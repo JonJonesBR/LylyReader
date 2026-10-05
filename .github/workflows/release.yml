@@ -1,7 +1,8 @@
 name: Release Build
 
 # Dispara automaticamente ao publicar uma tag "v*" (ex.: v1.7.0) e também pode ser rodado
-# manualmente. Builda o APK de release e o anexa à Release do GitHub da tag.
+# manualmente. Builda o APK de DEPURAÇÃO (debug, sem assinatura de release) e o anexa à Release
+# do GitHub da tag, nomeado com a versão: LylyReader-v<versão>-debug.apk.
 on:
   push:
     tags:
@@ -90,40 +91,20 @@ jobs:
           done
           echo "libonnxruntime_supertonic.so copiada (arm64-v8a, x86_64)."
 
-      - name: Configure release signing (opcional, via secrets)
-        env:
-          KS_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
-          KS_PW: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          KEY_PW: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: |
-          if [ -n "$KS_B64" ]; then
-            echo "$KS_B64" | base64 -d > release.jks
-            {
-              echo "storeFile=release.jks"
-              echo "storePassword=$KS_PW"
-              echo "keyAlias=$KEY_ALIAS"
-              echo "keyPassword=$KEY_PW"
-            } > release.properties
-            echo "Assinatura configurada (APK será assinado)."
-          else
-            echo "Sem secrets de assinatura — o APK de release sairá NÃO assinado."
-          fi
-
       - name: Run unit tests (gate)
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
-      - name: Build release APK
+      - name: Build debug APK
         run: >
-          ./gradlew :app:assembleRelease --stacktrace
+          ./gradlew :app:assembleDebug --stacktrace
           -PversionNameOverride="${VERSION_NAME}"
           -PversionCodeOverride="${VERSION_CODE}"
 
       - name: Prepare APK asset
         run: |
           set -e
-          APK="$(ls app/build/outputs/apk/release/*.apk | head -1)"
-          OUT="LylyReader-v${VERSION_NAME}.apk"
+          APK="$(ls app/build/outputs/apk/debug/*.apk | head -1)"
+          OUT="LylyReader-v${VERSION_NAME}-debug.apk"
           cp "$APK" "$OUT"
           echo "APK_ASSET=$OUT" >> "$GITHUB_ENV"
           echo "Asset: $OUT (origem: $APK)"
