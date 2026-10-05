@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema claro: fundo das barras de sistema (status/navegação) é claro -> ícones escuros
+         (android:windowLightStatusBar/windowLightNavigationBar = true). -->
+    <bool name="system_bars_are_light">true</bool>
+</resources>

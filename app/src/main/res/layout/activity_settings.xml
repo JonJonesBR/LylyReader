@@ -1,0 +1,2286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/color_background"
+    android:fitsSystemWindows="true">
+
+    <!-- Toolbar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="12dp"
+        android:gravity="center_vertical"
+        android:background="@color/color_background">
+
+        <ImageButton
+            android:id="@+id/btnVoltarSettings"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            android:contentDescription="@string/cd_voltar"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/nav_ajustes"
+            android:textSize="22sp"
+            android:textColor="@color/color_on_surface"/>
+
+        <ImageButton
+            android:id="@+id/btnAjudaSettings"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_ajuda"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_ajuda"/>
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_divider"/>
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabsSettings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/color_background"
+        app:tabIndicatorColor="?attr/colorPrimary"
+        app:tabSelectedTextColor="?attr/colorPrimary"
+        app:tabTextColor="@color/color_on_surface_muted"
+        app:tabMode="scrollable"
+        app:tabGravity="start">
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabSettingsGeral"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_tab_geral"/>
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabSettingsAudio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_tab_audio"/>
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabSettingsDados"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_tab_dados"/>
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabSettingsAjuda"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_tab_ajuda"/>
+
+    </com.google.android.material.tabs.TabLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_divider"/>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollSettings"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <LinearLayout
+                android:id="@+id/grupoSettingsGeral"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+            <!-- ── APARÊNCIA / TEMA ── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_appearance"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"
+                android:layout_marginTop="4dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:id="@+id/rowTema"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="56dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/tema_titulo"
+                        android:textColor="@color/color_on_surface"
+                        android:textSize="14sp"/>
+
+                    <TextView
+                        android:id="@+id/tvTemaAtual"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="14sp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- â”€â”€ MOTOR TTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp"
+                android:layout_marginTop="4dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_motor_tts"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+                <ImageButton
+                    android:id="@+id/btnAjudaMotorTts"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="10dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_ajuda"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_ajuda_motor_tts"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardMotorTts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <RadioGroup
+                        android:id="@+id/radioGroupMotor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <RadioButton
+                            android:id="@+id/radioEdge"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/radio_edge_tts"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="14sp"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:layout_marginBottom="4dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/desc_edge_tts"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:layout_marginStart="32dp"
+                            android:layout_marginBottom="12dp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioGemini"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/radio_gemini_tts"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="14sp"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:layout_marginBottom="4dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/desc_gemini_tts"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:layout_marginStart="32dp"
+                            android:layout_marginBottom="12dp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioOnnx"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/radio_onnx_tts"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="14sp"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:layout_marginBottom="4dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/desc_onnx_tts"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:layout_marginStart="32dp"
+                            android:layout_marginBottom="12dp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioAndroidTts"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/radio_android_tts"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="14sp"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:layout_marginBottom="4dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/motor_android_descricao"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:layout_marginStart="32dp"
+                            android:layout_marginBottom="12dp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioElevenLabs"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/radio_elevenlabs_tts"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="14sp"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:layout_marginBottom="4dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/desc_elevenlabs_tts"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:layout_marginStart="32dp"
+                            android:layout_marginBottom="12dp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioKokoro"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/radio_kokoro_tts"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="14sp"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:layout_marginBottom="4dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/desc_kokoro_tts"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:layout_marginStart="32dp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioPocket"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/radio_pocket_tts"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="14sp"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="4dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/desc_pocket_tts"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:layout_marginStart="32dp"/>
+
+                    </RadioGroup>
+
+                    <!-- Gemini API key, visible only when Gemini is selected -->
+                    <LinearLayout
+                        android:id="@+id/layoutGeminiKey"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="16dp"
+                        android:visibility="gone">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/color_divider_faint"
+                            android:layout_marginBottom="16dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/label_gemini_key"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="8dp"/>
+
+                        <EditText
+                            android:id="@+id/etGeminiKey"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:hint="@string/hint_gemini_key"
+                            android:textColor="@color/color_on_surface"
+                            android:textColorHint="@color/color_on_surface_faint"
+                            android:textSize="13sp"
+                            android:background="@drawable/bg_card_variant"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:inputType="textPassword"
+                            android:fontFamily="monospace"
+                            android:layout_marginBottom="10dp"/>
+
+                        <Button
+                            android:id="@+id/btnSalvarChave"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+        android:minHeight="42dp"
+                            android:text="@string/btn_salvar_chave"
+                            android:textColor="?attr/colorOnPrimary"
+                            android:textSize="13sp"
+                            android:backgroundTint="?attr/colorPrimary"/>
+
+                    </LinearLayout>
+
+                    <!-- ElevenLabs API key, visible only when ElevenLabs is selected -->
+                    <LinearLayout
+                        android:id="@+id/layoutElevenLabsKey"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="16dp"
+                        android:visibility="gone">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/color_divider_faint"
+                            android:layout_marginBottom="16dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/label_elevenlabs_key"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="8dp"/>
+
+                        <EditText
+                            android:id="@+id/etElevenLabsKey"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:hint="@string/hint_elevenlabs_key"
+                            android:textColor="@color/color_on_surface"
+                            android:textColorHint="@color/color_on_surface_faint"
+                            android:textSize="13sp"
+                            android:background="@drawable/bg_card_variant"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:inputType="textPassword"
+                            android:fontFamily="monospace"
+                            android:layout_marginBottom="10dp"/>
+
+                        <Button
+                            android:id="@+id/btnSalvarChaveElevenLabs"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+        android:minHeight="42dp"
+                            android:text="@string/btn_salvar_chave"
+                            android:textColor="?attr/colorOnPrimary"
+                            android:textSize="13sp"
+                            android:backgroundTint="?attr/colorPrimary"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── VOZES OFFLINE ────────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_vozes_offline"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardVozesOffline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_vozes_offline"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <!-- Uma linha por pacote registrado (V6 T2.2): Supertonic, Kokoro e,
+                         futuramente, MMS-por (Parte A) e modelos BYOM (Parte B) — sem UI nova
+                         por motor. Populado por SettingsActivity.carregarInfoVozesOffline. -->
+                    <LinearLayout
+                        android:id="@+id/layoutPacotesOffline"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"/>
+
+                    <Button
+                        android:id="@+id/btnCentralDownloads"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/dl_central_abrir"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorPrimary"
+                        android:backgroundTint="@color/color_surface_variant"/>
+
+                    <Button
+                        android:id="@+id/btnImportarVozByom"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/btn_importar_voz"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorPrimary"
+                        android:backgroundTint="@color/color_surface_variant"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_permissao_notificacao"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPermissaoNotificacao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_permissao_notificacao"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvPermissaoNotificacaoInfo"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:textSize="13sp"
+                            android:fontFamily="monospace"/>
+
+                        <Button
+                            android:id="@+id/btnAbrirConfigNotificacoes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="48dp"
+                            android:minWidth="48dp"
+                            android:text="@string/btn_abrir_config_notificacoes"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"/>
+
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/desc_otimizacao_bateria"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvOtimizacaoBateriaInfo"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:textSize="13sp" />
+
+                        <Button
+                            android:id="@+id/btnConfigOtimizacaoBateria"
+                            android:layout_width="wrap_content"
+                            android:layout_height="48dp"
+                            android:minWidth="48dp"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"
+                            android:text="@string/btn_config_otimizacao_bateria"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="13sp" />
+                    </LinearLayout>                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+            <!-- fim grupoSettingsGeral -->
+
+            <LinearLayout
+                android:id="@+id/grupoSettingsAudio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            <!-- â”€â”€ PAUSA ENTRE BLOCOS / VOZES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_pausa_blocos"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+                <ImageButton
+                    android:id="@+id/btnAjudaPausa"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="10dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_ajuda"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_ajuda_pausa"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardVozes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_pausa_blocos"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnPausa0"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="0ms"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnPausa300"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="300ms"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnPausa600"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="600ms"
+                            android:textSize="11sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnPausa900"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="900ms"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnPausa1500"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="1.5s"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- â”€â”€ QUALIDADE DE ÃUDIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_qualidade_audio"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+                <ImageButton
+                    android:id="@+id/btnAjudaBitrate"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="10dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_ajuda"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_ajuda_bitrate"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardQualidade"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_qualidade_audio"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnBitrate64"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="64kbps"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnBitrate128"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="128kbps"
+                            android:textSize="11sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnBitrate192"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="192kbps"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnBitrate256"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="256kbps"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── PASSOS DO SUPERTONIC ─────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/settings_supertonic_passos_titulo"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardSupertonicSteps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_supertonic_passos_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <SeekBar
+                            android:id="@+id/seekSupertonicSteps"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:max="14"/>
+
+                        <TextView
+                            android:id="@+id/tvSupertonicStepsValor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="64dp"
+                            android:gravity="end"
+                            tools:text="4 passos"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorPrimary"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── DICIONÁRIO DE PRONÚNCIA ─────────────────────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_pron_title"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPronuncias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pron_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <Button
+                        android:id="@+id/btnGerenciarPronuncias"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_pron_manage"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── VOZES CLONADAS ─────────────────────────────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/clone_title"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardVozesClonadas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/clone_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <Button
+                        android:id="@+id/btnCriarVozClonada"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_clone_create"/>
+
+                    <Button
+                        android:id="@+id/btnGerenciarVozesClonadas"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/btn_clone_manage"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── TIMBRE DA VOZ ───────────────────────────────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_timbre_title"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardTimbre"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_timbre_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <Button
+                        android:id="@+id/btnTimbre"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_timbre"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── PASSOS DO POCKET TTS (experimental) ─────────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_pocket_steps_title"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPocketPassos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pocket_steps_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <SeekBar
+                            android:id="@+id/seekPocketPassos"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:max="3"/>
+
+                        <TextView
+                            android:id="@+id/tvPocketPassosValor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="64dp"
+                            android:gravity="end"
+                            tools:text="1 passo"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorPrimary"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── PAUSA ENTRE FRASES (KOKORO) ──────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/settings_pausa_frase_title"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPausaFinalFrase"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pausa_frase_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <SeekBar
+                            android:id="@+id/seekPausaFinalFrase"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:max="2000"/>
+
+                        <TextView
+                            android:id="@+id/tvPausaFinalFraseValor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="64dp"
+                            android:gravity="end"
+                            tools:text="500 ms"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorPrimary"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── BUFFERING DA LEITURA GUIADA ──────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/settings_buffering_title"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardBuffering"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_buffer_paragrafos_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="14dp">
+
+                        <SeekBar
+                            android:id="@+id/seekBufferParagrafos"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:max="8"/>
+
+                        <TextView
+                            android:id="@+id/tvBufferParagrafosValor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="96dp"
+                            android:gravity="end"
+                            tools:text="Automático"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorPrimary"/>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/color_divider"
+                        android:layout_marginBottom="14dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_paralelismo_kokoro_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="14dp">
+
+                        <Button
+                            android:id="@+id/btnParalelismoPadrao"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_paralelismo_padrao"
+                            android:textSize="11sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnParalelismoReduzido"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_paralelismo_reduzido"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"/>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/color_divider"
+                        android:layout_marginBottom="14dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_paralelismo_supertonic_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="14dp">
+
+                        <Button
+                            android:id="@+id/btnParalelismoSupertonicoPadrao"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_paralelismo_supertonico_padrao"
+                            android:textSize="11sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnParalelismoSupertonicoExperimental"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_paralelismo_supertonico_experimental"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"/>
+
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnResetarBuffering"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_resetar_buffering"
+                        android:textSize="11sp"
+                        android:textColor="@color/color_on_surface_dim"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── AUTO-REWIND ──────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_auto_rewind"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAutoRewind"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_auto_rewind"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnAutoRewindOff"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_auto_rewind_off"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnAutoRewindCurto"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_auto_rewind_curto"
+                            android:textSize="11sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnAutoRewindLongo"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_auto_rewind_longo"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── PLAYER DA CONVERSÃO CONCLUÍDA ────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_player_conversao_concluida"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPlayerConversao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_player_conversao_concluida"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnPlayerConversaoPerguntar"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_player_conversao_perguntar"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnPlayerConversaoApp"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_player_conversao_app"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnPlayerConversaoSistema"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_player_conversao_sistema"
+                            android:textSize="11sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+            <!-- fim grupoSettingsAudio -->
+
+            <LinearLayout
+                android:id="@+id/grupoSettingsDados"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            <!-- â”€â”€ CACHE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_cache"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+                <ImageButton
+                    android:id="@+id/btnAjudaCache"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="10dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_ajuda"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_ajuda_cache"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardCache"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_cache"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvCacheInfo"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/cache_calculando"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:textSize="13sp"
+                            android:fontFamily="monospace"/>
+
+                        <Button
+                            android:id="@+id/btnLimparCache"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_limpar_cache"
+                            android:textColor="@color/color_error"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"/>
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvCacheAudioInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="@string/cache_calculando"
+                        android:textColor="@color/color_on_surface_muted"
+                        android:textSize="13sp"
+                        android:fontFamily="monospace"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/cache_teto_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="6dp">
+
+                        <SeekBar
+                            android:id="@+id/seekTetoCache"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:max="5"/>
+
+                        <TextView
+                            android:id="@+id/tvTetoCacheValor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="72dp"
+                            android:gravity="end"
+                            tools:text="1 GB"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorPrimary"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── PALAVRAS EXCLUÍDAS ────────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_blacklist"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+                <ImageButton
+                    android:id="@+id/btnAjudaBlacklist"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_ajuda"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_ajuda_blacklist"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardBlacklist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_blacklist"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvBlacklistInfo"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/cache_calculando"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:textSize="13sp"
+                            android:fontFamily="monospace"/>
+
+                        <Button
+                            android:id="@+id/btnGerenciarBlacklist"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_gerenciar_blacklist"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── LOGS DE ERRO ────────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_logs_erro"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardLogsErro"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_logs_erro"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvLogsErroInfo"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/logs_erro_calculando"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:textSize="13sp"
+                            android:fontFamily="monospace"/>
+
+                        <Button
+                            android:id="@+id/btnVisualizarLogs"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_visualizar_logs"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── ESTATÍSTICAS ─────────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_estatisticas"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_estatisticas_privacidade"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <Button
+                        android:id="@+id/btnVerEstatisticas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+        android:minHeight="42dp"
+                        android:text="@string/btn_ver_estatisticas"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="13sp"
+                        android:backgroundTint="@color/color_primary_surface"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── BACKUP ────────────────────────────────────────────────────────── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_backup"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_backup"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="end">
+
+                        <Button
+                            android:id="@+id/btnImportarConfig"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_importar_config"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"
+                            android:layout_marginEnd="8dp"/>
+
+                        <Button
+                            android:id="@+id/btnExportarConfig"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_exportar_config"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"/>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@color/color_divider"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_backup_completo"
+                        android:textColor="@color/color_on_surface"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_backup_completo"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="end">
+
+                        <Button
+                            android:id="@+id/btnImportarBackupCompleto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_importar_config"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"
+                            android:layout_marginEnd="8dp"/>
+
+                        <Button
+                            android:id="@+id/btnExportarBackupCompleto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                            android:text="@string/btn_exportar_config"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+            <!-- fim grupoSettingsDados -->
+
+            <LinearLayout
+                android:id="@+id/grupoSettingsAjuda"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            <!-- ── APRENDER (Fase J) ────────────────────────────────────────────── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_aprender"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/aprender_ajustes_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="13sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <Button
+                        android:id="@+id/btnAprenderApp"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/aprender_titulo"
+                        android:textAllCaps="false"/>
+
+                    <Button
+                        android:id="@+id/btnReverTour"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/aprender_rever_intro"
+                        android:textAllCaps="false"/>
+
+                    <Button
+                        android:id="@+id/btnReverDicas"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/aprender_rever_dicas"
+                        android:textAllCaps="false"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── AJUDA ─────────────────────────────────────────────────────────── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_ajuda"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_settings_tutorial"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <Button
+                        android:id="@+id/btnAbrirTutorial"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+        android:minHeight="36dp"
+                        android:text="@string/btn_ver_tutorial"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="13sp"
+                        android:backgroundTint="@color/color_primary_surface"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:layout_gravity="end"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── SOBRE ────────────────────────────────────────────────────────── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_sobre"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="LylyReader"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="16sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/tvVersao"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="v1.0"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:textSize="13sp"
+                            android:fontFamily="monospace"/>
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_sobre_app"
+                        android:textColor="@color/color_on_surface_muted"
+                        android:textSize="12sp"
+                        android:lineSpacingExtra="3dp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/color_divider_faint"
+                        android:layout_marginBottom="12dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_formatos_suportados"
+                        android:textColor="@color/color_on_surface_muted"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/formatos_suportados"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace"/>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/color_divider_faint"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <!-- Créditos/atribuição dos modelos de voz (V6 T2.3): Kokoro
+                         Apache-2.0 hoje; a Parte A (MMS CC-BY-NC) adiciona entradas no
+                         string-array creditos_voz_entradas. -->
+                    <TextView
+                        android:id="@+id/tvCreditosVoz"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:gravity="center_vertical"
+                        android:text="@string/label_creditos_voz"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="13sp"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+            <!-- fim grupoSettingsAjuda -->
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Collapsible mini-player -->
+    <include
+        layout="@layout/view_mini_player"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <include layout="@layout/view_barra_navegacao"/>
+
+</LinearLayout>

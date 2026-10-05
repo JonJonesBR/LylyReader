@@ -1,0 +1,79 @@
+name: Android CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  ORT_SUPERTONIC_VERSION: "1.26.0"
+
+jobs:
+  build:
+    # Push de tag já é coberto pelo release.yml (que builda e testa o mesmo commit).
+    if: github.ref_type != 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # Default do action é "tools platform-tools" — o pacote legado "tools" foi removido
+          # do repositório do Android SDK (2026-09-15: sdkmanager passou a falhar com "Failed
+          # to find package 'tools'"). Só platform-tools é necessário aqui; o resto (platform +
+          # build-tools) já é instalado explicitamente no passo "Install Android platform".
+          packages: "platform-tools"
+
+      - name: Set up Python for Chaquopy
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Install Android platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Fetch libonnxruntime_supertonic.so (ONNX Runtime para o Supertonic)
+        run: |
+          set -e
+          mkdir -p .ortdl
+          curl -fsSL -o .ortdl/ort.aar \
+            "https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime-android/${ORT_SUPERTONIC_VERSION}/onnxruntime-android-${ORT_SUPERTONIC_VERSION}.aar"
+          (cd .ortdl && unzip -q ort.aar -d x)
+          for abi in arm64-v8a x86_64; do
+            mkdir -p "app/src/main/jniLibs/$abi"
+            cp ".ortdl/x/jni/$abi/libonnxruntime.so" "app/src/main/jniLibs/$abi/libonnxruntime_supertonic.so"
+          done
+          echo "libonnxruntime_supertonic.so copiada (arm64-v8a, x86_64)."
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Upload debug APK
+        # continue-on-error: a cota de armazenamento de Artifacts (500MB) já estourou antes e
+        # volta a estourar com uso normal (recálculo leva 6-12h) — quando isso acontece, o
+        # BUILD (o que importa: o código compila) já passou, só o upload de conveniência falha.
+        # Sem isso, o check fica "failing" por um problema de infraestrutura sem relação com o
+        # código, mascarando o sinal real (ver "Build debug APK" acima).
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: lylyreader-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 3

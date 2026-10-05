@@ -1,0 +1,736 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="16dp">
+
+    <!-- Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="8dp"
+        android:background="@color/color_divider"
+        android:backgroundTintMode="src_atop"/>
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/sheet_acoes_titulo"
+        android:textSize="13sp"
+        android:textColor="@color/color_on_surface_muted"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="8dp"
+        android:textAllCaps="true"
+        android:letterSpacing="0.05"/>
+
+    <!-- Abas: agrupam os itens antes espalhados em 6 seções empilhadas numa rolagem só -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabsAcoesReader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:tabIndicatorColor="?attr/colorPrimary"
+        app:tabSelectedTextColor="?attr/colorPrimary"
+        app:tabTextColor="@color/color_on_surface_muted"
+        app:tabMode="scrollable"
+        app:tabGravity="start">
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabAcoesConversao"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sheet_section_conversion"/>
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabAcoesLeitura"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sheet_section_reading"/>
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabAcoesEdicao"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sheet_section_editing"/>
+
+    </com.google.android.material.tabs.TabLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_divider_faint"
+        android:layout_marginBottom="4dp"/>
+
+    <!-- ═══ ABA CONVERSÃO (conversão + download) ═══ -->
+    <LinearLayout
+        android:id="@+id/grupoAcoesConversao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Converter livro inteiro -->
+        <LinearLayout
+            android:id="@+id/itemAcaoConverterTudo"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_btn_speak_now"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/scope_full_book"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Exportar texto limpo -->
+        <LinearLayout
+            android:id="@+id/itemAcaoExportar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_share"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/scope_export_clean_text"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Exportar capítulos como arquivos .txt separados -->
+        <LinearLayout
+            android:id="@+id/itemAcaoExportarCapitulos"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_save"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/scope_export_chapters_files"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Compartilhar trecho atual -->
+        <LinearLayout
+            android:id="@+id/itemAcaoCompartilharTrecho"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_share"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/cd_compartilhar_trecho"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Baixar Capítulo -->
+        <LinearLayout
+            android:id="@+id/itemAcaoBaixarCapitulo"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_save"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/btn_baixar_capitulo"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Baixar Livro Completo -->
+        <LinearLayout
+            android:id="@+id/itemAcaoBaixarLivro"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_save"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/btn_baixar_livro"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Ouvir audiobook deste livro (só aparece se já existe conversão completa vinculada) -->
+        <LinearLayout
+            android:id="@+id/itemAcaoOuvirAudiobook"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_media_play"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/btn_ouvir_audiobook_livro"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+    <!-- fim grupoAcoesConversao -->
+
+    <!-- ═══ ABA LEITURA (leitura + aparência) ═══ -->
+    <LinearLayout
+        android:id="@+id/grupoAcoesLeitura"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- Capítulos (sumário navegável) -->
+        <LinearLayout
+            android:id="@+id/itemAcaoCapitulos"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_agenda"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/action_capitulos"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Marcadores -->
+        <LinearLayout
+            android:id="@+id/itemAcaoMarcadores"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_bookmark_filled"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/bookmark_listar"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Destaques -->
+        <LinearLayout
+            android:id="@+id/itemAcaoDestaques"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_gallery"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/destaque_listar"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Leitura Guiada -->
+        <LinearLayout
+            android:id="@+id/itemAcaoLeituraGuiada"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_btn_speak_now"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/action_guided_reading"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Preparar o capítulo (pré-renderiza a leitura guiada) -->
+        <LinearLayout
+            android:id="@+id/itemAcaoPrepararCapitulo"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/stat_sys_download"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/action_prepare_chapter"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Configurar voz/velocidade deste livro (antes de começar a ouvir) -->
+        <LinearLayout
+            android:id="@+id/itemAcaoConfigLivro"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_preferences"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/action_config_livro"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Vozes para os personagens detectados neste livro -->
+        <LinearLayout
+            android:id="@+id/itemAcaoVozesPersonagens"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_manage"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/action_character_voices"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Sleep Timer -->
+        <LinearLayout
+            android:id="@+id/itemAcaoSleepTimer"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_recent_history"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/sleep_timer_label"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Aparência -->
+        <LinearLayout
+            android:id="@+id/itemAcaoAparencia"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/cd_aparencia"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+    <!-- fim grupoAcoesLeitura -->
+
+    <!-- ═══ ABA EDIÇÃO ═══ -->
+    <LinearLayout
+        android:id="@+id/grupoAcoesEdicao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- Editar texto -->
+        <LinearLayout
+            android:id="@+id/itemAcaoEditar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/scope_edit_text"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Excluir palavras/frases -->
+        <LinearLayout
+            android:id="@+id/itemAcaoExcluirPalavras"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_delete"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/btn_excluir_ocorrencias"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Refazer limpeza -->
+        <LinearLayout
+            android:id="@+id/itemAcaoRefazerLimpeza"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_popup_sync"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@null"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/scope_redo_cleaning"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:paddingStart="16dp"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+    <!-- fim grupoAcoesEdicao -->
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_divider_faint"
+        android:layout_marginTop="4dp"/>
+
+    <!-- Ajuda: fica fora das abas, sempre visível (não é específica de nenhuma categoria) -->
+    <LinearLayout
+        android:id="@+id/itemAcaoAjuda"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/ic_menu_help"
+            app:tint="?attr/colorPrimary"
+            android:contentDescription="@null"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/action_help_tutorial"
+            android:textSize="14sp"
+            android:textColor="@color/color_on_surface"
+            android:paddingStart="16dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

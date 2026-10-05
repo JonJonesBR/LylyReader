@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Ler audiolivros de outros donos (ou órfãos após reinstalação) na coleção
+         MediaStore.Downloads — sem isso o provider só devolve arquivos que o próprio
+         app "possui" no momento da consulta, mesmo removendo o filtro OWNER_PACKAGE_NAME
+         da query (AudiobookLibraryUseCase.carregarDoMediaStore). -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+
+    <!-- Notificações (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- SherpaSynthService (síntese kokoro no processo :sherpa) roda como foreground service só
+         enquanto sintetiza — achado real em device (2026-09-16): o gerenciador de processos do
+         MIUI ("SmartPower") congela esse processo por não ter nenhuma superfície própria
+         (notificação/activity), MESMO com o app principal em primeiro plano e BIND_ABOVE_CLIENT
+         no bindService (tentado antes, não resolveu). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Mantém o CPU ativo com a tela apagada durante reprodução/síntese -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Necessário no Android 11+ (targetSdk 30+) para que PackageManager.queryIntentServices
+         enxergue os motores TTS de terceiros instalados no aparelho (AndroidTtsEngineDiscovery) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".LylyApplication"
+        android:extractNativeLibs="true"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:localeConfig="@xml/locales_config"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <!-- Android Auto: declara o app como compatível com mídia -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
+        <!-- Activity principal -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize">
+
+            <!-- Launcher padrão -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Receber arquivo compartilhado de outro app (Telegram, gerenciador, etc.) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/epub+zip" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/markdown" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/msword" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/x-mobipocket-ebook" />
+            </intent-filter>
+            <!-- Fallback para apps que enviam tipo genérico (ex: Telegram com EPUB/DOCX) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+
+            <!-- Abrir arquivo diretamente do gerenciador de arquivos -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/epub+zip" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/markdown" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/msword" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/x-mobipocket-ebook" />
+            </intent-filter>
+
+        </activity>
+
+        <!-- Tela de biblioteca de audiobooks -->
+        <activity
+            android:name=".ui.LibraryActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"/>
+
+        <!-- Tela de configurações -->
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"/>
+
+        <!-- Onboarding de primeiro uso -->
+        <activity
+            android:name=".ui.OnboardingActivity"
+            android:exported="false"/>
+
+        <!-- Tela do livro -->
+        <activity
+            android:name=".ui.LivroActivity"
+            android:exported="false"/>
+
+        <!-- Biblioteca de livros (textos importados e baixados) -->
+        <activity
+            android:name=".ui.MeusLivrosActivity"
+            android:exported="false"/>
+
+        <!-- Conversões em andamento (Fase P) -->
+        <activity
+            android:name=".ui.ConversoesActivity"
+            android:exported="false"/>
+
+        <!-- Central "Aprender o app" (Fase J) -->
+        <activity
+            android:name=".ui.AprenderActivity"
+            android:exported="false"/>
+
+        <!-- Busca de livros em domínio público -->
+        <activity
+            android:name=".ui.BuscarLivrosActivity"
+            android:exported="false"/>
+
+        <!-- Central de downloads dos pacotes de voz -->
+        <activity
+            android:name=".ui.DownloadCentralActivity"
+            android:exported="false"/>
+
+        <!-- Sistema de ajuda contextual -->
+        <activity
+            android:name=".ui.HelpActivity"
+            android:exported="false"/>
+
+        <!-- Leitor integrado com seleção de trecho -->
+        <activity
+            android:name=".ui.ReaderActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize"/>
+
+        <!-- Fila de processamento -->
+        <activity
+            android:name=".ui.QueueActivity"
+            android:exported="false"/>
+
+        <!-- Serviço de reprodução de áudio em background — MediaLibraryService (media3),
+             exportado pra ser descoberto pelo Android Auto -->
+        <service
+            android:name=".service.AudioPlayerService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+            </intent-filter>
+        </service>
+
+        <!-- Serviço da leitura guiada em 2º plano (mantém processo vivo + notificação) -->
+        <service
+            android:name=".service.VideoExportService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false"/>
+
+        <service
+            android:name=".service.DownloadService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false"/>
+
+        <service
+            android:name=".service.PreRenderService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false"/>
+
+        <service
+            android:name=".service.GuidedReadingService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false"/>
+
+        <!-- Síntese Supertonic em processo isolado: um abort() nativo do ONNX Runtime
+             mata apenas este processo, sem derrubar o app principal. foregroundServiceType
+             espelha o SherpaSynthService (mesmo achado do MIUI SmartPower congelando
+             processos sem superfície própria — ver comentário na classe). -->
+        <service
+            android:name=".tts.SupertonicSynthService"
+            android:process=":supertonic"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+
+        <!-- Síntese Kokoro (Sherpa-ONNX) em processo isolado: mesmo princípio do :supertonic —
+             o ONNX Runtime embutido no AAR pode abortar nativamente; aqui mata só este
+             processo. Ver PLANO_MELHORIAS_V6 (RN-2). -->
+        <service
+            android:name=".tts.SherpaSynthService"
+            android:process=":sherpa"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+
+        <!-- Pocket mantém somente um modelo INT8 carregado no processo filho; falhas do ORT
+             ficam isoladas e o modelo ocioso é liberado para devolver memória ao Android. -->
+        <service
+            android:name=".tts.PocketSynthService"
+            android:process=":pocket"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+
+        <!-- Widget de controle do player -->
+        <receiver
+            android:name=".ui.PlayerWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="com.jonjonesbr.audiobookgen.WIDGET_TOGGLE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/player_widget_info"/>
+        </receiver>
+
+
+
+        <!-- FileProvider: necessário para compartilhar o MP3 gerado -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Visualização de Logs de Erro -->
+        <activity
+            android:name=".ui.ErrorLogsActivity"
+            android:exported="false"/>
+
+        <!-- Estatísticas de leitura/escuta -->
+        <activity
+            android:name=".ui.StatisticsActivity"
+            android:exported="false"/>
+
+    </application>
+
+</manifest>

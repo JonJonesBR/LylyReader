@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="20dp">
+
+    <!-- Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="8dp"
+        android:background="@color/color_divider"/>
+
+    <TextView
+        android:id="@+id/tvSonecaTitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/color_on_surface"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="12dp"
+        tools:text="Soneca"/>
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:columnCount="4"
+        android:rowCount="2">
+
+        <Button
+            android:id="@+id/btnSoneca5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:layout_gravity="fill_horizontal"
+            android:text="5"
+            android:textSize="13sp"
+            android:textColor="@color/color_on_surface"
+            style="@style/Widget.Material3.Button.TextButton"/>
+
+        <Button
+            android:id="@+id/btnSoneca10"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:layout_gravity="fill_horizontal"
+            android:text="10"
+            android:textSize="13sp"
+            android:textColor="@color/color_on_surface"
+            style="@style/Widget.Material3.Button.TextButton"/>
+
+        <Button
+            android:id="@+id/btnSoneca20"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:layout_gravity="fill_horizontal"
+            android:text="20"
+            android:textSize="13sp"
+            android:textColor="@color/color_on_surface"
+            style="@style/Widget.Material3.Button.TextButton"/>
+
+        <Button
+            android:id="@+id/btnSoneca30"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:layout_gravity="fill_horizontal"
+            android:text="30"
+            android:textSize="13sp"
+            android:textColor="@color/color_on_surface"
+            style="@style/Widget.Material3.Button.TextButton"/>
+
+        <Button
+            android:id="@+id/btnSoneca60"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:layout_gravity="fill_horizontal"
+            android:text="60"
+            android:textSize="13sp"
+            android:textColor="@color/color_on_surface"
+            style="@style/Widget.Material3.Button.TextButton"/>
+
+        <Button
+            android:id="@+id/btnSoneca90"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:layout_gravity="fill_horizontal"
+            android:text="90"
+            android:textSize="13sp"
+            android:textColor="@color/color_on_surface"
+            style="@style/Widget.Material3.Button.TextButton"/>
+
+        <Button
+            android:id="@+id/btnSoneca120"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:layout_gravity="fill_horizontal"
+            android:text="120"
+            android:textSize="13sp"
+            android:textColor="@color/color_on_surface"
+            style="@style/Widget.Material3.Button.TextButton"/>
+
+        <Button
+            android:id="@+id/btnSonecaOff"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:layout_gravity="fill_horizontal"
+            android:text="@string/sleep_timer_off_option"
+            android:textSize="13sp"
+            android:textColor="@color/color_error"
+            style="@style/Widget.Material3.Button.TextButton"/>
+
+    </GridLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="8dp"
+        android:background="@color/color_divider_faint"/>
+
+    <TextView
+        android:id="@+id/tvSonecaPersonalizada"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="@color/color_on_surface_muted"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="4dp"
+        tools:text="Personalizado: 35 min"/>
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/sliderSoneca"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:valueFrom="0"
+        android:valueTo="120"
+        android:stepSize="5"
+        android:value="0"/>
+
+</LinearLayout>

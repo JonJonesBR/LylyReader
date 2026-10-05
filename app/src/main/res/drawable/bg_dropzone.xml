@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/bg_dropzone.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="16dp"/>
+    <solid android:color="@color/dropzone_fundo"/>
+    <stroke
+        android:width="1.5dp"
+        android:color="@color/dropzone_borda"
+        android:dashWidth="8dp"
+        android:dashGap="6dp"/>
+</shape>

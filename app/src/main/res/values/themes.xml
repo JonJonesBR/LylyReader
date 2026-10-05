@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Claro. Cores dinâmicas (Material You) desligadas: a identidade é fixa. -->
+    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#6D28D9</item>
+        <item name="colorAccent">#6D28D9</item>
+        <item name="colorControlActivated">#6D28D9</item>
+        <item name="android:colorControlActivated">#6D28D9</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#E8DEF8</item>
+        <item name="colorOnPrimaryContainer">#1D192B</item>
+        <item name="colorSecondaryContainer">#E8DEF8</item>
+        <item name="colorOnSecondaryContainer">#1D192B</item>
+        <item name="colorError">#BA1A1A</item>
+        <item name="colorOnError">#FFFFFF</item>
+        <item name="colorSurface">#FDFBFF</item>
+        <item name="colorOnSurface">#1C1B1F</item>
+        <item name="colorSurfaceVariant">#ECE6F0</item>
+        <item name="colorOnSurfaceVariant">#5F5D66</item>
+        <item name="colorOutline">#CAC4D0</item>
+        <item name="colorOutlineVariant">#EAE6EE</item>
+        <item name="colorSurfaceContainer">#F3EDF7</item>
+        <item name="colorSurfaceContainerHigh">#ECE6F0</item>
+        <item name="colorSurfaceContainerHighest">#ECE6F0</item>
+        <item name="android:colorBackground">#FDFBFF</item>
+
+        <!-- Barras de sistema acompanham o fundo; ícones claros/escuros conforme o tema -->
+        <item name="android:statusBarColor">#FDFBFF</item>
+        <item name="android:navigationBarColor">#FDFBFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+
+        <!-- Tokens do LylyReader -->
+        <item name="lylyFundo">#FDFBFF</item>
+        <item name="lylySuperficie">#F3EDF7</item>
+        <item name="lylySuperficie2">#ECE6F0</item>
+        <item name="lylyTexto">#1C1B1F</item>
+        <item name="lylyTextoMedio">#2B2930</item>
+        <item name="lylyTextoSecundario">#5F5D66</item>
+        <item name="lylyTextoTerciario">#79747E</item>
+        <item name="lylyTextoFraco">#8A8790</item>
+        <item name="lylyContorno">#CAC4D0</item>
+        <item name="lylyDivisor">#EAE6EE</item>
+        <item name="lylyDivisorFraco">#F1EDF5</item>
+        <item name="lylyTonal">#E8DEF8</item>
+        <item name="lylyNaTonal">#1D192B</item>
+        <item name="lylySucessoSuperficie">#E6F4EA</item>
+        <item name="lylyDestaqueLeitura">#EADDFF</item>
+        <item name="lylyFundoLeitura">#FDFBFF</item>
+        <item name="lylyTextoLeitura">#2B2930</item>
+        <item name="lylyBarraNavegacao">#F3EDF7</item>
+        <item name="lylyProgresso">#7C3AED</item>
+    </style>
+
+    <!-- Papel: creme de página de livro, tinta marrom e destaque sépia. Sempre claro (ThemePrefs força o modo diurno). -->
+    <style name="AppTheme.Papel" parent="AppTheme">
+        <item name="colorPrimary">#6B4226</item>
+        <item name="colorAccent">#6B4226</item>
+        <item name="colorControlActivated">#6B4226</item>
+        <item name="android:colorControlActivated">#6B4226</item>
+        <item name="colorOnPrimary">#FFF8EC</item>
+        <item name="colorPrimaryContainer">#E8D9B8</item>
+        <item name="colorOnPrimaryContainer">#3B2F20</item>
+        <item name="colorSecondaryContainer">#E8D9B8</item>
+        <item name="colorOnSecondaryContainer">#3B2F20</item>
+        <item name="colorError">#A3392B</item>
+        <item name="colorOnError">#FFF8EC</item>
+        <item name="colorSurface">#F5EEDC</item>
+        <item name="colorOnSurface">#3B2F20</item>
+        <item name="colorSurfaceVariant">#E6DAC0</item>
+        <item name="colorOnSurfaceVariant">#6E5F49</item>
+        <item name="colorOutline">#C9B996</item>
+        <item name="colorOutlineVariant">#E1D4B8</item>
+        <item name="colorSurfaceContainer">#EDE3CC</item>
+        <item name="colorSurfaceContainerHigh">#E6DAC0</item>
+        <item name="colorSurfaceContainerHighest">#E6DAC0</item>
+        <item name="android:colorBackground">#F5EEDC</item>
+
+        <!-- Barras de sistema acompanham o fundo; ícones claros/escuros conforme o tema -->
+        <item name="android:statusBarColor">#F5EEDC</item>
+        <item name="android:navigationBarColor">#F5EEDC</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+
+        <!-- Tokens do LylyReader -->
+        <item name="lylyFundo">#F5EEDC</item>
+        <item name="lylySuperficie">#EDE3CC</item>
+        <item name="lylySuperficie2">#E6DAC0</item>
+        <item name="lylyTexto">#3B2F20</item>
+        <item name="lylyTextoMedio">#4A3C2A</item>
+        <item name="lylyTextoSecundario">#6E5F49</item>
+        <item name="lylyTextoTerciario">#7A6B52</item>
+        <item name="lylyTextoFraco">#9A8B72</item>
+        <item name="lylyContorno">#C9B996</item>
+        <item name="lylyDivisor">#E1D4B8</item>
+        <item name="lylyDivisorFraco">#E9DEC6</item>
+        <item name="lylyTonal">#E8D9B8</item>
+        <item name="lylyNaTonal">#3B2F20</item>
+        <item name="lylySucessoSuperficie">#DDE5C8</item>
+        <item name="lylyDestaqueLeitura">#EAD49A</item>
+        <item name="lylyFundoLeitura">#F4ECD8</item>
+        <item name="lylyTextoLeitura">#3B2F20</item>
+        <item name="lylyBarraNavegacao">#EDE3CC</item>
+        <item name="lylyProgresso">#8A5A33</item>
+    </style>
+</resources>

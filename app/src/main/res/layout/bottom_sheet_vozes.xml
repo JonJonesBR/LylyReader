@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/vozes_titulo"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:paddingBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btnVozesDispositivo"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_vozes_dispositivo"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone"/>
+
+    <EditText
+        android:id="@+id/etFiltroVozes"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="@string/hint_filtrar_vozes"
+        android:textSize="14sp"
+        android:layout_marginBottom="12dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvVozes"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+</LinearLayout>

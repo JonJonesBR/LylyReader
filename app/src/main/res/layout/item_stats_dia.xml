@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="vertical"
+    android:gravity="center_horizontal">
+
+    <TextView
+        android:id="@+id/tvDiaMinutos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="9sp"
+        android:textColor="@color/color_on_surface_muted"
+        android:layout_marginBottom="2dp"
+        tools:text="12"/>
+
+    <FrameLayout
+        android:id="@+id/containerBarraDia"
+        android:layout_width="20dp"
+        android:layout_height="90dp"
+        android:background="@color/color_surface_variant">
+
+        <View
+            android:id="@+id/barraDia"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_gravity="bottom"
+            android:background="?attr/colorPrimary"/>
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tvDiaLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="10sp"
+        android:textColor="@color/color_on_surface_dim"
+        android:layout_marginTop="4dp"
+        tools:text="24"/>
+
+</LinearLayout>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/desc_blacklist"
+        android:textColor="@color/color_on_surface_muted"
+        android:textSize="13sp"
+        android:layout_marginBottom="16dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <EditText
+            android:id="@+id/etNovoTermo"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:hint="@string/hint_novo_termo"
+            android:textColor="@color/color_on_surface"
+            android:textColorHint="@color/color_on_surface_faint"
+            android:textSize="14sp"
+            android:background="@drawable/bg_card_variant"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:inputType="text"
+            android:maxLines="1"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnAdicionarTermo"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="@string/btn_adicionar"
+            android:textColor="?attr/colorOnPrimary"
+            android:textSize="13sp"
+            android:backgroundTint="?attr/colorPrimary"/>
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_divider_faint"
+        android:layout_marginBottom="12dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/containerTermos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+
+    </ScrollView>
+
+</LinearLayout>

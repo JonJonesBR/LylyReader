@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="@drawable/widget_bg"
+    android:gravity="center_vertical"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <ImageButton
+        android:id="@+id/widgetBtnCapituloAnterior"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@android:color/transparent"
+        android:src="@android:drawable/ic_media_previous"
+        android:scaleType="centerInside"
+        android:contentDescription="@string/cd_widget_capitulo_anterior"/>
+
+    <ImageButton
+        android:id="@+id/widgetBtnPlayPause"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:background="@android:color/transparent"
+        android:src="@android:drawable/ic_media_play"
+        android:scaleType="centerInside"
+        android:contentDescription="@string/cd_play_pause"/>
+
+    <ImageButton
+        android:id="@+id/widgetBtnProximoCapitulo"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:background="@android:color/transparent"
+        android:src="@android:drawable/ic_media_next"
+        android:scaleType="centerInside"
+        android:contentDescription="@string/cd_widget_proximo_capitulo"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="8dp">
+
+        <TextView
+            android:id="@+id/widgetTvNome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="LylyReader"
+            android:textColor="#DDDDDD"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:maxLines="1"/>
+
+        <TextView
+            android:id="@+id/widgetTvEstado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_tap_to_open"
+            android:textColor="#888888"
+            android:textSize="10sp"
+            android:ellipsize="end"
+            android:maxLines="1"/>
+    </LinearLayout>
+
+</LinearLayout>

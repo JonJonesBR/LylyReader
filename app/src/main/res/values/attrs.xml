@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tokens de design do LylyReader: cada tema (Claro, Escuro, Papel) define os valores. -->
+    <attr name="lylyFundo" format="color"/>
+    <attr name="lylySuperficie" format="color"/>
+    <attr name="lylySuperficie2" format="color"/>
+    <attr name="lylyTexto" format="color"/>
+    <attr name="lylyTextoMedio" format="color"/>
+    <attr name="lylyTextoSecundario" format="color"/>
+    <attr name="lylyTextoTerciario" format="color"/>
+    <attr name="lylyTextoFraco" format="color"/>
+    <attr name="lylyContorno" format="color"/>
+    <attr name="lylyDivisor" format="color"/>
+    <attr name="lylyDivisorFraco" format="color"/>
+    <attr name="lylyTonal" format="color"/>
+    <attr name="lylyNaTonal" format="color"/>
+    <attr name="lylySucessoSuperficie" format="color"/>
+    <attr name="lylyDestaqueLeitura" format="color"/>
+    <attr name="lylyFundoLeitura" format="color"/>
+    <attr name="lylyTextoLeitura" format="color"/>
+    <attr name="lylyBarraNavegacao" format="color"/>
+    <attr name="lylyProgresso" format="color"/>
+</resources>

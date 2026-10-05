@@ -1,0 +1,12 @@
+{
+  "replacements": {
+    "@": " at ",
+    "e.g.,": "for example, ",
+    "i.e.,": "that is, "
+  },
+  "abbreviations": [
+    "Dr.", "Mr.", "Mrs.", "Ms.", "Prof.", "Sr.", "Jr.",
+    "St.", "Ave.", "Rd.", "Blvd.", "Dept.", "Inc.", "Ltd.",
+    "Co.", "Corp.", "etc.", "vs.", "i.e.", "e.g.", "Ph.D."
+  ]
+}

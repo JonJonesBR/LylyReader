@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Arquivos MP3 gerados ficam em filesDir -->
+    <files-path name="audiobooks" path="." />
+    <!-- Cache (arquivos temporários) -->
+    <cache-path name="cache" path="." />
+</paths>

@@ -1,0 +1,1224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="app_name">LylyReader</string>
+
+    <!-- Content Descriptions -->
+    <string name="cd_logo">LylyReader logo</string>
+    <string name="cd_biblioteca">Library</string>
+    <string name="cd_abrir_audio">Open audio file</string>
+    <string name="cd_fila">Queue</string>
+    <string name="cd_ajuda">Help</string>
+    <string name="cd_configuracoes">Settings</string>
+    <string name="cd_voltar">Back</string>
+    <string name="cd_selecionar">Select</string>
+    <string name="cd_pasta">Folder</string>
+    <string name="cd_ordenar">Sort</string>
+    <string name="cd_aparencia">Appearance</string>
+    <string name="cd_play_pause">Play/Pause</string>
+    <string name="cd_guided_play">Start guided reading</string>
+    <string name="cd_guided_pause">Pause guided reading</string>
+    <string name="cd_guided_speed">Reading speed %1$s</string>
+    <string name="notification_permission_rationale_title">Allow notifications</string>
+    <string name="notification_permission_rationale_message">Notifications show conversion progress while LylyReader works in the background. You can keep converting without them.</string>
+    <string name="notification_permission_rationale_continue">Continue</string>
+    <string name="notification_permission_rationale_later">Not now</string>
+    <string name="cd_expandir_player">Expand player</string>
+    <string name="cd_fechar_player">Close player</string>
+    <string name="cd_guided_anterior">Previous paragraph</string>
+    <string name="cd_guided_proximo">Next paragraph</string>
+    <string name="cd_guided_fechar">Close guided reading</string>
+    <string name="cd_sleep_timer">Sleep timer</string>
+    <string name="sleep_timer_title_active">Sleep timer — %1$s left</string>
+    <string name="sleep_timer_minutes_option">%1$d min</string>
+    <string name="sleep_timer_off_option">Turn off</string>
+    <string name="toast_sleep_timer_off">Sleep timer turned off</string>
+    <string name="toast_sleep_timer_set">Sleep timer set for %1$d minutes</string>
+    <string name="sleep_timer_custom_label">Custom: %1$d min</string>
+    <string name="sleep_timer_custom_off_label">Custom: drag to set (0 = off)</string>
+    <string name="dialog_escolher_player_title">Open with which player?</string>
+    <string name="dialog_escolher_player_msg">You can change this later in Settings.</string>
+    <string name="dialog_escolher_player_app">LylyReader player</string>
+    <string name="dialog_escolher_player_outro">Choose another app</string>
+    <string name="toast_nenhum_player_instalado">No audio player app found</string>
+    <string name="chooser_abrir_audiobook">Open audiobook with</string>
+    <string name="cd_ajuda_motor_tts">TTS Engine Help</string>
+    <string name="cd_ajuda_pausa">Pause Help</string>
+    <string name="cd_ajuda_bitrate">Bitrate Help</string>
+    <string name="cd_ajuda_cache">Cache Help</string>
+    <string name="cd_repetir_item_fila">Retry queue item</string>
+    <string name="cd_remover_item_fila">Remove queue item</string>
+    <string name="cd_ler_item_fila">Guided reading of this queue item</string>
+    <string name="cd_reordenar_item_fila">Reorder queue item</string>
+    <string name="cd_warning">Warning</string>
+    <string name="cd_ilustracao_tutorial">Tutorial illustration</string>
+    <string name="cd_biblioteca_vazia">Empty library illustration</string>
+
+    <!-- Main Activity -->
+    <string name="btn_selecionar_arquivo">Select file</string>
+    <string name="formatos_suportados_completo">EPUB · PDF · TXT · DOC · DOCX · MOBI · MD</string>
+    <string name="nenhum_arquivo_selecionado">No file selected</string>
+    <string name="btn_previsualizar"> Preview</string>
+    <string name="pasta_padrao">Downloads</string>
+    <string name="btn_alterar">Change</string>
+    <string name="label_voz">VOICE</string>
+    <string name="btn_ouvir_amostra">▶  Sample</string>
+    <string name="label_estilo_narracao">NARRATION STYLE</string>
+    <string name="label_ritmo_fala">SPEECH RATE</string>
+    <string name="btn_processar">Create audiobook</string>
+    <string name="btn_leitura_guiada">Guided reading</string>
+    <string name="dialog_download_voice_title">Download Voice</string>
+    <string name="dialog_download_voice_message">This high-quality voice will be downloaded offline (~15MB to 85MB). Do you want to download it now?</string>
+    <string name="dialog_download_voice_confirm">Download</string>
+    <string name="dialog_download_supertonic_title">Download Premium Voices</string>
+    <string name="dialog_download_supertonic_message">The high-quality Supertonic voices (~270MB) are not installed yet. Download them now?</string>
+    <string name="dialog_download_piper_mobile_notice">You are not on Wi-Fi. This download will use mobile data.</string>
+    <string name="dialog_download_piper_message">Downloads this offline voice (about %1$d MB). License: %2$s. Continue?</string>
+    <string name="piper_license_notice_public_domain">The Piper model repository lists the voice files under MIT; the model card lists %1$s training data as public domain.</string>
+    <string name="piper_license_notice_apache">The Piper model repository lists the voice files under MIT; the model card lists %1$s training data under Apache-2.0.</string>
+    <string name="dialog_download_kokoro_title">Download Kokoro voices</string>
+    <string name="dialog_download_kokoro_message">The high-quality Kokoro voices (local Sherpa-ONNX, ~350MB) are not installed yet. You can hear each voice before downloading. Install them now?</string>
+    <string name="dialog_download_kokoro_wifi_aviso">You are not on Wi-Fi. This download (~350MB) will use mobile data.</string>
+    <string name="preview_kokoro_falha">Failed to download the Kokoro voice sample. Check your connection and try again.</string>
+    <string name="dialog_download_android_voice_title">Voice data not installed</string>
+    <string name="dialog_download_android_voice_message">This voice is known by the device\'s TTS engine, but its data hasn\'t been downloaded yet. Open the system settings to download it, then come back and pick it again.</string>
+    <string name="btn_abrir_configuracoes">Open settings</string>
+    <string name="toast_tts_settings_indisponivel">Couldn\'t open the voice download screen for this engine.</string>
+    <string name="status_downloading_voice">Downloading voice files... %1$d%%</string>
+    <string name="voice_download_title">Offline Voices</string>
+    <string name="voice_download_desc">To convert audiobooks and use guided reading without internet, download the offline voices you want. You can also do this later in Settings → Offline Voices.</string>
+    <string name="voice_download_skip">Continue</string>
+    <string name="voice_status_offline_ready">[Offline – Ready]</string>
+    <string name="voice_status_offline_download">[Offline – Download]</string>
+    <string name="voice_status_device">[Device]</string>
+    <string name="voice_status_download_needed">[Download in system settings]</string>
+    <string name="voice_speed_edge">⚡ Fast</string>
+    <string name="voice_speed_offline">🐢 Local (slower for books)</string>
+    <string name="menu_pronuncia">Pronunciation</string>
+    <string name="pron_title">How is it pronounced?</string>
+    <string name="pron_explanation">Type the word as it appears in the book and how it should be SPOKEN, spelled the way it sounds (e.g. Hermione → Hermy-oh-nee). Applies to every voice and to audiobooks. Leave the second field empty and save to remove.</string>
+    <string name="pron_hint_word">Word in the book</string>
+    <string name="pron_hint_spoken">How it is spoken</string>
+    <string name="pron_save">Save</string>
+    <string name="pron_listen">Listen</string>
+    <string name="pron_saved">Pronunciation saved.</string>
+    <string name="pron_removed">Pronunciation removed.</string>
+    <string name="pron_manage_title">Pronunciation dictionary</string>
+    <string name="pron_manage_empty">No pronunciations yet. Select a word in the reader and choose \"Pronunciation\", or tap \"Add\".</string>
+    <string name="pron_add">Add</string>
+    <string name="pron_close">Close</string>
+    <string name="settings_pron_title">Pronunciation dictionary</string>
+    <string name="settings_pron_desc">Teach the app how to say names and difficult words. It works with any voice, in guided reading and in audiobooks.</string>
+    <string name="btn_pron_manage">Manage pronunciations</string>
+    <string name="cd_guided_steps">Synthesis steps</string>
+    <string name="guided_steps_chip">⚙ %1$d</string>
+    <string name="guided_steps_apply">Apply</string>
+    <string name="guided_steps_desc_supertonic">Quality vs. speed of Supertonic voices. Fewer steps = faster; more steps = better quality. Applies to the next passages to be prepared.</string>
+    <string name="cache_audio_info">Voice audio: %1$s · limit: %2$s</string>
+    <string name="cache_teto_desc">Limit for the audio the voices keep so it can be reused. Over the limit, the app deletes the audio used longest ago; anything deleted is simply synthesized again if needed.</string>
+    <string name="cache_teto_sem_limite">no limit</string>
+    <string name="cache_teto_mb">%1$d MB</string>
+    <string name="cache_teto_gb">%1$d GB</string>
+    <string name="settings_pocket_steps_title">Pocket TTS steps (experimental)</string>
+    <string name="settings_pocket_steps_desc">Decoding steps per audio frame in Pocket TTS voices. 1 is the default and the fastest. More steps make synthesis slower and might improve fidelity — try 2 to 4 if you notice skipped words, and check how it sounds and whether reading keeps up. Applies to new syntheses; audio already prepared is regenerated when you change this.</string>
+    <string name="settings_steps_value">%1$d steps</string>
+    <string name="settings_supertonic_steps_title">Supertonic Steps</string>
+    <string name="settings_pausa_frase_title">Pause between sentences (local voices)</string>
+    <string name="settings_pausa_frase_desc">Pause between sentences during guided reading with local voices (Kokoro, Supertonic, Pocket), for more natural cadence.</string>
+    <string name="settings_pausa_frase_value">%1$d ms</string>
+    <string name="settings_buffering_title">Guided reading buffering</string>
+    <string name="settings_buffer_paragrafos_desc">How many text units (paragraph or sentence, depending on the voice engine) guided reading prepares ahead of the one currently playing. Applies to every voice engine. Further ahead: less chance of silence between chunks, but uses more memory/battery and may synthesize text you never end up hearing if you jump to a different spot. Less ahead: saves resources, but raises the risk of pauses if synthesis falls behind reading.</string>
+    <string name="settings_buffer_paragrafos_valor_automatico">Automatic</string>
+    <string name="settings_buffer_paragrafos_valor">%1$d ahead</string>
+    <string name="settings_paralelismo_kokoro_desc">How many syntheses the Kokoro engine can process at the same time (the only voice engine with this option today — the others already process one synthesis at a time). Standard (2) is faster and was tested on a real device. Reduced (1) processes one at a time — slower, but uses less processor at once. Nothing above 2 is offered because it was never tested.</string>
+    <string name="btn_paralelismo_padrao">Standard (2)</string>
+    <string name="btn_paralelismo_reduzido">Reduced (1)</string>
+    <string name="btn_resetar_buffering">Restore factory default</string>
+    <string name="toast_buffering_resetado">Buffering restored to each voice engine\'s default</string>
+    <string name="settings_paralelismo_supertonic_desc">How many syntheses the Supertonic (onnx) engine can process at the same time. Standard (1) always processes one at a time — how Supertonic has always worked in the app. Concurrent (2) is EXPERIMENTAL: it may make reading more fluid, but the native engine\'s safety for simultaneous calls was never tested on a real device — there is a real risk of the synthesis process crashing mid-book (contained: the main app won\'t crash, but reading may fail and need a retry). Test carefully before leaving it on.</string>
+    <string name="btn_paralelismo_supertonico_padrao">Standard (1)</string>
+    <string name="btn_paralelismo_supertonico_experimental">Concurrent (2) ⚠️</string>
+    <string name="dialog_paralelismo_experimental_titulo">Enable experimental concurrency?</string>
+    <string name="dialog_paralelismo_experimental_mensagem">This was never tested on a real device. It may cause the Supertonic synthesis process to crash mid-reading (the app itself won\'t crash — you\'d just need to retry that spot). Only enable it if you want to help test this.</string>
+    <string name="btn_ativar_mesmo_assim">Enable anyway</string>
+    <string name="notif_sintetizando_titulo">Synthesizing voice…</string>
+    <string name="dialog_downloading_title">Downloading</string>
+    <string name="toast_download_cancelled">Download cancelled.</string>
+    <string name="toast_download_voice_first">Select and download the voice first to hear the sample.</string>
+    <string name="btn_adicionar_fila">⊕  Add to queue</string>
+    <string name="btn_cancelar">Cancel</string>
+    <string name="dialog_audiobook_duplicado_title">Audiobook already exists</string>
+    <string name="dialog_audiobook_duplicado_msg">There\'s already an audiobook named \"%1$s\" in your library. Convert it again anyway?</string>
+    <string name="dialog_audiobook_duplicado_confirmar">Convert anyway</string>
+    <string name="btn_compartilhar_audiobook">  Share audiobook</string>
+    <string name="dialog_select_files_title">Select files</string>
+    <string name="dialog_select_files_option_files"> File(s)</string>
+    <string name="dialog_select_files_option_folder"> Folder</string>
+    <string name="status_file_ready">File ready. Tap Create audiobook.</string>
+    <string name="status_starting_excerpt">⏳ Starting excerpt conversion...</string>
+    <string name="status_reader_edits_saved">Edited text saved. Choose the voice and convert when ready.</string>
+    <string name="status_unsupported_format">⚠ Unsupported format: .%1$s\nSupported: EPUB, PDF, TXT, MD, DOCX</string>
+    <string name="status_file_received">File received. Tap Create audiobook.</string>
+    <string name="status_canceling">⏹ Canceling...</string>
+    <string name="status_file_read_error">❌ Could not read the file.</string>
+    <string name="status_file_read_error_detail">❌ Could not read the file.\nCheck if it is corrupted or protected.</string>
+    <string name="status_added_file_to_queue">✅ \"%1$s\" added to queue (%2$d pending)</string>
+    <string name="snackbar_open_queue">Open queue</string>
+    <string name="status_starting">⏳ Starting...</string>
+    <string name="share_audiobook_chooser">Share audiobook</string>
+    <string name="status_adding_to_queue">Adding to queue...</string>
+    <string name="status_files_added_to_queue">✅ %1$d file(s) added to queue</string>
+    <string name="status_reading_folder">Reading folder...</string>
+    <string name="status_folder_files_added">✅ %1$d file(s) from the folder added to queue</string>
+    <string name="status_no_supported_files_in_folder">❌ No compatible files found in the folder.</string>
+    <string name="dialog_lote_arquivos_title">%1$d files selected</string>
+    <string name="dialog_lote_arquivos_message">Convert the full files, or open each one to choose specific chapters before adding it to the queue?</string>
+    <string name="btn_converter_tudo">Convert all</string>
+    <string name="btn_selecionar_capitulos">Choose chapters</string>
+    <string name="status_generating_preview">Generating...</string>
+    <string name="status_sample_button"> Sample</string>
+    <string name="status_saved_to_folder">✅ Saved in %1$s\n%2$s | %3$sMB</string>
+    <string name="status_export_error">Export error</string>
+    <string name="status_audio_ready_export_failed">The audiobook was created and kept on this device, but could not be saved to the selected folder.</string>
+    <string name="status_export_retrying">Saving the audiobook to the selected folder…</string>
+    <string name="status_export_retry_success">Audiobook saved to %1$s.</string>
+    <string name="status_export_retry_failed">Could not save it there. The audiobook is still available on this device; choose another folder or share it.</string>
+    <string name="status_export_source_missing">The temporary audio file is no longer available. Convert the source file again.</string>
+    <string name="dialog_conversion_export_failed_title">Audio ready, save failed</string>
+    <string name="dialog_conversion_export_failed_message">The audiobook was created and remains available on this device. Choose another folder to save it, or play or share it now.</string>
+    <string name="dialog_conversion_save_elsewhere">Save to another folder</string>
+    <string name="dialog_conversion_done_title">Conversion completed!</string>
+    <string name="dialog_conversion_done_message">The audio is ready. What would you like to do?</string>
+    <string name="dialog_conversion_done_sem_capitulos">The file had no detectable chapter structure, so the audio has no chapter markers.</string>
+    <string name="toast_arquivo_nao_disponivel">The file is no longer available.</string>
+    <string name="dialog_conversion_done_play">▶ Play</string>
+    <string name="dialog_conversion_done_read_original"> Read original</string>
+    <string name="dialog_conversion_done_share"> Share</string>
+    <string name="status_preview_open_error">❌ Could not open the file for preview.</string>
+    <string name="status_queue_processing">⏳ [%1$d/%2$d] %3$s...</string>
+    <string name="dialog_shared_file_title">File received</string>
+    <string name="dialog_shared_file_message">Create an audiobook now or preview the text before converting.</string>
+    <string name="dialog_shared_file_later">Later</string>
+    <string name="hint_style_gemini_only">Narration styles are applied only when Gemini TTS is selected.</string>
+    <string name="voice_gender_male">male</string>
+    <string name="voice_gender_female">female</string>
+    <string name="voice_language_multilingual">multilingual</string>
+    <string name="style_standard">Standard</string>
+    <string name="style_horror">Horror</string>
+    <string name="style_action">Action</string>
+    <string name="style_scifi">Science fiction</string>
+    <string name="style_drama">Drama</string>
+    <string name="style_comedy">Comedy</string>
+
+    <!-- Library Activity -->
+    <string name="titulo_biblioteca">My Library</string>
+    <string name="label_ordenar_data">Date</string>
+    <string name="label_ordenar_nome">A->Z</string>
+    <string name="library_progress_listened">%1$d%% listened</string>
+    <string name="library_progress_done">✓ Finished</string>
+    <string name="library_search_hint">Search audiobooks</string>
+    <string name="library_search_no_results">No results for your search</string>
+    <string name="library_shortcut_title">Your library</string>
+    <string name="library_shortcut_last">Last: %1$s</string>
+    <string name="recent_section_title">Continue reading</string>
+    <string name="recent_continue">Continue</string>
+    <string name="recent_remove">Remove from list</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="msg_nenhum_audiobook">No audiobooks found</string>
+    <string name="msg_converta_livro">Convert a book to get started</string>
+    <string name="library_perm_necessaria">Media access is needed to show your audiobooks</string>
+    <string name="library_perm_acao">Grant access</string>
+    <string name="player_erro_reproducao">Couldn\'t play this file. It may have been moved or corrupted.</string>
+    <string name="dialog_delete_audiobook_title">Delete audiobook</string>
+    <string name="dialog_delete_audiobook_message">Delete \"%1$s\"?\nThis action cannot be undone.</string>
+    <string name="dialog_delete_audiobook_confirm">Delete</string>
+    <string name="toast_audiobook_deleted">\"%1$s\" deleted</string>
+    <string name="toast_audiobook_delete_failed">Could not delete the file. Check storage permissions.</string>
+    <string name="toast_audiobook_delete_error">Error deleting: %1$s. Try again or restart the app.</string>
+    <string name="folder_custom">Custom folder</string>
+    <string name="folder_downloads">Downloads</string>
+    <string name="cd_exportar_video">Export as video</string>
+    <string name="dialog_export_video_title">Export as video (MP4)</string>
+    <string name="dialog_export_video_message">Experimental feature: generates a video with the cover as a static image and this audiobook\'s audio (useful for uploading to YouTube, for example). May take a while and hasn\'t been tested on every device. Continue?</string>
+    <string name="dialog_export_video_confirm">Export</string>
+    <string name="status_exportando_video">Exporting video… %d%%</string>
+    <string name="toast_video_exportado">Video exported.</string>
+    <string name="toast_erro_exportar_video">Couldn\'t export the video: %s</string>
+    <string name="erro_audio_origem_indisponivel">Couldn\'t read this audiobook\'s source audio.</string>
+    <string name="video_opt_resolucao">Resolution</string>
+    <string name="video_opt_duracao_max">Maximum length per part (minutes)</string>
+    <string name="video_opt_modo">Split mode</string>
+    <string name="video_modo_maximo">Fill each part up to the maximum</string>
+    <string name="video_modo_iguais">Equal parts</string>
+    <string name="status_exportando_video_parte">Exporting video — part %1$d… %2$d%%</string>
+    <string name="toast_video_exportado_partes">%d videos exported (one per part).</string>
+    <string name="toast_video_cancelado">Export cancelled.</string>
+    <string name="erro_espaco_video">Not enough free space: about %d MB needed.</string>
+    <string name="video_channel">Video export</string>
+    <string name="video_notif_title">Exporting video: %s</string>
+    <string name="video_aviso_bateria">Battery is low. Exporting a long audiobook takes a while: plug in the charger first.</string>
+
+    <!-- Reader Activity -->
+    <string name="btn_converter_assim_mesmo">Convert anyway</string>
+    <string name="fab_converter_selecao">✓ Convert selection</string>
+    <string name="toast_save_selection_error">Could not save the selection. Check storage and try again.</string>
+
+    <!-- Queue Activity -->
+    <string name="titulo_fila">Queue</string>
+    <string name="msg_fila_vazia">No files in the queue.\nOpen a book in your Library and choose Generate audiobook.</string>
+    <string name="btn_iniciar_fila">Start processing</string>
+    <string name="btn_ler_tudo_fila">Read all (guided reading)</string>
+    <string name="btn_limpar_fila">Clear</string>
+    <string name="btn_limpar_historico">Clear history</string>
+    <string name="queue_status_pending">Pending</string>
+    <string name="queue_status_processing">Processing %1$d%%</string>
+    <string name="queue_status_completed">Completed</string>
+    <string name="queue_status_error">Conversion error</string>
+
+    <!-- Settings Activity -->
+    <string name="titulo_configuracoes">Settings</string>
+    <string name="label_motor_tts">TTS ENGINE</string>
+    <string name="radio_edge_tts">Edge TTS (Microsoft) - Free</string>
+    <string name="desc_edge_tts">No cost. Requires internet connection.</string>
+    <string name="radio_gemini_tts">Gemini TTS (Google) - Requires API Key</string>
+    <string name="desc_gemini_tts">More natural voice. Free with API quota.</string>
+
+    <string name="radio_onnx_tts">Local Neural (ONNX) - Free Offline</string>
+    <string name="radio_android_tts">Android TTS (device voices) - Offline</string>
+    <string name="desc_onnx_tts">Highly realistic neural voices (Supertonic). Fully offline.</string>
+    <string name="radio_elevenlabs_tts">ElevenLabs - Requires API Key</string>
+    <string name="desc_elevenlabs_tts">Official ElevenLabs voices, using your own API key.</string>
+    <string name="radio_kokoro_tts">Kokoro (Sherpa-ONNX) - Free Offline</string>
+    <string name="desc_kokoro_tts">Neural pt-BR voices (Dora, Alex, Santa) via local Sherpa-ONNX. Fully offline after one ~350MB download.</string>
+    <string name="radio_pocket_tts">Pocket TTS 3.3 (ONNX) - Free Offline</string>
+    <string name="desc_pocket_tts">Fixed public voices for Portuguese, English and Spanish. Downloads one ~132MB language pack on demand; no voice cloning.</string>
+    <string name="pocket_download_title">Download Pocket voice</string>
+    <string name="pocket_download_message">Download the %2$s Pocket TTS package (~%1$d MB) for offline use? License: %3$s.</string>
+    <string name="pocket_mobile_data_notice">You are not on Wi-Fi. This download will use mobile data.</string>
+    <string name="pocket_license_notice">CC BY 4.0 · attribution required</string>
+    <string name="preview_pocket_failure">Could not generate the Pocket sample. Check that this language pack is installed.</string>
+    <string name="btn_baixar">Download</string>
+    <string name="btn_excluir">Delete</string>
+    <string name="label_gemini_key">Gemini API Key</string>
+    <string name="label_elevenlabs_key">ElevenLabs API Key</string>
+
+    <string name="btn_salvar_chave">Save key</string>
+    <string name="label_pausa_blocos">PAUSE BETWEEN BLOCKS</string>
+    <string name="desc_pausa_blocos">Silence inserted between narrated paragraphs.</string>
+    <string name="label_qualidade_audio">AUDIO QUALITY</string>
+    <string name="desc_qualidade_audio">MP3 bitrate (applied via Gemini TTS + FFmpeg).</string>
+    <string name="label_cache">CACHE</string>
+    <string name="desc_cache">Cached audio chunks avoid re-synthesis when resuming processing.</string>
+    <string name="label_auto_rewind">AUTO-REWIND</string>
+    <string name="desc_auto_rewind">When resuming after a pause, rewind a few seconds to pick the narration back up. Off disables it.</string>
+    <string name="btn_auto_rewind_off">Off</string>
+    <string name="btn_auto_rewind_curto">Short</string>
+    <string name="btn_auto_rewind_longo">Long</string>
+    <string name="label_player_conversao_concluida">PLAYER FOR FINISHED AUDIOBOOKS</string>
+    <string name="desc_player_conversao_concluida">Which player opens when you tap the "conversion complete" notification.</string>
+    <string name="btn_player_conversao_perguntar">Ask me</string>
+    <string name="btn_player_conversao_app">This app</string>
+    <string name="btn_player_conversao_sistema">Other app</string>
+    <string name="label_estatisticas">STATISTICS</string>
+    <string name="desc_estatisticas_privacidade">100% local and private — nothing here is ever sent to any server.</string>
+    <string name="btn_ver_estatisticas">View statistics</string>
+    <string name="stats_minutos_ouvidos">Minutes listened</string>
+    <string name="stats_minutos_lidos">Minutes read</string>
+    <string name="stats_livros_concluidos">Books finished</string>
+    <string name="stats_streak_dias">Day streak</string>
+    <string name="label_stats_ultimos_7_dias">LAST 7 DAYS</string>
+    <string name="settings_tab_geral">General</string>
+    <string name="settings_tab_audio">Audio</string>
+    <string name="settings_tab_dados">Data</string>
+    <string name="settings_tab_ajuda">Help</string>
+    <string name="sheet_opcoes_titulo">Options</string>
+    <string name="tab_opcoes_navegacao">Navigation</string>
+    <string name="tab_opcoes_sistema">System</string>
+    <string name="desc_opcao_biblioteca">Your saved and converted audiobooks</string>
+    <string name="desc_opcao_fila">Track ongoing and pending conversions</string>
+    <string name="desc_opcao_ajuda">Tutorial and frequently asked questions</string>
+    <string name="desc_opcao_configuracoes">Voice, audio quality, appearance and more</string>
+    <string name="cache_calculando">Calculating…</string>
+    <string name="btn_limpar_cache">Clear</string>
+    <string name="label_sobre">ABOUT</string>
+    <string name="label_creditos_voz">Voice &amp; model credits</string>
+    <string-array name="creditos_voz_entradas">
+        <item>Piper PT-BR Cadu, Faber and Jeff — MIT-licensed Piper voice models; source datasets CC0. Copyright by the respective voice authors. https://github.com/rhasspy/piper-voices</item>
+        <item>Piper PT-BR Edresson — Piper model; training corpus CC BY 4.0. Attribution: Edresson and TTS-Portuguese-Corpus contributors. https://huggingface.co/csukuangfj/vits-piper-pt_BR-edresson-low</item>
+        <item>Piper PT-BR Dii and Miro — CC BY-NC-SA 4.0. Non-commercial use; attribution and same-license redistribution required. License: https://creativecommons.org/licenses/by-nc-sa/4.0/ Models: https://huggingface.co/csukuangfj/vits-piper-pt_BR-dii-high and https://huggingface.co/TarcisoAmorim/piper-pt_BR-miro-high</item>
+        <item>Piper en_US-ljspeech-medium — model repository MIT; training dataset LJSpeech is public domain. Model card: https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/en/en_US/ljspeech/medium/MODEL_CARD</item>
+        <item>Piper en_US-norman-medium — model repository MIT; LibriVox training recordings are public domain. Model card: https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/en/en_US/norman/medium/MODEL_CARD</item>
+        <item>Piper es_MX-claude-high — model repository MIT; model card lists Piper-TTS-Spanish training dataset under Apache-2.0. Model card: https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/es/es_MX/claude/high/MODEL_CARD</item>
+        <item>Kokoro-82M — neural TTS model (Apache-2.0). Copyright (c) hexgrad; ONNX conversion and runtime integration by k2-fsa (sherpa-onnx).</item>
+        <item>sherpa-onnx — offline speech runtime (Apache-2.0). Copyright (c) k2-fsa / Xiaomi.</item>
+        <item>MMS-TTS (Massively Multilingual Speech) — Portuguese voice model (CC-BY-NC 4.0). Copyright (c) Meta AI. Non-commercial use only.</item>
+        <item>Supertonic — neural TTS model (OpenRAIL-M). Copyright (c) Supertone.</item>
+        <item>Pocket TTS 3.3 — public no-voice-cloning ONNX packs and fixed presets (CC BY 4.0). Copyright (c) Kyutai Labs. C++ runtime PocketTTS.cpp (MIT), SentencePiece (Apache-2.0), and dr_libs (Unlicense).</item>
+    </string-array>
+    <string name="desc_sobre_app">Converts books into high-quality audiobooks using Microsoft Edge TTS and Google Gemini TTS, directly on your device.</string>
+    <string name="label_formatos_suportados">Supported formats</string>
+    <string name="formatos_suportados">EPUB · PDF · TXT · MD · DOC · DOCX · MOBI</string>
+    <string name="hint_gemini_key">AIza...</string>
+    <string name="hint_elevenlabs_key">sk_...</string>
+    <string name="settings_help_tts_title">TTS engine</string>
+    <string name="settings_help_tts_message">Defines the speech synthesis service used for conversion.\n\n• Edge TTS (Microsoft): free, requires internet. Offers many voices in several languages.\n\n• Gemini TTS (Google): more natural and expressive voice. Requires a Google API key.\n\n• ElevenLabs: official ElevenLabs voices, using your own API key.\n\n• OpenRouter: multi-model TTS (OpenAI, ElevenLabs). Requires an OpenRouter API key.</string>
+    <string name="settings_help_pause_title">Pause between blocks</string>
+    <string name="settings_help_pause_message">Controls the silence inserted between paragraphs during narration.\n\n• 0ms: no pause, continuous reading.\n• 300-600ms: natural pause, recommended for most texts.\n• 900-1500ms: longer pauses, useful for technical texts or studying.\n\nLonger pauses slightly increase audio generation time.</string>
+    <string name="settings_help_bitrate_title">Audio quality (bitrate)</string>
+    <string name="settings_help_bitrate_message">Defines the bitrate of the generated MP3 file.\n\n• 64 kbps: smaller file, lower quality.\n• 128 kbps: standard quality, good balance.\n• 192 kbps: high quality.\n• 256 kbps: maximum quality, larger files.\n\nNote: bitrate is applied by Gemini TTS + FFmpeg. Edge TTS uses its own codec.</string>
+    <string name="settings_help_cache_title">Audio cache</string>
+    <string name="settings_help_cache_message">The app stores synthesized audio chunks in cache.\n\nThis avoids reprocessing identical sections when converting the same file again or resuming an interrupted conversion.\n\nClear the cache to free storage or force a full re-synthesis.</string>
+    <string name="dialog_ok">OK</string>
+    <string name="toast_key_saved">Key saved</string>
+    <string name="dialog_valor_entre">Enter a value between %1$d and %2$d</string>
+    <string name="toast_key_removed">Key removed</string>
+    <string name="toast_key_secure_save_failed">Could not save the key securely</string>
+    <string name="toast_key_saved_local_fallback">Key saved only on this device. Secure storage is unavailable.</string>
+    <string name="cache_empty">Cache empty</string>
+    <string name="cache_info_chunks">%1$.1fMB  ·  %2$d chunks</string>
+    <string name="cache_unavailable">Unavailable</string>
+    <string name="cache_empty_removed">Cache empty (%1$d removed)</string>
+    <string name="cache_cleaning">Clearing...</string>
+    <string name="cache_clean_error">Error clearing</string>
+    <string name="toast_cache_cleared">Cache cleared</string>
+
+    <!-- Mini Player -->
+    <string name="tempo_inicial">0:00 / 0:00</string>
+    <string name="widget_tap_to_open">Tap to open</string>
+
+    <!-- Audiobook Item -->
+    <string name="btn_ouvir">▶ Play</string>
+    <string name="btn_compartilhar">↗ Share</string>
+    <string name="btn_deletar"> Delete</string>
+
+    <!-- Appearance Bottom Sheet -->
+    <string name="titulo_aparencia">Appearance</string>
+    <string name="label_tamanho_fonte">Font size</string>
+    <string name="label_espacamento_linhas">Line spacing</string>
+    <string name="label_tema">Theme</string>
+    <string name="btn_tema_claro">☀ Light</string>
+    <string name="btn_tema_escuro"> Dark</string>
+    <string name="btn_tema_sepia"> Sepia</string>
+    <string name="btn_tema_oled">⬛ OLED</string>
+    <string name="label_tipografia">Typography</string>
+    <string name="btn_fonte_padrao">Sans-serif</string>
+    <string name="btn_fonte_serifada">Serif</string>
+    <string name="label_margem">Margin</string>
+    <string name="btn_margem_estreita">Narrow</string>
+    <string name="btn_margem_media">Medium</string>
+    <string name="btn_margem_larga">Wide</string>
+    <string name="label_rolagem">Scrolling</string>
+    <string name="btn_rolagem_vertical">Vertical</string>
+    <string name="btn_rolagem_horizontal">Horizontal (pages)</string>
+    <string name="progresso_leitura_com_tempo">%1$d%% · ~%2$d min left in chapter</string>
+    <string name="progresso_leitura_sem_tempo">%1$d%% read</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_btn_pular">Skip</string>
+    <string name="onboarding_btn_proximo">Next</string>
+    <string name="onboarding_btn_proximo_seta">Next →</string>
+    <string name="onboarding_btn_comecar">Get started</string>
+
+    <!-- Onboarding Pages -->
+    <string name="onboarding_p1_rodape">EPUB  ·  PDF  ·  TXT  ·  MD  ·  DOC  ·  DOCX  ·  MOBI</string>
+
+    <!-- Battery Onboarding -->
+
+    <!-- Guided Reading Start -->
+    <string name="guided_start_dialog_title">Start from where?</string>
+    <string name="guided_start_from_beginning">From the beginning</string>
+    <string name="guided_start_from_detected">From where I stopped</string>
+
+    <!-- Text Treatment -->
+
+    <!-- Fase 1 - Limpeza inteligente -->
+    <string name="banner_otimizacao">Text optimization in progress…</string>
+    <string name="banner_info_trechos">%1$d sections removed (TOC, footnotes)</string>
+    <string name="banner_info_trechos_capitulos">%1$d sections removed. %2$d chapters found.</string>
+    <string name="scope_full_book">Convert full book</string>
+    <string name="scope_edit_text">Edit treated text</string>
+    <string name="scope_redo_cleaning">Run cleaning again</string>
+    <string name="scope_export_clean_text">Export clean text without audio</string>
+    <string name="scope_export_chapters_files">Export chapters as separate files</string>
+    <string name="toast_sem_capitulos_para_exportar">This book has no detected chapters to export.</string>
+    <string name="toast_capitulos_exportados">%d chapter file(s) saved.</string>
+    <string name="toast_erro_exportar_capitulos">Couldn\'t export the chapters: %1$s</string>
+    <string name="toast_elevenlabs_configure_key">Configure your ElevenLabs API key in Settings to use this voice.</string>
+    <string name="toast_clean_text_exported">Clean text exported.</string>
+    <string name="toast_clean_text_export_error">Could not export the text. Check disk space and try again.</string>
+    <string name="btn_excluir_ocorrencias">Remove phrase</string>
+    <string name="exclude_occurrences_title">Remove from entire text</string>
+    <string name="exclude_occurrences_message">Enter the exact word or phrase to remove everywhere.</string>
+    <string name="exclude_occurrences_hint">Word or phrase</string>
+    <string name="exclude_occurrences_confirm">Remove</string>
+    <string name="btn_limpar_opcoes">Clear options</string>
+    <string name="btn_show_advanced_options">Show advanced options</string>
+    <string name="btn_hide_advanced_options">Hide advanced options</string>
+    <string name="status_options_cleared">Options cleared.</string>
+    <string name="status_conversion_canceled">Conversion canceled.</string>
+    <string name="dialog_confirm_cancel_title">Cancel conversion?</string>
+    <string name="dialog_confirm_cancel_msg">The current conversion will be stopped and cannot be resumed. Are you sure?</string>
+    <string name="dialog_confirm_clear_title">Clear all options?</string>
+    <string name="dialog_confirm_clear_msg">The current conversion will be stopped and all settings will be reset. Are you sure?</string>
+    <string name="notification_conversion_done">Audiobook ready</string>
+    <string name="notification_conversion_done_message">Conversion completed successfully.</string>
+    <string name="notification_conversion_progress">Converting audio</string>
+    <string name="notification_conversion_channel">Audio conversion</string>
+    <string name="notification_conversion_channel_description">Text-to-speech conversion progress</string>
+    <string name="hint_paragrafo_edit">Edit paragraph…</string>
+
+    <!-- Fase 2 - Motor TTS e Configuração de Vozes -->
+    <string name="motor_android_descricao">Android - offline, uses installed voices</string>
+
+    <string name="vozes_titulo">Select voice</string>
+    <string name="preview_voz_btn_desc">Voice preview</string>
+    <string name="hint_filtrar_vozes">Filter voices...</string>
+    <string name="voice_recommended_for_language">For your app language: %1$s</string>
+    <string name="voice_no_recommended_for_language">No voices are specifically tagged for %1$s yet. Available alternatives:</string>
+    <string name="voice_other_languages_count">Other languages and multilingual (%1$d)</string>
+    <string name="voice_expand_section">Expand section</string>
+    <string name="voice_collapse_section">Collapse section</string>
+    <string name="btn_vozes_dispositivo">🔊 Device voices</string>
+    <string name="dialogo_escolher_motor_titulo">Choose a TTS engine</string>
+    <string name="toast_carregando_vozes_android">Loading voices…</string>
+    <string name="erro_nenhum_motor_tts">No TTS engine found. Install a voice engine (e.g., Google TTS) from the Play Store.</string>
+    <string name="erro_nenhuma_voz_motor">No voices found for this engine. Open the engine settings and download voices.</string>
+    <string name="erro_precisa_configurar_voz_dispositivo">Set up a device voice first: tap \"Select voice\" → \"Device voices\"</string>
+    <string name="aviso_voz_generica_motor">This engine uses its own default voice. Open the engine\'s app and choose the voice/language there — it will apply here automatically.</string>
+    <string name="aviso_voz_generica_titulo">About this voice</string>
+    <string name="aviso_voz_generica_nao_mostrar_mais">Don\'t show this again</string>
+
+    <!-- Help -->
+    <string name="help_btn_close">✕ Close</string>
+    <string name="help_btn_next">Next →</string>
+    <string name="help_btn_finish">Close</string>
+    <string name="help_conversion_title">Converting books into audiobooks</string>
+    <string name="help_conversion_step1">On the Library tab, add a book: from a file, a search or a link</string>
+    <string name="help_conversion_step2">Open the book and tap \"Generate audiobook\"</string>
+    <string name="help_conversion_step3">Choose voice and speed, then tap \"Generate now\" or \"Add to queue\"</string>
+    <string name="help_conversion_step4">Follow progress in Conversions; the finished audiobook shows up on the Audiobooks tab</string>
+    <string name="help_reader_title">Reading and selecting excerpts</string>
+    <string name="help_reader_step1">Open a book and tap \"Guided reading\" to read and listen at the same time</string>
+    <string name="help_reader_step2">Use the chips to navigate between chapters</string>
+    <string name="help_reader_step3">Long-press a paragraph to start excerpt selection</string>
+    <string name="help_reader_step4">Tap \"Convert selection\" to convert only the chosen excerpt</string>
+    <string name="help_library_title">Your audiobook library</string>
+    <string name="help_library_step1">Generated audiobooks appear on the Audiobooks tab automatically</string>
+    <string name="help_library_step2">Tap an item to play it</string>
+    <string name="help_library_step3">Use item actions to share or delete</string>
+    <string name="help_library_step4">Use the sort button to organize by date or name</string>
+    <string name="help_queue_title">Processing multiple files</string>
+    <string name="help_queue_step1">Open a book, tap \"Generate audiobook\" and choose \"Add to queue\"</string>
+    <string name="help_queue_step2">Repeat for as many files as you want to convert</string>
+    <string name="help_queue_step3">Open the queue (Library menu) and tap \"Start processing\"</string>
+    <string name="help_queue_step4">The app processes one at a time and notifies when finished</string>
+    <string name="help_settings_title">Customizing the app</string>
+    <string name="help_settings_step1">TTS engine: choose Edge, Gemini or Android</string>
+    <string name="help_settings_step2">Voice and speed: adjust on the book screen, in Generate audiobook</string>
+    <string name="help_settings_step3">Output folder: choose where generated MP3 files are saved</string>
+    <string name="help_settings_step4">Cache: free storage by removing temporary files in Settings</string>
+
+    <!-- Diálogos Offline e FAB -->
+    <string name="offline_titulo">You\'re offline</string>
+    <string name="offline_mensagem">Edge TTS and Gemini require internet. Switch to Android native engine to continue now.</string>
+    <string name="offline_btn_ok">OK - go back</string>
+    <string name="offline_btn_alternar">Switch to Android</string>
+    <string name="fab_voz_desc">Select voice</string>
+
+    <!-- Tooltips Gerais -->
+
+    <!-- Fase 3 - Recovery Fallback e Pitch Offline -->
+
+    <plurals name="fab_converter_capitulos">
+        <item quantity="one">Convert %d chapter</item>
+        <item quantity="other">Convert %d chapters</item>
+    </plurals>
+
+    <plurals name="library_shortcut_count">
+        <item quantity="one">%d audiobook converted</item>
+        <item quantity="other">%d audiobooks converted</item>
+    </plurals>
+
+    <!-- Blacklist Strings -->
+    <string name="label_blacklist">EXCLUDED WORDS</string>
+    <string name="desc_blacklist">Words or phrases automatically removed during text cleaning.</string>
+    <string name="btn_gerenciar_blacklist">Manage</string>
+    <string name="title_blacklist">Excluded Words</string>
+    <string name="hint_novo_termo">New word or phrase</string>
+    <string name="btn_adicionar">Add</string>
+    <string name="blacklist_empty">No excluded words.</string>
+    <string name="cd_ajuda_blacklist">Excluded Words Help</string>
+    <string name="settings_help_blacklist_title">Excluded words</string>
+    <string name="settings_help_blacklist_message">You can specify words or phrases that should be automatically removed from the books during text cleaning.\n\nThis is useful for removing repeating header/footer text, formatting errors, or words you do not want the engine to read.</string>
+    <plurals name="blacklist_terms_count">
+        <item quantity="one">%d word</item>
+        <item quantity="other">%d words</item>
+    </plurals>
+    <string name="toast_blacklist_duplicate">Term already in the list</string>
+    <string name="menu_selecionar_paragrafo">Select paragraph</string>
+    <string name="menu_definir_palavra">Define</string>
+    <string name="toast_definir_indisponivel">No dictionary app or browser found</string>
+    <string name="toast_blacklist_added">Term added to blacklist</string>
+
+    <!-- UI redesign — Reader UX improvements -->
+    <string name="cd_mais_opcoes">More options</string>
+    <string name="cd_mais_opcoes_com_pendentes">More options (%1$d pending in queue)</string>
+    <string name="btn_concluir_modo">Done</string>
+    <string name="fab_converter_principal">Convert to audio</string>
+    <string name="sheet_acoes_titulo">Actions</string>
+    <string name="sheet_section_conversion">Conversion</string>
+    <string name="sheet_section_reading">Reading</string>
+    <string name="sheet_section_editing">Editing</string>
+    <string name="sheet_section_help">Help</string>
+    <string name="action_help_tutorial">Help &amp; Tutorial</string>
+    <string name="label_ajuda">Help</string>
+    <string name="desc_settings_tutorial">Learn how to use all features of LylyReader — conversion, reader, library, queue and settings.</string>
+    <string name="btn_ver_tutorial">View Tutorial</string>
+    <string name="label_brilho">Brightness</string>
+    <string name="modo_edicao_label">✏️ Edit mode</string>
+    <string name="modo_comparacao_label">🔍 Compare changes</string>
+    <string name="snackbar_selecao_paragrafo">Paragraph selected — tap others to extend selection</string>
+
+    <!-- Phase 1 - Audio Player Engine -->
+
+    <!-- Phase 1 - Guided Reading & Downloads -->
+    <string name="guided_reading_status">Guided Reading: %1$d of %2$d</string>
+    <string name="guided_reading_status_capitulo">%1$s — Paragraph %2$d of %3$d</string>
+    <string name="guided_reading_indicator_paragrafo">📖 %1$s · Paragraph %2$d</string>
+
+    <string name="action_capitulos">Chapters</string>
+    <string name="action_guided_reading">Guided Reading</string>
+    <string name="action_config_livro">Voice and Speed for This Book</string>
+    <string name="action_character_voices">Character voices</string>
+    <string name="character_voices_title">Character voices</string>
+    <string name="character_voices_empty">No dialogue with a confidently identified speaker was found in this book.</string>
+    <string name="character_voice_assignment_item">%1$s (%4$s) · %2$d lines · %3$s</string>
+    <string name="character_gender_male">likely male</string>
+    <string name="character_gender_female">likely female</string>
+    <string name="character_gender_unknown">gender unclear</string>
+    <string name="character_voices_suggest">Suggest voices</string>
+    <string name="character_voices_suggest_title">Suggested voices</string>
+    <string name="character_voices_suggest_message">Suggestions use only ready-to-use voices, preferring the same engine as the narrator. Nothing changes until you apply.\n\n%1$s</string>
+    <string name="character_voices_suggest_line">%1$s (%2$s) → %3$s</string>
+    <string name="character_voices_suggest_no_voice">no voice available</string>
+    <string name="character_voices_suggest_none">No ready-to-use voice was found for these characters. Download or choose voices manually.</string>
+    <string name="character_voices_suggest_apply">Apply</string>
+    <string name="character_voices_pronunciation">Name pronunciation</string>
+    <string name="character_voices_pronunciation_title">Fix how a name is spoken</string>
+    <string name="character_voices_hint">Characters found: %1$d</string>
+    <string name="character_voices_hint_action">Assign voices</string>
+    <string name="character_voice_narrator">Narrator</string>
+    <string name="character_voice_use_narrator">Use narrator voice</string>
+    <string name="character_voice_choose">Choose a voice</string>
+    <string name="character_voice_saved">Character voice saved.</string>
+    <string name="desc_config_livro">Set the guided reading voice and speed for this book before you start listening.</string>
+    <string name="label_voz_config_livro">Voice</string>
+    <string name="label_velocidade_config_livro">Speed</string>
+    <string name="btn_baixar_capitulo">Download Chapter</string>
+    <string name="btn_baixar_livro">Download Full Book</string>
+    <string name="btn_ouvir_audiobook_livro">Listen to Audiobook</string>
+    <string name="mini_player_ler_livro">📖 Read this book</string>
+    <string name="toast_download_started">Download started in background...</string>
+    <string name="toast_download_completed">Download completed!</string>
+    <string name="toast_download_failed">Download failed: %1$s. Check connection or try again.</string>
+
+    <!-- Phase A - Toast messages -->
+    <string name="toast_velocidade_guided">Speed: %1$.2f×</string>
+    <string name="toast_erro_preparar_download">Error preparing download: %1$s. Check connection and space, then try again.</string>
+    <string name="toast_leitura_pausada_soneca">Reading paused by sleep timer</string>
+
+    <!-- Settings labels (added for layout references) -->
+
+    <!-- Voice download screen -->
+
+    <!-- Mini player labels -->
+    <string name="mini_player_recuar">-15s</string>
+    <string name="mini_player_avancar">+15s</string>
+    <string name="mini_player_vel_075">0.75x</string>
+    <string name="mini_player_vel_100">1x</string>
+    <string name="mini_player_vel_125">1.25x</string>
+    <string name="mini_player_vel_150">1.5x</string>
+    <string name="mini_player_vel_200">2x</string>
+
+    <!-- Sleep timer -->
+    <string name="sleep_timer_label">Sleep Timer</string>
+
+    <!-- Vozes Offline Settings Section -->
+    <string name="label_vozes_offline">Offline Voices</string>
+    <string name="desc_vozes_offline">Voice model packages downloaded for offline use (Supertonic, Kokoro, Pocket TTS, Piper). Removing one frees up storage but requires a new download.</string>
+    <string name="pacote_offline_baixar">Download</string>
+    <string name="pacote_offline_apagar">Delete</string>
+    <string name="pacote_offline_nao_baixado">Not downloaded · ~%1$dMB</string>
+    <string name="pacote_offline_estado_baixado">downloaded</string>
+    <string name="pacote_download_wifi_aviso">You are not on Wi-Fi. This download will use mobile data.</string>
+    <string name="toast_vozes_apagadas">Offline voices deleted successfully!</string>
+    <string name="toast_erro_apagar_vozes">Could not delete offline voices. Try again or free up storage space.</string>
+    <string name="btn_importar_voz">Import voice (file)</string>
+    <string name="dialog_byom_licenca_titulo">Before importing</string>
+    <string name="dialog_byom_licenca_mensagem">LylyReader does not verify the origin or license of imported voice files. You are responsible for making sure you have the right to use the model you are about to import. Only import files you trust.</string>
+    <string name="btn_continuar">Continue</string>
+    <string name="toast_importando_voz">Importing voice…</string>
+    <string name="toast_voz_importada">✅ Voice pack \"%1$s\" imported successfully!</string>
+    <string name="toast_erro_importar_voz">Could not open the file picker.</string>
+    <string name="toast_erro_importar_voz_motivo">Failed to import voice: %1$s</string>
+    <!-- Logs de Erro Settings Section -->
+    <string name="label_logs_erro">Error Logs</string>
+    <string name="desc_logs_erro">View or share error reports generated locally by the application. Reports are saved privately and do not occupy the public downloads folder.</string>
+    <string name="btn_visualizar_logs">View Logs</string>
+    <string name="logs_erro_calculando">Calculating…</string>
+    <string name="logs_erro_vazio">No error logs</string>
+    <string name="toast_valor_invalido">Invalid value. Use %1$d–%2$d.</string>
+    <plurals name="logs_erro_contagem">
+        <item quantity="one">%d log</item>
+        <item quantity="other">%d logs</item>
+    </plurals>
+    <string name="toast_logs_limpos">Error logs deleted!</string>
+
+    <!-- Library Cover -->
+    <string name="cd_cover">Cover</string>
+
+    <!-- Reader Bookmark -->
+    <string name="cd_bookmark">Bookmark</string>
+    <string name="cd_bookmark_adicionar">Bookmark this spot</string>
+    <string name="cd_bookmark_remover">Remove bookmark from this spot</string>
+    <string name="bookmark_listar">Bookmarks</string>
+    <string name="bookmark_sem_itens">No bookmarks for this book</string>
+    <string name="bookmark_nome_padrao">Page %1$d</string>
+    <string name="bookmark_dialog_salvar">Save</string>
+    <string name="toast_bookmark_adicionado">Bookmark added!</string>
+    <string name="toast_bookmark_removido">Bookmark removed</string>
+    <string name="btn_remover_marcador">Remove</string>
+
+    <!-- Reader Highlights (T3.5) -->
+    <string name="menu_destacar_trecho">Highlight</string>
+    <string name="destaque_dialog_titulo">Highlight excerpt</string>
+    <string name="destaque_nota_hint">Note (optional)</string>
+    <string name="destaque_listar">Highlights</string>
+    <string name="destaque_sem_itens">No highlights for this book</string>
+    <string name="toast_destaque_adicionado">Highlight saved!</string>
+    <string name="toast_destaque_removido">Highlight removed</string>
+
+    <!-- Reader Search -->
+    <string name="cd_buscar">Search text</string>
+    <string name="busca_hint">Search text…</string>
+    <string name="cd_busca_anterior">Previous result</string>
+    <string name="cd_busca_proximo">Next result</string>
+    <string name="cd_busca_fechar">Close search</string>
+    <string name="busca_contador">%1$d of %2$d</string>
+    <string name="busca_sem_resultados">No results</string>
+
+    <!-- Reader Share Excerpt -->
+    <string name="cd_compartilhar_trecho">Share excerpt</string>
+    <string name="share_excerpt_signature">\n\n— via LylyReader</string>
+    <string name="share_excerpt_chooser">Share excerpt</string>
+    <string name="toast_nada_para_compartilhar">No active paragraph to share. Select a paragraph to share.</string>
+
+    <!-- Player Widget -->
+    <string name="widget_toque_para_abrir">Tap to open</string>
+    <string name="widget_reproduzindo">Playing</string>
+    <string name="widget_pausado">Paused</string>
+    <string name="cd_widget_capitulo_anterior">Previous chapter</string>
+    <string name="cd_widget_proximo_capitulo">Next chapter</string>
+
+    <!-- Settings Backup -->
+    <string name="label_backup">Settings Backup</string>
+    <string name="desc_backup">Export your preferences to a JSON file or import them back. Gemini API keys and reading progress are not included for security reasons.</string>
+    <string name="btn_importar_config">Import</string>
+    <string name="btn_exportar_config">Export</string>
+    <string name="toast_backup_exportado">Settings exported successfully!</string>
+    <string name="toast_erro_exportar_null">Could not write the file.</string>
+    <string name="toast_erro_exportar">Failed to export settings: %1$s. Check write permissions and space.</string>
+    <string name="toast_erro_importar">Failed to import settings: %1$s. Verify that the file is valid.</string>
+    <string name="dialog_importar_sucesso_titulo">Settings Imported</string>
+    <string name="dialog_importar_sucesso_mensagem">Settings have been restored. Please restart the app to apply all changes.</string>
+    <string name="label_backup_completo">Full Backup</string>
+    <string name="desc_backup_completo">Back up your reading progress, bookmarks, highlights, statistics and settings to a single file, or restore them on this or another device. API keys are never included. Restoring never overwrites or deletes anything already on this device — it only adds what is missing.</string>
+    <string name="toast_backup_completo_exportado">Full backup exported successfully!</string>
+    <string name="toast_erro_exportar_backup">Failed to export backup: %1$s. Check write permissions and space.</string>
+    <string name="toast_erro_importar_backup">Failed to import backup: %1$s. Verify that the file is a valid LylyReader backup.</string>
+    <string name="dialog_importar_backup_sucesso_titulo">Backup Restored</string>
+    <string name="dialog_importar_backup_sucesso_mensagem">Restored: %1$d bookmark(s), %2$d highlight(s), %3$d reading-progress entries added. Nothing already on this device was changed or lost.</string>
+
+    <!-- Library Stats -->
+    <string name="cd_estatisticas">Library stats</string>
+    <string name="toast_importando_audio">Importing…</string>
+    <string name="toast_audio_importado">Audiobook imported</string>
+    <string name="toast_audios_importados">%1$d audiobooks imported</string>
+    <string name="toast_importar_audio_falhou">Couldn\'t import %1$s</string>
+    <string name="stats_dialog_title">Library Statistics</string>
+    <string name="stats_dialog_message">Total audiobooks: %1$d\nTotal listening time: %2$s\nCompleted: %3$d\nIn progress: %4$d</string>
+    <string name="stats_tempo_horas_minutos">%1$dh %2$dmin</string>
+    <string name="stats_tempo_minutos">%1$dmin</string>
+    <string name="stats_tempo_segundos">%1$ds</string>
+    <!-- Error Logs Activity -->
+    <string name="logs_compartilhar_titulo">Share Log</string>
+    <string name="toast_erro_compartilhar_log">Failed to share log: %1$s. Check permissions or try copying to clipboard.</string>
+    <string name="logs_erro_ler">Failed to read log: %1$s. Try restarting the app.</string>
+    <string name="logs_btn_copiar">Copy</string>
+    <string name="toast_copiado_area_transferencia">Copied to clipboard!</string>
+    <string name="logs_btn_compartilhar">Share</string>
+    <string name="logs_btn_fechar">Close</string>
+    <string name="logs_confirmar_exclusao">Delete this error report?</string>
+    <string name="logs_btn_excluir">Delete</string>
+    <string name="toast_log_apagado">Log deleted successfully.</string>
+    <string name="toast_erro_apagar_log">Could not delete the log. Please try again.</string>
+    <string name="ordenar_nao_concluidos_primeiro">Unfinished first</string>
+    <string name="label_permissao_notificacao">Notification Permission</string>
+    <string name="desc_permissao_notificacao">Android asks for notification permission only once. If denied, conversion and playback notifications disappear silently. Check the current state and open system settings to enable it.</string>
+    <string name="permissao_notificacao_ativada">Enabled</string>
+    <string name="permissao_notificacao_desativada">Disabled</string>
+    <string name="btn_abrir_config_notificacoes">Open Settings</string>
+    <string name="desc_otimizacao_bateria">System prompts are disabled. Change this only if long background synthesis is being stopped.</string>
+    <string name="otimizacao_bateria_desativada">Battery optimization exempted</string>
+    <string name="otimizacao_bateria_ativada">Battery optimization enforced</string>
+    <string name="btn_config_otimizacao_bateria">Manage</string>
+    <string name="toast_config_bateria_indisponivel">Battery settings are not available on this device.</string>
+    <string name="toast_config_notificacoes_indisponivel">Notification settings screen not available on this device.</string>
+
+    <!-- Post-update release notes (shown once, on first open after an update) -->
+    <string name="release_notes_titulo">What\'s new in %1$s</string>
+    <string name="release_notes_corpo">• New: a Conversions screen to follow what is being generated, with a queue that keeps going on its own even if you close the app.
+• Improvement: the audiobook now keeps the voice, speed and tone you chose for that book.
+• New: on first launch, pick your voices (all, or just Portuguese, English or Spanish) and keep downloading in the background, with pause and resume.
+• New: download books in the background and grab all search results at once.
+• New: add a book from a link (Google Drive, Dropbox or a direct link).
+• Fixed: the video for YouTube no longer gets cut short, and it is now much faster to create.
+• Improvement: updated help and texts in the three languages, and Downloads now looks right with the phone on its side.</string>
+    <string name="timbre_title">Voice tone</string>
+    <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
+    <string name="timbre_pitch_label">Pitch: %1$s</string>
+    <string name="timbre_treble_label">Treble smoothing: %1$s</string>
+    <string name="timbre_pitch_default">original</string>
+    <string name="timbre_pitch_value">%1$s semitones</string>
+    <string name="timbre_treble_off">off</string>
+    <string name="timbre_treble_value">−%1$d dB</string>
+    <string name="timbre_reset">Restore default</string>
+    <string name="timbre_close">Close</string>
+    <string name="settings_timbre_title">Voice tone</string>
+    <string name="settings_timbre_desc">Deeper or higher voices and softer treble, to your taste. Works with any voice.</string>
+    <string name="btn_timbre">Adjust tone</string>
+    <string name="clone_title">Cloned voices (Pocket TTS)</string>
+    <string name="clone_desc">Create a voice from a short recording or audio file of your own (mp3, m4a, ogg, wav, flac…). The reference never leaves this device.</string>
+    <string name="btn_clone_create">Create a cloned voice</string>
+    <string name="btn_clone_manage">My cloned voices</string>
+    <string name="clone_consent_title">Before you clone a voice</string>
+    <string name="clone_consent_message">The recording or audio file you use as a reference stays only on this device: it is not sent to any server. Use only a voice you have the rights to or the explicit, lawful consent of the person who owns it. Imitating someone without their consent is prohibited. Audio created this way is synthetic and must not be presented as a real recording of that person.</string>
+    <string name="clone_consent_check">I own this voice or have the owner\'s explicit and lawful consent to use it.</string>
+    <string name="clone_continue">Continue</string>
+    <string name="clone_source_title">Reference audio</string>
+    <string name="clone_source_record">Record now</string>
+    <string name="clone_source_file">Choose an audio file</string>
+    <string name="clone_record_title">Recording</string>
+    <string name="clone_record_hint">Read a text aloud for about 10 seconds, in a quiet place, at a natural pace. Recording stops by itself at 20 seconds; the app uses the best 10-second stretch.</string>
+    <string name="clone_record_stop">Stop and use</string>
+    <string name="clone_record_failed">Could not start the microphone.</string>
+    <string name="clone_mic_denied">Microphone permission is needed to record. You can still choose an audio file.</string>
+    <string name="clone_audio_failed">Could not read that audio.</string>
+    <string name="clone_audio_too_short">The audio is too short. Use at least 3 seconds (about 10 is ideal).</string>
+    <string name="clone_audio_ok">Reference ready: %1$.1f s (the best 10-second stretch is used)</string>
+    <string name="clone_name_title">Name the voice</string>
+    <string name="clone_name_hint">Voice name</string>
+    <string name="clone_lang_label">Language the voice will read</string>
+    <string name="clone_lang_pt">Portuguese (Brazil)</string>
+    <string name="clone_lang_en">English</string>
+    <string name="clone_lang_es">Spanish</string>
+    <string name="clone_create">Create voice</string>
+    <string name="clone_created">Voice created. Pick it in the voice list (Pocket).</string>
+    <string name="clone_downloading_title">Getting what is missing</string>
+    <string name="clone_downloading">Downloading the language pack and the voice encoder…</string>
+    <string name="clone_download_failed">Download failed: %1$s. The voice was saved; try again when you choose it.</string>
+    <string name="clone_manage_title">My cloned voices</string>
+    <string name="clone_manage_empty">You have not created any cloned voice yet.</string>
+    <string name="clone_new">New voice</string>
+    <string name="clone_rename">Rename</string>
+    <string name="clone_delete">Delete</string>
+    <string name="clone_delete_message">Delete "%1$s"? Its reference audio is removed from this device.</string>
+    <string name="action_prepare_chapter">Prepare chapter (no pauses)</string>
+    <string name="prerender_confirm_title">Prepare chapter</string>
+    <string name="prerender_confirm_message">The app will voice %1$d passages of "%2$s" with the current voice and keep them on this device, so guided reading plays without waiting. It can take a while; a notification shows the progress and lets you cancel. Changing the voice or speed cancels the preparation.</string>
+    <string name="prerender_confirm_start">Prepare</string>
+    <string name="prerender_started">Preparing the chapter in the background.</string>
+    <string name="prerender_already">A chapter is already being prepared.</string>
+    <string name="prerender_nothing">Nothing to prepare here.</string>
+    <string name="prerender_channel">Chapter preparation</string>
+    <string name="prerender_notif_title">Preparing: %1$s</string>
+    <string name="prerender_notif_starting">Starting…</string>
+    <string name="prerender_notif_progress">%1$d of %2$d passages</string>
+    <string name="prerender_notif_waiting">%1$d of %2$d passages (waiting for the reading to stop)</string>
+    <string name="prerender_notif_done">Chapter ready. Guided reading will play without waiting.</string>
+    <string name="prerender_notif_failed">Preparation stopped: %1$s</string>
+    <string name="character_ai_action">✨ Improve with AI (Gemini)…</string>
+    <string name="character_ai_confirm_title">Improve characters with AI</string>
+    <string name="character_ai_confirm_message">The AI decides who speaks each line, which usually finds many more characters and fixes mistakes.
+
+Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of text) will be SENT to Google Gemini using your own API key, in %3$d requests. Nothing is sent without your confirmation. This may use your key\'s free quota. You can cancel at any time; what was already analyzed is kept.</string>
+    <string name="character_ai_send">Send and analyze</string>
+    <string name="character_ai_need_key">Add your Gemini API key in Settings to use this feature.</string>
+    <string name="character_ai_progress_title">Analyzing characters</string>
+    <string name="character_ai_progress">Request %1$d of %2$d</string>
+    <string name="character_ai_nothing">This book was already fully analyzed by the AI.</string>
+    <string name="character_ai_done">Analysis finished. %1$d characters found.</string>
+    <string name="character_ai_partial">Analysis stopped: %1$s. What was analyzed so far was applied; run it again to continue.</string>
+    <string name="character_ai_cancelled">Analysis cancelled. What was analyzed so far was applied.</string>
+    <string name="character_ai_size_kb">%1$d KB</string>
+    <string name="character_ai_model_line">Model: %1$s</string>
+    <string name="character_ai_model_auto">Automatic (recommended)</string>
+    <string name="character_ai_model_change">Change model…</string>
+    <string name="character_ai_model_title">Gemini model</string>
+    <string name="character_ai_model_loading">Looking up the models your key can use…</string>
+    <string name="character_ai_model_custom">Type a model name…</string>
+    <string name="character_ai_model_custom_hint">e.g. gemini-3.5-flash-lite</string>
+    <string name="character_ai_model_note">Flash-Lite models usually have the largest free daily quota. Your exact quota and the models available depend on your account: see aistudio.google.com/rate-limit.</string>
+    <string name="character_ai_model_failed">Could not list the models (%1$s). You can still type a name.</string>
+    <string name="ia_provider_title">Which AI to use</string>
+    <string name="ia_provider_gemini">Gemini (your own key)</string>
+    <string name="ia_provider_pollinations">Pollinations (free, no key — may be slow or unavailable)</string>
+    <string name="ia_provider_custom">Other service (OpenAI-compatible)</string>
+    <string name="ia_provider_gemini_short">Gemini</string>
+    <string name="ia_provider_pollinations_short">Pollinations</string>
+    <string name="ia_provider_custom_short">Custom service</string>
+    <string name="ia_provider_line">AI: %1$s</string>
+    <string name="ia_change">Change AI</string>
+    <string name="ia_need_custom_config">Fill in the address and model of the AI service.</string>
+    <string name="ia_custom_title">Custom AI service</string>
+    <string name="ia_custom_url_hint">Address (e.g. https://openrouter.ai/api/v1)</string>
+    <string name="ia_custom_model_hint">Model name</string>
+    <string name="ia_custom_key_hint">API key (optional)</string>
+    <string name="ia_custom_note">Works with services that follow the OpenAI format (OpenRouter, Groq, and others). The key stays encrypted on this device.</string>
+    <string name="pron_menu_more">More…</string>
+    <string name="pron_import">Import a dictionary</string>
+    <string name="pron_export">Export the dictionary</string>
+    <string name="pron_ai_suggest">Suggest pronunciations for this book with AI</string>
+    <string name="pron_import_done">%1$d pronunciations imported.</string>
+    <string name="pron_import_empty">No pronunciations found in that file. Use JSON or lines like word=spoken.</string>
+    <string name="pron_export_done">Dictionary saved.</string>
+    <string name="pron_export_failed">Could not save the file.</string>
+    <string name="pron_ai_title">Suggest pronunciations with AI</string>
+    <string name="pron_ai_confirm_message">Found %1$d names in this book that voices tend to get wrong. Only the list of names (not the story) is sent to the AI, in %2$d request(s). You review the result before anything is saved.</string>
+    <string name="pron_ai_none">No difficult names found, or they are all in the dictionary already.</string>
+    <string name="pron_ai_progress">Asking the AI… %1$d of %2$d</string>
+    <string name="pron_ai_review_title">Review the suggestions</string>
+    <string name="pron_ai_apply">Add selected</string>
+    <string name="pron_ai_result_none">The AI had no suggestions.</string>
+    <string name="pron_ai_added">%1$d pronunciations added.</string>
+    <string name="pron_ai_failed">The AI failed: %1$s</string>
+    <string name="pron_ai_lang_pt">Brazilian Portuguese</string>
+    <string name="pron_ai_lang_en">English</string>
+    <string name="pron_ai_lang_es">Spanish</string>
+    <string name="guided_options_title">Voice and engine: %1$s</string>
+    <string name="guided_options_more">All audio settings</string>
+    <string name="guided_options_chip">⚙ Voice</string>
+    <string name="guided_options_engine_android">Android voice</string>
+    <string name="guided_options_only_book">Only for this book</string>
+    <string name="guided_options_only_book_desc">Pitch, dialogue pitch, sentence pause and look-ahead are saved for this book. Unchecked, they change the general settings.</string>
+    <string name="guided_options_dialogue_pitch_title">Narrator pitch in dialogue and quotes</string>
+    <string name="guided_options_dialogue_pitch_desc">Changes the narrator voice slightly while it speaks a character or a quote, so you can tell them apart. Off by default.</string>
+    <string name="guided_options_dialogue_pitch_off">Off</string>
+    <string name="character_edit_lines">Review and correct this character\'s lines</string>
+    <string name="character_edit_merge">Merge with another character…</string>
+    <string name="character_edit_unmerge">Undo merges into this character (%1$d)</string>
+    <string name="character_edit_lines_title">Lines of %1$s</string>
+    <string name="character_edit_lines_empty">No lines found for this character.</string>
+    <string name="character_edit_excerpt">¶%1$d · %2$s</string>
+    <string name="character_edit_who_title">Who speaks this line?</string>
+    <string name="character_edit_narrator">Narrator</string>
+    <string name="character_edit_other">Another name…</string>
+    <string name="character_edit_other_hint">Character name</string>
+    <string name="character_edit_merge_title">Merge %1$s into…</string>
+    <string name="character_edit_merge_none">There is no other character to merge with.</string>
+    <string name="character_edit_merge_confirm">%1$s will be treated as %2$s in the whole book.</string>
+    <string name="character_edit_done">Correction saved.</string>
+
+    <!-- Central de downloads (Fase I) -->
+    <string name="dl_central_titulo">Download center</string>
+    <string name="dl_central_abrir">Download center</string>
+    <string name="dl_central_desc">Voices and books in one place, downloading in the background. Pausing keeps what was already downloaded.</string>
+    <string name="dl_central_espaco">Free space: %1$s</string>
+    <string name="dl_central_simultaneos">At once: %1$d</string>
+    <string name="dl_central_grupo_motores">Voices and engines</string>
+    <string name="dl_central_grupo_codificadores">Voice encoders (cloning)</string>
+    <string name="dl_central_grupo_importadas">Imported voices</string>
+    <string name="dl_central_estado_nao_baixado">Not downloaded · ~%1$d MB</string>
+    <string name="dl_central_estado_fila">In the queue</string>
+    <string name="dl_central_estado_baixando">Downloading · %1$s of %2$s (%3$d%%)</string>
+    <string name="dl_central_estado_baixando_sem_total">Downloading…</string>
+    <string name="dl_central_estado_pausado">Paused · %1$d%%</string>
+    <string name="dl_central_estado_pronto">Downloaded · %1$s</string>
+    <string name="dl_central_estado_erro">Failed: %1$s</string>
+    <string name="dl_central_baixar">Download</string>
+    <string name="dl_central_pausar">Pause</string>
+    <string name="dl_central_continuar">Resume</string>
+    <string name="dl_central_tirar_fila">Remove from queue</string>
+    <string name="dl_central_tentar_novamente">Try again</string>
+    <string name="dl_central_cancelar">Cancel</string>
+    <string name="dl_central_apagar">Delete</string>
+    <string name="dl_central_baixar_selecionados">Download selected (%1$d)</string>
+    <string name="dl_central_baixar_tudo">Download all</string>
+    <string name="dl_central_pausar_tudo">Pause all</string>
+    <string name="dl_central_nada_a_baixar">Everything is already downloaded.</string>
+    <string name="dl_central_confirmar_titulo">Download packages</string>
+    <string name="dl_central_confirmar_msg">Download %1$d package(s), about %2$s in total?</string>
+    <string name="dl_central_pouco_espaco">There may not be enough free space (%1$s free; downloading and unpacking needs about twice the size).</string>
+    <string name="dl_central_apagar_msg">Delete %1$s from this device? You can download it again later.</string>
+    <string name="dl_central_cancelar_msg">Cancel and discard what was downloaded of %1$s?</string>
+    <string name="dl_notif_canal">Downloads</string>
+    <string name="dl_notif_titulo">Downloading files</string>
+    <string name="dl_notif_iniciando">Starting…</string>
+    <string name="dl_notif_texto">%1$d%% · %2$d downloading · %3$d in the queue</string>
+    <string name="dl_notif_pausar_tudo">Pause all</string>
+    <string name="dl_notif_fim">Downloads finished</string>
+    <string name="dl_notif_falha">Some downloads failed</string>
+
+    <!-- Buscar livros em domínio público (Fase L) -->
+    <string name="dialog_select_files_option_livros">Search free books (public domain)</string>
+    <string name="livros_titulo">Free books</string>
+    <string name="livros_busca_hint">Title or author</string>
+    <string name="livros_buscar">Search</string>
+    <string name="livros_idioma_todos">All</string>
+    <string name="livros_mais">More results</string>
+    <string name="livros_buscando">Searching…</string>
+    <string name="livros_nada">No books found.</string>
+    <string name="livros_erro_busca">Could not search: %1$s</string>
+    <string name="livros_erro_download">Could not download the book: %1$s</string>
+    <string name="livros_baixar_usar">Download and use</string>
+    <string name="livros_fonte_gutenberg">Gutenberg</string>
+    <string name="livros_fonte_wikisource">Wikisource</string>
+    <string name="livros_digite_busca">Type a title or author to search Wikisource.</string>
+    <string name="livros_aviso_wikisource">Texts from Wikisource (wikisource.org), in the public domain or under free licenses; check the page of each work. EPUBs are generated by the ws-export tool from Wikimedia.</string>
+    <string name="livros_fonte_archive">Internet Archive</string>
+    <string name="livros_aviso_archive">Books from the Internet Archive (archive.org) published up to 1928 and marked as public domain by whoever uploaded them. The marking is not checked by the app: copyright rules in your country may differ.</string>
+    <string name="livros_usar">Use</string>
+    <string name="livros_ja_baixado">already downloaded</string>
+    <string name="livros_aviso">Books from Project Gutenberg (gutenberg.org), public domain in the United States. Copyright rules in your country may differ.</string>
+
+    <!-- Meus livros: biblioteca (Fase N) -->
+    <string name="bib_titulo">Library</string>
+    <string name="bib_abrir">My library</string>
+    <string name="bib_buscar_hint">Search your library</string>
+    <string name="bib_cd_buscar">Search the library</string>
+    <string name="bib_aba_todos">All</string>
+    <string name="bib_aba_lendo">Reading</string>
+    <string name="bib_aba_audio">With audio</string>
+    <string name="bib_aba_baixados">Downloaded</string>
+    <string name="bib_continuar">Continue</string>
+    <string name="bib_progresso">%1$d%% read</string>
+    <string name="bib_nao_iniciado">Not started</string>
+    <string name="bib_audio_pronto">Audio ready</string>
+    <string name="bib_adicionar">Add</string>
+    <string name="bib_adicionar_titulo">Add book</string>
+    <string name="bib_adicionar_desc">The book stays saved in the app, even if the original disappears.</string>
+    <string name="bib_add_aparelho">From this device</string>
+    <string name="bib_add_aparelho_sub">EPUB, PDF, TXT, DOCX, MOBI</string>
+    <string name="bib_add_gratis">Free books</string>
+    <string name="bib_add_gratis_sub">Gutenberg, Wikisource, Internet Archive</string>
+    <string name="bib_add_pasta">A whole folder</string>
+    <string name="bib_add_pasta_sub">Adds several books at once</string>
+    <string name="bib_vazio_titulo">Your library starts here</string>
+    <string name="bib_vazio_texto">Add a book from your device or search for free books.</string>
+    <string name="bib_filtro_vazio">No books here.</string>
+    <string name="bib_ordenar">Sort by…</string>
+    <string name="bib_ord_recentes">Recent</string>
+    <string name="bib_ord_titulo">Title</string>
+    <string name="bib_ord_autor">Author</string>
+    <string name="bib_espaco">Space used: %1$s</string>
+    <string name="bib_acao_ler">Read</string>
+    <string name="bib_acao_audiobook">Generate audiobook</string>
+    <string name="bib_acao_detalhes">Details</string>
+    <string name="bib_acao_apagar">Delete</string>
+    <string name="bib_apagar_titulo">Delete this book?</string>
+    <string name="bib_apagar_msg">“%1$s” will be removed from the app, freeing %2$s. The generated audiobook, if any, stays in Audiobooks.</string>
+    <string name="bib_apagado">Book deleted</string>
+    <string name="bib_importando">Adding books…</string>
+    <string name="bib_importados">Books added: %1$d</string>
+    <string name="bib_importados_falha">Could not add: %1$d</string>
+    <string name="bib_nenhum_suportado">No supported files found.</string>
+    <string name="bib_det_autor">Author</string>
+    <string name="bib_det_formato">Format</string>
+    <string name="bib_det_tamanho">Size</string>
+    <string name="bib_det_origem">Source</string>
+    <string name="bib_det_adicionado">Added</string>
+    <string name="bib_origem_arquivo">File</string>
+    <string name="bib_origem_gutenberg">Project Gutenberg</string>
+    <string name="bib_origem_wikisource">Wikisource</string>
+    <string name="bib_origem_archive">Internet Archive</string>
+    <string name="bib_erro_abrir">Could not open the book file.</string>
+
+    <!-- Temas (Fase O) -->
+    <string name="tema_titulo">Appearance</string>
+    <string name="tema_subtitulo">Choose how the app looks. It applies to every screen.</string>
+    <string name="theme_papel">Paper</string>
+    <string name="tema_desc_sistema">Follows your phone</string>
+    <string name="tema_desc_claro">Light surfaces</string>
+    <string name="tema_desc_escuro">Easy on the eyes at night</string>
+    <string name="tema_desc_papel">Cream page, like a printed book</string>
+    <string name="tema_do_app">App theme…</string>
+    <string name="bib_cd_tema">Change theme</string>
+
+    <!-- Navegação principal (Fase O) -->
+    <string name="nav_biblioteca">Library</string>
+    <string name="nav_audiobooks">Audiobooks</string>
+    <string name="nav_downloads">Downloads</string>
+    <string name="nav_ajustes">Settings</string>
+    <string name="bib_menu_fila">Processing queue</string>
+
+    <!-- Tela do livro (Fase O) -->
+    <string name="livro_continuar">Continue guided reading</string>
+    <string name="livro_comecar">Start listening</string>
+    <string name="livro_voz_titulo">Voice for this book</string>
+    <string name="livro_trocar">Change</string>
+    <string name="livro_opcoes_titulo">Options</string>
+    <string name="livro_op_capitulos">Chapters</string>
+    <string name="livro_op_personagens">Character voices</string>
+    <string name="livro_op_pronuncia">Pronunciation</string>
+    <string name="livro_op_timbre">Voice timbre</string>
+    <string name="livro_voz_online">online</string>
+    <string name="livro_voz_offline">offline</string>
+    <string name="livro_motor_android">Phone voices</string>
+
+    <!-- Painel Gerar audiobook (Fase O3b) -->
+    <string name="gerar_titulo">Generate audiobook</string>
+    <string name="gerar_voz">Voice</string>
+    <string name="gerar_velocidade">Speed</string>
+    <string name="gerar_aviso_personagens">This book has character voices. To use them in the audiobook, generate it from Guided Reading (menu → Download Full Book).</string>
+    <string name="gerar_dica">The audiobook is generated in Conversions, where you follow the progress.</string>
+    <string name="gerar_agora">Generate now</string>
+    <string name="gerar_mais_opcoes">More options (chapters, output folder…)</string>
+
+    <string name="dl_buscar_livros">Search free books</string>
+
+    <string name="onboarding_t1_titulo">Your books, read aloud</string>
+    <string name="onboarding_t1_descricao">LylyReader reads any book with neural voices, even offline. No account and no ads.</string>
+    <string name="onboarding_t2_titulo">Build your library</string>
+    <string name="onboarding_t2_descricao">Tap Add to import a file or search free public domain books. Everything stays saved in the app.</string>
+    <string name="onboarding_t3_titulo">Listen while you read</string>
+    <string name="onboarding_t3_descricao">Open a book and tap Continue guided reading: the text is read sentence by sentence while you follow along.</string>
+    <string name="onboarding_t4_titulo">Create an audiobook</string>
+    <string name="onboarding_t4_descricao">On the book screen, choose the voice and pace and tap Generate audiobook. It shows up in the Audiobooks tab and plays even with the screen off.</string>
+    <string name="onboarding_t5_titulo">Voices and appearance</string>
+    <string name="onboarding_t5_descricao">Download offline voices in the Downloads tab and pick a theme (Light, Dark or Paper) with the palette icon.</string>
+
+    <string name="bib_exemplo_botao">Try with a sample book</string>
+
+    <string name="dica_entendi">Got it</string>
+    <string name="dica_bib_adicionar_titulo">Add your books</string>
+    <string name="dica_bib_adicionar_texto">Import a file, search free public domain books, or share a book from another app to this one.</string>
+    <string name="dica_bib_tema_titulo">Choose your look</string>
+    <string name="dica_bib_tema_texto">Switch between Light, Dark and Paper, the theme that looks like a book page.</string>
+    <string name="dica_livro_gerar_titulo">Create an audiobook</string>
+    <string name="dica_livro_gerar_texto">Pick the voice and pace and turn this book into an audio file you can play anywhere.</string>
+    <string name="dica_livro_voz_titulo">One voice per book</string>
+    <string name="dica_livro_voz_texto">Change the voice for this book only. Your other books keep the default voice.</string>
+    <string name="dica_downloads_vozes_titulo">Voices that work offline</string>
+    <string name="dica_downloads_vozes_texto">Download a voice pack once, then read and create audiobooks without internet.</string>
+    <string name="dica_leitor_guiada_titulo">Guided reading and more</string>
+    <string name="dica_leitor_guiada_texto">This menu has guided reading, chapters, search and the voice and appearance settings.</string>
+    <string name="dica_leitor_voz_titulo">Change the voice on the go</string>
+    <string name="dica_leitor_voz_texto">Tap the microphone to change the voice or engine while the reading keeps going.</string>
+
+    <string name="label_aprender">Learn</string>
+    <string name="aprender_titulo">Learn the app</string>
+    <string name="aprender_ajustes_desc">Short hands-on lessons using a sample book.</string>
+    <string name="aprender_rever_intro">Review the introduction</string>
+    <string name="aprender_rever_dicas">Show the tips again</string>
+    <string name="aprender_dicas_reativadas">Tips will show again.</string>
+    <string name="aprender_progresso">%1$d of %2$d lessons done</string>
+    <string name="licao_fazer">Do it now</string>
+    <string name="licao_refazer">Do it again</string>
+    <string name="licao_concluida">Done</string>
+    <string name="licao_pendente">Not done yet</string>
+    <string name="licao_adicionar_titulo">Add a book</string>
+    <string name="licao_adicionar_resumo">Bring a book into your library.</string>
+    <string name="licao_adicionar_passos">Tap Add in the Library.\nPick a file, search free books or share one from another app.</string>
+    <string name="licao_guiada_titulo">Listen with guided reading</string>
+    <string name="licao_guiada_resumo">Follow the text while it is read aloud.</string>
+    <string name="licao_guiada_passos">Open the sample book.\nTap Continue guided reading, then play.</string>
+    <string name="licao_gerar_titulo">Create an audiobook</string>
+    <string name="licao_gerar_resumo">Turn a book into an audio file.</string>
+    <string name="licao_gerar_passos">Open the Generate audiobook panel.\nPick the voice and pace and tap Generate now.\nFollow the progress in the Queue.</string>
+    <string name="licao_voz_titulo">Change a book voice</string>
+    <string name="licao_voz_resumo">Each book can have its own voice.</string>
+    <string name="licao_voz_passos">On the book screen, tap Change voice.\nPick a voice and listen to the sample first.</string>
+    <string name="licao_downloads_titulo">Offline voices and look</string>
+    <string name="licao_downloads_resumo">Read without internet and choose your theme.</string>
+    <string name="licao_downloads_passos">Open the Downloads tab and check the voice packs.\nUse the palette icon in the Library to choose the theme.</string>
+
+    <string name="conv_titulo">Conversions</string>
+    <string name="conv_agora">Creating now</string>
+    <string name="conv_agora_generico">Audiobook</string>
+    <string name="conv_pct">%1$d%%</string>
+    <string name="conv_cancelar">Cancel conversion</string>
+    <string name="conv_cancelar_msg">The audiobook being created will be discarded. Do you want to cancel?</string>
+    <string name="conv_continuar">Keep going</string>
+    <string name="conv_vazio_titulo">No conversion in progress</string>
+    <string name="conv_vazio_texto">Open a book and tap Generate audiobook to start.</string>
+    <string name="conv_ir_biblioteca">Go to the Library</string>
+    <string name="conv_ver_fila">Processing queue</string>
+    <string name="conv_ver_audiobooks">See my audiobooks</string>
+    <string name="conv_pronto_titulo">Audiobook ready</string>
+    <string name="conv_pronto_info">%1$s · %2$s · %3$s MB</string>
+    <string name="conv_ouvir">Listen now</string>
+    <string name="conv_compartilhar">Share</string>
+    <string name="conv_fechar">Close</string>
+    <string name="conv_erro_titulo">Could not create the audiobook</string>
+    <string name="conv_ja_andando">A conversion is already running. Wait for it to finish.</string>
+    <string name="conv_exportar_falhou">The file is saved in the app but could not be copied to your Downloads folder.</string>
+
+    <string name="conv_iniciada_do_leitor">Conversion started.</string>
+    <string name="conv_ver">View</string>
+
+    <string name="conv_fila_titulo">Queue</string>
+    <string name="conv_iniciar_fila">Start the queue</string>
+    <string name="conv_fila_vazia">The queue is empty.</string>
+    <string name="conv_na_fila">Queue: %1$d waiting</string>
+    <plurals name="conv_fila_resumo">
+        <item quantity="one">%d item waiting</item>
+        <item quantity="other">%d items waiting</item>
+    </plurals>
+
+    <string name="gerar_fila">Add to queue</string>
+    <string name="gerar_fila_ok">Added to the queue (%1$d waiting)</string>
+    <string name="gerar_fila_ja">This book is already in the queue.</string>
+    <string name="gerar_avancadas">Advanced options</string>
+    <string name="gerar_pasta_titulo">Output folder</string>
+    <string name="gerar_pasta_padrao">Downloads (default)</string>
+    <string name="gerar_escolher">Choose</string>
+    <string name="gerar_estilo_titulo">Narration style (Gemini voices only)</string>
+
+    <string name="toast_edicoes_salvas">Edits saved as a new book: %1$s</string>
+
+    <string name="dl_primeiro_titulo">Choose your voices</string>
+    <string name="dl_primeiro_desc">To create audiobooks and use guided reading without internet, download the offline voices you want. Pick a language, download one by one or all at once, and pause any time. You can do this later in Downloads.</string>
+    <string name="dl_primeiro_continuar">Continue</string>
+    <string name="dl_central_baixar_todos">Download all (%1$d)</string>
+
+    <string name="bib_add_link">From a link</string>
+    <string name="bib_add_link_sub">Direct address of a file (EPUB, PDF, TXT...)</string>
+    <string name="link_titulo">Import from a link</string>
+    <string name="link_hint">Paste the file address</string>
+    <string name="link_aviso">LylyReader only downloads the file into your library. It does not search or check the content: you are responsible for what you download. Works with direct links, including Google Drive and Dropbox files you share.</string>
+    <string name="link_declaracao">I declare that I have the right to use this content (it is mine, it is public domain or I have permission).</string>
+    <string name="link_baixar">Download</string>
+    <string name="link_baixando">Downloading...</string>
+    <string name="link_erro_invalido">Invalid address. Use a link that starts with https://</string>
+    <string name="link_erro_pagina">This link opens a web page, not a file. Use the direct address of the file.</string>
+    <string name="link_erro_formato">Unsupported format. Use EPUB, PDF, TXT, MD, DOC, DOCX or MOBI.</string>
+    <string name="link_erro_grande">The file is too large (limit of 200 MB).</string>
+    <string name="link_erro_rede">Could not download: %1$s</string>
+
+    <string name="dl_central_grupo_livros">Books</string>
+    <string name="livros_baixar_todos">Download all results (in the background)</string>
+    <string name="livros_carregando_todos">Loading the list... %1$d books</string>
+    <string name="livros_na_fila">%1$d books added to the downloads queue.</string>
+    <string name="livros_nada_novo">These books are already in your library.</string>
+    <string name="queue_erro_interrompida">Conversion interrupted. Tap retry to try again.</string>
+    <string name="status_conversion_running">Conversion in progress…</string>
+    <string name="status_conversion_error">⚠ Error: %1$s</string>
+    <string name="status_concluido">Done!</string>
+    <string name="status_gerando_amostra">Generating sample…</string>
+    <string name="status_amostra_onnx_falha">⚠ Failed to generate the ONNX sample. Check that the model was downloaded.</string>
+    <string name="status_amostra_falha">⚠ Failed to generate the sample.</string>
+    <string name="settings_supertonic_passos_titulo">Supertonic steps</string>
+    <string name="settings_supertonic_passos_desc">Balances quality and speed of Supertonic voice synthesis. Fewer steps = faster; more steps = better quality. Recommended: 4.</string>
+</resources>

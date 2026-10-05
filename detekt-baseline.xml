@@ -1,0 +1,135 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>ComplexCondition:QueueManager.kt$QueueManager$de &lt; 0 || de &gt;= items.size || para &lt; 0 || para &gt;= items.size</ID>
+    <ID>ComplexCondition:SupertonicTTS.kt$SupertonicTTS$lastChar != '.' &amp;&amp; lastChar != '!' &amp;&amp; lastChar != '?' &amp;&amp; lastChar != '।'</ID>
+    <ID>CyclomaticComplexMethod:ExtractTextUseCase.kt$ExtractTextUseCase$suspend fun invoke(caminho: String): ExtractionResult</ID>
+    <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private fun prefetch(index: Int)</ID>
+    <ID>CyclomaticComplexMethod:OnnxTtsEngine.kt$OnnxTtsEngine$private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float): FloatArray?</ID>
+    <ID>CyclomaticComplexMethod:OnnxTtsEngine.kt$OnnxTtsEngine$suspend fun synthesize( texto: String, voiceId: String, outputFile: File ): Result&lt;File&gt;</ID>
+    <ID>CyclomaticComplexMethod:ReadingStartDetector.kt$ReadingStartDetector$fun indiceInicio(capitulos: List&lt;Capitulo&gt;): Int</ID>
+    <ID>CyclomaticComplexMethod:SupertonicAssetManager.kt$SupertonicAssetManager$private suspend fun downloadFileWithResume( url: String, targetFile: File, onChunk: (bytesWritten: Long) -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:SupertonicTTS.kt$SupertonicTTS$private fun fallbackChunkText(text: String, lang: String): String</ID>
+    <ID>CyclomaticComplexMethod:TtsErrorMapper.kt$TtsErrorMapper$fun toUserMessage(raw: String): String</ID>
+    <ID>EmptyFunctionBlock:AndroidTtsEngine.kt$AndroidTtsEngine.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:MainActivity.kt$MainActivity.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:ParagrafoAdapter.kt$ParagrafoAdapter.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:ReaderActivity.kt$ReaderActivity.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:ReaderAparenciaController.kt$ReaderAparenciaController.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:ReaderRetornoController.kt$ReaderRetornoController.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:SettingsActivity.kt$SettingsActivity.&lt;no name provided&gt;${}</ID>
+    <ID>LargeClass:MainActivity.kt$MainActivity : BasePlayerActivity</ID>
+    <ID>LargeClass:ReaderActivity.kt$ReaderActivity : BasePlayerActivity</ID>
+    <ID>LargeClass:SettingsActivity.kt$SettingsActivity : BasePlayerActivity</ID>
+    <ID>LongMethod:OnnxTtsEngine.kt$OnnxTtsEngine$private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float): FloatArray?</ID>
+    <ID>LongMethod:OnnxTtsEngine.kt$OnnxTtsEngine$suspend fun synthesize( texto: String, voiceId: String, outputFile: File ): Result&lt;File&gt;</ID>
+    <ID>LongMethod:SupertonicAssetManager.kt$SupertonicAssetManager$private suspend fun downloadVersion( context: Context, version: String, baseUrl: String, files: List&lt;String&gt;, onProgress: (String, Float, Long, Long) -&gt; Unit )</ID>
+    <ID>LongMethod:SupertonicTTS.kt$SupertonicTTS$private fun fallbackChunkText(text: String, lang: String): String</ID>
+    <ID>LongParameterList:PythonEngineUseCase.kt$PythonEngineUseCase$( arquivo: String, voz: String, velocidade: String, estilo: String, saida: String, motor: String, chaveGemini: String, onProgress: (Int, String) -&gt; Unit )</ID>
+    <ID>LongParameterList:SupertonicTTS.kt$SupertonicTTS$(ptr: Long, text: String, lang: String, stylePath: String, speed: Float, bufferSeconds: Float, steps: Int, gain: Float)</ID>
+    <ID>LongParameterList:SupertonicTTS.kt$SupertonicTTS$(text: String, lang: String, stylePath: String, speed: Float = 1.0f, bufferDuration: Float = 0.0f, steps: Int = 12, gain: Float = 1.0f, listener: ProgressListener? = null)</ID>
+    <ID>LoopWithTooManyJumpStatements:AudioPlayerService.kt$AudioPlayerService$while</ID>
+    <ID>LoopWithTooManyJumpStatements:PlayAudioUseCase.kt$PlayAudioUseCase$while</ID>
+    <ID>LoopWithTooManyJumpStatements:SupertonicTTS.kt$SupertonicTTS$for</ID>
+    <ID>MagicNumber:OnnxModelManager.kt$OnnxModelManager$100</ID>
+    <ID>MagicNumber:OnnxSynthBridge.kt$OnnxSynthBridge$500</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$10</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$100.0f</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$16</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$32767</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$32768.0f</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$36</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$4</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$44</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$50</ID>
+    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$500</ID>
+    <ID>MagicNumber:ReaderActivity.kt$ReaderActivity$100</ID>
+    <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$100</ID>
+    <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$1_000</ID>
+    <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$1_000L</ID>
+    <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$416</ID>
+    <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$429</ID>
+    <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$60L</ID>
+    <ID>MagicNumber:SupertonicSynthService.kt$SupertonicSynthService.&lt;no name provided&gt;$500</ID>
+    <ID>MagicNumber:SupertonicTTS.kt$SupertonicTTS$120</ID>
+    <ID>MagicNumber:SupertonicTTS.kt$SupertonicTTS$300</ID>
+    <ID>MagicNumber:SupertonicTTS.kt$SupertonicTTS$80</ID>
+    <ID>MaxLineLength:OnnxTtsEngine.kt$OnnxTtsEngine$Log.d(TAG, "Supertonic result: ${r?.size?.toString() ?: "null"} samples")</ID>
+    <ID>MaxLineLength:SupertonicTTS.kt$SupertonicTTS$Log.i("SupertonicTTS", "Engine initialized successfully (ORT: $ortThreads, XNN: $xnnThreads) with model: $modelPath")</ID>
+    <ID>MaxLineLength:SupertonicTTS.kt$SupertonicTTS$fun</ID>
+    <ID>MaxLineLength:SupertonicTTS.kt$SupertonicTTS$private external fun synthesize(ptr: Long, text: String, lang: String, stylePath: String, speed: Float, bufferSeconds: Float, steps: Int, gain: Float): ByteArray</ID>
+    <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$fun extrairMetadadosArquivo(uri: Uri): DocumentMetadata</ID>
+    <ID>NestedBlockDepth:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$override fun setPlaybackSpeed(speed: Float)</ID>
+    <ID>NestedBlockDepth:NativeCrashDetector.kt$NativeCrashDetector$fun checkForNativeCrashes(context: Context)</ID>
+    <ID>NestedBlockDepth:SupertonicTTS.kt$SupertonicTTS$private fun fallbackChunkText(text: String, lang: String): String</ID>
+    <ID>ReturnCount:OnnxSynthBridge.kt$OnnxSynthBridge$@JvmStatic fun synthesize(text: String, voiceId: String, outPath: String): Boolean</ID>
+    <ID>ReturnCount:OnnxTtsEngine.kt$OnnxTtsEngine$private fun splitIntoChunks(texto: String, voiceId: String): List&lt;String&gt;</ID>
+    <ID>ReturnCount:OnnxTtsEngine.kt$OnnxTtsEngine$private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float): FloatArray?</ID>
+    <ID>ReturnCount:SupertonicAssetManager.kt$SupertonicAssetManager$private fun checkReady(context: Context, version: String, files: List&lt;String&gt;): Boolean</ID>
+    <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$@Synchronized fun generateAudio(text: String, lang: String, stylePath: String, speed: Float = 1.0f, bufferDuration: Float = 0.0f, steps: Int = 12, gain: Float = 1.0f, listener: ProgressListener? = null): ByteArray?</ID>
+    <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$@Synchronized fun initialize(modelPath: String, libPath: String, ortThreads: Int = 4, xnnThreads: Int = 1): Boolean</ID>
+    <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$@Synchronized fun isInitialized(modelPath: String): Boolean</ID>
+    <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$private fun fallbackChunkText(text: String, lang: String): String</ID>
+    <ID>SwallowedException:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$e: Exception</ID>
+    <ID>SwallowedException:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$e: Exception</ID>
+    <ID>SwallowedException:SupertonicTTS.kt$SupertonicTTS$e: Exception</ID>
+    <ID>SwallowedException:SupertonicTTS.kt$SupertonicTTS$e: UnsatisfiedLinkError</ID>
+    <ID>ThrowsCount:SupertonicAssetManager.kt$SupertonicAssetManager$private suspend fun downloadFileWithResume( url: String, targetFile: File, onChunk: (bytesWritten: Long) -&gt; Unit )</ID>
+    <ID>TooGenericExceptionCaught:AndroidTtsEngine.kt$AndroidTtsEngine$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AudioPlayerService.kt$AudioPlayerService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BasePlayerActivity.kt$BasePlayerActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DocumentRepository.kt$DocumentRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ExtractTextUseCase.kt$ExtractTextUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GuidedPlayerManager.kt$GuidedPlayerManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LibraryActivity.kt$LibraryActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LylyApplication.kt$LylyApplication$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NativeCrashDetector.kt$NativeCrashDetector$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:OnnxModelManager.kt$OnnxModelManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:OnnxSynthBridge.kt$OnnxSynthBridge$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:OnnxTtsEngine.kt$OnnxTtsEngine$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:OnnxTtsEngine.kt$OnnxTtsEngine$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PlayAudioUseCase.kt$PlayAudioUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PythonEngineUseCase.kt$PythonEngineUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReaderActivity.kt$ReaderActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReaderRetornoController.kt$ReaderRetornoController$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReaderViewModel.kt$ReaderViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SupertonicAssetManager.kt$SupertonicAssetManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SupertonicSynthService.kt$SupertonicSynthService.&lt;no name provided&gt;$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SupertonicTTS.kt$SupertonicTTS$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SupertonicTTS.kt$SupertonicTTS$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:VoiceDownloadActivity.kt$VoiceDownloadActivity$e: Exception</ID>
+    <ID>TooGenericExceptionThrown:SupertonicAssetManager.kt$SupertonicAssetManager$throw Exception("HTTP $responseCode for $url")</ID>
+    <ID>TooGenericExceptionThrown:SupertonicAssetManager.kt$SupertonicAssetManager$throw Exception("HTTP $responseCode probing $urlString")</ID>
+    <ID>TooGenericExceptionThrown:SupertonicAssetManager.kt$SupertonicAssetManager$throw Exception("HTTP 416 for $url")</ID>
+    <ID>TooGenericExceptionThrown:SupertonicAssetManager.kt$SupertonicAssetManager$throw Exception("HTTP 429 for $url")</ID>
+    <ID>TooManyFunctions:AudioPlayerEngine.kt$AudioPlayerEngine</ID>
+    <ID>TooManyFunctions:AudiobookViewModel.kt$AudiobookViewModel : AndroidViewModel</ID>
+    <ID>TooManyFunctions:BasePlayerActivity.kt$BasePlayerActivity : AppCompatActivity</ID>
+    <ID>TooManyFunctions:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl : AudioPlayerEngine</ID>
+    <ID>TooManyFunctions:GuidedPlayerManager.kt$GuidedPlayerManager</ID>
+    <ID>TooManyFunctions:GuidedReadingService.kt$GuidedReadingService : Service</ID>
+    <ID>TooManyFunctions:LibraryActivity.kt$LibraryActivity : BasePlayerActivity</ID>
+    <ID>TooManyFunctions:MainActivity.kt$MainActivity : BasePlayerActivity</ID>
+    <ID>TooManyFunctions:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl : AudioPlayerEngine</ID>
+    <ID>TooManyFunctions:QueueManager.kt$QueueManager</ID>
+    <ID>TooManyFunctions:ReaderActivity.kt$ReaderActivity : BasePlayerActivity</ID>
+    <ID>TooManyFunctions:ReaderRetornoController.kt$ReaderRetornoController</ID>
+    <ID>TooManyFunctions:ReaderViewModel.kt$ReaderViewModel : AndroidViewModel</ID>
+    <ID>TooManyFunctions:SettingsActivity.kt$SettingsActivity : BasePlayerActivity</ID>
+    <ID>TooManyFunctions:SupertonicAssetManager.kt$SupertonicAssetManager</ID>
+    <ID>TooManyFunctions:SupertonicTTS.kt$SupertonicTTS</ID>
+    <ID>UseCheckOrError:ReaderActivity.kt$ReaderActivity$throw IllegalStateException("Output stream unavailable")</ID>
+    <ID>VariableNaming:DocumentRepository.kt$DocumentRepository$private val TAG = "DocumentRepository"</ID>
+    <ID>VariableNaming:GuidedPlayerManager.kt$GuidedPlayerManager$private val TAG = "GuidedPlayerManager"</ID>
+    <ID>VariableNaming:OnnxModelManager.kt$OnnxModelManager$private val TAG = "OnnxModelManager"</ID>
+    <ID>VariableNaming:OnnxTtsEngine.kt$OnnxTtsEngine$private val TAG = "OnnxTtsEngine"</ID>
+    <ID>VariableNaming:PlayAudioUseCase.kt$PlayAudioUseCase$private val TAG = "PlayAudioUseCase"</ID>
+    <ID>VariableNaming:PythonEngineUseCase.kt$PythonEngineUseCase$private val TAG = "PythonEngineUseCase"</ID>
+    <ID>VariableNaming:SupertonicSynthService.kt$SupertonicSynthService$private val TAG = "SupertonicSynthSvc"</ID>
+    <ID>VariableNaming:TtsSynthesizer.kt$OnnxTtsSynthesizer$private val TAG = "OnnxTtsSynthesizer"</ID>
+    <ID>VariableNaming:TtsSynthesizer.kt$PythonTtsSynthesizer$private val TAG = "PythonTtsSynthesizer"</ID>
+  </CurrentIssues>
+</SmellBaseline>

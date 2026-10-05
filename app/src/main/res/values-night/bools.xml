@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema escuro: fundo das barras de sistema é escuro -> ícones claros. -->
+    <bool name="system_bars_are_light">false</bool>
+</resources>

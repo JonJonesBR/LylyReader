@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ScrollView: página do tutorial tem altura fixa (ViewPager2 sem scroll próprio) e o texto
+     dos passos pode crescer (fonte maior, telas pequenas ou fonte do sistema ampliada) além do
+     espaço disponível — sem isso o conteúdo era cortado. -->
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/color_background">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:paddingStart="36dp"
+    android:paddingEnd="36dp"
+    android:paddingTop="48dp"
+    android:paddingBottom="24dp">
+
+    <!-- Emoji / Ícone -->
+    <ImageView
+        android:id="@+id/ivOnboardingIcon"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:padding="26dp"
+        android:background="@drawable/bg_icon_circle"
+        android:layout_marginBottom="32dp"
+        android:contentDescription="@string/cd_ilustracao_tutorial"/>
+
+    <!-- Título -->
+    <TextView
+        android:id="@+id/tvOnboardingTitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/color_on_surface"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Descrição (texto livre) -->
+    <TextView
+        android:id="@+id/tvOnboardingDescricao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/color_on_surface_muted"
+        android:textSize="17sp"
+        android:gravity="center"
+        android:lineSpacingExtra="5dp"
+        android:layout_marginBottom="20dp"
+        android:visibility="gone"/>
+
+    <!-- Passos numerados (instruções propriamente ditas) — fonte maior e em negrito, pra
+         ficarem mais fáceis de ler durante o tutorial (caixa normal, não mais toda em maiúsculas). -->
+    <TextView
+        android:id="@+id/tvOnboardingPassos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/color_on_surface_medium"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:lineSpacingExtra="12dp"
+        android:layout_marginBottom="20dp"
+        android:visibility="gone"/>
+
+    <!-- Rodapé / destaque -->
+    <TextView
+        android:id="@+id/tvOnboardingRodape"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:fontFamily="monospace"
+        android:visibility="gone"/>
+
+</LinearLayout>
+</ScrollView>

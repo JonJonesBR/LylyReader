@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pill de status compacto: aparece após a limpeza automática. Ao tocar, abre o BottomSheet de ações. -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bannerTextoOtimizado"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="2dp"
+    app:cardBackgroundColor="?attr/colorSecondaryContainer"
+    app:cardCornerRadius="24dp"
+    app:strokeWidth="0dp"
+    app:cardElevation="2dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✨"
+            android:textSize="13sp"
+            android:layout_marginEnd="4dp"/>
+
+        <TextView
+            android:id="@+id/tvBannerInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/banner_otimizacao"
+            android:textColor="?attr/colorOnSecondaryContainer"
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@android:drawable/arrow_down_float"
+            android:layout_marginStart="4dp"
+            app:tint="?attr/colorOnSecondaryContainer"
+            android:contentDescription="@null"/>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

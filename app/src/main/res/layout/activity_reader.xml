@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/readerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_background"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- ── Toolbar ────────────────────────────────────────────────── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingEnd="8dp"
+            android:gravity="center_vertical"
+            android:background="@color/color_background">
+
+            <ImageButton
+                android:id="@+id/btnReaderVoltar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_voltar"
+                app:tint="@color/color_on_surface_muted"
+                android:contentDescription="@string/cd_voltar"
+                android:tooltipText="@string/cd_voltar"/>
+
+            <TextView
+                android:id="@+id/tvReaderTitulo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/color_on_surface"/>
+
+            <!-- Botão de busca -->
+            <ImageButton
+                android:id="@+id/btnBuscarReader"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_buscar"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@string/cd_buscar"
+                android:tooltipText="@string/cd_buscar"/>
+
+            <!-- Botão de bookmark: alterna marcado/desmarcado na posição atual (ícone reflete o estado) -->
+            <ImageButton
+                android:id="@+id/btnBookmarkReader"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_bookmark_border"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@string/cd_bookmark"
+                android:tooltipText="@string/cd_bookmark"/>
+
+            <!-- Botão de mais opções (abre BottomSheet de ações) -->
+            <ImageButton
+                android:id="@+id/btnReaderOpcoes"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_mais"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@string/cd_mais_opcoes"
+                android:tooltipText="@string/cd_mais_opcoes"/>
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/color_divider"/>
+
+        <!-- ── Search bar (inicialmente oculta) ───────────────────────── -->
+        <LinearLayout
+            android:id="@+id/layoutBuscaReader"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="4dp"
+            android:background="@color/color_surface_variant"
+            android:visibility="gone">
+
+            <EditText
+                android:id="@+id/etBuscaReader"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:hint="@string/busca_hint"
+                android:textSize="13sp"
+                android:inputType="text"
+                android:background="@android:color/transparent"
+                android:imeOptions="actionSearch"
+                android:maxLines="1"/>
+
+            <TextView
+                android:id="@+id/tvBuscaContador"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/color_on_surface_muted"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:visibility="gone"/>
+
+            <ImageButton
+                android:id="@+id/btnBuscaAnterior"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/ic_media_previous"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@string/cd_busca_anterior"/>
+
+            <ImageButton
+                android:id="@+id/btnBuscaProximo"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/ic_media_next"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@string/cd_busca_proximo"/>
+
+            <ImageButton
+                android:id="@+id/btnBuscaFechar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_player_fechar"
+                android:padding="12dp"
+                app:tint="@color/color_on_surface_muted"
+                android:contentDescription="@string/cd_busca_fechar"/>
+
+        </LinearLayout>
+
+        <!-- ── Chapter chips ──────────────────────────────────────────── -->
+        <HorizontalScrollView
+            android:id="@+id/scrollChips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingTop="8dp"
+            android:paddingBottom="4dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:visibility="gone">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupCapitulos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="false"
+                app:selectionRequired="false"/>
+
+        </HorizontalScrollView>
+
+        <!-- ── Progresso rico: % lido + tempo restante no capítulo ─────── -->
+        <TextView
+            android:id="@+id/tvProgressoLeitura"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="11sp"
+            android:textColor="@color/color_on_surface_dim"
+            android:paddingTop="2dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone"
+            tools:text="42% · ~8 min restantes no capítulo"/>
+
+        <!-- ── Status pill (banner de texto otimizado) ────────────────── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <include layout="@layout/banner_texto_otimizado"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+        <!-- ── Barra de modo ativo (Edição / Comparação) ─────────────── -->
+        <LinearLayout
+            android:id="@+id/layoutBarraModo"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="8dp"
+            android:background="?attr/colorSurfaceVariant"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvModoAtivo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurfaceVariant"/>
+
+            <Button
+                android:id="@+id/btnConcluirModo"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/btn_concluir_modo"
+                android:textSize="13sp"/>
+
+        </LinearLayout>
+
+        <!-- ── Loading ───────────────────────────────────────────────── -->
+        <ProgressBar
+            android:id="@+id/readerProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            style="?android:attr/progressBarStyle"/>
+
+        <!-- ── Erro ──────────────────────────────────────────────────── -->
+        <LinearLayout
+            android:id="@+id/layoutReaderErro"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_dialog_alert"
+                android:contentDescription="@string/cd_warning"
+                android:layout_marginBottom="12dp"/>
+
+            <TextView
+                android:id="@+id/tvReaderErro"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface_medium"
+                android:gravity="center"
+                android:layout_marginBottom="20dp"/>
+
+            <Button
+                android:id="@+id/btnConverterAssim"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/btn_converter_assim_mesmo"
+                android:textSize="13sp"/>
+
+        </LinearLayout>
+
+        <!-- ── Paragraph list ────────────────────────────────────────── -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewParagrafos"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingTop="12dp"
+            android:paddingBottom="96dp"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:scrollbars="none"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
+    <!-- ── FAB único de conversão (centro-inferior): texto/ícone mudam conforme
+         há ou não seleção ativa, em vez de dois FABs separados no mesmo lugar ── -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabConverterPrincipal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:text="@string/fab_converter_principal"
+        android:textSize="14sp"
+        app:icon="@android:drawable/ic_btn_speak_now"
+        android:visibility="gone"/>
+
+    <!-- ── Guided player bar ─────────────────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/layoutGuidedPlayer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="@color/color_surface"
+        android:elevation="8dp"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/color_divider"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Linha 1: status + chips de soneca/velocidade/loading (largura variável, pode
+             encolher sem empurrar nada pra fora — não compete por espaço com os controles). -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:layout_marginBottom="4dp">
+
+            <TextView
+                android:id="@+id/tvGuidedStatus"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                tools:text="Leitura Guiada"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/color_on_surface"
+                android:ellipsize="end"
+                android:maxLines="1"/>
+
+            <TextView
+                android:id="@+id/tvGuidedSoneca"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="48dp"
+                android:gravity="center"
+                tools:text="😴"
+                android:textSize="13sp"
+                android:textColor="?attr/colorPrimary"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:layout_marginEnd="4dp"
+                android:visibility="gone"
+                android:contentDescription="@string/cd_sleep_timer"/>
+
+            <TextView
+                android:id="@+id/tvGuidedPassos"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="48dp"
+                android:gravity="center"
+                tools:text="⚙ 12"
+                android:textSize="13sp"
+                android:textColor="?attr/colorPrimary"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:layout_marginEnd="4dp"
+                android:visibility="gone"
+                android:contentDescription="@string/cd_guided_steps"/>
+
+            <TextView
+                android:id="@+id/btnGuidedVelocidade"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="48dp"
+                android:gravity="center"
+                tools:text="1.0×"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_guided_speed"/>
+
+            <ProgressBar
+                android:id="@+id/progressGuidedLoading"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+
+        <!-- Linha 2: controles de reprodução — largura total fixa (~250dp), sempre cabe
+             inteira, então btnGuidedClose nunca é empurrado pra fora da tela (achado do
+             usuário: acontecia quando a linha 1 crescia com soneca/loading visíveis). -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/btnGuidedVoz"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_player_voz"
+                android:padding="12dp"
+                app:tint="?attr/colorPrimary"
+                android:layout_marginEnd="4dp"
+                android:contentDescription="@string/fab_voz_desc"
+                android:tooltipText="@string/fab_voz_desc"/>
+
+            <ImageButton
+                android:id="@+id/btnGuidedPrev"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_player_prev"
+                android:padding="12dp"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@string/cd_guided_anterior"
+                android:tooltipText="@string/cd_guided_anterior"/>
+
+            <ImageButton
+                android:id="@+id/btnGuidedPlayPause"
+                android:layout_width="58dp"
+                android:layout_height="58dp"
+                android:background="@drawable/bg_play_arredondado"
+                android:src="@drawable/ic_player_play"
+                android:padding="15dp"
+                app:tint="?attr/colorOnPrimary"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:contentDescription="@string/cd_guided_play"
+                android:tooltipText="@string/cd_guided_play"/>
+
+            <ImageButton
+                android:id="@+id/btnGuidedNext"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_player_next"
+                android:padding="12dp"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@string/cd_guided_proximo"
+                android:tooltipText="@string/cd_guided_proximo"/>
+
+            <ImageButton
+                android:id="@+id/btnGuidedClose"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_player_fechar"
+                android:padding="12dp"
+                app:tint="@color/color_on_surface_muted"
+                android:layout_marginStart="12dp"
+                android:contentDescription="@string/cd_guided_fechar"
+                android:tooltipText="@string/cd_guided_fechar"/>
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ── Collapsible mini-player ───────────────────────────────────────── -->
+    <include
+        layout="@layout/view_mini_player"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,0 +1,94 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "d0fb94a9966a8942a88e7ddb5b4e3a07",
+    "entities": [
+      {
+        "tableName": "queue_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `nome` TEXT NOT NULL, `caminhoLocal` TEXT NOT NULL, `status` TEXT NOT NULL, `erro` TEXT, `motor` TEXT, `progressoPct` INTEGER NOT NULL, `criadoEmMillis` INTEGER NOT NULL, `iniciadoEmMillis` INTEGER, `finalizadoEmMillis` INTEGER, `caminhoSaida` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nome",
+            "columnName": "nome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "caminhoLocal",
+            "columnName": "caminhoLocal",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "erro",
+            "columnName": "erro",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "motor",
+            "columnName": "motor",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "progressoPct",
+            "columnName": "progressoPct",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "criadoEmMillis",
+            "columnName": "criadoEmMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iniciadoEmMillis",
+            "columnName": "iniciadoEmMillis",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "finalizadoEmMillis",
+            "columnName": "finalizadoEmMillis",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "caminhoSaida",
+            "columnName": "caminhoSaida",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd0fb94a9966a8942a88e7ddb5b4e3a07')"
+    ]
+  }
+}

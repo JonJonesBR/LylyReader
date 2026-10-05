@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/color_background"
+    android:fitsSystemWindows="true">
+
+    <!-- Cabeçalho (aba raiz: sem seta de voltar) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="4dp"
+        android:gravity="center_vertical"
+        android:background="@color/color_background">
+
+        <ImageButton
+            android:id="@+id/btnVoltarLibrary"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            android:contentDescription="@string/cd_voltar"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/nav_audiobooks"
+            android:textSize="22sp"
+            android:textColor="@color/color_on_surface"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <ImageButton
+            android:id="@+id/btnOrdenar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_ordenar"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_ordenar"
+            android:tooltipText="@string/cd_ordenar"/>
+
+        <ImageButton
+            android:id="@+id/btnStatsLibrary"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_estatisticas"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_estatisticas"
+            android:tooltipText="@string/cd_estatisticas"/>
+
+        <ImageButton
+            android:id="@+id/btnImportarAudioLibrary"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_abrir_arquivo"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_abrir_audio"
+            android:tooltipText="@string/cd_abrir_audio"/>
+
+        <ImageButton
+            android:id="@+id/btnAjudaLibrary"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_ajuda"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_ajuda"
+            android:tooltipText="@string/cd_ajuda"/>
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_divider"/>
+
+    <!-- Busca -->
+    <EditText
+        android:id="@+id/etBuscaLibrary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_card"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:drawableStart="@drawable/ic_buscar"
+        android:drawableTint="@color/color_on_surface_dim"
+        android:drawablePadding="8dp"
+        android:hint="@string/library_search_hint"
+        android:textColorHint="@color/color_on_surface_dim"
+        android:textColor="@color/color_on_surface"
+        android:textSize="14sp"
+        android:inputType="text"
+        android:imeOptions="actionSearch"
+        android:singleLine="true"
+        android:maxLines="1"
+        android:contentDescription="@string/library_search_hint"/>
+
+    <TextView
+        android:id="@+id/tvOrdenar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="6dp"
+        android:text="@string/label_ordenar_data"
+        android:textSize="12sp"
+        android:textColor="@color/color_on_surface_dim"/>
+
+    <!-- Continuar lendo (livros recentes da leitura guiada) -->
+    <LinearLayout
+        android:id="@+id/continuarLendoSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/recent_section_title"
+            android:textSize="12sp"
+            android:textColor="?attr/colorPrimary"
+            android:textAllCaps="true"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="4dp"/>
+
+        <LinearLayout
+            android:id="@+id/continuarLendoContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/color_divider"
+            android:layout_marginTop="8dp"/>
+    </LinearLayout>
+
+    <!-- Carregando -->
+    <ProgressBar
+        android:id="@+id/progressBarLibrary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="1"
+        android:visibility="gone"/>
+
+    <!-- Lista -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewLibrary"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:clipToPadding="false"/>
+
+    <!-- Estado vazio -->
+    <LinearLayout
+        android:id="@+id/layoutVazio"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:src="@drawable/ic_empty_library"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="@string/cd_biblioteca_vazia"/>
+
+
+        <TextView
+            android:id="@+id/tvMsgVazio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:text="@string/msg_nenhum_audiobook"
+            android:textColor="@color/color_on_surface_medium"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/tvSubMsgVazio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:text="@string/msg_converta_livro"
+            android:textColor="@color/color_on_surface_dim"
+            android:textSize="13sp"/>
+
+        <Button
+            android:id="@+id/btnPermissaoVazio"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/library_perm_acao"
+            android:textAllCaps="false"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
+    <!-- Collapsible mini-player -->
+    <include
+        layout="@layout/view_mini_player"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <include layout="@layout/view_barra_navegacao"/>
+
+</LinearLayout>

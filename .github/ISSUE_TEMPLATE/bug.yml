@@ -1,0 +1,20 @@
+name: Relatar um bug
+description: Algo não funciona como esperado
+labels: [bug]
+body:
+  - type: textarea
+    id: o-que
+    attributes: {label: O que aconteceu, description: "O que você esperava e o que viu"}
+    validations: {required: true}
+  - type: textarea
+    id: passos
+    attributes: {label: Passos para reproduzir}
+  - type: input
+    id: versao
+    attributes: {label: Versão do app, placeholder: "ex.: 1.8.23"}
+  - type: input
+    id: aparelho
+    attributes: {label: Aparelho e Android, placeholder: "ex.: Redmi Note 13, Android 14"}
+  - type: textarea
+    id: extra
+    attributes: {label: Capturas de tela ou logs, description: "Não inclua chaves de API nem dados pessoais"}

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="6dp"
+        android:paddingBottom="6dp"
+        android:text="@string/bib_continuar"
+        android:textColor="@color/color_on_surface"
+        android:textSize="13sp"
+        android:textStyle="bold"/>
+
+    <LinearLayout
+        android:id="@+id/cartaoContinuar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="@color/color_surface_variant"
+        android:clickable="true"
+        android:focusable="true">
+
+        <com.jonjonesbr.audiobookgen.ui.CapaView
+            android:id="@+id/ivContinuarCapa"
+            android:layout_width="64dp"
+            android:layout_height="wrap_content"
+            android:scaleType="centerCrop"
+            android:contentDescription="@null"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvContinuarTitulo"
+                android:fontFamily="@font/literata"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:textColor="@color/color_on_surface"
+                android:textSize="15sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tvContinuarAutor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/color_on_surface_dim"
+                android:textSize="12sp"/>
+
+            <ProgressBar
+                android:id="@+id/pbContinuar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:max="1000"/>
+
+            <TextView
+                android:id="@+id/tvContinuarPct"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/color_on_surface_dim"
+                android:textSize="12sp"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

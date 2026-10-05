@@ -1,0 +1,9 @@
+{
+  "replacements": {
+  },
+  "abbreviations": [
+    "M.", "Mme.", "Mlle.", "Dr.", "Pr.", "Me.", "Mgr.", 
+    "etc.", "cf.", "Cie.", "St.", "Ste.",
+    "1er.", "1re.", "2e."
+  ]
+}

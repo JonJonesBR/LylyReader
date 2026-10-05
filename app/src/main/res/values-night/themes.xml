@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Escuro -->
+    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#D0BCFF</item>
+        <item name="colorAccent">#D0BCFF</item>
+        <item name="colorControlActivated">#D0BCFF</item>
+        <item name="android:colorControlActivated">#D0BCFF</item>
+        <item name="colorOnPrimary">#381E72</item>
+        <item name="colorPrimaryContainer">#4F378B</item>
+        <item name="colorOnPrimaryContainer">#EADDFF</item>
+        <item name="colorSecondaryContainer">#4A4458</item>
+        <item name="colorOnSecondaryContainer">#E8DEF8</item>
+        <item name="colorError">#FFB4AB</item>
+        <item name="colorOnError">#690005</item>
+        <item name="colorSurface">#141218</item>
+        <item name="colorOnSurface">#E6E0E9</item>
+        <item name="colorSurfaceVariant">#2B2930</item>
+        <item name="colorOnSurfaceVariant">#CAC4D0</item>
+        <item name="colorOutline">#49454F</item>
+        <item name="colorOutlineVariant">#322F37</item>
+        <item name="colorSurfaceContainer">#211F26</item>
+        <item name="colorSurfaceContainerHigh">#2B2930</item>
+        <item name="colorSurfaceContainerHighest">#2B2930</item>
+        <item name="android:colorBackground">#141218</item>
+
+        <!-- Barras de sistema acompanham o fundo; ícones claros/escuros conforme o tema -->
+        <item name="android:statusBarColor">#141218</item>
+        <item name="android:navigationBarColor">#141218</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
+
+        <!-- Tokens do LylyReader -->
+        <item name="lylyFundo">#141218</item>
+        <item name="lylySuperficie">#211F26</item>
+        <item name="lylySuperficie2">#2B2930</item>
+        <item name="lylyTexto">#E6E0E9</item>
+        <item name="lylyTextoMedio">#D9D3DD</item>
+        <item name="lylyTextoSecundario">#CAC4D0</item>
+        <item name="lylyTextoTerciario">#A8A2B0</item>
+        <item name="lylyTextoFraco">#938F99</item>
+        <item name="lylyContorno">#49454F</item>
+        <item name="lylyDivisor">#322F37</item>
+        <item name="lylyDivisorFraco">#2A272F</item>
+        <item name="lylyTonal">#4A4458</item>
+        <item name="lylyNaTonal">#E8DEF8</item>
+        <item name="lylySucessoSuperficie">#1A3A2A</item>
+        <item name="lylyDestaqueLeitura">#4F378B</item>
+        <item name="lylyFundoLeitura">#141218</item>
+        <item name="lylyTextoLeitura">#E6E0E9</item>
+        <item name="lylyBarraNavegacao">#1D1B20</item>
+        <item name="lylyProgresso">#D0BCFF</item>
+    </style>
+</resources>

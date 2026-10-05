@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/color_background"
+    android:fitsSystemWindows="true">
+
+    <!-- Toolbar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingEnd="16dp"
+        android:gravity="center_vertical"
+        android:background="@color/color_background">
+
+        <ImageButton
+            android:id="@+id/btnVoltarFila"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_voltar"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_voltar"
+            android:tooltipText="@string/cd_voltar"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/titulo_fila"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/color_on_surface"
+            android:layout_marginStart="4dp"/>
+
+        <ImageButton
+            android:id="@+id/btnAjudaQueue"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_ajuda"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_ajuda"
+            android:tooltipText="@string/cd_ajuda"/>
+
+        <Button
+            android:id="@+id/btnLimparFila"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+        android:minHeight="36dp"
+            android:text="@string/btn_limpar_fila"
+            android:textSize="12sp"
+            android:textColor="@color/color_error"
+            android:backgroundTint="@color/color_surface_variant"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_divider"/>
+
+    <!-- Empty state -->
+    <TextView
+        android:id="@+id/tvFilaVazia"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/msg_fila_vazia"
+        android:textColor="@color/color_on_surface_dim"
+        android:textSize="14sp"
+        android:padding="32dp"
+        android:visibility="gone"/>
+
+    <!-- List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerFila"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:overScrollMode="never"
+        android:visibility="gone"/>
+
+    <!-- Footer -->
+    <LinearLayout
+        android:id="@+id/layoutFooterFila"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/color_background"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="24dp">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/color_divider"
+            android:layout_marginBottom="10dp"/>
+
+        <Button
+            android:id="@+id/btnIniciarFila"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="@string/btn_iniciar_fila"
+            android:textColor="?attr/colorOnPrimary"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="?attr/colorPrimary"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnLerTudoFila"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="@string/btn_ler_tudo_fila"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="15sp"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- Collapsible mini-player -->
+    <include
+        layout="@layout/view_mini_player"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

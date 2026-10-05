@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/bg_card"
+    android:gravity="center_vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
+
+    <!-- Drag handle (visible only for PENDENTE) -->
+    <ImageView
+        android:id="@+id/tvDragHandle"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:padding="12dp"
+        android:src="@android:drawable/ic_menu_sort_by_size"
+        app:tint="@color/color_on_surface_dim"
+        android:contentDescription="@string/cd_reordenar_item_fila"
+        android:layout_marginEnd="12dp"/>
+
+    <!-- File name + status -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvQueueNome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/color_on_surface"
+            android:textSize="14sp"
+            android:ellipsize="end"
+            android:maxLines="1"/>
+
+        <TextView
+            android:id="@+id/tvQueueStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/color_on_surface_dim"/>
+
+        <TextView
+            android:id="@+id/tvQueueMeta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/color_on_surface_muted"/>
+    </LinearLayout>
+
+    <!-- Leitura guiada direto do arquivo de origem, disponível em qualquer status (o
+         arquivo copiado pra dentro do app na hora de entrar na fila nunca é apagado). -->
+    <ImageButton
+        android:id="@+id/btnLerFila"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:padding="6dp"
+        android:background="@android:color/transparent"
+        android:src="@android:drawable/ic_menu_agenda"
+        app:tint="@color/color_primary"
+        android:contentDescription="@string/cd_ler_item_fila"/>
+
+    <ImageButton
+        android:id="@+id/btnRepetirFila"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:padding="6dp"
+        android:background="@android:color/transparent"
+        android:src="@android:drawable/ic_popup_sync"
+        app:tint="@color/color_primary"
+        android:contentDescription="@string/cd_repetir_item_fila"
+        android:visibility="gone"/>
+
+    <!-- Remove button -->
+    <ImageButton
+        android:id="@+id/btnRemoverFila"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:padding="6dp"
+        android:background="@android:color/transparent"
+        android:src="@android:drawable/ic_delete"
+        app:tint="@color/color_on_surface_dim"
+        android:contentDescription="@string/cd_remover_item_fila"/>
+
+</LinearLayout>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_card"
+    android:padding="12dp"
+    android:layout_marginStart="14dp"
+    android:layout_marginEnd="14dp"
+    android:layout_marginBottom="8dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <ImageView
+        android:id="@+id/ivCover"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginEnd="12dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_capa_audiobook"
+        android:outlineProvider="background"
+        android:clipToOutline="true"
+        android:contentDescription="@string/cd_cover"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvAudiobookNome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/literata"
+            android:textColor="@color/color_on_surface"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:maxLines="2"/>
+
+        <TextView
+            android:id="@+id/tvAudiobookInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/color_on_surface_muted"
+            android:textSize="12sp"/>
+
+        <TextView
+            android:id="@+id/tvAudiobookLocal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/color_on_surface_dim"
+            android:textSize="11sp"
+            android:ellipsize="end"
+            android:maxLines="1"/>
+
+        <LinearLayout
+            android:id="@+id/layoutProgressoAudiobook"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="6dp"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:id="@+id/progressAudiobook"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:max="100"
+                android:progressTint="?attr/colorPrimary"/>
+
+            <TextView
+                android:id="@+id/tvAudiobookProgresso"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:textColor="?attr/colorPrimary"
+                android:textSize="11sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <ImageButton
+            android:id="@+id/btnAudiobookOuvir"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="@drawable/bg_botao_tocar"
+            android:src="@drawable/ic_tocar"
+            app:tint="?attr/colorOnPrimary"
+            android:contentDescription="@string/btn_ouvir"
+            android:tooltipText="@string/btn_ouvir"/>
+
+        <ImageButton
+            android:id="@+id/btnAudiobookMais"
+            android:layout_width="48dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_mais"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_mais_opcoes"
+            android:tooltipText="@string/cd_mais_opcoes"/>
+    </LinearLayout>
+</LinearLayout>
