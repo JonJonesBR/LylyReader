@@ -6,8 +6,8 @@ Lee este README en [ingles](README.md) o [portugues](README.pt-BR.md).
 
 <div align="center">
 
-[![Download APK](https://img.shields.io/github/v/release/JonJonesBR/LylyReader?label=Download%20APK&style=for-the-badge&color=4F46E5)](https://github.com/JonJonesBR/LylyReader/releases/latest)
-[![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JonJonesBR/LylyReader/releases)
+[![Download APK](https://img.shields.io/badge/Download-APK%20v1.8.0-4F46E5?style=for-the-badge)](https://github.com/JonJonesBR/LylyReader-Android/releases/latest)
+[![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JonJonesBR/LylyReader-Android/releases)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Android-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](app/src/main/java/com/jonjonesbr/audiobookgen)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-blue?style=for-the-badge)](LICENSE)
 
@@ -94,6 +94,7 @@ Las bibliotecas nativas ONNX y los modelos incluidos se distribuyen en el APK de
 ## Seguridad Y Privacidad
 
 - Las claves reales de API no se versionan en el repositorio.
+- `.env.example` documenta placeholders para configuracion local.
 - Las claves Gemini se almacenan en el dispositivo con `EncryptedSharedPreferences` y se migran desde la clave anterior en `SharedPreferences` en el primer acceso.
 - El repositorio tiene un workflow de higiene en GitHub Actions que bloquea patrones comunes de secrets filtrados.
 - Audio generado, libros importados, archivos de cache, claves de release, cuentas de servicio y archivos locales de firma son ignorados por Git.
@@ -119,9 +120,8 @@ Las bibliotecas nativas ONNX y los modelos incluidos se distribuyen en el APK de
 ## Ejecucion Local
 
 ```bash
-git clone https://github.com/JonJonesBR/LylyReader.git
-cd LylyReader
-./scripts/fetch-onnxruntime.sh   # Windows: powershell -File scripts/fetch-onnxruntime.ps1
+git clone https://github.com/JonJonesBR/LylyReader-Android.git
+cd LylyReader-Android
 ./gradlew :app:assembleDebug
 ```
 
@@ -142,17 +142,33 @@ keyPassword=change-me-locally
 
 ## Download
 
-El APK publico mas reciente esta disponible en la [pagina de Releases de GitHub](https://github.com/JonJonesBR/LylyReader/releases/latest). Este repositorio actualmente genera la version `1.8.0` de la app.
+El APK publico mas reciente esta disponible en la [pagina de Releases de GitHub](https://github.com/JonJonesBR/LylyReader-Android/releases/latest). Este repositorio actualmente genera la version `1.8.0` de la app.
 
 ## Roadmap
 
 - Agregar pruebas automatizadas para extraccion de documentos y casos extremos de archivos compartidos.
 - Agregar pruebas instrumentadas para las principales pantallas de importacion y conversion.
 - Mejorar la resiliencia de conversiones largas con cobertura mas profunda de WorkManager.
+- Ampliar los metadatos de la ficha de Play Store para ingles y espanol.
 
-## Contribuir
+## Créditos
 
-¡Las contribuciones son bienvenidas! Consulta [CONTRIBUTING.md](CONTRIBUTING.md) y las [plantillas de issue](../../issues/new/choose).
+LylyReader se apoya en el trabajo de varios proyectos y comunidades de código abierto:
+
+- **Supertone – Supertonic** (voces neuronales offline): https://github.com/supertone-inc/supertonic
+- **Kyutai Labs – Pocket TTS** (voces offline, CC BY 4.0) y el runtime **PocketTTS.cpp** de VolgaGerm (MIT): https://github.com/kyutai-labs/pocket-tts · https://github.com/VolgaGerm/PocketTTS.cpp
+- **Kokoro** y **sherpa-onnx** de k2-fsa (Apache-2.0): https://github.com/k2-fsa/sherpa-onnx
+- **ONNX Runtime** de Microsoft (MIT): https://github.com/microsoft/onnxruntime
+- **Voces Piper** de los proyectos rhasspy y de la comunidad (cada voz tiene su propia licencia): https://github.com/rhasspy/piper
+- **MMS-TTS** de Meta (CC BY-NC 4.0, uso no comercial): https://huggingface.co/facebook/mms-tts-por
+- **Chaquopy** – Python en Android (MIT): https://chaquo.com/chaquopy/
+- **Voces online de Microsoft Edge** (mediante el cliente no oficial `edge-tts`, LGPL-3.0): https://github.com/rany2/edge-tts
+- **Tipografía Literata** de The Literata Project (SIL OFL 1.1): https://github.com/googlefonts/literata
+- **Proyecto Gutenberg**, **Wikisource** e **Internet Archive**, las fuentes de dominio público de la búsqueda de libros.
+- Paquetes de Python: `aiohttp`, `mutagen`, `Pillow`, `pypdf`, `python-docx`, `ebooklib`, `beautifulsoup4`, `numpy`, `olefile`, `mobi`, `httpx`.
+- Bibliotecas de Android de Google y AndroidX (Apache-2.0), y el lenguaje Kotlin de JetBrains (Apache-2.0).
+
+Los detalles completos de atribución de los recursos y modelos incluidos están en [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ## Licencia
 

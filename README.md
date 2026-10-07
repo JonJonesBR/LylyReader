@@ -6,8 +6,8 @@ Read this README in [Portuguese](README.pt-BR.md) or [Spanish](README.es.md).
 
 <div align="center">
 
-[![Download APK](https://img.shields.io/github/v/release/JonJonesBR/LylyReader?label=Download%20APK&style=for-the-badge&color=4F46E5)](https://github.com/JonJonesBR/LylyReader/releases/latest)
-[![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JonJonesBR/LylyReader/releases)
+[![Download APK](https://img.shields.io/badge/Download-APK%20v1.8.0-4F46E5?style=for-the-badge)](https://github.com/JonJonesBR/LylyReader-Android/releases/latest)
+[![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JonJonesBR/LylyReader-Android/releases)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Android-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](app/src/main/java/com/jonjonesbr/audiobookgen)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
@@ -94,6 +94,7 @@ Native ONNX libraries and bundled models are distributed in the release APK and 
 ## Security And Privacy
 
 - Real API keys are not committed to the repository.
+- `.env.example` documents local configuration placeholders.
 - Gemini keys are stored on device with `EncryptedSharedPreferences` and migrated away from the previous plain `SharedPreferences` key on first read.
 - The repository has a GitHub Actions hygiene workflow that blocks common leaked-secret patterns.
 - Generated audio, imported books, cache files, release keys, service accounts and local signing files are ignored by Git.
@@ -119,9 +120,8 @@ Native ONNX libraries and bundled models are distributed in the release APK and 
 ## Run Locally
 
 ```bash
-git clone https://github.com/JonJonesBR/LylyReader.git
-cd LylyReader
-./scripts/fetch-onnxruntime.sh   # Windows: powershell -File scripts/fetch-onnxruntime.ps1
+git clone https://github.com/JonJonesBR/LylyReader-Android.git
+cd LylyReader-Android
 ./gradlew :app:assembleDebug
 ```
 
@@ -142,17 +142,33 @@ keyPassword=change-me-locally
 
 ## Download
 
-The latest public APK is available on the [GitHub Releases page](https://github.com/JonJonesBR/LylyReader/releases/latest). This repository currently builds app version `1.8.0`.
+The latest public APK is available on the [GitHub Releases page](https://github.com/JonJonesBR/LylyReader-Android/releases/latest). This repository currently builds app version `1.8.0`.
 
 ## Roadmap
 
 - Add automated tests for document extraction and shared-file edge cases.
 - Add instrumented tests for the main import/conversion screens.
 - Improve long-running conversion resilience with deeper WorkManager coverage.
+- Expand Play Store listing metadata for English and Spanish.
 
-## Contributing
+## Credits
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) and the [issue templates](../../issues/new/choose).
+LylyReader stands on the work of many open-source projects and communities:
+
+- **Supertone – Supertonic** (offline neural voices): https://github.com/supertone-inc/supertonic
+- **Kyutai Labs – Pocket TTS** (offline voices, CC BY 4.0) and the **PocketTTS.cpp** runtime by VolgaGerm (MIT): https://github.com/kyutai-labs/pocket-tts · https://github.com/VolgaGerm/PocketTTS.cpp
+- **Kokoro** and **sherpa-onnx** by k2-fsa (Apache-2.0): https://github.com/k2-fsa/sherpa-onnx
+- **ONNX Runtime** by Microsoft (MIT): https://github.com/microsoft/onnxruntime
+- **Piper** voices from the rhasspy and community projects (each voice has its own license): https://github.com/rhasspy/piper
+- **Meta MMS-TTS** (CC BY-NC 4.0, non-commercial use): https://huggingface.co/facebook/mms-tts-por
+- **Chaquopy** – Python on Android (MIT): https://chaquo.com/chaquopy/
+- **Microsoft Edge TTS** (online voices, via the unofficial `edge-tts` client, LGPL-3.0): https://github.com/rany2/edge-tts
+- **Literata** typeface by The Literata Project (SIL OFL 1.1): https://github.com/googlefonts/literata
+- **Project Gutenberg**, **Wikisource** and **Internet Archive**, the public-domain sources of the built-in book search.
+- Python packages: `aiohttp`, `mutagen`, `Pillow`, `pypdf`, `python-docx`, `ebooklib`, `beautifulsoup4`, `numpy`, `olefile`, `mobi`, `httpx`.
+- Android libraries from Google and AndroidX (Apache-2.0), and the Kotlin language by JetBrains (Apache-2.0).
+
+Full attribution details for bundled assets and models are in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ## License
 

@@ -6,8 +6,8 @@ Leia este README em [ingles](README.md) ou [espanhol](README.es.md).
 
 <div align="center">
 
-[![Download APK](https://img.shields.io/github/v/release/JonJonesBR/LylyReader?label=Download%20APK&style=for-the-badge&color=4F46E5)](https://github.com/JonJonesBR/LylyReader/releases/latest)
-[![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JonJonesBR/LylyReader/releases)
+[![Download APK](https://img.shields.io/badge/Download-APK%20v1.8.0-4F46E5?style=for-the-badge)](https://github.com/JonJonesBR/LylyReader-Android/releases/latest)
+[![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JonJonesBR/LylyReader-Android/releases)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Android-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](app/src/main/java/com/jonjonesbr/audiobookgen)
 [![Licenca](https://img.shields.io/badge/Licenca-MIT-blue?style=for-the-badge)](LICENSE)
 
@@ -94,6 +94,7 @@ As bibliotecas nativas ONNX e os modelos embarcados sao distribuidos no APK da r
 ## Seguranca E Privacidade
 
 - Chaves reais de API nao sao versionadas no repositorio.
+- `.env.example` documenta placeholders para configuracao local.
 - Chaves Gemini sao armazenadas no dispositivo com `EncryptedSharedPreferences` e migradas da chave antiga em `SharedPreferences` no primeiro acesso.
 - O repositorio tem um workflow de higiene no GitHub Actions que bloqueia padroes comuns de secrets vazados.
 - Audio gerado, livros importados, caches, chaves de release, contas de servico e arquivos locais de assinatura sao ignorados pelo Git.
@@ -119,9 +120,8 @@ As bibliotecas nativas ONNX e os modelos embarcados sao distribuidos no APK da r
 ## Execucao Local
 
 ```bash
-git clone https://github.com/JonJonesBR/LylyReader.git
-cd LylyReader
-./scripts/fetch-onnxruntime.sh   # Windows: powershell -File scripts/fetch-onnxruntime.ps1
+git clone https://github.com/JonJonesBR/LylyReader-Android.git
+cd LylyReader-Android
 ./gradlew :app:assembleDebug
 ```
 
@@ -142,17 +142,33 @@ keyPassword=change-me-locally
 
 ## Download
 
-O APK publico mais recente esta disponivel na [pagina de Releases do GitHub](https://github.com/JonJonesBR/LylyReader/releases/latest). Este repositorio atualmente gera a versao `1.8.0` do app.
+O APK publico mais recente esta disponivel na [pagina de Releases do GitHub](https://github.com/JonJonesBR/LylyReader-Android/releases/latest). Este repositorio atualmente gera a versao `1.8.0` do app.
 
 ## Roadmap
 
 - Adicionar testes automatizados para extracao de documentos e casos extremos de arquivos compartilhados.
 - Adicionar testes instrumentados para as principais telas de importacao e conversao.
 - Melhorar a resiliencia de conversoes longas com cobertura mais profunda de WorkManager.
+- Expandir os metadados da listagem da Play Store para ingles e espanhol.
 
-## Contribuindo
+## Créditos
 
-Contribuições são bem-vindas! Veja [CONTRIBUTING.md](CONTRIBUTING.md) e os [modelos de issue](../../issues/new/choose).
+O LylyReader se apoia no trabalho de vários projetos e comunidades de código aberto:
+
+- **Supertone – Supertonic** (vozes neurais offline): https://github.com/supertone-inc/supertonic
+- **Kyutai Labs – Pocket TTS** (vozes offline, CC BY 4.0) e o runtime **PocketTTS.cpp** de VolgaGerm (MIT): https://github.com/kyutai-labs/pocket-tts · https://github.com/VolgaGerm/PocketTTS.cpp
+- **Kokoro** e **sherpa-onnx** da k2-fsa (Apache-2.0): https://github.com/k2-fsa/sherpa-onnx
+- **ONNX Runtime** da Microsoft (MIT): https://github.com/microsoft/onnxruntime
+- **Vozes Piper** dos projetos rhasspy e da comunidade (cada voz tem sua própria licença): https://github.com/rhasspy/piper
+- **MMS-TTS** da Meta (CC BY-NC 4.0, uso não comercial): https://huggingface.co/facebook/mms-tts-por
+- **Chaquopy** – Python no Android (MIT): https://chaquo.com/chaquopy/
+- **Vozes online da Microsoft Edge** (via o cliente não oficial `edge-tts`, LGPL-3.0): https://github.com/rany2/edge-tts
+- **Fonte Literata** do The Literata Project (SIL OFL 1.1): https://github.com/googlefonts/literata
+- **Projeto Gutenberg**, **Wikisource** e **Internet Archive**, as fontes de domínio público da busca de livros.
+- Pacotes Python: `aiohttp`, `mutagen`, `Pillow`, `pypdf`, `python-docx`, `ebooklib`, `beautifulsoup4`, `numpy`, `olefile`, `mobi`, `httpx`.
+- Bibliotecas Android do Google e do AndroidX (Apache-2.0), e a linguagem Kotlin da JetBrains (Apache-2.0).
+
+Os detalhes completos de atribuição dos recursos e modelos incluídos estão em [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ## Licenca
 
