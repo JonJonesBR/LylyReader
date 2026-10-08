@@ -17,6 +17,8 @@ Lee este README en [English](README.md) o [Português](README.pt-BR.md).
 
 Videos promocionales cortos, uno por idioma:
 
+https://github.com/user-attachments/assets/85d1265c-99d0-4d1c-a38f-a593696509f6
+
 | Idioma | Video |
 |---|---|
 | 🇧🇷 Português | [LylyReader_promo_v2_pt.mp4](media/LylyReader_promo_v2_pt.mp4) |
