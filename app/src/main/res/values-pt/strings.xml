@@ -482,6 +482,7 @@
     <string name="voice_expand_section">Expandir seção</string>
     <string name="voice_collapse_section">Recolher seção</string>
     <string name="btn_vozes_dispositivo">🔊 Vozes do dispositivo</string>
+    <string name="btn_vozes_clonar">🎙️ Clonar minha voz</string>
     <string name="dialogo_escolher_motor_titulo">Escolha um motor TTS</string>
     <string name="toast_carregando_vozes_android">Carregando vozes…</string>
     <string name="erro_nenhum_motor_tts">Nenhum motor TTS encontrado. Instale um motor de voz (ex.: Google TTS) pela Play Store.</string>
@@ -770,7 +771,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Clonagem de voz mais simples: um guia passo a passo ajuda você a baixar o arquivo gratuito da Kyutai com a sua própria conta e liberar a clonagem. O app não pede nem guarda login ou senha.\n• O arquivo baixado é preparado no próprio aparelho, e você pode apagá-lo depois.</string>
+    <string name="release_notes_corpo">• Clonagem de voz mais simples: um guia passo a passo ajuda você a baixar o arquivo gratuito da Kyutai com a sua própria conta e liberar a clonagem. O app não pede nem guarda login ou senha.\n• O arquivo baixado é preparado no próprio aparelho, e você pode apagá-lo depois.\n• Clonar sua voz agora fica em destaque direto no seletor de vozes, sem precisar entrar em Ajustes.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>

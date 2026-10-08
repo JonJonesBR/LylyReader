@@ -32,6 +32,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         private const val ARG_VOICES = "voice_sheet_voices"
         private const val ARG_SELECTED_VOICE = "voice_sheet_selected_voice"
         private const val ARG_HAS_ANDROID_ACTION = "voice_sheet_has_android_action"
+        private const val ARG_HAS_CLONE_ACTION = "voice_sheet_has_clone_action"
         private const val ARG_RESTORABLE = "voice_sheet_restorable"
         private const val STATE_FILTER = "voice_sheet_filter"
         private const val STATE_SELECTED_VOICE = "voice_sheet_selected_voice_state"
@@ -40,6 +41,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         internal const val ACTION_SELECT = "select"
         internal const val ACTION_PREVIEW = "preview"
         internal const val ACTION_ANDROID = "android_voices"
+        internal const val ACTION_CLONE = "clone_voice"
         internal const val RESULT_VOICE = "voice"
 
         internal fun voiceToBundle(voice: VoiceOption) = Bundle().apply {
@@ -78,6 +80,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
     // estava acontecendo.
     private var onVoicePreview: ((VoiceOption, onFinished: () -> Unit) -> Unit)? = null
     private var onAndroidVoiceRequested: (() -> Unit)? = null
+    private var onCloneVoiceRequested: (() -> Unit)? = null
 
     fun configure(
         voices: List<VoiceOption>,
@@ -85,6 +88,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         onVoiceSelected: (VoiceOption) -> Unit,
         onVoicePreview: ((VoiceOption, onFinished: () -> Unit) -> Unit)? = null,
         onAndroidVoiceRequested: (() -> Unit)? = null,
+        onCloneVoiceRequested: (() -> Unit)? = null,
         restorable: Boolean = true
     ) {
         this.voices = voices
@@ -92,10 +96,12 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         this.onVoiceSelected = onVoiceSelected
         this.onVoicePreview = onVoicePreview
         this.onAndroidVoiceRequested = onAndroidVoiceRequested
+        this.onCloneVoiceRequested = onCloneVoiceRequested
         arguments = Bundle().apply {
             putParcelableArrayList(ARG_VOICES, ArrayList(voices.map(::voiceToBundle)))
             putString(ARG_SELECTED_VOICE, selectedVoiceId)
             putBoolean(ARG_HAS_ANDROID_ACTION, onAndroidVoiceRequested != null)
+            putBoolean(ARG_HAS_CLONE_ACTION, onCloneVoiceRequested != null)
             putBoolean(ARG_HAS_PREVIEW, onVoicePreview != null)
             putBoolean(ARG_RESTORABLE, restorable)
         }
@@ -169,6 +175,18 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         if (voices.isEmpty()) {
             dismissAllowingStateLoss()
             return
+        }
+        view.findViewById<Button>(R.id.btnClonarVoz).apply {
+            val hasCloneAction = onCloneVoiceRequested != null ||
+                arguments?.getBoolean(ARG_HAS_CLONE_ACTION) == true
+            visibility = if (hasCloneAction) View.VISIBLE else View.GONE
+            setOnClickListener {
+                dismiss()
+                if (onCloneVoiceRequested != null) onCloneVoiceRequested?.invoke()
+                else parentFragmentManager.setFragmentResult(RESULT_KEY, Bundle().apply {
+                    putString(RESULT_ACTION, ACTION_CLONE)
+                })
+            }
         }
         view.findViewById<Button>(R.id.btnVozesDispositivo).apply {
             val hasAndroidAction = onAndroidVoiceRequested != null ||

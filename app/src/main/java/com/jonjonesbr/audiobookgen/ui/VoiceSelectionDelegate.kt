@@ -18,6 +18,7 @@ class VoiceSelectionDelegate(
     private val onVoicePreview: (VoiceOption, onFinished: () -> Unit) -> Unit,
     private val obterVozAtualId: () -> String,
     private val restorable: Boolean = true,
+    private val onCloneVoiceRequested: (() -> Unit)? = null,
 ) {
 
     private val voiceDownloadFlow by lazy { VoiceDownloadFlow(activity) }
@@ -32,6 +33,7 @@ class VoiceSelectionDelegate(
                         .voiceFromBundle(result.getBundle(VoiceBottomSheet.RESULT_VOICE))
                         ?.let(::selecionarVozRestaurada)
                     VoiceBottomSheet.ACTION_ANDROID -> abrirFluxoVozAndroid()
+                    VoiceBottomSheet.ACTION_CLONE -> onCloneVoiceRequested?.invoke()
                     VoiceBottomSheet.ACTION_PREVIEW -> VoiceBottomSheet
                         .voiceFromBundle(result.getBundle(VoiceBottomSheet.RESULT_VOICE))
                         ?.let { voice ->
@@ -71,6 +73,7 @@ class VoiceSelectionDelegate(
                 },
                 onVoicePreview = onVoicePreview,
                 onAndroidVoiceRequested = { abrirFluxoVozAndroid() },
+                onCloneVoiceRequested = onCloneVoiceRequested,
                 restorable = restorable
             )
         }.show(fm, "voice_bottom_sheet")

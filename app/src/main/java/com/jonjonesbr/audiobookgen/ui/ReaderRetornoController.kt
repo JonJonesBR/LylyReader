@@ -42,6 +42,7 @@ class ReaderRetornoController(
         val onPrepararCapitulo: () -> Unit,
         val onAbrirAparencia: () -> Unit,
         val onAbrirSleepTimer: () -> Unit,
+        val onClonarVoz: () -> Unit = {},
     )
 
     fun retornarComSelecao() {
@@ -143,7 +144,7 @@ class ReaderRetornoController(
         }
         view.findViewById<android.view.View>(R.id.itemAcaoConfigLivro).setOnClickListener {
             dialog.dismiss()
-            ConfigLivroDialog.mostrar(activity, callbacks.obterCaminhoArquivo())
+            ConfigLivroDialog.mostrar(activity, callbacks.obterCaminhoArquivo(), callbacks.onClonarVoz)
         }
         view.findViewById<android.view.View>(R.id.itemAcaoVozesPersonagens).setOnClickListener {
             dialog.dismiss()

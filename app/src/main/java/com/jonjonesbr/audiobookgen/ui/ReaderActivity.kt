@@ -336,6 +336,7 @@ class ReaderActivity : BasePlayerActivity() {
                 onPrepararCapitulo = { prepararCapituloAtual() },
                 onAbrirAparencia = { aparenciaController.mostrarBottomSheet() },
                 onAbrirSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
+                onClonarVoz = { cloneVoiceFlow.iniciar() },
             ),
         )
     }
@@ -2050,6 +2051,8 @@ class ReaderActivity : BasePlayerActivity() {
         dialog.show()
     }
 
+    private val cloneVoiceFlow = CloneVoiceFlow(this)
+
     private val voiceSelectionDelegate: VoiceSelectionDelegate = VoiceSelectionDelegate(
         activity = this,
         onVoiceSelected = { voice ->
@@ -2108,6 +2111,7 @@ class ReaderActivity : BasePlayerActivity() {
             }
         },
         obterVozAtualId = { appPrefs.vozSelecionada.orEmpty() },
+        onCloneVoiceRequested = { cloneVoiceFlow.iniciar() },
     )
 
     /** Toca [texto] (a pronúncia digitada) com a voz e o motor do livro. */

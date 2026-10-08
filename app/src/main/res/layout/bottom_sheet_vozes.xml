@@ -14,6 +14,15 @@
         android:paddingBottom="12dp"/>
 
     <Button
+        android:id="@+id/btnClonarVoz"
+        style="?attr/materialButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_vozes_clonar"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone"/>
+
+    <Button
         android:id="@+id/btnVozesDispositivo"
         style="?attr/materialButtonOutlinedStyle"
         android:layout_width="match_parent"

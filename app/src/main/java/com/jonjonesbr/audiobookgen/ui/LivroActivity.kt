@@ -40,11 +40,14 @@ class LivroActivity : BasePlayerActivity() {
     private val appPrefs by lazy { AppPrefs(this) }
     private var livro: LivroBiblioteca? = null
 
+    private val cloneVoiceFlow = CloneVoiceFlow(this)
+
     private val seletorDeVoz = VoiceSelectionDelegate(
         activity = this,
         onVoiceSelected = ::aoEscolherVoz,
         onVoicePreview = ::ouvirAmostra,
-        obterVozAtualId = { vozDoLivro().first }
+        obterVozAtualId = { vozDoLivro().first },
+        onCloneVoiceRequested = { cloneVoiceFlow.iniciar() }
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {

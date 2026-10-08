@@ -25,7 +25,7 @@ private const val EPSILON_VELOCIDADE = 0.01f
  */
 object ConfigLivroDialog {
 
-    fun mostrar(activity: AppCompatActivity, caminhoArquivo: String) {
+    fun mostrar(activity: AppCompatActivity, caminhoArquivo: String, onClonarVoz: () -> Unit = {}) {
         val appPrefs = AppPrefs(activity)
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_config_livro, null)
         val dialog = BottomSheetDialog(activity)
@@ -70,7 +70,7 @@ object ConfigLivroDialog {
         }
 
         view.findViewById<View>(R.id.itemConfigVoz).setOnClickListener {
-            abrirSeletorDeVoz(activity, caminhoArquivo, appPrefs, ::atualizarUi)
+            abrirSeletorDeVoz(activity, caminhoArquivo, appPrefs, ::atualizarUi, onClonarVoz)
         }
         botoesVelocidade.forEach { (btn, valor) -> btn.setOnClickListener { salvarVelocidade(valor) } }
         sliderVelocidade.addOnChangeListener { _, value, fromUser ->
@@ -96,7 +96,8 @@ object ConfigLivroDialog {
         activity: AppCompatActivity,
         caminhoArquivo: String,
         appPrefs: AppPrefs,
-        aoConcluir: () -> Unit
+        aoConcluir: () -> Unit,
+        onClonarVoz: () -> Unit
     ) {
         val efetivo = resolverEfetivo(activity, caminhoArquivo, appPrefs)
         VoiceSelectionDelegate(
@@ -108,7 +109,8 @@ object ConfigLivroDialog {
             },
             onVoicePreview = { _, onFinished -> onFinished() },
             obterVozAtualId = { efetivo.voz },
-            restorable = false
+            restorable = false,
+            onCloneVoiceRequested = onClonarVoz
         ).abrirSeletorVozes()
     }
 
