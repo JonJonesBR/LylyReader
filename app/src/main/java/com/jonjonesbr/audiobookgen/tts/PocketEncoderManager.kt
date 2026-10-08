@@ -2,6 +2,12 @@ package com.jonjonesbr.audiobookgen.tts
 
 import android.content.Context
 import android.util.Log
+import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.data.AppPrefs
+import com.jonjonesbr.audiobookgen.data.ClonagemAcessoHf
+import com.jonjonesbr.audiobookgen.data.SecurePreferences
+import com.jonjonesbr.audiobookgen.data.SemAcessoHfException
+import com.jonjonesbr.audiobookgen.domain.ClonagemAcessoRegras
 import com.jonjonesbr.audiobookgen.util.ProgressoDownload
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,11 +19,14 @@ import java.security.MessageDigest
  * Codificador de voz (Mimi encoder) do Pocket TTS: transforma o áudio de referência do usuário na
  * "impressão" da voz. Cada idioma tem o seu (os pesos diferem), baixado sob demanda só para quem usa a
  * clonagem naquele idioma, e copiado para `models/mimi_encoder.onnx` do pacote do idioma.
+ *
+ * Os arquivos ficam num repositório de acesso restrito do Hugging Face: o download usa o token da conta
+ * do próprio usuário, que já aceitou os termos da Kyutai e do repositório (ver ClonagemAcessoDialog).
  */
 object PocketEncoderManager {
     private const val TAG = "PocketEncoder"
     private const val BASE_URL =
-        "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/pocket-tts-v3.3.0"
+        "https://huggingface.co/JonJonesBR/lylyreader-pocket-encoders/resolve/main/pocket-tts-v3.3.0"
     /** Nome do arquivo DENTRO do pacote (é o que o motor nativo procura). */
     const val FILE_NAME = "mimi_encoder.onnx"
     const val DOWNLOAD_MB = 40
@@ -75,36 +84,66 @@ object PocketEncoderManager {
         dir(context).listFiles { f -> f.isDirectory }?.forEach { File(File(it, "models"), FILE_NAME).delete() }
     }
 
-    /** Baixa e confere o checksum do codificador do idioma (download retomável, como os demais pacotes). */
+    /**
+     * Baixa e confere o checksum do codificador do idioma (download retomável, como os demais pacotes).
+     * Exige o token salvo e o acesso verificado; sem isso, lança [IOException] com o texto para o usuário.
+     */
     suspend fun download(context: Context, languageTag: String, onProgress: ProgressoDownload) =
         withContext(Dispatchers.IO) {
             if (isInstalled(context, languageTag)) {
                 onProgress("Pronto", 1f, 1L, 1L)
                 return@withContext
             }
+            val token = tokenDeAcesso(context)
             val url = "$BASE_URL/${remoto(languageTag)}"
             val alvo = installedFile(context, languageTag)
-            val sidecar = File(dir(context), "${remoto(languageTag)}.sha256")
             dir(context).mkdirs()
-            val total = SupertonicAssetManager.probeFileSize(url)
+            val enderecoArquivo = enderecoDoArquivo(context, url, token)
+            val total = SupertonicAssetManager.probeFileSize(enderecoArquivo)
             if (total < MIN_BYTES || total > MAX_BYTES) {
                 throw IOException("O codificador de voz ainda não está disponível para download.")
             }
             var baixado = File(dir(context), "${alvo.name}.part").let { if (it.exists()) it.length() else 0L }
             onProgress("Baixando codificador de voz", 0f, baixado, total)
-            SupertonicAssetManager.downloadFileWithResume(url, alvo) { delta ->
+            SupertonicAssetManager.downloadFileWithResume(enderecoArquivo, alvo) { delta ->
                 baixado += delta
                 onProgress("Baixando codificador de voz", (baixado.toFloat() / total).coerceIn(0f, 1f), baixado, total)
             }
-            SupertonicAssetManager.downloadFileWithResume("$url.sha256", sidecar) { }
-            val esperado = sidecar.readText().trim().split(Regex("\\s+"), limit = 2).first()
+            val esperado = textoDoAcesso(context, "$url.sha256", token)
+                .trim()
+                .split(Regex("\\s+"), limit = 2)
+                .firstOrNull()
+                .orEmpty()
             val atual = sha256(alvo)
-            sidecar.delete()
             if (!esperado.matches(Regex("[0-9a-fA-F]{64}")) || !atual.equals(esperado, ignoreCase = true)) {
                 alvo.delete()
                 throw IOException("Checksum do codificador de voz não confere.")
             }
             onProgress("Pronto", 1f, total, total)
+        }
+
+    /** Token salvo e acesso verificado pela conta do usuário; sem isso o download nem começa. */
+    private fun tokenDeAcesso(context: Context): String {
+        val token = SecurePreferences.getHfTokenClonagem(context)
+        if (!ClonagemAcessoRegras.podeClonar(token.isNotBlank(), AppPrefs(context).clonagemAcessoVerificado)) {
+            throw IOException(context.getString(R.string.clone_access_required))
+        }
+        return token
+    }
+
+    private fun enderecoDoArquivo(context: Context, url: String, token: String): String =
+        comAcesso(context) { ClonagemAcessoHf.enderecoDoArquivo(url, token) }
+
+    private fun textoDoAcesso(context: Context, url: String, token: String): String =
+        comAcesso(context) { ClonagemAcessoHf.lerTextoRestrito(url, token) }
+
+    /** Se o Hugging Face recusar o token, o acesso deixa de estar verificado e o usuário é avisado. */
+    private inline fun <T> comAcesso(context: Context, bloco: () -> T): T =
+        try {
+            bloco()
+        } catch (e: SemAcessoHfException) {
+            AppPrefs(context).clonagemAcessoVerificado = false
+            throw IOException(context.getString(R.string.clone_access_required))
         }
 
     private fun sha256(file: File): String {

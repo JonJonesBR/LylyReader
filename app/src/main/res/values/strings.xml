@@ -1221,4 +1221,31 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="status_amostra_falha">⚠ Failed to generate the sample.</string>
     <string name="settings_supertonic_passos_titulo">Supertonic steps</string>
     <string name="settings_supertonic_passos_desc">Balances quality and speed of Supertonic voice synthesis. Fewer steps = faster; more steps = better quality. Recommended: 4.</string>
+    <!-- Acesso à clonagem pela conta do próprio usuário (Fase E3) -->
+    <string name="clone_access_title">Unlock voice cloning</string>
+    <string name="clone_access_intro">Cloning uses the Pocket TTS model by Kyutai, under its terms. Do these steps once, with your own Hugging Face account.</string>
+    <string name="clone_access_step1">1. Open the Pocket TTS page and accept its conditions. They forbid cloning a voice without explicit and lawful consent.</string>
+    <string name="clone_access_step2">2. Open the voice encoder page and request access, accepting its conditions.</string>
+    <string name="clone_access_step3">3. Create a read-only access token in your Hugging Face account settings and copy it.</string>
+    <string name="clone_access_step4">4. Paste the token below and tap Verify. The token is stored encrypted on this device and sent only to huggingface.co.</string>
+    <string name="clone_access_btn_kyutai">Open Pocket TTS page</string>
+    <string name="clone_access_btn_encoders">Open encoder page</string>
+    <string name="clone_access_btn_token">Open token settings</string>
+    <string name="clone_access_token_hint">Paste the token</string>
+    <string name="clone_access_verify">Verify</string>
+    <string name="clone_access_verifying">Checking access…</string>
+    <string name="clone_access_ok">Access granted for %1$s. Cloning is unlocked.</string>
+    <string name="clone_access_err_token">This token was not accepted. Create a read-only token and try again.</string>
+    <string name="clone_access_err_kyutai">Access to Pocket TTS is missing. Open its page, accept the conditions and verify again.</string>
+    <string name="clone_access_err_encoders">Access to the encoder page is missing. Request access there and verify again.</string>
+    <string name="clone_access_err_network">Could not reach Hugging Face. Check the connection and try again.</string>
+    <string name="clone_access_err_config">The encoder page is unavailable right now. Try again later.</string>
+    <string name="clone_access_err_save">Could not save the token on this device.</string>
+    <string name="clone_access_disconnect">Disconnect</string>
+    <string name="clone_access_disconnected">Access removed from this device.</string>
+    <string name="clone_access_manage">Access</string>
+    <string name="clone_access_status_none">Not set up yet.</string>
+    <string name="clone_access_status_ok">Connected as %1$s.</string>
+    <string name="clone_access_no_browser">No browser is available to open this page.</string>
+    <string name="clone_access_required">Set up the cloning access first, in Cloned voices.</string>
 </resources>

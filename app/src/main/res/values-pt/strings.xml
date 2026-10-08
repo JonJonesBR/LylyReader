@@ -1212,4 +1212,31 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="status_amostra_falha">⚠ Falha ao gerar a amostra.</string>
     <string name="settings_supertonic_passos_titulo">Passos do Supertonic</string>
     <string name="settings_supertonic_passos_desc">Controla a qualidade x velocidade da síntese das vozes Supertonic. Menos passos = mais rápido; mais passos = melhor qualidade. Recomendado: 4.</string>
+    <!-- Acesso à clonagem pela conta do próprio usuário (Fase E3) -->
+    <string name="clone_access_title">Liberar a clonagem de voz</string>
+    <string name="clone_access_intro">A clonagem usa o modelo Pocket TTS, da Kyutai, sob os termos dela. Faça estes passos uma vez, com a sua própria conta do Hugging Face.</string>
+    <string name="clone_access_step1">1. Abra a página do Pocket TTS e aceite as condições. Elas proíbem clonar uma voz sem consentimento explícito e legal.</string>
+    <string name="clone_access_step2">2. Abra a página dos codificadores de voz e peça acesso, aceitando as condições dela.</string>
+    <string name="clone_access_step3">3. Crie um token de acesso somente leitura nas configurações da sua conta do Hugging Face e copie.</string>
+    <string name="clone_access_step4">4. Cole o token abaixo e toque em Verificar. O token fica criptografado neste aparelho e só é enviado ao huggingface.co.</string>
+    <string name="clone_access_btn_kyutai">Abrir página do Pocket TTS</string>
+    <string name="clone_access_btn_encoders">Abrir página dos codificadores</string>
+    <string name="clone_access_btn_token">Abrir configurações de token</string>
+    <string name="clone_access_token_hint">Cole o token</string>
+    <string name="clone_access_verify">Verificar</string>
+    <string name="clone_access_verifying">Verificando o acesso…</string>
+    <string name="clone_access_ok">Acesso liberado para %1$s. A clonagem está disponível.</string>
+    <string name="clone_access_err_token">Este token não foi aceito. Crie um token somente leitura e tente de novo.</string>
+    <string name="clone_access_err_kyutai">Falta o acesso ao Pocket TTS. Abra a página, aceite as condições e verifique de novo.</string>
+    <string name="clone_access_err_encoders">Falta o acesso à página dos codificadores. Peça o acesso por lá e verifique de novo.</string>
+    <string name="clone_access_err_network">Não foi possível falar com o Hugging Face. Confira a conexão e tente de novo.</string>
+    <string name="clone_access_err_config">A página dos codificadores não está disponível agora. Tente mais tarde.</string>
+    <string name="clone_access_err_save">Não foi possível guardar o token neste aparelho.</string>
+    <string name="clone_access_disconnect">Desconectar</string>
+    <string name="clone_access_disconnected">Acesso removido deste aparelho.</string>
+    <string name="clone_access_manage">Acesso</string>
+    <string name="clone_access_status_none">Ainda não configurado.</string>
+    <string name="clone_access_status_ok">Conectado como %1$s.</string>
+    <string name="clone_access_no_browser">Nenhum navegador disponível para abrir esta página.</string>
+    <string name="clone_access_required">Configure primeiro o acesso à clonagem, em Vozes clonadas.</string>
 </resources>

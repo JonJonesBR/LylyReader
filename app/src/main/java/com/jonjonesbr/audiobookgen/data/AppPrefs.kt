@@ -92,6 +92,16 @@ class AppPrefs(context: Context) {
         get() = p.getBoolean("biblioteca_migrada_v1", false)
         set(v) = p.edit().putBoolean("biblioteca_migrada_v1", v).apply()
 
+    /** O acesso à clonagem (token salvo + aceites na conta do usuário) foi verificado pelo app. */
+    var clonagemAcessoVerificado: Boolean
+        get() = p.getBoolean("clonagem_acesso_verificado", false)
+        set(v) = p.edit().putBoolean("clonagem_acesso_verificado", v).apply()
+
+    /** Conta do Hugging Face que liberou a clonagem (só para exibir; o token fica criptografado). */
+    var clonagemAcessoUsuario: String
+        get() = p.getString("clonagem_acesso_usuario", "") ?: ""
+        set(v) = p.edit().putString("clonagem_acesso_usuario", v).apply()
+
     /** Quantos pacotes a Central de downloads baixa ao mesmo tempo (mais que 2 esquenta o aparelho). */
     var downloadsSimultaneos: Int
         get() = p.getInt("downloads_simultaneos", DOWNLOADS_SIMULTANEOS_PADRAO)

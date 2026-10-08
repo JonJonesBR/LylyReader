@@ -34,6 +34,17 @@ MIT (https://github.com/microsoft/onnxruntime).
 Os pesos do modelo e os arquivos de voz são artefatos distintos do código do runtime;
 cada pacote offline deve manter sua atribuição CC BY 4.0 junto dos metadados.
 
+## Clonagem de voz (codificador Mimi)
+
+A clonagem usa um codificador de voz (Mimi encoder, ONNX, um por idioma: en, es, pt) exportado dos pesos
+com clonagem do Pocket TTS 3.3 (https://huggingface.co/kyutai/pocket-tts), licenciado sob CC BY 4.0 e com
+condições de uso que proíbem a clonagem de voz sem consentimento explícito e legal. Esse codificador não vem
+nos pacotes sem clonagem. Ele é publicado num repositório de acesso restrito
+(https://huggingface.co/JonJonesBR/lylyreader-pocket-encoders) e só é baixado quando a própria pessoa aceita
+as condições da Kyutai e as do repositório com a sua conta do Hugging Face e informa um token de leitura, que o
+app confere antes de liberar a clonagem. Atribuição: Kyutai Labs, Pocket TTS 3.3, CC BY 4.0 (ver
+ENCODER_LICENSE.txt no repositório).
+
 ## Supertonic (Supertone Inc.)
 
 O diretório `rust/` e os estilos de voz em `app/src/main/assets/supertonic/` derivam do projeto

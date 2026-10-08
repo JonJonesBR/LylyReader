@@ -19,6 +19,7 @@ object SecurePreferences {
     private const val GEMINI_KEYS = "gemini_keys"
     private const val ELEVENLABS_KEY = "elevenlabs_key"
     private const val IA_PERSONALIZADA_KEY = "ia_personalizada_key"
+    private const val HF_TOKEN_CLONAGEM = "hf_token_clonagem"
 
     private fun createSecurePrefs(context: Context): SharedPreferences {
         val masterKey = MasterKey.Builder(context)
@@ -61,6 +62,11 @@ object SecurePreferences {
     fun getElevenLabsKey(context: Context): String = getSecureValue(context, ELEVENLABS_KEY)
 
     fun setElevenLabsKey(context: Context, value: String): SaveResult = setSecureValue(context, ELEVENLABS_KEY, value)
+
+    /** Token de leitura do Hugging Face, usado só para liberar a clonagem com a conta do próprio usuário. */
+    fun getHfTokenClonagem(context: Context): String = getSecureValue(context, HF_TOKEN_CLONAGEM)
+
+    fun setHfTokenClonagem(context: Context, value: String): SaveResult = setSecureValue(context, HF_TOKEN_CLONAGEM, value)
 
     private fun getSecureValue(context: Context, prefKey: String): String {
         val secure = securePrefs(context)

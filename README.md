@@ -86,7 +86,7 @@ Online voices come from Microsoft Edge TTS. Gemini, ElevenLabs and OpenRouter vo
 | Supertonic | Multilingual (EN, PT, ES, FR, KO and more) | Neural voices, the default offline engine |
 | Kokoro (Sherpa-ONNX) | English (US and UK), Portuguese (Santa) | Varied English voices |
 | MMS-TTS (Meta) | Português | Non-commercial license (CC BY-NC 4.0) |
-| Pocket TTS 3.3 | Português do Brasil, English, Español | Fixed public presets, no voice cloning |
+| Pocket TTS 3.3 | Português do Brasil, English, Español | Fixed public presets. Optional voice cloning, after you accept Kyutai's terms with your own Hugging Face account |
 | Piper | Português (Cadu, Edresson, Faber, Jeff, Dii, Miro), English (Norman, LJSpeech), Español (Claude) | License varies per voice; Dii and Miro are CC BY-NC-SA |
 
 Each offline package keeps its own license. Check [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) before redistributing a model.

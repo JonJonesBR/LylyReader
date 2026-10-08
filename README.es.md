@@ -86,7 +86,7 @@ Las voces en línea vienen de Microsoft Edge TTS. Las voces de Gemini, ElevenLab
 | Supertonic | Multilingüe (EN, PT, ES, FR, KO y más) | Voces neuronales; motor sin conexión predeterminado |
 | Kokoro (Sherpa-ONNX) | Inglés (EE. UU. y Reino Unido), portugués (Santa) | Varias voces en inglés |
 | MMS-TTS (Meta) | Portugués | Licencia no comercial (CC BY-NC 4.0) |
-| Pocket TTS 3.3 | Portugués de Brasil, inglés, español | Presets públicos fijos, sin clonación de voz |
+| Pocket TTS 3.3 | Portugués de Brasil, inglés, español | Presets públicos fijos. Clonación de voz opcional, tras aceptar los términos de Kyutai con tu cuenta de Hugging Face |
 | Piper | Portugués (Cadu, Edresson, Faber, Jeff, Dii, Miro), inglés (Norman, LJSpeech), español (Claude) | La licencia varía según la voz; Dii y Miro son CC BY-NC-SA |
 
 Cada paquete sin conexión mantiene su propia licencia. Consulta [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) antes de redistribuir un modelo.
