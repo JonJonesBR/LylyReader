@@ -112,3 +112,23 @@ lint_output.txt
 # ONNX Runtime do Supertonic: baixado por scripts/fetch-onnxruntime.* (não versionado)
 .ortdl/
 /app/src/main/jniLibs/*/libonnxruntime_supertonic.so
+
+# ─── Itens locais/sensíveis e material interno de desenvolvimento ────────────
+# (clone fixo deste repositório público usado como workspace principal —
+# ver "NÃO COMMITAR/CLAUDE.md" para o guia completo)
+NÃO COMMITAR/
+"NÃO COMMITAR"/
+COISAS PARA IMPLEMENTAR NO APP/
+"COISAS PARA IMPLEMENTAR NO APP"/
+/LIVROS EXEMPLOS/
+/AGENTS.md
+/MOTORES QUE FALTAM IMPLEMENTAR NO APP.txt
+.claude/CLAUDE.md
+/scripts/build-local.ps1
+/scripts/test_tts_desktop.py
+/app/src/test/java/com/jonjonesbr/audiobookgen/CalibracaoManualTest.kt
+/temp/
+/tmp_kokoro_src/
+/.omp/
+/.planning/
+/graphify-out/
