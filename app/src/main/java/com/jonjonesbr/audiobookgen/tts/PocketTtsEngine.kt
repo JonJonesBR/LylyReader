@@ -31,7 +31,7 @@ class PocketTtsEngine(private val context: Context) {
                     return@withContext failure("A voz clonada não foi encontrada no aparelho.")
                 }
                 if (!PocketEncoderManager.isInstalled(context, spec.languageTag)) {
-                    return@withContext failure("Baixe o codificador de voz em Ajustes → Vozes clonadas.")
+                    return@withContext failure("Prepare a clonagem deste idioma em Ajustes → Vozes clonadas.")
                 }
             }
             val error = PocketProcessClient.synthesize(context, text, voiceId, output)

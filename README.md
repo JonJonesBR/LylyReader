@@ -60,6 +60,7 @@ https://github.com/user-attachments/assets/3f099670-c9ce-47a4-8846-af99d97583c0
 - Interface and content in **Portuguese, English and Spanish**.
 - Light, Dark and System theme; configurable speech speed, pauses, bitrate and output folder.
 - Built-in log viewer for troubleshooting.
+- Voice cloning (Pocket TTS): record or import a short sample of your own voice. A step-by-step guide helps you download Kyutai's free official file with your own Hugging Face account, and the app prepares it on the phone.
 
 ## Voices
 
@@ -86,7 +87,7 @@ Online voices come from Microsoft Edge TTS. Gemini, ElevenLabs and OpenRouter vo
 | Supertonic | Multilingual (EN, PT, ES, FR, KO and more) | Neural voices, the default offline engine |
 | Kokoro (Sherpa-ONNX) | English (US and UK), Portuguese (Santa) | Varied English voices |
 | MMS-TTS (Meta) | Português | Non-commercial license (CC BY-NC 4.0) |
-| Pocket TTS 3.3 | Português do Brasil, English, Español | Fixed public presets. Optional voice cloning, after you accept Kyutai's terms with your own Hugging Face account |
+| Pocket TTS 3.3 | Português do Brasil, English, Español | Fixed public presets. Optional voice cloning: the app guides you, step by step, to download Kyutai's official file with your own Hugging Face account (no login inside the app) |
 | Piper | Português (Cadu, Edresson, Faber, Jeff, Dii, Miro), English (Norman, LJSpeech), Español (Claude) | License varies per voice; Dii and Miro are CC BY-NC-SA |
 
 Each offline package keeps its own license. Check [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) before redistributing a model.
@@ -98,6 +99,7 @@ LylyReader stands on the work of many open-source projects and communities. The 
 ## Security And Privacy
 
 - No account and no analytics. Books, progress and statistics stay on the device.
+- Voice cloning needs no login in the app: you sign in only in your browser, and your voice sample stays on the device.
 - API keys (Gemini, ElevenLabs, OpenRouter) are stored in the device's encrypted storage and are never sent to this project.
 - Real API keys are not committed to the repository.
 - The repository has a GitHub Actions hygiene workflow that blocks common leaked-secret patterns.

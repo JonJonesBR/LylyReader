@@ -63,10 +63,13 @@ object SecurePreferences {
 
     fun setElevenLabsKey(context: Context, value: String): SaveResult = setSecureValue(context, ELEVENLABS_KEY, value)
 
-    /** Token de leitura do Hugging Face, usado só para liberar a clonagem com a conta do próprio usuário. */
-    fun getHfTokenClonagem(context: Context): String = getSecureValue(context, HF_TOKEN_CLONAGEM)
-
-    fun setHfTokenClonagem(context: Context, value: String): SaveResult = setSecureValue(context, HF_TOKEN_CLONAGEM, value)
+    /**
+     * Apaga o token do Hugging Face que versões de teste chegaram a guardar para a clonagem.
+     * A clonagem não usa mais login nem token: o usuário baixa o arquivo oficial no navegador.
+     */
+    fun apagarTokenHfLegado(context: Context) {
+        setSecureValue(context, HF_TOKEN_CLONAGEM, "")
+    }
 
     private fun getSecureValue(context: Context, prefKey: String): String {
         val secure = securePrefs(context)

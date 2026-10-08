@@ -1,0 +1,397 @@
+[
+ {
+  "nome": "encoder.model.0.conv.weight",
+  "chave": "mimi.encoder.model.0.conv.weight",
+  "transposto": false,
+  "forma": [
+   64,
+   1,
+   7
+  ]
+ },
+ {
+  "nome": "encoder.model.0.conv.bias",
+  "chave": "mimi.encoder.model.0.conv.bias",
+  "transposto": false,
+  "forma": [
+   64
+  ]
+ },
+ {
+  "nome": "encoder.model.1.block.1.conv.weight",
+  "chave": "mimi.encoder.model.1.block.1.conv.weight",
+  "transposto": false,
+  "forma": [
+   32,
+   64,
+   3
+  ]
+ },
+ {
+  "nome": "encoder.model.1.block.1.conv.bias",
+  "chave": "mimi.encoder.model.1.block.1.conv.bias",
+  "transposto": false,
+  "forma": [
+   32
+  ]
+ },
+ {
+  "nome": "encoder.model.1.block.3.conv.weight",
+  "chave": "mimi.encoder.model.1.block.3.conv.weight",
+  "transposto": false,
+  "forma": [
+   64,
+   32,
+   1
+  ]
+ },
+ {
+  "nome": "encoder.model.1.block.3.conv.bias",
+  "chave": "mimi.encoder.model.1.block.3.conv.bias",
+  "transposto": false,
+  "forma": [
+   64
+  ]
+ },
+ {
+  "nome": "encoder.model.3.conv.weight",
+  "chave": "mimi.encoder.model.3.conv.weight",
+  "transposto": false,
+  "forma": [
+   128,
+   64,
+   8
+  ]
+ },
+ {
+  "nome": "encoder.model.3.conv.bias",
+  "chave": "mimi.encoder.model.3.conv.bias",
+  "transposto": false,
+  "forma": [
+   128
+  ]
+ },
+ {
+  "nome": "encoder.model.4.block.1.conv.weight",
+  "chave": "mimi.encoder.model.4.block.1.conv.weight",
+  "transposto": false,
+  "forma": [
+   64,
+   128,
+   3
+  ]
+ },
+ {
+  "nome": "encoder.model.4.block.1.conv.bias",
+  "chave": "mimi.encoder.model.4.block.1.conv.bias",
+  "transposto": false,
+  "forma": [
+   64
+  ]
+ },
+ {
+  "nome": "encoder.model.4.block.3.conv.weight",
+  "chave": "mimi.encoder.model.4.block.3.conv.weight",
+  "transposto": false,
+  "forma": [
+   128,
+   64,
+   1
+  ]
+ },
+ {
+  "nome": "encoder.model.4.block.3.conv.bias",
+  "chave": "mimi.encoder.model.4.block.3.conv.bias",
+  "transposto": false,
+  "forma": [
+   128
+  ]
+ },
+ {
+  "nome": "encoder.model.6.conv.weight",
+  "chave": "mimi.encoder.model.6.conv.weight",
+  "transposto": false,
+  "forma": [
+   256,
+   128,
+   10
+  ]
+ },
+ {
+  "nome": "encoder.model.6.conv.bias",
+  "chave": "mimi.encoder.model.6.conv.bias",
+  "transposto": false,
+  "forma": [
+   256
+  ]
+ },
+ {
+  "nome": "encoder.model.7.block.1.conv.weight",
+  "chave": "mimi.encoder.model.7.block.1.conv.weight",
+  "transposto": false,
+  "forma": [
+   128,
+   256,
+   3
+  ]
+ },
+ {
+  "nome": "encoder.model.7.block.1.conv.bias",
+  "chave": "mimi.encoder.model.7.block.1.conv.bias",
+  "transposto": false,
+  "forma": [
+   128
+  ]
+ },
+ {
+  "nome": "encoder.model.7.block.3.conv.weight",
+  "chave": "mimi.encoder.model.7.block.3.conv.weight",
+  "transposto": false,
+  "forma": [
+   256,
+   128,
+   1
+  ]
+ },
+ {
+  "nome": "encoder.model.7.block.3.conv.bias",
+  "chave": "mimi.encoder.model.7.block.3.conv.bias",
+  "transposto": false,
+  "forma": [
+   256
+  ]
+ },
+ {
+  "nome": "encoder.model.9.conv.weight",
+  "chave": "mimi.encoder.model.9.conv.weight",
+  "transposto": false,
+  "forma": [
+   512,
+   256,
+   12
+  ]
+ },
+ {
+  "nome": "encoder.model.9.conv.bias",
+  "chave": "mimi.encoder.model.9.conv.bias",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder.model.11.conv.weight",
+  "chave": "mimi.encoder.model.11.conv.weight",
+  "transposto": false,
+  "forma": [
+   512,
+   512,
+   3
+  ]
+ },
+ {
+  "nome": "encoder.model.11.conv.bias",
+  "chave": "mimi.encoder.model.11.conv.bias",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.0.norm1.weight",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.norm1.weight",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.0.norm1.bias",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.norm1.bias",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.0.norm2.weight",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.norm2.weight",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.0.norm2.bias",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.norm2.bias",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.0.layer_scale_1.scale",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.layer_scale_1.scale",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.0.layer_scale_2.scale",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.layer_scale_2.scale",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.1.norm1.weight",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.norm1.weight",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.1.norm1.bias",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.norm1.bias",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.1.norm2.weight",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.norm2.weight",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.1.norm2.bias",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.norm2.bias",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.1.layer_scale_1.scale",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.layer_scale_1.scale",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "encoder_transformer.transformer.layers.1.layer_scale_2.scale",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.layer_scale_2.scale",
+  "transposto": false,
+  "forma": [
+   512
+  ]
+ },
+ {
+  "nome": "downsample.conv.conv.weight",
+  "chave": "mimi.downsample.conv.conv.weight",
+  "transposto": false,
+  "forma": [
+   32,
+   512,
+   32
+  ]
+ },
+ {
+  "nome": "onnx::MatMul_795",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.self_attn.in_proj.weight",
+  "transposto": true,
+  "forma": [
+   512,
+   1536
+  ]
+ },
+ {
+  "nome": "onnx::MatMul_801",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.self_attn.out_proj.weight",
+  "transposto": true,
+  "forma": [
+   512,
+   512
+  ]
+ },
+ {
+  "nome": "onnx::MatMul_802",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.linear1.weight",
+  "transposto": true,
+  "forma": [
+   512,
+   2048
+  ]
+ },
+ {
+  "nome": "onnx::MatMul_803",
+  "chave": "mimi.encoder_transformer.transformer.layers.0.linear2.weight",
+  "transposto": true,
+  "forma": [
+   2048,
+   512
+  ]
+ },
+ {
+  "nome": "onnx::MatMul_804",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.self_attn.in_proj.weight",
+  "transposto": true,
+  "forma": [
+   512,
+   1536
+  ]
+ },
+ {
+  "nome": "onnx::MatMul_810",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.self_attn.out_proj.weight",
+  "transposto": true,
+  "forma": [
+   512,
+   512
+  ]
+ },
+ {
+  "nome": "onnx::MatMul_811",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.linear1.weight",
+  "transposto": true,
+  "forma": [
+   512,
+   2048
+  ]
+ },
+ {
+  "nome": "onnx::MatMul_812",
+  "chave": "mimi.encoder_transformer.transformer.layers.1.linear2.weight",
+  "transposto": true,
+  "forma": [
+   2048,
+   512
+  ]
+ },
+ {
+  "nome": "onnx::MatMul_819",
+  "chave": "flow_lm.speaker_proj_weight",
+  "transposto": true,
+  "forma": [
+   32,
+   1024
+  ]
+ },
+ {
+  "nome": "onnx::Concat_821",
+  "chave": "flow_lm.bos_before_voice",
+  "transposto": false,
+  "forma": [
+   1,
+   1,
+   1024
+  ]
+ }
+]

@@ -60,6 +60,7 @@ https://github.com/user-attachments/assets/f04b1f61-9b0e-4409-a057-1c1c3fb67679
 - Interface e conteúdo em **português, inglês e espanhol**.
 - Tema Claro, Escuro ou do sistema; velocidade da fala, pausas, bitrate e pasta de saída configuráveis.
 - Visualizador de registros para diagnóstico.
+- Clonagem de voz (Pocket TTS): grave ou importe um trecho curto da sua própria voz. Um guia passo a passo ajuda a baixar o arquivo oficial gratuito da Kyutai com a sua conta do Hugging Face, e o app o prepara no próprio aparelho.
 
 ## Vozes
 
@@ -86,7 +87,7 @@ As vozes online vêm do Microsoft Edge TTS. As vozes do Gemini, do ElevenLabs e 
 | Supertonic | Multilíngue (EN, PT, ES, FR, KO e outros) | Vozes neurais; motor offline padrão |
 | Kokoro (Sherpa-ONNX) | Inglês (EUA e Reino Unido), português (Santa) | Várias vozes em inglês |
 | MMS-TTS (Meta) | Português | Licença não comercial (CC BY-NC 4.0) |
-| Pocket TTS 3.3 | Português do Brasil, inglês, espanhol | Presets públicos fixos. Clonagem de voz opcional, depois de aceitar os termos da Kyutai com a sua conta do Hugging Face |
+| Pocket TTS 3.3 | Português do Brasil, inglês, espanhol | Presets públicos fixos. Clonagem de voz opcional: o app guia, passo a passo, o download do arquivo oficial da Kyutai com a sua conta do Hugging Face (sem login dentro do app) |
 | Piper | Português (Cadu, Edresson, Faber, Jeff, Dii, Miro), inglês (Norman, LJSpeech), espanhol (Claude) | A licença varia por voz; Dii e Miro são CC BY-NC-SA |
 
 Cada pacote offline mantém a sua própria licença. Confira o [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) antes de redistribuir um modelo.
@@ -94,6 +95,7 @@ Cada pacote offline mantém a sua própria licença. Confira o [THIRD_PARTY_LICE
 ## Segurança e privacidade
 
 - Sem conta e sem análises de uso. Livros, progresso e estatísticas ficam no aparelho.
+- A clonagem de voz não pede login no app: você entra na sua conta só pelo navegador, e a amostra da sua voz fica no aparelho.
 - As chaves de API (Gemini, ElevenLabs, OpenRouter) ficam no armazenamento criptografado do aparelho e nunca são enviadas a este projeto.
 - Chaves reais de API não são versionadas no repositório.
 - O repositório tem um workflow de higiene no GitHub Actions que bloqueia padrões comuns de segredos vazados.

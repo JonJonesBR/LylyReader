@@ -44,7 +44,7 @@ class PocketSynthService : Service() {
                         voice = PocketCustomVoices.file(this@PocketSynthService, voiceId)
                             ?: return "a voz clonada não foi encontrada no aparelho"
                         if (!PocketEncoderManager.installInto(this@PocketSynthService, spec.languageTag, pack)) {
-                            return "baixe o codificador de voz da clonagem (Ajustes → Vozes clonadas)"
+                            return "prepare a clonagem deste idioma (Ajustes → Vozes clonadas)"
                         }
                     } else {
                         voice = File(File(pack, "voices"), spec.voiceFile)

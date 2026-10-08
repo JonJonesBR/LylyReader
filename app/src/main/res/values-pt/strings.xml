@@ -770,13 +770,8 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Novo: uma tela de Conversões para acompanhar o que está sendo gerado, com fila que segue sozinha mesmo se você fechar o app.
-• Melhoria: o audiobook agora mantém a voz, o ritmo e o tom que você escolheu para aquele livro.
-• Novo: no primeiro acesso, escolha suas vozes (todas, ou só português, inglês ou espanhol) e continue baixando em segundo plano, com pausa e retomada.
-• Novo: baixe livros em segundo plano e pegue todos os resultados de uma busca de uma vez.
-• Novo: adicione um livro por link (Google Drive, Dropbox ou link direto).
-• Corrigido: o vídeo para o YouTube não sai mais cortado e agora é criado bem mais rápido.
-• Melhoria: ajuda e textos atualizados nos três idiomas, e Downloads agora fica certo com o celular deitado.</string>
+    <string name="release_notes_corpo">• Clonagem de voz mais simples: um guia passo a passo ajuda você a baixar o arquivo gratuito da Kyutai com a sua própria conta e liberar a clonagem. O app não pede nem guarda login ou senha.
+• O arquivo baixado é preparado no próprio aparelho, e você pode apagá-lo depois.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
@@ -1212,31 +1207,41 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="status_amostra_falha">⚠ Falha ao gerar a amostra.</string>
     <string name="settings_supertonic_passos_titulo">Passos do Supertonic</string>
     <string name="settings_supertonic_passos_desc">Controla a qualidade x velocidade da síntese das vozes Supertonic. Menos passos = mais rápido; mais passos = melhor qualidade. Recomendado: 4.</string>
-    <!-- Acesso à clonagem pela conta do próprio usuário (Fase E3) -->
-    <string name="clone_access_title">Liberar a clonagem de voz</string>
-    <string name="clone_access_intro">A clonagem usa o modelo Pocket TTS, da Kyutai, sob os termos dela. Faça estes passos uma vez, com a sua própria conta do Hugging Face.</string>
-    <string name="clone_access_step1">1. Abra a página do Pocket TTS e aceite as condições. Elas proíbem clonar uma voz sem consentimento explícito e legal.</string>
-    <string name="clone_access_step2">2. Abra a página dos codificadores de voz e peça acesso, aceitando as condições dela.</string>
-    <string name="clone_access_step3">3. Crie um token de acesso somente leitura nas configurações da sua conta do Hugging Face e copie.</string>
-    <string name="clone_access_step4">4. Cole o token abaixo e toque em Verificar. O token fica criptografado neste aparelho e só é enviado ao huggingface.co.</string>
-    <string name="clone_access_btn_kyutai">Abrir página do Pocket TTS</string>
-    <string name="clone_access_btn_encoders">Abrir página dos codificadores</string>
-    <string name="clone_access_btn_token">Abrir configurações de token</string>
-    <string name="clone_access_token_hint">Cole o token</string>
-    <string name="clone_access_verify">Verificar</string>
-    <string name="clone_access_verifying">Verificando o acesso…</string>
-    <string name="clone_access_ok">Acesso liberado para %1$s. A clonagem está disponível.</string>
-    <string name="clone_access_err_token">Este token não foi aceito. Crie um token somente leitura e tente de novo.</string>
-    <string name="clone_access_err_kyutai">Falta o acesso ao Pocket TTS. Abra a página, aceite as condições e verifique de novo.</string>
-    <string name="clone_access_err_encoders">Falta o acesso à página dos codificadores. Peça o acesso por lá e verifique de novo.</string>
-    <string name="clone_access_err_network">Não foi possível falar com o Hugging Face. Confira a conexão e tente de novo.</string>
-    <string name="clone_access_err_config">A página dos codificadores não está disponível agora. Tente mais tarde.</string>
-    <string name="clone_access_err_save">Não foi possível guardar o token neste aparelho.</string>
-    <string name="clone_access_disconnect">Desconectar</string>
-    <string name="clone_access_disconnected">Acesso removido deste aparelho.</string>
-    <string name="clone_access_manage">Acesso</string>
-    <string name="clone_access_status_none">Ainda não configurado.</string>
-    <string name="clone_access_status_ok">Conectado como %1$s.</string>
-    <string name="clone_access_no_browser">Nenhum navegador disponível para abrir esta página.</string>
-    <string name="clone_access_required">Configure primeiro o acesso à clonagem, em Vozes clonadas.</string>
+    <!-- Assistente que libera a clonagem com o arquivo oficial da Kyutai (sem login no app) -->
+    <string name="clone_prep_title_intro">Liberar a clonagem de voz</string>
+    <string name="clone_prep_intro">Para clonar uma voz, o app precisa de um arquivo gratuito da Kyutai, a empresa que criou o Pocket TTS. Você vai fazer 4 passos simples, uma única vez:\n\n1. Entrar no site Hugging Face com uma conta gratuita\n2. Aceitar os termos de uso da Kyutai\n3. Baixar o arquivo (cerca de 220 MB, de preferência no Wi-Fi)\n4. Trazer o arquivo para o app\n\nVocê entra na conta só pelo navegador. O app nunca vê nem guarda a sua senha.</string>
+    <string name="clone_prep_start">Começar</string>
+    <string name="clone_prep_later">Agora não</string>
+    <string name="clone_prep_back">Voltar</string>
+    <string name="clone_prep_step1_title">Passo 1 de 4: conta gratuita</string>
+    <string name="clone_prep_step1">Você precisa de uma conta gratuita no site Hugging Face. Se já tem, toque em Já tenho conta. Se não tem, toque em Criar conta grátis: o site abre no seu navegador. Depois de criar a conta e confirmar o e-mail, volte para cá.</string>
+    <string name="clone_prep_create_account">Criar conta grátis</string>
+    <string name="clone_prep_have_account">Já tenho conta</string>
+    <string name="clone_prep_step2_title">Passo 2 de 4: aceitar os termos</string>
+    <string name="clone_prep_step2">Toque em Abrir página. No navegador, entre na sua conta, leia os termos e toque no botão que concorda e libera o acesso. Os termos proíbem clonar a voz de outra pessoa sem a permissão clara dela. Depois volte para cá.</string>
+    <string name="clone_prep_open_terms">Abrir página</string>
+    <string name="clone_prep_accepted">Já aceitei</string>
+    <string name="clone_prep_step3_title">Passo 3 de 4: baixar o arquivo</string>
+    <string name="clone_prep_step3">Escolha o idioma da voz que você vai clonar e toque em Baixar. O navegador vai salvar um arquivo chamado model.safetensors (cerca de 220 MB). Espere o download terminar e volte para cá. Se o site pedir para aceitar os termos, volte ao passo 2.</string>
+    <string name="clone_prep_download">Baixar</string>
+    <string name="clone_prep_downloaded">Já baixei</string>
+    <string name="clone_prep_step4_title">Passo 4 de 4: trazer o arquivo</string>
+    <string name="clone_prep_step4">Toque em Escolher arquivo e, na pasta Downloads, selecione o arquivo model.safetensors que você acabou de baixar.</string>
+    <string name="clone_prep_pick">Escolher arquivo</string>
+    <string name="clone_prep_working_title">Preparando a clonagem</string>
+    <string name="clone_prep_working">Conferindo e preparando o arquivo. Isso leva cerca de um minuto…</string>
+    <string name="clone_prep_done_title">Tudo pronto</string>
+    <string name="clone_prep_done">A clonagem de voz em %1$s está liberada. O arquivo grande que você baixou não é mais necessário.</string>
+    <string name="clone_prep_delete_big">Apagar o arquivo baixado</string>
+    <string name="clone_prep_keep">Manter</string>
+    <string name="clone_prep_deleted">Arquivo apagado.</string>
+    <string name="clone_prep_delete_failed">Não consegui apagar. Você pode apagar o model.safetensors na pasta Downloads.</string>
+    <string name="clone_prep_wrong_title">Algo não deu certo</string>
+    <string name="clone_prep_wrong">Este não é o arquivo esperado, ou o download não terminou. Baixe de novo pelo botão do passo 3 (ele leva à versão certa) e tente outra vez.</string>
+    <string name="clone_prep_failed">Não foi possível preparar o arquivo: %1$s</string>
+    <string name="clone_prep_try_again">Tentar de novo</string>
+    <string name="clone_prep_other_language">Este arquivo era do idioma %1$s, que agora também está liberado. A sua voz é em %2$s: repita o passo 3 escolhendo %2$s.</string>
+    <string name="clone_prep_needed">Libere a clonagem deste idioma em Ajustes → Vozes clonadas.</string>
+    <string name="clone_prep_manage">Liberar idioma</string>
+    <string name="clone_prep_no_browser">Nenhum navegador disponível para abrir esta página.</string>
 </resources>

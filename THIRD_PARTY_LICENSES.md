@@ -36,14 +36,15 @@ cada pacote offline deve manter sua atribuição CC BY 4.0 junto dos metadados.
 
 ## Clonagem de voz (codificador Mimi)
 
-A clonagem usa um codificador de voz (Mimi encoder, ONNX, um por idioma: en, es, pt) exportado dos pesos
-com clonagem do Pocket TTS 3.3 (https://huggingface.co/kyutai/pocket-tts), licenciado sob CC BY 4.0 e com
-condições de uso que proíbem a clonagem de voz sem consentimento explícito e legal. Esse codificador não vem
-nos pacotes sem clonagem. Ele é publicado num repositório de acesso restrito
-(https://huggingface.co/JonJonesBR/lylyreader-pocket-encoders) e só é baixado quando a própria pessoa aceita
-as condições da Kyutai e as do repositório com a sua conta do Hugging Face e informa um token de leitura, que o
-app confere antes de liberar a clonagem. Atribuição: Kyutai Labs, Pocket TTS 3.3, CC BY 4.0 (ver
-ENCODER_LICENSE.txt no repositório).
+A clonagem usa o codificador de voz (Mimi encoder) do Pocket TTS 3.3. O LylyReader **não distribui
+os pesos** desse codificador: o app traz só a estrutura do modelo, sem pesos
+(`app/src/main/assets/pocket/mimi_encoder_planta.onnx`, exportada do código do Pocket TTS,
+https://github.com/kyutai-labs/pocket-tts), e o mapa de onde cada peso fica no arquivo oficial
+(`mimi_encoder_mapa.json`). Os pesos vêm do arquivo oficial que a própria pessoa baixa de
+https://huggingface.co/kyutai/pocket-tts com a conta dela, depois de aceitar as condições da Kyutai
+(CC BY 4.0, com proibição de clonar voz sem consentimento explícito e legal). O app confere o hash do
+arquivo, monta o codificador no aparelho e não usa login, senha nem token. Atribuição: Kyutai Labs,
+Pocket TTS 3.3, CC BY 4.0.
 
 ## Supertonic (Supertone Inc.)
 

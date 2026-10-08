@@ -779,13 +779,8 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• New: a Conversions screen to follow what is being generated, with a queue that keeps going on its own even if you close the app.
-• Improvement: the audiobook now keeps the voice, speed and tone you chose for that book.
-• New: on first launch, pick your voices (all, or just Portuguese, English or Spanish) and keep downloading in the background, with pause and resume.
-• New: download books in the background and grab all search results at once.
-• New: add a book from a link (Google Drive, Dropbox or a direct link).
-• Fixed: the video for YouTube no longer gets cut short, and it is now much faster to create.
-• Improvement: updated help and texts in the three languages, and Downloads now looks right with the phone on its side.</string>
+    <string name="release_notes_corpo">• Easier voice cloning: a step-by-step guide helps you download Kyutai's free file with your own account and unlock cloning. The app never asks for or stores a login or password.
+• The downloaded file is prepared on your phone, and you can delete it afterwards.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1221,31 +1216,41 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="status_amostra_falha">⚠ Failed to generate the sample.</string>
     <string name="settings_supertonic_passos_titulo">Supertonic steps</string>
     <string name="settings_supertonic_passos_desc">Balances quality and speed of Supertonic voice synthesis. Fewer steps = faster; more steps = better quality. Recommended: 4.</string>
-    <!-- Acesso à clonagem pela conta do próprio usuário (Fase E3) -->
-    <string name="clone_access_title">Unlock voice cloning</string>
-    <string name="clone_access_intro">Cloning uses the Pocket TTS model by Kyutai, under its terms. Do these steps once, with your own Hugging Face account.</string>
-    <string name="clone_access_step1">1. Open the Pocket TTS page and accept its conditions. They forbid cloning a voice without explicit and lawful consent.</string>
-    <string name="clone_access_step2">2. Open the voice encoder page and request access, accepting its conditions.</string>
-    <string name="clone_access_step3">3. Create a read-only access token in your Hugging Face account settings and copy it.</string>
-    <string name="clone_access_step4">4. Paste the token below and tap Verify. The token is stored encrypted on this device and sent only to huggingface.co.</string>
-    <string name="clone_access_btn_kyutai">Open Pocket TTS page</string>
-    <string name="clone_access_btn_encoders">Open encoder page</string>
-    <string name="clone_access_btn_token">Open token settings</string>
-    <string name="clone_access_token_hint">Paste the token</string>
-    <string name="clone_access_verify">Verify</string>
-    <string name="clone_access_verifying">Checking access…</string>
-    <string name="clone_access_ok">Access granted for %1$s. Cloning is unlocked.</string>
-    <string name="clone_access_err_token">This token was not accepted. Create a read-only token and try again.</string>
-    <string name="clone_access_err_kyutai">Access to Pocket TTS is missing. Open its page, accept the conditions and verify again.</string>
-    <string name="clone_access_err_encoders">Access to the encoder page is missing. Request access there and verify again.</string>
-    <string name="clone_access_err_network">Could not reach Hugging Face. Check the connection and try again.</string>
-    <string name="clone_access_err_config">The encoder page is unavailable right now. Try again later.</string>
-    <string name="clone_access_err_save">Could not save the token on this device.</string>
-    <string name="clone_access_disconnect">Disconnect</string>
-    <string name="clone_access_disconnected">Access removed from this device.</string>
-    <string name="clone_access_manage">Access</string>
-    <string name="clone_access_status_none">Not set up yet.</string>
-    <string name="clone_access_status_ok">Connected as %1$s.</string>
-    <string name="clone_access_no_browser">No browser is available to open this page.</string>
-    <string name="clone_access_required">Set up the cloning access first, in Cloned voices.</string>
+    <!-- Assistente que libera a clonagem com o arquivo oficial da Kyutai (sem login no app) -->
+    <string name="clone_prep_title_intro">Unlock voice cloning</string>
+    <string name="clone_prep_intro">To clone a voice, the app needs a free file from Kyutai, the company that created Pocket TTS. You will do 4 simple steps, only once:\n\n1. Sign in to the Hugging Face website with a free account\n2. Accept Kyutai\'s terms of use\n3. Download the file (about 220 MB, Wi-Fi is best)\n4. Bring the file into the app\n\nYou sign in only in your browser. The app never sees or stores your password.</string>
+    <string name="clone_prep_start">Start</string>
+    <string name="clone_prep_later">Not now</string>
+    <string name="clone_prep_back">Back</string>
+    <string name="clone_prep_step1_title">Step 1 of 4: free account</string>
+    <string name="clone_prep_step1">You need a free account on the Hugging Face website. If you already have one, tap I have an account. If not, tap Create free account: the website opens in your browser. After creating it and confirming your email, come back here.</string>
+    <string name="clone_prep_create_account">Create free account</string>
+    <string name="clone_prep_have_account">I have an account</string>
+    <string name="clone_prep_step2_title">Step 2 of 4: accept the terms</string>
+    <string name="clone_prep_step2">Tap Open page. In your browser, sign in, read the terms and tap the button that agrees and gives you access. The terms forbid cloning another person\'s voice without their clear permission. Then come back here.</string>
+    <string name="clone_prep_open_terms">Open page</string>
+    <string name="clone_prep_accepted">I accepted</string>
+    <string name="clone_prep_step3_title">Step 3 of 4: download the file</string>
+    <string name="clone_prep_step3">Choose the language of the voice you will clone and tap Download. Your browser will save a file called model.safetensors (about 220 MB). Wait for the download to finish and come back here. If the website asks you to accept the terms, go back to step 2.</string>
+    <string name="clone_prep_download">Download</string>
+    <string name="clone_prep_downloaded">I downloaded it</string>
+    <string name="clone_prep_step4_title">Step 4 of 4: bring the file</string>
+    <string name="clone_prep_step4">Tap Choose file and, in the Downloads folder, pick the model.safetensors file you just downloaded.</string>
+    <string name="clone_prep_pick">Choose file</string>
+    <string name="clone_prep_working_title">Preparing voice cloning</string>
+    <string name="clone_prep_working">Checking and preparing the file. This takes about a minute…</string>
+    <string name="clone_prep_done_title">All set</string>
+    <string name="clone_prep_done">Voice cloning in %1$s is unlocked. The large file you downloaded is no longer needed.</string>
+    <string name="clone_prep_delete_big">Delete the downloaded file</string>
+    <string name="clone_prep_keep">Keep it</string>
+    <string name="clone_prep_deleted">File deleted.</string>
+    <string name="clone_prep_delete_failed">Could not delete it. You can delete model.safetensors from the Downloads folder.</string>
+    <string name="clone_prep_wrong_title">Something is not right</string>
+    <string name="clone_prep_wrong">This is not the expected file, or the download did not finish. Download it again with the button in step 3 (it goes to the right version) and try once more.</string>
+    <string name="clone_prep_failed">Could not prepare the file: %1$s</string>
+    <string name="clone_prep_try_again">Try again</string>
+    <string name="clone_prep_other_language">This file was for %1$s, and that language is now unlocked. Your voice is in %2$s: repeat step 3 choosing %2$s.</string>
+    <string name="clone_prep_needed">Unlock cloning for this language in Settings → Cloned voices.</string>
+    <string name="clone_prep_manage">Unlock language</string>
+    <string name="clone_prep_no_browser">No browser is available to open this page.</string>
 </resources>

@@ -5,7 +5,6 @@ import android.util.Log
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.domain.EstadoDownload
 import com.jonjonesbr.audiobookgen.domain.proximosDaFila
-import com.jonjonesbr.audiobookgen.tts.PocketEncoderManager
 import com.jonjonesbr.audiobookgen.util.ProgressoDownload
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import kotlinx.coroutines.CancellationException
@@ -69,8 +68,6 @@ object DownloadCentral {
     private val _andamento = MutableStateFlow<Map<String, AndamentoDownload>>(emptyMap())
     val andamento: StateFlow<Map<String, AndamentoDownload>> = _andamento
 
-    private val encoders = listOf("pt-BR" to "pt", "en-US" to "en", "es-ES" to "es")
-
     /** Livros em download (itens que só existem enquanto baixam; somem da lista pouco depois de entrar na biblioteca). */
     private val livrosEmDownload = LinkedHashMap<String, ItemBaixavel>()
     private const val PAUSA_ANTES_DE_SUMIR_MS = 4_000L
@@ -130,21 +127,10 @@ object DownloadCentral {
                 idiomas = com.jonjonesbr.audiobookgen.domain.IdiomaDownload.codigos(p.vozes.map { it.language })
             )
         }
-        val codificadores = encoders.map { (tag, codigo) ->
-            ItemBaixavel(
-                id = "pocket-encoder-$codigo",
-                nome = "Pocket · codificador de voz ($tag)",
-                grupo = GrupoDownload.CODIFICADORES,
-                tamanhoMb = PocketEncoderManager.DOWNLOAD_MB,
-                isPronto = { ctx -> PocketEncoderManager.isInstalled(ctx, tag) },
-                ocupadoBytes = { ctx -> PocketEncoderManager.installedFile(ctx, tag).let { if (it.isFile) it.length() else 0L } },
-                download = { ctx, progresso -> PocketEncoderManager.download(ctx, tag, progresso) },
-                apagar = { ctx -> PocketEncoderManager.delete(ctx, tag) },
-                idiomas = com.jonjonesbr.audiobookgen.domain.IdiomaDownload.codigos(listOf(tag))
-            )
-        }
+        // Os codificadores da clonagem não são baixados pelo app: o assistente de clonagem os prepara a
+        // partir do arquivo oficial que o usuário baixa da Kyutai com a própria conta.
         val livros = synchronized(lock) { livrosEmDownload.values.toList() }
-        return livros + pacotes + codificadores
+        return livros + pacotes
     }
 
     private fun item(id: String): ItemBaixavel? = itens().firstOrNull { it.id == id }

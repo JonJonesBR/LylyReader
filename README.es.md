@@ -60,6 +60,7 @@ https://github.com/user-attachments/assets/85d1265c-99d0-4d1c-a38f-a593696509f6
 - Interfaz y contenido en **portugués, inglés y español**.
 - Tema Claro, Oscuro o del sistema; velocidad de la voz, pausas, bitrate y carpeta de salida configurables.
 - Visor de registros para diagnóstico.
+- Clonación de voz (Pocket TTS): graba o importa un fragmento corto de tu propia voz. Una guía paso a paso te ayuda a descargar el archivo oficial gratuito de Kyutai con tu cuenta de Hugging Face, y la app lo prepara en el propio teléfono.
 
 ## Voces
 
@@ -86,7 +87,7 @@ Las voces en línea vienen de Microsoft Edge TTS. Las voces de Gemini, ElevenLab
 | Supertonic | Multilingüe (EN, PT, ES, FR, KO y más) | Voces neuronales; motor sin conexión predeterminado |
 | Kokoro (Sherpa-ONNX) | Inglés (EE. UU. y Reino Unido), portugués (Santa) | Varias voces en inglés |
 | MMS-TTS (Meta) | Portugués | Licencia no comercial (CC BY-NC 4.0) |
-| Pocket TTS 3.3 | Portugués de Brasil, inglés, español | Presets públicos fijos. Clonación de voz opcional, tras aceptar los términos de Kyutai con tu cuenta de Hugging Face |
+| Pocket TTS 3.3 | Portugués de Brasil, inglés, español | Presets públicos fijos. Clonación de voz opcional: la app te guía, paso a paso, para descargar el archivo oficial de Kyutai con tu cuenta de Hugging Face (sin iniciar sesión en la app) |
 | Piper | Portugués (Cadu, Edresson, Faber, Jeff, Dii, Miro), inglés (Norman, LJSpeech), español (Claude) | La licencia varía según la voz; Dii y Miro son CC BY-NC-SA |
 
 Cada paquete sin conexión mantiene su propia licencia. Consulta [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) antes de redistribuir un modelo.
@@ -94,6 +95,7 @@ Cada paquete sin conexión mantiene su propia licencia. Consulta [THIRD_PARTY_LI
 ## Seguridad y privacidad
 
 - Sin cuenta y sin analítica. Libros, progreso y estadísticas se quedan en el dispositivo.
+- La clonación de voz no pide iniciar sesión en la app: entras en tu cuenta solo en el navegador, y la muestra de tu voz se queda en el dispositivo.
 - Las claves de API (Gemini, ElevenLabs, OpenRouter) se guardan en el almacenamiento cifrado del dispositivo y nunca se envían a este proyecto.
 - Las claves reales de API no se versionan en el repositorio.
 - El repositorio tiene un flujo de higiene en GitHub Actions que bloquea patrones comunes de secretos filtrados.

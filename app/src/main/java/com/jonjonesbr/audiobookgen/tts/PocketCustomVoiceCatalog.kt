@@ -25,12 +25,11 @@ object PocketCustomVoiceCatalog {
     private fun pacote(context: Context, voz: PocketCustomVoices.Voice): PacoteVozes {
         val spec = PocketTtsModelManager.specForVoice(voz.id)
         val faltaPacote = spec == null || !PocketTtsModelManager.isReady(context, spec.id)
-        val faltaCodificador = !PocketEncoderManager.isInstalled(context, voz.languageTag)
         return PacoteVozes(
             id = voz.id,
             engine = "pocket",
             nomeExibicao = voz.name,
-            tamanhoDownloadMb = (if (faltaPacote) PACK_MB else 0) + (if (faltaCodificador) PocketEncoderManager.DOWNLOAD_MB else 0),
+            tamanhoDownloadMb = if (faltaPacote) PACK_MB else 0,
             vozes = listOf(
                 VoiceOption(
                     voz.id, voz.name, voz.languageTag, false, "pocket",
@@ -47,7 +46,11 @@ object PocketCustomVoiceCatalog {
                 if (spec != null && !PocketTtsModelManager.isReady(ctx, spec.id)) {
                     PocketTtsModelManager.download(ctx, spec.id, progresso)
                 }
-                PocketEncoderManager.download(ctx, voz.languageTag, progresso)
+                // O codificador não é baixado: ele é preparado pelo assistente de clonagem a partir do
+                // arquivo oficial que o próprio usuário baixa da Kyutai.
+                if (!PocketEncoderManager.isInstalled(ctx, voz.languageTag)) {
+                    throw java.io.IOException(ctx.getString(com.jonjonesbr.audiobookgen.R.string.clone_prep_needed))
+                }
             },
             delete = { ctx ->
                 PocketCustomVoices.remove(ctx, voz.id)

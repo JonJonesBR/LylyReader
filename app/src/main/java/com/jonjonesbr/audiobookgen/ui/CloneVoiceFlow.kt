@@ -21,9 +21,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.jonjonesbr.audiobookgen.R
-import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
-import com.jonjonesbr.audiobookgen.domain.ClonagemAcessoRegras
 import com.jonjonesbr.audiobookgen.tts.PocketCustomVoiceCatalog
 import com.jonjonesbr.audiobookgen.tts.PocketCustomVoices
 import com.jonjonesbr.audiobookgen.tts.PocketEncoderManager
@@ -57,15 +55,30 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
     private fun dp(v: Int) = (v * activity.resources.displayMetrics.density).toInt()
     private fun rascunho() = File(activity.cacheDir, "clone_referencia.wav")
 
-    /** Clonagem nova só com token salvo e acesso verificado pela conta do próprio usuário. */
-    private fun acessoLiberado(): Boolean =
-        ClonagemAcessoRegras.podeClonar(SecurePreferences.getHfTokenClonagem(activity).isNotBlank(), AppPrefs(activity).clonagemAcessoVerificado)
+    // Arquivo oficial da Kyutai baixado pelo navegador: o seletor já abre na pasta Downloads.
+    private val escolherArquivoKyutai: androidx.activity.result.ActivityResultLauncher<Array<String>> =
+        activity.registerForActivityResult(AbrirNosDownloads()) { uri -> assistente.aoEscolherArquivo(uri) }
+
+    private val assistente: ClonagemAssistente =
+        ClonagemAssistente(activity) { escolherArquivoKyutai.launch(arrayOf("*/*")) }
+
+    private class AbrirNosDownloads : ActivityResultContracts.OpenDocument() {
+        override fun createIntent(context: android.content.Context, input: Array<String>): android.content.Intent =
+            super.createIntent(context, input).apply {
+                putExtra(
+                    android.provider.DocumentsContract.EXTRA_INITIAL_URI,
+                    android.provider.DocumentsContract.buildRootUri("com.android.providers.downloads.documents", "downloads")
+                )
+            }
+    }
 
     // ── Passo 1: consentimento ───────────────────────────────────────────────
 
     fun iniciar() {
-        if (!acessoLiberado()) {
-            ClonagemAcessoDialog(activity).mostrar { iniciar() }
+        // Versões de teste guardavam um token do Hugging Face; a clonagem não usa mais login nenhum.
+        SecurePreferences.apagarTokenHfLegado(activity)
+        if (!PocketEncoderManager.algumInstalado(activity)) {
+            assistente.mostrar { iniciar() }
             return
         }
         val aceite = CheckBox(activity).apply { setText(R.string.clone_consent_check) }
@@ -223,7 +236,12 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             }
             PocketCustomVoiceCatalog.registrarTodas(activity)
             aoMudar()
-            baixarSeNecessario(voz.id)
+            if (PocketEncoderManager.isInstalled(activity, idioma)) {
+                baixarSeNecessario(voz.id)
+            } else {
+                // A voz já está salva; falta liberar a clonagem neste idioma.
+                assistente.mostrar(idioma) { baixarSeNecessario(voz.id) }
+            }
         }
     }
 
@@ -269,7 +287,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
         val construtor = AlertDialog.Builder(activity)
             .setTitle(R.string.clone_manage_title)
             .setPositiveButton(R.string.clone_new) { _, _ -> iniciar() }
-            .setNeutralButton(R.string.clone_access_manage) { _, _ -> ClonagemAcessoDialog(activity).mostrar() }
+            .setNeutralButton(R.string.clone_prep_manage) { _, _ -> assistente.mostrar() }
             .setNegativeButton(R.string.pron_close, null)
         if (vozes.isEmpty()) {
             construtor.setMessage(R.string.clone_manage_empty)
