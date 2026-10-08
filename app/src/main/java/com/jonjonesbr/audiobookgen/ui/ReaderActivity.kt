@@ -565,6 +565,12 @@ class ReaderActivity : BasePlayerActivity() {
             },
         )
         aplicarOrientacaoRolagem(viewModel.uiState.value.rolagemHorizontal)
+        // O destaque de progresso da leitura guiada repinta o parágrafo atual ~20x/s
+        // (notifyItemChanged); o ItemAnimator padrão faz uma animação de troca (cross-fade)
+        // a cada repintura, o que pisca o parágrafo em sincronia e disputa o layout com o
+        // smoothScrollToPosition automático. Mesmo padrão de DownloadCentralActivity/
+        // BuscarLivrosActivity para listas que atualizam a alta frequência.
+        recyclerView.itemAnimator = null
         recyclerView.adapter = adapter
         viewModel.registrarAdapter(adapter)
     }
