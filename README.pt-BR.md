@@ -1,159 +1,177 @@
-# LylyReader Android
+# LylyReader
 
-Aplicativo Android que converte livros digitais e documentos em arquivos de audiobook diretamente no dispositivo. O projeto combina uma interface nativa em Kotlin com um motor de processamento em Python embarcado para leitura de documentos, limpeza de texto, orquestracao de text-to-speech, cache de audio e metadados de MP3.
+**Transforme qualquer livro em audiolivro, direto no seu celular Android.** O LylyReader importa arquivos EPUB, PDF, TXT, DOCX, MOBI e Markdown, lê em voz alta com vozes neurais (inclusive vozes totalmente offline) e guarda seus audiolivros e seu progresso de leitura numa só biblioteca.
 
-Leia este README em [ingles](README.md) ou [espanhol](README.es.md).
+Leia este README em [English](README.md) ou [Español](README.es.md).
 
 <div align="center">
 
-[![Download APK](https://img.shields.io/badge/Download-APK%20v1.8.0-4F46E5?style=for-the-badge)](https://github.com/JonJonesBR/LylyReader-Android/releases/latest)
-[![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JonJonesBR/LylyReader-Android/releases)
+[![Baixar APK](https://img.shields.io/github/v/release/JonJonesBR/LylyReader?label=Baixar%20APK&style=for-the-badge&color=4F46E5)](https://github.com/JonJonesBR/LylyReader/releases/latest)
+[![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JonJonesBR/LylyReader/releases)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Android-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](app/src/main/java/com/jonjonesbr/audiobookgen)
-[![Licenca](https://img.shields.io/badge/Licenca-MIT-blue?style=for-the-badge)](LICENSE)
+[![Licença](https://img.shields.io/badge/Licen%C3%A7a-MIT-blue?style=for-the-badge)](LICENSE)
 
 </div>
 
-## Por Que Este Projeto Importa
+## Vídeos
 
-O LylyReader foi criado como uma ferramenta Android pratica para pessoas que querem ouvir textos longos sem depender de um fluxo de trabalho no desktop. Ele aceita formatos comuns de livros e documentos, extrai texto legivel, permite escolher um motor de voz e exporta um arquivo de audiobook com suporte a reproducao e biblioteca local.
+Vídeos promocionais curtos, um em cada idioma:
 
-A implementacao e intencionalmente hibrida:
+| Idioma | Vídeo |
+|---|---|
+| 🇧🇷 Português | [LylyReader_promo_v2_pt.mp4](media/LylyReader_promo_v2_pt.mp4) |
+| 🇺🇸 English | [LylyReader_promo_v2_en.mp4](media/LylyReader_promo_v2_en.mp4) |
+| 🇪🇸 Español | [LylyReader_promo_v2_es.mp4](media/LylyReader_promo_v2_es.mp4) |
 
-- Kotlin cuida de UI Android, ciclo de vida, intents de arquivo, reproducao, notificacoes, estado de fila e configuracoes do app.
-- Python roda dentro do APK por meio do Chaquopy e cuida de parsing, normalizacao de texto, coordenacao do pipeline TTS, cache de audio e metadados.
-- O app oferece suporte a varios motores de TTS: Microsoft Edge TTS, Google Gemini TTS, ElevenLabs e OpenRouter TTS online, Supertonic (vozes neurais offline) e o TTS nativo do Android (offline) — as chaves de API sao armazenadas localmente pelo usuario.
+## Destaques
+
+- **Audiolivro de qualquer livro:** importe um arquivo ou busque livros gratuitos de domínio público (Projeto Gutenberg, Wikisource, Internet Archive) sem sair do app.
+- **Vozes neurais, online e offline:** Edge, Gemini, ElevenLabs e OpenRouter online; Supertonic, Kokoro, Piper, MMS e Pocket offline, no próprio aparelho.
+- **Leitura guiada:** o texto acompanha a narração frase a frase, continua tocando em segundo plano e retoma de onde você parou.
+- **Fila de conversões:** converta vários livros seguidos; a fila continua mesmo com o app fechado.
+- **Voz por livro:** cada livro guarda a sua voz, velocidade e tom, e você pode dar vozes diferentes aos personagens.
+- **Grátis e privado:** sem conta, sem anúncios e sem rastreamento. Seus livros e chaves de API ficam no seu aparelho.
 
 ## Funcionalidades
 
-- Importacao de arquivos EPUB, PDF, TXT, DOC, DOCX, MOBI e Markdown pelo compartilhamento do Android ou seletor de arquivos.
-- Conversao de texto em audiobooks usando motores online (Microsoft Edge TTS, Google Gemini TTS, ElevenLabs, OpenRouter) ou vozes totalmente offline (Supertonic neural, ou o TTS nativo do Android).
-- Motor de voz ElevenLabs via API oficial com chave propria (armazenada com seguranca no dispositivo).
-- Vozes offline no dispositivo via ONNX Runtime: **Supertonic** (multilingue).
-- Modo de leitura guiada: o texto rola suavemente acompanhando a narracao e voce pode mudar a velocidade da voz ao vivo.
-- Leitura guiada em segundo plano: a narracao continua ao sair do leitor, com indicador dentro do app e uma notificacao que leva de volta ao paragrafo exato.
-- Buffer inteligente de TTS: os proximos paragrafos sao sintetizados antes da reproducao (janela mais profunda para motores online) e um cache de sintese por conteudo e compartilhado entre a leitura guiada e a conversao final, reaproveitando o audio em vez de gerar de novo.
-- Atalhos "Continuar lendo" na tela inicial e na biblioteca retomam uma leitura guiada na hora, do ponto onde voce parou.
-- Normalizacao inteligente de texto na leitura guiada: expande abreviacoes, simbolos (&,@,+,=,#), datas, porcentagens, moeda, unidades e siglas para pronunciacao natural em PT-BR.
-- Compartilhe um trecho do texto do leitor pelo menu de compartilhar do Android.
-- Temas de leitura Sepia e Preto OLED, alem de Claro/Escuro, com fonte serifada opcional e controle de margem horizontal do texto.
-- Progresso rico no leitor: percentual do livro e tempo estimado restante no capitulo atual.
-- Sumario navegavel de capitulos (indice), acessivel a qualquer momento durante a leitura.
-- Marque qualquer paragrafo durante a leitura com um toque; uma lista dedicada permite voltar a qualquer ponto salvo.
-- Destaques de texto com nota opcional, salvos por livro.
-- Definicao de palavra pela selecao de texto, abrindo um dicionario instalado no aparelho ou busca na web.
-- Auto-rewind ao retomar um audiobook pausado, com opcoes de recuo curto ou longo configuraveis.
-- Fade-out suave de volume nos ultimos segundos do sleep timer, em vez de corte seco.
-- Voz e velocidade da leitura guiada salvas por livro, retomadas automaticamente ao reabrir cada titulo.
-- Tela de estatisticas de leitura e escuta (minutos ouvidos/lidos, livros concluidos, sequencia de dias), 100% local e privada.
-- Tela de estatisticas da biblioteca exibindo total de livros, duracao total e progresso agregado de leitura.
-- Ordenacao da biblioteca por progresso (nao concluidos primeiro).
-- Backup e restauracao completos (marcadores, destaques, progresso de leitura/escuta, estatisticas e configuracoes) como um unico arquivo ZIP, com mesclagem conservadora na importacao que nunca perde dados locais; uma exportacao/importacao mais leve, so de configuracoes, em JSON, tambem esta disponivel.
-- Visualizador de logs interno para troubleshooting, acessivel pelas configuracoes.
-- Exclusao de vozes offline instaladas diretamente pela tela de gerenciamento de vozes.
-- Sliders com entrada numerica manual; controle rapido de brilho na folha de aparencia do leitor; tooltips e acesso ao tutorial.
-- 10 vozes Supertonic PT-BR (F1–F5 / M1–M5) embutidas no APK, com sintese mais rapida em aparelhos de entrada.
-- Preview de vozes antes de iniciar conversoes longas.
-- Aviso e atalho quando a voz Android selecionada nao tem dados baixados, com link direto para instala-la.
-- Configuracao de velocidade da narracao, pausas entre paragrafos, bitrate, qualidade do Supertonic (passos) e pasta de saida.
-- Seletor de tema Claro / Escuro / Sistema.
-- Timer de soneca com o tempo restante exibido na tela e na notificacao de midia.
-- Retomada de conversoes interrompidas com cache de chunks de audio.
-- Salvamento de audiobooks gerados com capa e metadados de capitulos quando disponiveis.
-- Exportacao dos capitulos do livro como arquivos .txt separados, ou do audiobook como video (MP4).
-- Reproducao de audio no app: retoma de onde parou, com indicador de "% ouvido" na biblioteca, alem de segundo plano e controles por notificacao.
-- Pule para o capitulo anterior ou proximo direto pela notificacao de midia, controles Bluetooth ou um wearable, quando o audiobook tem marcas de capitulo.
-- Navegue e toque sua biblioteca de audiobooks convertidos pelo Android Auto.
-- Alterne entre ler e ouvir o mesmo livro: abra o audiobook correspondente a partir do leitor depois de convertido, ou volte ao texto de origem a partir do player — incluindo o atalho "Ler original" logo apos a conversao.
-- Gerenciamento de biblioteca local de audiobooks (com busca por nome) e fila de conversao.
-- Interface reorganizada em abas (Ajustes, menu de acoes do leitor, menu da tela principal), com titulo e descricao claros em cada opcao.
+### Importação e livros
+- Importe EPUB, PDF, TXT, DOC, DOCX, MOBI e Markdown pelo compartilhamento ou pelo seletor de arquivos.
+- Importe um livro por link direto (por exemplo Google Drive, Dropbox ou link direto de arquivo).
+- Baixe em segundo plano todos os resultados de uma busca.
+- Biblioteca com abas (Todos, Lendo, Com áudio, Baixados), busca, capas, atalhos "Continuar" e ordenação.
+- Backup e restauração de marcadores, destaques, progresso, estatísticas e configurações em um único ZIP, com uma mesclagem que nunca apaga dados locais.
+
+### Leitura
+- Leitura guiada com controle de velocidade ao vivo, normalização do texto para uma pronúncia natural (abreviações, datas, moedas, unidades, siglas) e dicionário de pronúncia.
+- Narração em segundo plano, com indicador e uma notificação que leva de volta ao parágrafo exato.
+- Sumário, marcadores, destaques com notas, consulta de palavras, busca no texto e progresso de leitura por capítulo.
+- Temas: Claro, Escuro, Papel e preto puro, com fonte serifada opcional (Literata) e controle de margem.
+
+### Audiolivros e conversão
+- Converta um livro inteiro, um capítulo ou um trecho selecionado, com capa e marcas de capítulo.
+- A tela **Conversões** mostra o que está sendo gerado, a fila e o resultado.
+- Cada livro mantém sua voz, velocidade e tom; dá para ouvir uma prévia da voz antes de uma conversão longa.
+- Exporte o audiolivro em MP3, os capítulos em .txt ou o audiolivro como vídeo MP4 (dividido em partes para o YouTube).
+- Reprodução com continuação de onde parou, temporizador com fade-out, retrocesso automático, reprodução em segundo plano e controles na notificação.
+- Troca de capítulo pela notificação, controles Bluetooth, relógios e **Android Auto**.
+
+### Vozes e configurações
+- Escolha de vozes no primeiro acesso, com filtro por idioma (português, inglês, espanhol ou todos) e download em segundo plano, com pausa e retomada.
+- Interface e conteúdo em **português, inglês e espanhol**.
+- Tema Claro, Escuro ou do sistema; velocidade da fala, pausas, bitrate e pasta de saída configuráveis.
+- Visualizador de registros para diagnóstico.
+
+## Vozes
+
+**Incluídas no app (offline, sem download):** 10 vozes Supertonic (F1–F5, M1–M5), que funcionam em vários idiomas, inclusive português.
+
+**Online (precisam de internet):**
+
+| Idioma | Vozes |
+|---|---|
+| Português (Brasil) | Thalita, Antonio, Francisca |
+| Português (Portugal) | Raquel |
+| Inglês (EUA, Austrália) | Ava, Andrew, Emma, Brian, William |
+| Francês | Vivienne, Remy |
+| Alemão | Seraphina, Florian |
+| Italiano | Giuseppe |
+| Coreano | Hyunsu |
+
+As vozes online vêm do Microsoft Edge TTS. As vozes do Gemini, do ElevenLabs e do OpenRouter usam a sua própria chave de API.
+
+**Pacotes offline para baixar:**
+
+| Motor | Idioma(s) | Observações |
+|---|---|---|
+| Supertonic | Multilíngue (EN, PT, ES, FR, KO e outros) | Vozes neurais; motor offline padrão |
+| Kokoro (Sherpa-ONNX) | Inglês (EUA e Reino Unido), português (Santa) | Várias vozes em inglês |
+| MMS-TTS (Meta) | Português | Licença não comercial (CC BY-NC 4.0) |
+| Pocket TTS 3.3 | Português do Brasil, inglês, espanhol | Presets públicos fixos, sem clonagem de voz |
+| Piper | Português (Cadu, Edresson, Faber, Jeff, Dii, Miro), inglês (Norman, LJSpeech), espanhol (Claude) | A licença varia por voz; Dii e Miro são CC BY-NC-SA |
+
+Cada pacote offline mantém a sua própria licença. Confira o [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) antes de redistribuir um modelo.
+
+## Segurança e privacidade
+
+- Sem conta e sem análises de uso. Livros, progresso e estatísticas ficam no aparelho.
+- As chaves de API (Gemini, ElevenLabs, OpenRouter) ficam no armazenamento criptografado do aparelho e nunca são enviadas a este projeto.
+- Chaves reais de API não são versionadas no repositório.
+- O repositório tem um workflow de higiene no GitHub Actions que bloqueia padrões comuns de segredos vazados.
+- Áudios gerados, livros importados, arquivos de cache, chaves de release e de assinatura local são ignorados pelo Git.
 
 ## Arquitetura
 
+O app combina uma interface nativa em Kotlin com um motor em Python embutido:
+
+- O Kotlin cuida da interface Android, do ciclo de vida, dos intents de arquivo, da reprodução, das notificações, da fila e das configurações.
+- O Python roda dentro do APK via Chaquopy e cuida da leitura de arquivos, da normalização do texto, da orquestração de TTS, do cache de áudio e dos metadados.
+- As vozes offline rodam em ONNX Runtime (Supertonic, Kokoro, MMS, Pocket) e em Piper.
+
+Pastas principais:
+
 ```text
 app/src/main/java/com/jonjonesbr/audiobookgen/
-  ui/          Activities, adapters e view models (MainActivity, ReaderActivity, SettingsActivity, ...)
-  service/     Servicos de reproducao/conversao (AudioPlayerService, GuidedReadingService, ConversionWorker, SleepTimerManager)
-  tts/         Motor TTS offline (OnnxTtsEngine, OnnxSynthBridge, helpers de Supertonic)
-  domain/      Casos de uso (PythonEngineUseCase, ponte com o Chaquopy, extracao/exportacao)
-  player/      Abstracao do player de audio (MediaPlayer/ExoPlayer)
-  data/        Banco Room, repositorios e preferencias seguras
-  util/        Auxiliares (LanguageDetector, VoiceCatalog, logs de crash, ...)
-
-app/src/main/python/
-  audiobook_android.py         Entrada Python chamada pelo Kotlin
-  config_android.py            Configuracao em tempo de execucao
-  core_processor_android.py    Orquestracao de conversao
-  tts.py                       Roteamento de motor (Edge/Gemini/ponte ONNX)
-  text_processor.py            Extracao e limpeza de texto
-  gemini_tts.py                Logica do cliente Gemini TTS
-  audio_cache.py               Camada de retomada/cache de chunks gerados
+  ui/       telas, diálogos e adaptadores
+  domain/   casos de uso e regras de negócio
+  service/  conversão, reprodução e downloads em segundo plano
+  tts/      motores de voz offline e gerenciadores de modelos
+  data/     armazenamento local e repositórios
+app/src/main/python/   leitura, normalização e pipeline de TTS
 ```
 
-As bibliotecas nativas ONNX e os modelos embarcados sao distribuidos no APK da release e nao ficam neste repositorio.
+## Stack técnica
 
-## Seguranca E Privacidade
-
-- Chaves reais de API nao sao versionadas no repositorio.
-- `.env.example` documenta placeholders para configuracao local.
-- Chaves Gemini sao armazenadas no dispositivo com `EncryptedSharedPreferences` e migradas da chave antiga em `SharedPreferences` no primeiro acesso.
-- O repositorio tem um workflow de higiene no GitHub Actions que bloqueia padroes comuns de secrets vazados.
-- Audio gerado, livros importados, caches, chaves de release, contas de servico e arquivos locais de assinatura sao ignorados pelo Git.
-
-## Stack Tecnica
-
-- Kotlin
-- Android Views, ViewBinding e Material Components
-- WorkManager
-- Foreground service e controles de notificacao de media
-- Chaquopy com Python 3.11
-- Bibliotecas Python: `edge-tts`, `aiohttp`, `mutagen`, `pypdf`, `python-docx`, `ebooklib`, `beautifulsoup4`, `Pillow`
+- Kotlin, Android Views, ViewBinding e Material Components
+- WorkManager, serviços em primeiro plano e controles de mídia na notificação
+- Chaquopy com Python 3.11 (`edge-tts`, `aiohttp`, `mutagen`, `pypdf`, `python-docx`, `ebooklib`, `beautifulsoup4`, `Pillow`, `numpy`)
+- ONNX Runtime e Sherpa-ONNX para as vozes offline
 - Gradle Kotlin DSL
 
 ## Requisitos
 
 - Android Studio com JDK 17
 - Android SDK 36
-- Android 8.0 ou superior no dispositivo alvo
-- Acesso a internet para motores TTS online
-- Opcional: chave de API do Google AI Studio para Gemini TTS
+- Android 8.0 ou mais novo no aparelho
+- Internet para os motores de voz online
+- Opcional: uma chave de API do Google AI Studio para o Gemini TTS
 
-## Execucao Local
+## Execução local
 
 ```bash
-git clone https://github.com/JonJonesBR/LylyReader-Android.git
-cd LylyReader-Android
+git clone https://github.com/JonJonesBR/LylyReader.git
+cd LylyReader
+./scripts/fetch-onnxruntime.sh
 ./gradlew :app:assembleDebug
 ```
 
-Instale o APK debug em um dispositivo conectado:
+No Windows, rode `powershell -File scripts/fetch-onnxruntime.ps1` no lugar do primeiro script.
+
+Para instalar o APK de depuração num aparelho conectado:
 
 ```bash
 ./gradlew :app:installDebug
 ```
 
-Para builds de release, crie um arquivo local `release.properties` com os dados de assinatura. Nao versione esse arquivo.
-
-```properties
-storeFile=/absolute/path/to/release.keystore
-storePassword=change-me-locally
-keyAlias=release
-keyPassword=change-me-locally
-```
-
 ## Download
 
-O APK publico mais recente esta disponivel na [pagina de Releases do GitHub](https://github.com/JonJonesBR/LylyReader-Android/releases/latest). Este repositorio atualmente gera a versao `1.8.0` do app.
+O APK mais recente está na [página de Releases](https://github.com/JonJonesBR/LylyReader/releases/latest). É uma **compilação de depuração sem a assinatura do autor**, e instala como um app separado (`com.jonjonesbr.audiobookgen.debug`).
 
 ## Roadmap
 
-- Adicionar testes automatizados para extracao de documentos e casos extremos de arquivos compartilhados.
-- Adicionar testes instrumentados para as principais telas de importacao e conversao.
-- Melhorar a resiliencia de conversoes longas com cobertura mais profunda de WorkManager.
-- Expandir os metadados da listagem da Play Store para ingles e espanhol.
+- Testes automatizados para a extração de documentos e casos de arquivos compartilhados.
+- Testes instrumentados para as telas principais de importação e conversão.
+- Exportação de vídeo de audiolivros longos mais rápida em aparelhos simples.
+- Mais idiomas na interface.
+
+Ideias e relatos de bugs são bem-vindos nas [Issues](../../issues).
+
+## Contribuindo
+
+Veja o [CONTRIBUTING.md](CONTRIBUTING.md). Relatos de segurança passam pelo [SECURITY.md](SECURITY.md).
 
 ## Créditos
 
-O LylyReader se apoia no trabalho de vários projetos e comunidades de código aberto:
+O LylyReader se apoia no trabalho de muitos projetos e comunidades de código aberto:
 
 - **Supertone – Supertonic** (vozes neurais offline): https://github.com/supertone-inc/supertonic
 - **Kyutai Labs – Pocket TTS** (vozes offline, CC BY 4.0) e o runtime **PocketTTS.cpp** de VolgaGerm (MIT): https://github.com/kyutai-labs/pocket-tts · https://github.com/VolgaGerm/PocketTTS.cpp
@@ -170,6 +188,6 @@ O LylyReader se apoia no trabalho de vários projetos e comunidades de código a
 
 Os detalhes completos de atribuição dos recursos e modelos incluídos estão em [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
-## Licenca
+## Licença
 
 MIT. Veja [LICENSE](LICENSE).
