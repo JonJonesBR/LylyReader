@@ -779,8 +779,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Easier voice cloning: a step-by-step guide helps you download Kyutai's free file with your own account and unlock cloning. The app never asks for or stores a login or password.
-• The downloaded file is prepared on your phone, and you can delete it afterwards.</string>
+    <string name="release_notes_corpo">• Easier voice cloning: a step-by-step guide helps you download the free file from Kyutai with your own account and unlock cloning. The app never asks for or stores a login or password.\n• The downloaded file is prepared on your phone, and you can delete it afterwards.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>

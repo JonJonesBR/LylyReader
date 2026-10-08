@@ -767,8 +767,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Clonación de voz más sencilla: una guía paso a paso te ayuda a descargar el archivo gratuito de Kyutai con tu propia cuenta y habilitar la clonación. La app nunca pide ni guarda usuario o contraseña.
-• El archivo descargado se prepara en tu teléfono, y puedes borrarlo después.</string>
+    <string name="release_notes_corpo">• Clonación de voz más sencilla: una guía paso a paso te ayuda a descargar el archivo gratuito de Kyutai con tu propia cuenta y habilitar la clonación. La app nunca pide ni guarda usuario o contraseña.\n• El archivo descargado se prepara en tu teléfono, y puedes borrarlo después.</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Haz las voces un poco más graves o más agudas y suaviza los agudos ásperos. El cambio se aplica al instante en la lectura guiada y en los audiolibros que conviertas a partir de ahora.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
