@@ -780,7 +780,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Easier voice cloning: a step-by-step guide helps you download the free file from Kyutai with your own account and unlock cloning. The app never asks for or stores a login or password.\n• The downloaded file is prepared on your phone, and you can delete it afterwards.\n• Cloning your voice is now front and center in the voice picker — no need to dig through Settings.</string>
+    <string name="release_notes_corpo">• Guided reading: the marker that follows the narration no longer flickers, and the screen scrolls smoothly with each paragraph.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
