@@ -17,7 +17,11 @@ Read this README in [Português](README.pt-BR.md) or [Español](README.es.md).
 
 Short promotional videos, one per language:
 
+<div align="center">
+
 https://github.com/user-attachments/assets/3f099670-c9ce-47a4-8846-af99d97583c0
+
+</div>
 
 ## Highlights
 
