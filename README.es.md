@@ -19,12 +19,6 @@ Videos promocionales cortos, uno por idioma:
 
 https://github.com/user-attachments/assets/85d1265c-99d0-4d1c-a38f-a593696509f6
 
-| Idioma | Video |
-|---|---|
-| 🇧🇷 Português | [LylyReader_promo_v2_pt.mp4](media/LylyReader_promo_v2_pt.mp4) |
-| 🇺🇸 English | [LylyReader_promo_v2_en.mp4](media/LylyReader_promo_v2_en.mp4) |
-| 🇪🇸 Español | [LylyReader_promo_v2_es.mp4](media/LylyReader_promo_v2_es.mp4) |
-
 ## Destacados
 
 - **Audiolibro de cualquier libro:** importa un archivo o busca libros gratuitos de dominio público (Proyecto Gutenberg, Wikisource, Internet Archive) sin salir de la app.
