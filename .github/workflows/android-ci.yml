@@ -1,8 +1,8 @@
 name: Android CI
 
 on:
-  push:
-  pull_request:
+  # Sem build automático a cada push ou PR (decisão de 2026-10-08). Para gerar o APK de depuração, rode manualmente.
+  workflow_dispatch:
 
 permissions:
   contents: read
