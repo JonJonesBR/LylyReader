@@ -34,5 +34,5 @@
         android:maxLines="1"
         android:ellipsize="end"
         android:textColor="@color/color_on_surface_dim"
-        android:textSize="11sp"/>
+        android:textSize="12sp"/>
 </LinearLayout>

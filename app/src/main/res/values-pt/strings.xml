@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">LylyReader</string>
+    <string name="app_slogan">Seus livros, em voz alta</string>
 
     <!-- Content Descriptions -->
     <string name="cd_logo">LylyReader logo</string>
@@ -780,7 +781,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Conversões mais seguras: dá para pausar, continuar ou cancelar, com botões na notificação, e o app avisa quando vale desligar a economia de bateria.\n• Se um trecho falhar, o app tenta de novo com o texto simplificado antes de desistir.\n• Primeiro acesso mais simples: escolha seu livro (do aparelho, da biblioteca pública ou por link) e a voz offline baixa sozinha no Wi-Fi.\n• Voz em inglês do Supertonic mais clara: baixe o pacote Supertonic (inglês) em Downloads.\n• Ouça uma prévia de várias vozes antes de baixar.</string>
+    <string name="release_notes_corpo">• Mais fácil de usar: botões maiores e mais fáceis de tocar, cores de texto mais nítidas, textos pequenos um pouco maiores e telas que se adaptam melhor quando o celular usa fonte grande.\n• Conversões muito longas agora pausam sozinhas antes que o Android as interrompa. É só tocar em Continuar para retomar.\n• Novo slogan na primeira tela: Seus livros, em voz alta.\n• O nome do pacote Supertonic (inglês) agora acompanha o idioma do app.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>

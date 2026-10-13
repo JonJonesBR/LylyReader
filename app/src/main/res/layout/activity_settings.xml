@@ -503,7 +503,8 @@
                     <Button
                         android:id="@+id/btnCentralDownloads"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
                         android:layout_marginTop="8dp"
                         android:text="@string/dl_central_abrir"
                         android:textSize="12sp"
@@ -513,7 +514,8 @@
                     <Button
                         android:id="@+id/btnImportarVozByom"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
                         android:layout_marginTop="8dp"
                         android:text="@string/btn_importar_voz"
                         android:textSize="12sp"
@@ -582,7 +584,8 @@
                         <Button
                             android:id="@+id/btnAbrirConfigNotificacoes"
                             android:layout_width="wrap_content"
-                            android:layout_height="48dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
                             android:minWidth="48dp"
                             android:text="@string/btn_abrir_config_notificacoes"
                             android:textColor="@color/color_on_surface"
@@ -618,7 +621,8 @@
                         <Button
                             android:id="@+id/btnConfigOtimizacaoBateria"
                             android:layout_width="wrap_content"
-                            android:layout_height="48dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
                             android:minWidth="48dp"
                             android:backgroundTint="@color/color_surface_variant"
                             android:paddingStart="20dp"
@@ -1715,8 +1719,8 @@
                     android:letterSpacing="0.15"/>
                 <ImageButton
                     android:id="@+id/btnAjudaBlacklist"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:background="@android:color/transparent"
                     android:src="@drawable/ic_ajuda"
                     app:tint="@color/color_on_surface_dim"
@@ -2258,7 +2262,8 @@
                     <TextView
                         android:id="@+id/tvCreditosVoz"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
                         android:gravity="center_vertical"
                         android:text="@string/label_creditos_voz"
                         android:textColor="?attr/colorPrimary"

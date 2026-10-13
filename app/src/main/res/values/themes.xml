@@ -37,8 +37,8 @@
         <item name="lylyTexto">#1C1B1F</item>
         <item name="lylyTextoMedio">#2B2930</item>
         <item name="lylyTextoSecundario">#5F5D66</item>
-        <item name="lylyTextoTerciario">#79747E</item>
-        <item name="lylyTextoFraco">#8A8790</item>
+        <item name="lylyTextoTerciario">#6A6770</item>
+        <item name="lylyTextoFraco">#6B6770</item>
         <item name="lylyContorno">#CAC4D0</item>
         <item name="lylyDivisor">#EAE6EE</item>
         <item name="lylyDivisorFraco">#F1EDF5</item>
@@ -88,9 +88,9 @@
         <item name="lylySuperficie2">#E6DAC0</item>
         <item name="lylyTexto">#3B2F20</item>
         <item name="lylyTextoMedio">#4A3C2A</item>
-        <item name="lylyTextoSecundario">#6E5F49</item>
-        <item name="lylyTextoTerciario">#7A6B52</item>
-        <item name="lylyTextoFraco">#9A8B72</item>
+        <item name="lylyTextoSecundario">#5E5040</item>
+        <item name="lylyTextoTerciario">#6C5E48</item>
+        <item name="lylyTextoFraco">#6B5F4C</item>
         <item name="lylyContorno">#C9B996</item>
         <item name="lylyDivisor">#E1D4B8</item>
         <item name="lylyDivisorFraco">#E9DEC6</item>

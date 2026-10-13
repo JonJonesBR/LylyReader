@@ -177,7 +177,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textColor="@color/color_on_surface_dim"
             android:paddingTop="2dp"
             android:paddingBottom="4dp"
@@ -345,7 +345,8 @@
             <TextView
                 android:id="@+id/tvGuidedSoneca"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:minWidth="48dp"
                 android:gravity="center"
                 tools:text="😴"
@@ -361,7 +362,8 @@
             <TextView
                 android:id="@+id/tvGuidedPassos"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:minWidth="48dp"
                 android:gravity="center"
                 tools:text="⚙ 12"
@@ -377,7 +379,8 @@
             <TextView
                 android:id="@+id/btnGuidedVelocidade"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:minWidth="48dp"
                 android:gravity="center"
                 tools:text="1.0×"

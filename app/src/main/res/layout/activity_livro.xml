@@ -152,7 +152,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/livro_voz_titulo"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"/>
+                        android:textSize="12sp"/>
 
                     <TextView
                         android:id="@+id/tvLivroVozNome"

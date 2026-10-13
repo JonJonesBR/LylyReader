@@ -40,8 +40,8 @@
 
     <ImageButton
         android:id="@+id/btnShareLog"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@android:drawable/ic_menu_share"
         app:tint="?attr/colorPrimary"
@@ -49,8 +49,8 @@
 
     <ImageButton
         android:id="@+id/btnDeleteLog"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@android:drawable/ic_menu_delete"
         app:tint="@color/color_error"

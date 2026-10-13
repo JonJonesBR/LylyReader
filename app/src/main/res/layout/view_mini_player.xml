@@ -98,8 +98,8 @@
              de achar sem precisar expandir o player primeiro). -->
         <ImageButton
             android:id="@+id/miniPlayerFechar"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="@android:color/transparent"
             android:padding="8dp"
             android:src="@drawable/ic_player_fechar"
@@ -124,7 +124,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="end"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textColor="@color/color_on_surface_muted"
             android:text="@string/tempo_inicial"/>
 
@@ -203,7 +203,7 @@ android:text="@string/mini_player_avancar"
                 android:layout_height="wrap_content"
 android:text="@string/mini_player_vel_075"
                     android:textColor="@color/color_on_surface"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 style="@style/Widget.Material3.Button.TextButton"/>
 
             <Button
@@ -212,7 +212,7 @@ android:text="@string/mini_player_vel_075"
                 android:layout_height="wrap_content"
 android:text="@string/mini_player_vel_100"
                     android:textColor="@color/color_on_surface"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 style="@style/Widget.Material3.Button.TextButton"/>
 
             <Button
@@ -221,7 +221,7 @@ android:text="@string/mini_player_vel_100"
                 android:layout_height="wrap_content"
 android:text="@string/mini_player_vel_125"
                     android:textColor="@color/color_on_surface"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 style="@style/Widget.Material3.Button.TextButton"/>
 
             <Button
@@ -230,7 +230,7 @@ android:text="@string/mini_player_vel_125"
                 android:layout_height="wrap_content"
 android:text="@string/mini_player_vel_150"
                     android:textColor="@color/color_on_surface"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 style="@style/Widget.Material3.Button.TextButton"/>
 
             <Button
@@ -239,7 +239,7 @@ android:text="@string/mini_player_vel_150"
                 android:layout_height="wrap_content"
 android:text="@string/mini_player_vel_200"
                     android:textColor="@color/color_on_surface"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 style="@style/Widget.Material3.Button.TextButton"/>
 
         </LinearLayout>

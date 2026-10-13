@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="app_name">LylyReader</string>
+    <string name="app_slogan">Your books, out loud</string>
 
     <!-- Content Descriptions -->
     <string name="cd_logo">LylyReader logo</string>
@@ -789,7 +790,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Safer conversions: you can pause, resume or cancel, with buttons in the notification, and the app tells you when it is worth turning off battery saving.\n• If a passage fails, the app retries it with simplified text before giving up.\n• Simpler first launch: pick your book (from your device, the public library or a link) and the offline voice downloads by itself on Wi-Fi.\n• Clearer English Supertonic voice: download the Supertonic (English) pack in Downloads.\n• Hear a preview of several voices before downloading.</string>
+    <string name="release_notes_corpo">• Easier to use: bigger buttons that are easier to tap, clearer text colors and small text a little larger, and screens that adapt better when your phone uses a large font.\n• Very long conversions now pause by themselves before Android stops them. Just tap Continue to resume.\n• New tagline on the first screen: Your books, out loud.\n• The Supertonic (English) pack name now follows the app language.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>

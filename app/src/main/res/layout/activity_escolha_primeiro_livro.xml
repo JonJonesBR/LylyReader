@@ -25,6 +25,16 @@
             android:textStyle="bold"/>
 
         <TextView
+            android:id="@+id/tvSloganEscolhaLivro"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/app_slogan"
+            android:textColor="@color/color_on_surface_dim"
+            android:textSize="16sp"
+            android:textStyle="italic"/>
+
+        <TextView
             android:id="@+id/tvDescEscolhaLivro"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

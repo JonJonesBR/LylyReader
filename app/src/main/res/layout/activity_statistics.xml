@@ -55,7 +55,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/desc_estatisticas_privacidade"
                 android:textColor="@color/color_on_surface_dim"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:layout_marginBottom="16dp"/>
 
             <com.google.android.material.card.MaterialCardView
@@ -96,7 +96,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/stats_minutos_ouvidos"
-                                android:textSize="11sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/color_on_surface_dim"/>
                         </LinearLayout>
 
@@ -117,7 +117,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/stats_minutos_lidos"
-                                android:textSize="11sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/color_on_surface_dim"/>
                         </LinearLayout>
 
@@ -145,7 +145,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/stats_livros_concluidos"
-                                android:textSize="11sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/color_on_surface_dim"/>
                         </LinearLayout>
 
@@ -166,7 +166,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/stats_streak_dias"
-                                android:textSize="11sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/color_on_surface_dim"/>
                         </LinearLayout>
 

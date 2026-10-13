@@ -46,7 +46,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/gerar_voz"
                 android:textColor="@color/color_on_surface_dim"
-                android:textSize="11sp"/>
+                android:textSize="12sp"/>
 
             <TextView
                 android:id="@+id/tvGerarVozNome"
