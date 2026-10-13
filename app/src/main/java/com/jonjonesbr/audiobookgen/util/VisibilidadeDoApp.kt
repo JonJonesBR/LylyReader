@@ -17,15 +17,22 @@ object VisibilidadeDoApp {
     val appVisivel: Boolean
         get() = activitiesIniciadas.get() > 0
 
+    /** Instante (ms) da última vez em que uma activity iniciou ou parou; 0 se nunca. Reinicia o orçamento de primeiro plano. */
+    @Volatile
+    var ultimaVisivelMs: Long = 0L
+        private set
+
     /** Registra os callbacks de ciclo de vida da [app]. Chamar uma vez no `onCreate` da Application. */
     fun registrar(app: Application) {
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: Activity) {
                 activitiesIniciadas.incrementAndGet()
+                ultimaVisivelMs = System.currentTimeMillis()
             }
 
             override fun onActivityStopped(activity: Activity) {
                 activitiesIniciadas.updateAndGet { if (it > 0) it - 1 else 0 }
+                ultimaVisivelMs = System.currentTimeMillis()
             }
 
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit

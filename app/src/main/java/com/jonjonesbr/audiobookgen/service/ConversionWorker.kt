@@ -7,6 +7,7 @@ import com.jonjonesbr.audiobookgen.data.ConversaoPausadaStore
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.domain.DestinoDaParada
 import com.jonjonesbr.audiobookgen.domain.LimiteDeProgresso
+import com.jonjonesbr.audiobookgen.domain.MotivoParada
 import com.jonjonesbr.audiobookgen.domain.PoliticaPrimeiroPlano
 import com.jonjonesbr.audiobookgen.domain.RegraDaParada
 import com.jonjonesbr.audiobookgen.domain.RenovacaoDeTrava
@@ -144,19 +145,22 @@ class ConversionWorker(
     /**
      * Entra em primeiro plano quando a [PoliticaPrimeiroPlano] permite (app visível, fora da otimização de bateria
      * ou Android abaixo de 12). Falha do sistema ao iniciar não derruba a conversão: segue sem primeiro plano.
+     * Devolve true só se o primeiro plano foi de fato iniciado.
      */
-    private suspend fun iniciarPrimeiroPlano(notif: ConversionNotificationManager) {
+    private suspend fun iniciarPrimeiroPlano(notif: ConversionNotificationManager): Boolean {
         try {
             val semOtimizacaoBateria = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager)
                 .isIgnoringBatteryOptimizations(applicationContext.packageName)
             if (!PoliticaPrimeiroPlano.podeIniciar(Build.VERSION.SDK_INT, VisibilidadeDoApp.appVisivel, semOtimizacaoBateria)) {
-                return
+                return false
             }
             setForeground(infoPrimeiroPlano(notif))
+            return true
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             CrashLogWriter.log(e, "ConversionWorker", "setForeground")
+            return false
         }
     }
 
@@ -224,7 +228,8 @@ class ConversionWorker(
         yield()
 
         val notif = ConversionNotificationManager(applicationContext)
-        iniciarPrimeiroPlano(notif)
+        val emPrimeiroPlano = iniciarPrimeiroPlano(notif)
+        val inicioPrimeiroPlanoMs = if (emPrimeiroPlano) System.currentTimeMillis() else 0L
         ConversionWakeLock.acquire(applicationContext)
         var ultimaRenovacaoMs = System.currentTimeMillis()
         val engine = PythonEngineUseCase(applicationContext)
@@ -238,9 +243,17 @@ class ConversionWorker(
         val ultimoPct = AtomicInteger(0)
         val onProgress: (Int, String) -> Unit = { pct, msg ->
                 ultimoPct.set(pct)
+                val agora = System.currentTimeMillis()
+                // Limite do sistema para mediaProcessing (~6 h): pausa antes de o Android matar o primeiro plano.
+                if (PoliticaPrimeiroPlano.deveAutoPausar(
+                        Build.VERSION.SDK_INT, emPrimeiroPlano, VisibilidadeDoApp.appVisivel,
+                        maxOf(inicioPrimeiroPlanoMs, VisibilidadeDoApp.ultimaVisivelMs), agora
+                    ) && ControleDaConversao.pedido == null
+                ) {
+                    ControleDaConversao.pedirPausa(applicationContext, MotivoParada.LIMITE_DO_SISTEMA)
+                }
                 // Pausa pedida antes/durante a extração: o Python zera a flag em _reset_cancelar, então reforça a cada chamada.
                 if (devePausar()) engine.cancelar()
-                val agora = System.currentTimeMillis()
                 if (LimiteDeProgresso.deveAtualizar(ultimaAtualizacaoMs, agora, pct)) {
                     notif.mostrar(pct, msg)
                     setProgressAsync(workDataOf(
