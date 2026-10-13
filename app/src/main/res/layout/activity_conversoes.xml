@@ -125,6 +125,16 @@
                         android:textSize="13sp"/>
 
                     <Button
+                        android:id="@+id/btnConvPausar"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:minHeight="48dp"
+                        android:text="@string/conv_pausar"
+                        android:textAllCaps="false"/>
+
+                    <Button
                         android:id="@+id/btnConvCancelar"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="match_parent"
@@ -253,6 +263,72 @@
                         android:layout_marginTop="12dp"
                         android:minHeight="48dp"
                         android:text="@string/conv_fechar"
+                        android:textAllCaps="false"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Pausada -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardConvPausada"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/conv_pausada_titulo"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="12sp"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.12"/>
+
+                    <TextView
+                        android:id="@+id/tvConvPausadaLivro"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/literata"
+                        android:textColor="@color/color_on_surface"
+                        android:textSize="18sp"/>
+
+                    <TextView
+                        android:id="@+id/tvConvPausadaPct"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/color_on_surface_muted"
+                        android:textSize="14sp"/>
+
+                    <Button
+                        android:id="@+id/btnConvContinuar"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:minHeight="48dp"
+                        android:text="@string/conv_retomar"
+                        android:textAllCaps="false"/>
+
+                    <Button
+                        android:id="@+id/btnConvDescartar"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:minHeight="48dp"
+                        android:text="@string/conv_descartar"
                         android:textAllCaps="false"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

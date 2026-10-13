@@ -13,6 +13,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import shutil
 import time
 from pathlib import Path
@@ -28,7 +29,7 @@ from config_android import (
 from utils import (
     formatar_duracao, dividir_em_sentencas, dividir_em_capitulos,
     garantir_temp_dir, ProgressTracker, aplicar_intervalo, ler_texto_pronto,
-    extrair_texto_limpo, contar_estatisticas, estimar_duracao,
+    extrair_texto_limpo, contar_estatisticas, estimar_duracao, sanitizar_trecho_para_tts,
 )
 from tts import (
     converter_tts_auto, concatenar_grupo_com_pausa, aplicar_timbre,
@@ -44,15 +45,26 @@ ProgressCallback = Callable[[int, str], None]
 
 # Flag global de cancelamento (setada pelo Kotlin via cancelar())
 _cancelar_flag = False
+# Quando ligada junto com _cancelar_flag, o job dir é apagado ao parar (cancelamento definitivo, não pausa).
+_descartar_ao_cancelar = False
+# Formato do hash de job gerado por _job_hash (usado por descartar_job para não aceitar caminho).
+_JOB_HASH_RE = re.compile(r"[0-9a-f]{16}")
 
 def cancelar():
     """Chamado pelo Kotlin quando o usuário aperta 'Cancelar'."""
     global _cancelar_flag
     _cancelar_flag = True
 
+def cancelar_e_descartar():
+    """Cancela e pede para apagar o job dir ao parar (o próprio Python apaga, depois da síntese)."""
+    global _cancelar_flag, _descartar_ao_cancelar
+    _cancelar_flag = True
+    _descartar_ao_cancelar = True
+
 def _reset_cancelar():
-    global _cancelar_flag
+    global _cancelar_flag, _descartar_ao_cancelar
     _cancelar_flag = False
+    _descartar_ao_cancelar = False
 
 def _dica_erro_elevenlabs() -> str:
     """Dica de erro final com o motivo real propagado pela ponte Kotlin — falha de rede não
@@ -69,11 +81,19 @@ def _dica_erro_elevenlabs() -> str:
 
 # ── Helpers de progresso/job ──────────────────────────────────────────────────
 
-def _job_hash(texto: str, voz: str, estilo: str, voice_plan: Optional[list] = None) -> str:
+def _job_hash(
+    chunks: list, voz: str, estilo: str, voice_plan: Optional[list] = None,
+    velocidade: str = "", tom: str = "",
+) -> str:
+    """Identifica o job pelo conteúdo real dos blocos e pelos ajustes que mudam o áudio.
+    Mudar bloco, voz, estilo, velocidade, tom, plano de vozes ou dicionário de pronúncia gera outro job.
+    Jobs criados antes desta regra deixam de ser retomados (uma vez só)."""
+    conteudo = hashlib.sha256(json.dumps(list(chunks), ensure_ascii=False).encode()).hexdigest()
     mapping = json.dumps(voice_plan, ensure_ascii=False, separators=(",", ":")) if voice_plan else ""
     # A assinatura do dicionário de pronúncia entra no hash: mudá-lo não reaproveita áudio de um job antigo.
     pronuncias = pronunciation_dict.assinatura()
-    return hashlib.sha256(f"{texto[:500]}:{voz}:{estilo}:{mapping}:{pronuncias}".encode()).hexdigest()[:16]
+    material = f"{conteudo}:{voz}:{estilo}:{velocidade}:{tom}:{mapping}:{pronuncias}"
+    return hashlib.sha256(material.encode()).hexdigest()[:16]
 
 def _job_dir(job_hash: str) -> str:
     return os.path.join(TEMP_DIR, f"job_{job_hash}")
@@ -100,6 +120,22 @@ def _limpar_job(jh: str):
     d = _job_dir(jh)
     if os.path.exists(d):
         shutil.rmtree(d, ignore_errors=True)
+
+
+def descartar_job(jh: str) -> bool:
+    """Apaga o job dir de um hash (conversão pausada descartada). Só aceita hash no formato de _job_hash;
+    qualquer outra coisa (caminho, vazio, texto livre) é recusada sem tocar em nada."""
+    if not isinstance(jh, str) or not _JOB_HASH_RE.fullmatch(jh):
+        return False
+    _limpar_job(jh)
+    return True
+
+
+def _retorno_cancelado(jh: str) -> dict:
+    """Retorno de cancelamento. Se o cancelamento pediu descarte, apaga o job aqui: a síntese já terminou."""
+    if _descartar_ao_cancelar:
+        _limpar_job(jh)
+    return {"ok": False, "erro": "Cancelado pelo usuário.", "job": jh}
 
 
 def _chunks_falhos(total: int, completed_valid: set, temp_files: list) -> list:
@@ -351,7 +387,7 @@ async def processar(
 
     # Retomada de progresso
     plan_for_hash = list(zip(chunks, chunk_voices)) if speaker_plan else None
-    jh        = _job_hash(texto, voz, estilo, plan_for_hash)
+    jh        = _job_hash(chunks, voz, estilo, plan_for_hash, velocidade, tom)
     job_directory = _job_dir(jh)
     os.makedirs(job_directory, exist_ok=True)
 
@@ -372,27 +408,30 @@ async def processar(
     tracker  = ProgressTracker(total, inicio, ja_prontos)
     sem      = asyncio.Semaphore(_config.get_tts_workers())
 
-    async def _converter_um(idx: int, chunk: str, semaforo: asyncio.Semaphore, *, atualizar_tracker: bool = True):
+    async def _converter_um(idx: int, chunk: str, semaforo: asyncio.Semaphore, texto_alt: Optional[str] = None):
         if _cancelar_flag:
             return
         async with semaforo:
             if _cancelar_flag:
                 return
-            ok = await converter_tts_auto(chunk, chunk_voices[idx], temp_files[idx], velocidade, tom)
+            texto_envio = chunk
+            if texto_alt and texto_alt != chunk:
+                logger.warning(f"Bloco {idx + 1}: última tentativa com texto sanitizado (fallback).")
+                texto_envio = texto_alt
+            ok = await converter_tts_auto(texto_envio, chunk_voices[idx], temp_files[idx], velocidade, tom)
             if ok:
                 # BUG FIX: só marca como concluído se de fato gerou áudio válido
                 completed_valid.add(idx)
                 _salvar_progresso(jh, completed_valid)
-            if atualizar_tracker:
-                tracker.registrar(idx, ok)
-                if tracker.deve_atualizar():
-                    _cb(tracker.pct(), tracker.mensagem_simples())
+            tracker.registrar(idx, ok)
+            if tracker.deve_atualizar():
+                _cb(tracker.pct(), tracker.mensagem_simples())
 
     # ── Rodada inicial ────────────────────────────────────────────────────────
     await asyncio.gather(*[_converter_um(i, chunks[i], sem) for i in pending])
 
     if _cancelar_flag:
-        return {"ok": False, "erro": "Cancelado pelo usuário."}
+        return _retorno_cancelado(jh)
 
     # ── Rodadas de retry: garante que todos os chunks sejam convertidos ───────
     _MAX_RODADAS_RETRY = 3
@@ -412,13 +451,17 @@ async def processar(
         # Usa metade dos workers para dar mais folga à API
         workers_retry = max(1, _config.get_tts_workers() // 2)
         sem_retry = asyncio.Semaphore(workers_retry)
+        ultima_rodada = rodada == _MAX_RODADAS_RETRY
         await asyncio.gather(*[
-            _converter_um(i, chunks[i], sem_retry, atualizar_tracker=False)
+            _converter_um(
+                i, chunks[i], sem_retry,
+                sanitizar_trecho_para_tts(chunks[i]) if ultima_rodada else None,
+            )
             for i in falhos
         ])
 
         if _cancelar_flag:
-            return {"ok": False, "erro": "Cancelado pelo usuário."}
+            return _retorno_cancelado(jh)
 
     # ── Verificação final: impede audiobook incompleto ────────────────────────
     falhos_final = _chunks_falhos(total, completed_valid, temp_files)
@@ -436,6 +479,7 @@ async def processar(
                 f"{len(falhos_final)} de {total} blocos não puderam ser convertidos "
                 f"após {_MAX_RODADAS_RETRY} tentativas. {dica}"
             ),
+            "job": jh,
         }
 
     # Concatenar todos os chunks em ordem
@@ -448,7 +492,7 @@ async def processar(
     pausas_validas = [chunk_pauses[i] for i in indices_validos] if chunk_pauses else None
 
     if not arquivos_validos:
-        return {"ok": False, "erro": "Nenhum chunk de áudio foi gerado."}
+        return {"ok": False, "erro": "Nenhum chunk de áudio foi gerado.", "job": jh}
 
     pausa_ms = int(CONFIG.get("edge_pausa_entre_blocos_ms", 600))
 
@@ -457,7 +501,7 @@ async def processar(
 
     ok_concat = await concatenar_grupo_com_pausa(arquivos_validos, saida_mp3, pausa_ms, pausas_validas)
     if not ok_concat or not os.path.exists(saida_mp3):
-        return {"ok": False, "erro": "Falha na concatenação do áudio."}
+        return {"ok": False, "erro": "Falha na concatenação do áudio.", "job": jh}
 
     # Timbre escolhido pelo usuário (tom e suavização de agudos). Mantém a duração; se falhar, segue sem.
     tom_meios_tons = int(CONFIG.get("timbre_tom_meios_tons", 0) or 0)

@@ -4,6 +4,7 @@ import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.PacoteVozes
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -230,7 +231,33 @@ class VoiceCatalogTest {
         assertEquals(41, voices.count { it.engine == "kokoro" })
         // Vozes pt-BR do Kokoro, MMS e os seis pacotes Piper brasileiros.
         assertEquals(10, voices.count { it.language == "pt-BR" })
+        // O catálogo bruto ainda traz a voz MMS; quem a esconde sem instalação é a regra abaixo.
         assertTrue(voices.any { it.id == "mms-por::main-pt" })
+    }
+
+    @Test fun mmsEhPacoteOcultoSemInstalacaoENaoOsOutrosPacotes() {
+        val mms = VoiceCatalog.pacotesRegistrados().first { it.id == "mms-por" }
+        assertTrue(mms.ocultoSemInstalacao)
+        val outros = VoiceCatalog.pacotesRegistrados().filter { it.id != "mms-por" }
+        assertTrue(outros.none { it.ocultoSemInstalacao })
+    }
+
+    @Test fun visivelParaDownloadEscondePacoteOcultoSemInstalacao() {
+        // Oculto e não instalado: some do catálogo.
+        assertFalse(VoiceCatalog.visivelParaDownload(ocultoSemInstalacao = true) { false })
+        // Oculto mas já instalado: continua visível (usar e apagar).
+        assertTrue(VoiceCatalog.visivelParaDownload(ocultoSemInstalacao = true) { true })
+        // Pacote comum: sempre visível.
+        assertTrue(VoiceCatalog.visivelParaDownload(ocultoSemInstalacao = false) { false })
+    }
+
+    @Test fun visivelParaDownloadNaoConsultaInstalacaoDePacoteComum() {
+        var consultou = false
+        VoiceCatalog.visivelParaDownload(ocultoSemInstalacao = false) {
+            consultou = true
+            false
+        }
+        assertFalse(consultou)
     }
 
     @Test fun catalogoKokoroIncluiAsVinteEOitoVozesInglesasDoBundle() {
@@ -276,8 +303,56 @@ class VoiceCatalogTest {
             "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/kokoro-preview-pm-santa.mp3",
             VoiceCatalog.previewClipUrl("kokoro-pm-santa")
         )
-        assertEquals(null, VoiceCatalog.previewClipUrl("supertonic-f1"))
         assertEquals(null, VoiceCatalog.previewClipUrl("pt-BR-ThalitaMultilingualNeural"))
+    }
+
+    @Test fun previewClipUrlSupertonicApontaParaClipPorEstiloEIdioma() {
+        val base = "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/"
+        // Multilíngue (sem sufixo) e variante PT da mesma voz apontam para o mesmo clipe.
+        assertEquals(base + "supertonic-preview-f1-pt.mp3", VoiceCatalog.previewClipUrl("supertonic-f1"))
+        assertEquals(base + "supertonic-preview-f1-pt.mp3", VoiceCatalog.previewClipUrl("supertonic-f1-pt"))
+        assertEquals(base + "supertonic-preview-m3-pt.mp3", VoiceCatalog.previewClipUrl("supertonic-m3-pt"))
+        assertEquals(base + "supertonic-preview-m5-pt.mp3", VoiceCatalog.previewClipUrl("supertonic-m5-pt"))
+        // Ids fora do padrão não têm clipe.
+        assertEquals(null, VoiceCatalog.previewClipUrl("supertonic-f6-pt"))
+        assertEquals(null, VoiceCatalog.previewClipUrl("supertonic-x1"))
+    }
+
+    @Test fun previewClipUrlSupertonicMultilinguePorIdioma() {
+        val base = "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/"
+        assertEquals(base + "supertonic-preview-f1-es.mp3", VoiceCatalog.previewClipUrl("supertonic-f1", "es"))
+        assertEquals(base + "supertonic-preview-m1-en.mp3", VoiceCatalog.previewClipUrl("supertonic-m1", "en"))
+        // Tag de locale é reduzida ao código; idioma sem clipe cai em pt.
+        assertEquals(base + "supertonic-preview-f1-es.mp3", VoiceCatalog.previewClipUrl("supertonic-f1", "es-ES"))
+        assertEquals(base + "supertonic-preview-f1-pt.mp3", VoiceCatalog.previewClipUrl("supertonic-f1", "fr"))
+    }
+
+    @Test fun previewClipUrlSupertonicPtIgnoraIdiomaPedido() {
+        val base = "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/"
+        // Estilos -pt têm só o clipe pt, mesmo quando o aparelho pede en.
+        assertEquals(base + "supertonic-preview-f2-pt.mp3", VoiceCatalog.previewClipUrl("supertonic-f2-pt", "en"))
+        assertEquals(base + "supertonic-preview-m1-pt.mp3", VoiceCatalog.previewClipUrl("supertonic-m1-pt", "es"))
+    }
+
+    @Test fun idiomaPreviaSupertonicSoVariaNosMultilingues() {
+        assertEquals("es", VoiceCatalog.idiomaPreviaSupertonic("supertonic-m1", "es"))
+        assertEquals("pt", VoiceCatalog.idiomaPreviaSupertonic("supertonic-f1", "de"))
+        assertEquals("pt", VoiceCatalog.idiomaPreviaSupertonic("supertonic-f3", "en"))
+        assertEquals("pt", VoiceCatalog.idiomaPreviaSupertonic("supertonic-f1-pt", "en"))
+    }
+
+    @Test fun clipesSupertonicEsperadosSaoQuatorzeArquivos() {
+        // Lista de arquivos a publicar no repo HF: 10 estilos em pt (F1..F5, M1..M5) mais
+        // f1/m1 em es e en. f1-pt e m1-pt são o mesmo arquivo do clipe pt multilíngue.
+        val esperados = (listOf("f", "m").flatMap { g -> (1..5).map { "$g$it" } })
+            .map { "supertonic-preview-$it-pt.mp3" } +
+            listOf("f1", "m1").flatMap { e -> listOf("es", "en").map { "supertonic-preview-$e-$it.mp3" } }
+        val gerados = VoiceCatalog.forEngine("onnx")
+            .flatMap { voz -> listOf("pt", "es", "en").map { VoiceCatalog.previewClipUrl(voz.id, it)!!.substringAfterLast('/') } }
+            .distinct()
+            .sorted()
+        assertEquals(14, gerados.size)
+        assertEquals(esperados.sorted(), gerados)
     }
 
     @Test fun vozesPiperUsamMotorKokoroMasNaoTemClipePreRenderizado() {
@@ -337,6 +412,19 @@ class VoiceCatalogTest {
         assertEquals(300, pacote?.tamanhoDownloadMb)
     }
 
+    @Test fun pacoteSupertonicV1EhOpcionalSemVozesDuplicadas() {
+        val pacote = VoiceCatalog.pacotesRegistrados().firstOrNull { it.id == "supertonic-v1" }
+        assertEquals("onnx", pacote?.engine)
+        assertEquals(emptyList<VoiceOption>(), pacote?.vozes)
+        assertEquals(listOf("en-US"), pacote?.idiomas)
+        assertEquals(255, pacote?.tamanhoDownloadMb)
+        assertFalse(pacote?.ocultoSemInstalacao ?: true)
+        // As F1/M1 continuam pertencendo só ao pacote V2 (sem duplicar no catálogo).
+        assertEquals("supertonic-m1", VoiceCatalog.pacoteDaVoz("supertonic-f1")?.id)
+        assertEquals(12, VoiceCatalog.forEngine("onnx").size)
+        assertEquals(12, VoiceCatalog.forEngine("onnx").map { it.id }.toSet().size)
+    }
+
     @Test fun vozDeNuvemNaoTemPacote() {
         assertEquals(null, VoiceCatalog.pacoteDaVoz("pt-BR-ThalitaMultilingualNeural"))
         assertEquals(null, VoiceCatalog.pacoteDaVoz("elevenlabs-21m00Tcm4TlvDq8ikWAM"))
@@ -355,7 +443,7 @@ class VoiceCatalogTest {
             ),
             VoiceCatalog.pacotesDoEngine("kokoro").map { it.id }
         )
-        assertEquals(listOf("supertonic-m1"), VoiceCatalog.pacotesDoEngine("onnx").map { it.id })
+        assertEquals(listOf("supertonic-m1", "supertonic-v1"), VoiceCatalog.pacotesDoEngine("onnx").map { it.id })
         assertEquals(emptyList<PacoteVozes>(), VoiceCatalog.pacotesDoEngine("edge"))
     }
 

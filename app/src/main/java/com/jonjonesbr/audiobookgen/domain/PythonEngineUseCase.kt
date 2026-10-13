@@ -28,7 +28,8 @@ sealed class ProcessamentoResult {
         val capitulos: List<CapituloAudio> = emptyList()
     ) : ProcessamentoResult()
 
-    data class Error(val mensagem: String) : ProcessamentoResult()
+    /** [job] é o hash do job no Python (quando a conversão chegou a começar), para poder descartá-lo depois. */
+    data class Error(val mensagem: String, val job: String? = null) : ProcessamentoResult()
 }
 
 sealed class PreviewResult {
@@ -190,7 +191,6 @@ class PythonEngineUseCase(private val context: Context) {
         onProgress: (Int, String) -> Unit
     ): ProcessamentoResult = withContext(Dispatchers.IO) {
         kotlinx.coroutines.yield() // CancellationException se o usuário cancelou
-        SynthesisWakeLock.acquire(context)
         try {
             if (!inicializarMotorSeNecessario()) {
                 return@withContext ProcessamentoResult.Error("Motor Python offline.")
@@ -231,7 +231,7 @@ class PythonEngineUseCase(private val context: Context) {
                 )
             } else {
                 val erroRaw = resultado.callAttr("get", "erro")?.toString() ?: ""
-                ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(erroRaw))
+                ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(erroRaw), jobDo(resultado))
             }
 
         } catch (e: CancellationException) {
@@ -242,8 +242,6 @@ class PythonEngineUseCase(private val context: Context) {
         } catch (e: Exception) {
             CrashLogWriter.log(e, "processarArquivo", "voz=$voz, motor=$motor, arquivo=$arquivo")
             ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(e.message ?: "Falha interna local"))
-        } finally {
-            SynthesisWakeLock.release()
         }
     }
 
@@ -261,7 +259,6 @@ class PythonEngineUseCase(private val context: Context) {
         onProgress: (Int, String) -> Unit
     ): ProcessamentoResult = withContext(Dispatchers.IO) {
         kotlinx.coroutines.yield()
-        SynthesisWakeLock.acquire(context)
         try {
             if (!inicializarMotorSeNecessario()) {
                 return@withContext ProcessamentoResult.Error("Motor Python offline.")
@@ -296,7 +293,7 @@ class PythonEngineUseCase(private val context: Context) {
                 )
             } else {
                 val erroRaw = resultado.callAttr("get", "erro")?.toString() ?: ""
-                ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(erroRaw))
+                ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(erroRaw), jobDo(resultado))
             }
         } catch (e: CancellationException) {
             throw e
@@ -306,23 +303,37 @@ class PythonEngineUseCase(private val context: Context) {
         } catch (e: Exception) {
             CrashLogWriter.log(e, "processarTexto", "voz=$voz, motor=$motor, titulo=$titulo")
             ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(e.message ?: "Falha interna local"))
-        } finally {
-            SynthesisWakeLock.release()
         }
     }
 
     /**
-     * Cancela o processamento em andamento.
+     * Cancela o processamento em andamento. Com [descartar] = true, o Python também apaga o job ao parar
+     * (cancelamento definitivo); sem ele, o job fica guardado para retomar (pausa).
      */
-    fun cancelar() {
+    fun cancelar(descartar: Boolean = false) {
         try {
             if (Python.isStarted()) {
                 val mod = Python.getInstance().getModule("audiobook_android")
-                mod.callAttr("cancelar")
+                mod.callAttr(if (descartar) "cancelar_e_descartar" else "cancelar")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao tentar cancelar: ${e.message}")
             CrashLogWriter.log(e, "cancelar")
+        }
+    }
+
+    /**
+     * Apaga o job dir de uma conversão pausada. Devolve false se não deu (job inválido ou falha); nunca lança.
+     * É suspend porque inicializa o motor Python se ele ainda não subiu (app reaberto com a conversão pausada).
+     */
+    suspend fun descartarJob(job: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            if (!inicializarMotorSeNecessario()) return@withContext false
+            Python.getInstance().getModule("audiobook_android").callAttr("descartar_job", job).toBoolean()
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao descartar job: ${e.message}")
+            CrashLogWriter.log(e, "descartarJob")
+            false
         }
     }
 
@@ -365,6 +376,10 @@ class PythonEngineUseCase(private val context: Context) {
         }
     }
 }
+
+/** Hash do job devolvido pelo Python nos erros; ausente quando o erro veio antes de o job existir. */
+private fun jobDo(resultado: com.chaquo.python.PyObject): String? =
+    resultado.callAttr("get", "job")?.toString()?.takeIf { it.isNotBlank() && it != "None" }
 
 /** Converte a lista Python de capítulos (T4.4: timestamps de início/fim em ms) pro tipo Kotlin. */
 private fun parseCapitulos(resultado: com.chaquo.python.PyObject): List<CapituloAudio> =

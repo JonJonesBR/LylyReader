@@ -276,6 +276,7 @@
     <string name="queue_status_processing">Processando %1$d%%</string>
     <string name="queue_status_completed">Concluído</string>
     <string name="queue_status_error">Erro na conversão</string>
+    <string name="queue_status_paused">Pausada</string>
 
     <!-- Settings Activity -->
     <string name="titulo_configuracoes">Configurações</string>
@@ -458,12 +459,15 @@
     <string name="btn_hide_advanced_options">Ocultar opções avançadas</string>
     <string name="status_options_cleared">Opções limpas.</string>
     <string name="status_conversion_canceled">Conversão cancelada.</string>
+    <string name="status_conversion_paused">Conversão pausada.</string>
     <string name="dialog_confirm_cancel_title">Cancelar conversão?</string>
     <string name="dialog_confirm_cancel_msg">A conversão atual será interrompida e não poderá ser retomada. Tem certeza?</string>
     <string name="dialog_confirm_clear_title">Limpar todas as opções?</string>
     <string name="dialog_confirm_clear_msg">A conversão atual será interrompida e todas as configurações serão redefinidas. Tem certeza?</string>
     <string name="notification_conversion_done">Audiobook pronto</string>
     <string name="notification_conversion_done_message">Conversão concluída com sucesso.</string>
+    <string name="notification_conversion_paused">Conversão pausada</string>
+    <string name="notification_conversion_paused_message">Toque para continuar — %1$s</string>
     <string name="notification_conversion_progress">Convertendo áudio</string>
     <string name="notification_conversion_channel">Conversão de áudio</string>
     <string name="notification_conversion_channel_description">Progresso da conversão de texto para fala</string>
@@ -767,11 +771,15 @@
     <string name="otimizacao_bateria_ativada">Otimização de bateria ativa</string>
     <string name="btn_config_otimizacao_bateria">Configurar</string>
     <string name="toast_config_bateria_indisponivel">As configurações de bateria não estão disponíveis neste aparelho.</string>
+    <string name="dica_bateria_titulo">Mantenha conversões longas ativas</string>
+    <string name="dica_bateria_mensagem">Para converter livros longos com a tela apagada, permita que o LylyReader funcione sem restrição de bateria. Você pode mudar isso depois em Ajustes.</string>
+    <string name="dica_bateria_abrir">Abrir ajuste</string>
+    <string name="dica_bateria_depois">Agora não</string>
     <string name="toast_config_notificacoes_indisponivel">Tela de configurações de notificações indisponível neste aparelho.</string>
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Leitura guiada: a marcação que acompanha a voz não pisca mais e a tela desce suavemente a cada parágrafo.</string>
+    <string name="release_notes_corpo">• Conversões mais seguras: dá para pausar, continuar ou cancelar, com botões na notificação, e o app avisa quando vale desligar a economia de bateria.\n• Se um trecho falhar, o app tenta de novo com o texto simplificado antes de desistir.\n• Primeiro acesso mais simples: escolha seu livro (do aparelho, da biblioteca pública ou por link) e a voz offline baixa sozinha no Wi-Fi.\n• Voz em inglês do Supertonic mais clara: baixe o pacote Supertonic (inglês) em Downloads.\n• Ouça uma prévia de várias vozes antes de baixar.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
@@ -1137,6 +1145,18 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="conv_cancelar">Cancelar conversão</string>
     <string name="conv_cancelar_msg">O audiobook que está sendo gerado será descartado. Deseja cancelar?</string>
     <string name="conv_continuar">Continuar</string>
+    <string name="conv_pausar">Pausar</string>
+    <string name="conv_pausando">Pausando...</string>
+    <string name="conv_descartar">Descartar</string>
+    <string name="conv_pausada_titulo">Conversão pausada</string>
+    <string name="conv_pausada_pct">Pausada em %1$d%%</string>
+    <string name="conv_pausada_sem_job">Não há conversão pausada para continuar.</string>
+    <string name="conv_descartar_confirma">Descartar a conversão pausada? As partes já geradas serão perdidas.</string>
+    <string name="conv_pausada_bloqueia">Continue ou descarte a conversão pausada antes de iniciar outra.</string>
+    <string name="conv_retomar">Retomar</string>
+    <string name="conv_pausada_arquivo_ausente">O arquivo de origem não existe mais. Descarte esta conversão pausada e comece de novo.</string>
+    <string name="conv_pausada_falha_retomar">Não foi possível retomar a conversão. Ela continua pausada.</string>
+    <string name="conv_pausada_falha_salvar">Não foi possível guardar a conversão pausada.</string>
     <string name="conv_vazio_titulo">Nenhuma conversão em andamento</string>
     <string name="conv_vazio_texto">Abra um livro e toque em Gerar audiobook para começar.</string>
     <string name="conv_ir_biblioteca">Ir para a Biblioteca</string>
@@ -1244,4 +1264,14 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="clone_prep_needed">Libere a clonagem deste idioma em Ajustes → Vozes clonadas.</string>
     <string name="clone_prep_manage">Liberar idioma</string>
     <string name="clone_prep_no_browser">Nenhum navegador disponível para abrir esta página.</string>
+    <string name="primeiro_livro_titulo">Escolha seu livro</string>
+    <string name="primeiro_livro_desc">Escolha como começar. Você pode adicionar outros livros depois, pelo botão de adicionar.</string>
+    <string name="primeiro_livro_aparelho">Do meu aparelho</string>
+    <string name="primeiro_livro_aparelho_cd">Escolher um livro do meu aparelho</string>
+    <string name="primeiro_livro_biblioteca">Biblioteca pública</string>
+    <string name="primeiro_livro_biblioteca_cd">Buscar livros legais e gratuitos</string>
+    <string name="primeiro_livro_link">Colar um link</string>
+    <string name="primeiro_livro_link_cd">Baixar um livro a partir de um link direto</string>
+    <string name="primeiro_livro_exemplo">Usar o livro de exemplo</string>
+    <string name="primeiro_livro_agora_nao">Agora não</string>
 </resources>

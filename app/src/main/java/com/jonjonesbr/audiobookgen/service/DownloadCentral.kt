@@ -110,9 +110,12 @@ object DownloadCentral {
         }
     }
 
-    /** Todos os itens conhecidos agora (pacotes de voz + codificadores + vozes importadas). */
-    fun itens(): List<ItemBaixavel> {
-        val pacotes = VoiceCatalog.pacotesRegistrados().map { p ->
+    /**
+     * Todos os itens conhecidos agora (pacotes de voz + codificadores + vozes importadas).
+     * Pacotes ocultos sem instalação (ver [VoiceCatalog.pacotesVisiveis]) não entram na lista.
+     */
+    fun itens(context: Context): List<ItemBaixavel> {
+        val pacotes = VoiceCatalog.pacotesVisiveis(context.applicationContext).map { p ->
             ItemBaixavel(
                 id = p.id,
                 nome = p.nomeExibicao,
@@ -124,7 +127,7 @@ object DownloadCentral {
                 ocupadoBytes = p.tamanhoOcupadoBytes,
                 download = p.download,
                 apagar = p.delete,
-                idiomas = com.jonjonesbr.audiobookgen.domain.IdiomaDownload.codigos(p.vozes.map { it.language })
+                idiomas = com.jonjonesbr.audiobookgen.domain.IdiomaDownload.codigos(p.vozes.map { it.language } + p.idiomas)
             )
         }
         // Os codificadores da clonagem não são baixados pelo app: o assistente de clonagem os prepara a
@@ -133,12 +136,12 @@ object DownloadCentral {
         return livros + pacotes
     }
 
-    private fun item(id: String): ItemBaixavel? = itens().firstOrNull { it.id == id }
+    private fun item(context: Context, id: String): ItemBaixavel? = itens(context).firstOrNull { it.id == id }
 
     /** Recalcula o que está pronto/ocupado em disco, sem mexer em quem está na fila ou baixando. */
     suspend fun atualizar(context: Context) = withContext(Dispatchers.IO) {
         val ctx = context.applicationContext
-        val medidos = itens().associate { it.id to (it.isPronto(ctx) to it.ocupadoBytes(ctx)) }
+        val medidos = itens(ctx).associate { it.id to (it.isPronto(ctx) to it.ocupadoBytes(ctx)) }
         _andamento.update { atual ->
             val novo = HashMap(atual)
             for ((id, medida) in medidos) {
@@ -161,7 +164,7 @@ object DownloadCentral {
         val ctx = context.applicationContext
         synchronized(lock) {
             for (id in ids) {
-                val item = item(id) ?: continue
+                val item = item(ctx, id) ?: continue
                 if (item.download == null) continue
                 val estado = _andamento.value[id]?.estado ?: EstadoDownload.NAO_BAIXADO
                 if (estado == EstadoDownload.NA_FILA || estado == EstadoDownload.BAIXANDO || estado == EstadoDownload.PRONTO) continue
@@ -190,7 +193,7 @@ object DownloadCentral {
         if (comecar.isEmpty()) return
         DownloadService.start(ctx)
         for (id in comecar) {
-            val item = item(id) ?: continue
+            val item = item(ctx, id) ?: continue
             val baixar = item.download ?: continue
             val job = scope.launch(Dispatchers.IO) { executar(ctx, item, baixar) }
             synchronized(lock) { jobs[id] = job }
@@ -261,7 +264,7 @@ object DownloadCentral {
 
     private fun apagarArquivos(context: Context, id: String) {
         val ctx = context.applicationContext
-        val item = item(id) ?: return
+        val item = item(ctx, id) ?: return
         val job = synchronized(lock) {
             fila.remove(id)
             jobs[id]
@@ -282,7 +285,7 @@ object DownloadCentral {
      * com [CancellationException]).
      */
     suspend fun baixarEAguardar(context: Context, id: String, onProgress: ProgressoDownload) {
-        val item = item(id) ?: throw IOException("Pacote desconhecido: $id")
+        val item = item(context, id) ?: throw IOException("Pacote desconhecido: $id")
         enfileirar(context, listOf(id))
         _andamento.first { mapa ->
             val a = mapa[id] ?: AndamentoDownload()

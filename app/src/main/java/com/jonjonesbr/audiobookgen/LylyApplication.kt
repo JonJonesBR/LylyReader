@@ -8,7 +8,6 @@ import android.content.Context
 import android.os.Process
 import android.util.Log
 import com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager
-import java.io.File
 import kotlin.concurrent.thread
 
 class LylyApplication : Application() {
@@ -62,6 +61,8 @@ class LylyApplication : Application() {
             com.jonjonesbr.audiobookgen.util.ThemePrefs.load(this)
         )
         com.jonjonesbr.audiobookgen.util.ThemePrefs.instalar(this)
+        // Acompanha se o app está visível: a conversão só entra em primeiro plano quando pode (Android 12+).
+        com.jonjonesbr.audiobookgen.util.VisibilidadeDoApp.registrar(this)
         CrashLogWriter.init(this)
         NativeCrashDetector.checkForNativeCrashes(this)
         // Disponibiliza o motor ONNX Kotlin para o Python (geração de audiobook Supertonic).
@@ -90,9 +91,6 @@ class LylyApplication : Application() {
             // Mantém o cache de áudio das vozes dentro do teto definido em Ajustes.
             com.jonjonesbr.audiobookgen.tts.TtsChunkCache.aparaSeNecessario(this)
         }
-        thread(name = "supertonic-v1-cleanup") {
-            cleanupLegacySupertonicV1()
-        }
     }
 
     private fun isMainProcess(): Boolean = currentProcessName() == packageName
@@ -105,29 +103,6 @@ class LylyApplication : Application() {
         val pid = Process.myPid()
         val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         return am?.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName ?: packageName
-    }
-
-    /**
-     * Versões anteriores do app baixavam o pacote V1 da Supertonic (~300 MB, só inglês)
-     * para `filesDir/v1/`. Agora todas as vozes Supertonic usam o V2 multilíngue (en/ko/es/pt/fr)
-     * em `filesDir/v2/`, então o V1 só ocupa espaço. Apaga a pasta legada uma única vez.
-     */
-    private fun cleanupLegacySupertonicV1() {
-        try {
-            val v1Dir = File(filesDir, "v1")
-            if (!v1Dir.exists()) return
-            // Sanidade: só apaga se for o pacote Supertonic legado (tem `onnx/tts.json` ou marker).
-            val looksLikeSupertonic = File(v1Dir, "onnx/tts.json").exists() ||
-                File(v1Dir, ".ready").exists() ||
-                File(v1Dir, "voice_styles").isDirectory
-            if (!looksLikeSupertonic) return
-            val deleted = SupertonicAssetManager.runCatching {
-                deleteVersion(this@LylyApplication, "v1"); true
-            }.getOrDefault(false)
-            Log.i("LylyApplication", "Legacy Supertonic V1 cleanup: deleted=$deleted")
-        } catch (e: Throwable) {
-            Log.w("LylyApplication", "Supertonic V1 cleanup failed: ${e.message}")
-        }
     }
 
     private fun setupGlobalExceptionHandler() {

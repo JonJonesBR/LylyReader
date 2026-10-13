@@ -60,7 +60,7 @@ class VoiceSelectionDelegate(
     }
 
     fun abrirSeletorVozes() {
-        val combinedVoices = VoiceCatalog.forVoiceSelection()
+        val combinedVoices = VoiceCatalog.vozesVisiveis(VoiceCatalog.forVoiceSelection(), activity)
         val fm = activity.supportFragmentManager
         VoiceBottomSheet().apply {
             configure(

@@ -134,6 +134,39 @@ class TtsChunkCacheTest {
     }
 
     @Test
+    fun revisaoPorTextoUsaV1SoParaInglesEmF1M1() {
+        val ingles = "The quick brown fox jumps over the lazy dog. This is an example of English text."
+        val portugues = "O Brasil é um país de dimensões continentais e a cultura é muito rica."
+        assertEquals("supertonic-v1", TtsChunkCache.revisaoModelo("supertonic-f1", ingles, true))
+        assertEquals("supertonic-v1", TtsChunkCache.revisaoModelo("supertonic-m1", ingles, true))
+        assertEquals("supertonic-v2", TtsChunkCache.revisaoModelo("supertonic-f1", portugues, true))
+        assertEquals("supertonic-v2", TtsChunkCache.revisaoModelo("supertonic-f4-pt", ingles, true))
+        assertEquals("supertonic-v2", TtsChunkCache.revisaoModelo("supertonic-f1", "", true))
+        assertEquals("kokoro-multilang-v1_0-fp32", TtsChunkCache.revisaoModelo("kokoro-pf-dora", ingles, true))
+    }
+
+    @Test
+    fun semV1InstaladoInglesEmF1M1FicaComChaveV2() {
+        val ingles = "The quick brown fox jumps over the lazy dog."
+        assertEquals("supertonic-v2", TtsChunkCache.revisaoModelo("supertonic-f1", ingles, false))
+        assertEquals("supertonic-v2", TtsChunkCache.revisaoModelo("supertonic-m1", ingles, false))
+        val context = contextComCacheDir()
+        val chaveSemV1 = TtsChunkCache.file(context, "supertonic-f1", 100, ingles,
+            TtsChunkCache.revisaoModelo("supertonic-f1", ingles, false))
+        val chaveV2 = TtsChunkCache.file(context, "supertonic-f1", 100, ingles, "supertonic-v2")
+        assertEquals(chaveV2, chaveSemV1)
+    }
+
+    @Test
+    fun mesmoTextoInglesGeraChavesDiferentesEmV1EV2() {
+        val context = contextComCacheDir()
+        val ingles = "The quick brown fox jumps over the lazy dog."
+        val v1 = TtsChunkCache.file(context, "supertonic-f1", 100, ingles, "supertonic-v1")
+        val v2 = TtsChunkCache.file(context, "supertonic-f1", 100, ingles, "supertonic-v2")
+        assertNotEquals(v1, v2)
+    }
+
+    @Test
     fun passosDoPocketDiferentesDoPadraoMudamARevisaoSoDoPocket() {
         val base = "rev"
         assertEquals("rev", TtsChunkCache.revisaoComPassos(base, "pocket-ptbr-rafael", 1))

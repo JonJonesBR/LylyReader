@@ -9,6 +9,7 @@ import shutil
 import math
 import time
 import collections
+import unicodedata
 import ebooklib
 from ebooklib import epub
 from pypdf import PdfReader
@@ -62,21 +63,33 @@ class ProgressTracker:
     def __init__(self, total: int, inicio: float, concluidos_iniciais: int = 0):
         self.total = total
         self.inicio = inicio
+        # `concluidos` = blocos com áudio válido (inclui os da retomada).
         self.concluidos = concluidos_iniciais
+        # Índices de blocos que falharam e ainda não tiveram sucesso.
         self.falhas: list = []
-        self._janela: collections.deque = collections.deque(maxlen=5)
-        self._ultimo_tick = time.time()
+        self._iniciais = concluidos_iniciais
+        self._ok_nesta_execucao: set = set()
+        # Intervalos (s) entre sucessos consecutivos desta execução.
+        self._janela: collections.deque = collections.deque(maxlen=10)
+        self._ultimo_sucesso = inicio
         self._spin = 0
         self._ultima_pct = -1
         self._ultima_atualizacao_ts = time.time()
 
     def registrar(self, idx: int, sucesso: bool) -> None:
-        agora = time.time()
-        self._janela.append(agora - self._ultimo_tick)
-        self._ultimo_tick = agora
-        self.concluidos += 1
         if not sucesso:
-            self.falhas.append(idx)
+            if idx not in self._ok_nesta_execucao and idx not in self.falhas:
+                self.falhas.append(idx)
+            return
+        if idx in self._ok_nesta_execucao:
+            return
+        agora = time.time()
+        self._janela.append(max(0.0, agora - self._ultimo_sucesso))
+        self._ultimo_sucesso = agora
+        self._ok_nesta_execucao.add(idx)
+        if idx in self.falhas:
+            self.falhas.remove(idx)
+        self.concluidos += 1
 
     def pct(self) -> int:
         return math.floor(self.concluidos * 100 / self.total) if self.total else 0
@@ -101,13 +114,17 @@ class ProgressTracker:
         restantes = self.total - self.concluidos
         if restantes <= 0:
             return "0s"
+        # Base só com blocos produzidos NESTA execução: a retomada não entra na taxa.
+        produzidos = self.concluidos - self._iniciais
+        if produzidos <= 0:
+            return "calculando..."
+        decorrido = time.time() - self.inicio
+        taxa = decorrido / produzidos  # segundos por bloco, média da execução
         if len(self._janela) >= 3:
-            media = sum(self._janela) / len(self._janela)
-            return formatar_duracao(media * restantes)
-        if self.concluidos > 0:
-            decorrido = time.time() - self.inicio
-            return formatar_duracao((decorrido / self.concluidos) * restantes)
-        return "calculando..."
+            taxa_janela = sum(self._janela) / len(self._janela)
+            taxa = (taxa + taxa_janela) / 2  # suaviza com a janela recente
+        # Mínimo de 1s: nunca mostrar "0s" enquanto restam blocos.
+        return formatar_duracao(max(1.0, taxa * restantes))
 
     def _barra(self) -> str:
         cheios = self.pct() // 5
@@ -124,10 +141,12 @@ class ProgressTracker:
         self._ultima_pct = p
         decorrido = time.time() - self.inicio
         falhas_str = f" | {len(self.falhas)} falhas" if self.falhas else ""
+        eta = self._eta()
+        prefixo_eta = "" if eta == "calculando..." else "~"
         return (
             f"Convertendo {self._spinner()} {p}%\n"
             f"[{self._barra()}] {self.concluidos}/{self.total}{falhas_str}\n"
-            f"Tempo: {formatar_duracao(decorrido)} | ETA: ~{self._eta()}"
+            f"Tempo: {formatar_duracao(decorrido)} | ETA: {prefixo_eta}{eta}"
         )
 
 
@@ -168,6 +187,42 @@ def limpar_texto_avancado(texto: str) -> str:
     texto = texto.replace("\u2018", "'").replace("\u2019", "'")
     texto = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", texto)
     return texto.strip()
+
+
+_TROCAS_TIPOGRAFICAS_TTS = {
+    "“": '"', "”": '"', "„": '"', "«": '"', "»": '"',
+    "‘": "'", "’": "'", "‚": "'",
+    "‒": "-", "–": "-", "—": "-", "−": "-",
+}
+
+
+def sanitizar_trecho_para_tts(texto: str) -> str:
+    """Versão do trecho pensada para a última tentativa de um bloco que falhou no motor de voz.
+
+    Normaliza NFKC, troca aspas/travessões tipográficos por equivalentes simples, remove controle,
+    zero-width, emoji e símbolos (fora letras, dígitos, marcas e pontuação), e colapsa espaços.
+    Acentos e pontuação de frase são preservados. Se o original tinha letras ou dígitos, nunca
+    devolve vazio (nesse caso devolve o original).
+    """
+    original = texto or ""
+    normalizado = unicodedata.normalize("NFKC", original)
+    for origem, destino in _TROCAS_TIPOGRAFICAS_TTS.items():
+        normalizado = normalizado.replace(origem, destino)
+    partes = []
+    for ch in normalizado:
+        if ch.isspace():
+            partes.append(" ")
+            continue
+        # Variation selectors (U+FE00..U+FE0F) são categoria Mn mas são só modificadores de emoji.
+        if 0xFE00 <= ord(ch) <= 0xFE0F:
+            continue
+        categoria = unicodedata.category(ch)
+        if categoria[0] in ("L", "N", "P") or categoria in ("Mn", "Mc", "Sc") or ch in "+=<>":
+            partes.append(ch)
+    resultado = re.sub(r" {2,}", " ", "".join(partes)).strip()
+    if not resultado and any(c.isalnum() for c in original):
+        return original
+    return resultado
 
 
 _PALAVRAS_CHAVE_CAP = [

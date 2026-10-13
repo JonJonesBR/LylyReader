@@ -13,6 +13,9 @@ import com.jonjonesbr.audiobookgen.data.DocumentRepository
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.service.PlayerNotificationManager
 import com.jonjonesbr.audiobookgen.service.ConversionWorker
+import com.jonjonesbr.audiobookgen.service.ControleDaConversao
+import com.jonjonesbr.audiobookgen.service.FilaDeConversao
+import com.jonjonesbr.audiobookgen.data.ConversaoPausadaStore
 import com.jonjonesbr.audiobookgen.domain.DocumentExportUseCase
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import android.app.Application
@@ -26,13 +29,18 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+/** Motivo pelo qual [AudiobookViewModel.retomarConversaoPausada] não pôde retomar. */
+enum class RetomadaFalha { SEM_JOB, JA_HA_CONVERSAO, ARQUIVO_AUSENTE, FALHA_AO_INICIAR }
 
 sealed class ConversionDoneEvent {
     data class Sucesso(
@@ -44,6 +52,8 @@ sealed class ConversionDoneEvent {
     ) : ConversionDoneEvent()
     data class Erro(val mensagem: String, val runToken: String? = null) : ConversionDoneEvent()
     data class Cancelada(val runToken: String? = null) : ConversionDoneEvent()
+    /** Parada pelo app (pausa): não é erro nem conclusão. A UI de continuar/descartar é de outra tarefa. */
+    data class Pausada(val runToken: String? = null) : ConversionDoneEvent()
 }
 
 
@@ -177,7 +187,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun atualizarVozesPorMotor(motor: String) {
-        val lista = VoiceCatalog.forEngine(motor).map { it.id to it.displayLabel(getApplication()) }
+        val lista = VoiceCatalog.vozesVisiveis(VoiceCatalog.forEngine(motor), getApplication())
+            .map { it.id to it.displayLabel(getApplication()) }
         _uiState.update { it.copy(vozesAtuais = lista) }
     }
 
@@ -230,6 +241,20 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
 
             // Bug #8: ONNX preview usa o engine Kotlin nativo diretamente (mais robusto)
             if (motorEfetivo == "onnx") {
+                // Supertonic sem modelo baixado: ouve o clipe pré-renderizado antes do download (Q5).
+                // Sem clipe, ou com falha (404/rede), segue para a síntese local abaixo, como antes.
+                // Estilos multilíngues (f1/m1) tocam o clipe no idioma do aparelho (pt/es/en).
+                val idiomaPrevia = java.util.Locale.getDefault().language
+                val clipeSemModelo = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    VoiceCatalog.previewClipUrl(voz, idiomaPrevia) != null &&
+                        !VoiceCatalog.modeloProntoParaVoz(voz, getApplication())
+                }
+                val clipe = if (clipeSemModelo) baixarClipePrevia(voz, idiomaPrevia) else null
+                if (clipe != null) {
+                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " Amostra Pronta") }
+                    iniciarPreview(clipe)
+                    return@launch
+                }
                 val caminho = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     val engine = com.jonjonesbr.audiobookgen.tts.OnnxTtsEngine(getApplication())
                     val textoDefault = "Hello! This is a sample text for the selected voice engine."
@@ -294,20 +319,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 // Preview do Kokoro NÃO exige o bundle de ~350MB: baixa só o clipe
                 // pré-renderizado (poucos KB, HF) — o usuário ouve a voz antes de
                 // comprometer o download (V6 T1.5).
-                val caminho = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    val url = com.jonjonesbr.audiobookgen.util.VoiceCatalog.previewClipUrl(voz)
-                        ?: return@withContext null
-                    val app = getApplication<android.app.Application>()
-                    val outFile = java.io.File(app.cacheDir, "preview_kokoro_${voz.hashCode()}.mp3")
-                    if (!outFile.exists() || outFile.length() == 0L) {
-                        val ok = kotlin.runCatching {
-                            com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager
-                                .downloadFileWithResume(url, outFile) { }
-                        }.isSuccess
-                        if (!ok) outFile.delete()
-                    }
-                    outFile.takeIf { it.exists() && it.length() > 0L }?.absolutePath
-                }
+                val caminho = baixarClipePrevia(voz)
                 if (caminho != null) {
                     _uiState.update {
                         it.copy(amostraGerando = false, statusMessage = " Amostra Pronta")
@@ -382,7 +394,9 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         speakerMapPath: String? = null,
         /** Livro de onde vem o texto (inteiro ou um capítulo): sua voz, velocidade e tom valem na conversão. */
         caminhoDoLivro: String? = livroOrigemCaminho
-    ) {
+    ): Boolean {
+        // Antes de prepararConfiguracoesPython: não mexer nas configurações do Python com um job pausado guardado.
+        if (conversaoPausadaBloqueia()) return false
         val context = getApplication<Application>()
         val ajustes = ajustesDoLivro(caminhoDoLivro)
         val appPrefs = com.jonjonesbr.audiobookgen.data.AppPrefs(context)
@@ -390,7 +404,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         val saidaInterna = java.io.File(context.filesDir, "$nomeAudiobook.mp3").absolutePath
 
         prepararConfiguracoesPython(ajustes.motor, chave, appPrefs.pausaMs)
-        iniciarProcessamento(
+        return iniciarProcessamento(
             ParametrosConversao(
                 arquivoEntrada = arquivoEntrada,
                 voz = ajustes.voz,
@@ -437,6 +451,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         speakerMapPath: String? = null,
         filaItemId: String? = null
     ) {
+        // Antes de prepararConfiguracoesPython: a Activity também checa, mas o ViewModel não pode depender disso.
+        if (conversaoPausadaBloqueia()) return
         val context = getApplication<Application>()
         val ajustes = ajustesDoLivro(caminhoDoLivro, voz, motor, ritmo)
         val appPrefs = com.jonjonesbr.audiobookgen.data.AppPrefs(context)
@@ -473,7 +489,15 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             getApplication<Application>(), caminhoDoLivro, escolhaVoz, escolhaMotor, escolhaRitmo
         )
 
-    fun iniciarProcessamento(params: ParametrosConversao) {
+    /** Há um job pausado guardado: nova conversão não pode começar (sobrescreveria o job pausado). */
+    private fun conversaoPausadaBloqueia(): Boolean =
+        !com.jonjonesbr.audiobookgen.domain.PausaRegras.podeIniciarNovaConversao(
+            ConversaoPausadaStore.existe(getApplication<Application>())
+        )
+
+    /** Devolve false, sem enfileirar nada, se há uma conversão pausada guardada. */
+    fun iniciarProcessamento(params: ParametrosConversao): Boolean {
+        if (conversaoPausadaBloqueia()) return false
         // Cancela conversão em andamento: ExistingWorkPolicy.REPLACE abaixo, no enqueue.
         _uiState.update {
             it.copy(
@@ -495,6 +519,99 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             .enqueueUniqueWork(ConversionWorker.WORK_NAME, ExistingWorkPolicy.REPLACE, request)
 
         observarTrabalho(request.id)
+        return true
+    }
+
+    /** Retomada em curso: trava síncrona (thread principal) contra duplo toque em Continuar. */
+    @Volatile
+    private var retomando = false
+
+    /**
+     * Retoma a conversão pausada guardada em [ConversaoPausadaStore], reenfileirando o `Data` exato salvo (mesmo hash de job).
+     * Falha (chamando [aoFalhar] na thread principal) se não houver conversão pausada, se já houver uma conversão ativa,
+     * se o arquivo de origem sumiu ou se o enfileiramento falhou (nesse caso o job continua guardado e pausado).
+     * [aoAceitar] roda depois que o trabalho foi enfileirado e o job saiu do disco. Chamadas repetidas enquanto uma
+     * retomada está em curso (duplo toque) são ignoradas.
+     */
+    fun retomarConversaoPausada(
+        aoFalhar: (RetomadaFalha) -> Unit = {},
+        aoAceitar: () -> Unit = {}
+    ) {
+        if (retomando) return
+        retomando = true
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            try {
+                val pausada = withContext(Dispatchers.IO) { ConversaoPausadaStore.carregar(app) }
+                if (pausada == null) {
+                    aoFalhar(RetomadaFalha.SEM_JOB)
+                    return@launch
+                }
+                val ativa = withContext(Dispatchers.IO) {
+                    runCatching {
+                        WorkManager.getInstance(app).getWorkInfosForUniqueWork(ConversionWorker.WORK_NAME).get()
+                    }.getOrDefault(emptyList())
+                        .any { it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED }
+                }
+                if (ativa) {
+                    aoFalhar(RetomadaFalha.JA_HA_CONVERSAO)
+                    return@launch
+                }
+                val arquivo = pausada.data.getString(ConversionWorker.KEY_ARQUIVO)
+                if (arquivo == null || !java.io.File(arquivo).isFile) {
+                    aoFalhar(RetomadaFalha.ARQUIVO_AUSENTE)
+                    return@launch
+                }
+                ControleDaConversao.limpar()
+                pausada.filaItemId?.let { FilaDeConversao.aoIniciarExecucao(app, it, pausada.runToken) }
+                _uiState.update {
+                    it.copy(
+                        processando = true,
+                        progressoPct = pausada.pct,
+                        statusMessage = app.getString(R.string.status_starting),
+                        conversionDone = null,
+                        progressoRunToken = pausada.runToken
+                    )
+                }
+                val request = OneTimeWorkRequestBuilder<ConversionWorker>()
+                    .setInputData(pausada.data)
+                    .build()
+                try {
+                    WorkManager.getInstance(app)
+                        .enqueueUniqueWork(ConversionWorker.WORK_NAME, ExistingWorkPolicy.REPLACE, request)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Não enfileirou: o item volta a PAUSADO e o job pausado continua guardado para tentar de novo.
+                    pausada.filaItemId?.let { FilaDeConversao.aoPausarExecucao(app, it, pausada.runToken) }
+                    _uiState.update { it.copy(processando = false) }
+                    aoFalhar(RetomadaFalha.FALHA_AO_INICIAR)
+                    return@launch
+                }
+                observarTrabalho(request.id)
+                // Só depois de enfileirar: se algo falhar antes, o job pausado continua guardado.
+                withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) { ConversaoPausadaStore.limpar(app) }
+                conversionNotif.cancelarPausada()
+                aoAceitar()
+            } finally {
+                retomando = false
+            }
+        }
+    }
+
+    /**
+     * Descarta a conversão pausada: apaga o job no Python (os blocos já gerados), o arquivo guardado, cancela a
+     * notificação e, se ela veio da fila, remove o item PAUSADO da fila.
+     */
+    fun descartarConversaoPausada() {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            val pausada = withContext(Dispatchers.IO) { ConversaoPausadaStore.carregar(app) }
+            pausada?.job?.let { job -> PythonEngineUseCase(app).descartarJob(job) }
+            withContext(Dispatchers.IO) { ConversaoPausadaStore.limpar(app) }
+            conversionNotif.cancelarPausada()
+            pausada?.filaItemId?.let { FilaDeConversao.aoDescartarPausado(app, it) }
+        }
     }
 
     /**
@@ -541,7 +658,18 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                         WorkInfo.State.SUCCEEDED -> {
                             handled = true
                             setProcessando(false)
-                            handleConversionSuccess(resultadoDeSucesso(info.outputData))
+                            if (info.outputData.getBoolean(ConversionWorker.KEY_RESULT_PAUSADA, false)) {
+                                val token = info.outputData.getString(ConversionWorker.KEY_RUN_TOKEN)
+                                    ?: _uiState.value.progressoRunToken
+                                _uiState.update {
+                                    it.copy(
+                                        statusMessage  = getApplication<Application>().getString(R.string.status_conversion_paused),
+                                        conversionDone = ConversionDoneEvent.Pausada(token)
+                                    )
+                                }
+                            } else {
+                                handleConversionSuccess(resultadoDeSucesso(info.outputData))
+                            }
                         }
                         WorkInfo.State.FAILED -> {
                             handled = true
@@ -675,10 +803,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun pausarProcessamento() {
-        // Cancela no WorkManager (marca como CANCELLED no banco de dados)
-        WorkManager.getInstance(getApplication()).cancelUniqueWork(ConversionWorker.WORK_NAME)
-        // Sinaliza o Python para parar o processamento atual
-        pythonEngine.cancelar()
+        ControleDaConversao.pedirCancelamento(getApplication())
         setProcessando(false)
         conversionNotif.cancelar()
         _uiState.update { it.copy(statusMessage = getApplication<Application>().getString(R.string.status_conversion_canceled)) }
@@ -744,6 +869,27 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
     }
+
+    /**
+     * Baixa (ou reaproveita do cache) o clipe pré-renderizado de [voz] e devolve o caminho local.
+     * Null se a voz não tem clipe ([VoiceCatalog.previewClipUrl]) ou o download falhou (404/rede);
+     * quem chama cai no comportamento anterior. Usado pela prévia Kokoro e pela Supertonic sem modelo.
+     */
+    private suspend fun baixarClipePrevia(voz: String, idioma: String = "pt"): String? =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val url = VoiceCatalog.previewClipUrl(voz, idioma) ?: return@withContext null
+            val app = getApplication<android.app.Application>()
+            // Nome derivado do clipe (não do id da voz): es/en/pt da mesma voz não podem colidir no cache.
+            val outFile = java.io.File(app.cacheDir, "preview_${url.substringAfterLast('/')}")
+            if (!outFile.exists() || outFile.length() == 0L) {
+                val ok = kotlin.runCatching {
+                    com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager
+                        .downloadFileWithResume(url, outFile) { }
+                }.isSuccess
+                if (!ok) outFile.delete()
+            }
+            outFile.takeIf { it.exists() && it.length() > 0L }?.absolutePath
+        }
 
     fun iniciarPreview(caminho: String) = playerUseCase.iniciarPreview(caminho)
 

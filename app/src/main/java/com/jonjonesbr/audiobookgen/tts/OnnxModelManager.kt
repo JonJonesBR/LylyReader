@@ -66,6 +66,10 @@ class OnnxModelManager(private val context: Context) {
         if (v2Dir.exists()) {
             totalSize += getDirectorySize(v2Dir)
         }
+        val v1Dir = File(context.filesDir, "v1")
+        if (v1Dir.exists()) {
+            totalSize += getDirectorySize(v1Dir)
+        }
         // Bundle do motor Kokoro (V6 T1.4) — mesmo card "Vozes offline" de Ajustes.
         totalSize += KokoroModelManager.tamanhoOcupado(context)
         return totalSize
@@ -92,6 +96,10 @@ class OnnxModelManager(private val context: Context) {
         val v2Dir = File(context.filesDir, "v2")
         if (v2Dir.exists()) {
             v2Dir.deleteRecursively()
+        }
+        val v1Dir = File(context.filesDir, "v1")
+        if (v1Dir.exists()) {
+            v1Dir.deleteRecursively()
         }
         SupertonicAssetManager.copyBundledVoiceStyles(context)
         // Bundle do motor Kokoro (V6 T1.4) — "Apagar vozes offline" também remove o kokoro.

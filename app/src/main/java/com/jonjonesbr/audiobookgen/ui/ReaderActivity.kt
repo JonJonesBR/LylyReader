@@ -832,6 +832,13 @@ class ReaderActivity : BasePlayerActivity() {
                                 val msg = getString(R.string.toast_download_failed, evento.mensagem)
                                 Toast.makeText(this@ReaderActivity, msg, Toast.LENGTH_LONG).show()
                             }
+                            is ConversionDoneEvent.Pausada -> {
+                                Toast.makeText(
+                                    this@ReaderActivity,
+                                    R.string.status_conversion_paused,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     }
                 }
@@ -938,13 +945,17 @@ class ReaderActivity : BasePlayerActivity() {
         speakerMapPath: String? = null,
         caminhoDoLivro: String? = livroOrigemCaminho
     ) {
-        audiobookViewModel.iniciarProcessamentoDeTexto(
+        val iniciou = audiobookViewModel.iniciarProcessamentoDeTexto(
             caminhoTexto,
             nomeAudiobook,
             livroOrigemCaminho,
             speakerMapPath,
             caminhoDoLivro
         )
+        if (!iniciou) {
+            Toast.makeText(this, R.string.conv_pausada_bloqueia, Toast.LENGTH_LONG).show()
+            return
+        }
         // Avisa que começou e leva ao andamento (antes a conversão iniciada aqui não tinha onde ser acompanhada).
         com.google.android.material.snackbar.Snackbar.make(
             findViewById(android.R.id.content),
@@ -1742,7 +1753,7 @@ class ReaderActivity : BasePlayerActivity() {
         } else {
             emptyList()
         }
-        return VoiceCatalog.forVoiceSelection() + doNarradorAndroid
+        return VoiceCatalog.vozesVisiveis(VoiceCatalog.forVoiceSelection(), this) + doNarradorAndroid
     }
 
     /** Voz utilizável agora: pacote local baixado ou, para nuvem com chave, chave configurada. */

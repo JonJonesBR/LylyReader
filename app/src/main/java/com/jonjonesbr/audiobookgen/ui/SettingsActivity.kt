@@ -6,7 +6,6 @@ import com.jonjonesbr.audiobookgen.util.ThemePrefs
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -931,7 +930,7 @@ class SettingsActivity : BasePlayerActivity() {
         if (pacotes.isEmpty()) return
         lifecycleScope.launch {
             val linhas = withContext(Dispatchers.IO) {
-                pacotes.map { pacote ->
+                com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesVisiveis(applicationContext).map { pacote ->
                     Triple(
                         pacote,
                         pacote.isPronto(applicationContext),
@@ -1176,16 +1175,7 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
     private fun abrirConfiguracaoOtimizacaoBateria() {
-        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            !com.jonjonesbr.audiobookgen.util.BatteryOptimizationHelper.isIgnoringBatteryOptimizations(this)
-        ) {
-            Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))
-        } else {
-            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-        }
-        try {
-            startActivity(intent)
-        } catch (_: android.content.ActivityNotFoundException) {
+        if (!com.jonjonesbr.audiobookgen.util.BatteryOptimizationHelper.abrir(this)) {
             Toast.makeText(this, R.string.toast_config_bateria_indisponivel, Toast.LENGTH_SHORT).show()
         }
     }

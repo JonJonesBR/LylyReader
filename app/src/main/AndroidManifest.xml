@@ -23,6 +23,8 @@
          (notificação/activity), MESMO com o app principal em primeiro plano e BIND_ABOVE_CLIENT
          no bindService (tentado antes, não resolveu). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Conversão de audiolivro em primeiro plano (ConversionWorker → setForeground), tipo mediaProcessing (API 35+) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING" />
     <!-- Mantém o CPU ativo com a tela apagada durante reprodução/síntese -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
@@ -192,6 +194,11 @@
             android:name=".ui.DownloadCentralActivity"
             android:exported="false"/>
 
+        <!-- Primeiro acesso "Escolha seu livro" -->
+        <activity
+            android:name=".ui.EscolhaPrimeiroLivroActivity"
+            android:exported="false"/>
+
         <!-- Sistema de ajuda contextual -->
         <activity
             android:name=".ui.HelpActivity"
@@ -269,6 +276,18 @@
             android:process=":pocket"
             android:exported="false"
             android:foregroundServiceType="dataSync"/>
+
+        <!-- Serviço do WorkManager que executa setForeground() da conversão (ConversionWorker).
+             Mescla com o declarado pela biblioteca, trocando só o tipo de serviço. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync|mediaProcessing"
+            tools:node="merge" />
+
+        <!-- Botão "Pausar" da notificação de conversão (não exportado: intent explícita) -->
+        <receiver
+            android:name=".service.AcaoDaConversaoReceiver"
+            android:exported="false" />
 
         <!-- Widget de controle do player -->
         <receiver

@@ -5,6 +5,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.jonjonesbr.audiobookgen.data.AppPrefs
+import com.jonjonesbr.audiobookgen.data.ERRO_FILA_INTERROMPIDA
 import com.jonjonesbr.audiobookgen.data.QueueItem
 import com.jonjonesbr.audiobookgen.data.QueueRepository
 import com.jonjonesbr.audiobookgen.data.QueueStatus
@@ -81,6 +82,116 @@ object FilaDeConversao {
             android.util.Log.w("FilaDeConversao", "Falha ao atualizar a fila: ${e.message}", e)
         }
     }
+
+    /**
+     * Chamado pelo worker ao iniciar uma execução da fila. Se o item foi interrompido pelo sistema (ficou PROCESSANDO ou
+     * ERRO "interrompida"), volta a PROCESSANDO com o runToken do worker; só persiste se [marcarEmAndamento] mudou algo.
+     */
+    suspend fun aoIniciarExecucao(context: Context, itemId: String?, runToken: String?) {
+        if (itemId == null) return
+        val app = context.applicationContext
+        try {
+            withContext(Dispatchers.Main) {
+                val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                QueueManager.garantirCarregada(app, prefs)
+                if (!marcarEmAndamento(QueueManager.items, itemId, runToken)) return@withContext
+                QueueManager.salvar(prefs)
+                val snapshot = QueueManager.items.toList()
+                withContext(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.w("FilaDeConversao", "Falha ao iniciar item na fila: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Retoma um item que estava em andamento, pausado pelo usuário ou interrompido pelo sistema. Devolve true só se algo
+     * mudou (status, erro ou runToken). Devolve false, sem alterar nada, para item inexistente, concluído, com erro de outro
+     * motivo, pendente, ou quando o item já tem outro runToken (execução de outro worker: não sobrescrever).
+     */
+    fun marcarEmAndamento(items: MutableList<QueueItem>, itemId: String, runToken: String?): Boolean {
+        val item = items.find { it.id == itemId } ?: return false
+        val retomavel = item.status == QueueStatus.PROCESSANDO ||
+            item.status == QueueStatus.PAUSADO ||
+            (item.status == QueueStatus.ERRO && item.erro == ERRO_FILA_INTERROMPIDA)
+        if (!retomavel) return false
+        if (runToken != null && item.runToken != null && item.runToken != runToken) return false
+        val tokenMuda = runToken != null && item.runToken != runToken
+        val mudou = item.status != QueueStatus.PROCESSANDO || item.erro != null || tokenMuda
+        if (!mudou) return false
+        item.status = QueueStatus.PROCESSANDO
+        item.erro = null
+        if (runToken != null) item.runToken = runToken
+        return true
+    }
+
+    /**
+     * Chamado quando a execução da fila é pausada pelo usuário (T5b). Só persiste se [pausarItem] mudou algo. Não avança
+     * a fila: o item pausado fica fora de PENDENTE, então o próximo não começa sozinho.
+     */
+    suspend fun aoPausarExecucao(context: Context, itemId: String?, runToken: String?) {
+        if (itemId == null) return
+        val app = context.applicationContext
+        try {
+            withContext(Dispatchers.Main) {
+                val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                QueueManager.garantirCarregada(app, prefs)
+                if (!pausarItem(QueueManager.items, itemId, runToken)) return@withContext
+                QueueManager.salvar(prefs)
+                val snapshot = QueueManager.items.toList()
+                withContext(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.w("FilaDeConversao", "Falha ao pausar item na fila: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Marca como PAUSADO o item que está PROCESSANDO, sem avançar a fila. Mantém o progresso e limpa o erro. Devolve true
+     * só se mudou. Devolve false, sem alterar nada, se o item não existe, não está PROCESSANDO, ou se a execução é de
+     * outro worker (runToken diferente nos dois lados).
+     */
+    fun pausarItem(items: MutableList<QueueItem>, itemId: String, runToken: String?): Boolean {
+        val item = items.find { it.id == itemId } ?: return false
+        if (item.status != QueueStatus.PROCESSANDO) return false
+        if (item.runToken != null && runToken != null && item.runToken != runToken) return false
+        item.status = QueueStatus.PAUSADO
+        item.erro = null
+        return true
+    }
+
+    /**
+     * Chamado quando o usuário descarta uma conversão pausada que veio da fila: remove o item PAUSADO da fila e persiste.
+     * Só persiste se [removerPausado] removeu algo.
+     */
+    suspend fun aoDescartarPausado(context: Context, itemId: String) {
+        val app = context.applicationContext
+        try {
+            withContext(Dispatchers.Main) {
+                val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                QueueManager.garantirCarregada(app, prefs)
+                if (!removerPausado(QueueManager.items, itemId)) return@withContext
+                QueueManager.salvar(prefs)
+                val snapshot = QueueManager.items.toList()
+                withContext(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.w("FilaDeConversao", "Falha ao descartar item pausado na fila: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Remove o item [itemId] da lista só se ele estiver PAUSADO. Devolve true só se removeu. Outros status e outros ids
+     * não são tocados.
+     */
+    fun removerPausado(items: MutableList<QueueItem>, itemId: String): Boolean =
+        items.removeAll { it.id == itemId && it.status == QueueStatus.PAUSADO }
 
     private suspend fun fecharEIniciarProximo(
         app: Context,

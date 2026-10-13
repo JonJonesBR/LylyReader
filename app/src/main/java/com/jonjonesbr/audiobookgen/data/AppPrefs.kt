@@ -189,6 +189,11 @@ class AppPrefs(context: Context) {
         get() = p.getBoolean("voice_download_onboarding_done", false)
         set(v) = p.edit().putBoolean("voice_download_onboarding_done", v).apply()
 
+    /** O download offline silencioso do primeiro acesso (pacote recomendado) já foi enfileirado. Ver PoliticaDownloadSilencioso. */
+    var downloadOfflineSilenciosoIniciado: Boolean
+        get() = p.getBoolean("download_offline_silencioso_iniciado", false)
+        set(v) = p.edit().putBoolean("download_offline_silencioso_iniciado", v).apply()
+
     /** "Não mostrar mais" do aviso sobre a voz genérica de motores de terceiros (ex.: MultiTTS). */
     var avisoVozGenericaDispensado: Boolean
         get() = p.getBoolean("aviso_voz_generica_dispensado", false)
@@ -197,6 +202,11 @@ class AppPrefs(context: Context) {
     // Nota: `battery_opt_dismissed` NÃO entra aqui — vive em outro arquivo de prefs
     // ("lylyreader_prefs", ver BatteryOptimizationHelper). Igualmente, as chaves `reader_*`
     // (tema/fonte/espacamento do leitor) são de uso único e ficam no ReaderViewModel.
+
+    /** A dica de otimização de bateria (sugerida ao iniciar uma conversão) já foi mostrada. Ver DicaDeBateria. */
+    var dicaBateriaVista: Boolean
+        get() = p.getBoolean("dica_bateria_vista", false)
+        set(v) = p.edit().putBoolean("dica_bateria_vista", v).apply()
 
     var blacklistWordsJson: String
         get() = p.getString("blacklist_words", "[]") ?: "[]"

@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -19,13 +20,19 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
+import com.jonjonesbr.audiobookgen.data.ConversaoPausadaStore
 import com.jonjonesbr.audiobookgen.data.nomeNormalizadoParaDedupe
 import com.jonjonesbr.audiobookgen.domain.AudiobookLibraryUseCase
+import com.jonjonesbr.audiobookgen.domain.DicaDeBateria
 import com.jonjonesbr.audiobookgen.domain.EventoAprendizado
 import com.jonjonesbr.audiobookgen.domain.ExportStatus
+import com.jonjonesbr.audiobookgen.domain.MotivoParada
+import com.jonjonesbr.audiobookgen.domain.PausaRegras
 import com.jonjonesbr.audiobookgen.service.ConversionQueueCoordinator
 import com.jonjonesbr.audiobookgen.service.ConversionWorker
+import com.jonjonesbr.audiobookgen.service.ControleDaConversao
 import com.jonjonesbr.audiobookgen.service.QueueManager
+import com.jonjonesbr.audiobookgen.util.BatteryOptimizationHelper
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import kotlinx.coroutines.Dispatchers
@@ -48,12 +55,21 @@ class ConversoesActivity : AppCompatActivity() {
     /** Resultado de uma conversão da fila (o evento do ViewModel já foi consumido para a fila seguir). */
     private var resultadoLocal: ConversionDoneEvent? = null
     private var eventoRegistrado = false
+    /** Dados do job pausado para o card (lidos do disco; o disco é a fonte de verdade). */
+    private var pausadaAtual: ConversaoPausadaStore.Pausada? = null
+    /** Usuário tocou em Pausar; o worker ainda não parou. */
+    private var pausandoLocal = false
+    /** Token da execução em que Pausar foi tocado; se a execução mudar (troca de item da fila), o "Pausando" some. */
+    private var tokenDaPausa: String? = null
+    /** Usuário confirmou o descarte; o ViewModel apaga o arquivo em segundo plano, então a tela esconde o card antes. */
+    private var pausadaOcultada = false
 
     private val prefsLegado get() = getSharedPreferences("audiobookgen_prefs", MODE_PRIVATE)
 
     private lateinit var cardAgora: View
     private lateinit var cardPronto: View
     private lateinit var cardErro: View
+    private lateinit var cardPausada: View
     private lateinit var layoutVazio: View
     private lateinit var cardFila: View
 
@@ -65,6 +81,7 @@ class ConversoesActivity : AppCompatActivity() {
         cardAgora = findViewById(R.id.cardConvAgora)
         cardPronto = findViewById(R.id.cardConvPronto)
         cardErro = findViewById(R.id.cardConvErro)
+        cardPausada = findViewById(R.id.cardConvPausada)
         layoutVazio = findViewById(R.id.layoutConvVazio)
         cardFila = findViewById(R.id.cardConvFila)
 
@@ -75,12 +92,17 @@ class ConversoesActivity : AppCompatActivity() {
 
         findViewById<ImageButton>(R.id.btnVoltarConv).setOnClickListener { finish() }
         findViewById<Button>(R.id.btnConvCancelar).setOnClickListener { confirmarCancelamento() }
+        findViewById<Button>(R.id.btnConvPausar).setOnClickListener { pausarConversao() }
+        findViewById<Button>(R.id.btnConvContinuar).setOnClickListener { continuarPausada() }
+        findViewById<Button>(R.id.btnConvDescartar).setOnClickListener { confirmarDescarte() }
         findViewById<Button>(R.id.btnConvFecharPronto).setOnClickListener { fecharResultado() }
         findViewById<Button>(R.id.btnConvFecharErro).setOnClickListener { fecharResultado() }
         findViewById<Button>(R.id.btnConvIrBiblioteca).setOnClickListener { irParaAba(MeusLivrosActivity::class.java) }
         findViewById<Button>(R.id.btnConvVerAudiobooks).setOnClickListener { irParaAba(LibraryActivity::class.java) }
         findViewById<Button>(R.id.btnConvVerFila).setOnClickListener { startActivity(Intent(this, QueueActivity::class.java)) }
         findViewById<Button>(R.id.btnConvIniciarFila).setOnClickListener { rodarFila() }
+
+        tratarPedidoDeCancelamento(intent)
 
         // Sem repeatOnLifecycle de propósito: a fila precisa seguir para o próximo item mesmo com a tela apagada.
         lifecycleScope.launch { viewModel.uiState.collect { mostrar(it) } }
@@ -110,6 +132,12 @@ class ConversoesActivity : AppCompatActivity() {
         outState.putString(ESTADO_TITULO, tituloDoLivro)
     }
 
+    override fun onResume() {
+        super.onResume()
+        pausadaOcultada = false
+        atualizarPausadaDoDisco()
+    }
+
     /** Reabriu a tela com uma conversão (avulsa ou da fila) rodando no worker: volta a acompanhá-la. */
     private suspend fun acompanharConversaoEmAndamento() {
         if (viewModel.uiState.value.processando || !jaHaConversao()) return
@@ -129,6 +157,7 @@ class ConversoesActivity : AppCompatActivity() {
         val ritmo = intent.getIntExtra(EXTRA_RITMO, SEM_RITMO).takeIf { it != SEM_RITMO }
         val estilo = intent.getStringExtra(EXTRA_ESTILO) ?: "padrao"
         lifecycleScope.launch {
+            if (bloqueadoPorPausada()) return@launch
             if (jaHaConversao()) {
                 Toast.makeText(this@ConversoesActivity, R.string.conv_ja_andando, Toast.LENGTH_LONG).show()
                 return@launch
@@ -138,7 +167,31 @@ class ConversoesActivity : AppCompatActivity() {
             resultadoLocal = null
             viewModel.pararPlayer()
             viewModel.iniciarConversao(arquivo, nome, caminhoDoLivro, livroInteiro, estilo, voz, motor, ritmo)
+            sugerirBateriaSeNecessario()
         }
+    }
+
+    /** Sugere, uma única vez, tirar o app da otimização de bateria (conversão longa com a tela apagada). Não bloqueia a conversão. */
+    private fun sugerirBateriaSeNecessario() {
+        val prefs = AppPrefs(this)
+        if (!DicaDeBateria.deveSugerir(
+                Build.VERSION.SDK_INT,
+                BatteryOptimizationHelper.isIgnoringBatteryOptimizations(this),
+                prefs.dicaBateriaVista
+            )
+        ) return
+        if (isFinishing || isDestroyed) return
+        prefs.dicaBateriaVista = true
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dica_bateria_titulo)
+            .setMessage(R.string.dica_bateria_mensagem)
+            .setPositiveButton(R.string.dica_bateria_abrir) { _, _ ->
+                if (!BatteryOptimizationHelper.abrir(this)) {
+                    Toast.makeText(this, R.string.toast_config_bateria_indisponivel, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton(R.string.dica_bateria_depois, null)
+            .show()
     }
 
     private fun bloqueadoPorFaltaDeRede(caminhoDoLivro: String?, voz: String?, motor: String?, ritmo: Int?): Boolean {
@@ -179,6 +232,19 @@ class ConversoesActivity : AppCompatActivity() {
             .show()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        tratarPedidoDeCancelamento(intent)
+    }
+
+    /** Botão "Cancelar" da notificação: abre a confirmação. O extra é removido para não reabrir em recriação. */
+    private fun tratarPedidoDeCancelamento(intent: Intent?) {
+        if (intent?.hasExtra(EXTRA_CONFIRMAR_CANCELAR) != true) return
+        intent.removeExtra(EXTRA_CONFIRMAR_CANCELAR)
+        confirmarCancelamento()
+    }
+
     private fun confirmarCancelamento() {
         AlertDialog.Builder(this)
             .setTitle(R.string.conv_cancelar)
@@ -186,6 +252,80 @@ class ConversoesActivity : AppCompatActivity() {
             .setPositiveButton(R.string.conv_cancelar) { _, _ -> viewModel.cancelarProcessamento() }
             .setNegativeButton(R.string.conv_continuar, null)
             .show()
+    }
+
+    // ── Pausar, continuar e descartar ────────────────────────────────────────
+
+    private fun pausarConversao() {
+        pausandoLocal = true
+        tokenDaPausa = viewModel.uiState.value.progressoRunToken
+        findViewById<Button>(R.id.btnConvPausar).isEnabled = false
+        ControleDaConversao.pedirPausa(this, MotivoParada.PAUSAR)
+        mostrar(viewModel.uiState.value)
+    }
+
+    /** Uma conversão pausada impede iniciar outra (ela guarda o único job pausado). */
+    private fun bloqueadoPorPausada(): Boolean {
+        val bloqueado = !PausaRegras.podeIniciarNovaConversao(ConversaoPausadaStore.existe(applicationContext))
+        if (bloqueado) Toast.makeText(this, R.string.conv_pausada_bloqueia, Toast.LENGTH_LONG).show()
+        return bloqueado
+    }
+
+    private fun continuarPausada() {
+        // Desabilita no clique (o ViewModel também ignora duplo toque); a volta reabilita.
+        findViewById<Button>(R.id.btnConvContinuar).isEnabled = false
+        viewModel.retomarConversaoPausada(
+            aoFalhar = { falha ->
+                findViewById<Button>(R.id.btnConvContinuar).isEnabled = true
+                val mensagem = when (falha) {
+                    RetomadaFalha.JA_HA_CONVERSAO -> R.string.conv_ja_andando
+                    RetomadaFalha.SEM_JOB -> R.string.conv_pausada_sem_job
+                    RetomadaFalha.ARQUIVO_AUSENTE -> R.string.conv_pausada_arquivo_ausente
+                    RetomadaFalha.FALHA_AO_INICIAR -> R.string.conv_pausada_falha_retomar
+                }
+                Toast.makeText(this, mensagem, Toast.LENGTH_LONG).show()
+                atualizarPausadaDoDisco()
+            },
+            aoAceitar = {
+                // Job saiu do disco e foi enfileirado: a tela passa a acompanhar a execução (fila ou avulsa).
+                coordenador.sincronizar()
+                tituloDoLivro = coordenador.currentItem?.nome ?: pausadaAtual?.titulo.orEmpty()
+                atualizarFila()
+            }
+        )
+    }
+
+    private fun confirmarDescarte() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.conv_descartar)
+            .setMessage(R.string.conv_descartar_confirma)
+            .setPositiveButton(R.string.conv_descartar) { _, _ ->
+                viewModel.descartarConversaoPausada()
+                pausadaAtual = null
+                pausadaOcultada = true
+                mostrar(viewModel.uiState.value)
+            }
+            .setNegativeButton(R.string.btn_cancelar, null)
+            .show()
+    }
+
+    /** Relê o job pausado do disco (fora da thread principal) e atualiza o card. */
+    private fun atualizarPausadaDoDisco() {
+        lifecycleScope.launch {
+            pausadaAtual = withContext(Dispatchers.IO) { ConversaoPausadaStore.carregar(applicationContext) }
+            mostrar(viewModel.uiState.value)
+        }
+    }
+
+    /** Card "Pausada" aparece se há job pausado no disco e o usuário não acabou de descartá-lo. */
+    private fun pausadaVisivel(): Boolean = !pausadaOcultada && ConversaoPausadaStore.existe(applicationContext)
+
+    private fun mostrarPausada() {
+        mostrarSo(cardPausada)
+        findViewById<Button>(R.id.btnConvContinuar).isEnabled = true
+        val pausada = pausadaAtual
+        findViewById<TextView>(R.id.tvConvPausadaLivro).text = pausada?.titulo.orEmpty()
+        findViewById<TextView>(R.id.tvConvPausadaPct).text = pausada?.let { getString(R.string.conv_pausada_pct, it.pct) }.orEmpty()
     }
 
     // ── Fila de processamento ────────────────────────────────────────────────
@@ -197,6 +337,7 @@ class ConversoesActivity : AppCompatActivity() {
     /** Processa o próximo item pendente da fila; ao terminar (ver [aoConcluirNaFila]) segue para o seguinte. */
     private fun rodarFila() {
         lifecycleScope.launch {
+            if (bloqueadoPorPausada()) return@launch
             if (jaHaConversao()) {
                 Toast.makeText(this@ConversoesActivity, R.string.conv_ja_andando, Toast.LENGTH_LONG).show()
                 return@launch
@@ -221,6 +362,7 @@ class ConversoesActivity : AppCompatActivity() {
                 runToken = inicio.runToken,
                 filaItemId = inicio.item.id
             )
+            sugerirBateriaSeNecessario()
             atualizarFila()
         }
     }
@@ -253,7 +395,7 @@ class ConversoesActivity : AppCompatActivity() {
             R.plurals.conv_fila_resumo, resumo.pendentes, resumo.pendentes
         )
         findViewById<Button>(R.id.btnConvIniciarFila).visibility =
-            if (resumo.pendentes > 0 && !viewModel.uiState.value.processando) View.VISIBLE else View.GONE
+            if (resumo.pendentes > 0 && !viewModel.uiState.value.processando && !pausadaVisivel()) View.VISIBLE else View.GONE
     }
 
     // ── Estado na tela ───────────────────────────────────────────────────────
@@ -265,11 +407,16 @@ class ConversoesActivity : AppCompatActivity() {
             return
         }
         val exibir = evento ?: resultadoLocal
+        if (!estado.processando || estado.progressoRunToken != tokenDaPausa) pausandoLocal = false
         when {
             estado.processando -> {
                 mostrarSo(cardAgora)
                 findViewById<TextView>(R.id.tvConvLivro).text = tituloDoLivro.ifBlank { getString(R.string.conv_agora_generico) }
-                findViewById<TextView>(R.id.tvConvStatus).text = estado.statusMessage.ifBlank { getString(R.string.status_starting) }
+                findViewById<TextView>(R.id.tvConvStatus).text = when {
+                    pausandoLocal -> getString(R.string.conv_pausando)
+                    else -> estado.statusMessage.ifBlank { getString(R.string.status_starting) }
+                }
+                findViewById<Button>(R.id.btnConvPausar).isEnabled = !pausandoLocal
                 findViewById<ProgressBar>(R.id.pbConv).progress = estado.progressoPct
                 findViewById<TextView>(R.id.tvConvPct).text = getString(R.string.conv_pct, estado.progressoPct)
                 val naFila = coordenador.isProcessingQueue
@@ -285,7 +432,18 @@ class ConversoesActivity : AppCompatActivity() {
             }
             exibir is ConversionDoneEvent.Cancelada -> {
                 viewModel.consumirEventoConversao()
+                resultadoLocal = null
                 Toast.makeText(this, R.string.status_conversion_canceled, Toast.LENGTH_SHORT).show()
+            }
+            exibir is ConversionDoneEvent.Pausada || pausadaVisivel() -> {
+                if (exibir is ConversionDoneEvent.Pausada) {
+                    viewModel.consumirEventoConversao()
+                    resultadoLocal = null
+                    pausadaOcultada = false
+                    Toast.makeText(this, R.string.status_conversion_paused, Toast.LENGTH_SHORT).show()
+                    atualizarPausadaDoDisco()
+                }
+                mostrarPausada()
             }
             else -> mostrarSo(layoutVazio)
         }
@@ -299,7 +457,7 @@ class ConversoesActivity : AppCompatActivity() {
     }
 
     private fun mostrarSo(alvo: View) {
-        listOf(cardAgora, cardPronto, cardErro, layoutVazio).forEach { it.visibility = if (it === alvo) View.VISIBLE else View.GONE }
+        listOf(cardAgora, cardPronto, cardErro, cardPausada, layoutVazio).forEach { it.visibility = if (it === alvo) View.VISIBLE else View.GONE }
     }
 
     private fun mostrarPronto(evento: ConversionDoneEvent.Sucesso) {
@@ -342,6 +500,8 @@ class ConversoesActivity : AppCompatActivity() {
     }
 
     companion object {
+        /** Pedido vindo da notificação de conversão para abrir a confirmação de cancelamento. */
+        const val EXTRA_CONFIRMAR_CANCELAR = "extra_conv_confirmar_cancelar"
         /** Arquivo a converter (o livro ou um trecho em texto). Sem ele, [EXTRA_LIVRO_CAMINHO] é o arquivo (livro inteiro). */
         const val EXTRA_ARQUIVO = "extra_conv_arquivo"
         /** Livro da biblioteca de onde vêm voz, velocidade e tom (e o vínculo do MP3 quando é o livro inteiro). */

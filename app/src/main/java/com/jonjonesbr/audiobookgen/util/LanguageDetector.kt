@@ -52,4 +52,16 @@ object LanguageDetector {
             else -> "pt-BR" // default
         }
     }
+
+    /**
+     * Como [detectLanguage], mas devolve null quando nenhuma palavra da amostra pertence às listas
+     * (sem evidência de idioma). Mesmo critério de amostra; o resultado, quando não é null, é igual
+     * ao de [detectLanguage].
+     */
+    fun detectLanguageOrNull(text: String, sampleSize: Int = 500): String? {
+        val sample = text.take(sampleSize).lowercase()
+        val haEvidencia = sample.split(REGEX_QUEBRA_PALAVRAS)
+            .any { it in PT_WORDS || it in EN_WORDS || it in ES_WORDS }
+        return if (haEvidencia) detectLanguage(text, sampleSize) else null
+    }
 }

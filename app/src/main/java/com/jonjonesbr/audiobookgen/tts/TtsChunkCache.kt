@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.tts
 
 import android.content.Context
+import com.jonjonesbr.audiobookgen.domain.versaoEfetivaSupertonic
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -36,13 +37,21 @@ object TtsChunkCache {
         else -> "python-" + voice.substringBefore('-')
     }
 
+    /**
+     * Supertonic: a revisão depende do texto e de o pacote V1 estar instalado (ver
+     * [versaoEfetivaSupertonic]). Sem V1, inglês é cacheado como v2, igual ao áudio que o motor gera.
+     */
+    internal fun revisaoModelo(voice: String, texto: String, v1Pronto: Boolean): String =
+        if (voice.startsWith("supertonic-")) "supertonic-" + versaoEfetivaSupertonic(voice, texto, v1Pronto)
+        else revisaoModelo(voice)
+
     internal fun hashTexto(texto: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest(texto.toByteArray(Charsets.UTF_8))
         return bytes.joinToString("") { "%02x".format(it) }.take(TAMANHO_HASH_HEX)
     }
 
     /** Revisão do modelo + opções que mudam o áudio (passos do Pocket diferentes do padrão). */
-    internal fun revisaoModelo(context: Context, voice: String): String {
+    internal fun revisaoModelo(context: Context, voice: String, texto: String): String {
         val passos = runCatching {
             when {
                 voice.startsWith("pocket-") -> com.jonjonesbr.audiobookgen.data.AppPrefs(context).pocketPassos
@@ -50,7 +59,9 @@ object TtsChunkCache {
                 else -> 0
             }
         }.getOrDefault(0)
-        return revisaoComPassos(revisaoModelo(voice), voice, passos)
+        val v1Pronto = voice.startsWith("supertonic-") &&
+            runCatching { SupertonicAssetManager.isV1Ready(context) }.getOrDefault(false)
+        return revisaoComPassos(revisaoModelo(voice, texto, v1Pronto), voice, passos)
     }
 
     /**
@@ -72,7 +83,7 @@ object TtsChunkCache {
         voice: String,
         speedPct: Int,
         text: String,
-        modelRevision: String = revisaoModelo(context, voice)
+        modelRevision: String = revisaoModelo(context, voice, text)
     ): File {
         val chave = "$VERSAO_SINTESE\u0000$modelRevision\u0000$voice\u0000$speedPct\u0000$text"
         return File(dir(context), "tts_v2_" + hashTexto(chave) + ".wav")

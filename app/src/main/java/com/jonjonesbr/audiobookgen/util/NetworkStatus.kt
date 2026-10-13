@@ -24,6 +24,13 @@ object NetworkStatus {
             ?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
     }
 
+    /** True quando a rede ativa é tarifada (dados móveis). Indeterminado = true, para não baixar sem saber. */
+    fun isMetered(context: Context): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            ?: return true
+        return cm.isActiveNetworkMetered
+    }
+
     fun isOnline(context: Context): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
             // Sem como checar: assume online e deixa a operação falhar com o erro real.

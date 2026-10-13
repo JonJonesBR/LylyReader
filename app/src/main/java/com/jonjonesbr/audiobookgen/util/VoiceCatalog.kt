@@ -91,7 +91,18 @@ data class PacoteVozes(
      * Null = sem download (nuvem não entra na gestão offline). */
     val download: (suspend (Context, ProgressoDownload) -> Unit)? = null,
     /** Remove o pacote do disco (restaura o estado "não baixado"). */
-    val delete: (Context) -> Unit = {}
+    val delete: (Context) -> Unit = {},
+    /**
+     * Pacote que só aparece no catálogo (Central de downloads, card de Ajustes, seletor de
+     * vozes) quando já estiver instalado. Quem já baixou continua vendo, usando e apagando.
+     * Ver [VoiceCatalog.visivelParaDownload].
+     */
+    val ocultoSemInstalacao: Boolean = false,
+    /**
+     * Idiomas do pacote quando ele não lista vozes próprias (ex.: pacote de idioma do motor que só
+     * cobre o idioma, sem voz no catálogo). Usado pelo filtro de idioma da Central de downloads.
+     */
+    val idiomas: List<String> = emptyList()
 )
 
 /** Vozes separadas pela correspondência com o idioma atual do app. */
@@ -305,6 +316,28 @@ object VoiceCatalog {
                 com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager.copyBundledVoiceStyles(ctx, "v2")
             }
         ),
+        // Supertonic V1 (inglês, opcional). Sem vozes próprias: as F1/M1 continuam no pacote V2 e o
+        // motor escolhe o V1 por texto (domain/VersaoSupertonic). Só aparece no filtro de inglês.
+        PacoteVozes(
+            id = "supertonic-v1",
+            engine = "onnx",
+            nomeExibicao = "Supertonic (inglês)",
+            tamanhoDownloadMb = 255,
+            vozes = emptyList(),
+            isPronto = { ctx ->
+                com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager.isV1Ready(ctx)
+            },
+            tamanhoOcupadoBytes = { ctx ->
+                tamanhoDiretorioEmBytes(java.io.File(ctx.filesDir, "v1"))
+            },
+            download = { ctx, progresso ->
+                com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager.downloadV1(ctx, progresso)
+            },
+            delete = { ctx ->
+                com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager.deleteVersion(ctx, "v1")
+            },
+            idiomas = listOf("en-US")
+        ),
         PacoteVozes(
             id = "kokoro",
             engine = "kokoro",
@@ -333,7 +366,8 @@ object VoiceCatalog {
             download = { ctx, progresso ->
                 com.jonjonesbr.audiobookgen.tts.MmsPtModelManager.download(ctx, progresso)
             },
-            delete = { ctx -> com.jonjonesbr.audiobookgen.tts.MmsPtModelManager.delete(ctx) }
+            delete = { ctx -> com.jonjonesbr.audiobookgen.tts.MmsPtModelManager.delete(ctx) },
+            ocultoSemInstalacao = true
         )
     ) + listOf(
         PacoteVozes(
@@ -528,6 +562,31 @@ object VoiceCatalog {
     fun modeloProntoParaVoz(vozId: String, context: Context): Boolean =
         pacoteDaVoz(vozId)?.isPronto?.invoke(context) ?: true
 
+    /**
+     * Regra de catálogo (pura, testável): pacote [PacoteVozes.ocultoSemInstalacao] só entra nas
+     * listas de download/seleção quando instalado. [instalado] é lazy: só consulta o disco se
+     * o pacote for oculto.
+     */
+    fun visivelParaDownload(ocultoSemInstalacao: Boolean, instalado: () -> Boolean): Boolean =
+        !ocultoSemInstalacao || instalado()
+
+    /** Pacotes que a Central de downloads e o card "Vozes offline" de Ajustes exibem. */
+    fun pacotesVisiveis(context: Context): List<PacoteVozes> =
+        pacotesRegistrados().filter { pacote ->
+            visivelParaDownload(pacote.ocultoSemInstalacao) { pacote.isPronto(context) }
+        }
+
+    /** Remove do seletor as vozes de pacotes ocultos e ainda não instalados (ver [visivelParaDownload]). */
+    fun vozesVisiveis(vozes: List<VoiceOption>, context: Context): List<VoiceOption> {
+        val idsOcultos = pacotesRegistrados()
+            .filterNot { pacote ->
+                visivelParaDownload(pacote.ocultoSemInstalacao) { pacote.isPronto(context) }
+            }
+            .flatMap { pacote -> pacote.vozes.map { it.id } }
+            .toSet()
+        return vozes.filterNot { it.id in idsOcultos }
+    }
+
     private const val PREVIEW_TEXT_PT = "Olá! Esta é uma prévia da voz selecionada para a leitura do seu livro."
     private const val PREVIEW_TEXT_EN = "Hello! This is a preview of the selected voice for reading your book."
     private const val PREVIEW_TEXT_ES = "¡Hola! Esta es una vista previa de la voz seleccionada para leer tu libro."
@@ -538,18 +597,50 @@ object VoiceCatalog {
 
     /**
      * URL do clipe de preview pré-renderizado (vozes offline Kokoro/MMS-TTS, ambas via
-     * KokoroTtsEngine): o app baixa só o clipe (poucos KB) em vez de exigir o bundle completo
-     * antes de o usuário ouvir a voz. Os clipes são gerados com o mesmo texto de preview e
-     * hospedados no mesmo repo HF do bundle (Kokoro = V6 T1.5; MMS-TTS = V6 Parte A).
+     * KokoroTtsEngine, e Supertonic): o app baixa só o clipe (poucos KB) em vez de exigir o
+     * modelo completo antes de o usuário ouvir a voz. Os clipes são gerados com o mesmo texto de
+     * preview e hospedados no mesmo repo HF do bundle (Kokoro = V6 T1.5; MMS-TTS = V6 Parte A).
+     *
+     * Convenção dos clipes Supertonic: `supertonic-preview-<estilo>-<idioma>.mp3`, onde
+     * `<estilo>` é f1..f5 / m1..m5 (id da voz sem o prefixo `supertonic-` e sem `-pt`) e
+     * `<idioma>` é pt, es ou en. Estilos `-pt` (f1..f5-pt, m1..m5-pt) têm só o clipe pt. Os
+     * multilíngues f1/m1 (sem sufixo) têm clipe por idioma; [idioma] fora de pt/es/en cai em pt.
+     * Arquivos publicados (14): supertonic-preview-{f1..f5,m1..m5}-pt.mp3 (o clipe pt de f1/m1
+     * é o mesmo para a voz multilíngue e para a `-pt`) e supertonic-preview-{f1,m1}-{es,en}.mp3.
      */
-    fun previewClipUrl(vozId: String): String? {
+    fun previewClipUrl(vozId: String, idioma: String = IDIOMA_PREVIA_SUPERTONIC): String? {
         val nomeArquivo = when {
             vozId.startsWith("kokoro-") -> "kokoro-preview-${vozId.removePrefix("kokoro-")}.mp3"
             vozId == "mms-por::main-pt" -> "mms-preview-main-pt.mp3"
+            regexVozSupertonic.matches(vozId) -> {
+                val estilo = vozId.removePrefix("supertonic-").removeSuffix("-pt")
+                "supertonic-preview-$estilo-${idiomaPreviaSupertonic(vozId, idioma)}.mp3"
+            }
             else -> return null
         }
         return "${com.jonjonesbr.audiobookgen.tts.KokoroModelManager.BASE_URL}/$nomeArquivo"
     }
+
+    private val regexVozSupertonic = Regex("supertonic-[fm][1-5](-pt)?")
+
+    /** Estilos multilíngues (sem sufixo -pt) que têm clipe em cada idioma de [IDIOMAS_PREVIA_SUPERTONIC]. */
+    private val ESTILOS_SUPERTONIC_MULTILINGUES = setOf("f1", "m1")
+
+    private val IDIOMAS_PREVIA_SUPERTONIC = setOf("pt", "es", "en")
+
+    /**
+     * Idioma efetivo do clipe Supertonic de [vozId] para o [idioma] pedido (código ou tag, ex.:
+     * "es" ou "pt-BR"). Só os estilos multilíngues variam por idioma; os `-pt` ficam em pt.
+     * Idioma não suportado cai em [IDIOMA_PREVIA_SUPERTONIC].
+     */
+    fun idiomaPreviaSupertonic(vozId: String, idioma: String): String {
+        val multilingue = !vozId.endsWith("-pt") &&
+            vozId.removePrefix("supertonic-") in ESTILOS_SUPERTONIC_MULTILINGUES
+        val codigo = idioma.lowercase().substringBefore('-').substringBefore('_')
+        return if (multilingue && codigo in IDIOMAS_PREVIA_SUPERTONIC) codigo else IDIOMA_PREVIA_SUPERTONIC
+    }
+
+    private const val IDIOMA_PREVIA_SUPERTONIC = "pt"
 
     /**
      * Frase de teste no idioma da própria voz — usada no preview (▶) em vez de um texto em

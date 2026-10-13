@@ -179,4 +179,54 @@ class QueueManagerTest {
         QueueManager.repetir(item.id)
         assertNull(item.runToken)
     }
+
+    @Test
+    fun pausadoSobreviveAoRecarregarJson() {
+        val item = QueueManager.adicionar("book.epub", "/tmp/book.epub", "edge")
+        QueueManager.marcarProcessando(item.id, "edge")
+        QueueManager.atualizarProgresso(item.id, 45)
+        item.status = QueueStatus.PAUSADO
+
+        QueueManager.carregarJson(QueueManager.toJson())
+
+        val restored = QueueManager.items.single()
+        assertEquals(QueueStatus.PAUSADO, restored.status)
+        assertNull(restored.erro)
+        assertEquals(45, restored.progressoPct)
+    }
+
+    @Test
+    fun limparNaoAtivosNaoRemovePausado() {
+        val pausado = QueueManager.adicionar("paused.epub", "/tmp/paused.epub")
+        val erro = QueueManager.adicionar("failed.epub", "/tmp/failed.epub")
+        pausado.status = QueueStatus.PAUSADO
+        QueueManager.marcarErro(erro.id, "network")
+
+        QueueManager.limparNaoAtivos()
+
+        assertEquals(listOf(pausado), QueueManager.items)
+    }
+
+    @Test
+    fun pausadoNaoContaComoPendenteNemAtivoNemAndaNaFila() {
+        val pausado = QueueManager.adicionar("paused.epub", "/tmp/paused.epub")
+        pausado.status = QueueStatus.PAUSADO
+
+        assertEquals(0, QueueManager.contarPendentes())
+        assertEquals(0, QueueManager.contarAtivos())
+        assertNull(QueueManager.proximoPendente())
+    }
+
+    @Test
+    fun resumoContaPausados() {
+        val pausado = QueueManager.adicionar("paused.epub", "/tmp/paused.epub")
+        QueueManager.adicionar("pending.epub", "/tmp/pending.epub")
+        pausado.status = QueueStatus.PAUSADO
+
+        val resumo = QueueManager.resumo()
+
+        assertEquals(1, resumo.pausados)
+        assertEquals(1, resumo.pendentes)
+        assertEquals(2, resumo.total)
+    }
 }

@@ -1,10 +1,14 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import com.jonjonesbr.audiobookgen.data.ERRO_FILA_INTERROMPIDA
 import com.jonjonesbr.audiobookgen.data.QueueItem
 import com.jonjonesbr.audiobookgen.data.QueueStatus
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.service.ConversionWorker
+import com.jonjonesbr.audiobookgen.service.ControleDaConversao
+import com.jonjonesbr.audiobookgen.data.ConversaoPausadaStore
 import com.jonjonesbr.audiobookgen.data.QueueRepository
+import com.jonjonesbr.audiobookgen.service.ConversionNotificationManager
 import com.jonjonesbr.audiobookgen.service.QueueManager
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import android.content.Intent
@@ -65,7 +69,7 @@ class QueueActivity : BasePlayerActivity() {
         }
 
         btnLimparFila.setOnClickListener {
-            val processando = QueueManager.items.any { it.status == QueueStatus.PROCESSANDO }
+            val processando = QueueManager.items.any { it.status == QueueStatus.PROCESSANDO || it.status == QueueStatus.PAUSADO }
             if (processando) {
                 QueueManager.limparNaoAtivos()
             } else {
@@ -82,9 +86,20 @@ class QueueActivity : BasePlayerActivity() {
     private fun setupRecycler() {
         adapter = QueueAdapter(
             onRemove = { item ->
-                if (item.status == QueueStatus.PROCESSANDO) {
-                    androidx.work.WorkManager.getInstance(this)
-                        .cancelUniqueWork(ConversionWorker.WORK_NAME)
+                val interrompido = item.status == QueueStatus.ERRO && item.erro == ERRO_FILA_INTERROMPIDA
+                if (item.status == QueueStatus.PROCESSANDO || interrompido) {
+                    ControleDaConversao.pedirCancelamento(this)
+                }
+                if (item.status == QueueStatus.PAUSADO) {
+                    // Remover um item pausado descarta a conversão guardada (só se ela for deste item); não há job rodando.
+                    // T8: descartar_job — o job dir do Python ainda não é apagado aqui.
+                    lifecycleScope.launch {
+                        val guardada = withContext(Dispatchers.IO) { ConversaoPausadaStore.carregar(this@QueueActivity) }
+                        if (guardada?.filaItemId == item.id) {
+                            withContext(Dispatchers.IO) { ConversaoPausadaStore.limpar(this@QueueActivity) }
+                            ConversionNotificationManager(this@QueueActivity).cancelarPausada()
+                        }
+                    }
                 }
                 QueueManager.remover(item.id)
                 adapter.submitList(QueueManager.items.toList())

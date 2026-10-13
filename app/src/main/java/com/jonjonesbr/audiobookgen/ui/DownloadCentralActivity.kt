@@ -100,14 +100,14 @@ class DownloadCentralActivity : BasePlayerActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 DownloadCentral.atualizar(applicationContext)
-                itens = DownloadCentral.itens()
+                itens = DownloadCentral.itens(applicationContext)
                 var chavesAnteriores = emptySet<String>()
                 DownloadCentral.andamento.collect { mapa ->
                     andamentoAtual = mapa
                     // Livros entram e saem da lista enquanto baixam: relê os itens quando o conjunto muda.
                     if (mapa.keys != chavesAnteriores) {
                         chavesAnteriores = mapa.keys
-                        itens = DownloadCentral.itens()
+                        itens = DownloadCentral.itens(applicationContext)
                     }
                     montarLista()
                 }

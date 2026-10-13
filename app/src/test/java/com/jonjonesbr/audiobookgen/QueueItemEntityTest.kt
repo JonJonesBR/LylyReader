@@ -54,4 +54,39 @@ class QueueItemEntityTest {
             restored.erro
         )
     }
+
+    @Test
+    fun pausadoIdaEVoltaSemErroNemPerdaDeProgresso() {
+        val item = QueueItem(
+            id = "id-2",
+            nome = "book.epub",
+            caminhoLocal = "/tmp/book.epub",
+            status = QueueStatus.PAUSADO,
+            progressoPct = 45,
+        )
+
+        val restored = item.toEntity().toQueueItem()
+
+        assertEquals(item, restored)
+        assertEquals(QueueStatus.PAUSADO.name, item.toEntity().status)
+    }
+
+    @Test
+    fun statusDesconhecidoVoltaComoPendente() {
+        val entity = QueueItemEntity(
+            id = "id-3",
+            nome = "book.epub",
+            caminhoLocal = "/tmp/book.epub",
+            status = "ALGO_NOVO",
+            erro = null,
+            motor = null,
+            progressoPct = 0,
+            criadoEmMillis = 10,
+            iniciadoEmMillis = null,
+            finalizadoEmMillis = null,
+            caminhoSaida = null,
+        )
+
+        assertEquals(QueueStatus.PENDENTE, entity.toQueueItem().status)
+    }
 }

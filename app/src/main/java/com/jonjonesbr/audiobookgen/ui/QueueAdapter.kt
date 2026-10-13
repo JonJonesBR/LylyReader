@@ -83,6 +83,12 @@ class QueueAdapter(
                 holder.btnRemover.visibility = View.VISIBLE
                 holder.tvDrag.visibility = View.GONE
             }
+            QueueStatus.PAUSADO -> {
+                holder.tvStatus.text = ctx.getString(R.string.queue_status_paused)
+                holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.color_on_surface_dim))
+                holder.btnRemover.visibility = View.VISIBLE
+                holder.tvDrag.visibility = View.GONE
+            }
         }
 
         holder.btnRetry.setOnClickListener { onRetry(item) }

@@ -276,6 +276,7 @@
     <string name="queue_status_processing">Processing %1$d%%</string>
     <string name="queue_status_completed">Completed</string>
     <string name="queue_status_error">Conversion error</string>
+    <string name="queue_status_paused">Paused</string>
 
     <!-- Settings Activity -->
     <string name="titulo_configuracoes">Settings</string>
@@ -458,12 +459,15 @@
     <string name="btn_hide_advanced_options">Hide advanced options</string>
     <string name="status_options_cleared">Options cleared.</string>
     <string name="status_conversion_canceled">Conversion canceled.</string>
+    <string name="status_conversion_paused">Conversion paused.</string>
     <string name="dialog_confirm_cancel_title">Cancel conversion?</string>
     <string name="dialog_confirm_cancel_msg">The current conversion will be stopped and cannot be resumed. Are you sure?</string>
     <string name="dialog_confirm_clear_title">Clear all options?</string>
     <string name="dialog_confirm_clear_msg">The current conversion will be stopped and all settings will be reset. Are you sure?</string>
     <string name="notification_conversion_done">Audiobook ready</string>
     <string name="notification_conversion_done_message">Conversion completed successfully.</string>
+    <string name="notification_conversion_paused">Conversion paused</string>
+    <string name="notification_conversion_paused_message">Tap to continue — %1$s</string>
     <string name="notification_conversion_progress">Converting audio</string>
     <string name="notification_conversion_channel">Audio conversion</string>
     <string name="notification_conversion_channel_description">Text-to-speech conversion progress</string>
@@ -776,11 +780,15 @@
     <string name="otimizacao_bateria_ativada">Battery optimization enforced</string>
     <string name="btn_config_otimizacao_bateria">Manage</string>
     <string name="toast_config_bateria_indisponivel">Battery settings are not available on this device.</string>
+    <string name="dica_bateria_titulo">Keep long conversions running</string>
+    <string name="dica_bateria_mensagem">To convert long books with the screen off, allow LylyReader to run without battery restrictions. You can change this later in Settings.</string>
+    <string name="dica_bateria_abrir">Open settings</string>
+    <string name="dica_bateria_depois">Not now</string>
     <string name="toast_config_notificacoes_indisponivel">Notification settings screen not available on this device.</string>
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Guided reading: the marker that follows the narration no longer flickers, and the screen scrolls smoothly with each paragraph.</string>
+    <string name="release_notes_corpo">• Safer conversions: you can pause, resume or cancel, with buttons in the notification, and the app tells you when it is worth turning off battery saving.\n• If a passage fails, the app retries it with simplified text before giving up.\n• Simpler first launch: pick your book (from your device, the public library or a link) and the offline voice downloads by itself on Wi-Fi.\n• Clearer English Supertonic voice: download the Supertonic (English) pack in Downloads.\n• Hear a preview of several voices before downloading.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1146,6 +1154,18 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="conv_cancelar">Cancel conversion</string>
     <string name="conv_cancelar_msg">The audiobook being created will be discarded. Do you want to cancel?</string>
     <string name="conv_continuar">Keep going</string>
+    <string name="conv_pausar">Pause</string>
+    <string name="conv_pausando">Pausing...</string>
+    <string name="conv_descartar">Discard</string>
+    <string name="conv_pausada_titulo">Conversion paused</string>
+    <string name="conv_pausada_pct">Paused at %1$d%%</string>
+    <string name="conv_pausada_sem_job">There is no paused conversion to resume.</string>
+    <string name="conv_descartar_confirma">Discard the paused conversion? The generated parts will be lost.</string>
+    <string name="conv_pausada_bloqueia">Resume or discard the paused conversion first.</string>
+    <string name="conv_retomar">Resume</string>
+    <string name="conv_pausada_arquivo_ausente">The source file is gone. Discard this paused conversion and start again.</string>
+    <string name="conv_pausada_falha_retomar">Could not resume the conversion. It stays paused.</string>
+    <string name="conv_pausada_falha_salvar">Could not save the paused conversion.</string>
     <string name="conv_vazio_titulo">No conversion in progress</string>
     <string name="conv_vazio_texto">Open a book and tap Generate audiobook to start.</string>
     <string name="conv_ir_biblioteca">Go to the Library</string>
@@ -1253,4 +1273,14 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="clone_prep_needed">Unlock cloning for this language in Settings → Cloned voices.</string>
     <string name="clone_prep_manage">Unlock language</string>
     <string name="clone_prep_no_browser">No browser is available to open this page.</string>
+    <string name="primeiro_livro_titulo">Choose your book</string>
+    <string name="primeiro_livro_desc">Pick how to start. You can add more books later with the add button.</string>
+    <string name="primeiro_livro_aparelho">From my device</string>
+    <string name="primeiro_livro_aparelho_cd">Choose a book from my device</string>
+    <string name="primeiro_livro_biblioteca">Public library</string>
+    <string name="primeiro_livro_biblioteca_cd">Search free, legal books</string>
+    <string name="primeiro_livro_link">Paste a link</string>
+    <string name="primeiro_livro_link_cd">Download a book from a direct link</string>
+    <string name="primeiro_livro_exemplo">Use the sample book</string>
+    <string name="primeiro_livro_agora_nao">Not now</string>
 </resources>

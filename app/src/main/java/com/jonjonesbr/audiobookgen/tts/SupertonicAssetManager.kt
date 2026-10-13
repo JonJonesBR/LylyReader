@@ -14,12 +14,12 @@ import java.net.HttpURLConnection
 import java.net.URI
 
 object SupertonicAssetManager {
+    /** Pacote por idioma: inglês usa o V1; os demais, o V2 (o V3 não é usado). */
     fun getModelVersionForLanguage(lang: String): String {
         val cleanLang = lang.lowercase().substringBefore("-").substringBefore("_")
         return when (cleanLang) {
             "en" -> "v1"
-            "fr", "pt", "es", "ko" -> "v2"
-            else -> "v3"
+            else -> "v2"
         }
     }
 
@@ -97,6 +97,8 @@ object SupertonicAssetManager {
     fun deleteVersion(context: Context, version: String) {
         val baseDir = File(context.filesDir, version)
         if (baseDir.exists()) {
+            // Marcador primeiro: se a remoção for interrompida, a versão não fica "pronta" pela metade.
+            File(baseDir, ".ready").delete()
             baseDir.deleteRecursively()
         }
     }

@@ -1,5 +1,8 @@
 package com.jonjonesbr.audiobookgen.tts
 
+import com.jonjonesbr.audiobookgen.domain.idiomaNativoSupertonic
+import com.jonjonesbr.audiobookgen.domain.versaoEfetivaSupertonic
+import com.jonjonesbr.audiobookgen.domain.versaoSupertonic
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import android.content.Context
 
@@ -59,6 +62,9 @@ class OnnxTtsEngine(
         // en/ko/es/pt/fr no mesmo modelo (~300 MB). Variantes do voice ID só mudam o `lang`
         // passado para o nativo, e o arquivo de estilo (M1.json/F1.json).
         private const val SUPERTONIC_VERSION  = "v2"
+        // Cobre init/troca de modelo e generate do Supertonic: com paralelismo, uma thread não pode
+        // trocar o modelo (v1 ↔ v2) entre o init e o generate de outra.
+        private val LOCK_MODELO_SUPERTONIC = Any()
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -104,6 +110,9 @@ class OnnxTtsEngine(
             val speedPct = com.jonjonesbr.audiobookgen.data.AppPrefs(context).ritmo
             val speed    = speedPct / 100.0f
 
+            // Versão do modelo decidida UMA vez sobre o texto inteiro (não por subchunk).
+            val versaoModelo = if (voiceId.startsWith("supertonic-")) versaoSupertonicEfetiva(voiceId, texto)
+                else SUPERTONIC_VERSION
             val chunks   = splitIntoChunks(texto, voiceId)
             Log.d(TAG, "Texto dividido em ${chunks.size} chunks.")
             val wavParts = mutableListOf<FloatArray>()
@@ -114,7 +123,7 @@ class OnnxTtsEngine(
                 val result = when {
                     // Supertonic via native backend C++/Rust (JNI)
                     voiceId.startsWith("supertonic-") -> { sampleRate = SUPERTONIC_SR
-                                                           val r = synthesizeSupertonicNative(chunk, voiceId, speed)
+                                                           val r = synthesizeSupertonicNative(chunk, voiceId, speed, versaoModelo)
                                                            Log.d(TAG, "Supertonic result: ${r?.size?.toString() ?: "null"} samples")
                                                            r }
                     else -> {
@@ -201,26 +210,25 @@ class OnnxTtsEngine(
     //  Supertonic 3
     // ──────────────────────────────────────────────────────────────────────────
 
-    private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float): FloatArray? {
+    /** Versão efetiva (v1 só se instalado; senão v2), com log quando o v1 foi pedido e não está pronto. */
+    private fun versaoSupertonicEfetiva(voiceId: String, texto: String): String {
+        val v1Pronto = SupertonicAssetManager.isV1Ready(context)
+        val efetiva = versaoEfetivaSupertonic(voiceId, texto, v1Pronto)
+        if (efetiva == "v2" && versaoSupertonic(voiceId, texto) == "v1") {
+            Log.d(TAG, "Pacote Supertonic V1 não instalado: texto em inglês sintetizado com V2")
+        }
+        return efetiva
+    }
+
+    private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float, version: String): FloatArray? {
         lastChunkErrorReason = null
         if (!com.brahmadeo.supertonic.tts.SupertonicTTS.isNativeLoaded()) {
             return logSynthFailure("Supertonic: lib nativa não carregada")
         }
 
-        // Idioma do Supertonic (V2 multilíngue: en/ko/es/pt/fr). As variantes "-pt" forçam pt.
-        // As multilíngues (M1/F1) detectam o idioma do texto — antes usavam "en" fixo, o que
-        // fazia o preditor de duração GAGUEJAR ao ler português ("E-e-esse é é é...").
-        val lang = if (voiceId.endsWith("-pt", ignoreCase = true)) {
-            "pt"
-        } else {
-            when (com.jonjonesbr.audiobookgen.util.LanguageDetector.detectLanguage(texto)) {
-                "pt-BR" -> "pt"
-                "es-ES" -> "es"
-                else -> "en"
-            }
-        }
-        val version = SUPERTONIC_VERSION
-
+        // Idioma nativo: o V1 é sempre "en"; no V2 as variantes "-pt" forçam pt e as multilíngues
+        // seguem a detecção do texto (ver idiomaNativoSupertonic).
+        val lang = idiomaNativoSupertonic(voiceId, texto, version)
         val onnxDir = File(context.filesDir, "$version/onnx")
         // Validate all required ONNX/config files exist with non-zero length before native init.
         // Any missing/empty file causes the Rust ort crate to panic-abort the process.
@@ -243,23 +251,9 @@ class OnnxTtsEngine(
         val libFile = File(libDir, "libonnxruntime_supertonic.so")
         val libPath = if (libFile.exists()) libFile.absolutePath else "libonnxruntime_supertonic.so"
 
-        if (!com.brahmadeo.supertonic.tts.SupertonicTTS.isInitialized(modelPath)) {
-            // xnnThreads = recommendedThreadCount (dinâmico): o XNNPACK executa o grosso
-            // do vector_estimator e com menos threads deixaria núcleos rápidos ociosos.
-            val initSuccess = try {
-                com.brahmadeo.supertonic.tts.SupertonicTTS
-                    .initialize(modelPath, libPath, recommendedThreadCount, recommendedThreadCount)
-            } catch (e: Throwable) {
-                Log.e(TAG, "Supertonic init threw: ${e.message}", e)
-                lastChunkErrorReason = "init Supertonic lançou: ${e.message ?: e.javaClass.simpleName}"; false
-            }
-            if (!initSuccess) {
-                return null.also { if (lastChunkErrorReason == null) lastChunkErrorReason = "falha ao inicializar" }
-            }
-        }
-
         // Garante os estilos embutidos no APK em filesDir (idempotente; cobre o processo
-        // isolado :supertonic, que pula o startup pesado da Application).
+        // isolado :supertonic, que pula o startup pesado da Application). Para o V1 é no-op:
+        // os estilos dele vêm do download.
         SupertonicAssetManager.copyBundledVoiceStyles(context, version)
 
         // Resolve estilo (HF distribui como M1.json/F1.json — maiúsculo).
@@ -284,15 +278,34 @@ class OnnxTtsEngine(
         // Configurável pelo usuário (Configurações): menos passos = mais rápido, menos qualidade.
         val supertonicSteps = com.jonjonesbr.audiobookgen.data.AppPrefs(context).supertonicSteps
             .coerceIn(1, 16)
-        val pcmBytes = com.brahmadeo.supertonic.tts.SupertonicTTS.generateAudio(
-            text = texto,
-            lang = lang,
-            stylePath = styleFile.absolutePath,
-            speed = speed,
-            bufferDuration = 0.0f,
-            steps = supertonicSteps,
-            gain = 1.0f
-        ) ?: return logSynthFailure("Supertonic: generateAudio nativo retornou null (lang=$lang)")
+
+        // Init e generate no mesmo bloco de lock: com paralelismo, outra thread não pode trocar o
+        // modelo (v1 ↔ v2) entre o init desta chamada e o generate.
+        val pcmBytes = synchronized(LOCK_MODELO_SUPERTONIC) {
+            if (!com.brahmadeo.supertonic.tts.SupertonicTTS.isInitialized(modelPath)) {
+                // xnnThreads = recommendedThreadCount (dinâmico): o XNNPACK executa o grosso
+                // do vector_estimator e com menos threads deixaria núcleos rápidos ociosos.
+                val initSuccess = try {
+                    com.brahmadeo.supertonic.tts.SupertonicTTS
+                        .initialize(modelPath, libPath, recommendedThreadCount, recommendedThreadCount)
+                } catch (e: Throwable) {
+                    Log.e(TAG, "Supertonic init threw: ${e.message}", e)
+                    lastChunkErrorReason = "init Supertonic lançou: ${e.message ?: e.javaClass.simpleName}"; false
+                }
+                if (!initSuccess) {
+                    return null.also { if (lastChunkErrorReason == null) lastChunkErrorReason = "falha ao inicializar" }
+                }
+            }
+            com.brahmadeo.supertonic.tts.SupertonicTTS.generateAudio(
+                text = texto,
+                lang = lang,
+                stylePath = styleFile.absolutePath,
+                speed = speed,
+                bufferDuration = 0.0f,
+                steps = supertonicSteps,
+                gain = 1.0f
+            ) ?: return logSynthFailure("Supertonic: generateAudio nativo retornou null (lang=$lang)")
+        }
 
         val floats = FloatArray(pcmBytes.size / 2)
         val buffer = java.nio.ByteBuffer.wrap(pcmBytes).order(java.nio.ByteOrder.LITTLE_ENDIAN).asShortBuffer()

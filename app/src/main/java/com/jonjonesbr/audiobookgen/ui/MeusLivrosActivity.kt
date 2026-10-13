@@ -90,6 +90,17 @@ class MeusLivrosActivity : BasePlayerActivity() {
     private val buscaLivros =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { carregar() }
 
+    /** Primeiro acesso "Escolha seu livro": a tela devolve o caminho escolhido e aqui se usa a ação já existente. */
+    private val escolhaPrimeiroLivro =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { resultado ->
+            when (resultado.data?.getStringExtra(EscolhaPrimeiroLivroActivity.EXTRA_ESCOLHA)) {
+                EscolhaPrimeiroLivroActivity.ESCOLHA_APARELHO -> seletorArquivos.launch(TIPOS_MIME)
+                EscolhaPrimeiroLivroActivity.ESCOLHA_BIBLIOTECA -> buscaLivros.launch(Intent(this, BuscarLivrosActivity::class.java))
+                EscolhaPrimeiroLivroActivity.ESCOLHA_LINK -> mostrarDialogoLink()
+                EscolhaPrimeiroLivroActivity.ESCOLHA_EXEMPLO -> abrirLivroDeExemplo()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_meus_livros)
@@ -237,7 +248,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
     }
 
     /**
-     * Escolha de vozes do primeiro acesso: aparece UMA vez. Quem já tem algum pacote de voz baixado (ou já passou por ela) não a vê.
+     * Primeiro acesso ("Escolha seu livro"): aparece UMA vez. Quem já tem algum pacote de voz baixado (ou já passou por ela) não a vê.
      * A tela se marca como vista ao abrir, então qualquer saída (Continuar, Voltar, outra aba) conta.
      */
     private fun ofertarVozesUmaVez() {
@@ -250,8 +261,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
             if (temVoz) {
                 appPrefs.voiceDownloadOnboardingDone = true
             } else {
-                startActivity(Intent(this@MeusLivrosActivity, DownloadCentralActivity::class.java)
-                    .putExtra(DownloadCentralActivity.EXTRA_PRIMEIRO_ACESSO, true))
+                escolhaPrimeiroLivro.launch(Intent(this@MeusLivrosActivity, EscolhaPrimeiroLivroActivity::class.java))
             }
             ofertandoVozes = false
         }

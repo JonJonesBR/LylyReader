@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen
 
 import com.jonjonesbr.audiobookgen.util.LanguageDetector
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class LanguageDetectorTest {
@@ -64,5 +65,22 @@ class LanguageDetectorTest {
         // fazendo "the" (en) vencer por 2 a 0 mesmo com "é" aparecendo 4 vezes no texto.
         val texto = "é é é é the the"
         assertEquals("pt-BR", LanguageDetector.detectLanguage(texto))
+    }
+
+    @Test fun orNullDetectaIdiomaQuandoHaEvidencia() {
+        assertEquals("en-US", LanguageDetector.detectLanguageOrNull("The cat is in the box."))
+        assertEquals("pt-BR", LanguageDetector.detectLanguageOrNull("O gato está em casa com um livro."))
+        assertEquals("es-ES", LanguageDetector.detectLanguageOrNull("El gato está en la casa."))
+    }
+
+    @Test fun orNullDevolveNullSemNenhumaPalavraConhecida() {
+        assertNull(LanguageDetector.detectLanguageOrNull(""))
+        assertNull(LanguageDetector.detectLanguageOrNull("xyz qwe 123 ..."))
+        assertNull(LanguageDetector.detectLanguageOrNull("   "))
+    }
+
+    @Test fun orNullConcordaComDetectLanguageQuandoHaEvidencia() {
+        val texto = "This is an example of English text that should be detected."
+        assertEquals(LanguageDetector.detectLanguage(texto), LanguageDetector.detectLanguageOrNull(texto))
     }
 }

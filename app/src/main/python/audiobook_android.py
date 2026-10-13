@@ -111,6 +111,18 @@ def cancelar():
     _cancelar()
 
 
+def cancelar_e_descartar():
+    """Cancela o processamento e apaga o job dir ao parar (cancelamento definitivo)."""
+    from core_processor_android import cancelar_e_descartar as _cancelar_e_descartar
+    _cancelar_e_descartar()
+
+
+def descartar_job(jh: str) -> bool:
+    """Apaga o job dir de uma conversão pausada descartada. Recusa hash em formato inválido."""
+    from core_processor_android import descartar_job as _descartar_job
+    return _descartar_job(jh)
+
+
 def get_cache_info() -> str:
     """Retorna informações do cache de áudio como JSON."""
     import json

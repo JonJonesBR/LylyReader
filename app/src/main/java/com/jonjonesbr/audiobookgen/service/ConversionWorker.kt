@@ -3,13 +3,30 @@ package com.jonjonesbr.audiobookgen.service
 import com.jonjonesbr.audiobookgen.domain.ProcessamentoResult
 import com.jonjonesbr.audiobookgen.domain.ExportStatus
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
+import com.jonjonesbr.audiobookgen.data.ConversaoPausadaStore
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
+import com.jonjonesbr.audiobookgen.domain.DestinoDaParada
+import com.jonjonesbr.audiobookgen.domain.LimiteDeProgresso
+import com.jonjonesbr.audiobookgen.domain.PoliticaPrimeiroPlano
+import com.jonjonesbr.audiobookgen.domain.RegraDaParada
+import com.jonjonesbr.audiobookgen.domain.RenovacaoDeTrava
+import com.jonjonesbr.audiobookgen.domain.TipoServicoConversao
+import com.jonjonesbr.audiobookgen.util.ConversionWakeLock
+import com.jonjonesbr.audiobookgen.util.CrashLogWriter
+import com.jonjonesbr.audiobookgen.util.VisibilidadeDoApp
 import android.content.Context
+import android.content.pm.ServiceInfo
+import android.os.Build
+import android.os.PowerManager
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
+import androidx.work.WorkInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.yield
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Worker responsável por executar a conversão livro->MP3 em background.
@@ -63,6 +80,8 @@ class ConversionWorker(
         const val KEY_RESULT_EXPORT_URI = "result_export_uri"
         const val KEY_RESULT_EXPORT_PASTA = "result_export_pasta"
         const val KEY_RESULT_EXPORT_ERRO = "result_export_erro"
+        /** Parada pedida pelo app (pausa): não é erro nem conclusão; a conversão fica salva em [ConversaoPausadaStore]. */
+        const val KEY_RESULT_PAUSADA = "result_pausada"
 
         // Chave de OutputData (erro)
         const val KEY_ERROR_MSG = "error_msg"
@@ -78,6 +97,7 @@ class ConversionWorker(
     private fun tokenDaExecucao(): String? = inputData.getString(KEY_RUN_TOKEN_ENTRADA) ?: inputData.getString(KEY_RUN_TOKEN)
 
     override suspend fun doWork(): Result {
+        ControleDaConversao.limpar()
         val arquivo    = inputData.getString(KEY_ARQUIVO)
         val voz        = inputData.getString(KEY_VOZ)
         val velocidade = inputData.getString(KEY_VELOCIDADE)
@@ -90,21 +110,101 @@ class ConversionWorker(
         val filaItemId = inputData.getString(KEY_FILA_ITEM_ID)
         val runToken = tokenDaExecucao()
         return try {
+            FilaDeConversao.aoIniciarExecucao(applicationContext, filaItemId, runToken)
             executarConversao(arquivo!!, voz!!, velocidade!!, estilo!!, saida!!)
         } catch (e: kotlinx.coroutines.CancellationException) {
-            // Cancelada pelo usuário: o item fica com erro e a fila para (os demais seguem pendentes).
+            // Parada pelo app/usuário (cancelar) ou pelo sistema (cota, limite de runtime). Só o cancelamento do app fecha o
+            // item; nos demais casos o item continua PROCESSANDO e o WorkManager reexecuta o trabalho.
+            // NOT_STOPPED: o WorkManager pode cancelar antes de gravar o motivo; tratar como cancelamento pelo app (comportamento anterior).
+            val canceladoPeloApp = stopReason == WorkInfo.STOP_REASON_CANCELLED_BY_APP ||
+                stopReason == WorkInfo.STOP_REASON_NOT_STOPPED
+            val destino = RegraDaParada.destino(ControleDaConversao.pedido, canceladoPeloApp)
             kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
-                FilaDeConversao.aoTerminarExecucao(
-                    applicationContext, filaItemId, runToken, null,
-                    applicationContext.getString(com.jonjonesbr.audiobookgen.R.string.status_conversion_canceled), avancar = false
-                )
+                when (destino) {
+                    DestinoDaParada.CANCELADA -> FilaDeConversao.aoTerminarExecucao(
+                        applicationContext, filaItemId, runToken, null,
+                        applicationContext.getString(com.jonjonesbr.audiobookgen.R.string.status_conversion_canceled), avancar = false
+                    )
+                    DestinoDaParada.PAUSADA, DestinoDaParada.INTERROMPIDA ->
+                        PythonEngineUseCase(applicationContext).cancelar()
+                }
             }
             throw e
         } catch (e: Exception) {
             val mensagem = e.message ?: e.javaClass.simpleName
             FilaDeConversao.aoTerminarExecucao(applicationContext, filaItemId, runToken, null, mensagem)
             Result.failure(workDataOf(KEY_ERROR_MSG to mensagem, KEY_RUN_TOKEN to runToken))
+        } finally {
+            ConversionWakeLock.release()
+            // O pedido não pode sobreviver ao worker: a próxima execução começa sem pausa/cancelamento pendente.
+            ControleDaConversao.limpar()
         }
+    }
+
+    /**
+     * Entra em primeiro plano quando a [PoliticaPrimeiroPlano] permite (app visível, fora da otimização de bateria
+     * ou Android abaixo de 12). Falha do sistema ao iniciar não derruba a conversão: segue sem primeiro plano.
+     */
+    private suspend fun iniciarPrimeiroPlano(notif: ConversionNotificationManager) {
+        try {
+            val semOtimizacaoBateria = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager)
+                .isIgnoringBatteryOptimizations(applicationContext.packageName)
+            if (!PoliticaPrimeiroPlano.podeIniciar(Build.VERSION.SDK_INT, VisibilidadeDoApp.appVisivel, semOtimizacaoBateria)) {
+                return
+            }
+            setForeground(infoPrimeiroPlano(notif))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            CrashLogWriter.log(e, "ConversionWorker", "setForeground")
+        }
+    }
+
+    /**
+     * Notificação e tipo de serviço do primeiro plano. O tipo segue o SDK pela [PoliticaPrimeiroPlano]:
+     * as constantes de ServiceInfo só são usadas nos ramos de SDK correspondentes (29+ e 35+).
+     */
+    private fun infoPrimeiroPlano(notif: ConversionNotificationManager): ForegroundInfo {
+        val notificacao = notif.construir(0, "")
+        return when (PoliticaPrimeiroPlano.tipoDeServico(Build.VERSION.SDK_INT)) {
+            TipoServicoConversao.MEDIA_PROCESSING -> ForegroundInfo(
+                ConversionNotificationManager.NOTIF_ID, notificacao,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROCESSING
+            )
+            TipoServicoConversao.DATA_SYNC -> ForegroundInfo(
+                ConversionNotificationManager.NOTIF_ID, notificacao,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+            TipoServicoConversao.NENHUM -> ForegroundInfo(ConversionNotificationManager.NOTIF_ID, notificacao)
+        }
+    }
+
+    /** Exigido pelo WorkManager para trabalho em primeiro plano; devolve a mesma notificação de [iniciarPrimeiroPlano]. */
+    override suspend fun getForegroundInfo(): ForegroundInfo =
+        infoPrimeiroPlano(ConversionNotificationManager(applicationContext))
+
+    /** Há pedido de pausa do app (ou do limite do sistema) que deve parar a conversão preservando o job. */
+    private fun devePausar(): Boolean =
+        RegraDaParada.destino(ControleDaConversao.pedido, canceladoPeloApp = false) == DestinoDaParada.PAUSADA
+
+    /**
+     * Pausa de verdade: o motor já parou (job dir do Python preservado, ele só limpa em sucesso). Guarda o [inputData]
+     * exato para retomar, avisa a fila e a notificação, e devolve sucesso marcado com [KEY_RESULT_PAUSADA].
+     */
+    private suspend fun pausar(
+        notif: ConversionNotificationManager, arquivo: String, pct: Int, runToken: String?, job: String? = null
+    ): Result {
+        val titulo = File(arquivo).nameWithoutExtension
+        notif.cancelar()
+        if (!ConversaoPausadaStore.salvar(applicationContext, inputData, titulo, pct, job)) {
+            // Sem o job guardado não há como retomar: trata como erro, pelo mesmo caminho do erro comum.
+            val mensagem = applicationContext.getString(com.jonjonesbr.audiobookgen.R.string.conv_pausada_falha_salvar)
+            FilaDeConversao.aoTerminarExecucao(applicationContext, inputData.getString(KEY_FILA_ITEM_ID), runToken, null, mensagem)
+            return Result.failure(workDataOf(KEY_ERROR_MSG to mensagem, KEY_RUN_TOKEN to runToken))
+        }
+        FilaDeConversao.aoPausarExecucao(applicationContext, inputData.getString(KEY_FILA_ITEM_ID), runToken)
+        notif.mostrarPausada(titulo)
+        return Result.success(workDataOf(KEY_RESULT_PAUSADA to true, KEY_RUN_TOKEN to runToken))
     }
 
     private suspend fun executarConversao(
@@ -124,19 +224,36 @@ class ConversionWorker(
         yield()
 
         val notif = ConversionNotificationManager(applicationContext)
+        iniciarPrimeiroPlano(notif)
+        ConversionWakeLock.acquire(applicationContext)
+        var ultimaRenovacaoMs = System.currentTimeMillis()
         val engine = PythonEngineUseCase(applicationContext)
         engine.inicializarMotorSeNecessario()
         val tomDoLivro = inputData.getInt(KEY_TOM_MEIOS_TONS, SEM_VALOR).takeIf { it != SEM_VALOR }
         val agudosDoLivro = inputData.getInt(KEY_AGUDOS_DB, SEM_VALOR).takeIf { it != SEM_VALOR }
         engine.sincronizarConfiguracoes(motor, chaveGemini, pausaMs, tomDoLivro, agudosDoLivro)
 
+        var ultimaAtualizacaoMs: Long? = null
+        // Último percentual visto (fora do limitador), para a pausa salvar onde a conversão estava.
+        val ultimoPct = AtomicInteger(0)
         val onProgress: (Int, String) -> Unit = { pct, msg ->
-                notif.mostrar(pct, msg)
-                setProgressAsync(workDataOf(
-                    KEY_PROGRESS_PCT to pct,
-                    KEY_PROGRESS_MSG to msg,
-                    KEY_RUN_TOKEN to runToken
-                ))
+                ultimoPct.set(pct)
+                // Pausa pedida antes/durante a extração: o Python zera a flag em _reset_cancelar, então reforça a cada chamada.
+                if (devePausar()) engine.cancelar()
+                val agora = System.currentTimeMillis()
+                if (LimiteDeProgresso.deveAtualizar(ultimaAtualizacaoMs, agora, pct)) {
+                    notif.mostrar(pct, msg)
+                    setProgressAsync(workDataOf(
+                        KEY_PROGRESS_PCT to pct,
+                        KEY_PROGRESS_MSG to msg,
+                        KEY_RUN_TOKEN to runToken
+                    ))
+                    ultimaAtualizacaoMs = agora
+                }
+                if (RenovacaoDeTrava.deveRenovar(ultimaRenovacaoMs, agora)) {
+                    ConversionWakeLock.renovar()
+                    ultimaRenovacaoMs = agora
+                }
             }
         val speakerMapPath = inputData.getString(KEY_SPEAKER_MAP_PATH)
             ?.takeIf { File(it).isFile }
@@ -145,6 +262,8 @@ class ConversionWorker(
         } else {
             null
         }
+        // O Python zera a flag de cancelamento ao iniciar: se a pausa já foi pedida, não inicia o motor.
+        if (devePausar()) return pausar(notif, arquivo, ultimoPct.get(), runToken)
         val result = if (speakerMapPath != null && textoComMapa != null) {
             engine.processarTexto(
                 texto = textoComMapa,
@@ -202,6 +321,8 @@ class ConversionWorker(
                 )
             }
             is ProcessamentoResult.Error -> {
+                // Pausa pedida pelo app interrompe o motor e chega aqui como erro ("Cancelado pelo usuário."): não é erro.
+                if (devePausar()) return pausar(notif, arquivo, ultimoPct.get(), runToken, result.job)
                 notif.cancelar()
                 FilaDeConversao.aoTerminarExecucao(
                     applicationContext, inputData.getString(KEY_FILA_ITEM_ID), runToken, null, result.mensagem

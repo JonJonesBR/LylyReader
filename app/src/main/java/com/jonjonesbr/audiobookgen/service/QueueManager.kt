@@ -109,6 +109,7 @@ object QueueManager {
         processando = items.count { it.status == QueueStatus.PROCESSANDO },
         concluidos = items.count { it.status == QueueStatus.CONCLUIDO },
         erros = items.count { it.status == QueueStatus.ERRO },
+        pausados = items.count { it.status == QueueStatus.PAUSADO },
     )
 
     fun limparNaoAtivos() {
@@ -232,4 +233,5 @@ data class QueueSummary(
     val processando: Int,
     val concluidos: Int,
     val erros: Int,
+    val pausados: Int = 0,
 )

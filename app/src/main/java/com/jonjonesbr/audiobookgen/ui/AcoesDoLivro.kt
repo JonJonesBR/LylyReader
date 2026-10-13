@@ -73,7 +73,8 @@ object AcoesDoLivro {
             val ativo = com.jonjonesbr.audiobookgen.service.QueueManager.items.any {
                 it.caminhoLocal == arquivo.absolutePath &&
                     (it.status == com.jonjonesbr.audiobookgen.data.QueueStatus.PENDENTE ||
-                        it.status == com.jonjonesbr.audiobookgen.data.QueueStatus.PROCESSANDO)
+                        it.status == com.jonjonesbr.audiobookgen.data.QueueStatus.PROCESSANDO ||
+                        it.status == com.jonjonesbr.audiobookgen.data.QueueStatus.PAUSADO)
             }
             if (ativo) {
                 Toast.makeText(activity, R.string.gerar_fila_ja, Toast.LENGTH_SHORT).show()
