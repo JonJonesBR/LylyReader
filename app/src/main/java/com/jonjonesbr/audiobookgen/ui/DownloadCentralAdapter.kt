@@ -75,7 +75,7 @@ class DownloadCentralAdapter(
                 }
             )
         }
-        holder.nome.text = linha.item.nome
+        holder.nome.text = nomeExibidoDoPacote(holder.nome.context, linha.item.id, linha.item.nome)
 
         holder.check.setOnCheckedChangeListener(null)
         holder.check.visibility = if (linha.selecionavel) View.VISIBLE else View.INVISIBLE

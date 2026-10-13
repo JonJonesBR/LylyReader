@@ -41,8 +41,6 @@ class DownloadCentralActivity : BasePlayerActivity() {
     private val selecionados = mutableSetOf<String>()
     private var itens: List<ItemBaixavel> = emptyList()
     private var filtro = com.jonjonesbr.audiobookgen.domain.FiltroIdioma.TODOS
-    /** Primeiro acesso ao app: a Central em "modo escolha de vozes" (sem barra inferior; "Continuar" segue para a Biblioteca). */
-    private var primeiroAcesso = false
     private var andamentoAtual: Map<String, AndamentoDownload> = emptyMap()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,18 +49,14 @@ class DownloadCentralActivity : BasePlayerActivity() {
         setContentView(R.layout.activity_download_central)
         com.jonjonesbr.audiobookgen.data.AppPrefs(this).registrarEvento(com.jonjonesbr.audiobookgen.domain.EventoAprendizado.DOWNLOADS_ABERTO.id)
         configurarMiniPlayerBotoes()
-        if (!intent.getBooleanExtra(EXTRA_PRIMEIRO_ACESSO, false)) NavegacaoPrincipal.configurar(this, AbaPrincipal.DOWNLOADS)
+        NavegacaoPrincipal.configurar(this, AbaPrincipal.DOWNLOADS)
         findViewById<android.view.View>(R.id.layoutFooterDownloads).aplicarPaddingInferiorComNavigationBar()
         findViewById<ImageButton>(R.id.btnVoltarDownloads).setOnClickListener { finish() }
         btnSelecionados = findViewById(R.id.btnBaixarSelecionados)
         btnTudo = findViewById(R.id.btnBaixarTudo)
         btnPausarTudo = findViewById(R.id.btnPausarTudo)
         btnSimultaneos = findViewById(R.id.btnSimultaneos)
-        primeiroAcesso = intent.getBooleanExtra(EXTRA_PRIMEIRO_ACESSO, false)
-        // Oferecida uma vez: ao abrir já conta como vista (sair por qualquer caminho não a traz de volta).
-        if (primeiroAcesso) prefs.voiceDownloadOnboardingDone = true
         configurarFiltroDeIdioma()
-        if (primeiroAcesso) configurarPrimeiroAcesso()
 
         adapter = DownloadCentralAdapter(
             onPrincipal = ::aoToquePrincipal,
@@ -139,34 +133,14 @@ class DownloadCentralActivity : BasePlayerActivity() {
         com.jonjonesbr.audiobookgen.domain.FiltroIdioma.TODOS -> R.id.chipIdiomaTodos
     }
 
-    /** Itens que o filtro de idioma mostra (no primeiro acesso, só os pacotes de voz). */
+    /** Itens que o filtro de idioma mostra. */
     private fun visiveis(): List<ItemBaixavel> = itens.filter { item ->
-        com.jonjonesbr.audiobookgen.domain.IdiomaDownload.combina(filtro, item.idiomas) &&
-            (!primeiroAcesso || item.grupo == com.jonjonesbr.audiobookgen.service.GrupoDownload.MOTORES)
-    }
-
-    private fun configurarPrimeiroAcesso() {
-        findViewById<android.widget.TextView>(R.id.tvTituloDownloads).setText(R.string.dl_primeiro_titulo)
-        findViewById<android.widget.TextView>(R.id.tvDescDownloads).setText(R.string.dl_primeiro_desc)
-        findViewById<android.view.View>(R.id.btnBuscarLivrosDownloads).visibility = android.view.View.GONE
-        findViewById<android.view.View>(R.id.navPrincipal).visibility = android.view.View.GONE
-        findViewById<Button>(R.id.btnConcluirPrimeiroAcesso).apply {
-            visibility = android.view.View.VISIBLE
-            setOnClickListener { concluirPrimeiroAcesso() }
-        }
-        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() = concluirPrimeiroAcesso()
-        })
-    }
-
-    private fun concluirPrimeiroAcesso() {
-        prefs.voiceDownloadOnboardingDone = true
-        finish()
+        com.jonjonesbr.audiobookgen.domain.IdiomaDownload.combina(filtro, item.idiomas)
     }
 
     override fun onResume() {
         super.onResume()
-        if (!primeiroAcesso) NavegacaoPrincipal.configurar(this, AbaPrincipal.DOWNLOADS) // volta de outra tela: realça de novo a aba certa
+        NavegacaoPrincipal.configurar(this, AbaPrincipal.DOWNLOADS) // volta de outra tela: realça de novo a aba certa
         atualizarCabecalho()
     }
 
@@ -230,8 +204,8 @@ class DownloadCentralActivity : BasePlayerActivity() {
         val mensagem = if (linha.estado == EstadoDownload.PRONTO) R.string.dl_central_apagar_msg
         else R.string.dl_central_cancelar_msg
         AlertDialog.Builder(this)
-            .setTitle(linha.item.nome)
-            .setMessage(getString(mensagem, linha.item.nome))
+            .setTitle(nomeExibidoDoPacote(this, linha.item.id, linha.item.nome))
+            .setMessage(getString(mensagem, nomeExibidoDoPacote(this, linha.item.id, linha.item.nome)))
             .setPositiveButton(
                 if (linha.estado == EstadoDownload.PRONTO) R.string.dl_central_apagar else R.string.dl_central_cancelar
             ) { _, _ ->
@@ -285,8 +259,6 @@ class DownloadCentralActivity : BasePlayerActivity() {
     }
 
     companion object {
-        /** Abre a Central como escolha de vozes do primeiro acesso (ver [MeusLivrosActivity]). */
-        const val EXTRA_PRIMEIRO_ACESSO = "extra_primeiro_acesso"
         private const val BYTES_POR_MB = 1024L * 1024L
     }
 }

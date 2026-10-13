@@ -802,14 +802,12 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(progressoPct = pct, statusMessage = mensagem, progressoRunToken = runToken) }
     }
 
-    fun pausarProcessamento() {
+    fun cancelarProcessamento() {
         ControleDaConversao.pedirCancelamento(getApplication())
         setProcessando(false)
         conversionNotif.cancelar()
         _uiState.update { it.copy(statusMessage = getApplication<Application>().getString(R.string.status_conversion_canceled)) }
     }
-
-    fun cancelarProcessamento() = pausarProcessamento()
 
     // ── Player Principal ──────────────────────────────────────────────────────
 

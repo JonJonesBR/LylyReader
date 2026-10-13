@@ -658,6 +658,7 @@
     <string name="pacote_offline_nao_baixado">Not downloaded · ~%1$dMB</string>
     <string name="pacote_offline_estado_baixado">downloaded</string>
     <string name="pacote_download_wifi_aviso">You are not on Wi-Fi. This download will use mobile data.</string>
+    <string name="pacote_nome_supertonic_ingles">Supertonic (English)</string>
     <string name="toast_vozes_apagadas">Offline voices deleted successfully!</string>
     <string name="toast_erro_apagar_vozes">Could not delete offline voices. Try again or free up storage space.</string>
     <string name="btn_importar_voz">Import voice (file)</string>

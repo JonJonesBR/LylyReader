@@ -131,6 +131,52 @@ def descartar_job(jh: str) -> bool:
     return True
 
 
+def _data_mais_recente_do_job(pasta: str) -> float:
+    """Maior data de modificação entre o diretório do job e o progress.json (se existir)."""
+    recente = os.path.getmtime(pasta)
+    pf = os.path.join(pasta, "progress.json")
+    if os.path.exists(pf):
+        recente = max(recente, os.path.getmtime(pf))
+    return recente
+
+
+def limpar_jobs_antigos(max_dias: int = 30, agora: Optional[float] = None, manter: Optional[str] = None) -> int:
+    """Apaga job dirs (job_<hash16>) em TEMP_DIR sem uso há mais de max_dias. Nunca levanta exceção.
+    Ignora nomes fora do formato de _job_hash, links simbólicos e o job `manter` (hash atual).
+    Devolve quantos diretórios foram apagados."""
+    apagados = 0
+    try:
+        if not os.path.isdir(TEMP_DIR):
+            return 0
+        limite = (time.time() if agora is None else agora) - max_dias * 86400
+        with os.scandir(TEMP_DIR) as it:
+            entradas = list(it)
+    except Exception as e:
+        logger.warning(f"Limpeza de jobs antigos ignorada: {e}")
+        return 0
+
+    for entrada in entradas:
+        try:
+            nome = entrada.name
+            if not nome.startswith("job_") or not _JOB_HASH_RE.fullmatch(nome[len("job_"):]):
+                continue
+            if manter and nome == f"job_{manter}":
+                continue
+            if entrada.is_symlink() or not entrada.is_dir(follow_symlinks=False):
+                continue
+            if _data_mais_recente_do_job(entrada.path) >= limite:
+                continue
+            shutil.rmtree(entrada.path, ignore_errors=True)
+            if not os.path.exists(entrada.path):
+                apagados += 1
+        except Exception as e:
+            logger.warning(f"Não foi possível limpar job antigo {entrada.name}: {e}")
+
+    if apagados:
+        logger.info(f"Jobs antigos apagados: {apagados}.")
+    return apagados
+
+
 def _retorno_cancelado(jh: str) -> dict:
     """Retorno de cancelamento. Se o cancelamento pediu descarte, apaga o job aqui: a síntese já terminou."""
     if _descartar_ao_cancelar:
@@ -388,6 +434,7 @@ async def processar(
     # Retomada de progresso
     plan_for_hash = list(zip(chunks, chunk_voices)) if speaker_plan else None
     jh        = _job_hash(chunks, voz, estilo, plan_for_hash, velocidade, tom)
+    limpar_jobs_antigos(manter=jh)
     job_directory = _job_dir(jh)
     os.makedirs(job_directory, exist_ok=True)
 

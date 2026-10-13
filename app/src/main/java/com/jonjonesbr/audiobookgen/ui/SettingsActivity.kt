@@ -950,7 +950,7 @@ class SettingsActivity : BasePlayerActivity() {
         ocupadoMb: Double
     ): android.view.View {
         val linha = layoutInflater.inflate(R.layout.item_pacote_offline, null)
-        linha.findViewById<android.widget.TextView>(R.id.tvPacoteNome).text = pacote.nomeExibicao
+        linha.findViewById<android.widget.TextView>(R.id.tvPacoteNome).text = nomeExibidoDoPacote(this, pacote.id, pacote.nomeExibicao)
         val estado = linha.findViewById<android.widget.TextView>(R.id.tvPacoteEstado)
         val botao = linha.findViewById<android.widget.Button>(R.id.btnPacoteAcao)
         if (pronto) {
@@ -1047,7 +1047,7 @@ class SettingsActivity : BasePlayerActivity() {
     private fun baixarPacote(pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
         if (!com.jonjonesbr.audiobookgen.util.NetworkStatus.isOnWifi(this)) {
             android.app.AlertDialog.Builder(this)
-                .setTitle(pacote.nomeExibicao)
+                .setTitle(nomeExibidoDoPacote(this, pacote.id, pacote.nomeExibicao))
                 .setMessage(R.string.pacote_download_wifi_aviso)
                 .setPositiveButton(R.string.pacote_offline_baixar) { _, _ -> baixarPacoteDireto(pacote) }
                 .setNegativeButton(android.R.string.cancel, null)
