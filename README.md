@@ -42,14 +42,16 @@ https://github.com/user-attachments/assets/3f099670-c9ce-47a4-8846-af99d97583c0
 - Backup and restore of bookmarks, highlights, progress, statistics and settings in a single ZIP, with a merge that never deletes local data.
 
 ### Reading
-- Guided reading with live speed control, text normalization for natural pronunciation (abbreviations, dates, currency, units, acronyms) and a pronunciation dictionary.
+- Guided reading with live speed control, text normalization for natural pronunciation (abbreviations, dates, currency, units, acronyms) and a pronunciation dictionary that works for all books or only for the book you are reading.
 - Background narration, with an indicator and a notification that returns you to the exact paragraph.
 - Table of contents, bookmarks, highlights with notes, word lookup, text search and reading progress per chapter.
 - Themes: Light, Dark, Sepia and pure black, with an optional serif font (Literata) and margin control.
 
 ### Audiobooks and conversion
 - Convert a whole book, a chapter or a selected excerpt, with cover art and chapter marks.
-- The **Conversions** screen shows what is being generated, with the queue and the result.
+- The **Conversions** screen shows what is being generated, with the queue and the result. You can pause a conversion and continue it later, and very long ones pause by themselves before Android would stop them.
+- Books with character voices use them in queue and library conversions too, not only in guided reading.
+- **Check how the text will be spoken:** before converting, see what changes (numbers, abbreviations, acronyms and your pronunciation entries) for the selected voice.
 - Each book keeps its voice, speed and tone; you can preview voices before a long conversion.
 - Export audiobooks as MP3, chapters as .txt, or the audiobook as an MP4 video (split into parts for YouTube).
 - Playback with resume, sleep timer with fade-out, auto-rewind, background playback and notification controls.

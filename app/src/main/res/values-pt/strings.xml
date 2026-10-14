@@ -781,7 +781,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Mais fácil de usar: botões maiores e mais fáceis de tocar, cores de texto mais nítidas, textos pequenos um pouco maiores e telas que se adaptam melhor quando o celular usa fonte grande.\n• Conversões muito longas agora pausam sozinhas antes que o Android as interrompa. É só tocar em Continuar para retomar.\n• Novo slogan na primeira tela: Seus livros, em voz alta.\n• O nome do pacote Supertonic (inglês) agora acompanha o idioma do app.</string>
+    <string name="release_notes_corpo">• Dicionário de pronúncia por livro: ao ensinar como falar um nome, você escolhe se vale só para aquele livro ou para todos.\n• Novo botão \"Conferir como o texto será falado\" ao gerar um audiobook: mostra o que muda (números, abreviações, siglas e as suas pronúncias) antes de converter.\n• Livros com vozes de personagens agora usam essas vozes também ao gerar pela fila e pela biblioteca.\n• O botão de tocar e pausar do mini-player agora acompanha a notificação, o fone e a tela de bloqueio, e o ponto onde você parou é salvo.\n• Novo slogan: LylyReader: Dê voz aos seus livros!\n• Textos pequenos de Ajustes um pouco maiores.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>

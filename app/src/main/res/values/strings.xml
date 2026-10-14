@@ -790,7 +790,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Easier to use: bigger buttons that are easier to tap, clearer text colors and small text a little larger, and screens that adapt better when your phone uses a large font.\n• Very long conversions now pause by themselves before Android stops them. Just tap Continue to resume.\n• New tagline on the first screen: Your books, out loud.\n• The Supertonic (English) pack name now follows the app language.</string>
+    <string name="release_notes_corpo">• Pronunciation dictionary per book: when you teach how to say a name, you choose whether it applies to that book only or to all of them.\n• New \"Check how the text will be spoken\" button when generating an audiobook: it shows what changes (numbers, abbreviations, acronyms and your pronunciations) before converting.\n• Books with character voices now use those voices when generating from the queue and the library too.\n• The mini-player play/pause button now follows the notification, headphones and lock screen, and where you stopped is saved.\n• New tagline: LylyReader: Give your books a voice!\n• Small text in Settings is a little larger.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>

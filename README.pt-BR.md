@@ -42,14 +42,16 @@ https://github.com/user-attachments/assets/f04b1f61-9b0e-4409-a057-1c1c3fb67679
 - Backup e restauração de marcadores, destaques, progresso, estatísticas e configurações em um único ZIP, com uma mesclagem que nunca apaga dados locais.
 
 ### Leitura
-- Leitura guiada com controle de velocidade ao vivo, normalização do texto para uma pronúncia natural (abreviações, datas, moedas, unidades, siglas) e dicionário de pronúncia.
+- Leitura guiada com controle de velocidade ao vivo, normalização do texto para uma pronúncia natural (abreviações, datas, moedas, unidades, siglas) e dicionário de pronúncia, que vale para todos os livros ou só para o livro que você está lendo.
 - Narração em segundo plano, com indicador e uma notificação que leva de volta ao parágrafo exato.
 - Sumário, marcadores, destaques com notas, consulta de palavras, busca no texto e progresso de leitura por capítulo.
 - Temas: Claro, Escuro, Papel e preto puro, com fonte serifada opcional (Literata) e controle de margem.
 
 ### Audiolivros e conversão
 - Converta um livro inteiro, um capítulo ou um trecho selecionado, com capa e marcas de capítulo.
-- A tela **Conversões** mostra o que está sendo gerado, a fila e o resultado.
+- A tela **Conversões** mostra o que está sendo gerado, a fila e o resultado. Dá para pausar uma conversão e continuar depois, e as muito longas pausam sozinhas antes que o Android as interrompa.
+- Livros com vozes de personagens usam essas vozes também nas conversões da fila e da biblioteca, não só na leitura guiada.
+- **Conferir como o texto será falado:** antes de converter, veja o que muda (números, abreviações, siglas e as suas pronúncias) para a voz escolhida.
 - Cada livro mantém sua voz, velocidade e tom; dá para ouvir uma prévia da voz antes de uma conversão longa.
 - Exporte o audiolivro em MP3, os capítulos em .txt ou o audiolivro como vídeo MP4 (dividido em partes para o YouTube).
 - Reprodução com continuação de onde parou, temporizador com fade-out, retrocesso automático, reprodução em segundo plano e controles na notificação.

@@ -42,14 +42,16 @@ https://github.com/user-attachments/assets/85d1265c-99d0-4d1c-a38f-a593696509f6
 - Copia de seguridad y restauración de marcadores, destacados, progreso, estadísticas y ajustes en un único ZIP, con una fusión que nunca borra datos locales.
 
 ### Lectura
-- Lectura guiada con control de velocidad en vivo, normalización del texto para una pronunciación natural (abreviaturas, fechas, monedas, unidades, siglas) y diccionario de pronunciación.
+- Lectura guiada con control de velocidad en vivo, normalización del texto para una pronunciación natural (abreviaturas, fechas, monedas, unidades, siglas) y diccionario de pronunciación, que vale para todos los libros o solo para el libro que estás leyendo.
 - Narración en segundo plano, con indicador y una notificación que te lleva de vuelta al párrafo exacto.
 - Índice, marcadores, destacados con notas, consulta de palabras, búsqueda en el texto y progreso de lectura por capítulo.
 - Temas: Claro, Oscuro, Papel y negro puro, con fuente con serifas opcional (Literata) y control de márgenes.
 
 ### Audiolibros y conversión
 - Convierte un libro completo, un capítulo o un fragmento seleccionado, con portada y marcas de capítulo.
-- La pantalla **Conversiones** muestra lo que se está generando, la cola y el resultado.
+- La pantalla **Conversiones** muestra lo que se está generando, la cola y el resultado. Puedes pausar una conversión y continuarla después, y las muy largas se pausan solas antes de que Android las interrumpa.
+- Los libros con voces de personajes usan esas voces también en las conversiones de la cola y de la biblioteca, no solo en la lectura guiada.
+- **Comprobar cómo se leerá el texto:** antes de convertir, mira qué cambia (números, abreviaturas, siglas y tus pronunciaciones) para la voz elegida.
 - Cada libro mantiene su voz, velocidad y tono; puedes escuchar una muestra de la voz antes de una conversión larga.
 - Exporta el audiolibro en MP3, los capítulos en .txt o el audiolibro como video MP4 (dividido en partes para YouTube).
 - Reproducción con continuación donde la dejaste, temporizador con desvanecimiento, retroceso automático, reproducción en segundo plano y controles en la notificación.
