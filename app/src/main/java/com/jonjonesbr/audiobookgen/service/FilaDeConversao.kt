@@ -213,14 +213,18 @@ object FilaDeConversao {
             withContext(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
             val inicio = fechamento.proximo
             val ajustes = ajustesDoProximo
-            if (inicio != null && ajustes != null) enfileirar(app, inicio, ajustes)
+            if (inicio != null && ajustes != null) {
+                // Livro com vozes de personagens: converte o texto reconstruído do mapa (fora da thread principal).
+                val comMapa = withContext(Dispatchers.IO) { ArquivoComPersonagens.preparar(app, inicio.item.caminhoLocal) }
+                enfileirar(app, inicio, ajustes, comMapa)
+            }
         }
     }
 
-    private fun enfileirar(context: Context, inicio: QueueStart, ajustes: AjustesDaConversao) {
+    private fun enfileirar(context: Context, inicio: QueueStart, ajustes: AjustesDaConversao, comMapa: Pair<String, String>?) {
         val item = inicio.item
         val parametros = ParametrosConversao(
-            arquivoEntrada = item.caminhoLocal,
+            arquivoEntrada = comMapa?.first ?: item.caminhoLocal,
             voz = ajustes.voz,
             velocidade = TtsRate.fromRitmo(ajustes.ritmo),
             estilo = ESTILO_PADRAO,
@@ -228,9 +232,11 @@ object FilaDeConversao {
             motor = ajustes.motor,
             runToken = inicio.runToken,
             livroOrigemCaminho = item.caminhoLocal,
+            speakerMapPath = comMapa?.second,
             tomMeiosTons = ajustes.tomMeiosTons,
             agudosDb = ajustes.agudosDb,
-            filaItemId = item.id
+            filaItemId = item.id,
+            livroDicionarioCaminho = item.caminhoLocal
         )
         val pedido = OneTimeWorkRequestBuilder<ConversionWorker>()
             .setInputData(parametros.toInputData(AppPrefs(context).pausaMs))

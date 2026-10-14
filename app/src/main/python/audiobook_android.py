@@ -955,3 +955,36 @@ def processar_texto_sync(
         return {"ok": False, "erro": type(e).__name__ + ": " + str(e) + "\n\n" + tb_str}
     finally:
         loop.close()
+
+
+def relatorio_normalizacao_json(texto: str, voz: str) -> str:
+    """Relatório de conferência (antes → depois) da normalização que a síntese faria com esta voz.
+
+    Usa o mesmo idioma e as mesmas flags de tts.converter_tts_auto e aplica antes o dicionário de
+    pronúncia. Não sintetiza nada. Devolve JSON: {"ok": bool, "trocas": [{"antes","depois"}], "erro"?}.
+    """
+    import json
+    import pronunciation_dict
+    from text_normalizer import comparar_textos, relatorio_trocas
+    from tts import _idioma_para_voz
+    try:
+        idioma = _idioma_para_voz(voz)
+        trocas = []
+        for linha in (texto or "").split("\n"):
+            if not linha.strip():
+                continue
+            # 1) Dicionário de pronúncia: original → após o dicionário (é o que será falado antes da normalização).
+            falado = pronunciation_dict.aplicar(linha)
+            trocas.extend(comparar_textos(linha, falado))
+            # 2) Normalizador sobre o texto já com o dicionário, como a síntese faz.
+            trocas.extend(relatorio_trocas(
+                falado,
+                idioma=idioma,
+                # Mesmas flags de tts.converter_tts_auto: o Pocket lê números soltos por extenso e
+                # Pocket/Piper não podem receber travessão no início do trecho.
+                numeros_soltos=voz.startswith("pocket-"),
+                sem_travessoes=voz.startswith(("pocket-", "piper-")),
+            ))
+        return json.dumps({"ok": True, "trocas": trocas}, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"ok": False, "erro": str(e), "trocas": []}, ensure_ascii=False)

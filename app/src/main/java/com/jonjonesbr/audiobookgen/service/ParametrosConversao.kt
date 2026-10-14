@@ -25,7 +25,12 @@ data class ParametrosConversao(
     val tomMeiosTons: Int? = null,
     val agudosDb: Int? = null,
     /** Item da fila de processamento que esta execução atende; o worker o fecha e inicia o próximo (ver [FilaDeConversao]). */
-    val filaItemId: String? = null
+    val filaItemId: String? = null,
+    /**
+     * Livro dono do texto (inteiro, capítulo ou trecho) cujo dicionário de pronúncia próprio entra na conversão, somado ao global.
+     * É o caminho real do livro, nunca o .txt temporário. Null = só o global.
+     */
+    val livroDicionarioCaminho: String? = null
 ) {
     fun toInputData(pausaMs: Int): Data {
         val base = workDataOf(
@@ -39,7 +44,8 @@ data class ParametrosConversao(
         ConversionWorker.KEY_RUN_TOKEN     to runToken,
         ConversionWorker.KEY_RUN_TOKEN_ENTRADA to runToken,
         ConversionWorker.KEY_LIVRO_ORIGEM  to livroOrigemCaminho,
-        ConversionWorker.KEY_SPEAKER_MAP_PATH to speakerMapPath
+        ConversionWorker.KEY_SPEAKER_MAP_PATH to speakerMapPath,
+        ConversionWorker.KEY_LIVRO_DICIONARIO to livroDicionarioCaminho
         )
         val builder = Data.Builder().putAll(base)
         tomMeiosTons?.let { builder.putInt(ConversionWorker.KEY_TOM_MEIOS_TONS, it) }

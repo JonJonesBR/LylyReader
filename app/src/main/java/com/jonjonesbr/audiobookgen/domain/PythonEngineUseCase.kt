@@ -51,6 +51,22 @@ class PythonEngineUseCase(private val context: Context) {
 
         /** Tamanho do trecho de texto incluído no log de diagnóstico da síntese. */
         private const val LOG_TEXTO_PREVIEW_CHARS = 80
+
+        /** Parágrafos enviados por vez ao Python no relatório de trocas (livro grande não vai inteiro). */
+        private const val PARAGRAFOS_POR_LOTE_RELATORIO = 200
+
+        /**
+         * Verdadeiro enquanto o worker de conversão roda. Durante a conversão o dicionário do Python é do livro da
+         * conversão: leitura, prévia e diálogos não o reescrevem. O worker liga após definir o dicionário e desliga
+         * (restaurando o global) no finally.
+         */
+        @Volatile private var emConversa = false
+
+        fun marcarConversaoAtiva(ativa: Boolean) {
+            emConversa = ativa
+        }
+
+        fun conversaoAtiva(): Boolean = emConversa
     }
 
     private val TAG = "PythonEngineUseCase"
@@ -77,14 +93,16 @@ class PythonEngineUseCase(private val context: Context) {
     }
 
     /**
-     * Aplica configurações globais ao módulo Python.
+     * Aplica configurações globais ao módulo Python. Com [caminhoDoLivro], o dicionário de pronúncia injetado é o
+     * global mais o do livro (o do livro vence); sem ele, só o global.
      */
     suspend fun sincronizarConfiguracoes(
         motorTts: String,
         chaveGemini: String,
         pausaMs: Int = 600,
         tomMeiosTons: Int? = null,
-        agudosDb: Int? = null
+        agudosDb: Int? = null,
+        caminhoDoLivro: String? = null
     ) = withContext(Dispatchers.IO) {
         try {
             if (!inicializarMotorSeNecessario()) return@withContext
@@ -96,11 +114,37 @@ class PythonEngineUseCase(private val context: Context) {
             mod.callAttr("set_config", "timbre_tom_meios_tons", tomMeiosTons ?: prefs.tomVozMeiosTons)
             mod.callAttr("set_config", "timbre_agudos_db", agudosDb ?: prefs.suavizarAgudosDb)
             mod.callAttr("set_gemini_keys", chaveGemini)
-            mod.callAttr("set_pronunciations", com.jonjonesbr.audiobookgen.data.PronunciationStore.rawJson(context))
+            // Durante uma conversão, o dicionário do Python já é o do livro da conversão: não o reescreve.
+            if (!conversaoAtiva()) sincronizarDicionarioNoMotor(mod, caminhoDoLivro)
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao sincronizar config Python: ${e.message}")
             CrashLogWriter.log(e, "sincronizarConfiguracoes", "motor=$motorTts")
         }
+    }
+
+    /**
+     * Manda ao motor só o dicionário de pronúncia efetivo (global mais o do livro, se houver). Usar depois de
+     * salvar entradas no leitor, para a próxima síntese já valer. Sem livro, o resultado é só o global.
+     */
+    suspend fun sincronizarDicionario(caminhoDoLivro: String?) = withContext(Dispatchers.IO) {
+        // Com conversão em andamento, quem manda no dicionário do Python é o worker (ver marcarConversaoAtiva).
+        if (conversaoAtiva()) return@withContext
+        try {
+            if (!inicializarMotorSeNecessario()) return@withContext
+            sincronizarDicionarioNoMotor(Python.getInstance().getModule("audiobook_android"), caminhoDoLivro)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao sincronizar dicionário Python: ${e.message}")
+            CrashLogWriter.log(e, "sincronizarDicionario")
+        }
+    }
+
+    private fun sincronizarDicionarioNoMotor(mod: com.chaquo.python.PyObject, caminhoDoLivro: String?) {
+        val dicionarioDoLivro = com.jonjonesbr.audiobookgen.data.PronunciationBookStore.doApp(context)
+            .load(caminhoDoLivro.orEmpty())
+        val dicionarioEfetivo = DicionarioDoLivro.efetivo(
+            com.jonjonesbr.audiobookgen.data.PronunciationStore.get(context), dicionarioDoLivro
+        )
+        mod.callAttr("set_pronunciations", dicionarioEfetivo.toJson())
     }
 
     /** Ajusta o bitrate de saída (kbps) do áudio gerado. */
@@ -373,6 +417,44 @@ class PythonEngineUseCase(private val context: Context) {
             SinteseResult.Error(TtsErrorMapper.toUserMessage(e.message ?: "Falha crítica na síntese"))
         } finally {
             SynthesisWakeLock.release()
+        }
+    }
+
+    /**
+     * Relatório de conferência (antes → depois) da normalização que a síntese faria com esta voz. Não
+     * sintetiza nada. Processa em lotes de parágrafos. Em falha devolve lista vazia (e registra no log).
+     * O dicionário de pronúncia é o que estiver sincronizado no Python (ver sincronizarDicionario).
+     */
+    suspend fun relatorioDeTrocas(texto: String, voz: String): List<TrocaNormalizador> = withContext(Dispatchers.IO) {
+        try {
+            if (!inicializarMotorSeNecessario()) return@withContext emptyList()
+            val mod = Python.getInstance().getModule("audiobook_android")
+            texto.lines()
+                .filter { it.isNotBlank() }
+                .chunked(PARAGRAFOS_POR_LOTE_RELATORIO)
+                .flatMap { lote ->
+                    val json = mod.callAttr("relatorio_normalizacao_json", lote.joinToString("\n"), voz).toString()
+                    trocasDoRelatorio(json)
+                }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao gerar relatório de trocas: ${e.message}")
+            CrashLogWriter.log(e, "relatorioDeTrocas")
+            emptyList()
+        }
+    }
+
+    private fun trocasDoRelatorio(json: String): List<TrocaNormalizador> {
+        val obj = JSONObject(json)
+        if (!obj.optBoolean("ok", false)) {
+            Log.e(TAG, "Relatório de trocas falhou: ${obj.optString("erro")}")
+            return emptyList()
+        }
+        val arr = obj.optJSONArray("trocas") ?: return emptyList()
+        return (0 until arr.length()).map { i ->
+            val item = arr.getJSONObject(i)
+            TrocaNormalizador(item.getString("antes"), item.getString("depois"))
         }
     }
 }

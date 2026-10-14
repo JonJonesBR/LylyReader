@@ -183,7 +183,7 @@ class LivroActivity : BasePlayerActivity() {
         val vista = layoutInflater.inflate(R.layout.bottom_sheet_gerar_audiobook, null)
         folha.setContentView(vista)
         vista.findViewById<TextView>(R.id.tvGerarLivro).text = l.titulo
-        // O mapa de personagens é por parágrafo da Leitura guiada; a geração direta não o aplica, então avisa onde usá-lo.
+        // Se há vozes de personagens, a geração do livro inteiro (ArquivoComPersonagens) já as usa; o aviso só informa isso.
         val temVozesDePersonagens = com.jonjonesbr.audiobookgen.domain.SpeakerAttributionStore(java.io.File(filesDir, "speaker_attribution"))
             .temVozesAtribuidas(caminho())
         vista.findViewById<View>(R.id.tvGerarAvisoPersonagens).visibility = if (temVozesDePersonagens) View.VISIBLE else View.GONE
@@ -216,6 +216,10 @@ class LivroActivity : BasePlayerActivity() {
         val avancadas = vista.findViewById<View>(R.id.layoutGerarAvancadas)
         vista.findViewById<View>(R.id.btnGerarAvancadas).setOnClickListener {
             avancadas.visibility = if (avancadas.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }
+        vista.findViewById<View>(R.id.btnGerarConferir).setOnClickListener {
+            // Usa a voz que o painel mostra agora (a deste livro, ou a global se ele não tem voz própria).
+            ConferirTrocasDialog.show(this, caminho(), vozDoLivro().first)
         }
         vista.findViewById<View>(R.id.btnGerarPasta).setOnClickListener { seletorPasta.launch(null) }
         val (vozAtual, motorAtual) = vozDoLivro()

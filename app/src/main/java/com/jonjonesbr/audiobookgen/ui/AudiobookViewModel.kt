@@ -4,6 +4,7 @@ import com.jonjonesbr.audiobookgen.R
 
 import com.jonjonesbr.audiobookgen.domain.ExportStatus
 import com.jonjonesbr.audiobookgen.domain.PreviewResult
+import com.jonjonesbr.audiobookgen.service.ArquivoComPersonagens
 import com.jonjonesbr.audiobookgen.service.ConversionNotificationManager
 import com.jonjonesbr.audiobookgen.service.ParametrosConversao
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
@@ -194,9 +195,10 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
 
     // ── Python Use Cases (Substituindo Service e AsyncTask) ────────────────
 
-    fun prepararConfiguracoesPython(motor: String, chaveEfetiva: String, pausaMs: Int) {
+    /** Sem [caminhoDoLivro], o dicionário de pronúncia enviado ao motor é só o global. */
+    fun prepararConfiguracoesPython(motor: String, chaveEfetiva: String, pausaMs: Int, caminhoDoLivro: String? = null) {
         pausaMsAtual = pausaMs
-        viewModelScope.launch { pythonEngine.sincronizarConfiguracoes(motor, chaveEfetiva, pausaMs) }
+        viewModelScope.launch { pythonEngine.sincronizarConfiguracoes(motor, chaveEfetiva, pausaMs, caminhoDoLivro = caminhoDoLivro) }
     }
 
     // Despacha entre 3 caminhos de síntese (android/onnx/python) — cada um com seu próprio
@@ -403,7 +405,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         val chave = com.jonjonesbr.audiobookgen.data.SecurePreferences.getGeminiKeys(context)
         val saidaInterna = java.io.File(context.filesDir, "$nomeAudiobook.mp3").absolutePath
 
-        prepararConfiguracoesPython(ajustes.motor, chave, appPrefs.pausaMs)
+        prepararConfiguracoesPython(ajustes.motor, chave, appPrefs.pausaMs, caminhoDoLivro)
         return iniciarProcessamento(
             ParametrosConversao(
                 arquivoEntrada = arquivoEntrada,
@@ -415,7 +417,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 livroOrigemCaminho = livroOrigemCaminho,
                 speakerMapPath = speakerMapPath,
                 tomMeiosTons = ajustes.tomMeiosTons,
-                agudosDb = ajustes.agudosDb
+                agudosDb = ajustes.agudosDb,
+                livroDicionarioCaminho = caminhoDoLivro
             )
         )
     }
@@ -459,23 +462,44 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         val chave = com.jonjonesbr.audiobookgen.data.SecurePreferences.getGeminiKeys(context)
         val saidaInterna = java.io.File(context.filesDir, "$nomeAudiobook.mp3").absolutePath
 
-        prepararConfiguracoesPython(ajustes.motor, chave, appPrefs.pausaMs)
-        iniciarProcessamento(
-            ParametrosConversao(
-                arquivoEntrada = arquivo,
-                voz = ajustes.voz,
-                velocidade = com.jonjonesbr.audiobookgen.util.TtsRate.fromRitmo(ajustes.ritmo),
-                estilo = estilo,
-                caminhoSaidaInterna = saidaInterna,
-                motor = ajustes.motor,
-                runToken = runToken,
-                livroOrigemCaminho = if (livroInteiro) caminhoDoLivro else null,
-                speakerMapPath = speakerMapPath,
-                tomMeiosTons = ajustes.tomMeiosTons,
-                agudosDb = ajustes.agudosDb,
-                filaItemId = filaItemId
+        // Montagem e início da conversão; com [comMapa] (texto reconstruído do mapa de personagens), usa-o no lugar de [arquivo].
+        fun iniciar(comMapa: Pair<String, String>?): Boolean {
+            prepararConfiguracoesPython(ajustes.motor, chave, appPrefs.pausaMs, caminhoDoLivro)
+            return iniciarProcessamento(
+                ParametrosConversao(
+                    arquivoEntrada = comMapa?.first ?: arquivo,
+                    voz = ajustes.voz,
+                    velocidade = com.jonjonesbr.audiobookgen.util.TtsRate.fromRitmo(ajustes.ritmo),
+                    estilo = estilo,
+                    caminhoSaidaInterna = saidaInterna,
+                    motor = ajustes.motor,
+                    runToken = runToken,
+                    livroOrigemCaminho = if (livroInteiro) caminhoDoLivro else null,
+                    speakerMapPath = comMapa?.second ?: speakerMapPath,
+                    tomMeiosTons = ajustes.tomMeiosTons,
+                    agudosDb = ajustes.agudosDb,
+                    filaItemId = filaItemId,
+                    livroDicionarioCaminho = caminhoDoLivro
+                )
             )
-        )
+        }
+
+        // Livro inteiro com vozes de personagens: o texto do mapa (o mesmo que o leitor usa) é gravado fora da thread principal.
+        val livroComMapa = if (speakerMapPath == null && livroInteiro && caminhoDoLivro != null && caminhoDoLivro == arquivo) {
+            caminhoDoLivro
+        } else {
+            null
+        }
+        if (livroComMapa == null) {
+            iniciar(null)
+            return
+        }
+        // Marca "processando" já agora, para um segundo toque não disparar outra conversão enquanto o texto é preparado.
+        _uiState.update { it.copy(processando = true) }
+        viewModelScope.launch {
+            val comMapa = withContext(Dispatchers.IO) { ArquivoComPersonagens.preparar(context, livroComMapa) }
+            if (!iniciar(comMapa)) _uiState.update { it.copy(processando = false) }
+        }
     }
 
     /** Ajustes da conversão de um livro: escolha na hora > perfil do livro (voz, velocidade, tom) > preferências globais. */
@@ -848,14 +872,14 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
      * Fala EXATAMENTE [texto] com a voz/motor indicados (usado para ouvir uma pronúncia do dicionário;
      * a prévia comum de voz pode tocar um clipe fixo em vez do texto).
      */
-    fun ouvirTexto(voz: String, ritmo: Int, motor: String, texto: String) {
+    fun ouvirTexto(voz: String, ritmo: Int, motor: String, texto: String, caminhoDoLivro: String? = null) {
         if (_uiState.value.amostraGerando || texto.isBlank()) return
         _uiState.update { it.copy(amostraGerando = true, statusMessage = getApplication<Application>().getString(R.string.status_gerando_amostra)) }
         viewModelScope.launch {
             val app = getApplication<android.app.Application>()
             val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motor)
             val caminho = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(motorEfetivo, app, pythonEngine) {
+                com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(motorEfetivo, app, pythonEngine, caminhoDoLivro) {
                     com.jonjonesbr.audiobookgen.tts.OnnxTtsEngine(app)
                 }.synthesize(texto, voz, ritmo)
             }

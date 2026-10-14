@@ -11,6 +11,7 @@ Chamado antes de qualquer G2P, em todos os pipelines (local e remoto).
 
 from __future__ import annotations
 
+import difflib
 import re
 import unicodedata
 from typing import List
@@ -771,3 +772,73 @@ def normalizar(
     t = _normalizar_pontuacao(t)
 
     return t
+
+
+def relatorio_trocas(
+    texto: str,
+    idioma: str = "pt",
+    numeros_soltos: bool = False,
+    sem_travessoes: bool = False,
+) -> List[dict]:
+    """Lista, linha a linha, o que a normalização troca (antes → depois), só para conferência.
+
+    Não altera nada: chama `normalizar()` com as mesmas flags da síntese e compara palavra a
+    palavra (difflib). Cada item é um trecho que mudou, com `antes` (como está) e `depois`
+    (como será falado). Quando a troca é uma inserção/remoção pura, inclui uma palavra vizinha
+    para o trecho fazer sentido. Espaços e pontuação que não mudam a leitura não aparecem.
+
+    O texto deve chegar já com o dicionário de pronúncia aplicado (é quem chama que aplica).
+    """
+    trocas: List[dict] = []
+    if not texto or not texto.strip():
+        return trocas
+
+    for linha in texto.split("\n"):
+        if not linha.strip():
+            continue
+        depois = normalizar(
+            linha, idioma, numeros_soltos=numeros_soltos, sem_travessoes=sem_travessoes
+        )
+        trocas.extend(comparar_textos(linha, depois))
+    return trocas
+
+
+def comparar_textos(antes: str, depois: str) -> List[dict]:
+    """Trocas entre duas versões de um mesmo trecho, por palavra (difflib), no formato
+    `{"antes", "depois"}`. Usado pelo relatório para comparar o texto original com o texto após o
+    dicionário de pronúncia e, depois, com a normalização. Texto igual ou vazio devolve `[]`."""
+    palavras_antes = antes.split()
+    palavras_depois = depois.split()
+    casador = difflib.SequenceMatcher(None, palavras_antes, palavras_depois, autojunk=False)
+    trocas: List[dict] = []
+    for i1, i2, j1, j2 in _grupos_alterados(casador.get_opcodes()):
+        ini_a, fim_a, ini_b, fim_b = i1, i2, j1, j2
+        if i1 == i2 or j1 == j2:
+            ini_a, fim_a = max(0, i1 - 1), min(len(palavras_antes), i2 + 1)
+            ini_b, fim_b = max(0, j1 - 1), min(len(palavras_depois), j2 + 1)
+        trocas.append({
+            "antes": " ".join(palavras_antes[ini_a:fim_a]),
+            "depois": " ".join(palavras_depois[ini_b:fim_b]),
+        })
+    return trocas
+
+
+def _grupos_alterados(ops) -> List[tuple]:
+    """Junta trechos alterados separados por no máximo 1 palavra igual (ex.: 'R$ 45,90 e US$ 10'
+    → um único grupo, em vez de 'e' casado no meio e a troca partida em dois pedaços sem sentido)."""
+    grupos: List[list] = []
+    aberto = False
+    for k, (tag, i1, i2, j1, j2) in enumerate(ops):
+        if tag == "equal":
+            proximo_alterado = k + 1 < len(ops) and ops[k + 1][0] != "equal"
+            if aberto and proximo_alterado and (i2 - i1) <= 1:
+                grupos[-1][1], grupos[-1][3] = i2, j2  # ponte: palavras iguais entre duas trocas
+            else:
+                aberto = False
+            continue
+        if aberto:
+            grupos[-1][1], grupos[-1][3] = i2, j2
+        else:
+            grupos.append([i1, i2, j1, j2])
+            aberto = True
+    return [tuple(g) for g in grupos]

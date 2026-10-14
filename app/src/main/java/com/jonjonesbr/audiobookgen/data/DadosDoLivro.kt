@@ -5,6 +5,7 @@ import com.jonjonesbr.audiobookgen.domain.ChavesDeLivro
 import com.jonjonesbr.audiobookgen.domain.SpeakerAiStore
 import com.jonjonesbr.audiobookgen.domain.SpeakerAttributionStore
 import com.jonjonesbr.audiobookgen.domain.SpeakerEditsStore
+import com.jonjonesbr.audiobookgen.service.ArquivoComPersonagens
 import com.jonjonesbr.audiobookgen.service.GuidedBookAudioStore
 import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
 import java.io.File
@@ -21,6 +22,8 @@ object DadosDoLivro {
     private const val PREFIXO_TOTAL = "reader_total_"
 
     private fun pastaPersonagens(ctx: Context) = File(ctx.filesDir, "speaker_attribution")
+
+    private fun pastaPronuncias(ctx: Context) = File(ctx.filesDir, "pronuncias_livro")
 
     /** Copia os dados de [antigo] para [novo]; **nunca sobrescreve** o que o caminho novo já tem (a posição de leitura fica com a maior). */
     fun migrar(ctx: Context, antigo: String, novo: String) {
@@ -41,6 +44,9 @@ object DadosDoLivro {
         SpeakerAttributionStore(pasta).migrarIdentidade(antigo, novo)
         SpeakerAiStore(pasta).migrarIdentidade(antigo, novo)
         SpeakerEditsStore(pasta).migrarIdentidade(antigo, novo)
+        PronunciationBookStore(pastaPronuncias(ctx)).migrarIdentidade(antigo, novo)
+        // O texto reconstruído do mapa é recriado a cada conversão; o do caminho antigo não tem mais dono.
+        ArquivoComPersonagens.apagar(ctx, antigo)
     }
 
     private fun migrarInteiro(
@@ -70,5 +76,7 @@ object DadosDoLivro {
         SpeakerAttributionStore(pasta).apagarIdentidade(caminho)
         SpeakerAiStore(pasta).clear(caminho)
         SpeakerEditsStore(pasta).apagarIdentidade(caminho)
+        PronunciationBookStore(pastaPronuncias(ctx)).apagarIdentidade(caminho)
+        ArquivoComPersonagens.apagar(ctx, caminho)
     }
 }

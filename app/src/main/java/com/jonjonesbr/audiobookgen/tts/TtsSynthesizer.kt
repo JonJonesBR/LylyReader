@@ -25,11 +25,16 @@ interface TtsSynthesizer {
     fun ultimoErro(): String? = null
 
     companion object {
-        /** Escolhe a implementação certa para [motorEfetivo] ("onnx", "android" ou o motor Python). */
+        /**
+         * Escolhe a implementação certa para [motorEfetivo] ("onnx", "android" ou o motor Python).
+         * Com [caminhoDoLivro], o dicionário é o global mais o do livro (o do livro vence); sem ele, só o global.
+         * O dicionário do livro é lido a cada trecho, então uma edição feita no meio da leitura vale logo.
+         */
         fun para(
             motorEfetivo: String,
             context: Context,
             pythonUseCase: PythonEngineUseCase,
+            caminhoDoLivro: String? = null,
             onnxEngine: () -> OnnxTtsEngine
         ): TtsSynthesizer = PronunciationSynthesizer(
             when (motorEfetivo) {
@@ -40,7 +45,12 @@ interface TtsSynthesizer {
                 "elevenlabs" -> ElevenLabsTtsSynthesizer(context)
                 else -> PythonTtsSynthesizer(pythonUseCase, motorEfetivo, SecurePreferences.getGeminiKeys(context))
             }
-        ) { com.jonjonesbr.audiobookgen.data.PronunciationStore.get(context) }
+        ) {
+            com.jonjonesbr.audiobookgen.domain.DicionarioDoLivro.efetivo(
+                com.jonjonesbr.audiobookgen.data.PronunciationStore.get(context),
+                com.jonjonesbr.audiobookgen.data.PronunciationBookStore.doApp(context).load(caminhoDoLivro.orEmpty())
+            )
+        }
     }
 }
 

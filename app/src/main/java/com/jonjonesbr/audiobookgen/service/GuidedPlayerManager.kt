@@ -521,7 +521,7 @@ class GuidedPlayerManager(
 
             val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motor)
             val synthesizer = com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(
-                motorEfetivo, context, pythonUseCase
+                motorEfetivo, context, pythonUseCase, caminhoArquivo
             ) { getOnnxEngine() }
 
             try {
@@ -681,7 +681,7 @@ class GuidedPlayerManager(
         modoOracoes = true
         paragrafoChars = paragraphText.length.coerceAtLeast(1)
         val narrador = com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(
-            fallbackEngine, context, pythonUseCase
+            fallbackEngine, context, pythonUseCase, caminhoArquivo
         ) { getOnnxEngine() }
         var nextSynthesis: kotlinx.coroutines.Deferred<String?>? = null
         var textCursor = 0
@@ -691,7 +691,7 @@ class GuidedPlayerManager(
                 val engine = VoiceCatalog.effectiveEngine(segment.voiceId, fallbackEngine)
                 val synthesizer = if (segment.voiceId == narratorVoice) narrador else
                     com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(
-                        engine, context, pythonUseCase
+                        engine, context, pythonUseCase, caminhoArquivo
                     ) { getOnnxEngine() }
 
                 var audioPath = nextSynthesis?.await()
@@ -707,7 +707,7 @@ class GuidedPlayerManager(
                     val nextEngine = VoiceCatalog.effectiveEngine(next.voiceId, fallbackEngine)
                     val nextSynthesizer = if (next.voiceId == narratorVoice) narrador else
                         com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(
-                            nextEngine, context, pythonUseCase
+                            nextEngine, context, pythonUseCase, caminhoArquivo
                         ) { getOnnxEngine() }
                     nextSynthesis = coroutineScope.async(Dispatchers.IO) {
                         nextSynthesizer.synthesize(next.text, next.voiceId, ritmo)
@@ -1099,7 +1099,7 @@ class GuidedPlayerManager(
 
                     val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motor)
                     val synthesizer = com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(
-                        motorEfetivo, context, pythonUseCase
+                        motorEfetivo, context, pythonUseCase, caminhoArquivo
                     ) { getOnnxEngine() }
 
                     // Janela de buffer adaptativa por tipo de motor:
@@ -1240,7 +1240,7 @@ class GuidedPlayerManager(
                     val motorDaUnidade = VoiceCatalog.effectiveEngine(vozUnidade, motorEfetivo)
                     val sintetizador = sintetizadores.getOrPut(motorDaUnidade) {
                         com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(
-                            motorDaUnidade, context, pythonUseCase
+                            motorDaUnidade, context, pythonUseCase, caminhoArquivo
                         ) { getOnnxEngine() }
                     }
                     val caminho = withContext(Dispatchers.IO) { sintetizador.synthesize(texto, vozUnidade, ritmo) }

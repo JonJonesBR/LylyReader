@@ -28,6 +28,40 @@ class SpeakerAttributionStore(private val directory: File) {
         }.getOrDefault(false)
     }
 
+    /**
+     * Texto do livro reconstituído do próprio mapa: os `source_text` dos parágrafos, na ordem de `index`, juntados por "\n\n"
+     * (o mesmo texto que `build_speaker_chunk_plan` confere). Null se não há mapa válido ou se algum parágrafo não guardou
+     * o texto de origem (mapas antigos).
+     */
+    fun textoDoMapa(bookIdentity: String): String? {
+        val json = lerMapaValido(bookIdentity) ?: return null
+        return runCatching {
+            val paragrafos = json.getJSONArray(KEY_PARAGRAPHS)
+            val ordenados = List(paragrafos.length()) { paragrafos.getJSONObject(it) }.sortedBy { it.getInt("index") }
+            if (ordenados.isEmpty() || ordenados.any { it.isNull("source_text") }) {
+                null
+            } else {
+                ordenados.joinToString("\n\n") { it.getString("source_text") }
+            }
+        }.getOrNull()
+    }
+
+    /** Diz se o mapa válido do livro traz capítulos (usados como marcas de capítulo do MP3 na conversão). */
+    fun temCapitulos(bookIdentity: String): Boolean =
+        (lerMapaValido(bookIdentity)?.optJSONArray(KEY_CHAPTERS)?.length() ?: 0) > 0
+
+    private fun lerMapaValido(bookIdentity: String): JSONObject? {
+        if (bookIdentity.isBlank()) return null
+        val file = cacheFile(bookIdentity)
+        if (!file.isFile) return null
+        return runCatching {
+            JSONObject(file.readText(Charsets.UTF_8)).takeIf {
+                it.optInt(KEY_VERSION, -1) == FORMAT_VERSION &&
+                    it.optInt(KEY_ANALYSIS, 1) == OfflineSpeakerAttributor.ANALYSIS_VERSION
+            }
+        }.getOrNull()
+    }
+
     fun load(bookIdentity: String, paragraphs: List<String>): SpeakerAttributionResult? {
         if (bookIdentity.isBlank()) return null
         val file = cacheFile(bookIdentity)

@@ -900,6 +900,12 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="pron_ai_lang_pt">portugués de Brasil</string>
     <string name="pron_ai_lang_en">inglés</string>
     <string name="pron_ai_lang_es">español</string>
+    <string name="pron_scope_title">Vale para</string>
+    <string name="pron_scope_book">Este libro</string>
+    <string name="pron_scope_all">Todos los libros</string>
+    <string name="pron_ai_save_to">Guardar en: %1$s</string>
+    <string name="pron_import_all">Importar un diccionario (todos los libros)</string>
+    <string name="pron_export_all">Exportar el diccionario (todos los libros)</string>
     <string name="guided_options_title">Voz y motor: %1$s</string>
     <string name="guided_options_more">Todos los ajustes de audio</string>
     <string name="guided_options_chip">⚙ Voz</string>
@@ -1074,7 +1080,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="gerar_titulo">Generar audiolibro</string>
     <string name="gerar_voz">Voz</string>
     <string name="gerar_velocidade">Velocidad</string>
-    <string name="gerar_aviso_personagens">Este libro tiene voces de personajes. Para usarlas en el audiolibro, genéralo desde la Lectura guiada (menú → Descargar Libro Completo).</string>
+    <string name="gerar_aviso_personagens">Este libro tiene voces de personajes. El audiolibro del libro completo ya las usa.</string>
     <string name="gerar_dica">El audiolibro se genera en Conversiones, donde sigues el progreso.</string>
     <string name="gerar_agora">Generar ahora</string>
     <string name="gerar_mais_opcoes">Más opciones (capítulos, carpeta de salida…)</string>
@@ -1190,6 +1196,12 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="gerar_pasta_padrao">Descargas (predeterminada)</string>
     <string name="gerar_escolher">Elegir</string>
     <string name="gerar_estilo_titulo">Estilo de narración (solo voces Gemini)</string>
+    <string name="conferir_trocas_botao">Revisar cómo se leerá el texto</string>
+    <string name="conferir_trocas_titulo">Cómo se leerá el texto</string>
+    <string name="conferir_trocas_explicacao">Mira qué cambia antes de convertir. Esta pantalla solo muestra; no se cambia nada.</string>
+    <string name="conferir_trocas_carregando">Revisando el texto…</string>
+    <string name="conferir_trocas_vazio">No se encontraron cambios</string>
+    <string name="conferir_trocas_erro">No se pudo revisar el texto. Inténtalo de nuevo.</string>
 
     <string name="toast_edicoes_salvas">Ediciones guardadas como un libro nuevo: %1$s</string>
 

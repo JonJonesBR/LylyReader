@@ -128,7 +128,7 @@ class GuidedPlayerManagerTest {
         val synthesizer = mockk<com.jonjonesbr.audiobookgen.tts.TtsSynthesizer>()
         io.mockk.coEvery { synthesizer.synthesize(any(), any(), 100) } returns arquivo.absolutePath
         mockkObject(com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.Companion)
-        every { com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para("edge", any(), any(), any()) } returns synthesizer
+        every { com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para("edge", any(), any(), any(), any()) } returns synthesizer
         mockkObject(com.jonjonesbr.audiobookgen.service.GuidedReadingService.Companion)
         every { com.jonjonesbr.audiobookgen.service.GuidedReadingService.ativo } returns true
         every { anyConstructed<AppPrefs>().motorTts } returns "edge"
@@ -202,7 +202,7 @@ class GuidedPlayerManagerTest {
             arquivo.absolutePath
         }
         mockkObject(com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.Companion)
-        every { com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(motor, any(), any(), any()) } returns sintetizador
+        every { com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(motor, any(), any(), any(), any()) } returns sintetizador
         mockkObject(com.jonjonesbr.audiobookgen.service.GuidedReadingService.Companion)
         every { com.jonjonesbr.audiobookgen.service.GuidedReadingService.ativo } returns true
         every { anyConstructed<AppPrefs>().motorTts } returns motor

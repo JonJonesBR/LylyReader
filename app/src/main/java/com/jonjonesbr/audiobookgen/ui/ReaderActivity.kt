@@ -424,7 +424,7 @@ class ReaderActivity : BasePlayerActivity() {
         val chaveInit = SecurePreferences.getGeminiKeys(this)
         val pausaMsInit = appPrefs.pausaMs
         lifecycleScope.launch {
-            pythonUseCase.sincronizarConfiguracoes(motorInit, chaveInit, pausaMsInit)
+            pythonUseCase.sincronizarConfiguracoes(motorInit, chaveInit, pausaMsInit, caminhoDoLivro = caminhoArquivo)
         }
 
         observarViewModel()
@@ -561,7 +561,7 @@ class ReaderActivity : BasePlayerActivity() {
                 marcacoesController.mostrarDialogDestacarTrecho(indice, inicio, fim)
             },
             onDefinirPronuncia = { palavra ->
-                PronunciationDialog.show(this, palavra, onOuvir = ::ouvirPronuncia)
+                PronunciationDialog.show(this, palavra, caminhoDoLivro = caminhoArquivo, onOuvir = ::ouvirPronuncia)
             },
         )
         aplicarOrientacaoRolagem(viewModel.uiState.value.rolagemHorizontal)
@@ -1274,10 +1274,10 @@ class ReaderActivity : BasePlayerActivity() {
             ACAO_INICIAL_CAPITULOS -> mostrarBottomSheetCapitulos()
             ACAO_INICIAL_PERSONAGENS -> abrirConfiguracaoVozesPersonagens()
             ACAO_INICIAL_PRONUNCIA -> PronunciationDialog.showManager(
-                this, ::ouvirPronuncia,
+                this, caminhoArquivo, ::ouvirPronuncia,
                 onSugerirIa = {
                     val paragrafos = viewModel.textoEfetivo()?.paragrafos?.map { it.texto }.orEmpty()
-                    PronunciationAiFlow.start(this, paragrafos)
+                    PronunciationAiFlow.start(this, paragrafos, caminhoArquivo)
                 }
             )
         }
@@ -1525,22 +1525,22 @@ class ReaderActivity : BasePlayerActivity() {
 
     /** Lista os nomes dos personagens detectados para o usuário ajustar como cada um é falado. */
     private fun mostrarPronunciaDosNomes(result: SpeakerAttributionResult) {
-        val dicionario = com.jonjonesbr.audiobookgen.data.PronunciationStore.get(this)
+        val dicionario = PronunciationDialog.dicionarioEfetivo(this, caminhoArquivo)
         val nomes = result.speakers.map { it.name }
         val rotulos = nomes.map { nome -> dicionario.find(nome)?.let { "$nome  →  ${it.spoken}" } ?: nome }
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(R.string.character_voices_pronunciation_title)
             .setItems(rotulos.toTypedArray()) { _, position ->
-                PronunciationDialog.show(this, nomes[position], onOuvir = ::ouvirPronuncia) {
+                PronunciationDialog.show(this, nomes[position], caminhoDoLivro = caminhoArquivo, onOuvir = ::ouvirPronuncia) {
                     mostrarPronunciaDosNomes(result)
                 }
             }
             .setPositiveButton(R.string.pron_manage_title) { _, _ ->
                 PronunciationDialog.showManager(
-                    this, ::ouvirPronuncia,
+                    this, caminhoArquivo, ::ouvirPronuncia,
                     onSugerirIa = {
                         val paragrafos = viewModel.textoEfetivo()?.paragrafos?.map { it.texto }.orEmpty()
-                        PronunciationAiFlow.start(this, paragrafos)
+                        PronunciationAiFlow.start(this, paragrafos, caminhoArquivo)
                     }
                 )
             }
@@ -2115,7 +2115,7 @@ class ReaderActivity : BasePlayerActivity() {
             } else {
                 val ritmo = appPrefs.ritmo
                 val chave = SecurePreferences.getGeminiKeys(this@ReaderActivity)
-                audiobookViewModel.prepararConfiguracoesPython(voice.engine, chave, appPrefs.pausaMs)
+                audiobookViewModel.prepararConfiguracoesPython(voice.engine, chave, appPrefs.pausaMs, caminhoArquivo)
                 val previewText = viewModel.textoEfetivo()?.paragrafos
                     ?.take(PARAGRAFOS_PREVIEW)?.joinToString(" ") { it.texto }
                     ?.takeIf { it.isNotBlank() }
@@ -2137,8 +2137,8 @@ class ReaderActivity : BasePlayerActivity() {
         val motor = VoiceCatalog.effectiveEngine(voz, motorSalvo)
         val chave = SecurePreferences.getGeminiKeys(this)
         audiobookViewModel.pararPreview()
-        audiobookViewModel.prepararConfiguracoesPython(motor, chave, appPrefs.pausaMs)
-        audiobookViewModel.ouvirTexto(voz, appPrefs.ritmo, motor, texto)
+        audiobookViewModel.prepararConfiguracoesPython(motor, chave, appPrefs.pausaMs, caminhoArquivo)
+        audiobookViewModel.ouvirTexto(voz, appPrefs.ritmo, motor, texto, caminhoArquivo)
     }
 
     private fun compartilharTrechoAtual() {

@@ -55,6 +55,17 @@ class PronunciationDictionary(entries: List<PronunciationEntry>) {
     companion object {
         val EMPTY = PronunciationDictionary(emptyList())
 
+        /**
+         * Dicionário efetivo de um livro: as entradas do global que o livro não redefine, seguidas das do livro.
+         * O livro vence em conflito de palavra (sem diferenciar caixa); a ordem é a do global e depois a do livro.
+         */
+        fun mesclar(global: PronunciationDictionary, livro: PronunciationDictionary): PronunciationDictionary {
+            val palavrasDoLivro = livro.entries.map { it.word.lowercase() }.toSet()
+            return PronunciationDictionary(
+                global.entries.filterNot { it.word.lowercase() in palavrasDoLivro } + livro.entries
+            )
+        }
+
         fun fromJson(json: String?): PronunciationDictionary {
             if (json.isNullOrBlank()) return EMPTY
             return runCatching {

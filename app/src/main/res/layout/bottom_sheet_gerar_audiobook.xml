@@ -144,6 +144,16 @@
         android:textAllCaps="false"/>
 
     <Button
+        android:id="@+id/btnGerarConferir"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/conferir_trocas_botao"
+        android:textAllCaps="false"
+        android:textColor="?attr/colorPrimary"/>
+
+    <Button
         android:id="@+id/btnGerarAvancadas"
         style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="match_parent"

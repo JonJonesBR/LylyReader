@@ -62,6 +62,21 @@ class PronunciationDictionaryTest {
         assertEquals("texto", PronunciationDictionary.EMPTY.apply("texto"))
     }
 
+    @Test fun mesclarLivroVenceNoConflitoERespeitaAOrdem() {
+        val global = dic("Hermione" to "Hérmione", "Nyx" to "Níks")
+        val livro = dic("hermione" to "Hermáione", "Gandalf" to "Gândalf")
+        val mesclado = PronunciationDictionary.mesclar(global, livro)
+        assertEquals(listOf("Nyx", "hermione", "Gandalf"), mesclado.entries.map { it.word })
+        assertEquals("Hermáione", mesclado.find("Hermione")?.spoken)
+        assertEquals("Níks", mesclado.apply("Nyx"))
+    }
+
+    @Test fun mesclarComDicionarioVazioMantemOOutro() {
+        val global = dic("Nyx" to "Níks")
+        assertEquals(global.entries, PronunciationDictionary.mesclar(global, PronunciationDictionary.EMPTY).entries)
+        assertEquals("Níks", PronunciationDictionary.mesclar(PronunciationDictionary.EMPTY, global).apply("Nyx"))
+    }
+
     @Test fun comESemEntradasNaoMudamOOriginal() {
         val d = dic("Hermione" to "Hermáione")
         assertEquals("Hermáione", d.with(PronunciationEntry("Hermione", "Hermáione")).apply("Hermione"))

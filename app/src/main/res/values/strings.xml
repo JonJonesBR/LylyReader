@@ -912,6 +912,12 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="pron_ai_lang_pt">Brazilian Portuguese</string>
     <string name="pron_ai_lang_en">English</string>
     <string name="pron_ai_lang_es">Spanish</string>
+    <string name="pron_scope_title">Applies to</string>
+    <string name="pron_scope_book">This book</string>
+    <string name="pron_scope_all">All books</string>
+    <string name="pron_ai_save_to">Save to: %1$s</string>
+    <string name="pron_import_all">Import a dictionary (all books)</string>
+    <string name="pron_export_all">Export the dictionary (all books)</string>
     <string name="guided_options_title">Voice and engine: %1$s</string>
     <string name="guided_options_more">All audio settings</string>
     <string name="guided_options_chip">⚙ Voice</string>
@@ -1086,7 +1092,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="gerar_titulo">Generate audiobook</string>
     <string name="gerar_voz">Voice</string>
     <string name="gerar_velocidade">Speed</string>
-    <string name="gerar_aviso_personagens">This book has character voices. To use them in the audiobook, generate it from Guided Reading (menu → Download Full Book).</string>
+    <string name="gerar_aviso_personagens">This book has character voices. The full-book audiobook uses them.</string>
     <string name="gerar_dica">The audiobook is generated in Conversions, where you follow the progress.</string>
     <string name="gerar_agora">Generate now</string>
     <string name="gerar_mais_opcoes">More options (chapters, output folder…)</string>
@@ -1202,6 +1208,12 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="gerar_pasta_padrao">Downloads (default)</string>
     <string name="gerar_escolher">Choose</string>
     <string name="gerar_estilo_titulo">Narration style (Gemini voices only)</string>
+    <string name="conferir_trocas_botao">Check how the text will be spoken</string>
+    <string name="conferir_trocas_titulo">How the text will be spoken</string>
+    <string name="conferir_trocas_explicacao">See what changes before converting. This only shows the text; nothing is changed.</string>
+    <string name="conferir_trocas_carregando">Checking the text…</string>
+    <string name="conferir_trocas_vazio">No changes found</string>
+    <string name="conferir_trocas_erro">Could not check the text. Try again.</string>
 
     <string name="toast_edicoes_salvas">Edits saved as a new book: %1$s</string>
 

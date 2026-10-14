@@ -59,6 +59,8 @@ class ConversionWorker(
          */
         const val KEY_RUN_TOKEN_ENTRADA = "run_token_entrada"
         const val KEY_LIVRO_ORIGEM = "livro_origem"
+        /** Caminho do livro dono do texto, para somar o dicionário de pronúncia dele ao global (ausente = usa [KEY_LIVRO_ORIGEM]). */
+        const val KEY_LIVRO_DICIONARIO = "livro_dicionario"
         const val KEY_SPEAKER_MAP_PATH = "speaker_map_path"
         /** Tom/agudos do perfil de áudio do livro (opcionais); ausentes = ajustes globais. */
         const val KEY_TOM_MEIOS_TONS = "tom_meios_tons"
@@ -139,6 +141,13 @@ class ConversionWorker(
             ConversionWakeLock.release()
             // O pedido não pode sobreviver ao worker: a próxima execução começa sem pausa/cancelamento pendente.
             ControleDaConversao.limpar()
+            // Fim da conversão (sucesso, erro, pausa ou cancelamento): o Python volta a ter só o dicionário global.
+            if (PythonEngineUseCase.conversaoAtiva()) {
+                PythonEngineUseCase.marcarConversaoAtiva(false)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                    PythonEngineUseCase(applicationContext).sincronizarDicionario(null)
+                }
+            }
         }
     }
 
@@ -236,7 +245,11 @@ class ConversionWorker(
         engine.inicializarMotorSeNecessario()
         val tomDoLivro = inputData.getInt(KEY_TOM_MEIOS_TONS, SEM_VALOR).takeIf { it != SEM_VALOR }
         val agudosDoLivro = inputData.getInt(KEY_AGUDOS_DB, SEM_VALOR).takeIf { it != SEM_VALOR }
-        engine.sincronizarConfiguracoes(motor, chaveGemini, pausaMs, tomDoLivro, agudosDoLivro)
+        // Dicionário de pronúncia efetivo: o global mais o do livro. Vai como caminho; o JSON é montado aqui, no processo.
+        val livroDoDicionario = inputData.getString(KEY_LIVRO_DICIONARIO) ?: livroOrigem
+        engine.sincronizarConfiguracoes(motor, chaveGemini, pausaMs, tomDoLivro, agudosDoLivro, livroDoDicionario)
+        // A partir daqui o dicionário do Python é deste livro: leitura e diálogos não o reescrevem até o fim da conversão.
+        PythonEngineUseCase.marcarConversaoAtiva(true)
 
         var ultimaAtualizacaoMs: Long? = null
         // Último percentual visto (fora do limitador), para a pausa salvar onde a conversão estava.
