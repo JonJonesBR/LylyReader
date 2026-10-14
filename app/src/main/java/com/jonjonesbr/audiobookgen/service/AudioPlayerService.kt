@@ -5,6 +5,8 @@ import com.jonjonesbr.audiobookgen.data.StatsStore
 import com.jonjonesbr.audiobookgen.domain.AudiobookLibraryUseCase
 import com.jonjonesbr.audiobookgen.domain.CapituloAudio
 import com.jonjonesbr.audiobookgen.domain.PlayerState
+import com.jonjonesbr.audiobookgen.domain.ehPlayPauseExterno
+import com.jonjonesbr.audiobookgen.domain.reconciliarIsPlaying
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import com.jonjonesbr.audiobookgen.ui.AudiobookItem
@@ -123,6 +125,11 @@ class AudioPlayerService : MediaLibraryService() {
 
     private var estavaTocandoAntesDoFoco = false
 
+    // Verdadeiro enquanto o próprio app muda playWhenReady (pause/play abaixo). O listener
+    // onPlayWhenReadyChanged é síncrono nessas chamadas: com esta flag ele não repete o
+    // bookkeeping que o caminho interno já faz (progresso, marcarPausa, auto-rewind).
+    private var mudancaPlayInterna = false
+
     // Fator de fade-out do sleep timer (1f = volume cheio); combinado com o volume de
     // "duck" do foco de áudio para as duas reduções de volume não se sobrescreverem.
     private var fadeVolumeFactor = 1f
@@ -153,7 +160,7 @@ class AudioPlayerService : MediaLibraryService() {
             context = applicationContext,
             onFocusLost = {
                 if (exoPlayer.isPlaying) {
-                    exoPlayer.pause()
+                    emMudancaPlayInterna { exoPlayer.pause() }
                     marcarPausa()
                     _state.update { it.copy(isPlaying = false) }
                     PlayerStateHolder.update(_state.value)
@@ -164,7 +171,7 @@ class AudioPlayerService : MediaLibraryService() {
             onFocusLostTransient = {
                 estavaTocandoAntesDoFoco = exoPlayer.isPlaying
                 if (exoPlayer.isPlaying) {
-                    exoPlayer.pause()
+                    emMudancaPlayInterna { exoPlayer.pause() }
                     marcarPausa()
                     _state.update { it.copy(isPlaying = false) }
                     PlayerStateHolder.update(_state.value)
@@ -175,7 +182,7 @@ class AudioPlayerService : MediaLibraryService() {
                 exoPlayer.volume = fadeVolumeFactor
                 if (estavaTocandoAntesDoFoco) {
                     if (!exoPlayer.isPlaying) {
-                        exoPlayer.play()
+                        emMudancaPlayInterna { exoPlayer.play() }
                         exoPlayer.playbackParameters = PlaybackParameters(_state.value.speed)
                         aplicarAutoRewindNoResume()
                         _state.update { it.copy(isPlaying = true) }
@@ -307,6 +314,20 @@ class AudioPlayerService : MediaLibraryService() {
             }
         }
 
+        // Play/pause vindo de fora (notificação, fone, Bluetooth, tela de bloqueio) não passa
+        // pelo alternarPlayPause(): sem isto o ícone do mini-player não acompanhava.
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            if (ehPlayPauseExterno(
+                    mudancaInterna = mudancaPlayInterna,
+                    playbackEnded = exoPlayer.playbackState == Player.STATE_ENDED,
+                    caminhoVazio = _state.value.caminho.isBlank(),
+                )
+            ) {
+                aplicarBookkeepingPlayPauseExterno(playWhenReady)
+            }
+            reconciliarEstadoPlay()
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             Log.e(TAG, "Erro no ExoPlayer: ${error.message}", error)
             // Sem isso, um erro antes de STATE_READY deixava aguardandoReady travado em true:
@@ -314,7 +335,7 @@ class AudioPlayerService : MediaLibraryService() {
             // capítulos), mesmo que uma tentativa seguinte tivesse sucesso.
             falhaAntesDoPrimeiroReady = aguardandoReady
             aguardandoReady = false
-            try { if (exoPlayer.isPlaying) exoPlayer.pause() } catch (_: Exception) {}
+            try { if (exoPlayer.isPlaying) emMudancaPlayInterna { exoPlayer.pause() } } catch (_: Exception) {}
             // Feedback visível (P1): sem isso o erro ia só pro Logcat — notificação e
             // mini-player mostravam "Pausado" normal, e o usuário ficava num loop de tap
             // silencioso (retry abaixo re-tenta, mas sem explicação do motivo).
@@ -445,7 +466,7 @@ class AudioPlayerService : MediaLibraryService() {
             exoPlayer.setMediaItem(item)
             exoPlayer.playbackParameters = PlaybackParameters(_state.value.speed)
             exoPlayer.prepare()
-            exoPlayer.play()
+            emMudancaPlayInterna { exoPlayer.play() }
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao iniciar: ${e.message}", e)
             CrashLogWriter.log(e, "AudioPlayerService.iniciar", "caminho=$caminho, nome=$nome")
@@ -465,7 +486,7 @@ class AudioPlayerService : MediaLibraryService() {
     fun alternarPlayPause() {
         try {
             if (exoPlayer.isPlaying) {
-                exoPlayer.pause()
+                emMudancaPlayInterna { exoPlayer.pause() }
                 _state.update { it.copy(isPlaying = false) }
                 salvarProgresso()
                 marcarPausa()
@@ -485,7 +506,7 @@ class AudioPlayerService : MediaLibraryService() {
                     // uma nova tentativa ao usuário e limpa a mensagem de erro exibida.
                     prepararRetomadaAposErro()
                 }
-                exoPlayer.play()
+                emMudancaPlayInterna { exoPlayer.play() }
                 exoPlayer.playbackParameters = PlaybackParameters(_state.value.speed)
                 aplicarAutoRewindNoResume()
                 _state.update { it.copy(isPlaying = true, erroMensagem = null) }
@@ -598,6 +619,40 @@ class AudioPlayerService : MediaLibraryService() {
         _state.value = PlayerState(isVisible = true, trackName = nome, caminho = caminho, speed = _state.value.speed)
     }
 
+    /** Faz [PlayerState.isPlaying] seguir o `playWhenReady` do ExoPlayer (decisão pura em
+     *  [reconciliarIsPlaying]). Reinicia o tick quando volta a tocar, se ele tiver parado. */
+    private fun reconciliarEstadoPlay() {
+        val novo = reconciliarIsPlaying(
+            estadoIsPlaying = _state.value.isPlaying,
+            playWhenReady = exoPlayer.playWhenReady,
+            playbackEnded = exoPlayer.playbackState == Player.STATE_ENDED,
+            caminhoVazio = _state.value.caminho.isBlank(),
+        ) ?: return
+        _state.update { it.copy(isPlaying = novo) }
+        PlayerStateHolder.update(_state.value)
+        playerNotificationManager.atualizarNotificacao()
+        // Antes do primeiro READY o tick ainda não deve rodar (aoFicarPronto o inicia).
+        if (novo && !aguardandoReady && tickJob?.isActive != true) iniciarTick()
+    }
+
+    /** Executa [bloco] (pause/play do próprio app) marcando que a mudança de playWhenReady é interna. */
+    private inline fun emMudancaPlayInterna(bloco: () -> Unit) {
+        val anterior = mudancaPlayInterna
+        mudancaPlayInterna = true
+        try { bloco() } finally { mudancaPlayInterna = anterior }
+    }
+
+    /** Mesmo bookkeeping do mini-player para play/pause vindo de fora: pausa salva progresso e
+     *  marca o instante (base do auto-rewind); play aplica o auto-rewind. */
+    private fun aplicarBookkeepingPlayPauseExterno(playWhenReady: Boolean) {
+        if (playWhenReady) {
+            aplicarAutoRewindNoResume()
+        } else {
+            salvarProgresso()
+            marcarPausa()
+        }
+    }
+
     /** Bookkeeping que precisa da duração real (só confiável em STATE_READY, diferente do
      *  `MediaPlayer.prepare()` síncrono de antes): chapter marks, retomada de progresso, notificação. */
     private fun aoFicarPronto() {
@@ -701,7 +756,7 @@ class AudioPlayerService : MediaLibraryService() {
             while (isActive) {
                 delay(TICK_INTERVAL_MS)
                 if (_state.value.caminho.isBlank()) break
-                if (!exoPlayer.isPlaying && _state.value.isPlaying) {
+                if (!exoPlayer.playWhenReady && _state.value.isPlaying) {
                     Log.w(TAG, "ExoPlayer parou inesperadamente. Limpando estado...")
                     _state.update { it.copy(isPlaying = false) }
                     PlayerStateHolder.update(_state.value)
