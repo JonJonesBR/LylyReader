@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="app_name">LylyReader</string>
-    <string name="app_slogan">Your books, out loud</string>
+    <string name="app_slogan">LylyReader: Give your books a voice!</string>
 
     <!-- Content Descriptions -->
     <string name="cd_logo">LylyReader logo</string>
@@ -1205,9 +1205,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
 
     <string name="toast_edicoes_salvas">Edits saved as a new book: %1$s</string>
 
-    <string name="dl_primeiro_titulo">Choose your voices</string>
-    <string name="dl_primeiro_desc">To create audiobooks and use guided reading without internet, download the offline voices you want. Pick a language, download one by one or all at once, and pause any time. You can do this later in Downloads.</string>
-    <string name="dl_primeiro_continuar">Continue</string>
     <string name="dl_central_baixar_todos">Download all (%1$d)</string>
 
     <string name="bib_add_link">From a link</string>

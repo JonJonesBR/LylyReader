@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">LylyReader</string>
-    <string name="app_slogan">Seus livros, em voz alta</string>
+    <string name="app_slogan">LylyReader: Dê voz aos seus livros!</string>
 
     <!-- Content Descriptions -->
     <string name="cd_logo">LylyReader logo</string>
@@ -1196,9 +1196,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
 
     <string name="toast_edicoes_salvas">Edições salvas como um novo livro: %1$s</string>
 
-    <string name="dl_primeiro_titulo">Escolha as vozes</string>
-    <string name="dl_primeiro_desc">Para gerar audiobooks e usar a leitura guiada sem internet, baixe as vozes offline que quiser. Escolha o idioma, baixe uma a uma ou todas de uma vez e pause quando quiser. Dá para fazer isso depois, em Downloads.</string>
-    <string name="dl_primeiro_continuar">Continuar</string>
     <string name="dl_central_baixar_todos">Baixar todos (%1$d)</string>
 
     <string name="bib_add_link">De um link</string>

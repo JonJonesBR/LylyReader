@@ -226,7 +226,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/desc_edge_tts"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
                             android:layout_marginStart="32dp"
                             android:layout_marginBottom="12dp"/>
@@ -245,7 +245,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/desc_gemini_tts"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
                             android:layout_marginStart="32dp"
                             android:layout_marginBottom="12dp"/>
@@ -264,7 +264,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/desc_onnx_tts"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
                             android:layout_marginStart="32dp"
                             android:layout_marginBottom="12dp"/>
@@ -283,7 +283,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/motor_android_descricao"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
                             android:layout_marginStart="32dp"
                             android:layout_marginBottom="12dp"/>
@@ -302,7 +302,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/desc_elevenlabs_tts"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
                             android:layout_marginStart="32dp"
                             android:layout_marginBottom="12dp"/>
@@ -321,7 +321,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/desc_kokoro_tts"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
                             android:layout_marginStart="32dp"/>
 
@@ -340,7 +340,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/desc_pocket_tts"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
                             android:layout_marginStart="32dp"/>
 
@@ -488,7 +488,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_vozes_offline"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <!-- Uma linha por pacote registrado (V6 T2.2): Supertonic, Kokoro e,
@@ -563,7 +563,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_permissao_notificacao"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -601,7 +601,7 @@
                         android:layout_marginTop="16dp"
                         android:text="@string/desc_otimizacao_bateria"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp" />
+                        android:textSize="12sp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -693,7 +693,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_pausa_blocos"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -708,7 +708,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="0ms"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
                             android:layout_marginEnd="4dp"/>
@@ -720,7 +720,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="300ms"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
                             android:layout_marginEnd="4dp"/>
@@ -732,7 +732,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="600ms"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="?attr/colorPrimary"
                             android:backgroundTint="@color/color_primary_surface"
                             android:layout_marginEnd="4dp"/>
@@ -744,7 +744,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="900ms"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
                             android:layout_marginEnd="4dp"/>
@@ -756,7 +756,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="1.5s"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"/>
 
@@ -813,7 +813,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_qualidade_audio"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -828,7 +828,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="64kbps"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
                             android:layout_marginEnd="4dp"/>
@@ -840,7 +840,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="128kbps"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="?attr/colorPrimary"
                             android:backgroundTint="@color/color_primary_surface"
                             android:layout_marginEnd="4dp"/>
@@ -852,7 +852,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="192kbps"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
                             android:layout_marginEnd="4dp"/>
@@ -864,7 +864,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="256kbps"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"/>
 
@@ -912,7 +912,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/settings_supertonic_passos_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -975,7 +975,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/settings_pron_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <Button
@@ -1020,7 +1020,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/clone_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <Button
@@ -1073,7 +1073,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/settings_timbre_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <Button
@@ -1118,7 +1118,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/settings_pocket_steps_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1188,7 +1188,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/settings_pausa_frase_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1258,7 +1258,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/settings_buffer_paragrafos_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1298,7 +1298,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/settings_paralelismo_kokoro_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1314,7 +1314,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_paralelismo_padrao"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="?attr/colorPrimary"
                             android:backgroundTint="@color/color_primary_surface"
                             android:layout_marginEnd="4dp"/>
@@ -1326,7 +1326,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_paralelismo_reduzido"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"/>
 
@@ -1343,7 +1343,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/settings_paralelismo_supertonic_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1359,7 +1359,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_paralelismo_supertonico_padrao"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="?attr/colorPrimary"
                             android:backgroundTint="@color/color_primary_surface"
                             android:layout_marginEnd="4dp"/>
@@ -1371,7 +1371,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_paralelismo_supertonico_experimental"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"/>
 
@@ -1383,7 +1383,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/btn_resetar_buffering"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:textColor="@color/color_on_surface_dim"/>
 
                 </LinearLayout>
@@ -1428,7 +1428,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_auto_rewind"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1443,7 +1443,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_auto_rewind_off"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
                             android:layout_marginEnd="4dp"/>
@@ -1455,7 +1455,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_auto_rewind_curto"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="?attr/colorPrimary"
                             android:backgroundTint="@color/color_primary_surface"
                             android:layout_marginEnd="4dp"/>
@@ -1467,7 +1467,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_auto_rewind_longo"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"/>
 
@@ -1515,7 +1515,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_player_conversao_concluida"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1530,7 +1530,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_player_conversao_perguntar"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
                             android:layout_marginEnd="4dp"/>
@@ -1542,7 +1542,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_player_conversao_app"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
                             android:layout_marginEnd="4dp"/>
@@ -1554,7 +1554,7 @@
                             android:layout_height="wrap_content"
         android:minHeight="36dp"
                             android:text="@string/btn_player_conversao_sistema"
-                            android:textSize="11sp"
+                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"/>
 
@@ -1621,7 +1621,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_cache"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1670,7 +1670,7 @@
                         android:layout_marginTop="6dp"
                         android:text="@string/cache_teto_desc"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"/>
+                        android:textSize="12sp"/>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -1748,7 +1748,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_blacklist"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1823,7 +1823,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_logs_erro"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -1897,7 +1897,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_estatisticas_privacidade"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <Button
@@ -1944,7 +1944,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_backup"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -2001,7 +2001,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_backup_completo"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <LinearLayout
@@ -2146,7 +2146,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/desc_settings_tutorial"
                         android:textColor="@color/color_on_surface_dim"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="12dp"/>
 
                     <Button
@@ -2238,7 +2238,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/label_formatos_suportados"
                         android:textColor="@color/color_on_surface_muted"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:layout_marginBottom="4dp"/>
 
                     <TextView

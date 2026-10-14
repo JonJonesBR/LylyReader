@@ -157,17 +157,6 @@
         android:paddingBottom="6dp">
 
         <Button
-            android:id="@+id/btnConcluirPrimeiroAcesso"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:layout_marginBottom="6dp"
-            android:text="@string/dl_primeiro_continuar"
-            android:textAllCaps="false"
-            android:visibility="gone"/>
-
-        <Button
             android:id="@+id/btnBaixarSelecionados"
             style="@style/Widget.Material3.Button"
             android:layout_width="0dp"
