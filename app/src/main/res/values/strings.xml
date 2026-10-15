@@ -790,7 +790,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• New \"Read without audio\" button on the book screen: read like a regular e-book, with chapters, bookmarks, highlights and search, and no voice.\n• \"Check how the text will be spoken\" is cleaner: the same change is no longer listed twice just because of a comma or a period.\n• Future updates can be installed right over this one, with no need to uninstall first. This version is the last one that needs a reinstall (if you have 1.8.29 or older, make a backup first, since uninstalling erases the app data).</string>
+    <string name="release_notes_corpo">• Previewing a voice now works without downloading its pack first: the preview clips for Supertonic, Kokoro, MMS and Piper voices are built into the app (Pocket voices still need the download).</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>

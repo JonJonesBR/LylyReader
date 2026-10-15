@@ -778,7 +778,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Nuevo botón \"Leer sin audio\" en la pantalla del libro: lee como en un e-book normal, con capítulos, marcadores, destacados y búsqueda, sin voz.\n• \"Comprobar cómo se leerá el texto\" es más limpio: el mismo cambio ya no aparece dos veces solo por una coma o un punto.\n• Las próximas actualizaciones se podrán instalar encima de esta, sin desinstalar antes. Esta versión es la última que exige reinstalar (si tienes la 1.8.29 o anterior, haz una copia de seguridad antes, porque desinstalar borra los datos de la app).</string>
+    <string name="release_notes_corpo">• Escuchar la vista previa de una voz ya funciona sin descargar antes el paquete: los clips de las voces Supertonic, Kokoro, MMS y Piper ya vienen dentro de la app (las de Pocket aún requieren la descarga).</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Haz las voces un poco más graves o más agudas y suaviza los agudos ásperos. El cambio se aplica al instante en la lectura guiada y en los audiolibros que conviertas a partir de ahora.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>

@@ -596,29 +596,62 @@ object VoiceCatalog {
     private const val PREVIEW_TEXT_KO = "안녕하세요! 선택한 목소리로 책을 읽어드리는 미리듣기입니다."
 
     /**
-     * URL do clipe de preview pré-renderizado (vozes offline Kokoro/MMS-TTS, ambas via
-     * KokoroTtsEngine, e Supertonic): o app baixa só o clipe (poucos KB) em vez de exigir o
-     * modelo completo antes de o usuário ouvir a voz. Os clipes são gerados com o mesmo texto de
-     * preview e hospedados no mesmo repo HF do bundle (Kokoro = V6 T1.5; MMS-TTS = V6 Parte A).
-     *
-     * Convenção dos clipes Supertonic: `supertonic-preview-<estilo>-<idioma>.mp3`, onde
-     * `<estilo>` é f1..f5 / m1..m5 (id da voz sem o prefixo `supertonic-` e sem `-pt`) e
-     * `<idioma>` é pt, es ou en. Estilos `-pt` (f1..f5-pt, m1..m5-pt) têm só o clipe pt. Os
-     * multilíngues f1/m1 (sem sufixo) têm clipe por idioma; [idioma] fora de pt/es/en cai em pt.
-     * Arquivos publicados (14): supertonic-preview-{f1..f5,m1..m5}-pt.mp3 (o clipe pt de f1/m1
-     * é o mesmo para a voz multilíngue e para a `-pt`) e supertonic-preview-{f1,m1}-{es,en}.mp3.
+     * URL remota do clipe de preview (HF, mesmo repo do bundle) para as famílias que têm
+     * clipe publicado: Supertonic, Kokoro (incl. kokoro-en-*) e MMS-por. Piper e Pocket (e ids
+     * desconhecidos) devolvem null: não têm URL remota, só asset embarcado (Piper) ou nada (Pocket).
+     * O nome do arquivo remoto é o mesmo de [previewAssetName]. O app usa a URL só como fallback,
+     * quando o asset embarcado não existe para a voz.
      */
     fun previewClipUrl(vozId: String, idioma: String = IDIOMA_PREVIA_SUPERTONIC): String? {
-        val nomeArquivo = when {
-            vozId.startsWith("kokoro-") -> "kokoro-preview-${vozId.removePrefix("kokoro-")}.mp3"
-            vozId == "mms-por::main-pt" -> "mms-preview-main-pt.mp3"
-            regexVozSupertonic.matches(vozId) -> {
-                val estilo = vozId.removePrefix("supertonic-").removeSuffix("-pt")
-                "supertonic-preview-$estilo-${idiomaPreviaSupertonic(vozId, idioma)}.mp3"
-            }
-            else -> return null
-        }
+        val remota = regexVozSupertonic.matches(vozId) || vozId.startsWith("kokoro-") ||
+            vozId == ID_VOZ_MMS_PT
+        if (!remota) return null
+        val nomeArquivo = previewAssetName(vozId, idioma) ?: return null
         return "${com.jonjonesbr.audiobookgen.tts.KokoroModelManager.BASE_URL}/$nomeArquivo"
+    }
+
+    /**
+     * Nome do clipe de preview de [vozId] em `assets/previas/` (embarcado no APK), ou null se a
+     * voz não tem clipe. Convenção por família:
+     * - Supertonic: `supertonic-preview-<estilo>-<idioma>.mp3` (estilo = f1..f5/m1..m5, sem o
+     *   prefixo `supertonic-` e sem `-pt`; idioma = pt/es/en via [idiomaPreviaSupertonic]).
+     *   Os estilos `-pt` têm só o clipe pt; f1/m1 multilíngues têm um clipe por idioma.
+     * - Kokoro: `kokoro-preview-<id sem "kokoro-">.mp3` (ex.: kokoro-en-af-alloy →
+     *   kokoro-preview-en-af-alloy.mp3; kokoro-pf-dora → kokoro-preview-pf-dora.mp3).
+     * - MMS-por (`mms-por::main-pt`): `mms-preview-main-pt.mp3`.
+     * - Piper (`<idDoPacote>::main` ou `::main-pt`, pacotes de [PiperVitsModelManager.models]):
+     *   `piper-preview-<idDoPacote>.mp3`.
+     * - Pocket e ids desconhecidos: null.
+     * [idioma] só altera o nome dos clipes Supertonic multilíngues.
+     */
+    fun previewAssetName(vozId: String, idioma: String = IDIOMA_PREVIA_SUPERTONIC): String? {
+        if (regexVozSupertonic.matches(vozId)) {
+            val estilo = vozId.removePrefix("supertonic-").removeSuffix("-pt")
+            return "supertonic-preview-$estilo-${idiomaPreviaSupertonic(vozId, idioma)}.mp3"
+        }
+        if (vozId.startsWith("kokoro-")) return "kokoro-preview-${vozId.removePrefix("kokoro-")}.mp3"
+        if (vozId == ID_VOZ_MMS_PT) return "mms-preview-main-pt.mp3"
+        val pacote = vozId.substringBefore("::", missingDelimiterValue = "")
+        if (pacote.isNotEmpty() &&
+            com.jonjonesbr.audiobookgen.tts.PiperVitsModelManager.models.any { it.id == pacote }
+        ) {
+            return "piper-preview-$pacote.mp3"
+        }
+        return null
+    }
+
+    private const val ID_VOZ_MMS_PT = "mms-por::main-pt"
+
+    /**
+     * Decide se o ▶ toca primeiro o clipe embarcado (`assets/previas/`) em vez de sintetizar.
+     * Sem asset para a voz (Pocket, desconhecidos) = false. Kokoro e MMS-por sempre tocam o clipe
+     * primeiro (já era o comportamento). Supertonic e Piper só tocam o clipe quando o pacote ainda
+     * não está baixado: com pacote pronto, a síntese local preserva ritmo e texto do usuário.
+     */
+    fun usarClipeEmbarcadoPrimeiro(vozId: String, pacotePronto: Boolean): Boolean {
+        if (previewAssetName(vozId) == null) return false
+        if (vozId.startsWith("kokoro-") || vozId.startsWith("mms-por::")) return true
+        return !pacotePronto
     }
 
     private val regexVozSupertonic = Regex("supertonic-[fm][1-5](-pt)?")

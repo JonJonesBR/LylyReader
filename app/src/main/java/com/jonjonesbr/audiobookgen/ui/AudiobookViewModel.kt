@@ -247,11 +247,22 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 // Sem clipe, ou com falha (404/rede), segue para a síntese local abaixo, como antes.
                 // Estilos multilíngues (f1/m1) tocam o clipe no idioma do aparelho (pt/es/en).
                 val idiomaPrevia = java.util.Locale.getDefault().language
-                val clipeSemModelo = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    VoiceCatalog.previewClipUrl(voz, idiomaPrevia) != null &&
-                        !VoiceCatalog.modeloProntoParaVoz(voz, getApplication())
+                // Clipe embarcado primeiro só quando o pacote ainda não está baixado (ou para
+                // vozes que sempre tocam clipe, ver usarClipeEmbarcadoPrimeiro); com pacote
+                // pronto a síntese local preserva ritmo e texto do usuário.
+                val pacotePronto = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    VoiceCatalog.modeloProntoParaVoz(voz, getApplication())
                 }
-                val clipe = if (clipeSemModelo) baixarClipePrevia(voz, idiomaPrevia) else null
+                val clipe = (if (VoiceCatalog.usarClipeEmbarcadoPrimeiro(voz, pacotePronto)) {
+                    clipeEmbarcado(voz, idiomaPrevia)
+                } else {
+                    null
+                }) ?: run {
+                    val clipeSemModelo = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        VoiceCatalog.previewClipUrl(voz, idiomaPrevia) != null && !pacotePronto
+                    }
+                    if (clipeSemModelo) baixarClipePrevia(voz, idiomaPrevia) else null
+                }
                 if (clipe != null) {
                     _uiState.update { it.copy(amostraGerando = false, statusMessage = " Amostra Pronta") }
                     iniciarPreview(clipe)
@@ -285,6 +296,24 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                 }
                 return@launch
+            }
+
+            if (motorEfetivo == "kokoro") {
+                // Clipe embarcado toca antes de download ou síntese para Kokoro/MMS (sempre) e
+                // para Piper só com pacote ainda não baixado (ver usarClipeEmbarcadoPrimeiro).
+                val pacotePronto = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    VoiceCatalog.modeloProntoParaVoz(voz, getApplication())
+                }
+                val clipeAsset = if (VoiceCatalog.usarClipeEmbarcadoPrimeiro(voz, pacotePronto)) {
+                    clipeEmbarcado(voz)
+                } else {
+                    null
+                }
+                if (clipeAsset != null) {
+                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " Amostra Pronta") }
+                    iniciarPreview(clipeAsset)
+                    return@launch
+                }
             }
 
             if (motorEfetivo == "kokoro" && VoiceCatalog.previewClipUrl(voz) == null) {
@@ -896,6 +925,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
      * Baixa (ou reaproveita do cache) o clipe pré-renderizado de [voz] e devolve o caminho local.
      * Null se a voz não tem clipe ([VoiceCatalog.previewClipUrl]) ou o download falhou (404/rede);
      * quem chama cai no comportamento anterior. Usado pela prévia Kokoro e pela Supertonic sem modelo.
+     * Clipes Supertonic embarcados em `assets/previas/` são copiados do APK, sem rede; o download
+     * só acontece quando não há asset para a voz.
      */
     private suspend fun baixarClipePrevia(voz: String, idioma: String = "pt"): String? =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -904,14 +935,46 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             // Nome derivado do clipe (não do id da voz): es/en/pt da mesma voz não podem colidir no cache.
             val outFile = java.io.File(app.cacheDir, "preview_${url.substringAfterLast('/')}")
             if (!outFile.exists() || outFile.length() == 0L) {
-                val ok = kotlin.runCatching {
-                    com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager
-                        .downloadFileWithResume(url, outFile) { }
-                }.isSuccess
-                if (!ok) outFile.delete()
+                val copiadoDoAsset = copiarClipePrevia(app, VoiceCatalog.previewAssetName(voz, idioma), outFile)
+                if (!copiadoDoAsset) {
+                    val ok = kotlin.runCatching {
+                        com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager
+                            .downloadFileWithResume(url, outFile) { }
+                    }.isSuccess
+                    if (!ok) outFile.delete()
+                }
             }
             outFile.takeIf { it.exists() && it.length() > 0L }?.absolutePath
         }
+
+    /**
+     * Copia o clipe embarcado de [voz] (`assets/previas/`, nome dado por
+     * [VoiceCatalog.previewAssetName]) para o cache e devolve o caminho. Null se a voz não tem
+     * asset ou a cópia falhou. Sem rede e sem exigir o pacote baixado.
+     */
+    private suspend fun clipeEmbarcado(voz: String, idioma: String = "pt"): String? =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val nome = VoiceCatalog.previewAssetName(voz, idioma) ?: return@withContext null
+            val app = getApplication<android.app.Application>()
+            // Mesmo nome que baixarClipePrevia usa para o arquivo remoto: os dois caminhos compartilham o cache.
+            val outFile = java.io.File(app.cacheDir, "preview_$nome")
+            if (!outFile.exists() || outFile.length() == 0L) {
+                if (!copiarClipePrevia(app, nome, outFile)) return@withContext null
+            }
+            outFile.takeIf { it.exists() && it.length() > 0L }?.absolutePath
+        }
+
+    /** Copia `assets/previas/<nomeAsset>` para [destino]. False se não há asset ou a cópia falhou. */
+    private fun copiarClipePrevia(app: android.app.Application, nomeAsset: String?, destino: java.io.File): Boolean {
+        if (nomeAsset == null) return false
+        val ok = kotlin.runCatching {
+            app.assets.open("previas/$nomeAsset").use { entrada ->
+                destino.outputStream().use { saida -> entrada.copyTo(saida) }
+            }
+        }.isSuccess
+        if (!ok) destino.delete()
+        return ok
+    }
 
     fun iniciarPreview(caminho: String) = playerUseCase.iniciarPreview(caminho)
 

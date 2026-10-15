@@ -425,7 +425,10 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             holder.preview.isEnabled = true
             holder.preview.text = PREVIEW_ICON_IDLE
             holder.preview.setOnClickListener {
-                val precisaBaixarAntes = ((voice.engine == "onnx" || voice.engine == "kokoro" || voice.engine == "pocket") && !isModeloPronto(voice)) ||
+                // Voz com clipe embarcado (assets/previas/) toca sem o pacote baixado.
+                val temClipeEmbarcado = com.jonjonesbr.audiobookgen.util.VoiceCatalog.previewAssetName(voice.id) != null
+                val precisaBaixarAntes = ((voice.engine == "onnx" || voice.engine == "kokoro" || voice.engine == "pocket") &&
+                    !isModeloPronto(voice) && !temClipeEmbarcado) ||
                     (voice.engine == "android" && voice.precisaBaixarNoSistema)
                 if (precisaBaixarAntes) {
                     android.widget.Toast.makeText(

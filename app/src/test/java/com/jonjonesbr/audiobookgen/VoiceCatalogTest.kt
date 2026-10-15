@@ -5,6 +5,7 @@ import com.jonjonesbr.audiobookgen.util.PacoteVozes
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -373,6 +374,27 @@ class VoiceCatalogTest {
         )
     }
 
+    @Test fun previewAssetNameSupertonicMultilinguePorIdioma() {
+        assertEquals("supertonic-preview-f1-pt.mp3", VoiceCatalog.previewAssetName("supertonic-f1", "pt"))
+        assertEquals("supertonic-preview-f1-es.mp3", VoiceCatalog.previewAssetName("supertonic-f1", "es"))
+        assertEquals("supertonic-preview-m1-en.mp3", VoiceCatalog.previewAssetName("supertonic-m1", "en"))
+        // Tag de locale é reduzida ao código; idioma sem clipe cai em pt.
+        assertEquals("supertonic-preview-m1-es.mp3", VoiceCatalog.previewAssetName("supertonic-m1", "es-ES"))
+        assertEquals("supertonic-preview-f1-pt.mp3", VoiceCatalog.previewAssetName("supertonic-f1", "fr"))
+    }
+
+    @Test fun previewAssetNameSupertonicPtIgnoraIdiomaPedido() {
+        assertEquals("supertonic-preview-f2-pt.mp3", VoiceCatalog.previewAssetName("supertonic-f2-pt", "en"))
+        assertEquals("supertonic-preview-m1-pt.mp3", VoiceCatalog.previewAssetName("supertonic-m1-pt", "es"))
+        assertEquals("supertonic-preview-m3-pt.mp3", VoiceCatalog.previewAssetName("supertonic-m3"))
+    }
+
+    @Test fun previewAssetNameNuloParaSupertonicForaDoPadrao() {
+        // Kokoro e MMS agora têm nome de clipe (ver previewAssetNameDaFamiliaKokoroMmsEPiper).
+        assertEquals(null, VoiceCatalog.previewAssetName("supertonic-f6-pt", "pt"))
+        assertEquals(null, VoiceCatalog.previewAssetName("supertonic-x1", "pt"))
+    }
+
     @Test fun catalogoKokoroSincronizadoComEngine() {
         // Guard anti-dessincronização: toda voz "kokoro-*" do catálogo precisa ter sid no
         // engine (kokoroVoiceParams). PT-BR exige lang explícito; inglês usa o lexicon padrão.
@@ -480,5 +502,72 @@ class VoiceCatalogTest {
         assertEquals("kokoro", VoiceCatalog.effectiveEngine("kokoro-voz-antiga", "edge"))
         assertEquals("supertonic-m1", VoiceCatalog.modelRootId("supertonic-voz-antiga"))
         assertEquals("kokoro", VoiceCatalog.modelRootId("kokoro-voz-antiga"))
+    }
+
+    @Test fun previewAssetNameDaFamiliaKokoroMmsEPiper() {
+        assertEquals("kokoro-preview-pf-dora.mp3", VoiceCatalog.previewAssetName("kokoro-pf-dora"))
+        assertEquals("kokoro-preview-en-af-alloy.mp3", VoiceCatalog.previewAssetName("kokoro-en-af-alloy"))
+        assertEquals("mms-preview-main-pt.mp3", VoiceCatalog.previewAssetName("mms-por::main-pt"))
+        assertEquals("piper-preview-piper-ptbr-cadu.mp3", VoiceCatalog.previewAssetName("piper-ptbr-cadu::main-pt"))
+        assertEquals(
+            "piper-preview-piper-enus-ljspeech-medium.mp3",
+            VoiceCatalog.previewAssetName("piper-enus-ljspeech-medium::main")
+        )
+    }
+
+    @Test fun previewAssetNameNuloParaPocketNuvemEDesconhecidos() {
+        assertNull(VoiceCatalog.previewAssetName("pocket-ptbr-rafael"))
+        assertNull(VoiceCatalog.previewAssetName("pt-BR-AntonioNeural"))
+        assertNull(VoiceCatalog.previewAssetName("piper-inexistente::main"))
+    }
+
+    @Test fun previewClipUrlRemotaSoParaKokoroMmsESupertonic() {
+        assertTrue(VoiceCatalog.previewClipUrl("kokoro-en-af-alloy")!!.endsWith("/kokoro-preview-en-af-alloy.mp3"))
+        assertTrue(VoiceCatalog.previewClipUrl("mms-por::main-pt")!!.endsWith("/mms-preview-main-pt.mp3"))
+        assertTrue(VoiceCatalog.previewClipUrl("supertonic-f1", "es")!!.endsWith("/supertonic-preview-f1-es.mp3"))
+        assertNull(VoiceCatalog.previewClipUrl("piper-ptbr-cadu::main-pt"))
+        assertNull(VoiceCatalog.previewClipUrl("pocket-ptbr-rafael"))
+    }
+
+    @Test fun clipeEmbarcadoPrimeiroSupertonicSoSemPacoteBaixado() {
+        assertTrue(VoiceCatalog.usarClipeEmbarcadoPrimeiro("supertonic-f1", pacotePronto = false))
+        assertFalse(VoiceCatalog.usarClipeEmbarcadoPrimeiro("supertonic-f1", pacotePronto = true))
+    }
+
+    @Test fun clipeEmbarcadoPrimeiroPiperSoSemPacoteBaixado() {
+        assertTrue(VoiceCatalog.usarClipeEmbarcadoPrimeiro("piper-ptbr-cadu::main-pt", pacotePronto = false))
+        assertFalse(VoiceCatalog.usarClipeEmbarcadoPrimeiro("piper-ptbr-cadu::main-pt", pacotePronto = true))
+    }
+
+    @Test fun clipeEmbarcadoPrimeiroKokoroEMmsSempre() {
+        assertTrue(VoiceCatalog.usarClipeEmbarcadoPrimeiro("kokoro-pf-dora", pacotePronto = false))
+        assertTrue(VoiceCatalog.usarClipeEmbarcadoPrimeiro("kokoro-pf-dora", pacotePronto = true))
+        assertTrue(VoiceCatalog.usarClipeEmbarcadoPrimeiro("mms-por::main-pt", pacotePronto = false))
+        assertTrue(VoiceCatalog.usarClipeEmbarcadoPrimeiro("mms-por::main-pt", pacotePronto = true))
+    }
+
+    @Test fun clipeEmbarcadoPrimeiroPocketNuncaTemAsset() {
+        assertFalse(VoiceCatalog.usarClipeEmbarcadoPrimeiro("pocket-ptbr-rafael", pacotePronto = false))
+        assertFalse(VoiceCatalog.usarClipeEmbarcadoPrimeiro("pocket-ptbr-rafael", pacotePronto = true))
+    }
+
+    @Test fun todaVozOfflineComClipeTemArquivoEmbarcado() {
+        // Gradle roda os testes com o diretório do módulo `app` como working dir.
+        val pasta = java.io.File("src/main/assets/previas")
+        assertTrue("pasta de prévias não encontrada: ${pasta.absolutePath}", pasta.isDirectory)
+        val vozes = VoiceCatalog.forEngine("onnx") + VoiceCatalog.forEngine("kokoro")
+        assertTrue("catálogo offline vazio", vozes.isNotEmpty())
+        val problemas = mutableListOf<String>()
+        for (voz in vozes) {
+            for (idioma in listOf("pt", "es", "en")) {
+                val nome = VoiceCatalog.previewAssetName(voz.id, idioma)
+                if (nome == null) {
+                    problemas.add("${voz.id}: sem nome de clipe")
+                } else if (!java.io.File(pasta, nome).isFile) {
+                    problemas.add("${voz.id} ($idioma): $nome ausente")
+                }
+            }
+        }
+        assertTrue("clipes faltando: $problemas", problemas.isEmpty())
     }
 }
