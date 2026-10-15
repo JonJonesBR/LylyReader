@@ -17,7 +17,7 @@ class RelatorioTrocasTest(unittest.TestCase):
         return relatorio_trocas(texto, "pt-BR", numeros_soltos=numeros_soltos)
 
     def test_abreviacao_pt(self):
-        self.assertEqual(self._pt("O Dr. Silva disse."), [{"antes": "Dr.", "depois": "doutor"}])
+        self.assertEqual(self._pt("O Dr. Silva disse."), [{"antes": "Dr", "depois": "doutor"}])
 
     def test_ordinais_pt(self):
         self.assertEqual(
@@ -28,14 +28,14 @@ class RelatorioTrocasTest(unittest.TestCase):
     def test_horas_pt(self):
         self.assertEqual(
             self._pt("Chegou às 10h30."),
-            [{"antes": "10h30.", "depois": "dez horas e trinta minutos."}],
+            [{"antes": "10h30", "depois": "dez horas e trinta minutos"}],
         )
 
     def test_moeda_pt_junta_trechos_separados_por_palavra_igual(self):
         self.assertEqual(
             self._pt("Custa R$ 45,90 e US$ 10."),
             [{
-                "antes": "R$ 45,90 e US$ 10.",
+                "antes": "R$ 45,90 e US$ 10",
                 "depois": "quarenta e cinco reais e noventa centavos e dez dólares",
             }],
         )
@@ -71,7 +71,7 @@ class RelatorioTrocasTest(unittest.TestCase):
     def test_en_abreviacao_e_numero_com_flag(self):
         self.assertEqual(
             relatorio_trocas("Dr. Smith came.", "en"),
-            [{"antes": "Dr.", "depois": "doctor"}],
+            [{"antes": "Dr", "depois": "doctor"}],
         )
         self.assertEqual(
             relatorio_trocas("Paid 3 dollars.", "en", numeros_soltos=True),
@@ -85,11 +85,9 @@ class RelatorioTrocasTest(unittest.TestCase):
             [{"antes": "99", "depois": "noventa y nueve"}, {"antes": "3", "depois": "tres"}],
         )
 
-    def test_sem_travessoes_remove_travessao_inicial(self):
-        self.assertEqual(
-            relatorio_trocas("— Olá, disse ele.", "pt-BR", sem_travessoes=True),
-            [{"antes": "— Olá,", "depois": "Olá,"}],
-        )
+    def test_sem_travessoes_remove_travessao_inicial_nao_e_reportado(self):
+        # Remover o travessão só mexe em pontuação: a troca é descartada.
+        self.assertEqual(relatorio_trocas("— Olá, disse ele.", "pt-BR", sem_travessoes=True), [])
         self.assertEqual(relatorio_trocas("— Olá, disse ele.", "pt-BR"), [])
 
     def test_texto_sem_trocas_devolve_lista_vazia(self):
@@ -104,7 +102,7 @@ class RelatorioTrocasTest(unittest.TestCase):
         trocas = self._pt("Primeiro, Dr. Silva.\n\nSegundo, 2º lugar.")
         self.assertEqual(
             trocas,
-            [{"antes": "Dr.", "depois": "doutor"}, {"antes": "2º", "depois": "segundo"}],
+            [{"antes": "Dr", "depois": "doutor"}, {"antes": "2º", "depois": "segundo"}],
         )
 
     def test_nao_altera_saida_de_normalizar(self):
@@ -138,15 +136,22 @@ class RelatorioComDicionarioTest(unittest.TestCase):
         self._pron.configurar(self._json.dumps([{"word": "coso", "spoken": "cozo"}]))
         self.assertEqual(
             self._trocas("Porque coso."),
-            [{"antes": "coso.", "depois": "cozo."}],
+            [{"antes": "coso", "depois": "cozo"}],
         )
 
     def test_dicionario_e_numero_no_mesmo_texto_geram_as_duas_trocas(self):
         self._pron.configurar(self._json.dumps([{"word": "coso", "spoken": "cozo"}]))
         self.assertEqual(
             self._trocas("Porque coso.\nEram 3 homens.", voz="pocket-pt-x"),
-            [{"antes": "coso.", "depois": "cozo."}, {"antes": "3", "depois": "três"}],
+            [{"antes": "coso", "depois": "cozo"}, {"antes": "3", "depois": "três"}],
         )
+
+    def test_coso_com_virgula_e_coso_com_ponto_viram_o_mesmo_par(self):
+        self._pron.configurar(self._json.dumps([{"word": "coso", "spoken": "cozo"}]))
+        trocas = self._trocas("Digo coso, e depois coso.")
+        self.assertEqual(len(trocas), 2)
+        self.assertEqual(trocas[0], trocas[1])
+        self.assertEqual(trocas[0], {"antes": "coso", "depois": "cozo"})
 
     def test_sem_dicionario_resultado_igual_ao_relatorio_puro(self):
         texto = "Dr. Silva chegou às 10h30.\nEram 3 homens e 2 mulheres."
@@ -157,6 +162,18 @@ class RelatorioComDicionarioTest(unittest.TestCase):
     def test_comparar_textos_igual_devolve_vazio(self):
         from text_normalizer import comparar_textos
         self.assertEqual(comparar_textos("Olá, mundo.", "Olá, mundo."), [])
+
+    def test_comparar_textos_so_pontuacao_mudou_devolve_vazio(self):
+        from text_normalizer import comparar_textos
+        self.assertEqual(comparar_textos("Ele disse, sim.", "Ele disse sim!"), [])
+        self.assertEqual(comparar_textos("Oi — tudo bem", "Oi tudo bem"), [])
+
+    def test_comparar_textos_tira_pontuacao_das_bordas_do_par(self):
+        from text_normalizer import comparar_textos
+        self.assertEqual(
+            comparar_textos("Porque coso, sim.", "Porque cozo, sim."),
+            [{"antes": "coso", "depois": "cozo"}],
+        )
 
 
 if __name__ == "__main__":

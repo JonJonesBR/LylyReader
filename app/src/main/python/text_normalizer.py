@@ -803,10 +803,21 @@ def relatorio_trocas(
     return trocas
 
 
+_PONTUACAO_BORDAS = '.,;:!?"\'()«»“”‘’[]…—–-'
+
+
+def _sem_pontuacao_bordas(palavras: List[str]) -> List[str]:
+    """Tira pontuação das bordas de cada palavra e descarta as que ficam vazias (ex.: '—')."""
+    return [p for p in (w.strip(_PONTUACAO_BORDAS) for w in palavras) if p]
+
+
 def comparar_textos(antes: str, depois: str) -> List[dict]:
     """Trocas entre duas versões de um mesmo trecho, por palavra (difflib), no formato
     `{"antes", "depois"}`. Usado pelo relatório para comparar o texto original com o texto após o
-    dicionário de pronúncia e, depois, com a normalização. Texto igual ou vazio devolve `[]`."""
+    dicionário de pronúncia e, depois, com a normalização. Texto igual ou vazio devolve `[]`.
+
+    A pontuação das bordas não entra no par exibido ('coso,' e 'coso.' viram 'coso'), e uma troca
+    que só mudou pontuação é descartada."""
     palavras_antes = antes.split()
     palavras_depois = depois.split()
     casador = difflib.SequenceMatcher(None, palavras_antes, palavras_depois, autojunk=False)
@@ -816,9 +827,13 @@ def comparar_textos(antes: str, depois: str) -> List[dict]:
         if i1 == i2 or j1 == j2:
             ini_a, fim_a = max(0, i1 - 1), min(len(palavras_antes), i2 + 1)
             ini_b, fim_b = max(0, j1 - 1), min(len(palavras_depois), j2 + 1)
+        trecho_antes = _sem_pontuacao_bordas(palavras_antes[ini_a:fim_a])
+        trecho_depois = _sem_pontuacao_bordas(palavras_depois[ini_b:fim_b])
+        if trecho_antes == trecho_depois:
+            continue  # só mudou pontuação
         trocas.append({
-            "antes": " ".join(palavras_antes[ini_a:fim_a]),
-            "depois": " ".join(palavras_depois[ini_b:fim_b]),
+            "antes": " ".join(trecho_antes),
+            "depois": " ".join(trecho_depois),
         })
     return trocas
 
