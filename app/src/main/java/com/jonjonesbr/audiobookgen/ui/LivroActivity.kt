@@ -129,6 +129,9 @@ class LivroActivity : BasePlayerActivity() {
         val principal = findViewById<Button>(R.id.btnLivroContinuar)
         principal.setText(if (iniciado) R.string.livro_continuar else R.string.livro_comecar)
         principal.setOnClickListener { AcoesDoLivro.abrirNoLeitor(this, l, continuar = true) }
+        findViewById<Button>(R.id.btnLivroLerSemAudio).setOnClickListener {
+            AcoesDoLivro.abrirNoLeitor(this, l, continuar = false, somenteLeitura = true)
+        }
         findViewById<Button>(R.id.btnLivroGerarAudiobook).setOnClickListener { mostrarPainelGerar(l) }
 
         mostrarVoz()

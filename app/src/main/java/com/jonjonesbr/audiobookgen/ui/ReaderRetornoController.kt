@@ -22,6 +22,8 @@ class ReaderRetornoController(
     private val activity: AppCompatActivity,
     private val viewModel: ReaderViewModel,
     private val callbacks: Callbacks,
+    /** "Ler sem áudio": o menu de ações esconde tudo que converte, toca ou configura voz. */
+    private val somenteLeitura: Boolean = false,
 ) {
     data class Callbacks(
         val obterCaminhoArquivo: () -> String,
@@ -250,7 +252,28 @@ class ReaderRetornoController(
             )
         }
 
+        if (somenteLeitura) {
+            esconderItensDeAudio(view)
+            // Abre direto na aba "Leitura" (índice 1: Conversão, Leitura, Edição). O listener já está registrado.
+            view.findViewById<TabLayout>(R.id.tabsAcoesReader).getTabAt(1)?.select()
+        }
+
         dialog.show()
+    }
+
+    /** Itens do menu que convertem, tocam ou configuram voz/sleep timer — sumem no modo "Ler sem áudio". */
+    private fun esconderItensDeAudio(view: android.view.View) {
+        listOf(
+            R.id.itemAcaoConverterTudo,
+            R.id.itemAcaoBaixarCapitulo,
+            R.id.itemAcaoBaixarLivro,
+            R.id.itemAcaoOuvirAudiobook,
+            R.id.itemAcaoLeituraGuiada,
+            R.id.itemAcaoPrepararCapitulo,
+            R.id.itemAcaoConfigLivro,
+            R.id.itemAcaoVozesPersonagens,
+            R.id.itemAcaoSleepTimer,
+        ).forEach { view.findViewById<android.view.View>(it).visibility = View.GONE }
     }
 
     private fun mostrarDialogoExcluirOcorrencias() {

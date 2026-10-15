@@ -69,7 +69,9 @@ class ParagrafoAdapter(
     // T3.5 — destacar um trecho selecionado do parágrafo (posição, início, fim em char offset)
     private val onDestacarTrecho: (Int, Int, Int) -> Unit,
     // Dicionário de pronúncia — palavra selecionada
-    private val onDefinirPronuncia: (String) -> Unit = {}
+    private val onDefinirPronuncia: (String) -> Unit = {},
+    // "Ler sem áudio": sem a opção de pronúncia (que toca o texto) no menu de seleção
+    private val mostrarPronuncia: Boolean = true,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     init {
@@ -296,8 +298,10 @@ class ParagrafoAdapter(
                 val item4 = menu.add(0, MENU_ITEM_DEFINIR, 0, R.string.menu_definir_palavra)
                 item4.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
 
-                val item5 = menu.add(0, MENU_ITEM_PRONUNCIA, 0, R.string.menu_pronuncia)
-                item5.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_IF_ROOM)
+                if (mostrarPronuncia) {
+                    val item5 = menu.add(0, MENU_ITEM_PRONUNCIA, 0, R.string.menu_pronuncia)
+                    item5.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_IF_ROOM)
+                }
                 return true
             }
 

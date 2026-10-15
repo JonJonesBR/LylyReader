@@ -1065,6 +1065,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <!-- Tela do livro (Fase O) -->
     <string name="livro_continuar">Continuar lectura guiada</string>
     <string name="livro_comecar">Empezar a escuchar</string>
+    <string name="livro_ler_sem_audio">Leer sin audio</string>
     <string name="livro_voz_titulo">Voz de este libro</string>
     <string name="livro_trocar">Cambiar</string>
     <string name="livro_opcoes_titulo">Opciones</string>

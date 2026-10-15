@@ -18,8 +18,15 @@ object AcoesDoLivro {
     /**
      * Abre o livro no leitor. [continuar] retoma a leitura guiada de onde parou; [acaoInicial] (uma das
      * `ReaderActivity.ACAO_INICIAL_*`) abre direto um painel do leitor assim que o texto carrega.
+     * [somenteLeitura] abre o leitor sem nenhuma parte de áudio (ver `ReaderActivity.EXTRA_SOMENTE_LEITURA`).
      */
-    fun abrirNoLeitor(activity: AppCompatActivity, livro: LivroBiblioteca, continuar: Boolean, acaoInicial: String? = null) {
+    fun abrirNoLeitor(
+        activity: AppCompatActivity,
+        livro: LivroBiblioteca,
+        continuar: Boolean,
+        acaoInicial: String? = null,
+        somenteLeitura: Boolean = false,
+    ) {
         val arquivo = BibliotecaStore.arquivoDo(activity, livro)
         if (!arquivo.isFile) {
             Toast.makeText(activity, R.string.bib_erro_abrir, Toast.LENGTH_SHORT).show()
@@ -29,6 +36,7 @@ object AcoesDoLivro {
             Intent(activity, ReaderActivity::class.java)
                 .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
                 .putExtra(ReaderActivity.EXTRA_CONTINUAR_GUIADA, continuar)
+                .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, somenteLeitura)
                 .apply { acaoInicial?.let { putExtra(ReaderActivity.EXTRA_ACAO_INICIAL, it) } }
         )
     }

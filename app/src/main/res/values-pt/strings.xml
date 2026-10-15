@@ -1068,6 +1068,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <!-- Tela do livro (Fase O) -->
     <string name="livro_continuar">Continuar leitura guiada</string>
     <string name="livro_comecar">Começar a ouvir</string>
+    <string name="livro_ler_sem_audio">Ler sem áudio</string>
     <string name="livro_voz_titulo">Voz deste livro</string>
     <string name="livro_trocar">Trocar</string>
     <string name="livro_opcoes_titulo">Opções</string>

@@ -99,6 +99,12 @@ class ReaderActivity : BasePlayerActivity() {
         const val ACAO_INICIAL_CAPITULOS = "capitulos"
         const val ACAO_INICIAL_PERSONAGENS = "personagens"
         const val ACAO_INICIAL_PRONUNCIA = "pronuncia"
+        /**
+         * Modo "Ler sem áudio": abre o livro como leitor puro, sem leitura guiada, conversão, voz nem
+         * análise de personagens (nada de GuidedPlayerManager). Busca, capítulos, marcadores, destaques,
+         * aparência e posição de leitura continuam iguais.
+         */
+        const val EXTRA_SOMENTE_LEITURA = "extra_somente_leitura"
         /** Caminhos (ArrayList<String>) dos PRÓXIMOS arquivos a ler em sequência, em ordem,
          *  NÃO incluindo o arquivo atual — usado pelo botão "Ler tudo" da fila de conversão
          *  (QueueActivity). Quando a leitura guiada do arquivo atual termina naturalmente
@@ -206,7 +212,9 @@ class ReaderActivity : BasePlayerActivity() {
         ActivityResultContracts.OpenDocumentTree()
     ) { uri -> if (uri != null) exportarCapitulosPara(uri) }
 
-    private lateinit var guidedPlayerManager: GuidedPlayerManager
+    /** Nulo no modo "Ler sem áudio" (o manager nunca é criado). Todo acesso trata o nulo. */
+    private var guidedPlayerManager: GuidedPlayerManager? = null
+    private val somenteLeitura: Boolean by lazy { intent.getBooleanExtra(EXTRA_SOMENTE_LEITURA, false) }
     private var ultimoTextoExibido: List<Paragrafo>? = null
     private var autoStartGuidedTriggered = false
     private var scrollRestaurado = false
@@ -223,44 +231,47 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
-    private val guidedReadingBarController by lazy {
-        GuidedReadingBarController(
-            activity = this,
-            guidedPlayerManager = guidedPlayerManager,
-            viewModel = viewModel,
-            recyclerView = recyclerView,
-            views = GuidedReadingBarController.Views(
-                layoutGuidedPlayer = findViewById(R.id.layoutGuidedPlayer),
-                tvGuidedStatus = findViewById(R.id.tvGuidedStatus),
-                progressGuidedLoading = findViewById(R.id.progressGuidedLoading),
-                btnGuidedVoz = findViewById(R.id.btnGuidedVoz),
-                btnGuidedPrev = findViewById(R.id.btnGuidedPrev),
-                btnGuidedPlayPause = findViewById(R.id.btnGuidedPlayPause),
-                btnGuidedNext = findViewById(R.id.btnGuidedNext),
-                btnGuidedClose = findViewById(R.id.btnGuidedClose),
-                btnGuidedVelocidade = findViewById(R.id.btnGuidedVelocidade),
-                tvGuidedSoneca = tvGuidedSoneca,
-                tvGuidedPassos = findViewById(R.id.tvGuidedPassos),
-            ),
-            callbacks = GuidedReadingBarController.Callbacks(
-                abrirSeletorVozes = { voiceSelectionDelegate.abrirSeletorVozes() },
-                mostrarDialogoSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
-                atualizarFabs = { atualizarFabs() },
-                fecharPlayerService = { playerService?.fecharPlayer() },
-                mostrarMiniPlayer = {
-                    playerService?.state?.value?.let { ps ->
-                        if (ps.isVisible) {
-                            findViewById<View>(R.id.miniPlayerRoot)?.visibility = View.VISIBLE
+    /** Nulo no modo "Ler sem áudio" (não há manager para a barra conectar). Não acessar antes de o manager ser atribuído no onCreate. */
+    private val guidedReadingBarController: GuidedReadingBarController? by lazy {
+        guidedPlayerManager?.let { manager ->
+            GuidedReadingBarController(
+                activity = this,
+                guidedPlayerManager = manager,
+                viewModel = viewModel,
+                recyclerView = recyclerView,
+                views = GuidedReadingBarController.Views(
+                    layoutGuidedPlayer = findViewById(R.id.layoutGuidedPlayer),
+                    tvGuidedStatus = findViewById(R.id.tvGuidedStatus),
+                    progressGuidedLoading = findViewById(R.id.progressGuidedLoading),
+                    btnGuidedVoz = findViewById(R.id.btnGuidedVoz),
+                    btnGuidedPrev = findViewById(R.id.btnGuidedPrev),
+                    btnGuidedPlayPause = findViewById(R.id.btnGuidedPlayPause),
+                    btnGuidedNext = findViewById(R.id.btnGuidedNext),
+                    btnGuidedClose = findViewById(R.id.btnGuidedClose),
+                    btnGuidedVelocidade = findViewById(R.id.btnGuidedVelocidade),
+                    tvGuidedSoneca = tvGuidedSoneca,
+                    tvGuidedPassos = findViewById(R.id.tvGuidedPassos),
+                ),
+                callbacks = GuidedReadingBarController.Callbacks(
+                    abrirSeletorVozes = { voiceSelectionDelegate.abrirSeletorVozes() },
+                    mostrarDialogoSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
+                    atualizarFabs = { atualizarFabs() },
+                    fecharPlayerService = { playerService?.fecharPlayer() },
+                    mostrarMiniPlayer = {
+                        playerService?.state?.value?.let { ps ->
+                            if (ps.isVisible) {
+                                findViewById<View>(R.id.miniPlayerRoot)?.visibility = View.VISIBLE
+                            }
                         }
-                    }
-                },
-                esconderMiniPlayer = {
-                    findViewById<View>(R.id.miniPlayerRoot)?.visibility = View.GONE
-                },
-                obterCaminhoArquivo = { caminhoArquivo },
-                onLivroConcluido = { avancarSequenciaFila() },
-            ),
-        )
+                    },
+                    esconderMiniPlayer = {
+                        findViewById<View>(R.id.miniPlayerRoot)?.visibility = View.GONE
+                    },
+                    obterCaminhoArquivo = { caminhoArquivo },
+                    onLivroConcluido = { avancarSequenciaFila() },
+                ),
+            )
+        }
     }
     private val marcacoesController by lazy {
         ReaderMarcacoesController(
@@ -288,10 +299,8 @@ class ReaderActivity : BasePlayerActivity() {
         ReaderSonecaController(
             activity = this,
             callbacks = ReaderSonecaController.Callbacks(
-                obterTokenSessaoGuided = {
-                    if (::guidedPlayerManager.isInitialized) guidedPlayerManager.sessionToken else null
-                },
-                pausarGuided = { guidedPlayerManager.pause() },
+                obterTokenSessaoGuided = { guidedPlayerManager?.sessionToken },
+                pausarGuided = { guidedPlayerManager?.pause() },
                 pausarPlayerSeTocando = {
                     if (playerService?.state?.value?.isPlaying == true) {
                         playerService?.alternarPlayPause()
@@ -310,6 +319,7 @@ class ReaderActivity : BasePlayerActivity() {
         ReaderRetornoController(
             activity = this,
             viewModel = viewModel,
+            somenteLeitura = somenteLeitura,
             callbacks = ReaderRetornoController.Callbacks(
                 obterCaminhoArquivo = { caminhoArquivo },
                 obterCapitulosSelecionados = { capitulosSelecionados },
@@ -331,7 +341,7 @@ class ReaderActivity : BasePlayerActivity() {
                 onAbrirMarcadores = { marcacoesController.mostrarDialogListarBookmarks() },
                 onAbrirDestaques = { marcacoesController.mostrarDialogListarDestaques() },
                 onIniciarLeituraGuiada = {
-                    guidedReadingBarController.playGuidedFrom(guidedReadingBarController.obterIndiceInicioLeitura())
+                    guidedReadingBarController?.let { it.playGuidedFrom(it.obterIndiceInicioLeitura()) }
                 },
                 onPrepararCapitulo = { prepararCapituloAtual() },
                 onAbrirAparencia = { aparenciaController.mostrarBottomSheet() },
@@ -350,7 +360,7 @@ class ReaderActivity : BasePlayerActivity() {
         super.onSaveInstanceState(outState)
         // Só marca como resolvido se o diálogo já teve escolha; aberto na hora da rotação, reaparece.
         outState.putBoolean(STATE_AUTO_START_RESOLVIDO,
-            autoStartGuidedTriggered && !guidedReadingBarController.dialogoInicioPendente)
+            autoStartGuidedTriggered && guidedReadingBarController?.dialogoInicioPendente != true)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -374,32 +384,36 @@ class ReaderActivity : BasePlayerActivity() {
         // ainda não tiver sido atribuído aqui, crasha com
         // UninitializedPropertyAccessException (bug real, já reproduzido no aparelho).
         val pythonUseCase = PythonEngineUseCase(this)
-        // Reconecta ao manager em execução se já houver leitura guiada ativa para ESTE documento
-        // (ex.: usuário voltou ao menu e reabriu pelo indicador/notificação). Senão, cria um novo.
-        // Usa applicationContext para o manager poder sobreviver ao fim desta Activity.
-        val managerExistente = GuidedPlaybackBridge.manager
-        guidedPlayerManager = if (managerExistente != null &&
-            GuidedPlaybackBridge.caminhoArquivo == caminhoArquivo &&
-            managerExistente.state.value.index >= 0) {
-            reconectandoGuided = true
-            managerExistente
-        } else {
-            managerExistente?.release()
-            GuidedPlayerManager(applicationContext, pythonUseCase)
-        }
-        guidedPlayerManager.trackName = tituloCompleto
-        guidedPlayerManager.caminhoArquivo = caminhoArquivo
-        // Reconectando a uma sessão já ativa: os campos acima foram atualizados diretamente no
-        // manager (sem passar por play()), então republica a mesma escrita atômica no bridge
-        // para não deixar trackName/caminho desalinhados com o token/manager já publicados.
-        if (GuidedPlaybackBridge.manager === guidedPlayerManager) {
-            GuidedPlaybackBridge.activate(guidedPlayerManager, tituloCompleto, caminhoArquivo)
+        // Modo "Ler sem áudio": nenhum manager é criado nem conectado (nem o bridge é tocado).
+        if (!somenteLeitura) {
+            // Reconecta ao manager em execução se já houver leitura guiada ativa para ESTE documento
+            // (ex.: usuário voltou ao menu e reabriu pelo indicador/notificação). Senão, cria um novo.
+            // Usa applicationContext para o manager poder sobreviver ao fim desta Activity.
+            val managerExistente = GuidedPlaybackBridge.manager
+            val manager: GuidedPlayerManager = if (managerExistente != null &&
+                GuidedPlaybackBridge.caminhoArquivo == caminhoArquivo &&
+                managerExistente.state.value.index >= 0) {
+                reconectandoGuided = true
+                managerExistente
+            } else {
+                managerExistente?.release()
+                GuidedPlayerManager(applicationContext, pythonUseCase)
+            }
+            guidedPlayerManager = manager
+            manager.trackName = tituloCompleto
+            manager.caminhoArquivo = caminhoArquivo
+            // Reconectando a uma sessão já ativa: os campos acima foram atualizados diretamente no
+            // manager (sem passar por play()), então republica a mesma escrita atômica no bridge
+            // para não deixar trackName/caminho desalinhados com o token/manager já publicados.
+            if (GuidedPlaybackBridge.manager === manager) {
+                GuidedPlaybackBridge.activate(manager, tituloCompleto, caminhoArquivo)
+            }
         }
 
         vincularViews()
         configurarRecyclerView()
         configurarBotoes()
-        guidedReadingBarController.configurarGuidedPlayerBotoes()
+        guidedReadingBarController?.configurarGuidedPlayerBotoes()
         configurarScrollListener()
         onBackPressedDispatcher.addCallback(this) { retornoController.retornarMantendoEdicoes() }
 
@@ -428,8 +442,8 @@ class ReaderActivity : BasePlayerActivity() {
         }
 
         observarViewModel()
-        guidedReadingBarController.observarGuidedPlayer()
-        sonecaController.observarSleepTimer()
+        guidedReadingBarController?.observarGuidedPlayer()
+        if (!somenteLeitura) sonecaController.observarSleepTimer()
         observarAudiobookViewModel()
 
         // NÃO usar `savedInstanceState == null` aqui: após morte de processo o Android
@@ -472,16 +486,17 @@ class ReaderActivity : BasePlayerActivity() {
         super.onDestroy()
         scrollListener?.let { recyclerView.removeOnScrollListener(it) }
         scrollListener = null
-        if (::guidedPlayerManager.isInitialized) {
+        val manager = guidedPlayerManager
+        if (manager != null) {
             // Mantém a leitura guiada tocando em 2º plano (foreground service); só libera o
             // manager quando a leitura está parada. Reabrir o leitor reconecta ao manager vivo.
-            if (guidedPlayerManager.state.value.index < 0) {
-                if (guidedPlayerManager.preparandoCapitulo()) {
+            if (manager.state.value.index < 0) {
+                if (manager.preparandoCapitulo()) {
                     // O preparo do capítulo segue em segundo plano (com notificação); o manager se
                     // libera sozinho quando ele terminar.
-                    guidedPlayerManager.liberarAoFimDoPreparo = true
+                    manager.liberarAoFimDoPreparo = true
                 } else {
-                    guidedPlayerManager.release()
+                    manager.release()
                 }
             }
         }
@@ -530,6 +545,12 @@ class ReaderActivity : BasePlayerActivity() {
         // sem isso, ficam atrás da barra de gestos em telas sem botões de navegação físicos.
         fabConverterPrincipal.aplicarMargemInferiorComNavigationBar()
         findViewById<View>(R.id.layoutGuidedPlayer).aplicarPaddingInferiorComNavigationBar()
+        if (somenteLeitura) {
+            // "Ler sem áudio": sem FAB de conversão, sem barra da leitura guiada e sem "converter assim mesmo".
+            fabConverterPrincipal.visibility = View.GONE
+            findViewById<View>(R.id.layoutGuidedPlayer).visibility = View.GONE
+            btnConverterAssim.visibility = View.GONE
+        }
         bannerOtimizado      = findViewById(R.id.bannerTextoOtimizado)
         tvBannerInfo         = findViewById(R.id.tvBannerInfo)
         layoutBarraModo      = findViewById(R.id.layoutBarraModo)
@@ -556,13 +577,17 @@ class ReaderActivity : BasePlayerActivity() {
             recyclerView = recyclerView,
             viewModel = viewModel,
             onLongPress = { indice -> viewModel.onParagrafoLongPress(indice) },
-            onToque     = { indice -> guidedReadingBarController.onParagrafoToque(indice) },
+            // Sem a guiada, o toque só age na seleção (o viewModel retorna cedo sem seleção ativa, sem áudio).
+            onToque     = { indice ->
+                guidedReadingBarController?.onParagrafoToque(indice) ?: viewModel.onParagrafoToque(indice)
+            },
             onDestacarTrecho = { indice, inicio, fim ->
                 marcacoesController.mostrarDialogDestacarTrecho(indice, inicio, fim)
             },
             onDefinirPronuncia = { palavra ->
                 PronunciationDialog.show(this, palavra, caminhoDoLivro = caminhoArquivo, onOuvir = ::ouvirPronuncia)
             },
+            mostrarPronuncia = !somenteLeitura,
         )
         aplicarOrientacaoRolagem(viewModel.uiState.value.rolagemHorizontal)
         // O destaque de progresso da leitura guiada repinta o parágrafo atual ~20x/s
@@ -691,10 +716,10 @@ class ReaderActivity : BasePlayerActivity() {
         scrollListener = object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(rv: RecyclerView, newState: Int) {
                 if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                    guidedReadingBarController.scrollManual = true
+                    guidedReadingBarController?.scrollManual = true
                     viewModel.pausarSync()
                 } else if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    guidedReadingBarController.aguardandoAutoScroll = false
+                    guidedReadingBarController?.aguardandoAutoScroll = false
                     atualizarProgressoLeitura()
                 }
             }
@@ -711,12 +736,13 @@ class ReaderActivity : BasePlayerActivity() {
      * em vez de mostrar um segundo FAB no mesmo lugar.
      */
     private fun atualizarFabs() {
-        if (!::guidedPlayerManager.isInitialized) return
+        // Sem manager (modo "Ler sem áudio") o FAB de conversão fica escondido em vincularViews().
+        val manager = guidedPlayerManager ?: return
         val state = viewModel.uiState.value
         val temCapitulos = capitulosSelecionados.isNotEmpty()
         val temSelecaoAtiva = state.selecaoInicio != null || temCapitulos
         val emModoEspecial = state.modoEdicao || state.mostrandoAlteracoes
-        val guiadaAtiva = guidedPlayerManager.state.value.index >= 0
+        val guiadaAtiva = manager.state.value.index >= 0
 
         val fabVisivel = if (temSelecaoAtiva) !guiadaAtiva else !emModoEspecial && !guiadaAtiva
         fabConverterPrincipal.visibility = if (fabVisivel) View.VISIBLE else View.GONE
@@ -1031,7 +1057,7 @@ class ReaderActivity : BasePlayerActivity() {
         // e nunca quando a leitura guiada vai iniciar sozinha (ela faz seu próprio scroll).
         restaurarPosicaoLeituraSeNecessario(paragrafosExibidos)
         executarAcaoInicialSeNecessario()
-        if (!dicaLeitorTentada) {
+        if (!dicaLeitorTentada && !somenteLeitura) {
             dicaLeitorTentada = true
             btnOpcoes.post { CoachMark.tentar(this, com.jonjonesbr.audiobookgen.domain.Dica.LEITOR_GUIADA, btnOpcoes) }
         }
@@ -1055,12 +1081,15 @@ class ReaderActivity : BasePlayerActivity() {
 
     /** Extraído de [atualizarUI] (ações disparadas pelas intents de leitura guiada). */
     private fun processarAutoStartLeituraGuiada(texto: TextoExtraido) {
+        // "Ler sem áudio" nunca inicia a guiada (nem o diálogo de início nem a leitura direta).
+        if (somenteLeitura) return
+        val controlador = guidedReadingBarController ?: return
         // Não reabrir o diálogo ao reconectar a uma leitura em andamento (ex.: rotação da tela):
         // a intent original ainda carrega EXTRA_AUTO_START_GUIDED e o flag da instância se perde.
         if (intent.getBooleanExtra(EXTRA_AUTO_START_GUIDED, false) &&
             !autoStartGuidedTriggered && !reconectandoGuided) {
             autoStartGuidedTriggered = true
-            guidedReadingBarController.mostrarDialogPontoInicioLeituraGuiada()
+            controlador.mostrarDialogPontoInicioLeituraGuiada()
         }
 
         // "Continuar lendo": inicia a guiada direto na posição salva (sem diálogo). Pulado se
@@ -1071,8 +1100,8 @@ class ReaderActivity : BasePlayerActivity() {
             val total = texto.paragrafos.size
             val salvo = getSharedPreferences("audiobookgen_prefs", MODE_PRIVATE)
                 .getInt("reader_scroll_$caminhoArquivo", -1)
-            val inicio = if (salvo in 0 until total) salvo else guidedReadingBarController.obterIndiceInicioLeitura()
-            recyclerView.post { guidedReadingBarController.playGuidedFrom(inicio) }
+            val inicio = if (salvo in 0 until total) salvo else controlador.obterIndiceInicioLeitura()
+            recyclerView.post { controlador.playGuidedFrom(inicio) }
         }
     }
 
@@ -1173,8 +1202,9 @@ class ReaderActivity : BasePlayerActivity() {
         val paragrafosExibidos = state.textoLimpo?.paragrafos ?: texto.paragrafos
         if (ultimoTextoExibido !== paragrafosExibidos) {
             ultimoTextoExibido = paragrafosExibidos
-            guidedPlayerManager.setParagraphs(paragrafosExibidos)
-            prepararAtribuicaoDeFalantes(paragrafosExibidos)
+            guidedPlayerManager?.setParagraphs(paragrafosExibidos)
+            // Análise de falantes serve às vozes (TTS): não roda no modo "Ler sem áudio".
+            if (!somenteLeitura) prepararAtribuicaoDeFalantes(paragrafosExibidos)
             marcacoesController.carregarDestaques()
         }
         adapter.atualizarEstado(
@@ -1230,7 +1260,7 @@ class ReaderActivity : BasePlayerActivity() {
             if (caminhoArquivo == identidadeLivro && textoAtual == textos) {
                 speakerAttribution = resultado
                 speakerGenders = generos
-                guidedPlayerManager.setSpeakerAttribution(resultado)
+                guidedPlayerManager?.setSpeakerAttribution(resultado)
                 avisarPersonagensEncontradosSeNecessario(resultado)
             }
         }
@@ -1238,6 +1268,7 @@ class ReaderActivity : BasePlayerActivity() {
 
     /** "Preparar capítulo": pré-sintetiza o capítulo do ponto de leitura atual (ver GuidedPlayerManager). */
     private fun prepararCapituloAtual() {
+        val manager = guidedPlayerManager ?: return
         val andamento = com.jonjonesbr.audiobookgen.service.PreRenderBridge.state.value
         if (andamento != null && !andamento.terminou) {
             Toast.makeText(this, R.string.prerender_already, Toast.LENGTH_SHORT).show()
@@ -1245,12 +1276,13 @@ class ReaderActivity : BasePlayerActivity() {
         }
         val texto = viewModel.textoEfetivo() ?: return
         if (texto.paragrafos.isEmpty()) return
-        val inicio = guidedReadingBarController.obterIndiceInicioLeitura().coerceIn(0, texto.paragrafos.lastIndex)
+        val inicio = (guidedReadingBarController?.obterIndiceInicioLeitura() ?: 0)
+            .coerceIn(0, texto.paragrafos.lastIndex)
         val capitulo = texto.capitulos.getOrNull(texto.paragrafos[inicio].indiceCapitulo)
         val fim = (capitulo?.indiceParagrafoFim ?: (inicio + PREPARO_PARAGRAFOS_SEM_CAPITULO))
             .coerceIn(inicio, texto.paragrafos.lastIndex)
         val titulo = capitulo?.titulo ?: File(caminhoArquivo).nameWithoutExtension
-        val unidades = guidedPlayerManager.contarUnidadesParaPreparo(inicio, fim)
+        val unidades = manager.contarUnidadesParaPreparo(inicio, fim)
         if (unidades == 0) {
             Toast.makeText(this, R.string.prerender_nothing, Toast.LENGTH_SHORT).show()
             return
@@ -1259,7 +1291,7 @@ class ReaderActivity : BasePlayerActivity() {
             .setTitle(R.string.prerender_confirm_title)
             .setMessage(getString(R.string.prerender_confirm_message, unidades, titulo))
             .setPositiveButton(R.string.prerender_confirm_start) { _, _ ->
-                guidedPlayerManager.prepararCapitulo(inicio, fim, titulo)
+                manager.prepararCapitulo(inicio, fim, titulo)
                 Toast.makeText(this, R.string.prerender_started, Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton(android.R.string.cancel, null)
@@ -1518,7 +1550,7 @@ class ReaderActivity : BasePlayerActivity() {
         runOnUiThread {
             speakerAttribution = novo
             speakerGenders = generos
-            guidedPlayerManager.setSpeakerAttribution(novo)
+            guidedPlayerManager?.setSpeakerAttribution(novo)
         }
         return novo
     }
@@ -1572,7 +1604,8 @@ class ReaderActivity : BasePlayerActivity() {
 
     /** Sugere (não aplica) vozes prontas do motor do narrador; o usuário confirma antes de salvar. */
     private fun sugerirVozesPersonagens(result: SpeakerAttributionResult) {
-        val (narratorVoice, motorSalvo) = guidedPlayerManager.vozEMotorDoLivro()
+        val manager = guidedPlayerManager ?: return
+        val (narratorVoice, motorSalvo) = manager.vozEMotorDoLivro()
         val engine = VoiceCatalog.effectiveEngine(narratorVoice, motorSalvo)
         lifecycleScope.launch {
             val sugestoes = withContext(Dispatchers.IO) {
@@ -1765,7 +1798,8 @@ class ReaderActivity : BasePlayerActivity() {
 
     private fun abrirSeletorVozPersonagem(result: SpeakerAttributionResult, speaker: DetectedSpeaker) {
         // Voz/motor do NARRADOR deste livro ("Voz e velocidade deste livro"), não os globais.
-        val (narratorVoice, motorSalvo) = guidedPlayerManager.vozEMotorDoLivro()
+        val manager = guidedPlayerManager ?: return
+        val (narratorVoice, motorSalvo) = manager.vozEMotorDoLivro()
         val engine = VoiceCatalog.effectiveEngine(narratorVoice, motorSalvo)
         lifecycleScope.launch {
             val voices = withContext(Dispatchers.IO) { vozesParaPersonagens(narratorVoice, engine) }
@@ -1819,7 +1853,7 @@ class ReaderActivity : BasePlayerActivity() {
             Log.w("ReaderActivity", "Não foi possível persistir o mapeamento de voz dos personagens")
         }
         speakerAttribution = updated
-        guidedPlayerManager.setSpeakerAttribution(updated)
+        guidedPlayerManager?.setSpeakerAttribution(updated)
         Toast.makeText(this, R.string.character_voice_saved, Toast.LENGTH_SHORT).show()
         mostrarListaVozesPersonagens(updated)
     }
@@ -1846,7 +1880,7 @@ class ReaderActivity : BasePlayerActivity() {
         // e nunca quando a leitura guiada vai iniciar sozinha (ela faz seu próprio scroll).
         if (!scrollRestaurado && paragrafosExibidos.isNotEmpty()) {
             scrollRestaurado = true
-            val guidedIdx = guidedPlayerManager.state.value.index
+            val guidedIdx = guidedPlayerManager?.state?.value?.index ?: -1
             if (reconectandoGuided && guidedIdx in 0 until paragrafosExibidos.size) {
                 // Reconexão: rola para o parágrafo em execução, não para o scroll salvo.
                 recyclerView.post {
@@ -1869,12 +1903,13 @@ class ReaderActivity : BasePlayerActivity() {
 
     /** Extraído de [atualizarUI] (scroll automático da leitura guiada). */
     private fun sincronizarScrollAutomatico(state: ReaderUiState) {
+        val controlador = guidedReadingBarController ?: return
         val paragrafoMudouDesdeUltimoSync =
-            state.paragrafoSyncAtual != guidedReadingBarController.ultimoScrollSyncStandard
-        val podeRolarAutomaticamente = !guidedReadingBarController.scrollManual && state.syncAtivo &&
+            state.paragrafoSyncAtual != controlador.ultimoScrollSyncStandard
+        val podeRolarAutomaticamente = !controlador.scrollManual && state.syncAtivo &&
             state.paragrafoSyncAtual >= 0 && paragrafoMudouDesdeUltimoSync
         if (podeRolarAutomaticamente) {
-            guidedReadingBarController.ultimoScrollSyncStandard = state.paragrafoSyncAtual
+            controlador.ultimoScrollSyncStandard = state.paragrafoSyncAtual
             (recyclerView.layoutManager as? LinearLayoutManager)
                 ?.smoothScrollToPosition(recyclerView, null, state.paragrafoSyncAtual)
         }
@@ -1970,7 +2005,10 @@ class ReaderActivity : BasePlayerActivity() {
                 isCheckable = true
                 isChecked = capitulosSelecionados.contains(i)
                 setOnClickListener {
-                    if (isChecked) {
+                    // "Ler sem áudio": o chip só navega; não entra na seleção de conversão.
+                    if (somenteLeitura) {
+                        isChecked = false
+                    } else if (isChecked) {
                         capitulosSelecionados.add(i)
                         viewModel.limparSelecao()
                     } else {
@@ -2075,7 +2113,7 @@ class ReaderActivity : BasePlayerActivity() {
         onVoiceSelected = { voice ->
             appPrefs.vozSelecionada = voice.id
             appPrefs.motorTts = voice.engine
-            guidedPlayerManager.registrarVozEscolhida(voice.id, voice.engine)
+            guidedPlayerManager?.registrarVozEscolhida(voice.id, voice.engine)
 
             if (voice.engine == "gemini") {
                 val chave = SecurePreferences.getGeminiKeys(this@ReaderActivity)
@@ -2095,10 +2133,10 @@ class ReaderActivity : BasePlayerActivity() {
                 startActivity(intent)
             }
 
-            val guidedIndex = guidedPlayerManager.state.value.index
+            val guidedIndex = guidedPlayerManager?.state?.value?.index ?: -1
             if (guidedIndex >= 0) {
-                guidedReadingBarController.scrollManual = false
-                guidedPlayerManager.play(guidedIndex)
+                guidedReadingBarController?.scrollManual = false
+                guidedPlayerManager?.play(guidedIndex)
             }
         },
         onVoicePreview = { voice, onFinished ->
@@ -2133,7 +2171,8 @@ class ReaderActivity : BasePlayerActivity() {
 
     /** Toca [texto] (a pronúncia digitada) com a voz e o motor do livro. */
     private fun ouvirPronuncia(texto: String) {
-        val (voz, motorSalvo) = guidedPlayerManager.vozEMotorDoLivro()
+        val manager = guidedPlayerManager ?: return
+        val (voz, motorSalvo) = manager.vozEMotorDoLivro()
         val motor = VoiceCatalog.effectiveEngine(voz, motorSalvo)
         val chave = SecurePreferences.getGeminiKeys(this)
         audiobookViewModel.pararPreview()

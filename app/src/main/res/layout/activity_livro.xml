@@ -123,6 +123,16 @@
                 android:textColor="?attr/colorOnPrimary"/>
 
             <Button
+                android:id="@+id/btnLivroLerSemAudio"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/livro_ler_sem_audio"
+                android:textSize="15sp"/>
+
+            <Button
                 android:id="@+id/btnLivroGerarAudiobook"
                 style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="match_parent"

@@ -1077,6 +1077,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <!-- Tela do livro (Fase O) -->
     <string name="livro_continuar">Continue guided reading</string>
     <string name="livro_comecar">Start listening</string>
+    <string name="livro_ler_sem_audio">Read without audio</string>
     <string name="livro_voz_titulo">Voice for this book</string>
     <string name="livro_trocar">Change</string>
     <string name="livro_opcoes_titulo">Options</string>
