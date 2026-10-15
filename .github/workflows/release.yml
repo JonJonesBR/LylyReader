@@ -94,6 +94,29 @@ jobs:
       - name: Run unit tests (gate)
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
+      - name: Prepare fixed debug signing key
+        # Chave fixa do APK debug, guardada só como segredo do repositório (nunca no Git): mantém a
+        # mesma assinatura em toda versão, para instalar a nova por cima da antiga. Sem os segredos
+        # (ex.: fork), o build segue com a chave debug padrão.
+        env:
+          DEBUG_KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_B64 }}
+          DEBUG_KEYSTORE_PASSWORD: ${{ secrets.DEBUG_KEYSTORE_PASSWORD }}
+        run: |
+          set -e
+          if [ -z "$DEBUG_KEYSTORE_B64" ] || [ -z "$DEBUG_KEYSTORE_PASSWORD" ]; then
+            echo "Segredos da chave debug ausentes; usando a chave debug padrão."
+            exit 0
+          fi
+          KS="$RUNNER_TEMP/lylyreader-debug.p12"
+          echo "$DEBUG_KEYSTORE_B64" | base64 -d > "$KS"
+          {
+            echo "storeFile=$KS"
+            echo "storePassword=$DEBUG_KEYSTORE_PASSWORD"
+            echo "keyAlias=lylyreader-debug"
+            echo "keyPassword=$DEBUG_KEYSTORE_PASSWORD"
+          } > "$RUNNER_TEMP/debug-signing.properties"
+          echo "LYLY_DEBUG_SIGNING_PROPS=$RUNNER_TEMP/debug-signing.properties" >> "$GITHUB_ENV"
+
       - name: Build debug APK
         run: >
           ./gradlew :app:assembleDebug --stacktrace

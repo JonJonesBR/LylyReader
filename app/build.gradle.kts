@@ -23,6 +23,19 @@ val hasValidSigningProps = keystorePropsFile.exists().also { exists ->
     }
 }
 
+// Caminho (variável de ambiente) de um .properties com storeFile/storePassword/keyAlias/keyPassword
+// da chave fixa do debug. No CI é montado a partir de segredos; localmente fica em ~/.lylyreader-keys.
+val debugSigningProps = Properties()
+val hasDebugSigningProps = System.getenv("LYLY_DEBUG_SIGNING_PROPS")
+    ?.let { File(it) }
+    ?.takeIf { it.isFile }
+    ?.also { arquivo -> FileInputStream(arquivo).use { debugSigningProps.load(it) } }
+    ?.let {
+        listOf("storeFile", "storePassword", "keyAlias", "keyPassword").all { chave ->
+            debugSigningProps[chave] != null && File(debugSigningProps["storeFile"] as String).isFile
+        }
+    } ?: false
+
 val versionCodeOverrideValue = providers.gradleProperty("versionCodeOverride").orNull
 val versionCodeOverride = versionCodeOverrideValue?.toIntOrNull()
     ?: versionCodeOverrideValue?.let {
@@ -40,6 +53,16 @@ android {
     }
 
     signingConfigs {
+        // Chave fixa do APK debug (fora do Git): mesma assinatura em toda versão, para o usuário
+        // instalar a nova por cima da antiga. Sem o arquivo, o Gradle usa a chave debug padrão.
+        if (hasDebugSigningProps) {
+            create("debugFixa") {
+                storeFile = File(debugSigningProps["storeFile"] as String)
+                storePassword = debugSigningProps["storePassword"] as String
+                keyAlias = debugSigningProps["keyAlias"] as String
+                keyPassword = debugSigningProps["keyPassword"] as String
+            }
+        }
         if (hasValidSigningProps) {
             create("release") {
                 storeFile = rootProject.file(keystoreProps["storeFile"] as String)
@@ -82,6 +105,9 @@ android {
             // O build de teste convive com a release instalada (outro id, outros dados): testar no aparelho
             // sem desinstalar a versão assinada de uso diário.
             applicationIdSuffix = ".debug"
+            if (hasDebugSigningProps) {
+                signingConfig = signingConfigs.getByName("debugFixa")
+            }
         }
         release {
             if (hasValidSigningProps) {
