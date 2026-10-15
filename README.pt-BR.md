@@ -44,6 +44,7 @@ https://github.com/user-attachments/assets/f04b1f61-9b0e-4409-a057-1c1c3fb67679
 ### Leitura
 - Leitura guiada com controle de velocidade ao vivo, normalização do texto para uma pronúncia natural (abreviações, datas, moedas, unidades, siglas) e dicionário de pronúncia, que vale para todos os livros ou só para o livro que você está lendo.
 - Narração em segundo plano, com indicador e uma notificação que leva de volta ao parágrafo exato.
+- **Ler sem áudio:** abra qualquer livro como um e-book comum, sem voz nem player, mantendo capítulos, marcadores, destaques, busca e a posição de leitura.
 - Sumário, marcadores, destaques com notas, consulta de palavras, busca no texto e progresso de leitura por capítulo.
 - Temas: Claro, Escuro, Papel e preto puro, com fonte serifada opcional (Literata) e controle de margem.
 
@@ -158,7 +159,7 @@ Para instalar o APK de depuração num aparelho conectado:
 
 ## Download
 
-O APK mais recente está na [página de Releases](https://github.com/JonJonesBR/LylyReader/releases/latest). É uma **compilação de depuração sem a assinatura do autor**, e instala como um app separado (`com.jonjonesbr.audiobookgen.debug`).
+O APK mais recente está na [página de Releases](https://github.com/JonJonesBR/LylyReader/releases/latest). É uma **compilação de depuração sem a assinatura do autor**, e instala como um app separado (`com.jonjonesbr.audiobookgen.debug`). A partir da 1.8.30, todo APK é assinado com a mesma chave, então uma versão nova instala por cima da anterior e mantém seus dados. Da 1.8.29 ou anterior para a 1.8.30 é a última vez que precisa desinstalar antes (faça um backup antes, pois desinstalar apaga os dados do app).
 
 ## Roadmap
 

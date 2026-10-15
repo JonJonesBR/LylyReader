@@ -44,6 +44,7 @@ https://github.com/user-attachments/assets/3f099670-c9ce-47a4-8846-af99d97583c0
 ### Reading
 - Guided reading with live speed control, text normalization for natural pronunciation (abbreviations, dates, currency, units, acronyms) and a pronunciation dictionary that works for all books or only for the book you are reading.
 - Background narration, with an indicator and a notification that returns you to the exact paragraph.
+- **Read without audio:** open any book as a plain e-book, with no voice or player, keeping chapters, bookmarks, highlights, search and your reading position.
 - Table of contents, bookmarks, highlights with notes, word lookup, text search and reading progress per chapter.
 - Themes: Light, Dark, Sepia and pure black, with an optional serif font (Literata) and margin control.
 
@@ -162,7 +163,7 @@ Install the debug APK on a connected device:
 
 ## Download
 
-The latest APK is on the [Releases page](https://github.com/JonJonesBR/LylyReader/releases/latest). It is a **debug build without the author's signature**, and it installs as a separate app (`com.jonjonesbr.audiobookgen.debug`).
+The latest APK is on the [Releases page](https://github.com/JonJonesBR/LylyReader/releases/latest). It is a **debug build without the author's signature**, and it installs as a separate app (`com.jonjonesbr.audiobookgen.debug`). From 1.8.30 on, every APK is signed with the same key, so a new version installs right over the previous one and keeps your data. Going from 1.8.29 or older to 1.8.30 is the last time you must uninstall first (make a backup before, since uninstalling erases the app data).
 
 ## Roadmap
 
