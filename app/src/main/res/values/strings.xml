@@ -795,7 +795,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Previewing a voice now works without downloading its pack first: the preview clips for Supertonic, Kokoro, MMS and Piper voices are built into the app (Pocket voices still need the download).</string>
+    <string name="release_notes_corpo">• A round of polish: a few messages that always appeared in Portuguese now follow your language.\n• On tablets, screens with long content are now centered and easier to read.\n• The mode bar in the reader is taller and easier to tap.\n• The voice download dialog is now readable in the dark theme.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>

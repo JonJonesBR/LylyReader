@@ -783,7 +783,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Escuchar la vista previa de una voz ya funciona sin descargar antes el paquete: los clips de las voces Supertonic, Kokoro, MMS y Piper ya vienen dentro de la app (las de Pocket aún requieren la descarga).</string>
+    <string name="release_notes_corpo">• Ronda de pulido: algunos mensajes que siempre aparecían en portugués ahora siguen tu idioma.\n• En tabletas, las pantallas con mucho contenido quedan centradas y son más fáciles de leer.\n• La barra de modo del lector es más alta y más fácil de tocar.\n• El diálogo de descarga de voces ahora se lee bien en el tema oscuro.</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Haz las voces un poco más graves o más agudas y suaviza los agudos ásperos. El cambio se aplica al instante en la lectura guiada y en los audiolibros que conviertas a partir de ahora.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
