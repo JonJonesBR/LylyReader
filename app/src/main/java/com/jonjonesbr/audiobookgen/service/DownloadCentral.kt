@@ -88,6 +88,7 @@ object DownloadCentral {
                         nome = livro.titulo,
                         grupo = GrupoDownload.LIVROS,
                         tamanhoMb = 1,
+                        // runBlocking aqui: só pode ser chamado fora da thread principal (hoje só roda em Dispatchers.IO, em atualizar/executar).
                         isPronto = { c -> kotlinx.coroutines.runBlocking { com.jonjonesbr.audiobookgen.data.BibliotecaStore.porChaveOrigem(c, livro.chave) != null } },
                         ocupadoBytes = { 0L },
                         download = { c, progresso -> com.jonjonesbr.audiobookgen.data.LivrosDownloads.guardar(c, livro, progresso) },

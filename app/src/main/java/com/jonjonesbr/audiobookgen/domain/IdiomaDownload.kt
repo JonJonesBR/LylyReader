@@ -25,5 +25,5 @@ object IdiomaDownload {
 
     /** Filtro inicial sugerido pelo idioma do aparelho/app; qualquer outro idioma começa em "Todos". */
     fun padraoDoIdioma(idiomaDoApp: String): FiltroIdioma =
-        FiltroIdioma.values().firstOrNull { it.codigo == idiomaDoApp.lowercase().substringBefore('-') } ?: FiltroIdioma.TODOS
+        FiltroIdioma.entries.firstOrNull { it.codigo == idiomaDoApp.lowercase().substringBefore('-') } ?: FiltroIdioma.TODOS
 }
