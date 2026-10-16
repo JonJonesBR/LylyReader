@@ -566,7 +566,9 @@ class AudioPlayerService : MediaLibraryService() {
 
     fun aplicarVelocidade(velocidade: Float) {
         _state.update { it.copy(speed = velocidade) }
-        try { exoPlayer.playbackParameters = PlaybackParameters(velocidade) } catch (_: Exception) {}
+        try { exoPlayer.playbackParameters = PlaybackParameters(velocidade) } catch (e: Exception) {
+            Log.w(TAG, "Falha ao aplicar velocidade", e)
+        }
     }
 
     fun fecharPlayer() {

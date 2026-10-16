@@ -2,7 +2,6 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.graphics.Color
 import android.speech.tts.TextToSpeech
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -149,7 +148,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
         val tvStatusMsg = TextView(activity).apply {
             text = activity.getString(R.string.status_downloading_voice, 0)
             textSize = TEXT_SIZE_STATUS_SP
-            setTextColor(Color.parseColor("#424242"))
+            setTextColor(com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface))
             setPadding(0, 0, 0, activity.dpToPx(PADDING_TEXTO_STATUS_BAIXO))
         }
         val progressBar = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {

@@ -88,7 +88,7 @@ class OnnxTtsEngine(
         voiceId: String,
         outputFile: File
     ): Result<File> = withContext(Dispatchers.IO) {
-        Log.d(TAG, "synthesize() called: voice=$voiceId, text='${texto.take(50)}', output=$outputFile")
+        Log.d(TAG, "synthesize() called: voice=$voiceId, chars=${texto.length}, output=$outputFile")
 
         if (!isModelDownloaded(voiceId)) {
             val msg = "Modelo '$voiceId' não baixado. Acesse Configurações → Vozes Offline."
@@ -166,7 +166,7 @@ class OnnxTtsEngine(
 
         } catch (e: Exception) {
             Log.e(TAG, "Erro na síntese offline para '$voiceId': ${e.message}", e)
-            CrashLogWriter.log(e, "synthesize", "voiceId=$voiceId, text='${texto.take(50)}'")
+            CrashLogWriter.log(e, "synthesize", "voiceId=$voiceId, chars=${texto.length}")
             Result.failure(e)
         }
     }

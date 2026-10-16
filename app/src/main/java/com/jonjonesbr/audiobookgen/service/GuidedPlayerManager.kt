@@ -132,7 +132,9 @@ class GuidedPlayerManager(
     fun setSpeedMultiplier(mult: Float) {
         speedMultiplier = mult
         appPrefs.guidedSpeedMult = mult
-        try { playerEngine?.setPlaybackSpeed(currentBaseSpeed * mult) } catch (_: Exception) {}
+        try { playerEngine?.setPlaybackSpeed(currentBaseSpeed * mult) } catch (e: Exception) {
+            Log.w(TAG, "Falha ao aplicar velocidade guiada", e)
+        }
         salvarPrefsDoLivro()
     }
 
@@ -1286,7 +1288,9 @@ class GuidedPlayerManager(
         stop()
         val onnx = onnxEngine
         kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try { onnx?.releaseAll() } catch (_: Exception) {}
+            try { onnx?.releaseAll() } catch (e: Exception) {
+                Log.w(TAG, "Falha ao liberar o motor ONNX", e)
+            }
         }
         playerEngine?.release()
         playerEngine = null
