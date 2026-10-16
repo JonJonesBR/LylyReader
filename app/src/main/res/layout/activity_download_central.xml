@@ -118,21 +118,21 @@
                 style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Português"/>
+                android:text="@string/chip_idioma_pt"/>
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipIdiomaEn"
                 style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="English"/>
+                android:text="@string/chip_idioma_en"/>
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipIdiomaEs"
                 style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Español"/>
+                android:text="@string/chip_idioma_es"/>
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 

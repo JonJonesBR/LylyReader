@@ -164,6 +164,7 @@
     <string name="status_file_read_error_detail">❌ Não foi possível ler o arquivo.\nVerifique se ele não está corrompido ou protegido.</string>
     <string name="status_added_file_to_queue">✅ \"%1$s\" adicionado à fila (%2$d pendente(s))</string>
     <string name="snackbar_open_queue">Abrir fila</string>
+    <string name="reader_progresso_iniciando">Iniciando...</string>
     <string name="status_starting">⏳ Iniciando...</string>
     <string name="share_audiobook_chooser">Compartilhar audiobook</string>
     <string name="status_adding_to_queue">Adicionando à fila...</string>
@@ -656,6 +657,8 @@
     <string name="btn_visualizar_logs">Visualizar Logs</string>
     <string name="logs_erro_calculando">Calculando…</string>
     <string name="logs_erro_vazio">Nenhum log de erro</string>
+    <string name="reader_valor_entre">Digite um valor entre %1$s e %2$s</string>
+    <string name="reader_valor_invalido">Valor inválido. Use %1$s–%2$s.</string>
     <string name="toast_valor_invalido">Valor inválido. Use %1$d–%2$d.</string>
     <plurals name="logs_erro_contagem">
         <item quantity="one">%d log</item>
@@ -748,6 +751,8 @@
     <string name="logs_btn_compartilhar">Compartilhar</string>
     <string name="logs_btn_fechar">Fechar</string>
     <string name="logs_confirmar_exclusao">Excluir este relatório de erro?</string>
+    <string name="logs_confirmar_apagar_todos">Apagar todos os relatórios de erro?</string>
+    <string name="logs_btn_apagar_todos">Apagar</string>
     <string name="logs_btn_excluir">Excluir</string>
     <string name="toast_log_apagado">Log apagado com sucesso.</string>
     <string name="toast_erro_apagar_log">Não foi possível apagar o log. Tente novamente.</string>

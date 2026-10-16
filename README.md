@@ -54,6 +54,7 @@ https://github.com/user-attachments/assets/3f099670-c9ce-47a4-8846-af99d97583c0
 - Books with character voices use them in queue and library conversions too, not only in guided reading.
 - **Check how the text will be spoken:** before converting, see what changes (numbers, abbreviations, acronyms and your pronunciation entries) for the selected voice.
 - Each book keeps its voice, speed and tone; you can preview voices before a long conversion.
+- Voice previews ship inside the app: short samples of the Supertonic, Kokoro and Piper voices play without downloading the voice pack.
 - Export audiobooks as MP3, chapters as .txt, or the audiobook as an MP4 video (split into parts for YouTube).
 - Playback with resume, sleep timer with fade-out, auto-rewind, background playback and notification controls.
 - Chapter skipping from the notification, Bluetooth controls, wearables and **Android Auto**.

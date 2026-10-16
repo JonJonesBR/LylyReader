@@ -300,7 +300,9 @@ class SettingsActivity : BasePlayerActivity() {
         try {
             val pInfo = packageManager.getPackageInfo(packageName, 0)
             findViewById<TextView>(R.id.tvVersao).text = "v${pInfo.versionName}"
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            findViewById<TextView>(R.id.tvVersao).text = "v?"
+        }
     }
 
     // ── Abas ─────────────────────────────────────────────────────────────────

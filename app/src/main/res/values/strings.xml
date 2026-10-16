@@ -164,6 +164,7 @@
     <string name="status_file_read_error_detail">❌ Could not read the file.\nCheck if it is corrupted or protected.</string>
     <string name="status_added_file_to_queue">✅ \"%1$s\" added to queue (%2$d pending)</string>
     <string name="snackbar_open_queue">Open queue</string>
+    <string name="reader_progresso_iniciando">Starting...</string>
     <string name="status_starting">⏳ Starting...</string>
     <string name="share_audiobook_chooser">Share audiobook</string>
     <string name="status_adding_to_queue">Adding to queue...</string>
@@ -676,6 +677,8 @@
     <string name="btn_visualizar_logs">View Logs</string>
     <string name="logs_erro_calculando">Calculating…</string>
     <string name="logs_erro_vazio">No error logs</string>
+    <string name="reader_valor_entre">Enter a value between %1$s and %2$s</string>
+    <string name="reader_valor_invalido">Invalid value. Use %1$s–%2$s.</string>
     <string name="toast_valor_invalido">Invalid value. Use %1$d–%2$d.</string>
     <plurals name="logs_erro_contagem">
         <item quantity="one">%d log</item>
@@ -768,6 +771,8 @@
     <string name="logs_btn_compartilhar">Share</string>
     <string name="logs_btn_fechar">Close</string>
     <string name="logs_confirmar_exclusao">Delete this error report?</string>
+    <string name="logs_confirmar_apagar_todos">Delete all error reports?</string>
+    <string name="logs_btn_apagar_todos">Delete</string>
     <string name="logs_btn_excluir">Delete</string>
     <string name="toast_log_apagado">Log deleted successfully.</string>
     <string name="toast_erro_apagar_log">Could not delete the log. Please try again.</string>
@@ -988,6 +993,9 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="livros_busca_hint">Title or author</string>
     <string name="livros_buscar">Search</string>
     <string name="livros_idioma_todos">All</string>
+    <string name="chip_idioma_pt" translatable="false">Português</string>
+    <string name="chip_idioma_en" translatable="false">English</string>
+    <string name="chip_idioma_es" translatable="false">Español</string>
     <string name="livros_mais">More results</string>
     <string name="livros_buscando">Searching…</string>
     <string name="livros_nada">No books found.</string>

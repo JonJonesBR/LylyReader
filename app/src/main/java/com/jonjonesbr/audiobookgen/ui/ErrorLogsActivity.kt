@@ -81,8 +81,8 @@ class ErrorLogsActivity : AppCompatActivity() {
     private fun mostrarConfirmacaoLimparTudo() {
         AlertDialog.Builder(this)
             .setTitle(R.string.btn_limpar_fila)
-            .setMessage("Deseja apagar todos os relatórios de erro?")
-            .setPositiveButton("Apagar") { _, _ ->
+            .setMessage(R.string.logs_confirmar_apagar_todos)
+            .setPositiveButton(R.string.logs_btn_apagar_todos) { _, _ ->
                 lifecycleScope.launch {
                     withContext(Dispatchers.IO) {
                         CrashLogWriter.clearAllLogs(this@ErrorLogsActivity)

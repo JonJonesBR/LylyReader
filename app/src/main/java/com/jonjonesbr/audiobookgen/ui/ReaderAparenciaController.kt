@@ -223,7 +223,7 @@ class ReaderAparenciaController(
         }
         androidx.appcompat.app.AlertDialog.Builder(activity)
             .setTitle(title)
-            .setMessage("Digite um valor entre $min e $max")
+            .setMessage(activity.getString(R.string.reader_valor_entre, min.toString(), max.toString()))
             .setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val texto = input.text.toString().trim()
@@ -231,7 +231,11 @@ class ReaderAparenciaController(
                 if (valor != null && valor in min..max) {
                     onConfirm(valor)
                 } else {
-                    Toast.makeText(activity, "Valor inválido. Use $min–$max.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        activity,
+                        activity.getString(R.string.reader_valor_invalido, min.toString(), max.toString()),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)

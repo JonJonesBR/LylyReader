@@ -54,6 +54,7 @@ https://github.com/user-attachments/assets/f04b1f61-9b0e-4409-a057-1c1c3fb67679
 - Livros com vozes de personagens usam essas vozes também nas conversões da fila e da biblioteca, não só na leitura guiada.
 - **Conferir como o texto será falado:** antes de converter, veja o que muda (números, abreviações, siglas e as suas pronúncias) para a voz escolhida.
 - Cada livro mantém sua voz, velocidade e tom; dá para ouvir uma prévia da voz antes de uma conversão longa.
+- As prévias de voz vêm dentro do app: amostras curtas das vozes Supertonic, Kokoro e Piper tocam sem baixar o pacote da voz.
 - Exporte o audiolivro em MP3, os capítulos em .txt ou o audiolivro como vídeo MP4 (dividido em partes para o YouTube).
 - Reprodução com continuação de onde parou, temporizador com fade-out, retrocesso automático, reprodução em segundo plano e controles na notificação.
 - Troca de capítulo pela notificação, controles Bluetooth, relógios e **Android Auto**.

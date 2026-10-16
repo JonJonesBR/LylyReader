@@ -793,9 +793,9 @@ class ReaderActivity : BasePlayerActivity() {
                 )
             }
             tvDialogProgressoStatus = TextView(this).apply {
-                text = "Iniciando..."
+                text = getString(R.string.reader_progresso_iniciando)
                 textSize = DIALOG_PROGRESSO_TEXT_SIZE_SP
-                setTextColor(Color.parseColor("#424242"))
+                setTextColor(com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface))
                 setPadding(0, 0, 0, dpToPx(DIALOG_PROGRESSO_TEXTO_BAIXO_DP))
             }
             barDialogProgresso = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
