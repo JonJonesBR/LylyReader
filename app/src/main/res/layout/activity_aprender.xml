@@ -45,7 +45,10 @@
         android:id="@+id/scrollAprender"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:overScrollMode="never">
+        android:overScrollMode="never"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/lyly_conteudo_pad_extra"
+        android:paddingEnd="@dimen/lyly_conteudo_pad_extra">
 
         <LinearLayout
             android:layout_width="match_parent"

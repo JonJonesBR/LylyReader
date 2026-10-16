@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Padding horizontal extra das telas com rolagem (somado ao padding do conteúdo). 0 no celular. -->
+    <dimen name="lyly_conteudo_pad_extra">0dp</dimen>
+</resources>

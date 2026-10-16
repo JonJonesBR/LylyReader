@@ -98,7 +98,10 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:overScrollMode="never"
-        android:scrollbars="none">
+        android:scrollbars="none"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/lyly_conteudo_pad_extra"
+        android:paddingEnd="@dimen/lyly_conteudo_pad_extra">
 
         <LinearLayout
             android:layout_width="match_parent"
