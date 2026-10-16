@@ -795,7 +795,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• A round of polish: a few messages that always appeared in Portuguese now follow your language.\n• On tablets, screens with long content are now centered and easier to read.\n• The mode bar in the reader is taller and easier to tap.\n• The voice download dialog is now readable in the dark theme.</string>
+    <string name="release_notes_corpo">• In the Downloads tab, cancelling a download now has a clear \"Discard download\" button, so it no longer looks like two identical \"Cancel\" buttons.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -969,6 +969,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_central_tirar_fila">Remove from queue</string>
     <string name="dl_central_tentar_novamente">Try again</string>
     <string name="dl_central_cancelar">Cancel</string>
+    <string name="dl_central_descartar">Discard download</string>
     <string name="dl_central_apagar">Delete</string>
     <string name="dl_central_baixar_selecionados">Download selected (%1$d)</string>
     <string name="dl_central_baixar_tudo">Download all</string>

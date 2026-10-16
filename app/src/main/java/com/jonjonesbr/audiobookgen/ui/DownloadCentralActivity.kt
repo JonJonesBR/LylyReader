@@ -207,7 +207,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
             .setTitle(nomeExibidoDoPacote(this, linha.item.id, linha.item.nome))
             .setMessage(getString(mensagem, nomeExibidoDoPacote(this, linha.item.id, linha.item.nome)))
             .setPositiveButton(
-                if (linha.estado == EstadoDownload.PRONTO) R.string.dl_central_apagar else R.string.dl_central_cancelar
+                if (linha.estado == EstadoDownload.PRONTO) R.string.dl_central_apagar else R.string.dl_central_descartar
             ) { _, _ ->
                 if (linha.estado == EstadoDownload.PRONTO) DownloadCentral.apagar(this, linha.item.id)
                 else DownloadCentral.cancelar(this, linha.item.id)
