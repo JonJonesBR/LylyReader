@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/f04b1f61-9b0e-4409-a057-1c1c3fb67679
 ## Destaques
 
 - **Audiolivro de qualquer livro:** importe um arquivo ou busque livros gratuitos de domínio público (Projeto Gutenberg, Wikisource, Internet Archive) sem sair do app.
-- **Vozes neurais, online e offline:** Edge, Gemini, ElevenLabs e OpenRouter online; Supertonic, Kokoro, Piper, MMS e Pocket offline, no próprio aparelho.
+- **Vozes neurais, online e offline:** Edge, Gemini, ElevenLabs e OpenRouter online; Supertonic, Kokoro, Piper e Pocket offline, no próprio aparelho.
 - **Leitura guiada:** o texto acompanha a narração frase a frase, continua tocando em segundo plano e retoma de onde você parou.
 - **Fila de conversões:** converta vários livros seguidos; a fila continua mesmo com o app fechado.
 - **Voz por livro:** cada livro guarda a sua voz, velocidade e tom, e você pode dar vozes diferentes aos personagens.
@@ -89,7 +89,6 @@ As vozes online vêm do Microsoft Edge TTS. As vozes do Gemini, do ElevenLabs e 
 |---|---|---|
 | Supertonic | Multilíngue (EN, PT, ES, FR, KO e outros) | Vozes neurais; motor offline padrão |
 | Kokoro (Sherpa-ONNX) | Inglês (EUA e Reino Unido), português (Santa) | Várias vozes em inglês |
-| MMS-TTS (Meta) | Português | Licença não comercial (CC BY-NC 4.0) |
 | Pocket TTS 3.3 | Português do Brasil, inglês, espanhol | Presets públicos fixos. Clonagem de voz opcional: o app guia, passo a passo, o download do arquivo oficial da Kyutai com a sua conta do Hugging Face (sem login dentro do app) |
 | Piper | Português (Cadu, Edresson, Faber, Jeff, Dii, Miro), inglês (Norman, LJSpeech), espanhol (Claude) | A licença varia por voz; Dii e Miro são CC BY-NC-SA |
 
@@ -110,7 +109,7 @@ O app combina uma interface nativa em Kotlin com um motor em Python embutido:
 
 - O Kotlin cuida da interface Android, do ciclo de vida, dos intents de arquivo, da reprodução, das notificações, da fila e das configurações.
 - O Python roda dentro do APK via Chaquopy e cuida da leitura de arquivos, da normalização do texto, da orquestração de TTS, do cache de áudio e dos metadados.
-- As vozes offline rodam em ONNX Runtime (Supertonic, Kokoro, MMS, Pocket) e em Piper.
+- As vozes offline rodam em ONNX Runtime (Supertonic, Kokoro, Pocket) e em Piper.
 
 Pastas principais:
 
@@ -183,7 +182,6 @@ O LylyReader se apoia no trabalho de muitos projetos e comunidades de código ab
 - **Kokoro** e **sherpa-onnx** da k2-fsa (Apache-2.0): https://github.com/k2-fsa/sherpa-onnx
 - **ONNX Runtime** da Microsoft (MIT): https://github.com/microsoft/onnxruntime
 - **Vozes Piper** dos projetos rhasspy e da comunidade (cada voz tem sua própria licença): https://github.com/rhasspy/piper
-- **MMS-TTS** da Meta (CC BY-NC 4.0, uso não comercial): https://huggingface.co/facebook/mms-tts-por
 - **Chaquopy** – Python no Android (MIT): https://chaquo.com/chaquopy/
 - **Vozes online da Microsoft Edge** (via o cliente não oficial `edge-tts`, LGPL-3.0): https://github.com/rany2/edge-tts
 - **Fonte Literata** do The Literata Project (SIL OFL 1.1): https://github.com/googlefonts/literata

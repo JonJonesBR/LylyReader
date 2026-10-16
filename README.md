@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/3f099670-c9ce-47a4-8846-af99d97583c0
 ## Highlights
 
 - **Audiobooks from any book:** import a file, or search free public-domain books (Project Gutenberg, Wikisource, Internet Archive) without leaving the app.
-- **Neural voices, online and offline:** Edge, Gemini, ElevenLabs and OpenRouter online; Supertonic, Kokoro, Piper, MMS and Pocket offline, on the device.
+- **Neural voices, online and offline:** Edge, Gemini, ElevenLabs and OpenRouter online; Supertonic, Kokoro, Piper and Pocket offline, on the device.
 - **Guided reading:** the text follows the narration sentence by sentence, keeps playing in the background, and resumes where you stopped.
 - **Conversion queue:** convert several books in a row, and the queue keeps going with the app closed.
 - **Per-book voice:** each book keeps its own voice, speed and tone, and you can give characters their own voices.
@@ -89,7 +89,6 @@ Online voices come from Microsoft Edge TTS. Gemini, ElevenLabs and OpenRouter vo
 |---|---|---|
 | Supertonic | Multilingual (EN, PT, ES, FR, KO and more) | Neural voices, the default offline engine |
 | Kokoro (Sherpa-ONNX) | English (US and UK), Portuguese (Santa) | Varied English voices |
-| MMS-TTS (Meta) | Português | Non-commercial license (CC BY-NC 4.0) |
 | Pocket TTS 3.3 | Português do Brasil, English, Español | Fixed public presets. Optional voice cloning: the app guides you, step by step, to download Kyutai's official file with your own Hugging Face account (no login inside the app) |
 | Piper | Português (Cadu, Edresson, Faber, Jeff, Dii, Miro), English (Norman, LJSpeech), Español (Claude) | License varies per voice; Dii and Miro are CC BY-NC-SA |
 
@@ -97,7 +96,7 @@ Each offline package keeps its own license. Check [THIRD_PARTY_LICENSES.md](THIR
 
 ## Credits
 
-LylyReader stands on the work of many open-source projects and communities. The full list is in the README (credits section) and in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). In short: Supertonic (Supertone), Pocket TTS (Kyutai Labs), Kokoro and sherpa-onnx (k2-fsa), ONNX Runtime (Microsoft), Piper and its voices, MMS-TTS (Meta), Chaquopy, edge-tts, the Literata font, and the public-domain sources Project Gutenberg, Wikisource and Internet Archive.
+LylyReader stands on the work of many open-source projects and communities. The full list is in the README (credits section) and in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). In short: Supertonic (Supertone), Pocket TTS (Kyutai Labs), Kokoro and sherpa-onnx (k2-fsa), ONNX Runtime (Microsoft), Piper and its voices, Chaquopy, edge-tts, the Literata font, and the public-domain sources Project Gutenberg, Wikisource and Internet Archive.
 
 ## Security And Privacy
 
@@ -114,7 +113,7 @@ The app combines a native Kotlin interface with an embedded Python engine:
 
 - Kotlin handles the Android UI, lifecycle, file intents, playback, notifications, the queue and the settings.
 - Python runs inside the APK through Chaquopy and handles parsing, text normalization, TTS orchestration, the audio cache and metadata.
-- Offline voices run on ONNX Runtime (Supertonic, Kokoro, MMS, Pocket) and on Piper.
+- Offline voices run on ONNX Runtime (Supertonic, Kokoro, Pocket) and on Piper.
 
 Main folders:
 
