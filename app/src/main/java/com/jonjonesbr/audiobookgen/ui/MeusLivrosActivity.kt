@@ -41,6 +41,7 @@ import com.jonjonesbr.audiobookgen.domain.ehFormatoSuportado
 import com.jonjonesbr.audiobookgen.domain.filtrar
 import com.jonjonesbr.audiobookgen.domain.ordenar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -69,6 +70,10 @@ class MeusLivrosActivity : BasePlayerActivity() {
     private lateinit var fab: ExtendedFloatingActionButton
 
     private var todos: List<LivroBiblioteca> = emptyList()
+    /** Progresso e "tem áudio" por livro, calculados fora da thread principal em [carregar]. */
+    private var progressos: Map<String, Float?> = emptyMap()
+    private var audios: Map<String, Boolean> = emptyMap()
+    private var cargaJob: Job? = null
     private var aba = AbaBiblioteca.TODOS
     private var consulta = ""
     private var ordem = OrdemBiblioteca.RECENTES
@@ -199,22 +204,28 @@ class MeusLivrosActivity : BasePlayerActivity() {
     // ── Dados ────────────────────────────────────────────────────────────────
 
     private fun carregar() {
-        lifecycleScope.launch {
-            todos = BibliotecaStore.listar(applicationContext)
+        cargaJob?.cancel() // uma carga nova substitui a anterior, que não pode sobrescrever o resultado
+        cargaJob = lifecycleScope.launch {
+            val (lista, prog, audio) = withContext(Dispatchers.IO) {
+                val lista = BibliotecaStore.listar(applicationContext)
+                Triple(
+                    lista,
+                    lista.associate { it.id to BibliotecaStore.progressoDe(applicationContext, it) },
+                    lista.associate { it.id to BibliotecaStore.temAudio(applicationContext, it) }
+                )
+            }
+            todos = lista
+            progressos = prog
+            audios = audio
             aplicar()
         }
     }
 
     private fun caminhoDe(livro: LivroBiblioteca) = BibliotecaStore.arquivoDo(this, livro).absolutePath
 
-    /** Fração lida (posição de rolagem ÷ total de parágrafos gravados pelo leitor); null se o leitor ainda não gravou o total. */
-    private fun progressoDe(livro: LivroBiblioteca): Float? = BibliotecaStore.progressoDe(this, livro)
-
-    private fun temAudio(livro: LivroBiblioteca): Boolean = BibliotecaStore.temAudio(this, livro)
-
     private fun aplicar() {
-        val prog = todos.associate { it.id to progressoDe(it) }
-        val audio = todos.associate { it.id to temAudio(it) }
+        val prog = progressos
+        val audio = audios
         val filtrados = ordenar(
             filtrar(todos, aba, consulta, { prog[it.id] }, { audio[it.id] == true }),
             ordem
@@ -351,12 +362,12 @@ class MeusLivrosActivity : BasePlayerActivity() {
     }
 
     private fun mostrarMenuMais(ancora: View) {
-        PopupMenu(this, ancora).apply {
+        val popup = PopupMenu(this, ancora).apply {
             menu.add(0, MENU_ORDENAR, 0, R.string.bib_ordenar)
             menu.add(0, MENU_FILA, 2, R.string.bib_menu_fila)
             menu.add(0, MENU_CONVERSOES, 3, R.string.conv_titulo)
             menu.add(0, MENU_APRENDER, 4, R.string.aprender_titulo)
-            menu.add(0, MENU_ESPACO, 1, getString(R.string.bib_espaco, Formatter.formatShortFileSize(this@MeusLivrosActivity, BibliotecaStore.espacoUsado(this@MeusLivrosActivity))))
+            menu.add(0, MENU_ESPACO, 1, getString(R.string.bib_espaco, "…"))
                 .isEnabled = false
             setOnMenuItemClickListener {
                 when (it.itemId) {
@@ -367,7 +378,14 @@ class MeusLivrosActivity : BasePlayerActivity() {
                 }
                 true
             }
-        }.show()
+        }
+        popup.show()
+        // Espaço usado: percorre a pasta da biblioteca em 2º plano e preenche o item quando pronto.
+        lifecycleScope.launch {
+            val bytes = withContext(Dispatchers.IO) { BibliotecaStore.espacoUsado(applicationContext) }
+            popup.menu.findItem(MENU_ESPACO)?.title =
+                getString(R.string.bib_espaco, Formatter.formatShortFileSize(this@MeusLivrosActivity, bytes))
+        }
     }
 
     private fun escolherOrdem() {
