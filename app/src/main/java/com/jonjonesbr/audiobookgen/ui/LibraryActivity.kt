@@ -198,14 +198,13 @@ class LibraryActivity : BasePlayerActivity() {
             if (caminho != null) {
                 imageView.tag = caminho
                 lifecycleScope.launch {
-                    val arquivo = withContext(Dispatchers.IO) {
+                    val bitmap = withContext(Dispatchers.IO) {
                         coverUseCase.extrairOuGerarCapa(
                             caminhoLivro = null,
                             titulo = item.nome,
                             autor = "LylyReader"
-                        )
+                        )?.let { coverUseCase.carregarBitmap(it, ladoMax = 400) }
                     }
-                    val bitmap = arquivo?.let { coverUseCase.carregarBitmap(it) }
                     if (bitmap != null && imageView.tag == caminho) {
                         adapter.cacheCover(caminho, bitmap)
                         imageView.setImageBitmap(bitmap)

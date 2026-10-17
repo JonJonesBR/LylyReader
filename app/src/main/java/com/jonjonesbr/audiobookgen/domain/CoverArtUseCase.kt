@@ -42,10 +42,30 @@ class CoverArtUseCase(private val context: Context) {
         }
     }
 
-    fun carregarBitmap(caminhoCapa: File?): Bitmap? {
+    fun carregarBitmap(caminhoCapa: File?, ladoMax: Int? = null): Bitmap? {
         if (caminhoCapa?.exists() != true) return null
         return runCatching {
-            BitmapFactory.decodeFile(caminhoCapa.absolutePath)
+            if (ladoMax == null) {
+                BitmapFactory.decodeFile(caminhoCapa.absolutePath)
+            } else {
+                val limites = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(caminhoCapa.absolutePath, limites)
+                val amostra = calcularAmostra(limites.outWidth, limites.outHeight, ladoMax)
+                val opcoes = BitmapFactory.Options().apply { inSampleSize = amostra }
+                BitmapFactory.decodeFile(caminhoCapa.absolutePath, opcoes)
+            }
         }.onFailure { Log.w(tag, "Erro ao decodificar bitmap") }.getOrNull()
     }
+}
+
+/**
+ * Fator de reducao (potencia de 2) para decodificar a imagem com o lado maior perto de [ladoMax].
+ * Continua dividindo enquanto o lado maior, depois da proxima divisao, ainda fica >= [ladoMax].
+ */
+internal fun calcularAmostra(largura: Int, altura: Int, ladoMax: Int): Int {
+    if (ladoMax <= 0) return 1
+    val maior = maxOf(largura, altura)
+    var amostra = 1
+    while (maior / (amostra * 2) >= ladoMax) amostra *= 2
+    return amostra
 }
