@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen
 
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import com.jonjonesbr.audiobookgen.util.NativeCrashDetector
+import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
@@ -77,12 +78,14 @@ class LylyApplication : Application() {
         com.jonjonesbr.audiobookgen.tts.KokoroSynthBridge.init(this)
         // Disponibiliza o Pocket TTS isolado à conversão de audiobook via Chaquopy.
         com.jonjonesbr.audiobookgen.tts.PocketSynthBridge.init(this)
-        // Reidrata os pacotes de voz importados (BYOM, V6 Parte B) — VoiceCatalog só mantém
-        // pacotes locais em memória (RN-3/T2.1); o manifesto validado no import é a persistência
-        // real em filesDir/importados/, relida aqui a cada cold start do processo principal.
-        com.jonjonesbr.audiobookgen.tts.BYOMManager.rehydratarTodos(this)
-        // Vozes clonadas do usuário (Pocket TTS) voltam ao catálogo a cada cold start.
-        com.jonjonesbr.audiobookgen.tts.PocketCustomVoiceCatalog.registrarTodas(this)
+        // Reidrata fora da thread principal (cold start mais rápido): pacotes de voz importados
+        // (BYOM, V6 Parte B) e vozes clonadas do usuário (Pocket TTS). VoiceCatalog só mantém
+        // pacotes locais em memória; o manifesto validado no import é a persistência real em
+        // filesDir/importados/. Leituras do catálogo esperam esta reidratação terminar.
+        VoiceCatalog.reidratarEmSegundoPlano {
+            com.jonjonesbr.audiobookgen.tts.BYOMManager.rehydratarTodos(this)
+            com.jonjonesbr.audiobookgen.tts.PocketCustomVoiceCatalog.registrarTodas(this)
+        }
         thread(name = "bundled-model-copy") {
             // Estilos de voz Supertonic (F1–F5/M1–M5) embutidos no APK → filesDir/v2.
             SupertonicAssetManager.copyBundledVoiceStyles(this)

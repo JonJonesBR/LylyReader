@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.util
 
 import android.content.Context
+import android.util.Log
 import com.jonjonesbr.audiobookgen.R
 import java.util.Locale
 
@@ -429,6 +430,45 @@ object VoiceCatalog {
         )
     ) + com.jonjonesbr.audiobookgen.tts.PiperVitsModelManager.pacotes()
 
+    /** Latch da reidratação em segundo plano; null = nada a esperar. */
+    @Volatile
+    private var reidratacao: java.util.concurrent.CountDownLatch? = null
+
+    /** Thread que roda a reidratação. Ela nunca espera o próprio latch (evita deadlock). */
+    @Volatile
+    private var threadReidratadora: Thread? = null
+
+    /**
+     * Roda [bloco] (que registra pacotes no catálogo) em segundo plano, para não travar o cold
+     * start. Leituras do catálogo feitas enquanto o bloco roda esperam o fim dele (com timeout),
+     * assim nunca veem pacotes faltando. Escritas não esperam.
+     */
+    fun reidratarEmSegundoPlano(bloco: () -> Unit) {
+        val latch = java.util.concurrent.CountDownLatch(1)
+        reidratacao = latch
+        kotlin.concurrent.thread(name = "voice-rehydrate") {
+            threadReidratadora = Thread.currentThread()
+            try {
+                bloco()
+            } catch (t: Throwable) {
+                Log.e("VoiceCatalog", "Falha ao reidratar vozes em segundo plano", t)
+            } finally {
+                latch.countDown()
+            }
+        }
+    }
+
+    /** Espera a reidratação terminar (no máximo 5 s). Não espera quem é a própria reidratadora. */
+    private fun aguardarReidratacao() {
+        val latch = reidratacao ?: return
+        if (Thread.currentThread() === threadReidratadora) return
+        try {
+            latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+    }
+
     /** Registra um pacote de vozes local em runtime (Parte B — BYOM). Copy-on-write. */
     @Synchronized
     fun registrarPacoteLocal(pacote: PacoteVozes) {
@@ -444,17 +484,26 @@ object VoiceCatalog {
     }
 
     /** Voz → pacote que a habilita (1 download → N vozes). Null = sem download (nuvem). */
-    fun pacoteDaVoz(vozId: String): PacoteVozes? =
-        pacotesLocais.firstOrNull { pacote -> pacote.vozes.any { it.id == vozId } }
+    fun pacoteDaVoz(vozId: String): PacoteVozes? {
+        aguardarReidratacao()
+        return pacotesLocais.firstOrNull { pacote -> pacote.vozes.any { it.id == vozId } }
+    }
 
-    fun pacotesDoEngine(engine: String): List<PacoteVozes> =
-        pacotesLocais.filter { it.engine == engine }
+    fun pacotesDoEngine(engine: String): List<PacoteVozes> {
+        aguardarReidratacao()
+        return pacotesLocais.filter { it.engine == engine }
+    }
 
     /** Todos os pacotes registrados (built-ins + BYOM em runtime) — gestão de Ajustes. */
-    fun pacotesRegistrados(): List<PacoteVozes> = pacotesLocais
+    fun pacotesRegistrados(): List<PacoteVozes> {
+        aguardarReidratacao()
+        return pacotesLocais
+    }
 
-    private fun vozesDosPacotes(engine: String): List<VoiceOption> =
-        pacotesLocais.filter { it.engine == engine }.flatMap { it.vozes }
+    private fun vozesDosPacotes(engine: String): List<VoiceOption> {
+        aguardarReidratacao()
+        return pacotesLocais.filter { it.engine == engine }.flatMap { it.vozes }
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     //  API pública
@@ -521,9 +570,11 @@ object VoiceCatalog {
         forEngine(engine).firstOrNull { it.id == id }
 
     /** Busca uma voz pelo ID em todos os engines (útil ao trocar de motor TTS). */
-    fun findAny(id: String?): VoiceOption? =
-        (edgeVoices + geminiVoices + elevenLabsVoices +
+    fun findAny(id: String?): VoiceOption? {
+        aguardarReidratacao()
+        return (edgeVoices + geminiVoices + elevenLabsVoices +
             pacotesLocais.flatMap { it.vozes }).firstOrNull { it.id == id }
+    }
 
     /**
      * Resolve o motor que realmente vai sintetizar [voiceId], que pode divergir do motor salvo
