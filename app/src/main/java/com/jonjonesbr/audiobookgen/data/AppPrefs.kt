@@ -263,6 +263,21 @@ class AppPrefs(context: Context) {
             .apply()
     }
 
+    /** Posição de leitura (índice do primeiro parágrafo visível) gravada pelo leitor para o livro; [padrao] se nunca gravada. */
+    fun posicaoLeitura(caminhoLivro: String, padrao: Int): Int =
+        p.getInt("reader_scroll_$caminhoLivro", padrao)
+
+    /** Grava a posição de leitura e o total de parágrafos do livro (progresso = posição ÷ total na biblioteca). */
+    fun salvarPosicaoLeitura(caminhoLivro: String, posicao: Int, totalParagrafos: Int) {
+        p.edit()
+            .putInt("reader_scroll_$caminhoLivro", posicao)
+            .putInt("reader_total_$caminhoLivro", totalParagrafos)
+            .apply()
+    }
+
+    /** Total de parágrafos gravado pelo leitor para o livro; 0 se nunca gravado. */
+    fun totalParagrafosLeitura(caminhoLivro: String): Int = p.getInt("reader_total_$caminhoLivro", 0)
+
     fun getPrefs(): SharedPreferences = p
 
     companion object {

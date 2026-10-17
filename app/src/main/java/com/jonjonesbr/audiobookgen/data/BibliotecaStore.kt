@@ -207,11 +207,11 @@ object BibliotecaStore {
 
     /** Fração lida (posição de rolagem ÷ total de parágrafos gravados pelo leitor); null se o leitor ainda não gravou o total. */
     fun progressoDe(ctx: Context, livro: LivroBiblioteca): Float? {
-        val prefs = ctx.getSharedPreferences(AppPrefs.NAME, Context.MODE_PRIVATE)
+        val prefs = AppPrefs(ctx)
         val caminho = arquivoDo(ctx, livro).absolutePath
-        val total = prefs.getInt("reader_total_$caminho", 0)
+        val total = prefs.totalParagrafosLeitura(caminho)
         if (total <= 0) return null
-        return (prefs.getInt("reader_scroll_$caminho", 0).toFloat() / total).coerceIn(0f, 1f)
+        return (prefs.posicaoLeitura(caminho, 0).toFloat() / total).coerceIn(0f, 1f)
     }
 
     /** O livro já tem audiobook gerado (e o arquivo ainda existe)? */

@@ -475,9 +475,8 @@ class ReaderActivity : BasePlayerActivity() {
                 ?.findFirstVisibleItemPosition()
                 ?.takeIf { it >= 0 }
                 ?.let {
-                    prefs.edit().putInt("reader_scroll_$caminhoArquivo", it)
-                        // Total de parágrafos: dá a porcentagem lida (progresso = scroll / total) na biblioteca.
-                        .putInt("reader_total_$caminhoArquivo", if (::adapter.isInitialized) adapter.itemCount else 0).apply()
+                    // Total de parágrafos: dá a porcentagem lida (progresso = scroll / total) na biblioteca.
+                    appPrefs.salvarPosicaoLeitura(caminhoArquivo, it, if (::adapter.isInitialized) adapter.itemCount else 0)
                 }
         }
     }
@@ -1098,8 +1097,7 @@ class ReaderActivity : BasePlayerActivity() {
             !continuarGuiadaTriggered && !reconectandoGuided) {
             continuarGuiadaTriggered = true
             val total = texto.paragrafos.size
-            val salvo = getSharedPreferences("audiobookgen_prefs", MODE_PRIVATE)
-                .getInt("reader_scroll_$caminhoArquivo", -1)
+            val salvo = appPrefs.posicaoLeitura(caminhoArquivo, -1)
             val inicio = if (salvo in 0 until total) salvo else controlador.obterIndiceInicioLeitura()
             recyclerView.post { controlador.playGuidedFrom(inicio) }
         }
@@ -1889,8 +1887,7 @@ class ReaderActivity : BasePlayerActivity() {
                 }
             } else if (!intent.getBooleanExtra(EXTRA_AUTO_START_GUIDED, false) &&
                 !intent.getBooleanExtra(EXTRA_CONTINUAR_GUIADA, false)) {
-                val pos = getSharedPreferences("audiobookgen_prefs", MODE_PRIVATE)
-                    .getInt("reader_scroll_$caminhoArquivo", 0)
+                val pos = appPrefs.posicaoLeitura(caminhoArquivo, 0)
                 if (pos in 1 until paragrafosExibidos.size) {
                     recyclerView.post {
                         (recyclerView.layoutManager as? LinearLayoutManager)
