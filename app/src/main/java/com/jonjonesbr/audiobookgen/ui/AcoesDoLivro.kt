@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.app.ActivityOptions
 import android.content.Intent
 import android.text.format.Formatter
 import android.widget.Toast
@@ -19,6 +20,7 @@ object AcoesDoLivro {
      * Abre o livro no leitor. [continuar] retoma a leitura guiada de onde parou; [acaoInicial] (uma das
      * `ReaderActivity.ACAO_INICIAL_*`) abre direto um painel do leitor assim que o texto carrega.
      * [somenteLeitura] abre o leitor sem nenhuma parte de áudio (ver `ReaderActivity.EXTRA_SOMENTE_LEITURA`).
+     * [comFade] troca a transição padrão por um fade curto (aberturas a partir de Meus livros).
      */
     fun abrirNoLeitor(
         activity: AppCompatActivity,
@@ -26,19 +28,23 @@ object AcoesDoLivro {
         continuar: Boolean,
         acaoInicial: String? = null,
         somenteLeitura: Boolean = false,
+        comFade: Boolean = false,
     ) {
         val arquivo = BibliotecaStore.arquivoDo(activity, livro)
         if (!arquivo.isFile) {
             Toast.makeText(activity, R.string.bib_erro_abrir, Toast.LENGTH_SHORT).show()
             return
         }
-        activity.startActivity(
-            Intent(activity, ReaderActivity::class.java)
-                .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
-                .putExtra(ReaderActivity.EXTRA_CONTINUAR_GUIADA, continuar)
-                .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, somenteLeitura)
-                .apply { acaoInicial?.let { putExtra(ReaderActivity.EXTRA_ACAO_INICIAL, it) } }
-        )
+        val intent = Intent(activity, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_CONTINUAR_GUIADA, continuar)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, somenteLeitura)
+            .apply { acaoInicial?.let { putExtra(ReaderActivity.EXTRA_ACAO_INICIAL, it) } }
+        if (comFade) {
+            activity.startActivity(intent, ActivityOptions.makeCustomAnimation(activity, android.R.anim.fade_in, android.R.anim.fade_out).toBundle())
+        } else {
+            activity.startActivity(intent)
+        }
     }
 
     /**

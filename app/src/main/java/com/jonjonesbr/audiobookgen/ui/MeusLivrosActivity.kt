@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.app.ActivityOptions
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -297,11 +298,18 @@ class MeusLivrosActivity : BasePlayerActivity() {
     /** Cartão "Continuar" → direto na leitura guiada; toque num livro → tela do livro. */
     private fun abrirLivro(livro: LivroBiblioteca, continuarGuiada: Boolean) {
         if (continuarGuiada) {
-            AcoesDoLivro.abrirNoLeitor(this, livro, continuar = true)
+            AcoesDoLivro.abrirNoLeitor(this, livro, continuar = true, comFade = true)
         } else {
-            startActivity(Intent(this, LivroActivity::class.java).putExtra(LivroActivity.EXTRA_ID, livro.id))
+            startActivity(
+                Intent(this, LivroActivity::class.java).putExtra(LivroActivity.EXTRA_ID, livro.id),
+                fadeAoAbrir()
+            )
         }
     }
+
+    /** Transição curta (fade) ao abrir o leitor ou a tela do livro; o Android já a zera se as animações estiverem desligadas. */
+    private fun fadeAoAbrir(): Bundle =
+        ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in, android.R.anim.fade_out).toBundle()
 
     private fun mostrarMenuDoLivro(ancora: View, livro: LivroBiblioteca) {
         PopupMenu(this, ancora).apply {
@@ -312,11 +320,12 @@ class MeusLivrosActivity : BasePlayerActivity() {
             menu.add(0, ACAO_APAGAR, 4, R.string.bib_acao_apagar)
             setOnMenuItemClickListener {
                 when (it.itemId) {
-                    ACAO_LER -> AcoesDoLivro.abrirNoLeitor(this@MeusLivrosActivity, livro, continuar = false)
+                    ACAO_LER -> AcoesDoLivro.abrirNoLeitor(this@MeusLivrosActivity, livro, continuar = false, comFade = true)
                     ACAO_AUDIOBOOK -> startActivity(
                         Intent(this@MeusLivrosActivity, LivroActivity::class.java)
                             .putExtra(LivroActivity.EXTRA_ID, livro.id)
-                            .putExtra(LivroActivity.EXTRA_ABRIR_PAINEL_GERAR, true)
+                            .putExtra(LivroActivity.EXTRA_ABRIR_PAINEL_GERAR, true),
+                        fadeAoAbrir()
                     )
                     ACAO_FILA -> AcoesDoLivro.adicionarAFila(this@MeusLivrosActivity, livro)
                     ACAO_DETALHES -> mostrarDetalhes(livro)
