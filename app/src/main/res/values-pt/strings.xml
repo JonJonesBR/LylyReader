@@ -786,7 +786,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Na aba Downloads, cancelar um download agora tem o botão \"Descartar download\", e não aparecem mais dois botões \"Cancelar\" iguais.</string>
+    <string name="release_notes_corpo">• O app está mais fluido: Meus livros abre mais rápido, as capas dos audiobooks rolam sem travar e a busca dentro de um livro não congela em textos longos.\n• A busca de livros gratuitos agora mostra uma barra de progresso, abrir um livro tem uma transição suave e filtrar vozes ficou mais rápido.\n• Apagar um relatório de erro remove só aquela linha, e foi corrigido um pequeno vazamento ao gravar a sua voz.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
