@@ -11,6 +11,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -352,8 +353,22 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                 if (expandido) result += alternativas.map { VoiceRow.Voice(it) }
             }
 
+            val antigos = items
             items = result
-            notifyDataSetChanged()
+            DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun getOldListSize(): Int = antigos.size
+                override fun getNewListSize(): Int = result.size
+                override fun areItemsTheSame(oldPos: Int, newPos: Int): Boolean =
+                    chaveDaLinha(antigos[oldPos]) == chaveDaLinha(result[newPos])
+                override fun areContentsTheSame(oldPos: Int, newPos: Int): Boolean =
+                    antigos[oldPos] == result[newPos]
+            }).dispatchUpdatesTo(this)
+        }
+
+        // Identidade estável da linha: seção pelo rótulo, voz pelo id.
+        private fun chaveDaLinha(row: VoiceRow): String = when (row) {
+            is VoiceRow.Section -> "s:${row.label}"
+            is VoiceRow.Voice -> "v:${row.option.id}"
         }
 
         private fun filtrar(list: List<VoiceOption>): List<VoiceOption> =
