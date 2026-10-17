@@ -47,6 +47,7 @@ class BuscarLivrosActivity : AppCompatActivity() {
     private lateinit var rgIdioma: com.google.android.material.chip.ChipGroup
     private lateinit var rgFonte: com.google.android.material.chip.ChipGroup
     private lateinit var tvStatus: TextView
+    private lateinit var pbBusca: com.google.android.material.progressindicator.LinearProgressIndicator
     private lateinit var btnMais: Button
     private lateinit var adapter: LivrosAdapter
 
@@ -66,6 +67,7 @@ class BuscarLivrosActivity : AppCompatActivity() {
         rgIdioma = findViewById(R.id.rgIdiomaLivro)
         rgFonte = findViewById(R.id.rgFonteLivro)
         tvStatus = findViewById(R.id.tvStatusLivros)
+        pbBusca = findViewById(R.id.pbBuscaLivros)
         btnMais = findViewById(R.id.btnMaisLivros)
 
         adapter = LivrosAdapter(lifecycleScope, onBaixar = ::baixar)
@@ -130,6 +132,7 @@ class BuscarLivrosActivity : AppCompatActivity() {
     @Suppress("TooGenericExceptionCaught")
     private fun buscar(reiniciar: Boolean) {
         buscaAtual?.cancel()
+        pbBusca.visibility = View.GONE
         if (reiniciar) {
             livros.clear()
             proximoInicio = null
@@ -143,6 +146,7 @@ class BuscarLivrosActivity : AppCompatActivity() {
             return
         }
         tvStatus.setText(R.string.livros_buscando)
+        pbBusca.visibility = View.VISIBLE
         buscaAtual = lifecycleScope.launch {
             try {
                 val r = LivrosClient.buscar(fonte, etBusca.text.toString(), idiomaEscolhido(), inicio)
@@ -153,10 +157,12 @@ class BuscarLivrosActivity : AppCompatActivity() {
                 btnMais.visibility = if (proximoInicio != null) View.VISIBLE else View.GONE
                 findViewById<View>(R.id.btnBaixarTodosLivros).visibility = if (livros.isEmpty()) View.GONE else View.VISIBLE
                 tvStatus.text = if (livros.isEmpty()) getString(R.string.livros_nada) else ""
+                pbBusca.visibility = View.GONE
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 tvStatus.text = getString(R.string.livros_erro_busca, e.message ?: "")
+                pbBusca.visibility = View.GONE
             }
         }
     }
@@ -170,6 +176,7 @@ class BuscarLivrosActivity : AppCompatActivity() {
         val botao = findViewById<Button>(R.id.btnBaixarTodosLivros)
         botao.isEnabled = false
         buscaAtual?.cancel()
+        pbBusca.visibility = View.GONE
         lifecycleScope.launch {
             try {
                 while (proximoInicio != null && livros.size < limiteBaixar) {
