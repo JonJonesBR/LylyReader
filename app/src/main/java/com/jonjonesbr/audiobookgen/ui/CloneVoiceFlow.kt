@@ -19,6 +19,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
@@ -41,6 +43,13 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
 
     private val handler = Handler(Looper.getMainLooper())
     private var gravador: VoiceReferenceAudio.Gravador? = null
+
+    init {
+        // Sem isto, o Runnable de 100 ms da gravação continuaria agendado depois que a Activity morre.
+        activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) = handler.removeCallbacksAndMessages(null)
+        })
+    }
 
     private val pedirMicrofone =
         activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
@@ -154,6 +163,8 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 }
             }
         }
+        // Fechou o diálogo (parar, cancelar ou tempo esgotado): para o Runnable de 100 ms.
+        dialogo.setOnDismissListener { handler.removeCallbacks(atualizar) }
         handler.post(atualizar)
         dialogo.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val resultado = rec.parar(rascunho())
