@@ -380,6 +380,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
 
     fun toggleBusca() {
         val visivel = !_uiState.value.buscaVisivel
+        buscaJob?.cancel()
         _uiState.update {
             it.copy(
                 buscaVisivel = visivel,
@@ -393,23 +394,30 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Busca com debounce: a consulta espera [DEBOUNCE_BUSCA_MS] sem digitação antes de filtrar. */
     fun buscarTexto(query: String) {
         val texto = textoEfetivo() ?: return
         _uiState.update { it.copy(buscaQuery = query) }
+        buscaJob?.cancel()
         if (query.isBlank()) {
             _uiState.update { it.copy(buscaResultados = emptyList(), buscaIndiceAtual = -1) }
             adapter?.let { it.buscaResultados = emptyList(); it.buscaIndiceAtual = -1; it.notifyDataSetChanged() }
             return
         }
         val q = query.lowercase()
-        val resultados = texto.paragrafos.indices.filter { i ->
-            texto.paragrafos[i].texto.lowercase().contains(q)
+        buscaJob = viewModelScope.launch {
+            delay(DEBOUNCE_BUSCA_MS)
+            val resultados = withContext(Dispatchers.Default) {
+                texto.paragrafos.indices.filter { i ->
+                    texto.paragrafos[i].texto.lowercase().contains(q)
+                }
+            }
+            val indiceAtual = if (resultados.isNotEmpty()) 0 else -1
+            _uiState.update {
+                it.copy(buscaResultados = resultados, buscaIndiceAtual = indiceAtual)
+            }
+            adapter?.let { it.buscaResultados = resultados; it.buscaIndiceAtual = indiceAtual; it.notifyDataSetChanged() }
         }
-        val indiceAtual = if (resultados.isNotEmpty()) 0 else -1
-        _uiState.update {
-            it.copy(buscaResultados = resultados, buscaIndiceAtual = indiceAtual)
-        }
-        adapter?.let { it.buscaResultados = resultados; it.buscaIndiceAtual = indiceAtual; it.notifyDataSetChanged() }
     }
 
     fun navegarBusca(direcao: Int) {
@@ -427,6 +435,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
 
     private var adapter: ParagrafoAdapter? = null
 
+    // Job da busca em andamento (debounce + filtro); cancelado a cada tecla
+    private var buscaJob: Job? = null
+
     fun registrarAdapter(adapter: ParagrafoAdapter) {
         this.adapter = adapter
     }
@@ -441,5 +452,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         private const val FONTE_PADRAO = 16f
         /** Espaçamento padrão entre linhas do leitor. */
         private const val ESPACAMENTO_PADRAO = 1.5f
+        /** Espera após a última tecla antes de filtrar os parágrafos (ms). */
+        private const val DEBOUNCE_BUSCA_MS = 250L
     }
 }
