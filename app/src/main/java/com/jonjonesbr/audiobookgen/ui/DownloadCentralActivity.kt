@@ -42,6 +42,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
     private var itens: List<ItemBaixavel> = emptyList()
     private var filtro = com.jonjonesbr.audiobookgen.domain.FiltroIdioma.TODOS
     private var andamentoAtual: Map<String, AndamentoDownload> = emptyMap()
+    private var chavesCoach: Set<String>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         com.jonjonesbr.audiobookgen.util.ThemePrefs.aplicarNaActivity(this)
@@ -169,9 +170,14 @@ class DownloadCentralActivity : BasePlayerActivity() {
         }
         adapter.submitList(linhas)
         atualizarRodape()
-        findViewById<RecyclerView>(R.id.recyclerDownloads).post {
-            CoachMark.mostrarProxima(this, com.jonjonesbr.audiobookgen.domain.TelaDica.DOWNLOADS) { _ ->
-                findViewById<RecyclerView>(R.id.recyclerDownloads).getChildAt(0)
+        // O coach mark só é avaliado no primeiro render e quando os itens exibidos mudam (não a cada tick de progresso).
+        val chaves = linhas.map { it.item.id }.toSet()
+        if (chaves != chavesCoach) {
+            chavesCoach = chaves
+            findViewById<RecyclerView>(R.id.recyclerDownloads).post {
+                CoachMark.mostrarProxima(this, com.jonjonesbr.audiobookgen.domain.TelaDica.DOWNLOADS) { _ ->
+                    findViewById<RecyclerView>(R.id.recyclerDownloads).getChildAt(0)
+                }
             }
         }
     }
