@@ -179,7 +179,7 @@ class ErrorLogsActivity : AppCompatActivity() {
                     }
                     if (deleted) {
                         Toast.makeText(this@ErrorLogsActivity, R.string.toast_log_apagado, Toast.LENGTH_SHORT).show()
-                        carregarLogs()
+                        removerLogDaLista(file)
                     } else {
                         Toast.makeText(
                             this@ErrorLogsActivity,
@@ -191,6 +191,17 @@ class ErrorLogsActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.btn_cancelar, null)
             .show()
+    }
+
+    private fun removerLogDaLista(file: File) {
+        val posicao = logFiles.indexOf(file)
+        if (posicao < 0) {
+            carregarLogs()
+            return
+        }
+        logFiles.removeAt(posicao)
+        adapter.notifyItemRemoved(posicao)
+        atualizarTela()
     }
 
     private inner class LogsAdapter : RecyclerView.Adapter<LogsAdapter.ViewHolder>() {
