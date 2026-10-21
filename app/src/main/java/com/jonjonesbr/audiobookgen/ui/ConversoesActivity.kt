@@ -50,6 +50,9 @@ import kotlin.coroutines.resume
  */
 class ConversoesActivity : AppCompatActivity() {
 
+    private val dialogos = DialogosAbertos(this)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
+
     private val viewModel: AudiobookViewModel by viewModels()
     private var tituloDoLivro: String = ""
     /** Resultado de uma conversão da fila (o evento do ViewModel já foi consumido para a fila seguir). */
@@ -191,7 +194,7 @@ class ConversoesActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton(R.string.dica_bateria_depois, null)
-            .show()
+            .exibir()
     }
 
     private fun bloqueadoPorFaltaDeRede(caminhoDoLivro: String?, voz: String?, motor: String?, ritmo: Int?): Boolean {
@@ -203,7 +206,7 @@ class ConversoesActivity : AppCompatActivity() {
                 .setTitle(R.string.offline_titulo)
                 .setMessage(R.string.offline_mensagem)
                 .setPositiveButton(R.string.dialog_ok, null)
-                .show()
+                .exibir()
         }
         return semRede
     }
@@ -229,7 +232,7 @@ class ConversoesActivity : AppCompatActivity() {
             .setPositiveButton(R.string.dialog_audiobook_duplicado_confirmar) { _, _ -> if (cont.isActive) cont.resume(true) }
             .setNegativeButton(R.string.btn_cancelar) { _, _ -> if (cont.isActive) cont.resume(false) }
             .setOnCancelListener { if (cont.isActive) cont.resume(false) }
-            .show()
+            .exibir()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -251,7 +254,7 @@ class ConversoesActivity : AppCompatActivity() {
             .setMessage(R.string.conv_cancelar_msg)
             .setPositiveButton(R.string.conv_cancelar) { _, _ -> viewModel.cancelarProcessamento() }
             .setNegativeButton(R.string.conv_continuar, null)
-            .show()
+            .exibir()
     }
 
     // ── Pausar, continuar e descartar ────────────────────────────────────────
@@ -306,7 +309,7 @@ class ConversoesActivity : AppCompatActivity() {
                 mostrar(viewModel.uiState.value)
             }
             .setNegativeButton(R.string.btn_cancelar, null)
-            .show()
+            .exibir()
     }
 
     /** Relê o job pausado do disco (fora da thread principal) e atualiza o card. */
