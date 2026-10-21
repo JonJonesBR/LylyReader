@@ -52,6 +52,7 @@ class BibliotecaAdapter(
     }
 
     class VHLivro(view: View) : RecyclerView.ViewHolder(view) {
+        init { view.marcarComoBotao() } // uma vez por view; o delegate fica com ela ao ser reciclada
         val capa: CapaView = view.findViewById(R.id.ivBibCapa)
         val titulo: TextView = view.findViewById(R.id.tvBibTitulo)
         val estado: TextView = view.findViewById(R.id.tvBibEstado)

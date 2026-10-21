@@ -16,6 +16,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 
 /**
  * Seletor de tema do app (Seguir o sistema · Claro · Escuro · Papel). É o MESMO componente na Biblioteca, em Ajustes, no menu
@@ -53,6 +54,7 @@ object SeletorTemaSheet {
             linha.findViewById<TextView>(R.id.tvTemaNome).setText(opcao.nome)
             linha.findViewById<TextView>(R.id.tvTemaDescricao).setText(opcao.descricao)
             linha.findViewById<View>(R.id.ivTemaMarca).visibility = if (opcao.modo == atual) View.VISIBLE else View.INVISIBLE
+            linha.marcarComoBotao()
             linha.setOnClickListener {
                 folha.dismiss()
                 if (opcao.modo != atual) {
