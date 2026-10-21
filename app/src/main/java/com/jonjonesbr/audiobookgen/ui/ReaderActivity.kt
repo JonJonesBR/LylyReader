@@ -37,6 +37,7 @@ import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.aplicarMargemInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.dpToPx
+import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
 import android.content.Intent
@@ -632,6 +633,7 @@ class ReaderActivity : BasePlayerActivity() {
         btnOpcoes.setOnClickListener { retornoController.mostrarBottomSheetAcoes() }
 
         // Pill de status: também abre o BottomSheet de ações
+        bannerOtimizado.marcarComoBotao()
         bannerOtimizado.setOnClickListener { retornoController.mostrarBottomSheetAcoes() }
 
         // FAB de conversão: converter livro inteiro OU seleção, dependendo do estado atual

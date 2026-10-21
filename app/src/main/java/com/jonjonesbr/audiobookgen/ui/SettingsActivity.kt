@@ -4,6 +4,8 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
+import com.jonjonesbr.audiobookgen.util.marcarComoBotao
+import com.jonjonesbr.audiobookgen.util.marcarComoLink
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
@@ -427,6 +429,7 @@ class SettingsActivity : BasePlayerActivity() {
             mostrarAvisoLicencaEImportar()
         }
         // Tema — salva e aplica (recria as Activities com o novo modo)
+        findViewById<android.view.View>(R.id.rowTema).marcarComoBotao()
         findViewById<android.view.View>(R.id.rowTema).setOnClickListener { SeletorTemaSheet.mostrar(this) }
 
         // Motor TTS
@@ -1133,6 +1136,7 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
     private fun configurarCreditosVoz() {
+        findViewById<android.widget.TextView>(R.id.tvCreditosVoz).marcarComoLink()
         findViewById<android.widget.TextView>(R.id.tvCreditosVoz).setOnClickListener {
             val creditos = resources.getStringArray(R.array.creditos_voz_entradas)
             mostrarAjuda(

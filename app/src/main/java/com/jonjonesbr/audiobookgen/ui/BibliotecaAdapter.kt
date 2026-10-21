@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.LivroBiblioteca
+import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
@@ -76,6 +77,7 @@ class BibliotecaAdapter(
                 h.barra.progress = (item.progresso * BARRA_MAX).toInt()
                 h.pct.text = h.itemView.context.getString(R.string.bib_progresso, (item.progresso * 100).toInt())
                 mostrarCapa(h.capa, livro)
+                h.cartao.marcarComoBotao()
                 h.cartao.setOnClickListener { onAbrir(livro, true) }
                 h.cartao.setOnLongClickListener { onMenu(h.cartao, livro); true }
             }

@@ -1192,6 +1192,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="primeiro_livro_biblioteca_cd">Buscar livros legais e gratuitos</string>
     <string name="primeiro_livro_link">Colar um link</string>
     <string name="primeiro_livro_link_cd">Baixar um livro a partir de um link direto</string>
+    <string name="acessibilidade_papel_link">Link</string>
     <string name="primeiro_livro_exemplo">Usar o livro de exemplo</string>
     <string name="primeiro_livro_agora_nao">Agora não</string>
     <string name="notif_reproduzir">Reproduzir</string>

@@ -26,6 +26,7 @@ import com.jonjonesbr.audiobookgen.domain.ritmoDaPosicao
 import com.jonjonesbr.audiobookgen.util.aplicarSnapVelocidade
 import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
+import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import kotlinx.coroutines.flow.first
@@ -58,6 +59,10 @@ class LivroActivity : BasePlayerActivity() {
         findViewById<ImageButton>(R.id.btnVoltarLivro).setOnClickListener { finish() }
         findViewById<ImageButton>(R.id.btnMaisLivro).setOnClickListener { mostrarMenu(it) }
         findViewById<View>(R.id.btnTrocarVozLivro).setOnClickListener { seletorDeVoz.abrirSeletorVozes() }
+        findViewById<View>(R.id.linhaTimbreLivro).marcarComoBotao()
+        findViewById<View>(R.id.linhaCapitulosLivro).marcarComoBotao()
+        findViewById<View>(R.id.linhaPersonagensLivro).marcarComoBotao()
+        findViewById<View>(R.id.linhaPronunciaLivro).marcarComoBotao()
         findViewById<View>(R.id.linhaTimbreLivro).setOnClickListener { TimbreDialog.show(this, appPrefs) }
     }
 

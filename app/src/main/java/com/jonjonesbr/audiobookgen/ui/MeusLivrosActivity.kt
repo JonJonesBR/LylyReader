@@ -28,6 +28,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.tabs.TabLayout
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.DocumentRepository
@@ -415,6 +416,10 @@ class MeusLivrosActivity : BasePlayerActivity() {
     private fun mostrarAdicionar() {
         val folha = BottomSheetDialog(this)
         val conteudo = layoutInflater.inflate(R.layout.bottom_sheet_adicionar_livro, null)
+        conteudo.findViewById<View>(R.id.optAdicionarAparelho).marcarComoBotao()
+        conteudo.findViewById<View>(R.id.optAdicionarGratis).marcarComoBotao()
+        conteudo.findViewById<View>(R.id.optAdicionarLink).marcarComoBotao()
+        conteudo.findViewById<View>(R.id.optAdicionarPasta).marcarComoBotao()
         conteudo.findViewById<View>(R.id.optAdicionarAparelho).setOnClickListener {
             folha.dismiss()
             seletorArquivos.launch(TIPOS_MIME)

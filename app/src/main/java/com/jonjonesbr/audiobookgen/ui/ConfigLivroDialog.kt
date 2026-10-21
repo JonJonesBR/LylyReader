@@ -6,6 +6,7 @@ import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
 import com.jonjonesbr.audiobookgen.util.VELOCIDADES_GUIADAS
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.aplicarSnapVelocidade
+import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -69,6 +70,7 @@ object ConfigLivroDialog {
             atualizarUi()
         }
 
+        view.findViewById<View>(R.id.itemConfigVoz).marcarComoBotao()
         view.findViewById<View>(R.id.itemConfigVoz).setOnClickListener {
             abrirSeletorDeVoz(activity, caminhoArquivo, appPrefs, ::atualizarUi, onClonarVoz)
         }

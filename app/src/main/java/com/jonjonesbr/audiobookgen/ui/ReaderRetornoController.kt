@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.google.android.material.tabs.TabLayout
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import java.io.File
 
 /**
@@ -219,6 +220,7 @@ class ReaderRetornoController(
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_acoes_reader, null)
         dialog.setContentView(view)
         configurarTabsAcoesReader(view)
+        itensAcaoClicaveis.forEach { view.findViewById<android.view.View>(it).marcarComoBotao() }
 
         configurarItensSecaoConversao(dialog, view)
         configurarItensSecaoLeitura(dialog, view)
@@ -260,6 +262,17 @@ class ReaderRetornoController(
 
         dialog.show()
     }
+
+    /** Todos os itens clicáveis do bottom sheet de ações: contêineres que o TalkBack anuncia como botão. */
+    private val itensAcaoClicaveis = listOf(
+        R.id.itemAcaoConverterTudo, R.id.itemAcaoExportar, R.id.itemAcaoExportarCapitulos,
+        R.id.itemAcaoCompartilharTrecho, R.id.itemAcaoBaixarCapitulo, R.id.itemAcaoBaixarLivro,
+        R.id.itemAcaoOuvirAudiobook, R.id.itemAcaoCapitulos, R.id.itemAcaoMarcadores,
+        R.id.itemAcaoDestaques, R.id.itemAcaoLeituraGuiada, R.id.itemAcaoPrepararCapitulo,
+        R.id.itemAcaoConfigLivro, R.id.itemAcaoVozesPersonagens, R.id.itemAcaoEditar,
+        R.id.itemAcaoExcluirPalavras, R.id.itemAcaoAparencia, R.id.itemAcaoRefazerLimpeza,
+        R.id.itemAcaoSleepTimer, R.id.itemAcaoAjuda,
+    )
 
     /** Itens do menu que convertem, tocam ou configuram voz/sleep timer — sumem no modo "Ler sem áudio". */
     private fun esconderItensDeAudio(view: android.view.View) {

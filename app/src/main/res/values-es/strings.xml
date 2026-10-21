@@ -1189,6 +1189,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="primeiro_livro_biblioteca_cd">Buscar libros legales y gratuitos</string>
     <string name="primeiro_livro_link">Pegar un enlace</string>
     <string name="primeiro_livro_link_cd">Descargar un libro desde un enlace directo</string>
+    <string name="acessibilidade_papel_link">Enlace</string>
     <string name="primeiro_livro_exemplo">Usar el libro de ejemplo</string>
     <string name="primeiro_livro_agora_nao">Ahora no</string>
     <string name="notif_reproduzir">Reproduzir</string>

@@ -1204,6 +1204,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="primeiro_livro_biblioteca_cd">Search free, legal books</string>
     <string name="primeiro_livro_link">Paste a link</string>
     <string name="primeiro_livro_link_cd">Download a book from a direct link</string>
+    <string name="acessibilidade_papel_link">Link</string>
     <string name="primeiro_livro_exemplo">Use the sample book</string>
     <string name="primeiro_livro_agora_nao">Not now</string>
     <string name="notif_reproduzir">Reproduzir</string>
