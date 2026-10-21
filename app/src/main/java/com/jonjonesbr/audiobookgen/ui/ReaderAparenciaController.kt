@@ -39,6 +39,8 @@ class ReaderAparenciaController(
     private val viewModel: ReaderViewModel,
     private val onOrientacaoRolagem: (Boolean) -> Unit,
 ) {
+    private val dialogos = DialogosAbertos(activity)
+    private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
 
     fun mostrarBottomSheet() {
         val state = viewModel.uiState.value
@@ -246,6 +248,6 @@ class ReaderAparenciaController(
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 }
