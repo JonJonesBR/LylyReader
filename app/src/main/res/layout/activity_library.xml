@@ -32,7 +32,7 @@
             android:text="@string/nav_audiobooks"
             android:textSize="22sp"
             android:textColor="@color/color_on_surface"
-            android:maxLines="1"
+            android:maxLines="2"
             android:ellipsize="end"/>
 
         <ImageButton

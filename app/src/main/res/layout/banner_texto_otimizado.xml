@@ -31,7 +31,8 @@
             android:layout_height="wrap_content"
             android:text="✨"
             android:textSize="13sp"
-            android:layout_marginEnd="4dp"/>
+            android:layout_marginEnd="4dp"
+            android:importantForAccessibility="no"/>
 
         <TextView
             android:id="@+id/tvBannerInfo"
@@ -40,7 +41,7 @@
             android:text="@string/banner_otimizacao"
             android:textColor="?attr/colorOnSecondaryContainer"
             android:textSize="12sp"
-            android:maxLines="1"
+            android:maxLines="2"
             android:ellipsize="end"/>
 
         <ImageView

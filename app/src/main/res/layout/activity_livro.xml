@@ -224,7 +224,8 @@
                     android:layout_height="wrap_content"
                     android:text="›"
                     android:textColor="@color/color_on_surface_dim"
-                    android:textSize="22sp"/>
+                    android:textSize="22sp"
+                    android:importantForAccessibility="no"/>
             </LinearLayout>
 
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/color_divider"/>
@@ -253,7 +254,8 @@
                     android:layout_height="wrap_content"
                     android:text="›"
                     android:textColor="@color/color_on_surface_dim"
-                    android:textSize="22sp"/>
+                    android:textSize="22sp"
+                    android:importantForAccessibility="no"/>
             </LinearLayout>
 
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/color_divider"/>
@@ -282,7 +284,8 @@
                     android:layout_height="wrap_content"
                     android:text="›"
                     android:textColor="@color/color_on_surface_dim"
-                    android:textSize="22sp"/>
+                    android:textSize="22sp"
+                    android:importantForAccessibility="no"/>
             </LinearLayout>
 
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/color_divider"/>
@@ -311,7 +314,8 @@
                     android:layout_height="wrap_content"
                     android:text="›"
                     android:textColor="@color/color_on_surface_dim"
-                    android:textSize="22sp"/>
+                    android:textSize="22sp"
+                    android:importantForAccessibility="no"/>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
