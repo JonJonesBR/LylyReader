@@ -109,7 +109,7 @@ object TimbreDialog {
             .setPositiveButton(R.string.timbre_close, null)
             .setNeutralButton(R.string.timbre_reset, null)
             .create()
-        dialogo.show()
+        activity.mostrarDialogo(dialogo)
         // "Restaurar padrão" não fecha o diálogo: zera os dois controles e já aplica.
         dialogo.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
             controles.restaurar()
