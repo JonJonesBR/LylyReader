@@ -263,23 +263,27 @@ object PronunciationDialog {
         ) { uri ->
             launcher.unregister()
             if (uri == null) { depois(); return@register }
-            val texto = runCatching {
-                activity.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
-            }.getOrNull().orEmpty()
-            val entradas = com.jonjonesbr.audiobookgen.domain.PronunciationTransfer.parse(texto)
-            if (entradas.isEmpty()) {
-                Toast.makeText(activity, R.string.pron_import_empty, Toast.LENGTH_LONG).show()
-            } else {
-                salvarNoEscopo(
-                    activity, null, EscopoPronuncia.TODOS,
-                    com.jonjonesbr.audiobookgen.domain.PronunciationTransfer.merge(PronunciationStore.get(activity), entradas)
-                ) {
-                    Toast.makeText(activity, activity.getString(R.string.pron_import_done, entradas.size), Toast.LENGTH_LONG).show()
-                    depois()
+            activity.lifecycleScope.launch {
+                val entradas = withContext(Dispatchers.IO) {
+                    val texto = runCatching {
+                        activity.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+                    }.getOrNull().orEmpty()
+                    com.jonjonesbr.audiobookgen.domain.PronunciationTransfer.parse(texto)
                 }
-                return@register
+                if (entradas.isEmpty()) {
+                    Toast.makeText(activity, R.string.pron_import_empty, Toast.LENGTH_LONG).show()
+                } else {
+                    salvarNoEscopo(
+                        activity, null, EscopoPronuncia.TODOS,
+                        com.jonjonesbr.audiobookgen.domain.PronunciationTransfer.merge(PronunciationStore.get(activity), entradas)
+                    ) {
+                        Toast.makeText(activity, activity.getString(R.string.pron_import_done, entradas.size), Toast.LENGTH_LONG).show()
+                        depois()
+                    }
+                    return@launch
+                }
+                depois()
             }
-            depois()
         }
         launcher.launch(arrayOf("application/json", "text/plain", "text/csv", "text/comma-separated-values", "application/octet-stream"))
     }
