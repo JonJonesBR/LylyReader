@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.ui
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.service.SleepTimerManager
 import com.jonjonesbr.audiobookgen.util.PRESETS_SONECA_MIN
+import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import android.app.Activity
 import android.widget.Button
 import android.widget.TextView
@@ -29,6 +30,7 @@ object SleepTimerDialog {
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_sleep_timer, null)
         val dialog = BottomSheetDialog(activity)
         dialog.setContentView(view)
+        dialog.expandirEmPaisagem()
 
         val ativo = stm.remainingMs.value
         view.findViewById<TextView>(R.id.tvSonecaTitulo).text = if (ativo != null) {

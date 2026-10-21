@@ -4,6 +4,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
 import com.jonjonesbr.audiobookgen.util.VELOCIDADES_GUIADAS
+import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.aplicarSnapVelocidade
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
@@ -31,6 +32,7 @@ object ConfigLivroDialog {
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_config_livro, null)
         val dialog = BottomSheetDialog(activity)
         dialog.setContentView(view)
+        dialog.expandirEmPaisagem()
 
         val tvVoz = view.findViewById<TextView>(R.id.tvConfigVozAtual)
         val idsVelocidade = listOf(

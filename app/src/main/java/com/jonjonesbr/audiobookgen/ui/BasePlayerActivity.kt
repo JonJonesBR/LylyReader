@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.formatarTempo
+import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import kotlinx.coroutines.launch
 
 /**
@@ -325,6 +326,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_capitulos, null)
         dialog.setContentView(view)
+        dialog.expandirEmPaisagem()
 
         val posicao = state.currentPosition.toLong()
         val ativo = state.capitulos.indexOfLast { posicao >= it.inicioMs }.coerceAtLeast(0)

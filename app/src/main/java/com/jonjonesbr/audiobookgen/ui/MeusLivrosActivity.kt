@@ -29,6 +29,7 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.tabs.TabLayout
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
+import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.DocumentRepository
@@ -437,6 +438,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
             seletorPasta.launch(null)
         }
         folha.setContentView(conteudo)
+        folha.expandirEmPaisagem()
         folha.show()
     }
 

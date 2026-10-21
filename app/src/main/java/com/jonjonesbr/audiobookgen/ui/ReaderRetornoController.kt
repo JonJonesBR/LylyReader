@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import com.google.android.material.tabs.TabLayout
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
+import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import java.io.File
 
 /**
@@ -219,6 +220,7 @@ class ReaderRetornoController(
         val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(activity)
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_acoes_reader, null)
         dialog.setContentView(view)
+        dialog.expandirEmPaisagem()
         configurarTabsAcoesReader(view)
         itensAcaoClicaveis.forEach { view.findViewById<android.view.View>(it).marcarComoBotao() }
 

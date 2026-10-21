@@ -29,6 +29,7 @@ import com.jonjonesbr.audiobookgen.util.NetworkStatus
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.VoiceOption
+import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -191,6 +192,7 @@ class LivroActivity : BasePlayerActivity() {
         val folha = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         val vista = layoutInflater.inflate(R.layout.bottom_sheet_gerar_audiobook, null)
         folha.setContentView(vista)
+        folha.expandirEmPaisagem()
         vista.findViewById<TextView>(R.id.tvGerarLivro).text = l.titulo
         // Se há vozes de personagens, a geração do livro inteiro (ArquivoComPersonagens) já as usa; o aviso só informa isso.
         val temVozesDePersonagens = com.jonjonesbr.audiobookgen.domain.SpeakerAttributionStore(java.io.File(filesDir, "speaker_attribution"))

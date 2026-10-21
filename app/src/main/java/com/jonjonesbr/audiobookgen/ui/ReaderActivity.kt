@@ -40,6 +40,7 @@ import com.jonjonesbr.audiobookgen.util.dpToPx
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
+import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -2083,6 +2084,7 @@ class ReaderActivity : BasePlayerActivity() {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_capitulos, null)
         dialog.setContentView(view)
+        dialog.expandirEmPaisagem()
 
         val ativo = viewModel.uiState.value.capituloAtivo
         val adapter = CapituloTocAdapter(texto.capitulos, ativo) { indice ->

@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 
@@ -44,6 +45,7 @@ class ReaderAparenciaController(
         val dialog = BottomSheetDialog(activity)
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_aparencia, null)
         dialog.setContentView(view)
+        dialog.expandirEmPaisagem()
 
         configurarSeekFonte(
             view.findViewById(R.id.seekBarFonte),

@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
+import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 
 /**
  * Seletor de tema do app (Seguir o sistema · Claro · Escuro · Papel). É o MESMO componente na Biblioteca, em Ajustes, no menu
@@ -42,7 +43,7 @@ object SeletorTemaSheet {
     fun mostrar(activity: AppCompatActivity) {
         val atual = ThemePrefs.load(activity)
         val folha = BottomSheetDialog(activity)
-        val raiz = LayoutInflater.from(activity).inflate(R.layout.bottom_sheet_tema, null) as LinearLayout
+        val raiz = LayoutInflater.from(activity).inflate(R.layout.bottom_sheet_tema, null) as View
         val lista = raiz.findViewById<LinearLayout>(R.id.listaTemas)
         opcoes.forEach { opcao ->
             val linha = LayoutInflater.from(activity).inflate(R.layout.item_tema_opcao, lista, false)
@@ -63,6 +64,7 @@ object SeletorTemaSheet {
             lista.addView(linha)
         }
         folha.setContentView(raiz)
+        folha.expandirEmPaisagem()
         folha.show()
     }
 }
