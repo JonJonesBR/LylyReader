@@ -29,6 +29,9 @@ import kotlinx.coroutines.launch
  */
 class VoiceDownloadFlow(private val activity: AppCompatActivity) {
 
+    private val dialogos = DialogosAbertos(activity)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
+
     private var downloadJob: Job? = null
 
     /** Pacote que a Central está baixando para o diálogo aberto (o botão Cancelar o pausa). */
@@ -63,7 +66,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
             .setMessage(mensagem)
             .setPositiveButton(R.string.dialog_download_voice_confirm) { _, _ -> iniciarDownload(voice, onComplete) }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun mostrarDialogoConfirmarDownloadPacoteVits(voice: VoiceOption, onComplete: () -> Unit) {
@@ -79,7 +82,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
             .setMessage(activity.getString(R.string.dialog_download_piper_message, pacote.tamanhoDownloadMb, license) + mobileNotice)
             .setPositiveButton(R.string.dialog_download_voice_confirm) { _, _ -> iniciarDownload(voice, onComplete) }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
     private fun mostrarDialogoConfirmarDownloadKokoro(voice: VoiceOption, onComplete: () -> Unit) {
         val mensagem = if (NetworkStatus.isOnWifi(activity)) {
@@ -94,7 +97,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
             .setMessage(mensagem)
             .setPositiveButton(R.string.dialog_download_voice_confirm) { _, _ -> iniciarDownload(voice, onComplete) }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun mostrarDialogoConfirmarDownloadPocket(voice: VoiceOption, onComplete: () -> Unit) {
@@ -107,7 +110,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
             .setMessage(activity.getString(R.string.pocket_download_message, pack.tamanhoDownloadMb, voice.language, license) + mobileNotice)
             .setPositiveButton(R.string.dialog_download_voice_confirm) { _, _ -> iniciarDownload(voice, onComplete) }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     // Voz conhecida pelo motor Android (ex.: Google TTS) mas cujo pacote de dados não foi
@@ -119,7 +122,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
             .setMessage(R.string.dialog_download_android_voice_message)
             .setPositiveButton(R.string.btn_abrir_configuracoes) { _, _ -> abrirInstalacaoVozAndroid(voice) }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun abrirInstalacaoVozAndroid(voice: VoiceOption) {
@@ -170,7 +173,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
                 Toast.makeText(activity, R.string.toast_download_cancelled, Toast.LENGTH_SHORT).show()
             }
         }
-        progressDialog.show()
+        dialogos.mostrar(progressDialog)
 
         downloadJob = activity.lifecycleScope.launch {
             val result = executarDownload(voice) { pct ->
