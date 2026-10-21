@@ -87,6 +87,6 @@ object ConferirTrocasDialog {
                 dialogo.dismiss()
             }
         })
-        dialogo.show()
+        activity.mostrarDialogo(dialogo)
     }
 }
