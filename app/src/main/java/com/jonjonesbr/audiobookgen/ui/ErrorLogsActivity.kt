@@ -18,6 +18,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
+import android.util.Log
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -121,9 +123,10 @@ class ErrorLogsActivity : AppCompatActivity() {
             }
             startActivity(Intent.createChooser(intent, getString(R.string.logs_compartilhar_titulo)))
         } catch (e: Exception) {
+            Log.w("ErrorLogsActivity", "Falha ao compartilhar log", e)
             Toast.makeText(
                 this,
-                getString(R.string.toast_erro_compartilhar_log, e.message ?: ""),
+                getString(R.string.toast_erro_compartilhar_log, getString(mensagemDeErro(e))),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -133,7 +136,8 @@ class ErrorLogsActivity : AppCompatActivity() {
         val content = try {
             file.readText(Charsets.UTF_8)
         } catch (e: Exception) {
-            getString(R.string.logs_erro_ler, e.message ?: "")
+            Log.w("ErrorLogsActivity", "Falha ao ler log", e)
+            getString(R.string.logs_erro_ler, getString(mensagemDeErro(e)))
         }
 
         val density = resources.displayMetrics.density

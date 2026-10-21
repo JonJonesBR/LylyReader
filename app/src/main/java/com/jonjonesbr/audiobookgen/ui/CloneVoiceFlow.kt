@@ -29,6 +29,8 @@ import com.jonjonesbr.audiobookgen.tts.PocketCustomVoices
 import com.jonjonesbr.audiobookgen.tts.PocketEncoderManager
 import com.jonjonesbr.audiobookgen.tts.VoiceReferenceAudio
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
+import android.util.Log
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -304,7 +306,8 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             if (erro == null) {
                 toast(R.string.clone_created)
             } else {
-                Toast.makeText(activity, activity.getString(R.string.clone_download_failed, erro.message ?: ""), Toast.LENGTH_LONG).show()
+                Log.w("CloneVoiceFlow", "Falha ao baixar voz clonada", erro)
+                Toast.makeText(activity, activity.getString(R.string.clone_download_failed, activity.getString(mensagemDeErro(erro))), Toast.LENGTH_LONG).show()
             }
         }
     }

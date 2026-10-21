@@ -13,6 +13,7 @@ import com.jonjonesbr.audiobookgen.domain.ModoDivisao
 import com.jonjonesbr.audiobookgen.domain.OpcoesVideo
 import com.jonjonesbr.audiobookgen.domain.ResolucaoVideo
 import com.jonjonesbr.audiobookgen.util.dpToPx
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.service.ChapterMarksStore
 import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
@@ -396,7 +397,7 @@ class LibraryActivity : BasePlayerActivity() {
             Log.e(TAG, "Erro ao deletar: ${e.message}")
             Toast.makeText(
                 this,
-                getString(R.string.toast_audiobook_delete_error, e.message ?: ""),
+                getString(R.string.toast_audiobook_delete_error, getString(mensagemDeErro(e))),
                 Toast.LENGTH_SHORT
             ).show()
         }

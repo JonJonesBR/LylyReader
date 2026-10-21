@@ -9,6 +9,7 @@ import com.jonjonesbr.audiobookgen.service.ConversionNotificationManager
 import com.jonjonesbr.audiobookgen.service.ParametrosConversao
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.util.PlayerStateHolder
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.domain.PlayAudioUseCase
 import com.jonjonesbr.audiobookgen.data.DocumentRepository
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
@@ -799,7 +800,10 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             }
             exportUseCase.exportar(java.io.File(resultado.caminho), _uiState.value.pastaDestinoUri).fold(
                 onSuccess = { ExportStatus.Sucesso(it) },
-                onFailure = { ExportStatus.Erro(it.message ?: getApplication<Application>().getString(R.string.status_export_error)) }
+                onFailure = {
+                    Log.w("AudiobookViewModel", "Falha ao exportar audiolivro", it)
+                    ExportStatus.Erro(getApplication<Application>().getString(mensagemDeErro(it)))
+                }
             )
         }
         // ConversionWorker já mostra a notificação de conclusão (com o caminho/nome corretos

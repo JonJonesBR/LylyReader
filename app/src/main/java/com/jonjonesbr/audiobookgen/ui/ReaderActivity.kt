@@ -34,6 +34,7 @@ import com.jonjonesbr.audiobookgen.tts.AndroidTtsEngineCache
 import com.jonjonesbr.audiobookgen.tts.AndroidVoiceId
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.aplicarMargemInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.dpToPx
@@ -903,7 +904,7 @@ class ReaderActivity : BasePlayerActivity() {
             Log.w("ReaderActivity", "Erro ao preparar download de capítulo", e)
             Toast.makeText(
                 this,
-                getString(R.string.toast_erro_preparar_download, e.message ?: ""),
+                getString(R.string.toast_erro_preparar_download, getString(mensagemDeErro(e))),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -935,7 +936,7 @@ class ReaderActivity : BasePlayerActivity() {
                 Log.w("ReaderActivity", "Erro ao preparar download de livro completo", e)
                 Toast.makeText(
                     this@ReaderActivity,
-                    getString(R.string.toast_erro_preparar_download, e.message ?: ""),
+                    getString(R.string.toast_erro_preparar_download, getString(mensagemDeErro(e))),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -958,7 +959,8 @@ class ReaderActivity : BasePlayerActivity() {
             } else {
                 getString(
                     R.string.toast_erro_exportar_capitulos,
-                    resultado.exceptionOrNull()?.message ?: ""
+                    resultado.exceptionOrNull()?.let { getString(mensagemDeErro(it)) }
+                        ?: getString(R.string.erro_amigavel_generico)
                 )
             }
             Toast.makeText(this@ReaderActivity, mensagem, Toast.LENGTH_LONG).show()
@@ -1429,7 +1431,10 @@ class ReaderActivity : BasePlayerActivity() {
             carregando.dismiss()
             val modelos = resultado.getOrDefault(emptyList())
             resultado.exceptionOrNull()?.let {
-                Toast.makeText(this@ReaderActivity, getString(R.string.character_ai_model_failed, it.message ?: ""), Toast.LENGTH_LONG).show()
+                Log.w("ReaderActivity", "Falha ao listar modelos da IA", it)
+                val motivo = if (it is com.jonjonesbr.audiobookgen.domain.AiApiException) it.message.orEmpty()
+                    else getString(mensagemDeErro(it))
+                Toast.makeText(this@ReaderActivity, getString(R.string.character_ai_model_failed, motivo), Toast.LENGTH_LONG).show()
             }
             val opcoes = listOf(getString(R.string.character_ai_model_auto)) + modelos +
                 getString(R.string.character_ai_model_custom)
@@ -1514,7 +1519,12 @@ class ReaderActivity : BasePlayerActivity() {
             } catch (e: kotlinx.coroutines.CancellationException) {
                 mensagem = getString(R.string.character_ai_cancelled)
             } catch (e: Exception) {
-                mensagem = getString(R.string.character_ai_partial, e.message ?: "")
+                Log.w("ReaderActivity", "Falha parcial na analise de personagens por IA", e)
+                mensagem = getString(
+                    R.string.character_ai_partial,
+                    if (e is com.jonjonesbr.audiobookgen.domain.AiApiException) e.message.orEmpty()
+                    else getString(mensagemDeErro(e))
+                )
             }
             dialogo.dismiss()
             if (caminhoArquivo != identidade) return@launch

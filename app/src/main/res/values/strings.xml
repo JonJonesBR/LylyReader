@@ -1280,4 +1280,9 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="audio_sem_trilha">Nenhuma trilha de audio encontrada</string>
     <string name="audio_trilha_sem_mime">Trilha de audio sem MIME</string>
     <string name="audio_falha_decodificar">Falha ao decodificar o audio: %1$s</string>
+    <string name="erro_amigavel_sem_conexao">No internet connection. Check it and try again.</string>
+    <string name="erro_amigavel_sem_espaco">Not enough space on the device.</string>
+    <string name="erro_amigavel_arquivo_ilegivel">Could not read the file.</string>
+    <string name="erro_amigavel_formato">The file is not in the expected format.</string>
+    <string name="erro_amigavel_generico">Something went wrong. Try again.</string>
 </resources>

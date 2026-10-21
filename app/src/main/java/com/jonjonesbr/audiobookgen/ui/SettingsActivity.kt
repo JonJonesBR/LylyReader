@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.ui
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.marcarComoLink
@@ -1052,7 +1053,7 @@ class SettingsActivity : BasePlayerActivity() {
                 Log.w("SettingsActivity", "Erro ao importar pacote BYOM", e)
                 Toast.makeText(
                     this@SettingsActivity,
-                    getString(R.string.toast_erro_importar_voz_motivo, e.message ?: ""),
+                    getString(R.string.toast_erro_importar_voz_motivo, getString(mensagemDeErro(e))),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -1128,9 +1129,10 @@ class SettingsActivity : BasePlayerActivity() {
                 }
             } catch (e: Exception) {
                 progressDialog.dismiss()
+                Log.w("SettingsActivity", "Falha ao baixar voz", e)
                 Toast.makeText(
                     this@SettingsActivity,
-                    getString(R.string.toast_download_failed, e.message ?: "erro"),
+                    getString(R.string.toast_download_failed, getString(mensagemDeErro(e))),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -1351,7 +1353,7 @@ class SettingsActivity : BasePlayerActivity() {
             Log.w("SettingsActivity", "Erro ao iniciar exportacao", e)
             Toast.makeText(
                 this,
-                getString(R.string.toast_erro_exportar, e.message ?: ""),
+                getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -1372,10 +1374,10 @@ class SettingsActivity : BasePlayerActivity() {
             Toast.makeText(this, R.string.toast_backup_exportado, Toast.LENGTH_SHORT).show()
         } catch (e: java.io.IOException) {
             Log.w("SettingsActivity", "Erro ao salvar configuracoes", e)
-            Toast.makeText(this, getString(R.string.toast_erro_exportar, e.message ?: ""), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
         } catch (e: org.json.JSONException) {
             Log.w("SettingsActivity", "Erro ao salvar configuracoes", e)
-            Toast.makeText(this, getString(R.string.toast_erro_exportar, e.message ?: ""), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -1386,7 +1388,7 @@ class SettingsActivity : BasePlayerActivity() {
             Log.w("SettingsActivity", "Erro ao iniciar importacao", e)
             Toast.makeText(
                 this,
-                getString(R.string.toast_erro_importar, e.message ?: ""),
+                getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -1401,13 +1403,13 @@ class SettingsActivity : BasePlayerActivity() {
             result = JSONObject(jsonStr)
         } catch (e: java.io.IOException) {
             Log.w("SettingsActivity", "Erro ao carregar configuracoes", e)
-            Toast.makeText(this, getString(R.string.toast_erro_importar, e.message ?: ""), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
         } catch (e: java.lang.IllegalStateException) {
             Log.w("SettingsActivity", "Erro ao carregar configuracoes", e)
-            Toast.makeText(this, getString(R.string.toast_erro_importar, e.message ?: ""), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
         } catch (e: org.json.JSONException) {
             Log.w("SettingsActivity", "Erro ao parsear JSON", e)
-            Toast.makeText(this, getString(R.string.toast_erro_importar, e.message ?: ""), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
         }
         return result
     }
@@ -1442,7 +1444,7 @@ class SettingsActivity : BasePlayerActivity() {
             exportarBackupLauncher.launch("lylyreader-backup.zip")
         } catch (e: android.content.ActivityNotFoundException) {
             Log.w("SettingsActivity", "Erro ao iniciar exportacao de backup", e)
-            val msg = getString(R.string.toast_erro_exportar_backup, e.message ?: "")
+            val msg = getString(R.string.toast_erro_exportar_backup, getString(mensagemDeErro(e)))
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
     }
@@ -1457,7 +1459,7 @@ class SettingsActivity : BasePlayerActivity() {
                 Log.w("SettingsActivity", "Erro ao exportar backup completo", e)
                 Toast.makeText(
                     this@SettingsActivity,
-                    getString(R.string.toast_erro_exportar_backup, e.message ?: ""),
+                    getString(R.string.toast_erro_exportar_backup, getString(mensagemDeErro(e))),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -1469,7 +1471,7 @@ class SettingsActivity : BasePlayerActivity() {
             importarBackupLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
         } catch (e: android.content.ActivityNotFoundException) {
             Log.w("SettingsActivity", "Erro ao iniciar importacao de backup", e)
-            val msg = getString(R.string.toast_erro_importar_backup, e.message ?: "")
+            val msg = getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e)))
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
     }
@@ -1482,7 +1484,7 @@ class SettingsActivity : BasePlayerActivity() {
                     Log.w("SettingsActivity", "Erro ao importar backup completo", e)
                     Toast.makeText(
                         this@SettingsActivity,
-                        getString(R.string.toast_erro_importar_backup, e.message ?: ""),
+                        getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e))),
                         Toast.LENGTH_LONG
                     ).show()
                 }

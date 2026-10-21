@@ -17,6 +17,8 @@ import com.jonjonesbr.audiobookgen.tts.OnnxModelManager
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.dpToPx
+import android.util.Log
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -191,7 +193,9 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
                 // Pausado pelo botão Cancelar (o aviso já foi mostrado ali): não é falha.
                 Unit
             } else {
-                val erroMsg = result.exceptionOrNull()?.message ?: activity.getString(R.string.erro_download_desconhecido)
+                result.exceptionOrNull()?.let { Log.w("VoiceDownloadFlow", "Falha ao baixar voz", it) }
+                val erroMsg = result.exceptionOrNull()?.let { activity.getString(mensagemDeErro(it)) }
+                    ?: activity.getString(R.string.erro_download_desconhecido)
                 Toast.makeText(
                     activity,
                     activity.getString(R.string.toast_download_failed, erroMsg),

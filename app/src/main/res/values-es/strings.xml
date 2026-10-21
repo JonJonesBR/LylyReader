@@ -1265,4 +1265,9 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="audio_sem_trilha">Nenhuma trilha de audio encontrada</string>
     <string name="audio_trilha_sem_mime">Trilha de audio sem MIME</string>
     <string name="audio_falha_decodificar">Falha ao decodificar o audio: %1$s</string>
+    <string name="erro_amigavel_sem_conexao">Sin conexión a internet. Revísala e inténtalo de nuevo.</string>
+    <string name="erro_amigavel_sem_espaco">No hay suficiente espacio en el dispositivo.</string>
+    <string name="erro_amigavel_arquivo_ilegivel">No se pudo leer el archivo.</string>
+    <string name="erro_amigavel_formato">El archivo no tiene el formato esperado.</string>
+    <string name="erro_amigavel_generico">Algo salió mal. Inténtalo de nuevo.</string>
 </resources>

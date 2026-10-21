@@ -29,6 +29,8 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.tabs.TabLayout
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
+import android.util.Log
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.BibliotecaStore
@@ -510,7 +512,10 @@ class MeusLivrosActivity : BasePlayerActivity() {
             com.jonjonesbr.audiobookgen.domain.MotivoLink.PAGINA_WEB -> getString(R.string.link_erro_pagina)
             com.jonjonesbr.audiobookgen.domain.MotivoLink.FORMATO -> getString(R.string.link_erro_formato)
             com.jonjonesbr.audiobookgen.domain.MotivoLink.GRANDE -> getString(R.string.link_erro_grande)
-            else -> getString(R.string.link_erro_rede, erro.message ?: "")
+            else -> {
+                Log.w("MeusLivrosActivity", "Falha de rede ao processar link", erro)
+                getString(R.string.link_erro_rede, getString(mensagemDeErro(erro)))
+            }
         }
         AlertDialog.Builder(this).setMessage(mensagem).setPositiveButton(android.R.string.ok, null).exibir()
     }

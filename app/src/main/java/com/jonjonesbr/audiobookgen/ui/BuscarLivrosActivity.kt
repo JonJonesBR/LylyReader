@@ -32,6 +32,8 @@ import com.jonjonesbr.audiobookgen.domain.IdiomaBusca
 import com.jonjonesbr.audiobookgen.domain.LivroEncontrado
 import com.jonjonesbr.audiobookgen.domain.origemDaChave
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
+import android.util.Log
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -161,7 +163,8 @@ class BuscarLivrosActivity : AppCompatActivity() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                tvStatus.text = getString(R.string.livros_erro_busca, e.message ?: "")
+                Log.w("BuscarLivrosActivity", "Falha na busca de livros", e)
+                tvStatus.text = getString(R.string.livros_erro_busca, getString(mensagemDeErro(e)))
                 pbBusca.visibility = View.GONE
             }
         }
@@ -195,7 +198,8 @@ class BuscarLivrosActivity : AppCompatActivity() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                tvStatus.text = getString(R.string.livros_erro_busca, e.message ?: "")
+                Log.w("BuscarLivrosActivity", "Falha na busca de livros", e)
+                tvStatus.text = getString(R.string.livros_erro_busca, getString(mensagemDeErro(e)))
             } finally {
                 botao.isEnabled = true
             }
@@ -248,9 +252,10 @@ class BuscarLivrosActivity : AppCompatActivity() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                Log.w("BuscarLivrosActivity", "Falha ao baixar livro", e)
                 Toast.makeText(
                     this@BuscarLivrosActivity,
-                    getString(R.string.livros_erro_download, e.message ?: ""), Toast.LENGTH_LONG
+                    getString(R.string.livros_erro_download, getString(mensagemDeErro(e))), Toast.LENGTH_LONG
                 ).show()
                 baixando = null
                 adapter.marcarBaixando(null)

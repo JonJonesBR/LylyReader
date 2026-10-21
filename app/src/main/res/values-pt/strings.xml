@@ -1268,4 +1268,9 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="audio_sem_trilha">Nenhuma trilha de audio encontrada</string>
     <string name="audio_trilha_sem_mime">Trilha de audio sem MIME</string>
     <string name="audio_falha_decodificar">Falha ao decodificar o audio: %1$s</string>
+    <string name="erro_amigavel_sem_conexao">Sem conexão com a internet. Verifique e tente de novo.</string>
+    <string name="erro_amigavel_sem_espaco">Sem espaço no aparelho.</string>
+    <string name="erro_amigavel_arquivo_ilegivel">Não foi possível ler o arquivo.</string>
+    <string name="erro_amigavel_formato">O arquivo não está no formato esperado.</string>
+    <string name="erro_amigavel_generico">Algo deu errado. Tente de novo.</string>
 </resources>

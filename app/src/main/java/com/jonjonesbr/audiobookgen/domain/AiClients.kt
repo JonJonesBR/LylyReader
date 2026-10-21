@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.domain
 
 import android.content.Context
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
@@ -56,7 +57,8 @@ class OpenAiStyleClient(
                 if (e.fatal) throw e
                 lastError = e
             } catch (e: IOException) {
-                lastError = AiApiException(context.getString(R.string.ai_falha_rede, e.message), false)
+                lastError = AiApiException(context.getString(R.string.ai_falha_rede, context.getString(mensagemDeErro(e))), false)
+                    .also { it.initCause(e) }
             }
             if (attempt < MAX_ATTEMPTS) Thread.sleep(BACKOFF_MS * attempt)
         }

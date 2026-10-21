@@ -11,6 +11,8 @@ import com.jonjonesbr.audiobookgen.domain.EscopoPronuncia
 import com.jonjonesbr.audiobookgen.domain.PronunciationAiPlanner
 import com.jonjonesbr.audiobookgen.domain.PronunciationEntry
 import com.jonjonesbr.audiobookgen.util.LanguageDetector
+import android.util.Log
+import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -89,7 +91,12 @@ object PronunciationAiFlow {
             } catch (e: kotlinx.coroutines.CancellationException) {
                 failure = activity.getString(R.string.character_ai_cancelled)
             } catch (e: Exception) {
-                failure = activity.getString(R.string.pron_ai_failed, e.message ?: "")
+                Log.w("PronunciationAiFlow", "Falha na pronuncia por IA", e)
+                failure = activity.getString(
+                    R.string.pron_ai_failed,
+                    if (e is com.jonjonesbr.audiobookgen.domain.AiApiException) e.message.orEmpty()
+                    else activity.getString(mensagemDeErro(e))
+                )
             }
             dialog.dismiss()
             if (failure != null) Toast.makeText(activity, failure, Toast.LENGTH_LONG).show()
