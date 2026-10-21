@@ -59,6 +59,9 @@ const val EXTRA_ABRIR_ADICIONAR = "extra_abrir_adicionar"
  */
 class MeusLivrosActivity : BasePlayerActivity() {
 
+    private val dialogos = DialogosAbertos(this)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
+
     private lateinit var adapter: BibliotecaAdapter
     private lateinit var recycler: RecyclerView
     private lateinit var layoutVazio: View
@@ -353,7 +356,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
             add("${getString(R.string.bib_det_adicionado)}: ${DateFormat.getMediumDateFormat(this@MeusLivrosActivity).format(Date(livro.adicionadoEm))}")
         }
         AlertDialog.Builder(this).setTitle(livro.titulo).setMessage(linhas.joinToString("\n"))
-            .setPositiveButton(android.R.string.ok, null).show()
+            .setPositiveButton(android.R.string.ok, null).exibir()
     }
 
     // ── Busca, ordenação, espaço ─────────────────────────────────────────────
@@ -409,7 +412,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
                 aplicar()
                 dialogo.dismiss()
             }
-            .show()
+            .exibir()
     }
 
     // ── Adicionar ────────────────────────────────────────────────────────────
@@ -470,7 +473,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
                 importarDeLink(campo.text.toString())
             }
         }
-        dialogo.show()
+        dialogos.mostrar(dialogo)
     }
 
     private fun importarDeLink(entrada: String) {
@@ -509,7 +512,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
             com.jonjonesbr.audiobookgen.domain.MotivoLink.GRANDE -> getString(R.string.link_erro_grande)
             else -> getString(R.string.link_erro_rede, erro.message ?: "")
         }
-        AlertDialog.Builder(this).setMessage(mensagem).setPositiveButton(android.R.string.ok, null).show()
+        AlertDialog.Builder(this).setMessage(mensagem).setPositiveButton(android.R.string.ok, null).exibir()
     }
 
     /** Pares (uri, nome conhecido ou null → pergunta ao provedor). Copia para a biblioteca, em 2º plano. */
