@@ -142,7 +142,7 @@ object PronunciationDialog {
             .setNegativeButton(android.R.string.cancel, null)
         if (onOuvir != null) builder.setNeutralButton(R.string.pron_listen, null)
         val dialogo = builder.create()
-        dialogo.show()
+        activity.mostrarDialogo(dialogo)
 
         dialogo.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val nova = campoPalavra.text.toString().trim()
@@ -229,7 +229,7 @@ object PronunciationDialog {
                 show(activity, entrada.word, caminhoDoLivro, entrada.escopo, onOuvir) { voltar() }
             }
         }
-        builder.show()
+        activity.mostrarDialogo(builder)
     }
 
     private fun showMore(
@@ -248,11 +248,10 @@ object PronunciationDialog {
             rotuloExportar to { exportar(activity) }
         )
         if (onSugerirIa != null) itens += activity.getString(R.string.pron_ai_suggest) to onSugerirIa
-        AlertDialog.Builder(activity)
+        activity.mostrarDialogo(AlertDialog.Builder(activity)
             .setTitle(R.string.pron_menu_more)
             .setItems(itens.map { it.first }.toTypedArray()) { _, indice -> itens[indice].second() }
-            .setNegativeButton(R.string.pron_close) { _, _ -> showManager(activity, caminhoDoLivro, onOuvir, onSugerirIa) }
-            .show()
+            .setNegativeButton(R.string.pron_close) { _, _ -> showManager(activity, caminhoDoLivro, onOuvir, onSugerirIa) })
     }
 
     /** Importa um dicionário pronto (JSON ou linhas "palavra=falada") e junta ao global. */
