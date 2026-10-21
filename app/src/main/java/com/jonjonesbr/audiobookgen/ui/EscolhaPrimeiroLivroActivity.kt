@@ -63,8 +63,10 @@ class EscolhaPrimeiroLivroActivity : AppCompatActivity() {
         val prefs = AppPrefs(this)
         if (prefs.downloadOfflineSilenciosoIniciado) return
         lifecycleScope.launch {
-            val pacote = VoiceCatalog.pacotesRegistrados()
-                .firstOrNull { it.id == PoliticaDownloadSilencioso.PACOTE_RECOMENDADO } ?: return@launch
+            val pacote = withContext(Dispatchers.IO) {
+                VoiceCatalog.pacotesRegistrados()
+                    .firstOrNull { it.id == PoliticaDownloadSilencioso.PACOTE_RECOMENDADO }
+            } ?: return@launch
             val pronto = withContext(Dispatchers.IO) { pacote.isPronto(applicationContext) }
             if (pronto) {
                 prefs.downloadOfflineSilenciosoIniciado = true

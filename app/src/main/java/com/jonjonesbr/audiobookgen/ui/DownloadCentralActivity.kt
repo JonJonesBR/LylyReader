@@ -22,7 +22,9 @@ import com.jonjonesbr.audiobookgen.service.DownloadCentral
 import com.jonjonesbr.audiobookgen.service.ItemBaixavel
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Central de downloads: todos os pacotes de voz (e codificadores) com tamanho, estado e espaço; por item
@@ -95,14 +97,14 @@ class DownloadCentralActivity : BasePlayerActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 DownloadCentral.atualizar(applicationContext)
-                itens = DownloadCentral.itens(applicationContext)
+                itens = withContext(Dispatchers.IO) { DownloadCentral.itens(applicationContext) }
                 var chavesAnteriores = emptySet<String>()
                 DownloadCentral.andamento.collect { mapa ->
                     andamentoAtual = mapa
                     // Livros entram e saem da lista enquanto baixam: relê os itens quando o conjunto muda.
                     if (mapa.keys != chavesAnteriores) {
                         chavesAnteriores = mapa.keys
-                        itens = DownloadCentral.itens(applicationContext)
+                        itens = withContext(Dispatchers.IO) { DownloadCentral.itens(applicationContext) }
                     }
                     montarLista()
                 }

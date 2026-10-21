@@ -928,9 +928,9 @@ class SettingsActivity : BasePlayerActivity() {
     private fun carregarInfoVozesOffline() {
         val container = findViewById<android.widget.LinearLayout>(R.id.layoutPacotesOffline)
         container.removeAllViews()
-        val pacotes = com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesRegistrados()
-        if (pacotes.isEmpty()) return
         lifecycleScope.launch {
+            val pacotes = withContext(Dispatchers.IO) { com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesRegistrados() }
+            if (pacotes.isEmpty()) return@launch
             val linhas = withContext(Dispatchers.IO) {
                 com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesVisiveis(applicationContext).map { pacote ->
                     Triple(
