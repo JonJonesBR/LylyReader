@@ -107,7 +107,7 @@ object AcoesDoLivro {
     /** Confirma e apaga o livro (o audiobook gerado continua em Audiobooks). [aoApagar] roda depois. */
     fun confirmarApagar(activity: AppCompatActivity, livro: LivroBiblioteca, aoApagar: () -> Unit) {
         val liberado = Formatter.formatShortFileSize(activity, livro.tamanhoBytes)
-        AlertDialog.Builder(activity)
+        activity.mostrarDialogo(AlertDialog.Builder(activity)
             .setTitle(R.string.bib_apagar_titulo)
             .setMessage(activity.getString(R.string.bib_apagar_msg, livro.titulo, liberado))
             .setPositiveButton(R.string.bib_acao_apagar) { _, _ ->
@@ -117,7 +117,6 @@ object AcoesDoLivro {
                     aoApagar()
                 }
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .setNegativeButton(android.R.string.cancel, null))
     }
 }
