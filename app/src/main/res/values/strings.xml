@@ -701,7 +701,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Acronyms like CPF, RG and CNPJ are now read letter by letter, the way people say them out loud.\n• Buttons in Settings, Appearance and Downloads are bigger and easier to tap.\n• The app is steadier: rotating the screen during voice cloning no longer causes glitches, and the Settings and Downloads screens open without freezing.</string>
+    <string name="release_notes_corpo">• The app is now easier to use with a screen reader: sliders say their value and buttons are announced as buttons.\n• Error messages are clearer and appear in a bar at the bottom that stays on screen longer.\n• Long titles no longer get cut off with large text, and the Downloads list says when a filter finds nothing.\n• Menus now open fully and scroll when the phone is on its side, and screens fade smoothly into each other.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
