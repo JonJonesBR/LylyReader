@@ -26,6 +26,9 @@ import java.io.File
 @Suppress("TooGenericExceptionCaught", "SwallowedException")
 class ErrorLogsActivity : AppCompatActivity() {
 
+    private val dialogos = DialogosAbertos(this)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
+
     private lateinit var rvErrorLogs: RecyclerView
     private lateinit var tvEmptyLogs: TextView
     private lateinit var btnVoltarLogs: ImageButton
@@ -92,7 +95,7 @@ class ErrorLogsActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton(R.string.btn_cancelar, null)
-            .show()
+            .exibir()
     }
 
     private fun formatLogName(name: String): String {
@@ -161,7 +164,7 @@ class ErrorLogsActivity : AppCompatActivity() {
                 shareLogFile(file)
             }
             .setNegativeButton(getString(R.string.logs_btn_fechar), null)
-            .show()
+            .exibir()
     }
 
     private fun deleteLogFile(file: File) {
@@ -190,7 +193,7 @@ class ErrorLogsActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton(R.string.btn_cancelar, null)
-            .show()
+            .exibir()
     }
 
     private fun removerLogDaLista(file: File) {
