@@ -71,7 +71,6 @@ data class AudiobookUiState(
         val conversionDone: ConversionDoneEvent? = null,
 
         // Catálogos
-        val vozesAtuais: List<Pair<String, String>> = emptyList(),
         val estilos: List<Pair<String, String>> = emptyList(),
 
         // Player
@@ -126,7 +125,6 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
 
     init {
         _uiState.update { it.copy(estilos = estilos) }
-        atualizarVozesPorMotor("edge")
         // Python NÃO é mais iniciado aqui de propósito — abrir a tela (MainActivity/
         // ReaderActivity, que instanciam este ViewModel) não deve custar o startup do
         // interpretador se o usuário só vai navegar/ler. Cada operação que realmente
@@ -184,12 +182,6 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             val metadados = documentRepository.processarPastaSaf(uri)
             _uiState.update { it.copy(pastaDestinoUri = metadados.uri) }
         }
-    }
-
-    fun atualizarVozesPorMotor(motor: String) {
-        val lista = VoiceCatalog.vozesVisiveis(VoiceCatalog.forEngine(motor), getApplication())
-            .map { it.id to it.displayLabel(getApplication()) }
-        _uiState.update { it.copy(vozesAtuais = lista) }
     }
 
     // ── Python Use Cases (Substituindo Service e AsyncTask) ────────────────
