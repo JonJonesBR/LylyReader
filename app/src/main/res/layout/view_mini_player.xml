@@ -130,6 +130,7 @@
 
         <SeekBar
             android:id="@+id/miniPlayerSeek"
+            android:contentDescription="@string/cd_posicao_audio"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:progressTint="@color/color_primary"/>

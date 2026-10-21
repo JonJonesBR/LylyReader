@@ -7,6 +7,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
@@ -67,6 +68,7 @@ class ReaderAparenciaController(
     private fun configurarSeekFonte(seekFonte: SeekBar, tvFonteValor: TextView, tamanhoFonteInicial: Float) {
         fun atualizarLabelsFonte(sp: Float) {
             tvFonteValor.text = String.format(java.util.Locale.US, "%.1fsp", sp)
+            ViewCompat.setStateDescription(seekFonte, tvFonteValor.text)
         }
 
         // Fonte: min=12sp, max=24sp -> progress 0..24 representa (12+progress/2)sp
@@ -105,6 +107,7 @@ class ReaderAparenciaController(
     ) {
         fun atualizarLabelsEspacamento(mult: Float) {
             tvEspacamentoValor.text = String.format(java.util.Locale.US, "%.2f", mult)
+            ViewCompat.setStateDescription(seekEspacamento, tvEspacamentoValor.text)
         }
 
         seekEspacamento.max = ESPACAMENTO_MAX_PROGRESS
@@ -180,10 +183,12 @@ class ReaderAparenciaController(
         else (brilhoAtual * BRILHO_MAX).toInt().coerceIn(BRILHO_MIN, BRILHO_MAX)
         seekBrilho.progress = progressInicial
         tvBrilhoValor.text = "${progressInicial}%"
+        ViewCompat.setStateDescription(seekBrilho, tvBrilhoValor.text)
         seekBrilho.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar, p: Int, fromUser: Boolean) {
                 val brightness = (p.toFloat() / BRILHO_MAX).coerceIn(BRILHO_MIN_FLOAT, BRILHO_MAX_FLOAT)
                 tvBrilhoValor.text = "$p%"
+                ViewCompat.setStateDescription(sb, tvBrilhoValor.text)
                 if (fromUser) {
                     activity.window.attributes = activity.window.attributes.apply { screenBrightness = brightness }
                 }

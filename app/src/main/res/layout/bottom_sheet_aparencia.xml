@@ -46,6 +46,7 @@
 
         <SeekBar
             android:id="@+id/seekBarFonte"
+            android:contentDescription="@string/label_tamanho_fonte"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -100,6 +101,7 @@
 
         <SeekBar
             android:id="@+id/seekBarEspacamento"
+            android:contentDescription="@string/label_espacamento_linhas"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -349,6 +351,7 @@
 
         <SeekBar
             android:id="@+id/seekBarBrilho"
+            android:contentDescription="@string/label_brilho"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"

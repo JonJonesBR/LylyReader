@@ -20,6 +20,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -169,6 +170,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         // parecer só "pausado" — o botão de play vira "tentar de novo".
         tempoView.text   = state.erroMensagem
             ?: "${formatarTempo(state.currentPosition)} / ${formatarTempo(state.duration)}"
+        ViewCompat.setStateDescription(seekBar, "${formatarTempo(state.currentPosition)} / ${formatarTempo(state.duration)}")
 
         val livroVinculado =
             com.jonjonesbr.audiobookgen.data.LinkedBookStore.textoVinculado(this, state.caminho)
@@ -225,6 +227,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
             val seekBar = root.findViewById<SeekBar?>(R.id.miniPlayerSeek)
             seekBar?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(sb: SeekBar, p: Int, fromUser: Boolean) {
+                    ViewCompat.setStateDescription(sb, "${formatarTempo(p)} / ${formatarTempo(sb.max)}")
                     if (fromUser) playerService?.seek(p, true)
                 }
                 override fun onStartTrackingTouch(sb: SeekBar)  { playerService?.seek(sb.progress, true)  }

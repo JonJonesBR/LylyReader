@@ -926,6 +926,7 @@
 
                         <SeekBar
                             android:id="@+id/seekSupertonicSteps"
+                            android:contentDescription="@string/cd_seek_supertonic_passos"
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
@@ -1132,6 +1133,7 @@
 
                         <SeekBar
                             android:id="@+id/seekPocketPassos"
+                            android:contentDescription="@string/cd_seek_pocket_passos"
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
@@ -1202,6 +1204,7 @@
 
                         <SeekBar
                             android:id="@+id/seekPausaFinalFrase"
+                            android:contentDescription="@string/cd_seek_pausa_frase"
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
@@ -1273,6 +1276,7 @@
 
                         <SeekBar
                             android:id="@+id/seekBufferParagrafos"
+                            android:contentDescription="@string/cd_seek_buffer_paragrafos"
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
@@ -1684,6 +1688,7 @@
 
                         <SeekBar
                             android:id="@+id/seekTetoCache"
+                            android:contentDescription="@string/cd_seek_teto_cache"
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"

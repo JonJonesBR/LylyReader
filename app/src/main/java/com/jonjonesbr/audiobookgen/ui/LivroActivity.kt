@@ -13,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.ViewCompat
 import androidx.lifecycle.lifecycleScope
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
@@ -202,9 +203,11 @@ class LivroActivity : BasePlayerActivity() {
         val rotulo = vista.findViewById<TextView>(R.id.tvGerarRitmo)
         seek.progress = posicaoDoRitmo(appPrefs.ritmo)
         rotulo.text = "${ritmoDaPosicao(seek.progress)}%"
+        ViewCompat.setStateDescription(seek, rotulo.text)
         seek.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
                 rotulo.text = "${ritmoDaPosicao(progress)}%"
+                ViewCompat.setStateDescription(sb, rotulo.text)
             }
             override fun onStartTrackingTouch(sb: android.widget.SeekBar) = Unit
             override fun onStopTrackingTouch(sb: android.widget.SeekBar) {
@@ -212,6 +215,7 @@ class LivroActivity : BasePlayerActivity() {
                 val travado = (aplicarSnapVelocidade(ritmoDaPosicao(sb.progress) / PCT_POR_MULTIPLICADOR) * PCT_POR_MULTIPLICADOR).toInt()
                 sb.progress = posicaoDoRitmo(travado)
                 rotulo.text = "${ritmoDaPosicao(sb.progress)}%"
+                ViewCompat.setStateDescription(sb, rotulo.text)
             }
         })
 

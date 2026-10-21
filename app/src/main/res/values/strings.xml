@@ -86,6 +86,12 @@
     <string name="settings_pron_desc">Teach the app how to say names and difficult words. It works with any voice, in guided reading and in audiobooks.</string>
     <string name="btn_pron_manage">Manage pronunciations</string>
     <string name="cd_guided_steps">Synthesis steps</string>
+    <string name="cd_seek_supertonic_passos">Supertonic synthesis steps</string>
+    <string name="cd_seek_pocket_passos">Pocket TTS decoding steps</string>
+    <string name="cd_seek_pausa_frase">Pause between sentences</string>
+    <string name="cd_seek_buffer_paragrafos">Guided reading lookahead</string>
+    <string name="cd_seek_teto_cache">Audio cache limit</string>
+    <string name="cd_posicao_audio">Playback position</string>
     <string name="guided_steps_chip">⚙ %1$d</string>
     <string name="guided_steps_apply">Apply</string>
     <string name="guided_steps_desc_supertonic">Quality vs. speed of Supertonic voices. Fewer steps = faster; more steps = better quality. Applies to the next passages to be prepared.</string>

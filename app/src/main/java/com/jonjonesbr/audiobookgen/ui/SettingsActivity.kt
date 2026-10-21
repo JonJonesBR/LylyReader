@@ -20,6 +20,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.Dispatchers
@@ -395,14 +396,17 @@ class SettingsActivity : BasePlayerActivity() {
         val steps = appPrefs.supertonicSteps.coerceIn(STEPS_MIN, STEPS_MAX)
         seekSupertonicSteps.progress = steps - STEPS_MIN
         tvSupertonicStepsValor.text = getString(R.string.settings_steps_value, steps)
+        ViewCompat.setStateDescription(seekSupertonicSteps, tvSupertonicStepsValor.text)
 
         val passosPocket = appPrefs.pocketPassos
         seekPocketPassos.progress = passosPocket - com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_MIN
         tvPocketPassosValor.text = getString(R.string.settings_steps_value, passosPocket)
+        ViewCompat.setStateDescription(seekPocketPassos, tvPocketPassosValor.text)
 
         val pausaFrase = appPrefs.pausaFinalFraseMs.coerceIn(0, PAUSA_FINAL_FRASE_MS_MAX)
         seekPausaFinalFrase.progress = pausaFrase
         tvPausaFinalFraseValor.text = getString(R.string.settings_pausa_frase_value, pausaFrase)
+        ViewCompat.setStateDescription(seekPausaFinalFrase, tvPausaFinalFraseValor.text)
 
         atualizarUiBuffering()
 
@@ -567,6 +571,7 @@ class SettingsActivity : BasePlayerActivity() {
             override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
                 val passos = progress + com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_MIN
                 tvPocketPassosValor.text = getString(R.string.settings_steps_value, passos)
+                ViewCompat.setStateDescription(sb, tvPocketPassosValor.text)
                 if (fromUser) appPrefs.pocketPassos = passos
             }
             override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
@@ -579,6 +584,7 @@ class SettingsActivity : BasePlayerActivity() {
             override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
                 val steps = progress + STEPS_MIN
                 tvSupertonicStepsValor.text = getString(R.string.settings_steps_value, steps)
+                ViewCompat.setStateDescription(sb, tvSupertonicStepsValor.text)
                 appPrefs.supertonicSteps = steps
             }
             override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
@@ -621,6 +627,7 @@ class SettingsActivity : BasePlayerActivity() {
         seekPausaFinalFrase.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
                 tvPausaFinalFraseValor.text = getString(R.string.settings_pausa_frase_value, progress)
+                ViewCompat.setStateDescription(sb, tvPausaFinalFraseValor.text)
                 appPrefs.pausaFinalFraseMs = progress
             }
             override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
@@ -707,6 +714,7 @@ class SettingsActivity : BasePlayerActivity() {
         } else {
             getString(R.string.settings_buffer_paragrafos_valor, progress)
         }
+        ViewCompat.setStateDescription(seekBufferParagrafos, tvBufferParagrafosValor.text)
     }
 
     private fun atualizarBotoesParalelismo(reduzido: Boolean) {
@@ -843,9 +851,11 @@ class SettingsActivity : BasePlayerActivity() {
             ?: opcoes.indexOf(com.jonjonesbr.audiobookgen.tts.CachePolicy.TETO_PADRAO_MB)
         seekTetoCache.progress = indice
         tvTetoCacheValor.text = rotuloTetoCache(opcoes[indice])
+        ViewCompat.setStateDescription(seekTetoCache, tvTetoCacheValor.text)
         seekTetoCache.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
                 tvTetoCacheValor.text = rotuloTetoCache(opcoes[progress])
+                ViewCompat.setStateDescription(sb, tvTetoCacheValor.text)
             }
             override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
             override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {
