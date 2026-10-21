@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.app.Activity
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.pm.PackageInfoCompat
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
@@ -32,7 +33,7 @@ object ReleaseNotesDialog {
         return ultimaVista != 0 && versaoAtual > ultimaVista
     }
 
-    fun mostrarSeNecessario(activity: Activity) {
+    fun mostrarSeNecessario(activity: AppCompatActivity) {
         val pkgInfo = try {
             activity.packageManager.getPackageInfo(activity.packageName, 0)
         } catch (_: Exception) {
@@ -47,14 +48,13 @@ object ReleaseNotesDialog {
         when {
             ultimaVista == 0 -> prefs.ultimaVersaoNotasVista = versaoAtual
             versaoAtual > ultimaVista ->
-                AlertDialog.Builder(activity)
+                activity.mostrarDialogo(AlertDialog.Builder(activity)
                     .setTitle(activity.getString(R.string.release_notes_titulo, versaoNome))
                     .setMessage(R.string.release_notes_corpo)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
                         prefs.ultimaVersaoNotasVista = versaoAtual
                     }
-                    .setCancelable(false)
-                    .show()
+                    .setCancelable(false))
         }
     }
 }
