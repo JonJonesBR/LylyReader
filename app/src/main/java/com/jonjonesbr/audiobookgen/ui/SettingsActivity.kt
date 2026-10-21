@@ -35,6 +35,9 @@ import org.json.JSONObject
 
 class SettingsActivity : BasePlayerActivity() {
 
+    private val dialogos = DialogosAbertos(this)
+    private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
+
     private val appPrefs by lazy { com.jonjonesbr.audiobookgen.data.AppPrefs(this) }
     private val blacklistStore by lazy { com.jonjonesbr.audiobookgen.data.BlacklistStore(this) }
     private val pythonEngine by lazy { com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase(applicationContext) }
@@ -620,7 +623,7 @@ class SettingsActivity : BasePlayerActivity() {
                     }
                 }
                 .setNegativeButton(android.R.string.cancel, null)
-                .show()
+                .exibir()
         }
     }
 
@@ -678,7 +681,7 @@ class SettingsActivity : BasePlayerActivity() {
                     atualizarBotoesParalelismoSupertonico(true)
                 }
                 .setNegativeButton(android.R.string.cancel, null)
-                .show()
+                .exibir()
         }
 
         btnResetarBuffering.setOnClickListener {
@@ -907,7 +910,7 @@ class SettingsActivity : BasePlayerActivity() {
                 .setTitle(titulo)
                 .setMessage(texto)
                 .setPositiveButton(R.string.dialog_ok, null)
-                .show()
+                .exibir()
     }
 
     private fun limparCache() {
@@ -1031,7 +1034,7 @@ class SettingsActivity : BasePlayerActivity() {
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun importarPacoteByom(uri: Uri) {
@@ -1319,7 +1322,7 @@ class SettingsActivity : BasePlayerActivity() {
             carregarInfoBlacklist()
         }
 
-        dialog.show()
+        dialogos.mostrar(dialog)
     }
 
     private fun configurarListenersPausaEBitrate() {
@@ -1431,7 +1434,7 @@ class SettingsActivity : BasePlayerActivity() {
             .setTitle(R.string.dialog_importar_sucesso_titulo)
             .setMessage(R.string.dialog_importar_sucesso_mensagem)
             .setPositiveButton(R.string.dialog_ok, null)
-            .show()
+            .exibir()
     }
 
     private fun exportarBackupCompleto() {
@@ -1508,7 +1511,7 @@ class SettingsActivity : BasePlayerActivity() {
                 )
             )
             .setPositiveButton(R.string.dialog_ok, null)
-            .show()
+            .exibir()
     }
 
     companion object {
