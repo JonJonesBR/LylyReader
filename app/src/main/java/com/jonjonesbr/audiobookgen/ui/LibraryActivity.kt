@@ -14,6 +14,7 @@ import com.jonjonesbr.audiobookgen.domain.OpcoesVideo
 import com.jonjonesbr.audiobookgen.domain.ResolucaoVideo
 import com.jonjonesbr.audiobookgen.util.dpToPx
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
+import com.jonjonesbr.audiobookgen.util.mostrarErro
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.service.ChapterMarksStore
 import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
@@ -391,15 +392,11 @@ class LibraryActivity : BasePlayerActivity() {
                 aplicarOrdenacao()
                 Toast.makeText(this, getString(R.string.toast_audiobook_deleted, item.nome), Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, R.string.toast_audiobook_delete_failed, Toast.LENGTH_SHORT).show()
+                mostrarErro(R.string.toast_audiobook_delete_failed)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao deletar: ${e.message}")
-            Toast.makeText(
-                this,
-                getString(R.string.toast_audiobook_delete_error, getString(mensagemDeErro(e))),
-                Toast.LENGTH_SHORT
-            ).show()
+            mostrarErro(getString(R.string.toast_audiobook_delete_error, getString(mensagemDeErro(e))))
         }
     }
 
@@ -518,9 +515,7 @@ class LibraryActivity : BasePlayerActivity() {
                 this, getString(R.string.toast_video_exportado_partes, partes), Toast.LENGTH_LONG
             ).show()
             estado.cancelado -> Toast.makeText(this, R.string.toast_video_cancelado, Toast.LENGTH_SHORT).show()
-            else -> Toast.makeText(
-                this, getString(R.string.toast_erro_exportar_video, estado.erro.orEmpty()), Toast.LENGTH_LONG
-            ).show()
+            else -> mostrarErro(getString(R.string.toast_erro_exportar_video, estado.erro.orEmpty()))
         }
     }
 

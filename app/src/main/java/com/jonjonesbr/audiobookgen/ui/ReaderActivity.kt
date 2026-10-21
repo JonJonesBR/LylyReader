@@ -35,6 +35,7 @@ import com.jonjonesbr.audiobookgen.tts.AndroidVoiceId
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
+import com.jonjonesbr.audiobookgen.util.mostrarErro
 import com.jonjonesbr.audiobookgen.util.aplicarMargemInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.dpToPx
@@ -209,7 +210,7 @@ class ReaderActivity : BasePlayerActivity() {
             Toast.makeText(this, R.string.toast_clean_text_exported, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Log.w("ReaderActivity", "Erro ao exportar texto limpo", e)
-            Toast.makeText(this, R.string.toast_clean_text_export_error, Toast.LENGTH_SHORT).show()
+            mostrarErro(R.string.toast_clean_text_export_error)
         }
     }
 
@@ -859,7 +860,7 @@ class ReaderActivity : BasePlayerActivity() {
                             }
                             is ConversionDoneEvent.Erro -> {
                                 val msg = getString(R.string.toast_download_failed, evento.mensagem)
-                                Toast.makeText(this@ReaderActivity, msg, Toast.LENGTH_LONG).show()
+                                mostrarErro(msg)
                             }
                             is ConversionDoneEvent.Pausada -> {
                                 Toast.makeText(
@@ -902,11 +903,7 @@ class ReaderActivity : BasePlayerActivity() {
             iniciarDownloadBackground(arquivoTemp.absolutePath, nomeCapitulo, speakerMapPath = speakerMapPath, caminhoDoLivro = caminhoArquivo)
         } catch (e: Exception) {
             Log.w("ReaderActivity", "Erro ao preparar download de capítulo", e)
-            Toast.makeText(
-                this,
-                getString(R.string.toast_erro_preparar_download, getString(mensagemDeErro(e))),
-                Toast.LENGTH_SHORT
-            ).show()
+            mostrarErro(getString(R.string.toast_erro_preparar_download, getString(mensagemDeErro(e))))
         }
     }
 
@@ -934,11 +931,7 @@ class ReaderActivity : BasePlayerActivity() {
                 )
             } catch (e: Exception) {
                 Log.w("ReaderActivity", "Erro ao preparar download de livro completo", e)
-                Toast.makeText(
-                    this@ReaderActivity,
-                    getString(R.string.toast_erro_preparar_download, getString(mensagemDeErro(e))),
-                    Toast.LENGTH_SHORT
-                ).show()
+                mostrarErro(getString(R.string.toast_erro_preparar_download, getString(mensagemDeErro(e))))
             }
         }
     }
@@ -963,7 +956,11 @@ class ReaderActivity : BasePlayerActivity() {
                         ?: getString(R.string.erro_amigavel_generico)
                 )
             }
-            Toast.makeText(this@ReaderActivity, mensagem, Toast.LENGTH_LONG).show()
+            if (resultado.isSuccess) {
+                Toast.makeText(this@ReaderActivity, mensagem, Toast.LENGTH_LONG).show()
+            } else {
+                mostrarErro(mensagem)
+            }
         }
     }
 
@@ -983,7 +980,7 @@ class ReaderActivity : BasePlayerActivity() {
             caminhoDoLivro
         )
         if (!iniciou) {
-            Toast.makeText(this, R.string.conv_pausada_bloqueia, Toast.LENGTH_LONG).show()
+            mostrarErro(R.string.conv_pausada_bloqueia)
             return
         }
         // Avisa que começou e leva ao andamento (antes a conversão iniciada aqui não tinha onde ser acompanhada).
@@ -1434,7 +1431,7 @@ class ReaderActivity : BasePlayerActivity() {
                 Log.w("ReaderActivity", "Falha ao listar modelos da IA", it)
                 val motivo = if (it is com.jonjonesbr.audiobookgen.domain.AiApiException) it.message.orEmpty()
                     else getString(mensagemDeErro(it))
-                Toast.makeText(this@ReaderActivity, getString(R.string.character_ai_model_failed, motivo), Toast.LENGTH_LONG).show()
+                mostrarErro(getString(R.string.character_ai_model_failed, motivo))
             }
             val opcoes = listOf(getString(R.string.character_ai_model_auto)) + modelos +
                 getString(R.string.character_ai_model_custom)

@@ -35,6 +35,7 @@ import com.jonjonesbr.audiobookgen.service.QueueManager
 import com.jonjonesbr.audiobookgen.util.BatteryOptimizationHelper
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
+import com.jonjonesbr.audiobookgen.util.mostrarErro
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -162,7 +163,7 @@ class ConversoesActivity : AppCompatActivity() {
         lifecycleScope.launch {
             if (bloqueadoPorPausada()) return@launch
             if (jaHaConversao()) {
-                Toast.makeText(this@ConversoesActivity, R.string.conv_ja_andando, Toast.LENGTH_LONG).show()
+                mostrarErro(R.string.conv_ja_andando)
                 return@launch
             }
             if (bloqueadoPorFaltaDeRede(caminhoDoLivro, voz, motor, ritmo)) return@launch
@@ -270,7 +271,7 @@ class ConversoesActivity : AppCompatActivity() {
     /** Uma conversão pausada impede iniciar outra (ela guarda o único job pausado). */
     private fun bloqueadoPorPausada(): Boolean {
         val bloqueado = !PausaRegras.podeIniciarNovaConversao(ConversaoPausadaStore.existe(applicationContext))
-        if (bloqueado) Toast.makeText(this, R.string.conv_pausada_bloqueia, Toast.LENGTH_LONG).show()
+        if (bloqueado) mostrarErro(R.string.conv_pausada_bloqueia)
         return bloqueado
     }
 
@@ -286,7 +287,7 @@ class ConversoesActivity : AppCompatActivity() {
                     RetomadaFalha.ARQUIVO_AUSENTE -> R.string.conv_pausada_arquivo_ausente
                     RetomadaFalha.FALHA_AO_INICIAR -> R.string.conv_pausada_falha_retomar
                 }
-                Toast.makeText(this, mensagem, Toast.LENGTH_LONG).show()
+                mostrarErro(mensagem)
                 atualizarPausadaDoDisco()
             },
             aoAceitar = {
@@ -342,7 +343,7 @@ class ConversoesActivity : AppCompatActivity() {
         lifecycleScope.launch {
             if (bloqueadoPorPausada()) return@launch
             if (jaHaConversao()) {
-                Toast.makeText(this@ConversoesActivity, R.string.conv_ja_andando, Toast.LENGTH_LONG).show()
+                mostrarErro(R.string.conv_ja_andando)
                 return@launch
             }
             val proximo = QueueManager.proximoPendente()

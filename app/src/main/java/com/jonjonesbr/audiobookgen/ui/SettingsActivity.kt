@@ -4,6 +4,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
+import com.jonjonesbr.audiobookgen.util.mostrarErro
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.marcarComoLink
@@ -769,11 +770,7 @@ class SettingsActivity : BasePlayerActivity() {
                 if (chave.isNotBlank()) R.string.toast_key_saved_local_fallback else R.string.toast_key_removed,
                 Toast.LENGTH_LONG
             ).show()
-            SecurePreferences.SaveResult.FAILED -> Toast.makeText(
-                this,
-                R.string.toast_key_secure_save_failed,
-                Toast.LENGTH_LONG
-            ).show()
+            SecurePreferences.SaveResult.FAILED -> mostrarErro(R.string.toast_key_secure_save_failed)
         }
     }
 
@@ -791,11 +788,7 @@ class SettingsActivity : BasePlayerActivity() {
                 if (chave.isNotBlank()) R.string.toast_key_saved_local_fallback else R.string.toast_key_removed,
                 Toast.LENGTH_LONG
             ).show()
-            SecurePreferences.SaveResult.FAILED -> Toast.makeText(
-                this,
-                R.string.toast_key_secure_save_failed,
-                Toast.LENGTH_LONG
-            ).show()
+            SecurePreferences.SaveResult.FAILED -> mostrarErro(R.string.toast_key_secure_save_failed)
         }
     }
 
@@ -1009,9 +1002,7 @@ class SettingsActivity : BasePlayerActivity() {
                     this@SettingsActivity, R.string.toast_vozes_apagadas, Toast.LENGTH_SHORT
                 ).show()
             } else {
-                Toast.makeText(
-                    this@SettingsActivity, R.string.toast_erro_apagar_vozes, Toast.LENGTH_SHORT
-                ).show()
+                mostrarErro(R.string.toast_erro_apagar_vozes)
             }
             carregarInfoVozesOffline()
         }
@@ -1051,11 +1042,7 @@ class SettingsActivity : BasePlayerActivity() {
                 carregarInfoVozesOffline()
             }.onFailure { e ->
                 Log.w("SettingsActivity", "Erro ao importar pacote BYOM", e)
-                Toast.makeText(
-                    this@SettingsActivity,
-                    getString(R.string.toast_erro_importar_voz_motivo, getString(mensagemDeErro(e))),
-                    Toast.LENGTH_LONG
-                ).show()
+                mostrarErro(getString(R.string.toast_erro_importar_voz_motivo, getString(mensagemDeErro(e))))
             }
         }
     }
@@ -1130,11 +1117,7 @@ class SettingsActivity : BasePlayerActivity() {
             } catch (e: Exception) {
                 progressDialog.dismiss()
                 Log.w("SettingsActivity", "Falha ao baixar voz", e)
-                Toast.makeText(
-                    this@SettingsActivity,
-                    getString(R.string.toast_download_failed, getString(mensagemDeErro(e))),
-                    Toast.LENGTH_LONG
-                ).show()
+                mostrarErro(getString(R.string.toast_download_failed, getString(mensagemDeErro(e))))
             }
             carregarInfoVozesOffline()
         }
@@ -1178,11 +1161,7 @@ class SettingsActivity : BasePlayerActivity() {
             try {
                 startActivity(intent)
             } catch (_: android.content.ActivityNotFoundException) {
-                Toast.makeText(
-                    this,
-                    R.string.toast_config_notificacoes_indisponivel,
-                    Toast.LENGTH_SHORT
-                ).show()
+                mostrarErro(R.string.toast_config_notificacoes_indisponivel)
             }
         }
     }
@@ -1198,7 +1177,7 @@ class SettingsActivity : BasePlayerActivity() {
 
     private fun abrirConfiguracaoOtimizacaoBateria() {
         if (!com.jonjonesbr.audiobookgen.util.BatteryOptimizationHelper.abrir(this)) {
-            Toast.makeText(this, R.string.toast_config_bateria_indisponivel, Toast.LENGTH_SHORT).show()
+            mostrarErro(R.string.toast_config_bateria_indisponivel)
         }
     }
     private fun carregarInfoPermissaoNotificacao() {
@@ -1351,11 +1330,7 @@ class SettingsActivity : BasePlayerActivity() {
             exportarConfigLauncher.launch("lylyreader-config.json")
         } catch (e: android.content.ActivityNotFoundException) {
             Log.w("SettingsActivity", "Erro ao iniciar exportacao", e)
-            Toast.makeText(
-                this,
-                getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))),
-                Toast.LENGTH_SHORT
-            ).show()
+            mostrarErro(getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))))
         }
     }
 
@@ -1365,7 +1340,7 @@ class SettingsActivity : BasePlayerActivity() {
             val stream = contentResolver.openOutputStream(uri)
             if (stream == null) {
                 Log.w("SettingsActivity", "openOutputStream retornou null — sem permissão de escrita no provedor")
-                Toast.makeText(this, R.string.toast_erro_exportar_null, Toast.LENGTH_LONG).show()
+                mostrarErro(R.string.toast_erro_exportar_null)
                 return
             }
             stream.use { outputStream ->
@@ -1374,10 +1349,10 @@ class SettingsActivity : BasePlayerActivity() {
             Toast.makeText(this, R.string.toast_backup_exportado, Toast.LENGTH_SHORT).show()
         } catch (e: java.io.IOException) {
             Log.w("SettingsActivity", "Erro ao salvar configuracoes", e)
-            Toast.makeText(this, getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
+            mostrarErro(getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))))
         } catch (e: org.json.JSONException) {
             Log.w("SettingsActivity", "Erro ao salvar configuracoes", e)
-            Toast.makeText(this, getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
+            mostrarErro(getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))))
         }
     }
 
@@ -1386,11 +1361,7 @@ class SettingsActivity : BasePlayerActivity() {
             importarConfigLauncher.launch(arrayOf("application/json"))
         } catch (e: android.content.ActivityNotFoundException) {
             Log.w("SettingsActivity", "Erro ao iniciar importacao", e)
-            Toast.makeText(
-                this,
-                getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))),
-                Toast.LENGTH_SHORT
-            ).show()
+            mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))))
         }
     }
 
@@ -1403,13 +1374,13 @@ class SettingsActivity : BasePlayerActivity() {
             result = JSONObject(jsonStr)
         } catch (e: java.io.IOException) {
             Log.w("SettingsActivity", "Erro ao carregar configuracoes", e)
-            Toast.makeText(this, getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
+            mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))))
         } catch (e: java.lang.IllegalStateException) {
             Log.w("SettingsActivity", "Erro ao carregar configuracoes", e)
-            Toast.makeText(this, getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
+            mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))))
         } catch (e: org.json.JSONException) {
             Log.w("SettingsActivity", "Erro ao parsear JSON", e)
-            Toast.makeText(this, getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))), Toast.LENGTH_LONG).show()
+            mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))))
         }
         return result
     }
@@ -1445,7 +1416,7 @@ class SettingsActivity : BasePlayerActivity() {
         } catch (e: android.content.ActivityNotFoundException) {
             Log.w("SettingsActivity", "Erro ao iniciar exportacao de backup", e)
             val msg = getString(R.string.toast_erro_exportar_backup, getString(mensagemDeErro(e)))
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            mostrarErro(msg)
         }
     }
 
@@ -1457,11 +1428,7 @@ class SettingsActivity : BasePlayerActivity() {
                 Toast.makeText(this@SettingsActivity, msg, Toast.LENGTH_SHORT).show()
             }.onFailure { e ->
                 Log.w("SettingsActivity", "Erro ao exportar backup completo", e)
-                Toast.makeText(
-                    this@SettingsActivity,
-                    getString(R.string.toast_erro_exportar_backup, getString(mensagemDeErro(e))),
-                    Toast.LENGTH_LONG
-                ).show()
+                mostrarErro(getString(R.string.toast_erro_exportar_backup, getString(mensagemDeErro(e))))
             }
         }
     }
@@ -1472,7 +1439,7 @@ class SettingsActivity : BasePlayerActivity() {
         } catch (e: android.content.ActivityNotFoundException) {
             Log.w("SettingsActivity", "Erro ao iniciar importacao de backup", e)
             val msg = getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e)))
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            mostrarErro(msg)
         }
     }
 
@@ -1482,11 +1449,7 @@ class SettingsActivity : BasePlayerActivity() {
             resultado.onSuccess { resumo -> mostrarResumoBackupImportado(resumo) }
                 .onFailure { e ->
                     Log.w("SettingsActivity", "Erro ao importar backup completo", e)
-                    Toast.makeText(
-                        this@SettingsActivity,
-                        getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e))),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    mostrarErro(getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e))))
                 }
         }
     }
