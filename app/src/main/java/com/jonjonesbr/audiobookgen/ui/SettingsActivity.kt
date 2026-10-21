@@ -1365,49 +1365,55 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
-    private fun obterJsonDeUri(uri: Uri): JSONObject? {
-        var result: JSONObject? = null
+    /** Lê e parseia o JSON do Uri. Roda em IO; devolve (json, erro) para a main mostrar o erro. */
+    private fun lerJsonDeUri(uri: Uri): Pair<JSONObject?, Exception?> {
         try {
             val jsonStr = contentResolver.openInputStream(uri)?.use { inputStream ->
                 inputStream.bufferedReader().use { it.readText() }
             } ?: error("Input stream is null")
-            result = JSONObject(jsonStr)
+            return JSONObject(jsonStr) to null
         } catch (e: java.io.IOException) {
             Log.w("SettingsActivity", "Erro ao carregar configuracoes", e)
-            mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))))
+            return null to e
         } catch (e: java.lang.IllegalStateException) {
             Log.w("SettingsActivity", "Erro ao carregar configuracoes", e)
-            mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))))
+            return null to e
         } catch (e: org.json.JSONException) {
             Log.w("SettingsActivity", "Erro ao parsear JSON", e)
-            mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))))
+            return null to e
         }
-        return result
     }
 
     private fun carregarConfigJson(uri: Uri) {
-        val json = obterJsonDeUri(uri) ?: return
-
-        com.jonjonesbr.audiobookgen.data.AppPrefsBackup.aplicar(appPrefs, json)
-
-        // Sincroniza com o motor Python
         lifecycleScope.launch {
-            pythonEngine.sincronizarConfiguracoes(
-                appPrefs.motorTts,
-                SecurePreferences.getGeminiKeys(this@SettingsActivity),
-                appPrefs.pausaMs
-            )
+            val (json, erro) = withContext(Dispatchers.IO) { lerJsonDeUri(uri) }
+            if (erro != null) {
+                mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(erro))))
+                return@launch
+            }
+            if (json == null) return@launch
+
+            com.jonjonesbr.audiobookgen.data.AppPrefsBackup.aplicar(appPrefs, json)
+
+            // Sincroniza com o motor Python
+            launch {
+                pythonEngine.sincronizarConfiguracoes(
+                    appPrefs.motorTts,
+                    SecurePreferences.getGeminiKeys(this@SettingsActivity),
+                    appPrefs.pausaMs
+                )
+            }
+
+            // Recarrega configs na UI
+            carregarConfigAtual()
+
+            // Dialog de sucesso
+            androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
+                .setTitle(R.string.dialog_importar_sucesso_titulo)
+                .setMessage(R.string.dialog_importar_sucesso_mensagem)
+                .setPositiveButton(R.string.dialog_ok, null)
+                .exibir()
         }
-
-        // Recarrega configs na UI
-        carregarConfigAtual()
-
-        // Dialog de sucesso
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.dialog_importar_sucesso_titulo)
-            .setMessage(R.string.dialog_importar_sucesso_mensagem)
-            .setPositiveButton(R.string.dialog_ok, null)
-            .exibir()
     }
 
     private fun exportarBackupCompleto() {
