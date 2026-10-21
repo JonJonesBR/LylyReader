@@ -27,6 +27,9 @@ class ReaderRetornoController(
     /** "Ler sem áudio": o menu de ações esconde tudo que converte, toca ou configura voz. */
     private val somenteLeitura: Boolean = false,
 ) {
+    private val dialogos = DialogosAbertos(activity)
+    private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
+
     data class Callbacks(
         val obterCaminhoArquivo: () -> String,
         val obterCapitulosSelecionados: () -> Set<Int>,
@@ -305,7 +308,7 @@ class ReaderRetornoController(
                 viewModel.excluirOcorrencias(campo.text.toString())
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun retornarDocumentoAtual() {
