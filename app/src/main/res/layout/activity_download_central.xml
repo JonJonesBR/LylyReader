@@ -143,6 +143,18 @@
         android:layout_weight="1"
         android:overScrollMode="never"/>
 
+    <TextView
+        android:id="@+id/tvVazioDownloads"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="24dp"
+        android:text="@string/dl_central_vazio"
+        android:textColor="@color/color_on_surface_muted"
+        android:textSize="15sp"
+        android:visibility="gone"/>
+
     <LinearLayout
         android:id="@+id/layoutFooterDownloads"
         android:layout_width="match_parent"

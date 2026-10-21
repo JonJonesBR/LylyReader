@@ -880,6 +880,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_central_baixar_tudo">Download all</string>
     <string name="dl_central_pausar_tudo">Pause all</string>
     <string name="dl_central_nada_a_baixar">Everything is already downloaded.</string>
+    <string name="dl_central_vazio">No results for this filter.</string>
     <string name="dl_central_confirmar_titulo">Download packages</string>
     <string name="dl_central_confirmar_msg">Download %1$d package(s), about %2$s in total?</string>
     <string name="dl_central_pouco_espaco">There may not be enough free space (%1$s free; downloading and unpacking needs about twice the size).</string>

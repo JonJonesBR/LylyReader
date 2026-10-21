@@ -174,6 +174,11 @@ class DownloadCentralActivity : BasePlayerActivity() {
             linha
         }
         adapter.submitList(linhas)
+        val vazio = linhas.isEmpty()
+        findViewById<android.widget.TextView>(R.id.tvVazioDownloads).visibility =
+            if (vazio) android.view.View.VISIBLE else android.view.View.GONE
+        findViewById<RecyclerView>(R.id.recyclerDownloads).visibility =
+            if (vazio) android.view.View.GONE else android.view.View.VISIBLE
         atualizarRodape()
         // O coach mark só é avaliado no primeiro render e quando os itens exibidos mudam (não a cada tick de progresso).
         val chaves = linhas.map { it.item.id }.toSet()

@@ -868,6 +868,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dl_central_baixar_tudo">Descargar todo</string>
     <string name="dl_central_pausar_tudo">Pausar todo</string>
     <string name="dl_central_nada_a_baixar">Todo ya está descargado.</string>
+    <string name="dl_central_vazio">Ningún resultado para este filtro.</string>
     <string name="dl_central_confirmar_titulo">Descargar paquetes</string>
     <string name="dl_central_confirmar_msg">¿Descargar %1$d paquete(s), unos %2$s en total?</string>
     <string name="dl_central_pouco_espaco">Puede faltar espacio (%1$s libres; descargar y descomprimir ocupa cerca del doble del tamaño).</string>
