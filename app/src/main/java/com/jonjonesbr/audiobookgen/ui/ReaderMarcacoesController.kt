@@ -19,6 +19,9 @@ class ReaderMarcacoesController(
     private val viewModel: ReaderViewModel,
     private val callbacks: Callbacks,
 ) {
+    private val dialogos = DialogosAbertos(activity)
+    private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
+
     data class Callbacks(
         val obterCaminhoArquivo: () -> String,
         val obterParagrafoAtual: () -> Int?,
@@ -94,7 +97,7 @@ class ReaderMarcacoesController(
                 }
             }
             .setNeutralButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     // ── Destaques (T3.5) ─────────────────────────────────────────────────────
@@ -123,7 +126,7 @@ class ReaderMarcacoesController(
                 Toast.makeText(activity, R.string.toast_destaque_adicionado, Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     fun mostrarDialogListarDestaques() {
@@ -158,6 +161,6 @@ class ReaderMarcacoesController(
                 }
             }
             .setNeutralButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 }
