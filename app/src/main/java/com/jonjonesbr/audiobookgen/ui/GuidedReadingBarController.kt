@@ -37,6 +37,8 @@ class GuidedReadingBarController(
     private val views: Views,
     private val callbacks: Callbacks,
 ) {
+    private val dialogos = DialogosAbertos(activity)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
     private var dicaVozTentada = false
     private var eventoGuiadaRegistrado = false
 
@@ -133,7 +135,7 @@ class GuidedReadingBarController(
                 playGuidedFrom(indices[which])
             }
             .setCancelable(false)
-            .show()
+            .exibir()
     }
 
     fun configurarGuidedPlayerBotoes() {
