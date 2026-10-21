@@ -1,6 +1,8 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.util.formatarDuracao
+import com.jonjonesbr.audiobookgen.util.formatarTamanho
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.LruCache
@@ -42,11 +44,6 @@ class AudiobookAdapter(
             override fun areContentsTheSame(a: AudiobookItem, b: AudiobookItem) = a == b
         }
         private val COVER_CACHE = LruCache<String, Bitmap>(50)
-        private const val MS_POR_SEGUNDO = 1000L
-        private const val SEGUNDOS_POR_HORA = 3600L
-        private const val SEGUNDOS_POR_MINUTO = 60L
-        private const val BYTES_POR_KB = 1_000
-        private const val BYTES_POR_MB = 1_000_000
         private const val PROGRESSO_COMPLETO = 100
         private const val ACAO_COMPARTILHAR = 1
         private const val ACAO_VIDEO = 2
@@ -134,20 +131,4 @@ class AudiobookAdapter(
         COVER_CACHE.put(caminho, bitmap)
     }
 
-    private fun formatarDuracao(ms: Long): String {
-        val s = ms / MS_POR_SEGUNDO
-        val h = s / SEGUNDOS_POR_HORA
-        val m = (s % SEGUNDOS_POR_HORA) / SEGUNDOS_POR_MINUTO
-        val seg = s % SEGUNDOS_POR_MINUTO
-        return if (h > 0) "%d:%02d:%02d".format(h, m, seg)
-               else       "%d:%02d".format(m, seg)
-    }
-
-    private fun formatarTamanho(bytes: Long): String {
-        return when {
-            bytes >= BYTES_POR_MB -> "%.1fMB".format(bytes / BYTES_POR_MB.toDouble())
-            bytes >= BYTES_POR_KB -> "%dKB".format(bytes / BYTES_POR_KB)
-            else -> "${bytes}B"
-        }
-    }
 }

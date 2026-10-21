@@ -459,12 +459,13 @@ def _expandir_numeros_pt(texto: str) -> str:
 
 def _expandir_simbolos(texto: str) -> str:
     """Expande símbolos comuns."""
+    # Espaço ao redor do símbolo é absorvido pela troca: "Tom & Jerry" → "Tom e Jerry" (sem espaço duplo).
     subs = [
-        (r"&", " e "),
-        (r"@", " arroba "),
-        (r"\+", " mais "),
-        (r"=", " igual "),
-        (r"#", " número "),
+        (r"[ \t]*&[ \t]*", " e "),
+        (r"[ \t]*@[ \t]*", " arroba "),
+        (r"[ \t]*\+[ \t]*", " mais "),
+        (r"[ \t]*=[ \t]*", " igual "),
+        (r"[ \t]*#[ \t]*", " número "),
     ]
     for padrao, repl in subs:
         texto = re.sub(padrao, repl, texto)
@@ -479,7 +480,7 @@ _SIGLAS_LIDAS_COMO_PALAVRA = frozenset({
     "IBGE", "PETROBRAS", "EMBRAER", "FIESP", "SESI", "SENAI", "SENAC",
     "SESC", "IPTU", "IPVA", "FGTS", "PIS", "COFINS", "ICMS", "IPI",
     "UNESCO", "UNICEF", "ONU", "UE", "NASA", "NATO", "OPEP", "MERCOSUL",
-    "BNDES", "INSS", "SUS", "FAB", "MEC", "CNPJ", "CPF", "RG",
+    "BNDES", "INSS", "SUS", "FAB", "MEC",
 })
 
 _SIGLAS_SOLETRADAS = frozenset({
@@ -506,7 +507,7 @@ def _expandir_siglas(texto: str) -> str:
     def _substituir_sigla(m):
         s = m.group(0).upper().strip()
         if s in _SIGLAS_LIDAS_COMO_PALAVRA:
-            return s.lower() + " "
+            return s.lower()
         if s in _SIGLAS_SOLETRADAS:
             return _soletrar(s)
         if len(s) <= 4 and s.isalpha() and s != s.lower():

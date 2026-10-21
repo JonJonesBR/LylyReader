@@ -27,9 +27,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
+import com.jonjonesbr.audiobookgen.util.formatarTempo
 import kotlinx.coroutines.launch
-import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 /**
  * Activity base que gerencia o mini-player colapsível.
@@ -346,17 +345,10 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         )
     }
 
-    private fun formatarTempo(ms: Int): String {
-        val min = TimeUnit.MILLISECONDS.toMinutes(ms.toLong())
-        val sec = TimeUnit.MILLISECONDS.toSeconds(ms.toLong()) % SEGUNDOS_POR_MINUTO
-        return String.format(Locale.getDefault(), "%d:%02d", min, sec)
-    }
-
     companion object {
         private const val VELOCIDADE_075 = 0.75f
         private const val VELOCIDADE_125 = 1.25f
         private const val VELOCIDADE_150 = 1.5f
         private const val REWIND_MS = 15_000
-        private const val SEGUNDOS_POR_MINUTO = 60L
     }
 }

@@ -52,7 +52,7 @@ object SpeakerAiPlanner {
     }
 
     /** Texto do parágrafo com cada fala marcada como ⟦n⟧…⟦/n⟧ (n = número da fala no parágrafo). */
-    fun markedText(paragraph: String): String = OfflineSpeakerAttributor.partsOf(paragraph).joinToString("") { part ->
+    fun markedText(paragraph: String): String = OfflineSpeakerAttributor.partsOf(paragraph).joinToString(" ") { part ->
         if (part.speech) "⟦${part.ordinal}⟧${part.text}⟦/${part.ordinal}⟧" else part.text
     }
 
@@ -100,7 +100,7 @@ $corpo""".trimIndent()
 
     /** "NARRADOR"/"narrator"/"desconhecido" viram a marca de narrador; o resto é o nome limpo. */
     fun normalizeName(name: String): String {
-        val limpo = name.trim().trim('"', '.', ',')
+        val limpo = name.trim().trim('"', '.', ',').trim()
         val chave = Normalizer.normalize(limpo, Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").lowercase()
         return if (chave in NARRATOR_WORDS || chave.isEmpty()) OfflineSpeakerAttributor.AI_NARRATOR else limpo
     }
