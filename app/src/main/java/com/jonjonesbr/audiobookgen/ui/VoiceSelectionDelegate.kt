@@ -5,9 +5,9 @@ import com.jonjonesbr.audiobookgen.tts.AndroidTtsEngineCache
 import com.jonjonesbr.audiobookgen.tts.AndroidTtsEngineDiscovery
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.VoiceOption
-import android.app.AlertDialog
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -88,12 +88,11 @@ class VoiceSelectionDelegate(
         if (engines.size == 1) {
             carregarVozesAndroid(engines[0].packageName)
         } else {
-            AlertDialog.Builder(activity)
+            activity.mostrarDialogo(AlertDialog.Builder(activity)
                 .setTitle(R.string.dialogo_escolher_motor_titulo)
                 .setItems(engines.map { it.label }.toTypedArray()) { _, which ->
                     carregarVozesAndroid(engines[which].packageName)
-                }
-                .show()
+                })
         }
     }
 
