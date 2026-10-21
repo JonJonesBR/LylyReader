@@ -683,7 +683,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• La app va más fluida: Mis libros abre más rápido, las portadas de los audiolibros se desplazan sin trabarse y la búsqueda dentro de un libro ya no se congela en textos largos.\n• La búsqueda de libros gratuitos ahora muestra una barra de progreso, abrir un libro tiene una transición suave y filtrar voces es más rápido.\n• Borrar un informe de error quita solo esa línea, y se corrigió una pequeña fuga al grabar tu voz.</string>
+    <string name="release_notes_corpo">• Siglas como CPF, RG y CNPJ ahora se leen letra por letra, como se dicen en voz alta.\n• Los botones de Ajustes, Apariencia y Descargas son más grandes y fáciles de tocar.\n• La app es más estable: girar la pantalla durante la clonación de voz ya no causa fallos, y las pantallas de Ajustes y Descargas se abren sin congelarse.</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Haz las voces un poco más graves o más agudas y suaviza los agudos ásperos. El cambio se aplica al instante en la lectura guiada y en los audiolibros que conviertas a partir de ahora.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
