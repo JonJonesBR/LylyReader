@@ -39,6 +39,8 @@ abstract class BasePlayerActivity : AppCompatActivity() {
 
     protected var playerService: AudioPlayerService? = null
     private var serviceBound = false
+    // true enquanto o bind foi aceito pelo sistema (pode ser antes de onServiceConnected).
+    private var bindeado = false
     private var playerExpanded = false
 
     // O mini-player exibe o player de áudio OU o indicador de leitura guiada (mutuamente
@@ -79,7 +81,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         val intent = Intent(this, AudioPlayerService::class.java)
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        bindeado = bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
     /** Contagem regressiva da soneca ao lado do 😴 no mini-player — achado real (2026-09-16):
@@ -106,11 +108,14 @@ abstract class BasePlayerActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (serviceBound) {
-            unbindService(serviceConnection)
-            serviceBound = false
-            playerService = null
+        if (bindeado) {
+            runCatching { unbindService(serviceConnection) }
+            bindeado = false
         }
+        serviceBound = false
+        playerService = null
+        serviceObserverJob?.cancel()
+        serviceObserverJob = null
     }
 
     private fun observarEstadoServico(): kotlinx.coroutines.Job {

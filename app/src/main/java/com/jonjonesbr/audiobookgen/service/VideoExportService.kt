@@ -53,6 +53,8 @@ class VideoExportService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var job: Job? = null
+    // Referência ao cancelamento que este serviço publicou em VideoExportBridge.cancelar (para comparar em onDestroy).
+    private var cancelarDesteServico: (() -> Unit)? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -74,12 +76,17 @@ class VideoExportService : Service() {
     }
 
     override fun onDestroy() {
+        // Só zera o cancelamento global se ainda for o deste serviço (não apaga o de uma instância nova).
+        cancelarDesteServico?.let { if (VideoExportBridge.cancelar === it) VideoExportBridge.cancelar = null }
+        cancelarDesteServico = null
         scope.cancel()
         super.onDestroy()
     }
 
     private suspend fun executar(pedido: PedidoVideo) {
-        VideoExportBridge.cancelar = { job?.cancel() }
+        val cancelarAqui: () -> Unit = { job?.cancel() }
+        cancelarDesteServico = cancelarAqui
+        VideoExportBridge.cancelar = cancelarAqui
         publicar(EstadoVideoExport(pedido.nome))
         val pasta = File(cacheDir, "export_video_${System.currentTimeMillis()}").apply { mkdirs() }
         var desfecho: EstadoVideoExport

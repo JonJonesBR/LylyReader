@@ -29,6 +29,7 @@ import com.jonjonesbr.audiobookgen.tts.PocketCustomVoices
 import com.jonjonesbr.audiobookgen.tts.PocketEncoderManager
 import com.jonjonesbr.audiobookgen.tts.VoiceReferenceAudio
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,12 +43,22 @@ import java.io.File
 class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMudar: () -> Unit = {}) {
 
     private val handler = Handler(Looper.getMainLooper())
+    private val dialogos = DialogosAbertos(activity)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
     private var gravador: VoiceReferenceAudio.Gravador? = null
+    private var dialogoGravacao: AlertDialog? = null
 
     init {
         // Sem isto, o Runnable de 100 ms da gravação continuaria agendado depois que a Activity morre.
+        // Activity destruída no meio da gravação (ex.: girar a tela): para o gravador e fecha o diálogo.
         activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
-            override fun onDestroy(owner: LifecycleOwner) = handler.removeCallbacksAndMessages(null)
+            override fun onDestroy(owner: LifecycleOwner) {
+                handler.removeCallbacksAndMessages(null)
+                gravador?.cancelar()
+                gravador = null
+                dialogoGravacao?.dismiss()
+                dialogoGravacao = null
+            }
         })
     }
 
@@ -102,7 +113,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             .setView(conteudo)
             .setPositiveButton(R.string.clone_continue) { _, _ -> escolherOrigem() }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
         val continuar = dialogo.getButton(AlertDialog.BUTTON_POSITIVE)
         continuar.isEnabled = false
         aceite.setOnCheckedChangeListener { _, marcado -> continuar.isEnabled = marcado }
@@ -117,7 +128,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 if (qual == 0) gravar() else escolherArquivo.launch(arrayOf("audio/*", "video/*", "application/ogg", "application/octet-stream"))
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun gravar() {
@@ -151,7 +162,8 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             .setPositiveButton(R.string.clone_record_stop, null)
             .setNegativeButton(android.R.string.cancel) { _, _ -> rec.cancelar(); gravador = null }
             .create()
-        dialogo.show()
+        dialogos.mostrar(dialogo)
+        dialogoGravacao = dialogo
         val atualizar = object : Runnable {
             override fun run() {
                 tempo.text = String.format("%.1f s", rec.segundos)
@@ -163,8 +175,11 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 }
             }
         }
-        // Fechou o diálogo (parar, cancelar ou tempo esgotado): para o Runnable de 100 ms.
-        dialogo.setOnDismissListener { handler.removeCallbacks(atualizar) }
+        // Fechou o diálogo (parar, cancelar ou tempo esgotado): para o Runnable de 100 ms e esquece o diálogo.
+        dialogo.setOnDismissListener {
+            handler.removeCallbacks(atualizar)
+            if (dialogoGravacao === dialogo) dialogoGravacao = null
+        }
         handler.post(atualizar)
         dialogo.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val resultado = rec.parar(rascunho())
@@ -230,7 +245,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 criar(nome.text.toString(), tag)
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> rascunho().delete() }
-            .show()
+            .exibir()
     }
 
     // ── Passo 4: criar a voz e baixar o que falta ────────────────────────────
@@ -245,7 +260,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 toast(R.string.clone_audio_failed)
                 return@launch
             }
-            PocketCustomVoiceCatalog.registrarTodas(activity)
+            withContext(Dispatchers.IO) { PocketCustomVoiceCatalog.registrarTodas(activity) }
             aoMudar()
             if (PocketEncoderManager.isInstalled(activity, idioma)) {
                 baixarSeNecessario(voz.id)
@@ -271,17 +286,20 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             addView(barra)
         }
         val dialogo = AlertDialog.Builder(activity).setTitle(R.string.clone_downloading_title)
-            .setView(conteudo).setCancelable(false).show()
+            .setView(conteudo).setCancelable(false).exibir()
         activity.lifecycleScope.launch {
-            val erro = runCatching {
-                com.jonjonesbr.audiobookgen.service.DownloadCentral.baixarEAguardar(
-                    activity.applicationContext, pacote.id
-                ) { nomeItem, pct, _, _ ->
-                    activity.runOnUiThread { barra.progress = (pct * 100).toInt(); texto.text = nomeItem }
-                }
-            }.exceptionOrNull()
-            dialogo.dismiss()
-            PocketCustomVoiceCatalog.registrarTodas(activity)
+            val erro = try {
+                runCatching {
+                    com.jonjonesbr.audiobookgen.service.DownloadCentral.baixarEAguardar(
+                        activity.applicationContext, pacote.id
+                    ) { nomeItem, pct, _, _ ->
+                        activity.runOnUiThread { barra.progress = (pct * 100).toInt(); texto.text = nomeItem }
+                    }
+                }.onFailure { if (it is CancellationException) throw it }.exceptionOrNull()
+            } finally {
+                dialogo.dismiss()
+            }
+            withContext(Dispatchers.IO) { PocketCustomVoiceCatalog.registrarTodas(activity) }
             aoMudar()
             if (erro == null) {
                 toast(R.string.clone_created)
@@ -307,7 +325,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 opcoesDaVoz(vozes[qual])
             }
         }
-        construtor.show()
+        construtor.exibir()
     }
 
     private fun opcoesDaVoz(voz: PocketCustomVoices.Voice) {
@@ -317,7 +335,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 if (qual == 0) renomear(voz) else apagar(voz)
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> gerenciar() }
-            .show()
+            .exibir()
     }
 
     private fun renomear(voz: PocketCustomVoices.Voice) {
@@ -334,7 +352,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 gerenciar()
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> gerenciar() }
-            .show()
+            .exibir()
     }
 
     private fun apagar(voz: PocketCustomVoices.Voice) {
@@ -348,6 +366,34 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 gerenciar()
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> gerenciar() }
-            .show()
+            .exibir()
+    }
+}
+
+/**
+ * Guarda os diálogos abertos por um fluxo e fecha todos quando a Activity é destruída (ex.: girar a tela com
+ * um diálogo aberto), para não vazar a janela (WindowLeaked). Não usa setOnDismissListener, porque o builder
+ * ou o diálogo já podem ter um; os já fechados saem da lista na próxima abertura.
+ */
+internal class DialogosAbertos(activity: AppCompatActivity) {
+
+    private val abertos = mutableListOf<AlertDialog>()
+
+    init {
+        activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                abertos.toList().forEach { if (it.isShowing) it.dismiss() }
+                abertos.clear()
+            }
+        })
+    }
+
+    fun mostrar(builder: AlertDialog.Builder): AlertDialog = mostrar(builder.create())
+
+    fun mostrar(dialogo: AlertDialog): AlertDialog {
+        abertos.removeAll { !it.isShowing }
+        dialogo.show()
+        abertos.add(dialogo)
+        return dialogo
     }
 }

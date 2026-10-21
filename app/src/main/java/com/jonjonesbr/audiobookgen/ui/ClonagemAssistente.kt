@@ -19,6 +19,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.PocketEncoderOficial
 import com.jonjonesbr.audiobookgen.tts.PocketEncoderImportador
 import com.jonjonesbr.audiobookgen.tts.PocketEncoderManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /**
@@ -35,6 +36,9 @@ class ClonagemAssistente(
     // Definido em mostrar(): o assistente é criado junto com a Activity, antes de os recursos existirem.
     private var idiomaDoDownload: String = "pt-BR"
     private var aoConcluir: () -> Unit = {}
+
+    private val dialogos = DialogosAbertos(activity)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
 
     private fun dp(v: Int) = (v * activity.resources.displayMetrics.density).toInt()
 
@@ -62,7 +66,7 @@ class ClonagemAssistente(
             .setView(texto(activity.getString(R.string.clone_prep_intro)))
             .setPositiveButton(R.string.clone_prep_start) { _, _ -> passoConta() }
             .setNegativeButton(R.string.clone_prep_later, null)
-            .show()
+            .exibir()
     }
 
     private fun passoConta() {
@@ -72,7 +76,7 @@ class ClonagemAssistente(
             .setPositiveButton(R.string.clone_prep_have_account) { _, _ -> passoTermos() }
             .setNeutralButton(R.string.clone_prep_create_account, null)
             .setNegativeButton(R.string.clone_prep_later, null)
-            .show()
+            .exibir()
         // Abrir o site não fecha o passo: a pessoa volta e toca em "Já tenho conta".
         dialogo.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { abrir(PocketEncoderOficial.PAGINA_CONTA) }
     }
@@ -84,7 +88,7 @@ class ClonagemAssistente(
             .setPositiveButton(R.string.clone_prep_accepted) { _, _ -> passoBaixar() }
             .setNeutralButton(R.string.clone_prep_open_terms, null)
             .setNegativeButton(R.string.clone_prep_back) { _, _ -> passoConta() }
-            .show()
+            .exibir()
         dialogo.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { abrir(PocketEncoderOficial.PAGINA_TERMOS) }
     }
 
@@ -110,7 +114,7 @@ class ClonagemAssistente(
             .setPositiveButton(R.string.clone_prep_downloaded) { _, _ -> passoTrazer() }
             .setNeutralButton(R.string.clone_prep_download, null)
             .setNegativeButton(R.string.clone_prep_back) { _, _ -> passoTermos() }
-            .show()
+            .exibir()
         dialogo.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
             abrir(PocketEncoderOficial.porIdioma(idiomaDoDownload).urlDownload)
         }
@@ -122,7 +126,7 @@ class ClonagemAssistente(
             .setView(texto(activity.getString(R.string.clone_prep_step4)))
             .setPositiveButton(R.string.clone_prep_pick) { _, _ -> escolherArquivo() }
             .setNegativeButton(R.string.clone_prep_back) { _, _ -> passoBaixar() }
-            .show()
+            .exibir()
     }
 
     /** Chamado pela Activity quando a pessoa escolhe (ou não) o arquivo no seletor. */
@@ -136,14 +140,21 @@ class ClonagemAssistente(
             .setTitle(R.string.clone_prep_working_title)
             .setView(texto(activity.getString(R.string.clone_prep_working), barra))
             .setCancelable(false)
-            .show()
+            .exibir()
         activity.lifecycleScope.launch {
-            val resultado = runCatching {
-                PocketEncoderImportador.importar(activity.applicationContext, uri) { pct ->
-                    activity.runOnUiThread { barra.progress = (pct * 100).toInt() }
+            val resultado = try {
+                runCatching {
+                    PocketEncoderImportador.importar(activity.applicationContext, uri) { pct ->
+                        activity.runOnUiThread { barra.progress = (pct * 100).toInt() }
+                    }
+                }.getOrElse {
+                    // Activity destruída no meio da importação: não mostra erro numa tela morta.
+                    if (it is CancellationException) throw it
+                    PocketEncoderImportador.Resultado.Falha(it.message ?: it.javaClass.simpleName)
                 }
-            }.getOrElse { PocketEncoderImportador.Resultado.Falha(it.message ?: it.javaClass.simpleName) }
-            dialogo.dismiss()
+            } finally {
+                dialogo.dismiss()
+            }
             when (resultado) {
                 is PocketEncoderImportador.Resultado.Instalado -> concluido(uri, resultado.arquivo.idioma)
                 PocketEncoderImportador.Resultado.ArquivoErrado -> erro(activity.getString(R.string.clone_prep_wrong))
@@ -163,7 +174,7 @@ class ClonagemAssistente(
                 .setView(texto(activity.getString(R.string.clone_prep_other_language, nomeDoIdioma(idioma), nomeDoIdioma(desejado))))
                 .setPositiveButton(R.string.clone_prep_back) { _, _ -> passoBaixar() }
                 .setNegativeButton(R.string.clone_prep_later, null)
-                .show()
+                .exibir()
             return
         }
         AlertDialog.Builder(activity)
@@ -175,7 +186,7 @@ class ClonagemAssistente(
                 aoConcluir()
             }
             .setNegativeButton(R.string.clone_prep_keep) { _, _ -> aoConcluir() }
-            .show()
+            .exibir()
     }
 
     private fun erro(mensagem: String) {
@@ -185,7 +196,7 @@ class ClonagemAssistente(
             .setPositiveButton(R.string.clone_prep_try_again) { _, _ -> passoTrazer() }
             .setNeutralButton(R.string.clone_prep_back) { _, _ -> passoBaixar() }
             .setNegativeButton(R.string.clone_prep_later, null)
-            .show()
+            .exibir()
     }
 
     private fun apagarArquivoGrande(uri: Uri) {

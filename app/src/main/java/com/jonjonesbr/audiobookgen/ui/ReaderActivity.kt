@@ -383,7 +383,7 @@ class ReaderActivity : BasePlayerActivity() {
         // primeiro acesso (configurarGuidedPlayerBotoes()); se guidedPlayerManager
         // ainda não tiver sido atribuído aqui, crasha com
         // UninitializedPropertyAccessException (bug real, já reproduzido no aparelho).
-        val pythonUseCase = PythonEngineUseCase(this)
+        val pythonUseCase = PythonEngineUseCase(applicationContext)
         // Modo "Ler sem áudio": nenhum manager é criado nem conectado (nem o bridge é tocado).
         if (!somenteLeitura) {
             // Reconecta ao manager em execução se já houver leitura guiada ativa para ESTE documento
