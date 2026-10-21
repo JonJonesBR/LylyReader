@@ -328,7 +328,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         com.jonjonesbr.audiobookgen.data.BlacklistStore(getApplication()).load()
 
     private fun salvarNaBlacklist(trecho: String) {
-        com.jonjonesbr.audiobookgen.data.BlacklistStore(getApplication()).add(trecho)
+        viewModelScope.launch(Dispatchers.IO) {
+            com.jonjonesbr.audiobookgen.data.BlacklistStore(getApplication()).add(trecho)
+        }
     }
 
     private fun reconstruirCapitulos(

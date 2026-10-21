@@ -275,7 +275,9 @@ object PronunciationDialog {
                 } else {
                     salvarNoEscopo(
                         activity, null, EscopoPronuncia.TODOS,
-                        com.jonjonesbr.audiobookgen.domain.PronunciationTransfer.merge(PronunciationStore.get(activity), entradas)
+                        withContext(Dispatchers.IO) {
+                            com.jonjonesbr.audiobookgen.domain.PronunciationTransfer.merge(PronunciationStore.get(activity), entradas)
+                        }
                     ) {
                         Toast.makeText(activity, activity.getString(R.string.pron_import_done, entradas.size), Toast.LENGTH_LONG).show()
                         depois()
