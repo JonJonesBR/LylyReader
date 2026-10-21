@@ -14,7 +14,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
@@ -66,7 +68,7 @@ class ErrorLogsActivity : AppCompatActivity() {
             }
             logFiles.clear()
             logFiles.addAll(files)
-            adapter.notifyDataSetChanged()
+            adapter.submitList(logFiles.toList())
             atualizarTela()
         }
     }
@@ -133,13 +135,17 @@ class ErrorLogsActivity : AppCompatActivity() {
     }
 
     private fun showLogDetails(file: File) {
-        val content = try {
-            file.readText(Charsets.UTF_8)
-        } catch (e: Exception) {
-            Log.w("ErrorLogsActivity", "Falha ao ler log", e)
-            getString(R.string.logs_erro_ler, getString(mensagemDeErro(e)))
+        lifecycleScope.launch {
+            val lido = withContext(Dispatchers.IO) { runCatching { file.readText(Charsets.UTF_8) } }
+            val content = lido.getOrElse { e ->
+                Log.w("ErrorLogsActivity", "Falha ao ler log", e)
+                getString(R.string.logs_erro_ler, getString(mensagemDeErro(e)))
+            }
+            mostrarDetalhesLog(file, content)
         }
+    }
 
+    private fun mostrarDetalhesLog(file: File, content: String) {
         val density = resources.displayMetrics.density
         val paddingPx = (DETAIL_PADDING_DP * density).toInt()
 
@@ -207,11 +213,11 @@ class ErrorLogsActivity : AppCompatActivity() {
             return
         }
         logFiles.removeAt(posicao)
-        adapter.notifyItemRemoved(posicao)
+        adapter.submitList(logFiles.toList())
         atualizarTela()
     }
 
-    private inner class LogsAdapter : RecyclerView.Adapter<LogsAdapter.ViewHolder>() {
+    private inner class LogsAdapter : ListAdapter<File, LogsAdapter.ViewHolder>(DIFF_LOGS) {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val view = LayoutInflater.from(parent.context).inflate(R.layout.item_error_log, parent, false)
@@ -219,7 +225,7 @@ class ErrorLogsActivity : AppCompatActivity() {
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val file = logFiles[position]
+            val file = getItem(position)
             holder.tvLogDate.text = formatLogName(file.name)
             
             val kbSize = file.length().toDouble() / KB_FACTOR
@@ -238,8 +244,6 @@ class ErrorLogsActivity : AppCompatActivity() {
             }
         }
 
-        override fun getItemCount(): Int = logFiles.size
-
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val tvLogDate: TextView = view.findViewById(R.id.tvLogDate)
             val tvLogSize: TextView = view.findViewById(R.id.tvLogSize)
@@ -252,5 +256,10 @@ class ErrorLogsActivity : AppCompatActivity() {
         private const val DETAIL_PADDING_DP = 24
         private const val LOG_TEXT_SIZE = 12f
         private const val KB_FACTOR = 1024.0
+
+        private val DIFF_LOGS = object : DiffUtil.ItemCallback<File>() {
+            override fun areItemsTheSame(antigo: File, novo: File): Boolean = antigo == novo
+            override fun areContentsTheSame(antigo: File, novo: File): Boolean = antigo == novo
+        }
     }
 }
