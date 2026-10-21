@@ -189,6 +189,8 @@ class ReaderActivity : BasePlayerActivity() {
     private var arquivoTrechoTemp: File? = null
     private var preservarArquivoTrechoTemp = false
     private var dialogAtivo: androidx.appcompat.app.AlertDialog? = null
+    private val dialogos = DialogosAbertos(this)
+    private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
     // Marca de tempo de quando a tela ficou visível, para creditar minutos lidos nas
     // estatísticas ao sair (T4.5) — 0L quando a tela não está visível.
     private var telaVisivelDesdeMs = 0L
@@ -425,7 +427,7 @@ class ReaderActivity : BasePlayerActivity() {
                 .setTitle(null)
                 .setMessage(tituloCompleto)
                 .setPositiveButton(R.string.dialog_ok, null)
-                .show()
+                .exibir()
             true
         }
 
@@ -813,7 +815,7 @@ class ReaderActivity : BasePlayerActivity() {
                     audiobookViewModel.cancelarProcessamento()
                 }
                 .create()
-            dialogProgressoConversao?.show()
+            dialogProgressoConversao?.let { dialogos.mostrar(it) }
         }
         
         tvDialogProgressoStatus?.text = mensagem
@@ -1290,7 +1292,7 @@ class ReaderActivity : BasePlayerActivity() {
                 Toast.makeText(this, R.string.prerender_started, Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     /** Abre o painel pedido pela tela do livro (uma vez; o extra é consumido para não repetir na rotação). */
@@ -1324,7 +1326,7 @@ class ReaderActivity : BasePlayerActivity() {
                     .setTitle(R.string.character_voices_title)
                     .setMessage(R.string.character_voices_empty)
                     .setPositiveButton(android.R.string.ok, null)
-                    .show()
+                    .exibir()
             } else {
                 mostrarListaVozesPersonagens(result)
             }
@@ -1337,7 +1339,7 @@ class ReaderActivity : BasePlayerActivity() {
                 .setTitle(R.string.character_voices_title)
                 .setMessage(R.string.character_voices_empty)
                 .setPositiveButton(android.R.string.ok, null)
-                .show()
+                .exibir()
             return
         }
         val labels = result.speakers.map { speaker ->
@@ -1358,7 +1360,7 @@ class ReaderActivity : BasePlayerActivity() {
             .setPositiveButton(R.string.character_voices_suggest) { _, _ -> sugerirVozesPersonagens(result) }
             .setNeutralButton(R.string.character_voices_pronunciation) { _, _ -> mostrarPronunciaDosNomes(result) }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     // ── Análise de personagens por IA (Gemini), só por ação explícita ────────────────────────────
@@ -1389,7 +1391,7 @@ class ReaderActivity : BasePlayerActivity() {
             .setPositiveButton(R.string.character_ai_send) { _, _ -> executarAnaliseComIa(cliente, textos, estado) }
             .setNeutralButton(R.string.ia_change) { _, _ -> opcoesDaIa() }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun rotuloModeloIa(): String =
@@ -1411,7 +1413,7 @@ class ReaderActivity : BasePlayerActivity() {
             .setTitle(R.string.ia_change)
             .setItems(itens.map { it.first }.toTypedArray()) { _, indice -> itens[indice].second() }
             .setNegativeButton(android.R.string.cancel) { _, _ -> confirmarAnaliseComIa() }
-            .show()
+            .exibir()
     }
 
     /** Escolha do modelo: automático, um da lista que a API libera para a chave, ou um nome digitado. */
@@ -1420,7 +1422,7 @@ class ReaderActivity : BasePlayerActivity() {
             .setTitle(R.string.character_ai_model_title)
             .setMessage(R.string.character_ai_model_loading)
             .setNegativeButton(android.R.string.cancel) { _, _ -> confirmarAnaliseComIa() }
-            .show()
+            .exibir()
         lifecycleScope.launch {
             val resultado = withContext(Dispatchers.IO) { runCatching { GeminiSpeakerClient.listModels(chave) } }
             if (!carregando.isShowing) return@launch
@@ -1441,7 +1443,7 @@ class ReaderActivity : BasePlayerActivity() {
                     }
                 }
                 .setNegativeButton(android.R.string.cancel) { _, _ -> confirmarAnaliseComIa() }
-                .show()
+                .exibir()
         }
     }
 
@@ -1470,7 +1472,7 @@ class ReaderActivity : BasePlayerActivity() {
                 confirmarAnaliseComIa()
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> confirmarAnaliseComIa() }
-            .show()
+            .exibir()
     }
 
     private fun executarAnaliseComIa(cliente: com.jonjonesbr.audiobookgen.domain.AiTextClient, textos: List<String>, inicial: SpeakerAiStore.State) {
@@ -1489,7 +1491,7 @@ class ReaderActivity : BasePlayerActivity() {
             .setView(conteudo)
             .setCancelable(false)
             .setNegativeButton(android.R.string.cancel) { _, _ -> speakerAiJob?.cancel() }
-            .show()
+            .exibir()
         var ultimo = inicial
         speakerAiJob?.cancel()
         speakerAiJob = lifecycleScope.launch {
@@ -1572,7 +1574,7 @@ class ReaderActivity : BasePlayerActivity() {
                 )
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun rotuloGenero(speaker: DetectedSpeaker): String = getString(
@@ -1623,7 +1625,7 @@ class ReaderActivity : BasePlayerActivity() {
                     .setTitle(R.string.character_voices_suggest_title)
                     .setMessage(R.string.character_voices_suggest_none)
                     .setPositiveButton(android.R.string.ok, null)
-                    .show()
+                    .exibir()
                 return@launch
             }
             val resumo = sugestoes.joinToString("\n") { s ->
@@ -1641,7 +1643,7 @@ class ReaderActivity : BasePlayerActivity() {
                     aplicarVozesPersonagens(result, comVoz.associate { it.speaker.id to it.voice?.id })
                 }
                 .setNegativeButton(android.R.string.cancel) { _, _ -> mostrarListaVozesPersonagens(result) }
-                .show()
+                .exibir()
         }
     }
 
@@ -1672,7 +1674,7 @@ class ReaderActivity : BasePlayerActivity() {
             )
             .setItems(acoes.map { it.first }.toTypedArray()) { _, indice -> acoes[indice].second() }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     // ── Correção manual de personagens (B4): conferir falas, corrigir uma fala, fundir nomes ─────────
@@ -1689,7 +1691,7 @@ class ReaderActivity : BasePlayerActivity() {
             .setTitle(getString(R.string.character_edit_lines_title, speaker.name))
             .setItems(rotulos.toTypedArray()) { _, indice -> escolherQuemFala(result, speaker, falas[indice]) }
             .setNegativeButton(android.R.string.cancel) { _, _ -> mostrarOpcoesVozPersonagem(result, speaker) }
-            .show()
+            .exibir()
     }
 
     private fun escolherQuemFala(result: SpeakerAttributionResult, atual: DetectedSpeaker, fala: com.jonjonesbr.audiobookgen.domain.SpeechLine) {
@@ -1706,7 +1708,7 @@ class ReaderActivity : BasePlayerActivity() {
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun digitarNomeDaFala(fala: com.jonjonesbr.audiobookgen.domain.SpeechLine) {
@@ -1723,7 +1725,7 @@ class ReaderActivity : BasePlayerActivity() {
                 if (nome.isNotEmpty()) corrigirFala(fala, nome)
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun corrigirFala(fala: com.jonjonesbr.audiobookgen.domain.SpeechLine, nome: String) {
@@ -1744,10 +1746,10 @@ class ReaderActivity : BasePlayerActivity() {
                     .setMessage(getString(R.string.character_edit_merge_confirm, speaker.name, destino.name))
                     .setPositiveButton(android.R.string.ok) { _, _ -> aplicarEdicaoManual { it.withMerge(speaker.id, destino.name) } }
                     .setNegativeButton(android.R.string.cancel, null)
-                    .show()
+                    .exibir()
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     /** Grava a correção, refaz a análise (mantendo as vozes já escolhidas) e reabre a lista de personagens. */
@@ -2067,7 +2069,7 @@ class ReaderActivity : BasePlayerActivity() {
                         ).show()
                     }
                 }
-                .show()
+                .exibir()
         } else {
             prosseguir()
         }
