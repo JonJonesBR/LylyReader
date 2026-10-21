@@ -28,9 +28,10 @@
 
         <CheckBox
             android:id="@+id/cbDownloadSelecionar"
-            android:layout_width="40dp"
+            android:layout_width="48dp"
             android:layout_height="wrap_content"
             android:minWidth="0dp"
+            android:minHeight="48dp"
             android:contentDescription="@null"/>
 
         <LinearLayout

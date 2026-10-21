@@ -67,7 +67,7 @@
             android:id="@+id/btnBuscarLivro"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-        android:minHeight="44dp"
+        android:minHeight="48dp"
             android:text="@string/livros_buscar"
             android:textSize="13sp"
             android:backgroundTint="?attr/colorPrimary"
