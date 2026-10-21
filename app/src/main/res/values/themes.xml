@@ -50,6 +50,16 @@
         <item name="lylyTextoLeitura">#2B2930</item>
         <item name="lylyBarraNavegacao">#F3EDF7</item>
         <item name="lylyProgresso">#7C3AED</item>
+
+        <!-- Transição entre telas: fade curto em vez do slide padrão -->
+        <item name="android:windowAnimationStyle">@style/LylyTransicao</item>
+    </style>
+
+    <style name="LylyTransicao">
+        <item name="android:activityOpenEnterAnimation">@anim/fade_in</item>
+        <item name="android:activityOpenExitAnimation">@anim/fade_out</item>
+        <item name="android:activityCloseEnterAnimation">@anim/fade_in</item>
+        <item name="android:activityCloseExitAnimation">@anim/fade_out</item>
     </style>
 
     <!-- Papel: creme de página de livro, tinta marrom e destaque sépia. Sempre claro (ThemePrefs força o modo diurno). -->

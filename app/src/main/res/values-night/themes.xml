@@ -50,5 +50,8 @@
         <item name="lylyTextoLeitura">#E6E0E9</item>
         <item name="lylyBarraNavegacao">#1D1B20</item>
         <item name="lylyProgresso">#D0BCFF</item>
+
+        <!-- Transição entre telas: fade curto em vez do slide padrão (mesmo que values/) -->
+        <item name="android:windowAnimationStyle">@style/LylyTransicao</item>
     </style>
 </resources>
