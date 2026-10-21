@@ -188,7 +188,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
                 // Pausado pelo botão Cancelar (o aviso já foi mostrado ali): não é falha.
                 Unit
             } else {
-                val erroMsg = result.exceptionOrNull()?.message ?: "Unknown error"
+                val erroMsg = result.exceptionOrNull()?.message ?: activity.getString(R.string.erro_download_desconhecido)
                 Toast.makeText(
                     activity,
                     activity.getString(R.string.toast_download_failed, erroMsg),
@@ -219,7 +219,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
             }
         }
         if (voice.engine == "kokoro" || voice.engine == "pocket") {
-            return Result.failure(IllegalStateException("Download indisponível para esta voz."))
+            return Result.failure(IllegalStateException(activity.getString(R.string.download_voz_indisponivel)))
         }
         return OnnxModelManager(activity).downloadModel(voice.id, onProgress)
     }

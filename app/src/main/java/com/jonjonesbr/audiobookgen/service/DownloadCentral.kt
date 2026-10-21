@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.service
 
 import android.content.Context
 import android.util.Log
+import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.domain.EstadoDownload
 import com.jonjonesbr.audiobookgen.domain.proximosDaFila
@@ -219,7 +220,7 @@ object DownloadCentral {
                 _andamento.update { it + (item.id to AndamentoDownload(EstadoDownload.PRONTO, ocupadoBytes = item.ocupadoBytes(ctx))) }
                 if (item.grupo == GrupoDownload.LIVROS) sumirDepois(item.id)
             } else {
-                _andamento.update { it + (item.id to AndamentoDownload(EstadoDownload.ERRO, erro = "verificação final falhou")) }
+                _andamento.update { it + (item.id to AndamentoDownload(EstadoDownload.ERRO, erro = ctx.getString(R.string.dl_central_erro_verificacao))) }
             }
         } catch (e: CancellationException) {
             // Pausar/cancelar já definiram o estado novo; aqui só deixa a corrotina morrer.
@@ -286,7 +287,7 @@ object DownloadCentral {
      * com [CancellationException]).
      */
     suspend fun baixarEAguardar(context: Context, id: String, onProgress: ProgressoDownload) {
-        val item = item(context, id) ?: throw IOException("Pacote desconhecido: $id")
+        val item = item(context, id) ?: throw IOException(context.getString(R.string.pacote_desconhecido, id))
         enfileirar(context, listOf(id))
         _andamento.first { mapa ->
             val a = mapa[id] ?: AndamentoDownload()

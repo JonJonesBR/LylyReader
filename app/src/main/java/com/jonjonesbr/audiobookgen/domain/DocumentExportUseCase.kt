@@ -8,6 +8,7 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
+import com.jonjonesbr.audiobookgen.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -35,10 +36,10 @@ class DocumentExportUseCase(private val context: Context) {
                 val destUri =
                     if (pastaSafUri != null) {
                         copiarParaSafFolder(mp3, pastaSafUri, mimeType)
-                            ?: throw IOException("Falha ao criar arquivo na pasta SAF")
+                            ?: throw IOException(context.getString(R.string.export_falha_criar_saf))
                     } else {
                         copiarParaDownloads(mp3, mimeType)
-                            ?: throw IOException("Falha ao copiar para pasta Downloads")
+                            ?: throw IOException(context.getString(R.string.export_falha_copiar_downloads))
                     }
                 val nomePasta =
                     if (pastaSafUri != null) resolverNomePastaSaf(context, pastaSafUri) else "Downloads"
@@ -118,12 +119,12 @@ class DocumentExportUseCase(private val context: Context) {
     ): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
             val pastaDestino = criarSubpastaSaf(pastaSafUri, nomeSubpasta)
-                ?: throw IOException("Falha ao criar a pasta '$nomeSubpasta'")
+                ?: throw IOException(context.getString(R.string.export_falha_criar_pasta, nomeSubpasta))
             val sucessos = arquivos.count { (nomeArquivo, conteudo) ->
                 gravarTextoNaPasta(pastaDestino, nomeArquivo, conteudo)
             }
             if (sucessos < arquivos.size) {
-                throw IOException("Falha ao exportar ${arquivos.size - sucessos} de ${arquivos.size} capítulos")
+                throw IOException(context.getString(R.string.export_falha_capitulos, arquivos.size - sucessos, arquivos.size))
             }
             sucessos
         }

@@ -1,5 +1,7 @@
 package com.jonjonesbr.audiobookgen.domain
 
+import android.content.Context
+import com.jonjonesbr.audiobookgen.R
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
@@ -37,7 +39,8 @@ class OpenAiStyleClient(
     private val model: String,
     private val apiKey: String = "",
     override val rotulo: String,
-    private val pauseBetweenRequestsMs: Long = 1_500L
+    private val pauseBetweenRequestsMs: Long = 1_500L,
+    private val context: Context
 ) : AiTextClient {
     private var lastRequestAt = 0L
 
@@ -53,11 +56,11 @@ class OpenAiStyleClient(
                 if (e.fatal) throw e
                 lastError = e
             } catch (e: IOException) {
-                lastError = AiApiException("Falha de rede: ${e.message}", false)
+                lastError = AiApiException(context.getString(R.string.ai_falha_rede, e.message), false)
             }
             if (attempt < MAX_ATTEMPTS) Thread.sleep(BACKOFF_MS * attempt)
         }
-        throw lastError ?: AiApiException("A IA não respondeu.", false)
+        throw lastError ?: AiApiException(context.getString(R.string.ai_nao_respondeu), false)
     }
 
     private fun request(prompt: String): String {
@@ -79,11 +82,14 @@ class OpenAiStyleClient(
             val text = (if (code in 200..299) connection.inputStream else connection.errorStream)
                 ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
             return when {
-                code in 200..299 -> extractContent(text)
-                code == 401 || code == 403 -> throw AiApiException("$rotulo recusou o acesso (HTTP $code).", true)
-                code == 404 -> throw AiApiException("$rotulo: endereço ou modelo não encontrado (HTTP 404).", true)
-                code == 402 || code == 429 -> throw AiApiException("$rotulo atingiu o limite de uso (HTTP $code).", false)
-                else -> throw AiApiException("$rotulo respondeu com erro (HTTP $code).", false)
+                code in 200..299 -> extractContent(text, context)
+                code == 401 || code == 403 ->
+                    throw AiApiException(context.getString(R.string.ai_recusou_acesso, rotulo, code), true)
+                code == 404 ->
+                    throw AiApiException(context.getString(R.string.ai_modelo_nao_encontrado, rotulo), true)
+                code == 402 || code == 429 ->
+                    throw AiApiException(context.getString(R.string.ai_limite_uso, rotulo, code), false)
+                else -> throw AiApiException(context.getString(R.string.ai_erro_resposta, rotulo, code), false)
             }
         } finally {
             connection.disconnect()
@@ -98,11 +104,11 @@ class OpenAiStyleClient(
         const val POLLINATIONS_MODEL = "openai"
 
         /** Texto da resposta no formato OpenAI; vazio ou "{}" sem conteúdo conta como falha temporária. */
-        fun extractContent(json: String): String {
+        fun extractContent(json: String, context: Context): String {
             val content = runCatching {
                 JSONObject(json).optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")?.optString("content")
             }.getOrNull().orEmpty().trim()
-            if (content.isEmpty() || content == "{}") throw AiApiException("Resposta vazia da IA.", false)
+            if (content.isEmpty() || content == "{}") throw AiApiException(context.getString(R.string.ai_resposta_vazia), false)
             return content
         }
 

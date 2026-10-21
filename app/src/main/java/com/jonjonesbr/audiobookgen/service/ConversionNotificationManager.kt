@@ -8,7 +8,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 
 class ConversionNotificationManager(private val context: Context) {
@@ -142,16 +141,14 @@ class ConversionNotificationManager(private val context: Context) {
     }
 
     private fun criarCanal() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ch = NotificationChannel(
-                CHANNEL_ID,
-                context.getString(R.string.notification_conversion_channel),
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description  = context.getString(R.string.notification_conversion_channel_description)
-                setShowBadge(false)
-            }
-            nm.createNotificationChannel(ch)
+        val ch = NotificationChannel(
+            CHANNEL_ID,
+            context.getString(R.string.notification_conversion_channel),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description  = context.getString(R.string.notification_conversion_channel_description)
+            setShowBadge(false)
         }
+        nm.createNotificationChannel(ch)
     }
 }

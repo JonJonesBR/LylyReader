@@ -3,7 +3,6 @@ package com.jonjonesbr.audiobookgen.player
 import android.content.Context
 import android.media.MediaPlayer
 import android.media.PlaybackParams
-import android.os.Build
 import android.util.Log
 import java.io.File
 
@@ -130,13 +129,11 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
         currentSpeed = speed
         try {
             mediaPlayer?.let { player ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    val params = PlaybackParams().apply {
-                        this.speed = speed
-                        this.pitch = timbre.fatorDeTom
-                    }
-                    player.playbackParams = params
+                val params = PlaybackParams().apply {
+                    this.speed = speed
+                    this.pitch = timbre.fatorDeTom
                 }
+                player.playbackParams = params
             }
         } catch (e: Exception) {
             Log.e("MediaPlayerEngine", "Error setting playback speed", e)

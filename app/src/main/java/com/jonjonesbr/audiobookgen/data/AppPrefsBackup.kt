@@ -8,11 +8,7 @@ import org.json.JSONObject
  * backup completo (Fase 5), pra não divergir entre os dois pontos de uso.
  */
 object AppPrefsBackup {
-    private const val DEFAULT_READER_FONTE = 16f
-    private const val DEFAULT_READER_ESPACAMENTO = 1.5f
-
     fun paraJson(appPrefs: AppPrefs): JSONObject {
-        val readerPrefs = appPrefs.getPrefs()
         return JSONObject().apply {
             put("ritmo", appPrefs.ritmo)
             put("motor_tts", appPrefs.motorTts)
@@ -37,12 +33,9 @@ object AppPrefsBackup {
             put("voice_download_onboarding_done", appPrefs.voiceDownloadOnboardingDone)
             put("aviso_voz_generica_dispensado", appPrefs.avisoVozGenericaDispensado)
             put("blacklist_words", appPrefs.blacklistWordsJson)
-            put("reader_fonte", readerPrefs.getFloat("reader_fonte", DEFAULT_READER_FONTE).toDouble())
-            put(
-                "reader_espacamento",
-                readerPrefs.getFloat("reader_espacamento", DEFAULT_READER_ESPACAMENTO).toDouble()
-            )
-            put("reader_tema", readerPrefs.getInt("reader_tema", 0))
+            put("reader_fonte", appPrefs.readerFonte.toDouble())
+            put("reader_espacamento", appPrefs.readerEspacamento.toDouble())
+            put("reader_tema", appPrefs.readerTema)
         }
     }
 
@@ -117,19 +110,15 @@ object AppPrefsBackup {
     }
 
     private fun aplicarReaderPrefs(appPrefs: AppPrefs, json: JSONObject) {
-        if (!json.has("reader_fonte") && !json.has("reader_espacamento") && !json.has("reader_tema")) return
-        appPrefs.getPrefs().edit().apply {
-            if (json.has("reader_fonte")) {
-                val v = json.optDouble("reader_fonte", DEFAULT_READER_FONTE.toDouble()).toFloat()
-                putFloat("reader_fonte", v)
-            }
-            if (json.has("reader_espacamento")) {
-                val v = json.optDouble("reader_espacamento", DEFAULT_READER_ESPACAMENTO.toDouble()).toFloat()
-                putFloat("reader_espacamento", v)
-            }
-            if (json.has("reader_tema")) {
-                putInt("reader_tema", json.optInt("reader_tema", 0))
-            }
-        }.apply()
+        if (json.has("reader_fonte")) {
+            appPrefs.readerFonte = json.optDouble("reader_fonte", AppPrefs.READER_FONTE_PADRAO.toDouble()).toFloat()
+        }
+        if (json.has("reader_espacamento")) {
+            appPrefs.readerEspacamento =
+                json.optDouble("reader_espacamento", AppPrefs.READER_ESPACAMENTO_PADRAO.toDouble()).toFloat()
+        }
+        if (json.has("reader_tema")) {
+            appPrefs.readerTema = json.optInt("reader_tema", 0)
+        }
     }
 }

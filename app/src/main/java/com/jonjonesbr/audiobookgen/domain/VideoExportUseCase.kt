@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.domain
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -8,6 +9,7 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.media.MediaMuxer
+import com.jonjonesbr.audiobookgen.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -37,7 +39,7 @@ data class OpcoesVideo(
 
 const val DURACAO_MAX_PARTE_PADRAO_MIN = 11 * 60 + 50
 
-class VideoExportUseCase {
+class VideoExportUseCase(private val context: Context) {
 
     /**
      * Grava as partes em [pastaSaida] como `parte_1.mp4`, `parte_2.mp4`… e devolve os arquivos em
@@ -53,13 +55,13 @@ class VideoExportUseCase {
         onParte: (Int) -> Unit = {}
     ): Result<List<File>> = withContext(Dispatchers.IO) {
         runCatching {
-            val duracaoUs = obterDuracaoUs(audioFile).coerceAtLeast(1L)
-            val quadros = codificarQuadrosComFallback(capa, opcoes.resolucao)
+            val duracaoUs = obterDuracaoUs(context, audioFile).coerceAtLeast(1L)
+            val quadros = codificarQuadrosComFallback(context, capa, opcoes.resolucao)
             val contexto = coroutineContext
             val ativo = { contexto.isActive }
             val partes = ArrayList<File>()
             try {
-                gravarPartes(audioFile, quadros, duracaoUs, pastaSaida, opcoes, fronteirasCapituloUs, partes, onProgress, onParte, ativo)
+                gravarPartes(context, audioFile, quadros, duracaoUs, pastaSaida, opcoes, fronteirasCapituloUs, partes, onProgress, onParte, ativo)
             } catch (e: Throwable) {
                 partes.forEach { it.delete() }
                 throw e
@@ -70,7 +72,7 @@ class VideoExportUseCase {
 }
 
 /** Alguns encoders de hardware recusam resoluções pequenas: tenta a escolhida e depois as maiores. */
-private fun codificarQuadrosComFallback(capa: Bitmap?, resolucao: ResolucaoVideo): TrilhaCodificada {
+private fun codificarQuadrosComFallback(context: Context, capa: Bitmap?, resolucao: ResolucaoVideo): TrilhaCodificada {
     var ultimoErro: Exception? = null
     for (candidata in ResolucaoVideo.values().filter { it.ordinal >= resolucao.ordinal }) {
         try {
@@ -79,7 +81,7 @@ private fun codificarQuadrosComFallback(capa: Bitmap?, resolucao: ResolucaoVideo
             ultimoErro = e
         }
     }
-    throw ultimoErro ?: IllegalStateException("Nenhuma resolucao de video disponivel")
+    throw ultimoErro ?: IllegalStateException(context.getString(R.string.video_sem_resolucao))
 }
 
 private fun prepararBitmapDeVideo(capa: Bitmap?, resolucao: ResolucaoVideo): Bitmap {
@@ -98,7 +100,7 @@ private fun prepararBitmapDeVideo(capa: Bitmap?, resolucao: ResolucaoVideo): Bit
     return saida
 }
 
-private fun obterDuracaoUs(audioFile: File): Long {
+private fun obterDuracaoUs(context: Context, audioFile: File): Long {
     val extractor = MediaExtractor()
     try {
         extractor.setDataSource(audioFile.absolutePath)
@@ -109,15 +111,15 @@ private fun obterDuracaoUs(audioFile: File): Long {
     } finally {
         extractor.release()
     }
-    return obterDuracaoViaMetadataRetriever(audioFile)
+    return obterDuracaoViaMetadataRetriever(context, audioFile)
 }
 
-private fun obterDuracaoViaMetadataRetriever(audioFile: File): Long {
+private fun obterDuracaoViaMetadataRetriever(context: Context, audioFile: File): Long {
     val retriever = MediaMetadataRetriever()
     return try {
         retriever.setDataSource(audioFile.absolutePath)
         val ms = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
-            ?: error("Nao foi possivel determinar a duracao do audio")
+            ?: error(context.getString(R.string.video_duracao_desconhecida))
         ms * MS_PARA_US
     } finally {
         retriever.release()
@@ -126,6 +128,7 @@ private fun obterDuracaoViaMetadataRetriever(audioFile: File): Long {
 
 @Suppress("LongParameterList")
 private fun gravarPartes(
+    context: Context,
     audioFile: File,
     quadros: TrilhaCodificada,
     duracaoUs: Long,
@@ -151,7 +154,7 @@ private fun gravarPartes(
             val arquivo = File(pastaSaida, "parte_${indice + 1}.mp4")
             partes.add(arquivo)
             onParte(indice + 1)
-            GravadorMp4EmFluxo(arquivo, quadros) {
+            GravadorMp4EmFluxo(context, arquivo, quadros) {
                 formatoComCsdGarantido(estado, "Encoder AAC nao reportou formato de saida")
             }
         }
@@ -166,11 +169,11 @@ private fun gravarPartes(
                 analisador.descartarAntesDe(estado.ultimoPtsUs - JANELA_BUSCA_CORTE_US * 2)
             }
         }
-        transcodificarAudioParaAac(audioFile, duracaoUs, estado, onProgress)
+        transcodificarAudioParaAac(context, audioFile, duracaoUs, estado, onProgress)
         analisador.finalizar(taxa)
         // O vídeo acompanha o fim REAL do áudio gravado: a duração estimada do MP3 (sem cabeçalho de duração) pode ser menor.
         divisor.finalizar(maxOf(estado.ultimoPtsUs, 1L))
-        check(divisor.partesGravadas > 0) { "Nenhuma amostra de audio foi codificada" }
+        check(divisor.partesGravadas > 0) { context.getString(R.string.video_sem_amostra_audio) }
     } finally {
         divisor.liberar()
     }
@@ -182,6 +185,7 @@ private fun gravarPartes(
  * amostras-chave repetidas — são intercalados conforme o tempo do áudio avança.
  */
 private class GravadorMp4EmFluxo(
+    private val context: Context,
     private val destino: File,
     private val quadros: TrilhaCodificada,
     private val formatoAudio: () -> MediaFormat
@@ -200,7 +204,7 @@ private class GravadorMp4EmFluxo(
     }
 
     override fun finalizar(duracaoUs: Long) {
-        val m = muxer ?: error("Nenhuma amostra de audio foi codificada")
+        val m = muxer ?: error(context.getString(R.string.video_sem_amostra_audio))
         escreverQuadrosAte(m, duracaoUs, inclusivo = false)
         m.stop()
         concluido = true

@@ -4,25 +4,15 @@
     <string name="app_slogan">LylyReader: Give your books a voice!</string>
 
     <!-- Content Descriptions -->
-    <string name="cd_logo">LylyReader logo</string>
-    <string name="cd_biblioteca">Library</string>
     <string name="cd_abrir_audio">Open audio file</string>
-    <string name="cd_fila">Queue</string>
     <string name="cd_ajuda">Help</string>
-    <string name="cd_configuracoes">Settings</string>
     <string name="cd_voltar">Back</string>
-    <string name="cd_selecionar">Select</string>
-    <string name="cd_pasta">Folder</string>
     <string name="cd_ordenar">Sort</string>
     <string name="cd_aparencia">Appearance</string>
     <string name="cd_play_pause">Play/Pause</string>
     <string name="cd_guided_play">Start guided reading</string>
     <string name="cd_guided_pause">Pause guided reading</string>
     <string name="cd_guided_speed">Reading speed %1$s</string>
-    <string name="notification_permission_rationale_title">Allow notifications</string>
-    <string name="notification_permission_rationale_message">Notifications show conversion progress while LylyReader works in the background. You can keep converting without them.</string>
-    <string name="notification_permission_rationale_continue">Continue</string>
-    <string name="notification_permission_rationale_later">Not now</string>
     <string name="cd_expandir_player">Expand player</string>
     <string name="cd_fechar_player">Close player</string>
     <string name="cd_guided_anterior">Previous paragraph</string>
@@ -30,7 +20,6 @@
     <string name="cd_guided_fechar">Close guided reading</string>
     <string name="cd_sleep_timer">Sleep timer</string>
     <string name="sleep_timer_title_active">Sleep timer — %1$s left</string>
-    <string name="sleep_timer_minutes_option">%1$d min</string>
     <string name="sleep_timer_off_option">Turn off</string>
     <string name="toast_sleep_timer_off">Sleep timer turned off</string>
     <string name="toast_sleep_timer_set">Sleep timer set for %1$d minutes</string>
@@ -55,17 +44,6 @@
     <string name="cd_biblioteca_vazia">Empty library illustration</string>
 
     <!-- Main Activity -->
-    <string name="btn_selecionar_arquivo">Select file</string>
-    <string name="formatos_suportados_completo">EPUB · PDF · TXT · DOC · DOCX · MOBI · MD</string>
-    <string name="nenhum_arquivo_selecionado">No file selected</string>
-    <string name="btn_previsualizar"> Preview</string>
-    <string name="pasta_padrao">Downloads</string>
-    <string name="btn_alterar">Change</string>
-    <string name="label_voz">VOICE</string>
-    <string name="btn_ouvir_amostra">▶  Sample</string>
-    <string name="label_estilo_narracao">NARRATION STYLE</string>
-    <string name="label_ritmo_fala">SPEECH RATE</string>
-    <string name="btn_processar">Create audiobook</string>
     <string name="btn_leitura_guiada">Guided reading</string>
     <string name="dialog_download_voice_title">Download Voice</string>
     <string name="dialog_download_voice_message">This high-quality voice will be downloaded offline (~15MB to 85MB). Do you want to download it now?</string>
@@ -85,9 +63,6 @@
     <string name="btn_abrir_configuracoes">Open settings</string>
     <string name="toast_tts_settings_indisponivel">Couldn\'t open the voice download screen for this engine.</string>
     <string name="status_downloading_voice">Downloading voice files... %1$d%%</string>
-    <string name="voice_download_title">Offline Voices</string>
-    <string name="voice_download_desc">To convert audiobooks and use guided reading without internet, download the offline voices you want. You can also do this later in Settings → Offline Voices.</string>
-    <string name="voice_download_skip">Continue</string>
     <string name="voice_status_offline_ready">[Offline – Ready]</string>
     <string name="voice_status_offline_download">[Offline – Download]</string>
     <string name="voice_status_device">[Device]</string>
@@ -145,62 +120,17 @@
     <string name="dialog_downloading_title">Downloading</string>
     <string name="toast_download_cancelled">Download cancelled.</string>
     <string name="toast_download_voice_first">Select and download the voice first to hear the sample.</string>
-    <string name="btn_adicionar_fila">⊕  Add to queue</string>
     <string name="btn_cancelar">Cancel</string>
     <string name="dialog_audiobook_duplicado_title">Audiobook already exists</string>
     <string name="dialog_audiobook_duplicado_msg">There\'s already an audiobook named \"%1$s\" in your library. Convert it again anyway?</string>
     <string name="dialog_audiobook_duplicado_confirmar">Convert anyway</string>
-    <string name="btn_compartilhar_audiobook">  Share audiobook</string>
-    <string name="dialog_select_files_title">Select files</string>
-    <string name="dialog_select_files_option_files"> File(s)</string>
-    <string name="dialog_select_files_option_folder"> Folder</string>
-    <string name="status_file_ready">File ready. Tap Create audiobook.</string>
-    <string name="status_starting_excerpt">⏳ Starting excerpt conversion...</string>
-    <string name="status_reader_edits_saved">Edited text saved. Choose the voice and convert when ready.</string>
     <string name="status_unsupported_format">⚠ Unsupported format: .%1$s\nSupported: EPUB, PDF, TXT, MD, DOCX</string>
-    <string name="status_file_received">File received. Tap Create audiobook.</string>
-    <string name="status_canceling">⏹ Canceling...</string>
-    <string name="status_file_read_error">❌ Could not read the file.</string>
     <string name="status_file_read_error_detail">❌ Could not read the file.\nCheck if it is corrupted or protected.</string>
-    <string name="status_added_file_to_queue">✅ \"%1$s\" added to queue (%2$d pending)</string>
-    <string name="snackbar_open_queue">Open queue</string>
     <string name="reader_progresso_iniciando">Starting...</string>
     <string name="status_starting">⏳ Starting...</string>
     <string name="share_audiobook_chooser">Share audiobook</string>
-    <string name="status_adding_to_queue">Adding to queue...</string>
-    <string name="status_files_added_to_queue">✅ %1$d file(s) added to queue</string>
-    <string name="status_reading_folder">Reading folder...</string>
-    <string name="status_folder_files_added">✅ %1$d file(s) from the folder added to queue</string>
-    <string name="status_no_supported_files_in_folder">❌ No compatible files found in the folder.</string>
-    <string name="dialog_lote_arquivos_title">%1$d files selected</string>
-    <string name="dialog_lote_arquivos_message">Convert the full files, or open each one to choose specific chapters before adding it to the queue?</string>
-    <string name="btn_converter_tudo">Convert all</string>
-    <string name="btn_selecionar_capitulos">Choose chapters</string>
-    <string name="status_generating_preview">Generating...</string>
-    <string name="status_sample_button"> Sample</string>
-    <string name="status_saved_to_folder">✅ Saved in %1$s\n%2$s | %3$sMB</string>
     <string name="status_export_error">Export error</string>
-    <string name="status_audio_ready_export_failed">The audiobook was created and kept on this device, but could not be saved to the selected folder.</string>
-    <string name="status_export_retrying">Saving the audiobook to the selected folder…</string>
-    <string name="status_export_retry_success">Audiobook saved to %1$s.</string>
-    <string name="status_export_retry_failed">Could not save it there. The audiobook is still available on this device; choose another folder or share it.</string>
-    <string name="status_export_source_missing">The temporary audio file is no longer available. Convert the source file again.</string>
-    <string name="dialog_conversion_export_failed_title">Audio ready, save failed</string>
-    <string name="dialog_conversion_export_failed_message">The audiobook was created and remains available on this device. Choose another folder to save it, or play or share it now.</string>
-    <string name="dialog_conversion_save_elsewhere">Save to another folder</string>
-    <string name="dialog_conversion_done_title">Conversion completed!</string>
-    <string name="dialog_conversion_done_message">The audio is ready. What would you like to do?</string>
-    <string name="dialog_conversion_done_sem_capitulos">The file had no detectable chapter structure, so the audio has no chapter markers.</string>
     <string name="toast_arquivo_nao_disponivel">The file is no longer available.</string>
-    <string name="dialog_conversion_done_play">▶ Play</string>
-    <string name="dialog_conversion_done_read_original"> Read original</string>
-    <string name="dialog_conversion_done_share"> Share</string>
-    <string name="status_preview_open_error">❌ Could not open the file for preview.</string>
-    <string name="status_queue_processing">⏳ [%1$d/%2$d] %3$s...</string>
-    <string name="dialog_shared_file_title">File received</string>
-    <string name="dialog_shared_file_message">Create an audiobook now or preview the text before converting.</string>
-    <string name="dialog_shared_file_later">Later</string>
-    <string name="hint_style_gemini_only">Narration styles are applied only when Gemini TTS is selected.</string>
     <string name="voice_gender_male">male</string>
     <string name="voice_gender_female">female</string>
     <string name="voice_language_multilingual">multilingual</string>
@@ -212,15 +142,12 @@
     <string name="style_comedy">Comedy</string>
 
     <!-- Library Activity -->
-    <string name="titulo_biblioteca">My Library</string>
     <string name="label_ordenar_data">Date</string>
     <string name="label_ordenar_nome">A->Z</string>
     <string name="library_progress_listened">%1$d%% listened</string>
     <string name="library_progress_done">✓ Finished</string>
     <string name="library_search_hint">Search audiobooks</string>
     <string name="library_search_no_results">No results for your search</string>
-    <string name="library_shortcut_title">Your library</string>
-    <string name="library_shortcut_last">Last: %1$s</string>
     <string name="recent_section_title">Continue reading</string>
     <string name="recent_continue">Continue</string>
     <string name="recent_remove">Remove from list</string>
@@ -281,7 +208,6 @@
     <string name="queue_status_paused">Paused</string>
 
     <!-- Settings Activity -->
-    <string name="titulo_configuracoes">Settings</string>
     <string name="label_motor_tts">TTS ENGINE</string>
     <string name="radio_edge_tts">Edge TTS (Microsoft) - Free</string>
     <string name="desc_edge_tts">No cost. Requires internet connection.</string>
@@ -302,8 +228,6 @@
     <string name="pocket_mobile_data_notice">You are not on Wi-Fi. This download will use mobile data.</string>
     <string name="pocket_license_notice">CC BY 4.0 · attribution required</string>
     <string name="preview_pocket_failure">Could not generate the Pocket sample. Check that this language pack is installed.</string>
-    <string name="btn_baixar">Download</string>
-    <string name="btn_excluir">Delete</string>
     <string name="label_gemini_key">Gemini API Key</string>
     <string name="label_elevenlabs_key">ElevenLabs API Key</string>
 
@@ -336,13 +260,6 @@
     <string name="settings_tab_audio">Audio</string>
     <string name="settings_tab_dados">Data</string>
     <string name="settings_tab_ajuda">Help</string>
-    <string name="sheet_opcoes_titulo">Options</string>
-    <string name="tab_opcoes_navegacao">Navigation</string>
-    <string name="tab_opcoes_sistema">System</string>
-    <string name="desc_opcao_biblioteca">Your saved and converted audiobooks</string>
-    <string name="desc_opcao_fila">Track ongoing and pending conversions</string>
-    <string name="desc_opcao_ajuda">Tutorial and frequently asked questions</string>
-    <string name="desc_opcao_configuracoes">Voice, audio quality, appearance and more</string>
     <string name="cache_calculando">Calculating…</string>
     <string name="btn_limpar_cache">Clear</string>
     <string name="label_sobre">ABOUT</string>
@@ -438,7 +355,6 @@
 
     <!-- Fase 1 - Limpeza inteligente -->
     <string name="banner_otimizacao">Text optimization in progress…</string>
-    <string name="banner_info_trechos">%1$d sections removed (TOC, footnotes)</string>
     <string name="banner_info_trechos_capitulos">%1$d sections removed. %2$d chapters found.</string>
     <string name="scope_full_book">Convert full book</string>
     <string name="scope_edit_text">Edit treated text</string>
@@ -456,16 +372,8 @@
     <string name="exclude_occurrences_message">Enter the exact word or phrase to remove everywhere.</string>
     <string name="exclude_occurrences_hint">Word or phrase</string>
     <string name="exclude_occurrences_confirm">Remove</string>
-    <string name="btn_limpar_opcoes">Clear options</string>
-    <string name="btn_show_advanced_options">Show advanced options</string>
-    <string name="btn_hide_advanced_options">Hide advanced options</string>
-    <string name="status_options_cleared">Options cleared.</string>
     <string name="status_conversion_canceled">Conversion canceled.</string>
     <string name="status_conversion_paused">Conversion paused.</string>
-    <string name="dialog_confirm_cancel_title">Cancel conversion?</string>
-    <string name="dialog_confirm_cancel_msg">The current conversion will be stopped and cannot be resumed. Are you sure?</string>
-    <string name="dialog_confirm_clear_title">Clear all options?</string>
-    <string name="dialog_confirm_clear_msg">The current conversion will be stopped and all settings will be reset. Are you sure?</string>
     <string name="notification_conversion_done">Audiobook ready</string>
     <string name="notification_conversion_done_message">Conversion completed successfully.</string>
     <string name="notification_conversion_paused">Conversion paused</string>
@@ -543,11 +451,6 @@
         <item quantity="other">Convert %d chapters</item>
     </plurals>
 
-    <plurals name="library_shortcut_count">
-        <item quantity="one">%d audiobook converted</item>
-        <item quantity="other">%d audiobooks converted</item>
-    </plurals>
-
     <!-- Blacklist Strings -->
     <string name="label_blacklist">EXCLUDED WORDS</string>
     <string name="desc_blacklist">Words or phrases automatically removed during text cleaning.</string>
@@ -571,14 +474,12 @@
 
     <!-- UI redesign — Reader UX improvements -->
     <string name="cd_mais_opcoes">More options</string>
-    <string name="cd_mais_opcoes_com_pendentes">More options (%1$d pending in queue)</string>
     <string name="btn_concluir_modo">Done</string>
     <string name="fab_converter_principal">Convert to audio</string>
     <string name="sheet_acoes_titulo">Actions</string>
     <string name="sheet_section_conversion">Conversion</string>
     <string name="sheet_section_reading">Reading</string>
     <string name="sheet_section_editing">Editing</string>
-    <string name="sheet_section_help">Help</string>
     <string name="action_help_tutorial">Help &amp; Tutorial</string>
     <string name="label_ajuda">Help</string>
     <string name="desc_settings_tutorial">Learn how to use all features of LylyReader — conversion, reader, library, queue and settings.</string>
@@ -756,7 +657,6 @@
     <string name="toast_importando_audio">Importing…</string>
     <string name="toast_audio_importado">Audiobook imported</string>
     <string name="toast_audios_importados">%1$d audiobooks imported</string>
-    <string name="toast_importar_audio_falhou">Couldn\'t import %1$s</string>
     <string name="stats_dialog_title">Library Statistics</string>
     <string name="stats_dialog_message">Total audiobooks: %1$d\nTotal listening time: %2$s\nCompleted: %3$d\nIn progress: %4$d</string>
     <string name="stats_tempo_horas_minutos">%1$dh %2$dmin</string>
@@ -948,7 +848,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="character_edit_done">Correction saved.</string>
 
     <!-- Central de downloads (Fase I) -->
-    <string name="dl_central_titulo">Download center</string>
     <string name="dl_central_abrir">Download center</string>
     <string name="dl_central_desc">Voices and books in one place, downloading in the background. Pausing keeps what was already downloaded.</string>
     <string name="dl_central_espaco">Free space: %1$s</string>
@@ -989,7 +888,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_notif_falha">Some downloads failed</string>
 
     <!-- Buscar livros em domínio público (Fase L) -->
-    <string name="dialog_select_files_option_livros">Search free books (public domain)</string>
     <string name="livros_titulo">Free books</string>
     <string name="livros_busca_hint">Title or author</string>
     <string name="livros_buscar">Search</string>
@@ -1015,7 +913,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
 
     <!-- Meus livros: biblioteca (Fase N) -->
     <string name="bib_titulo">Library</string>
-    <string name="bib_abrir">My library</string>
     <string name="bib_buscar_hint">Search your library</string>
     <string name="bib_cd_buscar">Search the library</string>
     <string name="bib_aba_todos">All</string>
@@ -1105,7 +1002,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="gerar_aviso_personagens">This book has character voices. The full-book audiobook uses them.</string>
     <string name="gerar_dica">The audiobook is generated in Conversions, where you follow the progress.</string>
     <string name="gerar_agora">Generate now</string>
-    <string name="gerar_mais_opcoes">More options (chapters, output folder…)</string>
 
     <string name="dl_buscar_livros">Search free books</string>
 
@@ -1304,4 +1200,77 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="primeiro_livro_link_cd">Download a book from a direct link</string>
     <string name="primeiro_livro_exemplo">Use the sample book</string>
     <string name="primeiro_livro_agora_nao">Not now</string>
+    <string name="notif_reproduzir">Reproduzir</string>
+    <string name="notif_anterior">Anterior</string>
+    <string name="notif_recuar">Recuar</string>
+    <string name="notif_avancar">Avançar</string>
+    <string name="notif_paragrafo">Parágrafo %1$d</string>
+    <string name="notif_soneca_minutos">Soneca %1$dmin</string>
+    <string name="notif_player_canal_nome">Player de Áudio</string>
+    <string name="notif_player_canal_descricao">Controles de reprodução</string>
+    <string name="notif_guiada_canal_descricao">Controles da leitura guiada</string>
+    <string name="erro_arquivo_audio_nao_encontrado">Arquivo de áudio não encontrado.</string>
+    <string name="amostra_pronta">Amostra Pronta</string>
+    <string name="amostra_falha_dispositivo">Falha ao gerar amostra com voz do dispositivo.</string>
+    <string name="erro_desconhecido">Erro desconhecido</string>
+    <string name="estilo_ficcao_cientifica">Ficção Científica</string>
+    <string name="erro_download_desconhecido">Unknown error</string>
+    <string name="download_voz_indisponivel">Download indisponível para esta voz.</string>
+    <string name="queue_motor">Motor: %1$s</string>
+    <string name="pacote_offline_baixado_tamanho">%1$.1fMB · %2$s</string>
+    <string name="dl_central_erro_verificacao">verificação final falhou</string>
+    <string name="pacote_desconhecido">Pacote desconhecido: %1$s</string>
+    <string name="erro_tts_cancelado">Conversao cancelada.</string>
+    <string name="erro_tts_offline_sem_memoria">A sintese offline falhou por falta de memoria. Feche outros apps e tente novamente.</string>
+    <string name="erro_tts_offline_nao_respondeu">O motor de voz offline nao respondeu. Tente novamente; se persistir, reinicie o app.</string>
+    <string name="erro_tts_offline_nao_baixada">A voz offline ainda nao foi baixada. Acesse Configuracoes e baixe as vozes offline.</string>
+    <string name="erro_tts_sem_conexao">Sem conexao. Verifique a internet e tente novamente.</string>
+    <string name="erro_tts_tempo_esgotado">A conexao demorou demais. Tente novamente em alguns instantes.</string>
+    <string name="erro_tts_limite_requisicoes">O servico de voz limitou as requisicoes. Aguarde um pouco e tente novamente.</string>
+    <string name="erro_tts_gemini_recusada">A chave Gemini foi recusada. Revise a chave salva nas configuracoes.</string>
+    <string name="erro_tts_gemini_invalida">A chave Gemini esta ausente ou invalida.</string>
+    <string name="erro_tts_elevenlabs_recusada">A chave ElevenLabs foi recusada. Revise a chave salva nas configuracoes.</string>
+    <string name="erro_tts_elevenlabs_invalida">A chave ElevenLabs esta ausente ou invalida.</string>
+    <string name="erro_tts_voz_temporariamente_indisponivel">A voz selecionada esta temporariamente indisponivel.</string>
+    <string name="erro_tts_voz_nao_disponivel">A voz selecionada nao esta disponivel neste motor.</string>
+    <string name="erro_tts_sem_audio">O servico de voz nao devolveu audio. Tente novamente.</string>
+    <string name="erro_tts_epub_invalido">O arquivo EPUB parece invalido ou corrompido.</string>
+    <string name="erro_tts_pdf_ilegivel">O PDF nao pode ser lido neste formato.</string>
+    <string name="erro_tts_protegido">O arquivo parece protegido por senha ou DRM.</string>
+    <string name="erro_tts_formato_nao_suportado">Formato de arquivo nao suportado.</string>
+    <string name="erro_tts_sem_texto">Nao foi encontrado texto legivel no documento.</string>
+    <string name="erro_tts_texto_nao_separavel">O texto nao pode ser separado para narracao.</string>
+    <string name="erro_tts_generico">Nao foi possivel concluir. Tente novamente ou use outro arquivo.</string>
+    <string name="python_motor_offline">Motor Python offline.</string>
+    <string name="python_payload_incompleto">Python retornou um payload incompleto.</string>
+    <string name="python_payload_vazio">Python retornou um payload vazio.</string>
+    <string name="extracao_arquivo_grande">Arquivo muito grande para visualização (máx. 50 MB).</string>
+    <string name="extracao_motor_indisponivel">Não foi possível iniciar o motor de leitura. Tente novamente.</string>
+    <string name="extracao_erro_abrir">Erro ao abrir o arquivo. Tente converter diretamente.</string>
+    <string name="extracao_sem_texto">Nenhum texto encontrado neste arquivo.</string>
+    <string name="capitulo_sem_titulo">Sem título</string>
+    <string name="extracao_protegido_senha">Arquivo protegido por senha não pode ser lido.</string>
+    <string name="extracao_formato_nao_reconhecido">Formato de texto não reconhecido. Tente converter diretamente.</string>
+    <string name="ai_falha_rede">Falha de rede: %1$s</string>
+    <string name="ai_nao_respondeu">A IA não respondeu.</string>
+    <string name="ai_resposta_vazia">Resposta vazia da IA.</string>
+    <string name="ai_recusou_acesso">%1$s recusou o acesso (HTTP %2$d).</string>
+    <string name="ai_modelo_nao_encontrado">%1$s: endereço ou modelo não encontrado (HTTP 404).</string>
+    <string name="ai_limite_uso">%1$s atingiu o limite de uso (HTTP %2$d).</string>
+    <string name="ai_erro_resposta">%1$s respondeu com erro (HTTP %2$d).</string>
+    <string name="ai_gemini_sem_chave">Nenhuma chave Gemini configurada.</string>
+    <string name="ai_gemini_chave_recusada">A chave Gemini foi recusada (HTTP %1$d).</string>
+    <string name="ai_gemini_modelo_indisponivel">Modelo indisponível (%1$s).</string>
+    <string name="ai_gemini_erro_resposta">A IA respondeu com erro (HTTP %1$d).</string>
+    <string name="export_falha_criar_saf">Falha ao criar arquivo na pasta SAF</string>
+    <string name="export_falha_copiar_downloads">Falha ao copiar para pasta Downloads</string>
+    <string name="export_falha_criar_pasta">Falha ao criar a pasta \'%1$s\'</string>
+    <string name="export_falha_capitulos">Falha ao exportar %1$d de %2$d capítulos</string>
+    <string name="backup_destino_indisponivel">Não foi possível abrir o destino.</string>
+    <string name="video_sem_resolucao">Nenhuma resolucao de video disponivel</string>
+    <string name="video_duracao_desconhecida">Nao foi possivel determinar a duracao do audio</string>
+    <string name="video_sem_amostra_audio">Nenhuma amostra de audio foi codificada</string>
+    <string name="audio_sem_trilha">Nenhuma trilha de audio encontrada</string>
+    <string name="audio_trilha_sem_mime">Trilha de audio sem MIME</string>
+    <string name="audio_falha_decodificar">Falha ao decodificar o audio: %1$s</string>
 </resources>

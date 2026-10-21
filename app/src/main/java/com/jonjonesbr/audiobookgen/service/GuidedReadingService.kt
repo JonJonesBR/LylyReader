@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.service
 
+import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import com.jonjonesbr.audiobookgen.util.proximoPresetSonecaMin
 import android.annotation.SuppressLint
@@ -68,11 +69,7 @@ class GuidedReadingService : Service() {
 
         fun start(context: Context) {
             val intent = Intent(context, GuidedReadingService::class.java).apply { action = ACTION_START }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
 
         fun stop(context: Context) {
@@ -224,27 +221,20 @@ class GuidedReadingService : Service() {
     private fun pararServico() {
         observeJob?.cancel()
         observeJob = null
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } else {
-            @Suppress("DEPRECATION")
-            stopForeground(true)
-        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     private fun criarCanal() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Leitura Guiada",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Controles da leitura guiada"
-                setShowBadge(false)
-            }
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            getString(R.string.action_guided_reading),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = getString(R.string.notif_guiada_canal_descricao)
+            setShowBadge(false)
         }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
     private fun atualizarEstadoMediaSession(isPlaying: Boolean) {
@@ -305,26 +295,27 @@ class GuidedReadingService : Service() {
         }
         val sonecaMs = SleepTimerManager.remainingMs.value
         val contentText = if (sonecaMs != null)
-            "Parágrafo ${index + 1} · 😴 ${SleepTimerManager.formatRemaining(sonecaMs)}"
-        else "Parágrafo ${index + 1}"
+            "${getString(R.string.notif_paragrafo, index + 1)} · 😴 ${SleepTimerManager.formatRemaining(sonecaMs)}"
+        else getString(R.string.notif_paragrafo, index + 1)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
-            .setContentTitle(GuidedPlaybackBridge.trackName)
+            .setContentTitle(GuidedPlaybackBridge.trackName(getString(R.string.btn_leitura_guiada)))
             .setContentText(contentText)
             .setContentIntent(openApp)
-            .addAction(android.R.drawable.ic_media_previous, "Anterior", pending(ACTION_PREV, 1))
+            .addAction(android.R.drawable.ic_media_previous, getString(R.string.notif_anterior), pending(ACTION_PREV, 1))
             .addAction(
                 if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-                if (isPlaying) "Pausar" else "Reproduzir",
+                if (isPlaying) getString(R.string.conv_pausar) else getString(R.string.notif_reproduzir),
                 pending(ACTION_PLAY_PAUSE, 2)
             )
-            .addAction(android.R.drawable.ic_media_next, "Próximo", pending(ACTION_NEXT, PENDING_REQ_NEXT))
+            .addAction(android.R.drawable.ic_media_next, getString(R.string.onboarding_btn_proximo), pending(ACTION_NEXT, PENDING_REQ_NEXT))
             .addAction(
                 android.R.drawable.ic_lock_idle_alarm,
-                SleepTimerManager.armedMinutes.value?.let { "Soneca ${it}min" } ?: "Soneca",
+                SleepTimerManager.armedMinutes.value?.let { getString(R.string.notif_soneca_minutos, it) }
+                    ?: getString(R.string.cd_sleep_timer),
                 pending(ACTION_SLEEP, PENDING_REQ_SLEEP)
             )
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Fechar", pending(ACTION_STOP, PENDING_REQ_STOP))
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, getString(R.string.conv_fechar), pending(ACTION_STOP, PENDING_REQ_STOP))
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
                     .setMediaSession(mediaSession!!.sessionToken)

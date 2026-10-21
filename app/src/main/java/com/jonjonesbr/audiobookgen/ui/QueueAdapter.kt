@@ -48,7 +48,7 @@ class QueueAdapter(
         val ctx = holder.itemView.context
 
         holder.tvNome.text = item.nome
-        holder.tvMeta.text = metadataText(item)
+        holder.tvMeta.text = metadataText(item, ctx)
         holder.btnRetry.visibility = View.GONE
 
         when (item.status) {
@@ -110,8 +110,8 @@ class QueueAdapter(
         submitList(QueueManager.items.toList())
     }
 
-    private fun metadataText(item: QueueItem): String {
-        val motor = item.motor?.let { "Motor: ${it.uppercase()}" }
+    private fun metadataText(item: QueueItem, ctx: android.content.Context): String {
+        val motor = item.motor?.let { ctx.getString(R.string.queue_motor, it.uppercase()) }
         val timestamp = item.finalizadoEmMillis ?: item.iniciadoEmMillis ?: item.criadoEmMillis
         val quando = DateFormat.format("dd/MM HH:mm", timestamp).toString()
         return listOfNotNull(motor, quando).joinToString("  -  ")

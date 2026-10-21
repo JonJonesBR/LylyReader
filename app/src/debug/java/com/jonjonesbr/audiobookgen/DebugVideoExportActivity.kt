@@ -29,7 +29,7 @@ class DebugVideoExportActivity : Activity() {
             val capa = Bitmap.createBitmap(320, 180, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.DKGRAY) }
             Log.i(TAG, "origem: ${mp3.length()} bytes, duracao do extrator: ${duracaoUs(mp3)} us")
             val inicio = System.currentTimeMillis()
-            val r = runBlocking { VideoExportUseCase().exportar(mp3, capa, pasta, OpcoesVideo(duracaoMaxParteMin = intent.getIntExtra("maxmin", OpcoesVideo().duracaoMaxParteMin))) }
+            val r = runBlocking { VideoExportUseCase(this@DebugVideoExportActivity).exportar(mp3, capa, pasta, OpcoesVideo(duracaoMaxParteMin = intent.getIntExtra("maxmin", OpcoesVideo().duracaoMaxParteMin))) }
             r.onSuccess { arquivos ->
                 arquivos.forEach { medir(it) }
                 Log.i(TAG, "FIM ok em ${System.currentTimeMillis() - inicio} ms; pasta ${pasta.absolutePath}")

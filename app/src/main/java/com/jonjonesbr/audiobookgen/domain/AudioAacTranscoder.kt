@@ -1,10 +1,12 @@
 package com.jonjonesbr.audiobookgen.domain
 
+import android.content.Context
 import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import com.jonjonesbr.audiobookgen.R
 import kotlinx.coroutines.CancellationException
 import java.io.File
 import java.nio.ByteBuffer
@@ -44,6 +46,7 @@ private class BlocoPcm(
 
 /** As amostras AAC vão para [estado] (use [EstadoCodificacao.aoReceberAmostra] para gravar em fluxo). */
 internal fun transcodificarAudioParaAac(
+    context: Context,
     audioFile: File,
     duracaoUs: Long,
     estado: EstadoCodificacao,
@@ -51,14 +54,14 @@ internal fun transcodificarAudioParaAac(
 ) {
     val extractor = MediaExtractor()
     extractor.setDataSource(audioFile.absolutePath)
-    val (decoder, encoder) = prepararCodecsDeAudio(extractor)
+    val (decoder, encoder) = prepararCodecsDeAudio(context, extractor)
     val fila = ArrayBlockingQueue<BlocoPcm>(CAPACIDADE_FILA_PCM)
     val parar = AtomicBoolean(false)
     val erroDecoder = AtomicReference<Throwable?>(null)
     val threadDecoder = Thread({ rodarDecoder(extractor, decoder, fila, parar, erroDecoder) }, "lyly-decoder-audio")
     try {
         threadDecoder.start()
-        rodarEncoder(encoder, fila, estado, duracaoUs, erroDecoder, onProgress)
+        rodarEncoder(context, encoder, fila, estado, duracaoUs, erroDecoder, onProgress)
     } finally {
         parar.set(true)
         threadDecoder.join(ESPERA_JOIN_MS)
@@ -68,11 +71,12 @@ internal fun transcodificarAudioParaAac(
     }
 }
 
-private fun prepararCodecsDeAudio(extractor: MediaExtractor): Pair<MediaCodec, MediaCodec> {
-    val trackIdx = indiceTrilhaAudio(extractor) ?: error("Nenhuma trilha de audio encontrada")
+private fun prepararCodecsDeAudio(context: Context, extractor: MediaExtractor): Pair<MediaCodec, MediaCodec> {
+    val trackIdx = indiceTrilhaAudio(extractor) ?: error(context.getString(R.string.audio_sem_trilha))
     extractor.selectTrack(trackIdx)
     val formatoEntrada = extractor.getTrackFormat(trackIdx)
-    val mimeEntrada = formatoEntrada.getString(MediaFormat.KEY_MIME) ?: error("Trilha de audio sem MIME")
+    val mimeEntrada = formatoEntrada.getString(MediaFormat.KEY_MIME)
+        ?: error(context.getString(R.string.audio_trilha_sem_mime))
     val decoder = MediaCodec.createDecoderByType(mimeEntrada).apply {
         configure(formatoEntrada, null, null, 0)
         start()
@@ -196,6 +200,7 @@ private class EntregaEmCurso {
 
 @Suppress("LongParameterList")
 private fun rodarEncoder(
+    context: Context,
     encoder: MediaCodec,
     fila: ArrayBlockingQueue<BlocoPcm>,
     estado: EstadoCodificacao,
@@ -210,7 +215,7 @@ private fun rodarEncoder(
     while (!concluido && iteracoes < MAX_ITERACOES_SEGURANCA) {
         iteracoes++
         if (estado.cancelado()) throw CancellationException("Exportacao cancelada")
-        erroDecoder.get()?.let { throw IllegalStateException("Falha ao decodificar o audio: ${it.message}", it) }
+        erroDecoder.get()?.let { throw IllegalStateException(context.getString(R.string.audio_falha_decodificar, it.message), it) }
         var andou = false
         while (!fimEnviado) {
             val bloco = entrega.bloco ?: fila.poll()?.also { entrega.bloco = it; entrega.deslocamento = 0 } ?: break

@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.domain
 
 import android.content.Context
 import android.net.Uri
+import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.AppPrefsBackup
 import com.jonjonesbr.audiobookgen.data.BookmarkStore
@@ -46,7 +47,7 @@ class BackupUseCase(private val context: Context) {
 
     fun exportar(destino: Uri): Result<Unit> = runCatching {
         val appPrefs = AppPrefs(context)
-        val out = context.contentResolver.openOutputStream(destino) ?: error("Não foi possível abrir o destino.")
+        val out = context.contentResolver.openOutputStream(destino) ?: error(context.getString(R.string.backup_destino_indisponivel))
         out.use {
             ZipOutputStream(it).use { zip ->
                 escreverEntrada(zip, ENTRADA_CONFIG, AppPrefsBackup.paraJson(appPrefs).toString())

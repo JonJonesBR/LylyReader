@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.service
 
+import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.PlayerState
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import android.app.Notification
@@ -8,7 +9,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.annotation.OptIn
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.util.UnstableApi
@@ -75,17 +75,15 @@ class PlayerNotificationManager(
     // ── Privados ──────────────────────────────────────────────────────────
 
     private fun criarCanal() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_PLAYER_ID,
-                "Player de Áudio",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description  = "Controles de reprodução"
-                setShowBadge(false)
-            }
-            nm.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_PLAYER_ID,
+            context.getString(R.string.notif_player_canal_nome),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description  = context.getString(R.string.notif_player_canal_descricao)
+            setShowBadge(false)
         }
+        nm.createNotificationChannel(channel)
     }
 
     /** Texto da notificação: mensagem de erro de playback (P1) quando houver, senão o estado
@@ -93,7 +91,7 @@ class PlayerNotificationManager(
     private fun conteudoDaNotificacao(st: PlayerState): String {
         val erro = st.erroMensagem
         if (erro != null) return erro
-        val baseText = if (st.isPlaying) "Reproduzindo" else "Pausado"
+        val baseText = context.getString(if (st.isPlaying) R.string.widget_reproduzindo else R.string.widget_pausado)
         val sonecaMs = SleepTimerManager.remainingMs.value
         return if (sonecaMs != null)
             "$baseText · 😴 ${SleepTimerManager.formatRemaining(sonecaMs)}" else baseText
@@ -121,25 +119,26 @@ class PlayerNotificationManager(
             .setContentIntent(openApp)
             .addAction(
                 if (st.temCapitulos) android.R.drawable.ic_media_previous else android.R.drawable.ic_media_rew,
-                if (st.temCapitulos) "Capítulo anterior" else "Recuar",
+                if (st.temCapitulos) context.getString(R.string.cd_widget_capitulo_anterior) else context.getString(R.string.notif_recuar),
                 pending(ACTION_RECUAR, REQ_RECUAR)
             )
             .addAction(
                 if (st.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-                if (st.isPlaying) "Pausar" else "Reproduzir",
+                context.getString(if (st.isPlaying) R.string.conv_pausar else R.string.notif_reproduzir),
                 pending(ACTION_PLAY_PAUSE, REQ_PLAY_PAUSE)
             )
             .addAction(
                 if (st.temCapitulos) android.R.drawable.ic_media_next else android.R.drawable.ic_media_ff,
-                if (st.temCapitulos) "Próximo capítulo" else "Avançar",
+                context.getString(if (st.temCapitulos) R.string.cd_widget_proximo_capitulo else R.string.notif_avancar),
                 pending(ACTION_AVANCAR, REQ_AVANCAR)
             )
             .addAction(
                 android.R.drawable.ic_lock_idle_alarm,
-                SleepTimerManager.armedMinutes.value?.let { "Soneca ${it}min" } ?: "Soneca",
+                SleepTimerManager.armedMinutes.value?.let { context.getString(R.string.notif_soneca_minutos, it) }
+                    ?: context.getString(R.string.cd_sleep_timer),
                 pending(ACTION_SONECA, REQ_SONECA)
             )
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Fechar", pending(ACTION_FECHAR, REQ_FECHAR))
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, context.getString(R.string.conv_fechar), pending(ACTION_FECHAR, REQ_FECHAR))
             .setStyle(
                 MediaStyleNotificationHelper.MediaStyle(mediaSession)
                     .setShowActionsInCompactView(0, 1, 2)

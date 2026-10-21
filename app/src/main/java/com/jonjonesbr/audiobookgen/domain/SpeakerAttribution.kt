@@ -204,8 +204,8 @@ object OfflineSpeakerAttributor {
             val paragraphHasAttribution = paragraph.parts.any { it.attribution != null }
             val previousWasDialogue = index - lastDialogueIndex <= ALTERNATION_MAX_GAP
             var paragraphSpeaker: String? = null
-            val ids = paragraph.parts.mapIndexed { partIndex, part ->
-                if (!part.speech) return@mapIndexed NARRATOR_ID
+            val ids = paragraph.parts.mapIndexed partLoop@{ partIndex, part ->
+                if (!part.speech) return@partLoop NARRATOR_ID
                 val attribution = part.attribution
                     ?: announcement?.takeIf { partIndex == 0 }
                 val pronoun = attribution?.pronoun

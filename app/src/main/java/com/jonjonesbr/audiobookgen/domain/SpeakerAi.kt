@@ -1,5 +1,7 @@
 package com.jonjonesbr.audiobookgen.domain
 
+import android.content.Context
+import com.jonjonesbr.audiobookgen.R
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlinx.coroutines.ensureActive
@@ -126,7 +128,8 @@ class GeminiSpeakerClient(
     keys: List<String>,
     /** Modelo escolhido pelo usuário (tentado primeiro); vazio = só a lista automática. */
     preferredModel: String = "",
-    private val pauseBetweenRequestsMs: Long = 1_200L
+    private val pauseBetweenRequestsMs: Long = 1_200L,
+    private val context: Context
 ) : AiTextClient {
     override val rotulo: String get() = "Gemini"
 
@@ -145,7 +148,7 @@ class GeminiSpeakerClient(
 
     /** Envia [prompt] e devolve o texto da resposta. Repete com outra chave/modelo quando faz sentido. */
     override fun generate(prompt: String): String {
-        if (keys.isEmpty()) throw ApiException("Nenhuma chave Gemini configurada.", true)
+        if (keys.isEmpty()) throw ApiException(context.getString(R.string.ai_gemini_sem_chave), true)
         var lastError: ApiException? = null
         for (model in models) {
             var attempts = 0
@@ -161,13 +164,13 @@ class GeminiSpeakerClient(
                     attempts++
                     Thread.sleep(BACKOFF_MS * attempts)
                 } catch (e: java.io.IOException) {
-                    lastError = ApiException("Falha de rede: ${e.message}", false)
+                    lastError = ApiException(context.getString(R.string.ai_falha_rede, e.message), false)
                     attempts++
                     Thread.sleep(BACKOFF_MS * attempts)
                 }
             }
         }
-        throw lastError ?: ApiException("A IA não respondeu.", false)
+        throw lastError ?: ApiException(context.getString(R.string.ai_nao_respondeu), false)
     }
 
     private fun waitTurn() {
@@ -200,13 +203,13 @@ class GeminiSpeakerClient(
                         ?.optJSONObject("content")?.optJSONArray("parts")
                     val out = StringBuilder()
                     if (parts != null) for (i in 0 until parts.length()) out.append(parts.optJSONObject(i)?.optString("text").orEmpty())
-                    if (out.isEmpty()) throw ApiException("Resposta vazia da IA.", false)
+                    if (out.isEmpty()) throw ApiException(context.getString(R.string.ai_resposta_vazia), false)
                     return out.toString()
                 }
                 code == 400 || code == 401 || code == 403 ->
-                    throw ApiException("A chave Gemini foi recusada (HTTP $code).", true)
-                code == 404 -> throw ApiException("Modelo indisponível ($model).", false)
-                else -> throw ApiException("A IA respondeu com erro (HTTP $code).", false)
+                    throw ApiException(context.getString(R.string.ai_gemini_chave_recusada, code), true)
+                code == 404 -> throw ApiException(context.getString(R.string.ai_gemini_modelo_indisponivel, model), false)
+                else -> throw ApiException(context.getString(R.string.ai_gemini_erro_resposta, code), false)
             }
         } finally {
             connection.disconnect()

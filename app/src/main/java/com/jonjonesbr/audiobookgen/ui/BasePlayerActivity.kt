@@ -53,6 +53,8 @@ abstract class BasePlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         com.jonjonesbr.audiobookgen.util.ThemePrefs.aplicarNaActivity(this)
         super.onCreate(savedInstanceState)
+        // repeatOnLifecycle já pausa/retoma a coleta conforme STARTED; registrar uma vez aqui (e não em onStart).
+        observarSonecaMiniPlayer()
     }
 
     protected open fun deveExpandirMiniPlayerAoIniciar(): Boolean = false
@@ -78,7 +80,6 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         super.onStart()
         val intent = Intent(this, AudioPlayerService::class.java)
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-        observarSonecaMiniPlayer()
     }
 
     /** Contagem regressiva da soneca ao lado do 😴 no mini-player — achado real (2026-09-16):
@@ -276,7 +277,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
             root.findViewById<TextView>(R.id.guidedIndicatorText)?.text =
                 getString(
                     R.string.guided_reading_indicator_paragrafo,
-                    GuidedPlaybackBridge.trackName,
+                    GuidedPlaybackBridge.trackName(getString(R.string.btn_leitura_guiada)),
                     st.index + 1
                 )
             root.findViewById<ImageButton>(R.id.guidedIndicatorPlayPause)?.setImageResource(

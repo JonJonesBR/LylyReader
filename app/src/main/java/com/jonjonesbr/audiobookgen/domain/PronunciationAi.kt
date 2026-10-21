@@ -119,7 +119,7 @@ object PronunciationTransfer {
      * Linhas vazias e comentários (#, //) são ignorados.
      */
     fun parse(text: String): List<PronunciationEntry> {
-        val body = text.trimStart('﻿').trim()
+        val body = text.trimStart('\uFEFF').trim()
         if (body.isEmpty()) return emptyList()
         if (body.startsWith("[") || body.startsWith("{")) parseJson(body)?.let { return it }
         return body.lineSequence().mapNotNull(::parseLine).toList()

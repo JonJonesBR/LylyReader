@@ -576,12 +576,7 @@ class AudioPlayerService : MediaLibraryService() {
         _state.value = PlayerState()
         PlayerStateHolder.update(PlayerState())
         PlayerWidget.atualizarWidget(applicationContext)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } else {
-            @Suppress("DEPRECATION")
-            stopForeground(true)
-        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
@@ -701,12 +696,7 @@ class AudioPlayerService : MediaLibraryService() {
         // prioridade/bateria) mas mantém a notificação visível e dispensável, igual ao
         // GuidedReadingService faz ao detectar fim de sessão. Sem isso o serviço ficava
         // preso em foreground indefinidamente até o usuário fechar manualmente o player.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_DETACH)
-        } else {
-            @Suppress("DEPRECATION")
-            stopForeground(false)
-        }
+        stopForeground(STOP_FOREGROUND_DETACH)
     }
 
     /** Salva a posição atual para retomada futura (ignora se a faixa já foi concluída). */

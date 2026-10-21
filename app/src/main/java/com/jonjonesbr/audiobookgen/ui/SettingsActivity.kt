@@ -956,7 +956,8 @@ class SettingsActivity : BasePlayerActivity() {
         val estado = linha.findViewById<android.widget.TextView>(R.id.tvPacoteEstado)
         val botao = linha.findViewById<android.widget.Button>(R.id.btnPacoteAcao)
         if (pronto) {
-            estado.text = "%.1fMB · %s".format(
+            estado.text = getString(
+                R.string.pacote_offline_baixado_tamanho,
                 ocupadoMb,
                 getString(R.string.pacote_offline_estado_baixado)
             )
@@ -1094,7 +1095,7 @@ class SettingsActivity : BasePlayerActivity() {
             try {
                 com.jonjonesbr.audiobookgen.service.DownloadCentral.baixarEAguardar(
                     applicationContext, pacote.id
-                ) { _nome, pct, _bytes, _total ->
+                ) { _, pct, _, _ ->
                     if (!isDestroyed) runOnUiThread {
                         barra.progress = (pct * 100).toInt().coerceIn(0, 100)
                     }

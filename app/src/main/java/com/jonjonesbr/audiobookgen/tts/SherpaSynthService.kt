@@ -92,13 +92,11 @@ class SherpaSynthService : Service() {
     }
 
     private fun criarCanal() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val nm = getSystemService(NotificationManager::class.java)
-            nm.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Síntese de voz", NotificationManager.IMPORTANCE_MIN)
-                    .apply { setShowBadge(false) }
-            )
-        }
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, "Síntese de voz", NotificationManager.IMPORTANCE_MIN)
+                .apply { setShowBadge(false) }
+        )
     }
 
     private companion object {

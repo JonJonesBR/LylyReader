@@ -126,12 +126,10 @@ class PocketSynthService : Service() {
     }
 
     private fun startSynthesisForeground() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Síntese Pocket TTS", NotificationManager.IMPORTANCE_MIN)
-                    .apply { setShowBadge(false) }
-            )
-        }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, "Síntese Pocket TTS", NotificationManager.IMPORTANCE_MIN)
+                .apply { setShowBadge(false) }
+        )
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(getString(com.jonjonesbr.audiobookgen.R.string.notif_sintetizando_titulo))

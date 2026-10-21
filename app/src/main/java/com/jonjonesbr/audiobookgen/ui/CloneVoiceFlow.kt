@@ -207,7 +207,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 "es" -> "es-ES"
                 else -> "pt-BR"
             }
-            idiomas.forEachIndexed { i, (tag, res) ->
+            idiomas.forEachIndexed { _, (tag, res) ->
                 addView(RadioButton(activity).apply { id = View.generateViewId(); setText(res); this.tag = tag; isChecked = tag == padrao })
             }
         }

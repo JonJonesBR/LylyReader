@@ -23,7 +23,7 @@ object GuidedPlaybackBridge {
     @Volatile private var session: GuidedSession? = null
 
     val manager: GuidedPlayerManager? get() = session?.manager
-    val trackName: String get() = session?.trackName ?: "Leitura guiada"
+    fun trackName(fallback: String): String = session?.trackName ?: fallback
     // Caminho do documento em leitura guiada — usado para reabrir a ReaderActivity na posição.
     val caminhoArquivo: String get() = session?.caminhoArquivo ?: ""
     // Token da sessão vigente ([GuidedPlayerManager.sessionToken]) — permite que observadores

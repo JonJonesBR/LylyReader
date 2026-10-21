@@ -124,9 +124,10 @@ class PronunciationAiTest {
 
     @Test
     fun `resposta vazia do pollinations conta como falha temporaria`() {
-        val erro = runCatching { OpenAiStyleClient.extractContent("{\"choices\":[{\"message\":{\"content\":\"{}\"}}]}") }
+        val contexto = io.mockk.mockk<android.content.Context>(relaxed = true)
+        val erro = runCatching { OpenAiStyleClient.extractContent("{\"choices\":[{\"message\":{\"content\":\"{}\"}}]}", contexto) }
             .exceptionOrNull() as AiApiException
         assertFalse(erro.fatal)
-        assertEquals("ok", OpenAiStyleClient.extractContent("{\"choices\":[{\"message\":{\"content\":\"ok\"}}]}"))
+        assertEquals("ok", OpenAiStyleClient.extractContent("{\"choices\":[{\"message\":{\"content\":\"ok\"}}]}", contexto))
     }
 }

@@ -63,7 +63,7 @@ object NativeCrashDetector {
                     "reason" to reasonStr,
                     "status" to status,
                     "pid" to reason.pid.toString(),
-                    "processName" to (reason.processName ?: "?"),
+                    "processName" to reason.processName,
                     "description" to description,
                     "trace_begin" to trace.take(TRACE_MAX_CHARS)
                 )

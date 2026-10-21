@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.domain
 
 import android.util.Log
+import com.jonjonesbr.audiobookgen.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -81,7 +82,7 @@ class ExtractTextUseCase(private val context: android.content.Context) {
             val arquivo = java.io.File(caminho)
             if (arquivo.length() > MAX_BYTES) {
                 return@withContext ExtractionResult.Error(
-                    "Arquivo muito grande para visualização (máx. 50 MB)."
+                    context.getString(R.string.extracao_arquivo_grande)
                 )
             }
 
@@ -89,7 +90,7 @@ class ExtractTextUseCase(private val context: android.content.Context) {
             // é o próprio motivo de precisar dele, então garante aqui antes de qualquer uso.
             if (!PythonEngineUseCase(context).inicializarMotorSeNecessario()) {
                 return@withContext ExtractionResult.Error(
-                    "Não foi possível iniciar o motor de leitura. Tente novamente."
+                    context.getString(R.string.extracao_motor_indisponivel)
                 )
             }
 
@@ -112,13 +113,13 @@ class ExtractTextUseCase(private val context: android.content.Context) {
                 ?.toInt() ?: 0
 
             if (paragrafosPy.isEmpty()) {
-                return@withContext ExtractionResult.Error("Nenhum texto encontrado neste arquivo.")
+                return@withContext ExtractionResult.Error(context.getString(R.string.extracao_sem_texto))
             }
 
             val capitulos = capitulosPy.map { cap ->
                 val m = cap.asMap()
                 Capitulo(
-                    titulo = m[py.builtins.callAttr("str", "titulo")]?.toString() ?: "Sem título",
+                    titulo = m[py.builtins.callAttr("str", "titulo")]?.toString() ?: context.getString(R.string.capitulo_sem_titulo),
                     indiceParagrafoInicio = m[py.builtins.callAttr("str", "inicio")]?.toInt() ?: 0,
                     indiceParagrafoFim = m[py.builtins.callAttr("str", "fim")]?.toInt() ?: 0
                 )
@@ -142,17 +143,17 @@ class ExtractTextUseCase(private val context: android.content.Context) {
             )
         } catch (e: Exception) {
             Log.e(TAG, "Erro na extração: ${e.message}", e)
-            ExtractionResult.Error("Erro ao abrir o arquivo. Tente converter diretamente.")
+            ExtractionResult.Error(context.getString(R.string.extracao_erro_abrir))
         }
     }
 
     private fun traduzirErro(erro: String): String = when {
         "senha" in erro.lowercase() || "drm" in erro.lowercase() || "password" in erro.lowercase() ->
-            "Arquivo protegido por senha não pode ser lido."
+            context.getString(R.string.extracao_protegido_senha)
         "encoding" in erro.lowercase() || "codec" in erro.lowercase() ->
-            "Formato de texto não reconhecido. Tente converter diretamente."
+            context.getString(R.string.extracao_formato_nao_reconhecido)
         "vazio" in erro.lowercase() || "empty" in erro.lowercase() ->
-            "Nenhum texto encontrado neste arquivo."
-        else -> "Erro ao abrir o arquivo. Tente converter diretamente."
+            context.getString(R.string.extracao_sem_texto)
+        else -> context.getString(R.string.extracao_erro_abrir)
     }
 }

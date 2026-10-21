@@ -26,10 +26,11 @@ object AiSupport {
         return when (provider(context)) {
             AiProvider.GEMINI -> {
                 val keys = GeminiSpeakerClient.parseKeys(SecurePreferences.getGeminiKeys(context))
-                if (keys.isEmpty()) null else GeminiSpeakerClient(keys, prefs.geminiModeloAnalise)
+                if (keys.isEmpty()) null else GeminiSpeakerClient(keys, prefs.geminiModeloAnalise, context = context.applicationContext)
             }
             AiProvider.POLLINATIONS -> OpenAiStyleClient(
-                OpenAiStyleClient.POLLINATIONS_ENDPOINT, OpenAiStyleClient.POLLINATIONS_MODEL, rotulo = "Pollinations"
+                OpenAiStyleClient.POLLINATIONS_ENDPOINT, OpenAiStyleClient.POLLINATIONS_MODEL, rotulo = "Pollinations",
+                context = context.applicationContext
             )
             AiProvider.CUSTOM -> {
                 val url = prefs.iaPersonalizadaUrl
@@ -38,7 +39,8 @@ object AiSupport {
                     endpoint = OpenAiStyleClient.endpointFromBase(url),
                     model = model,
                     apiKey = SecurePreferences.getIaPersonalizadaChave(context),
-                    rotulo = runCatching { java.net.URI(url).host }.getOrNull() ?: url
+                    rotulo = runCatching { java.net.URI(url).host }.getOrNull() ?: url,
+                    context = context.applicationContext
                 )
             }
         }

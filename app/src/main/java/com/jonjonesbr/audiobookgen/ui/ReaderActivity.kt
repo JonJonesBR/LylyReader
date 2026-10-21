@@ -427,8 +427,7 @@ class ReaderActivity : BasePlayerActivity() {
             true
         }
 
-        val prefs = getSharedPreferences("audiobookgen_prefs", MODE_PRIVATE)
-        viewModel.carregarPreferencias(prefs)
+        viewModel.carregarPreferencias(appPrefs)
         // configurarRecyclerView() já rodou com o default (vertical) — carregarPreferencias()
         // só agora carrega o valor salvo, então reaplica a orientação correta.
         aplicarOrientacaoRolagem(viewModel.uiState.value.rolagemHorizontal)
@@ -467,8 +466,7 @@ class ReaderActivity : BasePlayerActivity() {
         if (::adapter.isInitialized) retornoController.aplicarEdicoesPendentes()
         dialogAtivo?.dismiss()
         dialogAtivo = null
-        val prefs = getSharedPreferences("audiobookgen_prefs", MODE_PRIVATE)
-        viewModel.salvarPreferencias(prefs)
+        viewModel.salvarPreferencias(appPrefs)
         // Salva a posição de leitura (primeiro parágrafo visível) para retomar depois.
         if (::recyclerView.isInitialized && caminhoArquivo.isNotEmpty()) {
             (recyclerView.layoutManager as? LinearLayoutManager)
@@ -1007,11 +1005,7 @@ class ReaderActivity : BasePlayerActivity() {
                 putExtra(com.jonjonesbr.audiobookgen.service.AudioPlayerService.EXTRA_CAMINHO, mp3)
                 putExtra(com.jonjonesbr.audiobookgen.service.AudioPlayerService.EXTRA_NOME, nome)
             }
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            startForegroundService(intent)
         }
     }
 

@@ -37,11 +37,7 @@ class DownloadService : Service() {
             val intent = Intent(context, DownloadService::class.java)
             // Pode ser recusado se o app estiver em 2º plano sem permissão para iniciar serviço.
             runCatching {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(intent)
-                } else {
-                    context.startService(intent)
-                }
+                context.startForegroundService(intent)
             }
         }
     }
@@ -141,11 +137,9 @@ class DownloadService : Service() {
     }
 
     private fun criarCanal() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, getString(R.string.dl_notif_canal), NotificationManager.IMPORTANCE_LOW)
-                    .apply { setShowBadge(false) }
-            )
-        }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, getString(R.string.dl_notif_canal), NotificationManager.IMPORTANCE_LOW)
+                .apply { setShowBadge(false) }
+        )
     }
 }

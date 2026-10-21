@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.service
 
+import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.FalaNoTrecho
 import com.jonjonesbr.audiobookgen.domain.OfflineSpeakerAttributor
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
@@ -174,7 +175,7 @@ class GuidedPlayerManager(
     }
 
     // Nome exibido na notificação da leitura guiada (definido pela Activity)
-    var trackName: String = "Leitura guiada"
+    var trackName: String = context.getString(R.string.btn_leitura_guiada)
     // Caminho do documento em leitura (definido pela Activity), propagado ao bridge junto
     // com o token/trackName na mesma escrita — ver GuidedPlaybackBridge.activate(). Carrega o
     // perfil de voz/velocidade salvo para este livro, se houver (T4.3).
@@ -636,7 +637,7 @@ class GuidedPlayerManager(
                                 index,
                                 isPlaying = false,
                                 isLoading = false,
-                                error = "Arquivo de áudio não encontrado."
+                                error = context.getString(R.string.erro_arquivo_audio_nao_encontrado)
                             )
                         }
                     }
@@ -652,7 +653,7 @@ class GuidedPlayerManager(
                     _state.update {
                         GuidedState(
                             index, isPlaying = false, isLoading = false,
-                            error = TtsErrorMapper.toUserMessage(motivo)
+                            error = context.getString(TtsErrorMapper.toUserMessageRes(motivo))
                         )
                     }
                 }
@@ -735,7 +736,7 @@ class GuidedPlayerManager(
                             currentIndex,
                             isPlaying = false,
                             isLoading = false,
-                            error = TtsErrorMapper.toUserMessage(motivo)
+                            error = context.getString(TtsErrorMapper.toUserMessageRes(motivo))
                         )
                     }
                     return
@@ -811,7 +812,7 @@ class GuidedPlayerManager(
                 Log.d(TAG, "1ª oração do parágrafo $proximo pré-sintetizada: $pathPrimeiro")
             }
             val pathSegundo = jobSegundo?.await()
-            if (pathSegundo != null && segundo != null) {
+            if (pathSegundo != null) {
                 segundaOracaoProximoParagrafo = PrefetchedAudio(pathSegundo, voz, ritmo, segundo.texto.hashCode())
                 Log.d(TAG, "2ª oração do parágrafo $proximo pré-sintetizada: $pathSegundo")
             }
@@ -882,7 +883,7 @@ class GuidedPlayerManager(
                     _state.update {
                         GuidedState(
                             currentIndex, isPlaying = false, isLoading = false,
-                            error = TtsErrorMapper.toUserMessage(motivo)
+                            error = context.getString(TtsErrorMapper.toUserMessageRes(motivo))
                         )
                     }
                     return
@@ -892,7 +893,7 @@ class GuidedPlayerManager(
                     _state.update {
                         GuidedState(
                             currentIndex, isPlaying = false, isLoading = false,
-                            error = "Arquivo de áudio não encontrado."
+                            error = context.getString(R.string.erro_arquivo_audio_nao_encontrado)
                         )
                     }
                     return
@@ -1252,7 +1253,7 @@ class GuidedPlayerManager(
                         CrashLogWriter.log(null, "prerender", "Falha ao preparar trecho: voz=$vozUnidade, motivo=$motivo")
                         if (falhasSeguidas >= MAX_FALHAS_PRERENDER) {
                             PreRenderBridge.state.update {
-                                it?.copy(erro = TtsErrorMapper.toUserMessage(motivo))
+                                it?.copy(erro = context.getString(TtsErrorMapper.toUserMessageRes(motivo)))
                             }
                             return@launch
                         }

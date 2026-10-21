@@ -32,11 +32,7 @@ class PreRenderService : Service() {
 
         fun start(context: Context) {
             val intent = Intent(context, PreRenderService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
     }
 
@@ -124,11 +120,9 @@ class PreRenderService : Service() {
     }
 
     private fun criarCanal() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, getString(R.string.prerender_channel), NotificationManager.IMPORTANCE_LOW)
-                    .apply { setShowBadge(false) }
-            )
-        }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, getString(R.string.prerender_channel), NotificationManager.IMPORTANCE_LOW)
+                .apply { setShowBadge(false) }
+        )
     }
 }

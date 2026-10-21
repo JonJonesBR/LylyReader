@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.domain
 
+import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import com.jonjonesbr.audiobookgen.util.TtsErrorMapper
 import com.jonjonesbr.audiobookgen.util.SynthesisWakeLock
@@ -193,7 +194,7 @@ class PythonEngineUseCase(private val context: Context) {
         SynthesisWakeLock.acquire(context)
         try {
             if (!inicializarMotorSeNecessario()) {
-                return@withContext PreviewResult.Error("Motor Python offline.")
+                return@withContext PreviewResult.Error(context.getString(R.string.python_motor_offline))
             }
             val mod = Python.getInstance().getModule("audiobook_android")
 
@@ -209,12 +210,12 @@ class PythonEngineUseCase(private val context: Context) {
                 PreviewResult.Success(caminho)
             } else {
                 val erroRaw = res.callAttr("get", "erro")?.toString() ?: "Erro desconhecido"
-                PreviewResult.Error(TtsErrorMapper.toUserMessage(erroRaw))
+                PreviewResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(erroRaw)))
             }
         } catch (e: Exception) {
             Log.e(TAG, "Exceção ao gerar preview", e)
             CrashLogWriter.log(e, "gerarPreviewVoz", "voz=$voz, motor=$motor")
-            PreviewResult.Error(TtsErrorMapper.toUserMessage(e.message ?: "Falha crítica no preview"))
+            PreviewResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha crítica no preview")))
         } finally {
             SynthesisWakeLock.release()
         }
@@ -237,7 +238,7 @@ class PythonEngineUseCase(private val context: Context) {
         kotlinx.coroutines.yield() // CancellationException se o usuário cancelou
         try {
             if (!inicializarMotorSeNecessario()) {
-                return@withContext ProcessamentoResult.Error("Motor Python offline.")
+                return@withContext ProcessamentoResult.Error(context.getString(R.string.python_motor_offline))
             }
 
             val mod = Python.getInstance().getModule("audiobook_android")
@@ -262,7 +263,7 @@ class PythonEngineUseCase(private val context: Context) {
             )
 
             if (resultado == null) {
-                return@withContext ProcessamentoResult.Error("Python retornou um payload incompleto.")
+                return@withContext ProcessamentoResult.Error(context.getString(R.string.python_payload_incompleto))
             }
 
             val ok = resultado.callAttr("get", "ok")?.toBoolean() ?: false
@@ -275,17 +276,17 @@ class PythonEngineUseCase(private val context: Context) {
                 )
             } else {
                 val erroRaw = resultado.callAttr("get", "erro")?.toString() ?: ""
-                ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(erroRaw), jobDo(resultado))
+                ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(erroRaw)), jobDo(resultado))
             }
 
         } catch (e: CancellationException) {
             throw e // propaga para que o WorkManager marque como CANCELLED
         } catch (e: PyException) {
             CrashLogWriter.log(e, "processarArquivo(PyException)", "voz=$voz, motor=$motor, arquivo=$arquivo")
-            ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(e.message ?: "Falha no Python"))
+            ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha no Python")))
         } catch (e: Exception) {
             CrashLogWriter.log(e, "processarArquivo", "voz=$voz, motor=$motor, arquivo=$arquivo")
-            ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(e.message ?: "Falha interna local"))
+            ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha interna local")))
         }
     }
 
@@ -305,7 +306,7 @@ class PythonEngineUseCase(private val context: Context) {
         kotlinx.coroutines.yield()
         try {
             if (!inicializarMotorSeNecessario()) {
-                return@withContext ProcessamentoResult.Error("Motor Python offline.")
+                return@withContext ProcessamentoResult.Error(context.getString(R.string.python_motor_offline))
             }
             val mod = Python.getInstance().getModule("audiobook_android")
             mod.callAttr("set_motor", motor)
@@ -326,7 +327,7 @@ class PythonEngineUseCase(private val context: Context) {
                 callbackBridge,
                 blacklist,
                 speakerMapPath.orEmpty()
-            ) ?: return@withContext ProcessamentoResult.Error("Python retornou um payload incompleto.")
+            ) ?: return@withContext ProcessamentoResult.Error(context.getString(R.string.python_payload_incompleto))
             val ok = resultado.callAttr("get", "ok")?.toBoolean() ?: false
             if (ok) {
                 ProcessamentoResult.Success(
@@ -337,16 +338,16 @@ class PythonEngineUseCase(private val context: Context) {
                 )
             } else {
                 val erroRaw = resultado.callAttr("get", "erro")?.toString() ?: ""
-                ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(erroRaw), jobDo(resultado))
+                ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(erroRaw)), jobDo(resultado))
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: PyException) {
             CrashLogWriter.log(e, "processarTexto(PyException)", "voz=$voz, motor=$motor, titulo=$titulo")
-            ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(e.message ?: "Falha no Python"))
+            ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha no Python")))
         } catch (e: Exception) {
             CrashLogWriter.log(e, "processarTexto", "voz=$voz, motor=$motor, titulo=$titulo")
-            ProcessamentoResult.Error(TtsErrorMapper.toUserMessage(e.message ?: "Falha interna local"))
+            ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha interna local")))
         }
     }
 
@@ -394,18 +395,18 @@ class PythonEngineUseCase(private val context: Context) {
         SynthesisWakeLock.acquire(context)
         try {
             if (!inicializarMotorSeNecessario()) {
-                return@withContext SinteseResult.Error("Motor Python offline.")
+                return@withContext SinteseResult.Error(context.getString(R.string.python_motor_offline))
             }
             val mod = Python.getInstance().getModule("audiobook_android")
             val res = mod.callAttr("sintetizar_paragrafo_sync", texto, voz, velocidade, "+0Hz", motor, chaveGemini)
-                ?: return@withContext SinteseResult.Error("Python retornou um payload vazio.")
+                ?: return@withContext SinteseResult.Error(context.getString(R.string.python_payload_vazio))
             val ok = res.callAttr("get", "ok")?.toBoolean() ?: false
             if (ok) {
                 val caminho = res.callAttr("get", "caminho")?.toString() ?: ""
                 SinteseResult.Success(caminho)
             } else {
                 val erroRaw = res.callAttr("get", "erro")?.toString() ?: "Erro desconhecido"
-                SinteseResult.Error(TtsErrorMapper.toUserMessage(erroRaw))
+                SinteseResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(erroRaw)))
             }
         } catch (e: Exception) {
             Log.e(TAG, "Exceção ao sintetizar parágrafo", e)
@@ -414,7 +415,7 @@ class PythonEngineUseCase(private val context: Context) {
                 "sintetizarParagrafo",
                 "voz=$voz, motor=$motor, text='${texto.take(LOG_TEXTO_PREVIEW_CHARS)}'"
             )
-            SinteseResult.Error(TtsErrorMapper.toUserMessage(e.message ?: "Falha crítica na síntese"))
+            SinteseResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha crítica na síntese")))
         } finally {
             SynthesisWakeLock.release()
         }

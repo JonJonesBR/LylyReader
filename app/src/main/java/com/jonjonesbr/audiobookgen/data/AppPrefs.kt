@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MAX
 import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MIN
+import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
+import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.util.AutoRewindMode
 
 /**
@@ -200,8 +202,8 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putBoolean("aviso_voz_generica_dispensado", v).apply()
 
     // Nota: `battery_opt_dismissed` NÃO entra aqui — vive em outro arquivo de prefs
-    // ("lylyreader_prefs", ver BatteryOptimizationHelper). Igualmente, as chaves `reader_*`
-    // (tema/fonte/espacamento do leitor) são de uso único e ficam no ReaderViewModel.
+    // ("lylyreader_prefs", ver BatteryOptimizationHelper). As chaves `reader_*` (aparência do
+    // leitor) estão logo abaixo, nos métodos tipados.
 
     /** A dica de otimização de bateria (sugerida ao iniciar uma conversão) já foi mostrada. Ver DicaDeBateria. */
     var dicaBateriaVista: Boolean
@@ -263,6 +265,55 @@ class AppPrefs(context: Context) {
             .apply()
     }
 
+    /** Tamanho da fonte do leitor (sp). */
+    var readerFonte: Float
+        get() = p.getFloat("reader_fonte", READER_FONTE_PADRAO)
+        set(v) = p.edit().putFloat("reader_fonte", v).apply()
+
+    /** Espaçamento entre linhas do leitor. */
+    var readerEspacamento: Float
+        get() = p.getFloat("reader_espacamento", READER_ESPACAMENTO_PADRAO)
+        set(v) = p.edit().putFloat("reader_espacamento", v).apply()
+
+    /** Tema do leitor, como ordinal de [TemaLeitura] (o ordinal é persistido: não reordenar o enum). */
+    var readerTema: Int
+        get() = p.getInt("reader_tema", TemaLeitura.CLARO.ordinal)
+        set(v) = p.edit().putInt("reader_tema", v).apply()
+
+    /** Fonte serifada no texto do leitor. */
+    var readerFonteSerifada: Boolean
+        get() = p.getBoolean("reader_fonte_serifada", false)
+        set(v) = p.edit().putBoolean("reader_fonte_serifada", v).apply()
+
+    /** Nível da margem horizontal do leitor (0=estreita, 1=média, 2=larga). */
+    var readerMargemNivel: Int
+        get() = p.getInt("reader_margem_nivel", MARGEM_NIVEL_PADRAO)
+        set(v) = p.edit().putInt("reader_margem_nivel", v).apply()
+
+    /** Rolagem horizontal (paginada) no lugar do scroll vertical contínuo no leitor. */
+    var readerRolagemHorizontal: Boolean
+        get() = p.getBoolean("reader_rolagem_horizontal", false)
+        set(v) = p.edit().putBoolean("reader_rolagem_horizontal", v).apply()
+
+    /** Grava toda a aparência do leitor de uma vez (um único apply). */
+    fun salvarAparenciaLeitor(
+        fonte: Float,
+        espacamento: Float,
+        temaOrdinal: Int,
+        fonteSerifada: Boolean,
+        margemNivel: Int,
+        rolagemHorizontal: Boolean
+    ) {
+        p.edit()
+            .putFloat("reader_fonte", fonte)
+            .putFloat("reader_espacamento", espacamento)
+            .putInt("reader_tema", temaOrdinal)
+            .putBoolean("reader_fonte_serifada", fonteSerifada)
+            .putInt("reader_margem_nivel", margemNivel)
+            .putBoolean("reader_rolagem_horizontal", rolagemHorizontal)
+            .apply()
+    }
+
     /** Posição de leitura (índice do primeiro parágrafo visível) gravada pelo leitor para o livro; [padrao] se nunca gravada. */
     fun posicaoLeitura(caminhoLivro: String, padrao: Int): Int =
         p.getInt("reader_scroll_$caminhoLivro", padrao)
@@ -296,6 +347,10 @@ class AppPrefs(context: Context) {
         const val TIMBRE_TOM_MAX = 6
         const val TIMBRE_AGUDOS_MAX = 8
         const val POCKET_PASSOS_PADRAO = 1
+        /** Tamanho de fonte padrão do leitor (sp). */
+        const val READER_FONTE_PADRAO = 16f
+        /** Espaçamento padrão entre linhas do leitor. */
+        const val READER_ESPACAMENTO_PADRAO = 1.5f
         /** Passos padrão do modelo Supertonic. */
         const val SUPERTONIC_STEPS_PADRAO = 12
         const val SUPERTONIC_STEPS_MIN = 2

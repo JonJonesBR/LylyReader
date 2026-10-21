@@ -119,8 +119,13 @@ class ConversionWorker(
             // Parada pelo app/usuário (cancelar) ou pelo sistema (cota, limite de runtime). Só o cancelamento do app fecha o
             // item; nos demais casos o item continua PROCESSANDO e o WorkManager reexecuta o trabalho.
             // NOT_STOPPED: o WorkManager pode cancelar antes de gravar o motivo; tratar como cancelamento pelo app (comportamento anterior).
-            val canceladoPeloApp = stopReason == WorkInfo.STOP_REASON_CANCELLED_BY_APP ||
-                stopReason == WorkInfo.STOP_REASON_NOT_STOPPED
+            val canceladoPeloApp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                stopReason == WorkInfo.STOP_REASON_CANCELLED_BY_APP ||
+                    stopReason == WorkInfo.STOP_REASON_NOT_STOPPED
+            } else {
+                // Antes da API 31 o motivo da parada não existe: segue o caminho NOT_STOPPED (cancelamento pelo app).
+                true
+            }
             val destino = RegraDaParada.destino(ControleDaConversao.pedido, canceladoPeloApp)
             kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
                 when (destino) {

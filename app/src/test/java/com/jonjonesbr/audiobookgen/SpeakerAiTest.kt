@@ -109,11 +109,12 @@ class SpeakerAiTest {
 
     @Test
     fun `modelo escolhido vai primeiro e sem duplicar o prefixo models`() {
-        val cliente = GeminiSpeakerClient(listOf("k"), "models/meu-modelo")
+        val contexto = io.mockk.mockk<android.content.Context>(relaxed = true)
+        val cliente = GeminiSpeakerClient(listOf("k"), "models/meu-modelo", context = contexto)
         assertEquals("meu-modelo", cliente.modelOrder.first())
         assertTrue(cliente.modelOrder.containsAll(GeminiSpeakerClient.AUTO_MODELS))
-        assertEquals(GeminiSpeakerClient.AUTO_MODELS, GeminiSpeakerClient(listOf("k")).modelOrder)
-        val repetido = GeminiSpeakerClient(listOf("k"), GeminiSpeakerClient.AUTO_MODELS[2])
+        assertEquals(GeminiSpeakerClient.AUTO_MODELS, GeminiSpeakerClient(listOf("k"), context = contexto).modelOrder)
+        val repetido = GeminiSpeakerClient(listOf("k"), GeminiSpeakerClient.AUTO_MODELS[2], context = contexto)
         assertEquals(GeminiSpeakerClient.AUTO_MODELS[2], repetido.modelOrder.first())
         assertEquals(GeminiSpeakerClient.AUTO_MODELS.size, repetido.modelOrder.size)
     }

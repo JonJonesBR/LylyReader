@@ -22,7 +22,6 @@ import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -105,12 +104,12 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
     // ── Catálogos Originais ──────────────────────────────────────────────────
     private val estilos =
             listOf(
-                    "padrao" to " Padrão",
-                    "terror" to " Terror",
-                    "acao" to "⚡ Ação",
-                    "scifi" to " Ficção Científica",
-                    "drama" to " Drama",
-                    "comedia" to " Comédia"
+                    "padrao" to " " + getApplication<Application>().getString(R.string.style_standard),
+                    "terror" to " " + getApplication<Application>().getString(R.string.style_horror),
+                    "acao" to "⚡ " + getApplication<Application>().getString(R.string.style_action),
+                    "scifi" to " " + getApplication<Application>().getString(R.string.estilo_ficcao_cientifica),
+                    "drama" to " " + getApplication<Application>().getString(R.string.style_drama),
+                    "comedia" to " " + getApplication<Application>().getString(R.string.style_comedy)
             )
 
     // Precisam ser declaradas antes do init{} abaixo: viewModelScope.launch usa
@@ -229,13 +228,13 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                     )
                 }
                 if (result.isSuccess) {
-                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " Amostra Pronta") }
+                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
                     iniciarPreview(outFile.absolutePath)
                 } else {
                     com.jonjonesbr.audiobookgen.util.CrashLogWriter.log(
                         result.exceptionOrNull(), "gerarAmostra", "voz=$voz"
                     )
-                    val msg = "⚠ Falha ao gerar amostra com voz do dispositivo."
+                    val msg = "⚠ " + getApplication<Application>().getString(R.string.amostra_falha_dispositivo)
                     _uiState.update { it.copy(amostraGerando = false, statusMessage = msg) }
                 }
                 return@launch
@@ -264,7 +263,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                     if (clipeSemModelo) baixarClipePrevia(voz, idiomaPrevia) else null
                 }
                 if (clipe != null) {
-                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " Amostra Pronta") }
+                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
                     iniciarPreview(clipe)
                     return@launch
                 }
@@ -285,7 +284,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                     if (result.isSuccess) outFile.absolutePath else null
                 }
                 if (caminho != null) {
-                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " Amostra Pronta") }
+                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
                     iniciarPreview(caminho)
                 } else {
                     _uiState.update {
@@ -310,7 +309,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                     null
                 }
                 if (clipeAsset != null) {
-                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " Amostra Pronta") }
+                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
                     iniciarPreview(clipeAsset)
                     return@launch
                 }
@@ -331,7 +330,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 }
                 if (caminho != null) {
                     _uiState.update {
-                        it.copy(amostraGerando = false, statusMessage = " Amostra Pronta")
+                        it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta))
                     }
                     iniciarPreview(caminho)
                 } else {
@@ -353,7 +352,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 val caminho = baixarClipePrevia(voz)
                 if (caminho != null) {
                     _uiState.update {
-                        it.copy(amostraGerando = false, statusMessage = " Amostra Pronta")
+                        it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta))
                     }
                     iniciarPreview(caminho)
                 } else {
@@ -380,7 +379,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 }
                 if (caminho != null) {
                     _uiState.update {
-                        it.copy(amostraGerando = false, statusMessage = " Amostra Pronta")
+                        it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta))
                     }
                     iniciarPreview(caminho)
                 } else {
@@ -398,7 +397,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             when (val result = pythonEngine.gerarPreviewVoz(voz, velStr, motorEfetivo, chaveGemini, texto)) {
                 is PreviewResult.Success -> {
                     _uiState.update {
-                        it.copy(amostraGerando = false, statusMessage = " Amostra Pronta")
+                        it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta))
                     }
                     iniciarPreview(result.caminho)
                 }
@@ -727,7 +726,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                         WorkInfo.State.FAILED -> {
                             handled = true
                             setProcessando(false)
-                            val msg = info.outputData.getString(ConversionWorker.KEY_ERROR_MSG) ?: "Erro desconhecido"
+                            val msg = info.outputData.getString(ConversionWorker.KEY_ERROR_MSG) ?: getApplication<Application>().getString(R.string.erro_desconhecido)
                             val token = info.outputData.getString(ConversionWorker.KEY_RUN_TOKEN)
                                 ?: _uiState.value.progressoRunToken
                             conversionNotif.cancelar()
@@ -795,7 +794,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             if (uri != null) {
                 ExportStatus.Sucesso(com.jonjonesbr.audiobookgen.domain.ExportResult(uri, resultado.exportPasta.orEmpty()))
             } else {
-                ExportStatus.Erro(resultado.exportErro ?: "Erro ao exportar")
+                ExportStatus.Erro(resultado.exportErro ?: getApplication<Application>().getString(R.string.status_export_error))
             }
         } else {
             com.jonjonesbr.audiobookgen.service.ChapterMarksStore.salvarJson(
@@ -808,7 +807,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             }
             exportUseCase.exportar(java.io.File(resultado.caminho), _uiState.value.pastaDestinoUri).fold(
                 onSuccess = { ExportStatus.Sucesso(it) },
-                onFailure = { ExportStatus.Erro(it.message ?: "Erro ao exportar") }
+                onFailure = { ExportStatus.Erro(it.message ?: getApplication<Application>().getString(R.string.status_export_error)) }
             )
         }
         // ConversionWorker já mostra a notificação de conclusão (com o caminho/nome corretos
@@ -871,11 +870,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             putExtra(AudioPlayerService.EXTRA_CAMINHO, caminho)
             putExtra(AudioPlayerService.EXTRA_NOME, nome)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ctx.startForegroundService(intent)
-        } else {
-            ctx.startService(intent)
-        }
+        ctx.startForegroundService(intent)
     }
 
     fun pararPlayer() {
@@ -913,7 +908,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 }.synthesize(texto, voz, ritmo)
             }
             if (caminho != null) {
-                _uiState.update { it.copy(amostraGerando = false, statusMessage = " Amostra Pronta") }
+                _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
                 iniciarPreview(caminho)
             } else {
                 _uiState.update { it.copy(amostraGerando = false, statusMessage = getApplication<Application>().getString(R.string.status_amostra_falha)) }

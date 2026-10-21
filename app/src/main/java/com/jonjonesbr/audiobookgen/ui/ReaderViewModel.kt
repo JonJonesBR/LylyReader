@@ -8,7 +8,7 @@ import com.jonjonesbr.audiobookgen.domain.Capitulo
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.util.EditableTextPolicy
 import com.jonjonesbr.audiobookgen.domain.ExtractTextUseCase
-import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
+import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.util.PlayerStateHolder
 import android.app.Application
 import android.content.Context
@@ -178,35 +178,29 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
 
     // ── Salvar preferências de aparência ─────────────────────────────────────
 
-    fun carregarPreferencias(prefs: android.content.SharedPreferences) {
-        val fonte = prefs.getFloat("reader_fonte", FONTE_PADRAO)
-        val espacamento = prefs.getFloat("reader_espacamento", ESPACAMENTO_PADRAO)
-        val temaOrd = prefs.getInt("reader_tema", TemaLeitura.CLARO.ordinal)
-        val fonteSerifada = prefs.getBoolean("reader_fonte_serifada", false)
-        val margemNivel = prefs.getInt("reader_margem_nivel", MARGEM_NIVEL_PADRAO)
-        val rolagemHorizontal = prefs.getBoolean("reader_rolagem_horizontal", false)
+    fun carregarPreferencias(prefs: AppPrefs) {
         _uiState.update {
             it.copy(
-                tamanhoFonte = fonte,
-                espacamento = espacamento,
-                tema = TemaLeitura.entries[temaOrd],
-                fonteSerifada = fonteSerifada,
-                margemNivel = margemNivel,
-                rolagemHorizontal = rolagemHorizontal
+                tamanhoFonte = prefs.readerFonte,
+                espacamento = prefs.readerEspacamento,
+                tema = TemaLeitura.entries[prefs.readerTema],
+                fonteSerifada = prefs.readerFonteSerifada,
+                margemNivel = prefs.readerMargemNivel,
+                rolagemHorizontal = prefs.readerRolagemHorizontal
             )
         }
     }
 
-    fun salvarPreferencias(prefs: android.content.SharedPreferences) {
+    fun salvarPreferencias(prefs: AppPrefs) {
         val state = _uiState.value
-        prefs.edit()
-            .putFloat("reader_fonte", state.tamanhoFonte)
-            .putFloat("reader_espacamento", state.espacamento)
-            .putInt("reader_tema", state.tema.ordinal)
-            .putBoolean("reader_fonte_serifada", state.fonteSerifada)
-            .putInt("reader_margem_nivel", state.margemNivel)
-            .putBoolean("reader_rolagem_horizontal", state.rolagemHorizontal)
-            .apply()
+        prefs.salvarAparenciaLeitor(
+            fonte = state.tamanhoFonte,
+            espacamento = state.espacamento,
+            temaOrdinal = state.tema.ordinal,
+            fonteSerifada = state.fonteSerifada,
+            margemNivel = state.margemNivel,
+            rolagemHorizontal = state.rolagemHorizontal
+        )
     }
 
     fun setFonteSerifada(serifada: Boolean) = _uiState.update { it.copy(fonteSerifada = serifada) }
@@ -448,10 +442,6 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
-        /** Tamanho de fonte padrão do leitor (sp). */
-        private const val FONTE_PADRAO = 16f
-        /** Espaçamento padrão entre linhas do leitor. */
-        private const val ESPACAMENTO_PADRAO = 1.5f
         /** Espera após a última tecla antes de filtrar os parágrafos (ms). */
         private const val DEBOUNCE_BUSCA_MS = 250L
     }
