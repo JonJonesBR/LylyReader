@@ -1,9 +1,9 @@
 package com.jonjonesbr.audiobookgen.ui
 
-import android.app.Activity
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.util.dpToPx
@@ -18,7 +18,7 @@ object VozGenericaAvisoDialog {
     private const val PADDING_HORIZONTAL_DP = 24
     private const val PADDING_TOPO_DP = 8
 
-    fun mostrarSeNecessario(activity: Activity) {
+    fun mostrarSeNecessario(activity: AppCompatActivity) {
         val prefs = AppPrefs(activity)
         if (prefs.avisoVozGenericaDispensado) return
 
@@ -32,14 +32,13 @@ object VozGenericaAvisoDialog {
             addView(checkbox)
         }
 
-        AlertDialog.Builder(activity)
+        activity.mostrarDialogo(AlertDialog.Builder(activity)
             .setTitle(R.string.aviso_voz_generica_titulo)
             .setMessage(R.string.aviso_voz_generica_motor)
             .setView(container)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 if (checkbox.isChecked) prefs.avisoVozGenericaDispensado = true
             }
-            .setCancelable(false)
-            .show()
+            .setCancelable(false))
     }
 }
