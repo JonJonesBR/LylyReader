@@ -40,6 +40,15 @@ class SettingsActivity : BasePlayerActivity() {
     private val dialogos = DialogosAbertos(this)
     private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
 
+    // Diálogos do sistema (android.app) de baixar pacote: fechados ao sair da tela (evita WindowLeaked).
+    private val dialogosNativos = mutableListOf<android.app.Dialog>()
+
+    override fun onDestroy() {
+        dialogosNativos.forEach { if (it.isShowing) it.dismiss() }
+        dialogosNativos.clear()
+        super.onDestroy()
+    }
+
     private val appPrefs by lazy { com.jonjonesbr.audiobookgen.data.AppPrefs(this) }
     private val blacklistStore by lazy { com.jonjonesbr.audiobookgen.data.BlacklistStore(this) }
     private val pythonEngine by lazy { com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase(applicationContext) }
@@ -1053,12 +1062,14 @@ class SettingsActivity : BasePlayerActivity() {
      */
     private fun baixarPacote(pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
         if (!com.jonjonesbr.audiobookgen.util.NetworkStatus.isOnWifi(this)) {
-            android.app.AlertDialog.Builder(this)
+            val aviso = android.app.AlertDialog.Builder(this)
                 .setTitle(nomeExibidoDoPacote(this, pacote.id, pacote.nomeExibicao))
                 .setMessage(R.string.pacote_download_wifi_aviso)
                 .setPositiveButton(R.string.pacote_offline_baixar) { _, _ -> baixarPacoteDireto(pacote) }
                 .setNegativeButton(android.R.string.cancel, null)
-                .show()
+                .create()
+            dialogosNativos.add(aviso)
+            aviso.show()
         } else {
             baixarPacoteDireto(pacote)
         }
@@ -1094,6 +1105,7 @@ class SettingsActivity : BasePlayerActivity() {
                 com.jonjonesbr.audiobookgen.service.DownloadCentral.pausar(pacote.id)
             }
         }
+        dialogosNativos.add(progressDialog)
         progressDialog.show()
         lifecycleScope.launch {
             try {

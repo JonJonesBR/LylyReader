@@ -382,6 +382,9 @@ internal class DialogosAbertos(activity: AppCompatActivity) {
 
     private val abertos = mutableListOf<AlertDialog>()
 
+    // Fraca: este objeto não deve segurar a Activity; usada só para saber se ela já foi destruída.
+    private val activityRef = java.lang.ref.WeakReference(activity)
+
     init {
         activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
@@ -394,6 +397,8 @@ internal class DialogosAbertos(activity: AppCompatActivity) {
     fun mostrar(builder: AlertDialog.Builder): AlertDialog = mostrar(builder.create())
 
     fun mostrar(dialogo: AlertDialog): AlertDialog {
+        val activity = activityRef.get()
+        if (activity == null || activity.isDestroyed) return dialogo // Activity já destruída: não exibe (evita WindowLeaked)
         abertos.removeAll { !it.isShowing }
         dialogo.show()
         abertos.add(dialogo)
