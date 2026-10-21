@@ -27,6 +27,9 @@ import java.io.File
  */
 class MainActivity : AppCompatActivity() {
 
+    private val dialogos = DialogosAbertos(this)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         com.jonjonesbr.audiobookgen.util.ThemePrefs.aplicarNaActivity(this)
         super.onCreate(savedInstanceState)
@@ -112,7 +115,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     .setCancelable(false)
                     .setOnDismissListener { finish() }
-                    .show()
+                    .exibir()
                 true
             }
         }
