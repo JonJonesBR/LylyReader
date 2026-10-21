@@ -33,6 +33,9 @@ import kotlinx.coroutines.withContext
  */
 class DownloadCentralActivity : BasePlayerActivity() {
 
+    private val dialogos = DialogosAbertos(this)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
+
     private lateinit var adapter: DownloadCentralAdapter
     private lateinit var btnSelecionados: Button
     private lateinit var btnTudo: Button
@@ -221,7 +224,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
                 else DownloadCentral.cancelar(this, linha.item.id)
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun baixarTudo() {
@@ -258,7 +261,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
             .setMessage(texto)
             .setPositiveButton(R.string.dl_central_baixar) { _, _ -> iniciar(ids) }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .exibir()
     }
 
     private fun iniciar(ids: List<String>) {
