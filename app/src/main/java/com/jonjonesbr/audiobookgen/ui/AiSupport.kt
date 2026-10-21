@@ -77,7 +77,7 @@ object AiSupport {
             activity.getString(R.string.ia_provider_custom)
         )
         var escolhido = atual.ordinal
-        AlertDialog.Builder(activity)
+        activity.mostrarDialogo(AlertDialog.Builder(activity)
             .setTitle(R.string.ia_provider_title)
             .setSingleChoiceItems(opcoes, escolhido) { _, which -> escolhido = which }
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -85,8 +85,7 @@ object AiSupport {
                 AppPrefs(activity).iaProvedor = novo.id
                 if (novo == AiProvider.CUSTOM) configureCustom(activity, onDone) else onDone()
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .setNegativeButton(android.R.string.cancel, null))
     }
 
     private fun configureCustom(activity: AppCompatActivity, onDone: () -> Unit) {
@@ -113,7 +112,7 @@ object AiSupport {
             setPadding(pad, pad / 2, pad, 0)
             addView(url); addView(modelo); addView(chave); addView(nota)
         }
-        AlertDialog.Builder(activity)
+        activity.mostrarDialogo(AlertDialog.Builder(activity)
             .setTitle(R.string.ia_custom_title)
             .setView(conteudo)
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -122,7 +121,6 @@ object AiSupport {
                 SecurePreferences.setIaPersonalizadaChave(activity, chave.text.toString().trim())
                 onDone()
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .setNegativeButton(android.R.string.cancel, null))
     }
 }
