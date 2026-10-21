@@ -158,7 +158,11 @@ class MeusLivrosActivity : BasePlayerActivity() {
         recycler.layoutManager = grade
         recycler.adapter = adapter
 
-        findViewById<TabLayout>(R.id.tabsBib).addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+        val tabs = findViewById<TabLayout>(R.id.tabsBib)
+        // Fonte ampliada (ex.: 200%): as abas de largura igual cortam o nome ("Downlo"); nesse caso elas rolam.
+        // Em fonte normal o layout (abas centralizadas, largura igual) continua o mesmo.
+        if (resources.configuration.fontScale >= 1.3f) tabs.tabMode = TabLayout.MODE_SCROLLABLE
+        tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 aba = AbaBiblioteca.values()[tab.position]
                 aplicar()
