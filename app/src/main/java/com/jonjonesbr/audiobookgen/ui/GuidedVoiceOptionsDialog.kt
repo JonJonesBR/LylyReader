@@ -145,7 +145,7 @@ object GuidedVoiceOptionsDialog {
             .setPositiveButton(R.string.timbre_close, null)
             .setNeutralButton(R.string.guided_options_more, null)
             .create()
-        dialogo.show()
+        activity.mostrarDialogo(dialogo)
         dialogo.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
             dialogo.dismiss()
             activity.startActivity(Intent(activity, SettingsActivity::class.java))
