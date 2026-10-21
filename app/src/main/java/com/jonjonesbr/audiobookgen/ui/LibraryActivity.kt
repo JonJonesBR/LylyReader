@@ -60,6 +60,9 @@ import java.io.File
 
 class LibraryActivity : BasePlayerActivity() {
 
+    private val dialogos = DialogosAbertos(this)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
+
     companion object {
         const val EXTRA_URI = "uri"
         const val EXTRA_NOME = "nome"
@@ -367,7 +370,7 @@ class LibraryActivity : BasePlayerActivity() {
             .setMessage(getString(R.string.dialog_delete_audiobook_message, item.nome))
             .setPositiveButton(R.string.dialog_delete_audiobook_confirm) { _, _ -> deletar(item) }
             .setNegativeButton(R.string.btn_cancelar, null)
-            .show()
+            .exibir()
     }
 
     private fun deletar(item: AudiobookItem) {
@@ -459,7 +462,7 @@ class LibraryActivity : BasePlayerActivity() {
                 exportarComoVideo(item, opcoes)
             }
             .setNegativeButton(R.string.btn_cancelar, null)
-            .show()
+            .exibir()
     }
 
     private data class DialogoProgressoVideo(val dialog: AlertDialog, val texto: TextView, val barra: ProgressBar)
@@ -495,7 +498,7 @@ class LibraryActivity : BasePlayerActivity() {
     private fun atualizarDialogoVideo(estado: EstadoVideoExport) {
         val dialogo = dialogoVideo ?: criarDialogoProgressoVideo().also {
             dialogoVideo = it
-            it.dialog.show()
+            dialogos.mostrar(it.dialog)
         }
         dialogo.barra.progress = estado.pct
         dialogo.texto.text = getString(R.string.status_exportando_video_parte, estado.parte, estado.pct)
@@ -574,7 +577,7 @@ class LibraryActivity : BasePlayerActivity() {
                 )
             )
             .setPositiveButton(R.string.dialog_ok, null)
-            .show()
+            .exibir()
     }
 
     private fun formatarDuracao(ms: Long): String {
