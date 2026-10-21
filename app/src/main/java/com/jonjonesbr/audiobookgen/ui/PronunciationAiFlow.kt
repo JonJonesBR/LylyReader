@@ -37,7 +37,7 @@ object PronunciationAiFlow {
             return
         }
         val batches = PronunciationAiPlanner.batches(candidates.map { it.word })
-        AlertDialog.Builder(activity)
+        activity.mostrarDialogo(AlertDialog.Builder(activity)
             .setTitle(R.string.pron_ai_title)
             .setMessage(
                 activity.getString(R.string.pron_ai_confirm_message, candidates.size, batches.size) +
@@ -47,8 +47,7 @@ object PronunciationAiFlow {
             .setNeutralButton(R.string.ia_change) { _, _ ->
                 AiSupport.chooseProvider(activity) { start(activity, paragraphs, caminhoDoLivro) }
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .setNegativeButton(android.R.string.cancel, null))
     }
 
     private fun run(
@@ -66,12 +65,11 @@ object PronunciationAiFlow {
             setPadding(pad, pad, pad, 0)
             addView(text); addView(bar)
         }
-        val dialog = AlertDialog.Builder(activity)
+        val dialog = activity.mostrarDialogo(AlertDialog.Builder(activity)
             .setTitle(R.string.pron_ai_title)
             .setView(content)
             .setCancelable(false)
-            .setNegativeButton(android.R.string.cancel) { _, _ -> job?.cancel() }
-            .show()
+            .setNegativeButton(android.R.string.cancel) { _, _ -> job?.cancel() })
         val language = languageName(activity, paragraphs)
         job?.cancel()
         job = activity.lifecycleScope.launch {
@@ -132,7 +130,7 @@ object PronunciationAiFlow {
             }
             .setNegativeButton(android.R.string.cancel, null)
         if (caminhoDoLivro != null) builder.setNeutralButton("", null)
-        val dialogo = builder.show()
+        val dialogo = activity.mostrarDialogo(builder)
         if (caminhoDoLivro != null) {
             // Botão de escopo: troca entre "Este livro" e "Todos os livros" sem fechar a revisão.
             val botao = dialogo.getButton(AlertDialog.BUTTON_NEUTRAL)
