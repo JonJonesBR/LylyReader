@@ -44,11 +44,10 @@ object PassosDialog {
             addView(valor)
             addView(slider)
         }
-        AlertDialog.Builder(activity)
+        activity.mostrarDialogo(AlertDialog.Builder(activity)
             .setTitle(titulo)
             .setView(conteudo)
             .setPositiveButton(R.string.guided_steps_apply) { _, _ -> aoAplicar(slider.progress + minimo) }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .setNegativeButton(android.R.string.cancel, null))
     }
 }
