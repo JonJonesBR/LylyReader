@@ -1,6 +1,10 @@
 package com.jonjonesbr.audiobookgen.domain
 
+import android.os.Build
+import androidx.work.WorkInfo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DestinoDaParadaTest {
@@ -31,5 +35,24 @@ class DestinoDaParadaTest {
     @Test
     fun `sem pedido e sem cancelamento do app e parada do sistema vai para interrompida`() {
         assertEquals(DestinoDaParada.INTERROMPIDA, RegraDaParada.destino(null, canceladoPeloApp = false))
+    }
+
+    @Test
+    fun `antes do android 12 a parada conta como cancelada pelo app, qualquer que seja o motivo`() {
+        assertTrue(RegraDaParada.canceladoPeloApp(Build.VERSION_CODES.R, WorkInfo.STOP_REASON_PREEMPT))
+        assertTrue(RegraDaParada.canceladoPeloApp(Build.VERSION_CODES.R, WorkInfo.STOP_REASON_NOT_STOPPED))
+        assertTrue(RegraDaParada.canceladoPeloApp(Build.VERSION_CODES.O, WorkInfo.STOP_REASON_CONSTRAINT_BATTERY_NOT_LOW))
+    }
+
+    @Test
+    fun `a partir do android 12 cancelamento pelo app e motivo nao gravado contam como cancelados`() {
+        assertTrue(RegraDaParada.canceladoPeloApp(Build.VERSION_CODES.S, WorkInfo.STOP_REASON_CANCELLED_BY_APP))
+        assertTrue(RegraDaParada.canceladoPeloApp(Build.VERSION_CODES.S, WorkInfo.STOP_REASON_NOT_STOPPED))
+    }
+
+    @Test
+    fun `a partir do android 12 parada pelo sistema nao conta como cancelada pelo app`() {
+        assertFalse(RegraDaParada.canceladoPeloApp(Build.VERSION_CODES.S, WorkInfo.STOP_REASON_PREEMPT))
+        assertFalse(RegraDaParada.canceladoPeloApp(Build.VERSION_CODES.VANILLA_ICE_CREAM, WorkInfo.STOP_REASON_CONSTRAINT_BATTERY_NOT_LOW))
     }
 }

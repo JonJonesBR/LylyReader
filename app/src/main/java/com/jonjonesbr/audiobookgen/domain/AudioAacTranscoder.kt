@@ -254,15 +254,27 @@ private fun entregarPedaco(encoder: MediaCodec, entrega: EntregaEmCurso, bloco: 
     if (encIdx < 0) return false
     val encBuf = encoder.getInputBuffer(encIdx) ?: return false
     val bytesPorQuadro = bloco.canais * BYTES_POR_AMOSTRA_PCM16
-    var n = minOf(encBuf.capacity(), bloco.bytes.size - entrega.deslocamento)
-    if (n > bytesPorQuadro) n -= n % bytesPorQuadro
+    val n = tamanhoAlinhado(encBuf.capacity(), bloco.bytes.size - entrega.deslocamento, bytesPorQuadro)
     encBuf.clear()
     encBuf.put(bloco.bytes, entrega.deslocamento, n)
-    val pts = bloco.ptsUs + entrega.deslocamento * US_POR_SEGUNDO_PCM / (bloco.taxa.toLong() * bytesPorQuadro)
+    val pts = ptsDoPedaco(bloco.ptsUs, entrega.deslocamento, bloco.taxa, bloco.canais)
     estado.aoDecodificarPcm?.let { entregarPcm(bloco, entrega.deslocamento, n, it) }
     encoder.queueInputBuffer(encIdx, 0, n, pts, 0)
     entrega.deslocamento += n
     return true
+}
+
+/** Tamanho do pedaço a entregar: o menor entre a capacidade do buffer e o que falta, arredondado para baixo ao quadro de PCM. */
+internal fun tamanhoAlinhado(capacidade: Int, restante: Int, bytesPorQuadro: Int): Int {
+    var n = minOf(capacidade, restante)
+    if (n > bytesPorQuadro) n -= n % bytesPorQuadro
+    return n
+}
+
+/** Tempo (us) do pedaço que começa [deslocamentoBytes] depois do início do bloco, a partir do tempo do bloco [ptsBaseUs]. */
+internal fun ptsDoPedaco(ptsBaseUs: Long, deslocamentoBytes: Int, taxa: Int, canais: Int): Long {
+    val bytesPorQuadro = canais * BYTES_POR_AMOSTRA_PCM16
+    return ptsBaseUs + deslocamentoBytes * US_POR_SEGUNDO_PCM / (taxa.toLong() * bytesPorQuadro)
 }
 
 // Só entrega o PCM quando o formato é PCM 16 bits (a linha do tempo da análise de silêncios acompanha o áudio gravado).

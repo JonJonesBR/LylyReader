@@ -86,21 +86,34 @@ private fun criarEncoderVideo(largura: Int, altura: Int): MediaCodec {
     }
 }
 
+/** O que fazer com o quadro de um índice: enviar a imagem com este [ptsUs], ou sinalizar o fim do fluxo ([Fim]). */
+internal sealed class AcaoQuadro {
+    data class Frame(val ptsUs: Long) : AcaoQuadro()
+    object Fim : AcaoQuadro()
+}
+
+/** Decide o quadro de índice [indice] de um total de [total]: a partir de [total] o fluxo termina. Função pura. */
+internal fun acaoDoQuadro(indice: Int, total: Int): AcaoQuadro =
+    if (indice >= total) AcaoQuadro.Fim else AcaoQuadro.Frame(indice * INTERVALO_QUADRO_VIDEO_US)
+
 /** Alimenta um frame (mesma imagem, timestamp avançado) ou sinaliza fim. */
 private fun alimentarProximoFrame(encoder: MediaCodec, yuv: Yuv420, indice: Int): ResultadoAlimentacao {
     val inIdx = encoder.dequeueInputBuffer(CODEC_TIMEOUT_US)
     if (inIdx < 0) return ResultadoAlimentacao.SEM_BUFFER_DISPONIVEL
-    return if (indice >= QUADROS_CODIFICADOS) {
-        encoder.queueInputBuffer(inIdx, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-        ResultadoAlimentacao.FIM_DE_STREAM
-    } else {
-        // getInputImage() pode retornar null em alguns encoders de hardware mesmo com
-        // COLOR_FormatYUV420Flexible configurado — falhar alto em vez de enviar um buffer
-        // vazio silenciosamente (que gerava um MP4 com o video track corrompido).
-        val image = encoder.getInputImage(inIdx)
-            ?: error("Encoder de video nao expos Image de entrada (getInputImage retornou null)")
-        escreverYuvNaImagem(image, yuv)
-        encoder.queueInputBuffer(inIdx, 0, tamanhoBufferYuv420(yuv), indice * INTERVALO_QUADRO_VIDEO_US, 0)
-        ResultadoAlimentacao.FRAME_ENVIADO
+    return when (val acao = acaoDoQuadro(indice, QUADROS_CODIFICADOS)) {
+        AcaoQuadro.Fim -> {
+            encoder.queueInputBuffer(inIdx, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+            ResultadoAlimentacao.FIM_DE_STREAM
+        }
+        is AcaoQuadro.Frame -> {
+            // getInputImage() pode retornar null em alguns encoders de hardware mesmo com
+            // COLOR_FormatYUV420Flexible configurado — falhar alto em vez de enviar um buffer
+            // vazio silenciosamente (que gerava um MP4 com o video track corrompido).
+            val image = encoder.getInputImage(inIdx)
+                ?: error("Encoder de video nao expos Image de entrada (getInputImage retornou null)")
+            escreverYuvNaImagem(image, yuv)
+            encoder.queueInputBuffer(inIdx, 0, tamanhoBufferYuv420(yuv), acao.ptsUs, 0)
+            ResultadoAlimentacao.FRAME_ENVIADO
+        }
     }
 }

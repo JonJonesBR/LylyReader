@@ -23,6 +23,20 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
+/** Comando que uma ação do Intent do [GuidedReadingService] pede. */
+internal enum class ComandoLeituraGuiada { INICIAR, ALTERNAR_REPRODUCAO, ANTERIOR, PROXIMO, SONECA, PARAR }
+
+/** Mapeia a ação do Intent ao comando; ação ausente ou desconhecida = null (nada a fazer). Função pura. */
+internal fun acaoDoComando(action: String?): ComandoLeituraGuiada? = when (action) {
+    GuidedReadingService.ACTION_START -> ComandoLeituraGuiada.INICIAR
+    GuidedReadingService.ACTION_PLAY_PAUSE -> ComandoLeituraGuiada.ALTERNAR_REPRODUCAO
+    GuidedReadingService.ACTION_PREV -> ComandoLeituraGuiada.ANTERIOR
+    GuidedReadingService.ACTION_NEXT -> ComandoLeituraGuiada.PROXIMO
+    GuidedReadingService.ACTION_SLEEP -> ComandoLeituraGuiada.SONECA
+    GuidedReadingService.ACTION_STOP -> ComandoLeituraGuiada.PARAR
+    else -> null
+}
+
 /**
  * Foreground service da leitura guiada.
  *
@@ -145,18 +159,18 @@ class GuidedReadingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_START -> {
+        when (acaoDoComando(intent?.action)) {
+            ComandoLeituraGuiada.INICIAR -> {
                 startForegroundCompat()
                 observarEstado()
             }
-            ACTION_PLAY_PAUSE -> {
+            ComandoLeituraGuiada.ALTERNAR_REPRODUCAO -> {
                 val m = GuidedPlaybackBridge.manager
                 if (m?.state?.value?.isPlaying == true) m.pause() else m?.resume()
             }
-            ACTION_PREV -> GuidedPlaybackBridge.manager?.previous()
-            ACTION_NEXT -> GuidedPlaybackBridge.manager?.next()
-            ACTION_SLEEP -> {
+            ComandoLeituraGuiada.ANTERIOR -> GuidedPlaybackBridge.manager?.previous()
+            ComandoLeituraGuiada.PROXIMO -> GuidedPlaybackBridge.manager?.next()
+            ComandoLeituraGuiada.SONECA -> {
                 // Cicla pelos presets (5→10→20→30→60→90→120→desligado→5…), travada no token
                 // da sessão vigente (ver SleepTimerManager.armedToken).
                 val proximo = proximoPresetSonecaMin(SleepTimerManager.armedMinutes.value)
@@ -167,10 +181,11 @@ class GuidedReadingService : Service() {
                 }
                 refreshNotificacao()
             }
-            ACTION_STOP -> {
+            ComandoLeituraGuiada.PARAR -> {
                 GuidedPlaybackBridge.manager?.stop()
                 pararServico()
             }
+            null -> Unit
         }
         return START_NOT_STICKY
     }
