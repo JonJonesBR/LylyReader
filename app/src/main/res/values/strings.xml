@@ -667,6 +667,8 @@
     <string name="toast_backup_completo_exportado">Full backup exported successfully!</string>
     <string name="toast_erro_exportar_backup">Failed to export backup: %1$s. Check write permissions and space.</string>
     <string name="toast_erro_importar_backup">Failed to import backup: %1$s. Verify that the file is a valid LylyReader backup.</string>
+    <string name="backup_erro_arquivo_invalido">This file is not a LylyReader backup. It may be empty, damaged or from another app.</string>
+    <string name="backup_erro_versao_mais_nova">This backup was made by a newer version of LylyReader. Update the app to restore it.</string>
     <string name="dialog_importar_backup_sucesso_titulo">Backup Restored</string>
     <string name="dialog_importar_backup_sucesso_mensagem">Restored: %1$d bookmark(s), %2$d highlight(s), %3$d reading-progress entries added. Nothing already on this device was changed or lost.</string>
 

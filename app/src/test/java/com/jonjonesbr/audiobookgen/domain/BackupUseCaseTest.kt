@@ -126,4 +126,80 @@ class BackupUseCaseTest {
     fun progressoCorrompidoDevolveNulo() {
         assertNull(progressoDeBackup("[{"))
     }
+
+    @Test
+    fun backupSemEntradaDeVersaoEhAntigoEAceito() {
+        assertNull(motivoRejeicaoBackup(mapOf("config.json" to "{}")))
+    }
+
+    @Test
+    fun backupComVersaoIgualALeituraEhAceito() {
+        val entradas = mapOf("versao.json" to "1", "config.json" to "{}")
+
+        assertNull(motivoRejeicaoBackup(entradas))
+    }
+
+    @Test
+    fun backupComVersaoMaisNovaEhRecusado() {
+        val entradas = mapOf("versao.json" to "2", "config.json" to "{}")
+
+        assertEquals(MotivoBackup.VERSAO_MAIS_NOVA, motivoRejeicaoBackup(entradas))
+    }
+
+    @Test
+    fun versaoMaisNovaEhRecusadaMesmoSemEntradasConhecidas() {
+        val entradas = mapOf("versao.json" to "9", "formato_novo.json" to "{}")
+
+        assertEquals(MotivoBackup.VERSAO_MAIS_NOVA, motivoRejeicaoBackup(entradas))
+    }
+
+    @Test
+    fun versaoIlegivelEhRecusadaComoArquivoInvalido() {
+        val entradas = mapOf("versao.json" to "abc", "config.json" to "{}")
+
+        assertEquals(MotivoBackup.ARQUIVO_INVALIDO, motivoRejeicaoBackup(entradas))
+    }
+
+    @Test
+    fun versaoZeroOuNegativaEhRecusadaComoArquivoInvalido() {
+        assertEquals(
+            MotivoBackup.ARQUIVO_INVALIDO,
+            motivoRejeicaoBackup(mapOf("versao.json" to "0", "config.json" to "{}"))
+        )
+        assertEquals(
+            MotivoBackup.ARQUIVO_INVALIDO,
+            motivoRejeicaoBackup(mapOf("versao.json" to "-1", "config.json" to "{}"))
+        )
+    }
+
+    @Test
+    fun mapaVazioEhRecusadoComoArquivoInvalido() {
+        assertEquals(MotivoBackup.ARQUIVO_INVALIDO, motivoRejeicaoBackup(emptyMap()))
+    }
+
+    @Test
+    fun zipInvalidoEhRecusadoComoArquivoInvalido() {
+        val entradas = lerZip("isto não é um zip".toByteArray(Charsets.UTF_8))
+
+        assertEquals(MotivoBackup.ARQUIVO_INVALIDO, motivoRejeicaoBackup(entradas))
+    }
+
+    @Test
+    fun arquivoVazioEhRecusadoComoArquivoInvalido() {
+        assertEquals(MotivoBackup.ARQUIVO_INVALIDO, motivoRejeicaoBackup(lerZip(ByteArray(0))))
+    }
+
+    @Test
+    fun zipSemEntradasConhecidasEhRecusadoComoArquivoInvalido() {
+        val entradas = lerZip(zipCom("outro.txt" to "x"))
+
+        assertEquals(MotivoBackup.ARQUIVO_INVALIDO, motivoRejeicaoBackup(entradas))
+    }
+
+    @Test
+    fun zipComVersaoEConteudoEhAceitoPelaLeituraDoZip() {
+        val entradas = lerZip(zipCom("versao.json" to "1", "bookmarks.json" to "[]"))
+
+        assertNull(motivoRejeicaoBackup(entradas))
+    }
 }

@@ -105,6 +105,7 @@
     <plurals name="settings_steps_value_qtd">
         <item quantity="one">%1$d paso</item>
         <item quantity="other">%1$d pasos</item>
+        <item quantity="many">%1$d pasos</item>
     </plurals>
     <string name="settings_supertonic_steps_title">Pasos de Supertonic</string>
     <string name="settings_pausa_frase_title">Pausa entre frases (voces locales)</string>
@@ -194,6 +195,7 @@
     <plurals name="toast_video_exportado_partes_qtd">
         <item quantity="one">%d video exportado (uno por parte).</item>
         <item quantity="other">%d videos exportados (uno por parte).</item>
+        <item quantity="many">%d videos exportados (uno por parte).</item>
     </plurals>
     <string name="toast_video_cancelado">Exportación cancelada.</string>
     <string name="erro_espaco_video">Espacio libre insuficiente: se necesitan unos %d MB.</string>
@@ -368,6 +370,7 @@
     <plurals name="banner_info_trechos_capitulos_qtd">
         <item quantity="one">%1$d sección eliminada. Capítulos encontrados: %2$d.</item>
         <item quantity="other">%1$d secciones eliminadas. Capítulos encontrados: %2$d.</item>
+        <item quantity="many">%1$d secciones eliminadas. Capítulos encontrados: %2$d.</item>
     </plurals>
     <string name="scope_full_book">Convertir libro completo</string>
     <string name="scope_edit_text">Editar texto tratado</string>
@@ -378,6 +381,7 @@
     <plurals name="toast_capitulos_exportados_qtd">
         <item quantity="one">%d archivo de capítulo guardado.</item>
         <item quantity="other">%d archivos de capítulo guardados.</item>
+        <item quantity="many">%d archivos de capítulo guardados.</item>
     </plurals>
     <string name="toast_erro_exportar_capitulos">No se pudieron exportar los capítulos: %1$s</string>
     <string name="toast_elevenlabs_configure_key">Configura tu clave de API de ElevenLabs en Ajustes para usar esta voz.</string>
@@ -464,6 +468,7 @@
     <plurals name="fab_converter_capitulos">
         <item quantity="one">Convertir %d capítulo</item>
         <item quantity="other">Convertir %d capítulos</item>
+        <item quantity="many">Convertir %d capítulos</item>
     </plurals>
 
     <!-- Blacklist Strings -->
@@ -480,6 +485,7 @@
     <plurals name="blacklist_terms_count">
         <item quantity="one">%d palabra</item>
         <item quantity="other">%d palabras</item>
+        <item quantity="many">%d palabras</item>
     </plurals>
     <string name="toast_blacklist_duplicate">El término ya está en la lista</string>
     <string name="menu_selecionar_paragrafo">Seleccionar párrafo</string>
@@ -581,6 +587,7 @@
     <plurals name="logs_erro_contagem">
         <item quantity="one">%d registro</item>
         <item quantity="other">%d registros</item>
+        <item quantity="many">%d registros</item>
     </plurals>
     <string name="toast_logs_limpos">¡Logs de errores eliminados!</string>
 
@@ -646,6 +653,8 @@
     <string name="toast_backup_completo_exportado">¡Copia de seguridad completa exportada con éxito!</string>
     <string name="toast_erro_exportar_backup">Error al exportar la copia de seguridad: %1$s. Verifique el espacio y permisos de escritura.</string>
     <string name="toast_erro_importar_backup">Error al importar la copia de seguridad: %1$s. Verifique si el archivo es una copia de seguridad válida de LylyReader.</string>
+    <string name="backup_erro_arquivo_invalido">Este archivo no es una copia de seguridad de LylyReader. Puede estar vacío, dañado o ser de otra app.</string>
+    <string name="backup_erro_versao_mais_nova">Esta copia de seguridad se creó con una versión más nueva de LylyReader. Actualiza la app para restaurarla.</string>
     <string name="dialog_importar_backup_sucesso_titulo">Copia de Seguridad Restaurada</string>
     <string name="dialog_importar_backup_sucesso_mensagem">Restaurado: %1$d marcador(es), %2$d resaltado(s), %3$d progresos de lectura agregados. Nada que ya existiera en este dispositivo fue alterado o perdido.</string>
 
@@ -1108,6 +1117,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <plurals name="conv_fila_resumo">
         <item quantity="one">%d elemento en espera</item>
         <item quantity="other">%d elementos en espera</item>
+        <item quantity="many">%d elementos en espera</item>
     </plurals>
 
     <string name="gerar_fila">Añadir a la cola</string>

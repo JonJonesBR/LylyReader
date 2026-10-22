@@ -40,18 +40,19 @@ class SettingsActivity : BasePlayerActivity() {
     private val dialogos = DialogosAbertos(this)
     private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
 
-    // Diálogos do sistema (android.app) de baixar pacote: fechados ao sair da tela (evita WindowLeaked).
-    private val dialogosNativos = mutableListOf<android.app.Dialog>()
-
-    override fun onDestroy() {
-        dialogosNativos.forEach { if (it.isShowing) it.dismiss() }
-        dialogosNativos.clear()
-        super.onDestroy()
-    }
-
     private val appPrefs by lazy { com.jonjonesbr.audiobookgen.data.AppPrefs(this) }
     private val blacklistStore by lazy { com.jonjonesbr.audiobookgen.data.BlacklistStore(this) }
     private val pythonEngine by lazy { com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase(applicationContext) }
+
+    // Classes extraídas (lazy: nada de recursos no construtor da Activity).
+    private val blacklistDialog by lazy {
+        BlacklistDialog(this, blacklistStore, onMudou = { carregarInfoBlacklist() })
+    }
+    private val pacotesOffline: PacotesVozOfflineCard by lazy {
+        PacotesVozOfflineCard(this, abrirSeletorByom = {
+            importarVozByomLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
+        })
+    }
 
     // Tema
 
@@ -201,7 +202,7 @@ class SettingsActivity : BasePlayerActivity() {
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@registerForActivityResult
-        importarPacoteByom(uri)
+        pacotesOffline.importarPacoteByom(uri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -223,7 +224,7 @@ class SettingsActivity : BasePlayerActivity() {
         super.onResume()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.AJUSTES) // volta de outra tela: realça de novo a aba certa
         carregarInfoCache()
-        carregarInfoVozesOffline()
+        pacotesOffline.carregar(findViewById<LinearLayout>(R.id.layoutPacotesOffline))
         carregarInfoLogsErro()
         carregarInfoPermissaoNotificacao()
         carregarInfoOtimizacaoBateria()
@@ -440,7 +441,7 @@ class SettingsActivity : BasePlayerActivity() {
             startActivity(Intent(this, DownloadCentralActivity::class.java))
         }
         findViewById<Button>(R.id.btnImportarVozByom).setOnClickListener {
-            mostrarAvisoLicencaEImportar()
+            pacotesOffline.mostrarAvisoLicencaEImportar()
         }
         // Tema — salva e aplica (recria as Activities com o novo modo)
         findViewById<android.view.View>(R.id.rowTema).marcarComoBotao()
@@ -501,7 +502,7 @@ class SettingsActivity : BasePlayerActivity() {
         // Vozes Offline
 
         // Blacklist
-        btnGerenciarBlacklist.setOnClickListener { mostrarDialogoBlacklist() }
+        btnGerenciarBlacklist.setOnClickListener { blacklistDialog.mostrarDialogoBlacklist() }
 
         // Logs de Erro
         btnVisualizarLogs.setOnClickListener { abrirLogsErro() }
@@ -938,203 +939,6 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
-    /**
-     * Card "Vozes offline" generalizado (V6 T2.2): UMA linha por pacote registrado
-     * (VoiceCatalog.pacotesRegistrados — Supertonic, Kokoro; Parte A/B entram sozinhas).
-     * Linha baixada → tamanho ocupado + Apagar; não baixada → ~tamanho + Baixar (diálogo de
-     * progresso; aviso de dados móveis fora de WiFi via NetworkStatus, fonte única).
-     */
-    private fun carregarInfoVozesOffline() {
-        val container = findViewById<android.widget.LinearLayout>(R.id.layoutPacotesOffline)
-        container.removeAllViews()
-        lifecycleScope.launch {
-            val pacotes = withContext(Dispatchers.IO) { com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesRegistrados() }
-            if (pacotes.isEmpty()) return@launch
-            val linhas = withContext(Dispatchers.IO) {
-                com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesVisiveis(applicationContext).map { pacote ->
-                    Triple(
-                        pacote,
-                        pacote.isPronto(applicationContext),
-                        pacote.tamanhoOcupadoBytes(applicationContext).toDouble() / BYTES_IN_MB
-                    )
-                }
-            }
-            for ((pacote, pronto, ocupadoMb) in linhas) {
-                container.addView(montarLinhaPacote(pacote, pronto, ocupadoMb))
-            }
-        }
-    }
-
-    private fun montarLinhaPacote(
-        pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes,
-        pronto: Boolean,
-        ocupadoMb: Double
-    ): android.view.View {
-        val linha = layoutInflater.inflate(R.layout.item_pacote_offline, null)
-        linha.findViewById<android.widget.TextView>(R.id.tvPacoteNome).text = nomeExibidoDoPacote(this, pacote.id, pacote.nomeExibicao)
-        val estado = linha.findViewById<android.widget.TextView>(R.id.tvPacoteEstado)
-        val botao = linha.findViewById<android.widget.Button>(R.id.btnPacoteAcao)
-        if (pronto) {
-            estado.text = getString(
-                R.string.pacote_offline_baixado_tamanho,
-                ocupadoMb,
-                getString(R.string.pacote_offline_estado_baixado)
-            )
-            botao.text = getString(R.string.pacote_offline_apagar)
-            botao.backgroundTintList =
-                androidx.core.content.ContextCompat.getColorStateList(this, R.color.color_surface_variant)
-            botao.setTextColor(
-                androidx.core.content.ContextCompat.getColor(this, R.color.color_error)
-            )
-            botao.setOnClickListener { apagarPacote(pacote) }
-        } else {
-            estado.text = getString(R.string.pacote_offline_nao_baixado, pacote.tamanhoDownloadMb)
-            botao.text = getString(R.string.pacote_offline_baixar)
-            botao.setOnClickListener { baixarPacote(pacote) }
-        }
-        return linha
-    }
-
-    private fun apagarPacote(pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
-        lifecycleScope.launch {
-            val ok = withContext(Dispatchers.IO) {
-                try {
-                    pacote.delete(applicationContext)
-                    true
-                } catch (e: Exception) {
-                    Log.e("SettingsActivity", "Erro ao apagar pacote ${pacote.id}", e)
-                    false
-                }
-            }
-            if (ok) {
-                Toast.makeText(
-                    this@SettingsActivity, R.string.toast_vozes_apagadas, Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                mostrarErro(R.string.toast_erro_apagar_vozes)
-            }
-            carregarInfoVozesOffline()
-        }
-    }
-
-    /**
-     * "Importar voz" do card Vozes offline (BYOM, V6 Parte B): antes de abrir o seletor,
-     * avisa que a responsabilidade pela licença do modelo importado é do usuário (o app não
-     * verifica proveniência) — plano exige esse aviso explícito no fluxo de importação.
-     */
-    private fun mostrarAvisoLicencaEImportar() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.dialog_byom_licenca_titulo)
-            .setMessage(R.string.dialog_byom_licenca_mensagem)
-            .setPositiveButton(R.string.btn_continuar) { _, _ ->
-                try {
-                    importarVozByomLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
-                } catch (e: android.content.ActivityNotFoundException) {
-                    Log.w("SettingsActivity", "Erro ao iniciar importação de voz BYOM", e)
-                    Toast.makeText(this, R.string.toast_erro_importar_voz, Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .exibir()
-    }
-
-    private fun importarPacoteByom(uri: Uri) {
-        Toast.makeText(this, R.string.toast_importando_voz, Toast.LENGTH_SHORT).show()
-        lifecycleScope.launch {
-            val resultado = com.jonjonesbr.audiobookgen.tts.BYOMManager.importar(applicationContext, uri)
-            resultado.onSuccess { nomePacote ->
-                Toast.makeText(
-                    this@SettingsActivity,
-                    getString(R.string.toast_voz_importada, nomePacote),
-                    Toast.LENGTH_LONG
-                ).show()
-                carregarInfoVozesOffline()
-            }.onFailure { e ->
-                Log.w("SettingsActivity", "Erro ao importar pacote BYOM", e)
-                mostrarErro(getString(R.string.toast_erro_importar_voz_motivo, getString(mensagemDeErro(e))))
-            }
-        }
-    }
-
-    /**
-     * Baixar de um pacote do card: fora de WiFi avisa ANTES (mesma checagem de conectividade
-     * do fluxo de seleção de voz — NetworkStatus, fonte única; V6 item 2).
-     */
-    private fun baixarPacote(pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
-        if (!com.jonjonesbr.audiobookgen.util.NetworkStatus.isOnWifi(this)) {
-            val aviso = android.app.AlertDialog.Builder(this)
-                .setTitle(nomeExibidoDoPacote(this, pacote.id, pacote.nomeExibicao))
-                .setMessage(R.string.pacote_download_wifi_aviso)
-                .setPositiveButton(R.string.pacote_offline_baixar) { _, _ -> baixarPacoteDireto(pacote) }
-                .setNegativeButton(android.R.string.cancel, null)
-                .create()
-            dialogosNativos.add(aviso)
-            aviso.show()
-        } else {
-            baixarPacoteDireto(pacote)
-        }
-    }
-
-    // Fronteira de download: exceção ampla intencional (o download limpa o parcial e relança;
-    // aqui vira toast de falha + refresh).
-    @Suppress("TooGenericExceptionCaught")
-    private fun baixarPacoteDireto(pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
-        if (pacote.download == null) return
-        val progressDialog = android.app.AlertDialog.Builder(this).create()
-        val container = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(48, 40, 48, 24)
-        }
-        val tvStatus = android.widget.TextView(this).apply {
-            textSize = 14f
-        }
-        val barra = android.widget.ProgressBar(
-            this, null, android.R.attr.progressBarStyleHorizontal
-        ).apply { max = 100 }
-        container.addView(tvStatus)
-        container.addView(barra)
-        progressDialog.apply {
-            setTitle(getString(R.string.dialog_downloading_title))
-            setView(container)
-            setCancelable(false)
-            setButton(
-                android.app.AlertDialog.BUTTON_NEGATIVE,
-                getString(android.R.string.cancel)
-            ) { _, _ ->
-                // Pausa pela Central: o parcial (.part) fica e dá para continuar de onde parou.
-                com.jonjonesbr.audiobookgen.service.DownloadCentral.pausar(pacote.id)
-            }
-        }
-        dialogosNativos.add(progressDialog)
-        progressDialog.show()
-        lifecycleScope.launch {
-            try {
-                com.jonjonesbr.audiobookgen.service.DownloadCentral.baixarEAguardar(
-                    applicationContext, pacote.id
-                ) { _, pct, _, _ ->
-                    if (!isDestroyed) runOnUiThread {
-                        barra.progress = (pct * 100).toInt().coerceIn(0, 100)
-                    }
-                }
-                progressDialog.dismiss()
-                Toast.makeText(
-                    this@SettingsActivity, R.string.toast_download_completed, Toast.LENGTH_SHORT
-                ).show()
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                progressDialog.dismiss()
-                // Tela fechada/girada não cancela o download (segue na Central); só o botão Cancelar pausa.
-                if (!isDestroyed) {
-                    Toast.makeText(this@SettingsActivity, R.string.toast_download_cancelled, Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                progressDialog.dismiss()
-                Log.w("SettingsActivity", "Falha ao baixar voz", e)
-                mostrarErro(getString(R.string.toast_download_failed, getString(mensagemDeErro(e))))
-            }
-            carregarInfoVozesOffline()
-        }
-    }
-
     private fun configurarCreditosVoz() {
         findViewById<android.widget.TextView>(R.id.tvCreditosVoz).marcarComoLink()
         findViewById<android.widget.TextView>(R.id.tvCreditosVoz).setOnClickListener {
@@ -1240,82 +1044,6 @@ class SettingsActivity : BasePlayerActivity() {
         } else {
             resources.getQuantityString(R.plurals.blacklist_terms_count, count, count)
         }
-    }
-
-    private fun obterBlacklist(): List<String> = blacklistStore.load()
-
-    private fun salvarBlacklist(list: List<String>) = blacklistStore.save(list)
-
-    private fun atualizarListaDialogo(container: LinearLayout) {
-        container.removeAllViews()
-        val termos = obterBlacklist()
-        if (termos.isEmpty()) {
-            val emptyTv = TextView(this).apply {
-                text = getString(R.string.blacklist_empty)
-                textSize = BLACKLIST_TEXT_SIZE_SP
-                setTextColor(ContextCompat.getColor(this@SettingsActivity, R.color.color_on_surface_muted))
-                setPadding(
-                    BLACKLIST_ITEM_PADDING_DP,
-                    BLACKLIST_ITEM_PADDING_DP,
-                    BLACKLIST_ITEM_PADDING_DP,
-                    BLACKLIST_ITEM_PADDING_DP
-                )
-                gravity = android.view.Gravity.CENTER
-            }
-            container.addView(emptyTv)
-            return
-        }
-
-        val inflater = layoutInflater
-        for (termo in termos) {
-            val itemView = inflater.inflate(R.layout.item_blacklist_term, container, false)
-            val tvTermo = itemView.findViewById<TextView>(R.id.tvTermo)
-            val btnRemoverTermo = itemView.findViewById<ImageButton>(R.id.btnRemoverTermo)
-
-            tvTermo.text = termo
-            btnRemoverTermo.setOnClickListener {
-                val novaLista = obterBlacklist().toMutableList()
-                novaLista.remove(termo)
-                salvarBlacklist(novaLista)
-                atualizarListaDialogo(container)
-                carregarInfoBlacklist()
-            }
-            container.addView(itemView)
-        }
-    }
-
-    private fun mostrarDialogoBlacklist() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_blacklist, null)
-        val etNovoTermo = dialogView.findViewById<EditText>(R.id.etNovoTermo)
-        val btnAdicionarTermo = dialogView.findViewById<Button>(R.id.btnAdicionarTermo)
-        val containerTermos = dialogView.findViewById<LinearLayout>(R.id.containerTermos)
-
-        atualizarListaDialogo(containerTermos)
-
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.title_blacklist)
-            .setView(dialogView)
-            .setPositiveButton(R.string.dialog_ok, null)
-            .create()
-
-        btnAdicionarTermo.setOnClickListener {
-            val novoTermo = etNovoTermo.text.toString().trim()
-            if (novoTermo.isEmpty()) return@setOnClickListener
-
-            val termos = obterBlacklist().toMutableList()
-            if (termos.contains(novoTermo)) {
-                Toast.makeText(this, getString(R.string.toast_blacklist_duplicate), Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            termos.add(novoTermo)
-            salvarBlacklist(termos)
-            etNovoTermo.text.clear()
-            atualizarListaDialogo(containerTermos)
-            carregarInfoBlacklist()
-        }
-
-        dialogos.mostrar(dialog)
     }
 
     private fun configurarListenersPausaEBitrate() {
@@ -1467,7 +1195,13 @@ class SettingsActivity : BasePlayerActivity() {
             resultado.onSuccess { resumo -> mostrarResumoBackupImportado(resumo) }
                 .onFailure { e ->
                     Log.w("SettingsActivity", "Erro ao importar backup completo", e)
-                    mostrarErro(getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e))))
+                    val motivo = (e as? com.jonjonesbr.audiobookgen.domain.BackupException)?.motivo
+                    val msg = when (motivo) {
+                        com.jonjonesbr.audiobookgen.domain.MotivoBackup.ARQUIVO_INVALIDO -> getString(R.string.backup_erro_arquivo_invalido)
+                        com.jonjonesbr.audiobookgen.domain.MotivoBackup.VERSAO_MAIS_NOVA -> getString(R.string.backup_erro_versao_mais_nova)
+                        null -> getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e)))
+                    }
+                    mostrarErro(msg)
                 }
         }
     }
@@ -1498,7 +1232,6 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
     companion object {
-        private const val BYTES_IN_MB = 1048576.0
         private const val JSON_INDENT = 4
         private const val STEPS_MIN = 2
         // Alinhado ao teto de segurança do motor (OnnxTtsEngine: supertonicSteps.coerceIn(1, 16))
@@ -1518,7 +1251,5 @@ class SettingsActivity : BasePlayerActivity() {
         private const val BITRATE_128_KBPS = 128
         private const val BITRATE_192_KBPS = 192
         private const val BITRATE_256_KBPS = 256
-        private const val BLACKLIST_TEXT_SIZE_SP = 14f
-        private const val BLACKLIST_ITEM_PADDING_DP = 16
     }
 }

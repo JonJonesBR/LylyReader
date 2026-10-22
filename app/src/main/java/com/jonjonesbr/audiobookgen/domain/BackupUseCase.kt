@@ -29,6 +29,15 @@ private const val ENTRADA_ESTATISTICAS = "estatisticas.json"
 private const val ENTRADA_CAPITULOS = "capitulos.json"
 private const val ENTRADA_VINCULOS = "vinculos.json"
 private const val ENTRADA_PERFIS_VOZ = "perfis_voz.json"
+private const val ENTRADA_VERSAO = "versao.json"
+
+/** Versão do formato de backup que este app grava e sabe ler. Backup sem `versao.json` é antigo (aceito). */
+internal const val VERSAO_BACKUP = 1
+
+private val ENTRADAS_CONTEUDO = setOf(
+    ENTRADA_CONFIG, ENTRADA_BOOKMARKS, ENTRADA_HIGHLIGHTS, ENTRADA_PROGRESSO,
+    ENTRADA_ESTATISTICAS, ENTRADA_CAPITULOS, ENTRADA_VINCULOS, ENTRADA_PERFIS_VOZ
+)
 
 /**
  * Backup/restauração completa (Fase 5, item 1): um ZIP com configurações, progresso de
@@ -53,6 +62,7 @@ class BackupUseCase(private val context: Context) {
         val out = context.contentResolver.openOutputStream(destino) ?: error(context.getString(R.string.backup_destino_indisponivel))
         out.use {
             ZipOutputStream(it).use { zip ->
+                escreverEntrada(zip, ENTRADA_VERSAO, VERSAO_BACKUP.toString())
                 escreverEntrada(zip, ENTRADA_CONFIG, AppPrefsBackup.paraJson(appPrefs).toString())
                 escreverEntrada(zip, ENTRADA_BOOKMARKS, BookmarkStore.paraJson(context))
                 escreverEntrada(zip, ENTRADA_HIGHLIGHTS, HighlightStore.paraJson(context))
@@ -67,9 +77,7 @@ class BackupUseCase(private val context: Context) {
 
     fun importar(origem: Uri): Result<ImportSummary> = runCatching {
         val entradas = lerEntradas(origem)
-        if (entradas.isEmpty()) {
-            Log.w(TAG, "Backup sem entradas reconhecíveis: arquivo vazio ou não é um backup do app")
-        }
+        motivoRejeicaoBackup(entradas)?.let { throw BackupException(it) }
         val appPrefs = AppPrefs(context)
 
         val temConfig = entradas[ENTRADA_CONFIG]?.also { AppPrefsBackup.aplicar(appPrefs, JSONObject(it)) } != null
@@ -143,7 +151,28 @@ class BackupUseCase(private val context: Context) {
         }
 }
 
+/** Por que um backup não pode ser importado. A tela traduz o motivo em texto amigável. */
+enum class MotivoBackup { ARQUIVO_INVALIDO, VERSAO_MAIS_NOVA }
+
+class BackupException(val motivo: MotivoBackup) : Exception(motivo.name)
+
 // ── Funções puras (sem Context), testadas em BackupUseCaseTest ──
+
+/**
+ * Diz por que um backup não pode ser importado, ou null se pode. Sem a entrada de versão é backup
+ * antigo, aceito. Versão ilegível (ou menor que 1) ou nenhuma entrada conhecida → arquivo inválido
+ * (ZIP inválido, vazio ou de outro app). Versão acima de [VERSAO_BACKUP] → versão mais nova; isso
+ * é checado antes das entradas, porque um formato futuro pode trocar os nomes delas.
+ */
+internal fun motivoRejeicaoBackup(entradas: Map<String, String>): MotivoBackup? {
+    if (ENTRADA_VERSAO in entradas) {
+        val versao = entradas.getValue(ENTRADA_VERSAO).trim().toIntOrNull()?.takeIf { it >= 1 }
+            ?: return MotivoBackup.ARQUIVO_INVALIDO
+        if (versao > VERSAO_BACKUP) return MotivoBackup.VERSAO_MAIS_NOVA
+    }
+    val temConteudo = entradas.keys.any { it in ENTRADAS_CONTEUDO }
+    return if (temConteudo) null else MotivoBackup.ARQUIVO_INVALIDO
+}
 
 /** Lê as entradas de um ZIP de backup como texto UTF-8. ZIP inválido ou vazio → mapa vazio. */
 internal fun lerEntradasZip(stream: InputStream): Map<String, String> {
