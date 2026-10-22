@@ -78,6 +78,12 @@ class PocketSynthService : Service() {
 
     override fun onBind(intent: Intent?): IBinder = binder
 
+    // Android 15+: limite de tempo do dataSync atingido. Sai do foreground sem parar o serviço
+    // (continua ligado ao cliente); sem isto o sistema derruba o app.
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        stopForeground(STOP_FOREGROUND_REMOVE)
+    }
+
     override fun onDestroy() {
         idleRelease?.let(mainHandler::removeCallbacks)
         synchronized(engineLock) {

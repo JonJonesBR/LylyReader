@@ -1287,12 +1287,11 @@ class GuidedPlayerManager(
     fun release() {
         cancelarPreparo()
         stop()
-        val onnx = onnxEngine
-        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try { onnx?.releaseAll() } catch (e: Exception) {
-                Log.w(TAG, "Falha ao liberar o motor ONNX", e)
-            }
+        // releaseAll() é trivial hoje; se ganhar trabalho real, precisa de ordem garantida (Mutex de processo).
+        try { onnxEngine?.releaseAll() } catch (e: Exception) {
+            Log.w(TAG, "Falha ao liberar o motor ONNX", e)
         }
+        onnxEngine = null
         playerEngine?.release()
         playerEngine = null
         coroutineScope.cancel()

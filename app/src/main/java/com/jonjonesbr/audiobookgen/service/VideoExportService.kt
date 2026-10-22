@@ -75,6 +75,13 @@ class VideoExportService : Service() {
         return START_NOT_STICKY
     }
 
+    // Android 15+: limite de tempo do dataSync atingido. Cancela a exportação e encerra o serviço.
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        VideoExportBridge.cancelar?.invoke()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
     override fun onDestroy() {
         // Só zera o cancelamento global se ainda for o deste serviço (não apaga o de uma instância nova).
         cancelarDesteServico?.let { if (VideoExportBridge.cancelar === it) VideoExportBridge.cancelar = null }
@@ -218,7 +225,7 @@ class VideoExportService : Service() {
         val partes = estado.partesExportadas
         val texto = when {
             partes == 1 -> getString(R.string.toast_video_exportado)
-            partes != null -> getString(R.string.toast_video_exportado_partes, partes)
+            partes != null -> resources.getQuantityString(R.plurals.toast_video_exportado_partes_qtd, partes, partes)
             else -> getString(R.string.toast_erro_exportar_video, estado.erro.orEmpty())
         }
         val n = NotificationCompat.Builder(this, CHANNEL_ID)

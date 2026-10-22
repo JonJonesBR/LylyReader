@@ -64,6 +64,13 @@ class PreRenderService : Service() {
         return START_NOT_STICKY
     }
 
+    // Android 15+: limite de tempo do dataSync atingido. Cancela o pré-render e encerra o serviço.
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        PreRenderBridge.cancelar?.invoke()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
     override fun onDestroy() {
         observeJob?.cancel()
         scope.cancel()

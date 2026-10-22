@@ -1,6 +1,8 @@
 package com.jonjonesbr.audiobookgen.tts
 import android.content.Context
+import android.os.Looper
 import android.util.Log
+import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import kotlinx.coroutines.runBlocking
 import java.io.File
 /** Ponte Python para TextToSpeech Android na conversão; o cache também é usado pela guiada. */
@@ -10,6 +12,15 @@ object AndroidSynthBridge {
     @Volatile private var appContext: Context? = null
     @JvmStatic fun init(context: Context) { appContext = context.applicationContext }
     @JvmStatic fun synthesize(text: String, voiceId: String, outPath: String): Boolean {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            // AndroidTtsEngineCache usa withContext(Main): chamar daqui trava a thread principal.
+            CrashLogWriter.log(
+                IllegalStateException("AndroidSynthBridge.synthesize chamado na main thread"),
+                TAG,
+                "Síntese bloqueada na main thread (voz=$voiceId)"
+            )
+            return false
+        }
         val ctx = appContext ?: return false
         return try {
             val ritmo = com.jonjonesbr.audiobookgen.data.AppPrefs(ctx).ritmo

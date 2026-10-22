@@ -1,7 +1,9 @@
 package com.jonjonesbr.audiobookgen.tts
 
 import android.content.Context
+import android.os.Looper
 import android.util.Log
+import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import java.io.File
 
 /** Synchronous Chaquopy bridge for audiobook generation; shares the cache with guided reading. */
@@ -16,6 +18,15 @@ object PocketSynthBridge {
 
     @JvmStatic
     fun synthesize(text: String, voiceId: String, outPath: String): Boolean {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            // A síntese usa runBlocking em PocketTtsEngine: chamar na main thread trava o app.
+            CrashLogWriter.log(
+                IllegalStateException("PocketSynthBridge.synthesize chamado na main thread"),
+                TAG,
+                "Síntese bloqueada na main thread (voz=$voiceId)"
+            )
+            return false
+        }
         val context = appContext ?: return false
         if (PocketTtsModelManager.specForVoice(voiceId) == null) return false
         return try {

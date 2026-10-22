@@ -71,6 +71,14 @@ class DownloadService : Service() {
         return START_NOT_STICKY
     }
 
+    // Android 15+: limite de tempo do dataSync atingido. Pausa os downloads (a central não
+    // consegue seguir sem processo em primeiro plano) e encerra o serviço.
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        DownloadCentral.pausarTodos()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
     override fun onDestroy() {
         observeJob?.cancel()
         scope.cancel()
