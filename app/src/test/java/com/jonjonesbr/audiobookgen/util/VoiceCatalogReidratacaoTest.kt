@@ -17,6 +17,9 @@ class VoiceCatalogReidratacaoTest {
         isPronto = { true }
     )
 
+    private fun estaBloqueado(thread: Thread): Boolean =
+        thread.state == Thread.State.WAITING || thread.state == Thread.State.TIMED_WAITING
+
     @Test(timeout = 4000)
     fun leituraFeitaDuranteAReidratacaoEsperaOPacoteRegistrado() {
         val segurar = CountDownLatch(1)
@@ -28,8 +31,12 @@ class VoiceCatalogReidratacaoTest {
         val leitor = Thread { lidos.set(VoiceCatalog.pacotesRegistrados()) }
         try {
             leitor.start()
-            Thread.sleep(200)
-            assertTrue("a leitura deveria estar esperando a reidratação", leitor.isAlive)
+            // Espera (com teto) o leitor bloquear no latch da reidratação, sem dormir um tempo fixo.
+            val limite = System.currentTimeMillis() + 2000
+            while (System.currentTimeMillis() < limite && !estaBloqueado(leitor)) {
+                Thread.sleep(5)
+            }
+            assertTrue("a leitura deveria estar esperando a reidratação", leitor.isAlive && estaBloqueado(leitor))
             segurar.countDown()
             leitor.join(3000)
             assertTrue(lidos.get().any { it.id == "teste-reidratacao-a" })

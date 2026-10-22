@@ -7,6 +7,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -209,7 +210,9 @@ class TtsChunkCacheTest {
                 true
             }
         }
-        Thread.sleep(100)
+        // Dá ao segundo caller a chance de rodar até aguardar o produtor (no runBlocking,
+        // Thread.sleep bloquearia o próprio loop e o segundo caller nem chegaria a executar).
+        yield()
         assertEquals(1, calls.get())
         finish.complete(Unit)
 
