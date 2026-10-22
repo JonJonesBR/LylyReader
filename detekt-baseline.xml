@@ -2,38 +2,280 @@
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
   <CurrentIssues>
+    <ID>ComplexCondition:AudiobookViewModel.kt$AudiobookViewModel$speakerMapPath == null &amp;&amp; livroInteiro &amp;&amp; caminhoDoLivro != null &amp;&amp; caminhoDoLivro == arquivo</ID>
+    <ID>ComplexCondition:CoachMark.kt$CoachMark$!alvo.isShown || alvo.width == 0 || alvo.height == 0 || !alvo.getGlobalVisibleRect(visivel)</ID>
+    <ID>ComplexCondition:DivisorDeOracoes.kt$DivisorDeOracoes$!(seguinte.isLetterOrDigit() || seguinte == '"' || seguinte == '“' || seguinte == '\'')</ID>
+    <ID>ComplexCondition:DivisorDeOracoes.kt$DivisorDeOracoes$c == '.' || c == '!' || c == '?' || c == '\u2026'</ID>
+    <ID>ComplexCondition:DivisorDeOracoes.kt$DivisorDeOracoes$fim &lt; n &amp;&amp; ( texto[fim] == '\u2026' || texto[fim] == '.' || texto[fim] == '!' || texto[fim] == '?' || texto[fim] == '"' || texto[fim] == '\u201D' || texto[fim] == '\'' || texto[fim] == '\u2019' || texto[fim] == ')' )</ID>
+    <ID>ComplexCondition:GuidedPlayerManager.kt$GuidedPlayerManager$prefetchAnterior != null &amp;&amp; prefetchAnterior.voice == voz &amp;&amp; prefetchAnterior.speedPct == ritmo &amp;&amp; prefetchAnterior.textHash == primeiro.texto.hashCode()</ID>
+    <ID>ComplexCondition:GuidedPlayerManager.kt$GuidedPlayerManager$segundo != null &amp;&amp; prefetchSegundoAnterior != null &amp;&amp; prefetchSegundoAnterior.voice == voz &amp;&amp; prefetchSegundoAnterior.speedPct == ritmo &amp;&amp; prefetchSegundoAnterior.textHash == segundo.texto.hashCode()</ID>
+    <ID>ComplexCondition:LinkDeLivro.kt$LinkDeLivro$(esquema != "https" &amp;&amp; esquema != "http") || host.isNullOrBlank() || !host.contains('.')</ID>
+    <ID>ComplexCondition:MigracaoBiblioteca.kt$MigracaoBiblioteca$arquivo.isFile &amp;&amp; arquivo.length() &gt; 0L &amp;&amp; ehFormatoSuportado(arquivo.name) &amp;&amp; vistos.add(arquivo.absolutePath)</ID>
     <ID>ComplexCondition:QueueManager.kt$QueueManager$de &lt; 0 || de &gt;= items.size || para &lt; 0 || para &gt;= items.size</ID>
     <ID>ComplexCondition:SupertonicTTS.kt$SupertonicTTS$lastChar != '.' &amp;&amp; lastChar != '!' &amp;&amp; lastChar != '?' &amp;&amp; lastChar != '।'</ID>
+    <ID>ComplexCondition:VoiceBottomSheet.kt$VoiceBottomSheet.VoiceAdapter$query.isBlank() &amp;&amp; recomendadas.isEmpty() &amp;&amp; grupos.recomendadas.isEmpty() &amp;&amp; alternativas.isNotEmpty()</ID>
+    <ID>CyclomaticComplexMethod:AppPrefsBackup.kt$AppPrefsBackup$fun aplicar(appPrefs: AppPrefs, json: JSONObject)</ID>
+    <ID>CyclomaticComplexMethod:AudioAacTranscoder.kt$@Suppress("LongParameterList") private fun rodarEncoder( context: Context, encoder: MediaCodec, fila: ArrayBlockingQueue&lt;BlocoPcm&gt;, estado: EstadoCodificacao, duracaoUs: Long, erroDecoder: AtomicReference&lt;Throwable?&gt;, onProgress: (Int) -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:AudioAacTranscoder.kt$private fun rodarDecoder( extractor: MediaExtractor, decoder: MediaCodec, fila: ArrayBlockingQueue&lt;BlocoPcm&gt;, parar: AtomicBoolean, erro: AtomicReference&lt;Throwable?&gt; )</ID>
+    <ID>CyclomaticComplexMethod:AudiobookViewModel.kt$AudiobookViewModel$private fun observarTrabalho(workId: java.util.UUID)</ID>
+    <ID>CyclomaticComplexMethod:BYOMManager.kt$BYOMManager$internal fun validarConteudo(dir: File, manifesto: ManifestoImportado): String?</ID>
+    <ID>CyclomaticComplexMethod:BibliotecaStore.kt$BibliotecaStore$private suspend fun importar( ctx: Context, abrir: () -&gt; InputStream?, nomeOriginal: String, mime: String?, origem: OrigemLivro, chaveOrigem: String?, tituloPreferido: String?, autorPreferido: String? ): LivroBiblioteca</ID>
+    <ID>CyclomaticComplexMethod:CapaLoader.kt$CapaLoader$@Suppress("TooGenericExceptionCaught") suspend fun carregar(url: String): Bitmap?</ID>
+    <ID>CyclomaticComplexMethod:ConversionWorker.kt$ConversionWorker$private suspend fun executarConversao( arquivo: String, voz: String, velocidade: String, estilo: String, saida: String ): Result</ID>
+    <ID>CyclomaticComplexMethod:ConversoesActivity.kt$ConversoesActivity$private fun mostrar(estado: AudiobookUiState)</ID>
+    <ID>CyclomaticComplexMethod:DivisorDeOracoes.kt$DivisorDeOracoes$fun dividirEmOracoes(texto: String): List&lt;OracaoGuia&gt;</ID>
+    <ID>CyclomaticComplexMethod:DivisorDeOracoes.kt$DivisorDeOracoes$private fun terminaEmAbreviacao(texto: String, pos: Int, fim: Int): Boolean</ID>
+    <ID>CyclomaticComplexMethod:DownloadCentralAdapter.kt$DownloadCentralAdapter$override fun onBindViewHolder(holder: VH, position: Int)</ID>
     <ID>CyclomaticComplexMethod:ExtractTextUseCase.kt$ExtractTextUseCase$suspend fun invoke(caminho: String): ExtractionResult</ID>
+    <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$@Suppress("LongMethod") fun play(index: Int)</ID>
+    <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$@Suppress("LongMethod") private suspend fun tocarParagrafoPorOracoes( oracoes: List&lt;OracaoGuia&gt;, paragraphText: String, voz: String, ritmo: Int, speedVal: Float, synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer )</ID>
+    <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$fun prepararCapitulo(desde: Int, ate: Int, titulo: String)</ID>
     <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private fun prefetch(index: Int)</ID>
-    <ID>CyclomaticComplexMethod:OnnxTtsEngine.kt$OnnxTtsEngine$private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float): FloatArray?</ID>
+    <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private suspend fun tocarParagrafoPorFalantes( segments: List&lt;VoiceAssignedSegment&gt;, paragraphText: String, narratorVoice: String, fallbackEngine: String, ritmo: Int, speedVal: Float )</ID>
+    <ID>CyclomaticComplexMethod:GuidedReadingBarController.kt$GuidedReadingBarController$private fun atualizarGuidedPlayerUI(guidedState: GuidedState)</ID>
+    <ID>CyclomaticComplexMethod:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$fun show(activity: AppCompatActivity, manager: GuidedPlayerManager, aoMudar: () -&gt; Unit = {})</ID>
+    <ID>CyclomaticComplexMethod:LinkDownloader.kt$LinkDownloader$suspend fun baixar(ctx: Context, url: String, aoProgredir: (bytes: Long, total: Long) -&gt; Unit): Baixado</ID>
+    <ID>CyclomaticComplexMethod:LivroActivity.kt$LivroActivity$private fun mostrar(l: LivroBiblioteca)</ID>
+    <ID>CyclomaticComplexMethod:MeusLivrosActivity.kt$MeusLivrosActivity$private fun aplicar()</ID>
+    <ID>CyclomaticComplexMethod:OnnxTtsEngine.kt$OnnxTtsEngine$private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float, version: String): FloatArray?</ID>
     <ID>CyclomaticComplexMethod:OnnxTtsEngine.kt$OnnxTtsEngine$suspend fun synthesize( texto: String, voiceId: String, outputFile: File ): Result&lt;File&gt;</ID>
+    <ID>CyclomaticComplexMethod:ParagrafoAdapter.kt$ParagrafoAdapter$private fun bindLeitura(holder: VHLeitura, par: Paragrafo?, position: Int, corTexto: Int)</ID>
+    <ID>CyclomaticComplexMethod:PiperVitsModelManager.kt$PiperVitsModelManager$suspend fun download(context: Context, packId: String, onProgress: ProgressoDownload)</ID>
+    <ID>CyclomaticComplexMethod:PocketEncoderOficial.kt$PocketEncoderOficial$fun lerPesos( entrada: java.io.InputStream, mapa: List&lt;PesoMapeado&gt;, tamanhoTotal: Long, bloco: Int = 256 * 1024, progresso: (Float) -&gt; Unit = {} ): PesosLidos</ID>
+    <ID>CyclomaticComplexMethod:PocketTtsModelManager.kt$PocketTtsModelManager$@Suppress("TooGenericExceptionCaught") suspend fun download(context: Context, packId: String, onProgress: ProgressoDownload)</ID>
+    <ID>CyclomaticComplexMethod:PocketTtsModelManager.kt$PocketTtsModelManager$private fun extractPack(archive: File, staging: File, model: Spec)</ID>
+    <ID>CyclomaticComplexMethod:PronunciationAi.kt$PronunciationAiPlanner$fun parseResponse(raw: String): Map&lt;String, String&gt;</ID>
+    <ID>CyclomaticComplexMethod:PronunciationDialog.kt$PronunciationDialog$fun show( activity: AppCompatActivity, palavra: String, caminhoDoLivro: String? = null, escopoInicial: EscopoPronuncia = if (caminhoDoLivro != null) EscopoPronuncia.LIVRO else EscopoPronuncia.TODOS, onOuvir: ((String) -&gt; Unit)? = null, onConcluido: () -&gt; Unit = {} )</ID>
     <ID>CyclomaticComplexMethod:ReadingStartDetector.kt$ReadingStartDetector$fun indiceInicio(capitulos: List&lt;Capitulo&gt;): Int</ID>
-    <ID>CyclomaticComplexMethod:SupertonicAssetManager.kt$SupertonicAssetManager$private suspend fun downloadFileWithResume( url: String, targetFile: File, onChunk: (bytesWritten: Long) -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:SpeakerAttribution.kt$OfflineSpeakerAttributor$fun analyze( paragraphs: List&lt;String&gt;, maxCharacterSpeakers: Int = MAX_CHARACTER_SPEAKERS, aiOverrides: Map&lt;Pair&lt;Int, Int&gt;, String&gt; = emptyMap(), edits: SpeakerEdits = SpeakerEdits.EMPTY ): SpeakerAttributionResult</ID>
+    <ID>CyclomaticComplexMethod:SpeakerAttributionStore.kt$SpeakerAttributionStore$fun save( bookIdentity: String, paragraphs: List&lt;String&gt;, result: SpeakerAttributionResult, chapters: List&lt;Capitulo&gt; = emptyList() ): Boolean</ID>
     <ID>CyclomaticComplexMethod:SupertonicTTS.kt$SupertonicTTS$private fun fallbackChunkText(text: String, lang: String): String</ID>
-    <ID>CyclomaticComplexMethod:TtsErrorMapper.kt$TtsErrorMapper$fun toUserMessage(raw: String): String</ID>
+    <ID>CyclomaticComplexMethod:TtsErrorMapper.kt$TtsErrorMapper$@StringRes fun toUserMessageRes(raw: String): Int</ID>
+    <ID>CyclomaticComplexMethod:VoiceBottomSheet.kt$VoiceBottomSheet$override fun onViewCreated(view: View, savedInstanceState: Bundle?)</ID>
+    <ID>CyclomaticComplexMethod:VoiceBottomSheet.kt$VoiceBottomSheet.VoiceAdapter$private fun bindVoice(holder: VH, voice: VoiceOption)</ID>
+    <ID>CyclomaticComplexMethod:VoiceDownloadFlow.kt$VoiceDownloadFlow$fun verificarEBaixarSeNecessario(voice: VoiceOption, onComplete: () -&gt; Unit)</ID>
+    <ID>CyclomaticComplexMethod:VoiceReferenceAudio.kt$VoiceReferenceAudio$fun converterArquivo(context: Context, uri: Uri, destino: File): Result</ID>
     <ID>EmptyFunctionBlock:AndroidTtsEngine.kt$AndroidTtsEngine.&lt;no name provided&gt;${}</ID>
-    <ID>EmptyFunctionBlock:MainActivity.kt$MainActivity.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ParagrafoAdapter.kt$ParagrafoAdapter.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:PassosDialog.kt$PassosDialog.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ReaderActivity.kt$ReaderActivity.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ReaderAparenciaController.kt$ReaderAparenciaController.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ReaderRetornoController.kt$ReaderRetornoController.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:SettingsActivity.kt$SettingsActivity.&lt;no name provided&gt;${}</ID>
-    <ID>LargeClass:MainActivity.kt$MainActivity : BasePlayerActivity</ID>
+    <ID>EmptyFunctionBlock:TimbreDialog.kt$TimbreDialog.&lt;no name provided&gt;${}</ID>
+    <ID>ImplicitDefaultLocale:CloneVoiceFlow.kt$CloneVoiceFlow.&lt;no name provided&gt;$String.format("%.1f s", rec.segundos)</ID>
+    <ID>InstanceOfCheckForException:LinkDownloader.kt$LinkDownloader$e is IOException</ID>
+    <ID>InstanceOfCheckForException:PronunciationAiFlow.kt$PronunciationAiFlow$e is com.jonjonesbr.audiobookgen.domain.AiApiException</ID>
+    <ID>InstanceOfCheckForException:ReaderPersonagensController.kt$ReaderPersonagensController$e is com.jonjonesbr.audiobookgen.domain.AiApiException</ID>
+    <ID>LargeClass:GuidedPlayerManager.kt$GuidedPlayerManager</ID>
     <ID>LargeClass:ReaderActivity.kt$ReaderActivity : BasePlayerActivity</ID>
     <ID>LargeClass:SettingsActivity.kt$SettingsActivity : BasePlayerActivity</ID>
-    <ID>LongMethod:OnnxTtsEngine.kt$OnnxTtsEngine$private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float): FloatArray?</ID>
+    <ID>LongMethod:AppPrefsBackup.kt$AppPrefsBackup$fun aplicar(appPrefs: AppPrefs, json: JSONObject)</ID>
+    <ID>LongMethod:AudiobookViewModel.kt$AudiobookViewModel$fun retomarConversaoPausada( aoFalhar: (RetomadaFalha) -&gt; Unit = {}, aoAceitar: () -&gt; Unit = {} )</ID>
+    <ID>LongMethod:AudiobookViewModel.kt$AudiobookViewModel$private fun observarTrabalho(workId: java.util.UUID)</ID>
+    <ID>LongMethod:ConversionWorker.kt$ConversionWorker$private suspend fun executarConversao( arquivo: String, voz: String, velocidade: String, estilo: String, saida: String ): Result</ID>
+    <ID>LongMethod:GuidedPlayerManager.kt$GuidedPlayerManager$fun prepararCapitulo(desde: Int, ate: Int, titulo: String)</ID>
+    <ID>LongMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private suspend fun tocarParagrafoPorFalantes( segments: List&lt;VoiceAssignedSegment&gt;, paragraphText: String, narratorVoice: String, fallbackEngine: String, ritmo: Int, speedVal: Float )</ID>
+    <ID>LongMethod:GuidedReadingBarController.kt$GuidedReadingBarController$private fun atualizarGuidedPlayerUI(guidedState: GuidedState)</ID>
+    <ID>LongMethod:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$fun show(activity: AppCompatActivity, manager: GuidedPlayerManager, aoMudar: () -&gt; Unit = {})</ID>
+    <ID>LongMethod:KokoroTtsEngine.kt$KokoroTtsEngine$@Suppress("TooGenericExceptionCaught") @Synchronized private fun byomEngine(resolved: BYOMManager.VozResolvidaByom): OfflineTts?</ID>
+    <ID>LongMethod:KokoroTtsEngine.kt$KokoroTtsEngine$@Suppress("TooGenericExceptionCaught") suspend fun synthesize(texto: String, voiceId: String, outputFile: File): Result&lt;File&gt;</ID>
+    <ID>LongMethod:LinkDownloader.kt$LinkDownloader$suspend fun baixar(ctx: Context, url: String, aoProgredir: (bytes: Long, total: Long) -&gt; Unit): Baixado</ID>
+    <ID>LongMethod:OnnxTtsEngine.kt$OnnxTtsEngine$private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float, version: String): FloatArray?</ID>
     <ID>LongMethod:OnnxTtsEngine.kt$OnnxTtsEngine$suspend fun synthesize( texto: String, voiceId: String, outputFile: File ): Result&lt;File&gt;</ID>
+    <ID>LongMethod:PiperVitsModelManager.kt$PiperVitsModelManager$suspend fun download(context: Context, packId: String, onProgress: ProgressoDownload)</ID>
+    <ID>LongMethod:PocketTtsModelManager.kt$PocketTtsModelManager$@Suppress("TooGenericExceptionCaught") suspend fun download(context: Context, packId: String, onProgress: ProgressoDownload)</ID>
+    <ID>LongMethod:PronunciationDialog.kt$PronunciationDialog$fun show( activity: AppCompatActivity, palavra: String, caminhoDoLivro: String? = null, escopoInicial: EscopoPronuncia = if (caminhoDoLivro != null) EscopoPronuncia.LIVRO else EscopoPronuncia.TODOS, onOuvir: ((String) -&gt; Unit)? = null, onConcluido: () -&gt; Unit = {} )</ID>
+    <ID>LongMethod:ReaderActivity.kt$ReaderActivity$override fun onCreate(savedInstanceState: Bundle?)</ID>
+    <ID>LongMethod:SettingsActivity.kt$SettingsActivity$private fun configurarListeners()</ID>
+    <ID>LongMethod:SettingsActivity.kt$SettingsActivity$private fun vincularViews()</ID>
+    <ID>LongMethod:SpeakerAttribution.kt$OfflineSpeakerAttributor$fun analyze( paragraphs: List&lt;String&gt;, maxCharacterSpeakers: Int = MAX_CHARACTER_SPEAKERS, aiOverrides: Map&lt;Pair&lt;Int, Int&gt;, String&gt; = emptyMap(), edits: SpeakerEdits = SpeakerEdits.EMPTY ): SpeakerAttributionResult</ID>
+    <ID>LongMethod:SpeakerAttributionStore.kt$SpeakerAttributionStore$fun save( bookIdentity: String, paragraphs: List&lt;String&gt;, result: SpeakerAttributionResult, chapters: List&lt;Capitulo&gt; = emptyList() ): Boolean</ID>
     <ID>LongMethod:SupertonicAssetManager.kt$SupertonicAssetManager$private suspend fun downloadVersion( context: Context, version: String, baseUrl: String, files: List&lt;String&gt;, onProgress: (String, Float, Long, Long) -&gt; Unit )</ID>
     <ID>LongMethod:SupertonicTTS.kt$SupertonicTTS$private fun fallbackChunkText(text: String, lang: String): String</ID>
+    <ID>LongMethod:VoiceBottomSheet.kt$VoiceBottomSheet$override fun onViewCreated(view: View, savedInstanceState: Bundle?)</ID>
+    <ID>LongMethod:VoiceBottomSheet.kt$VoiceBottomSheet.VoiceAdapter$private fun bindVoice(holder: VH, voice: VoiceOption)</ID>
+    <ID>LongMethod:VoiceDownloadFlow.kt$VoiceDownloadFlow$private fun iniciarDownload(voice: VoiceOption, onComplete: () -&gt; Unit)</ID>
+    <ID>LongMethod:VoiceReferenceAudio.kt$VoiceReferenceAudio$fun converterArquivo(context: Context, uri: Uri, destino: File): Result</ID>
+    <ID>LongParameterList:AcoesDoLivro.kt$AcoesDoLivro$( activity: AppCompatActivity, livro: LivroBiblioteca, continuar: Boolean, acaoInicial: String? = null, somenteLeitura: Boolean = false, comFade: Boolean = false, )</ID>
+    <ID>LongParameterList:AjustesDaConversao.kt$AjustesDaConversaoRegras$( escolhaVoz: String?, escolhaMotor: String?, escolhaRitmo: Int?, livroVoz: String?, livroMotor: String?, livroVelocidade: Float?, perfilAudio: PerfilAudioLivro?, globalVoz: String?, globalMotor: String, globalRitmo: Int, vozPadraoDoMotor: (String) -&gt; String )</ID>
+    <ID>LongParameterList:AjustesDaConversaoRegrasTest.kt$AjustesDaConversaoRegrasTest$( escolhaVoz: String? = null, escolhaMotor: String? = null, escolhaRitmo: Int? = null, livroVoz: String? = null, livroMotor: String? = null, livroVelocidade: Float? = null, perfil: PerfilAudioLivro? = null, globalVoz: String? = "voz-global", globalMotor: String = "edge", globalRitmo: Int = 100 )</ID>
+    <ID>LongParameterList:AppPrefs.kt$AppPrefs$( fonte: Float, espacamento: Float, temaOrdinal: Int, fonteSerifada: Boolean, margemNivel: Int, rolagemHorizontal: Boolean )</ID>
+    <ID>LongParameterList:AudiobookViewModel.kt$AudiobookViewModel$( caminhoDoLivro: String, nomeAudiobook: String, voz: String? = null, motor: String? = null, ritmo: Int? = null, estilo: String = "padrao" )</ID>
+    <ID>LongParameterList:BibliotecaStore.kt$BibliotecaStore$( ctx: Context, abrir: () -&gt; InputStream?, nomeOriginal: String, mime: String?, origem: OrigemLivro, chaveOrigem: String?, tituloPreferido: String?, autorPreferido: String? )</ID>
+    <ID>LongParameterList:BibliotecaStore.kt$BibliotecaStore$( ctx: Context, arquivo: File, nomeOriginal: String, origem: OrigemLivro, chaveOrigem: String?, tituloPreferido: String? = null, autorPreferido: String? = null )</ID>
+    <ID>LongParameterList:BibliotecaTest.kt$BibliotecaTest$( id: String, titulo: String, autor: String? = null, origem: OrigemLivro = OrigemLivro.ARQUIVO, adicionadoEm: Long = 0L, abertoEm: Long? = null )</ID>
+    <ID>LongParameterList:DivisaoDePartes.kt$DivisorDePartes$( private val duracaoTotalUs: Long, private val maxParteUs: Long, private val modo: ModoDivisao, private val silencios: () -&gt; List&lt;List&lt;Silencio&gt;&gt;, private val criarSaida: (indice: Int) -&gt; SaidaDeParte, private val janelaUs: Long = minOf(JANELA_BUSCA_CORTE_US, maxParteUs / 2), private val fronteirasUs: List&lt;Long&gt; = emptyList() )</ID>
+    <ID>LongParameterList:FilaDeConversao.kt$FilaDeConversao$( app: Context, itemId: String, runToken: String?, caminhoSaida: String?, erro: String?, avancar: Boolean )</ID>
+    <ID>LongParameterList:FilaDeConversao.kt$FilaDeConversao$( context: Context, itemId: String?, runToken: String?, caminhoSaida: String?, erro: String?, avancar: Boolean = true )</ID>
+    <ID>LongParameterList:FilaDeConversao.kt$FilaDeConversao$( items: MutableList&lt;QueueItem&gt;, itemId: String, runToken: String?, caminhoSaida: String?, erro: String?, avancar: Boolean, motorDoProximo: (QueueItem) -&gt; String )</ID>
+    <ID>LongParameterList:GuidedPlayerManager.kt$GuidedPlayerManager$( oracoes: List&lt;OracaoGuia&gt;, paragraphText: String, voz: String, ritmo: Int, speedVal: Float, synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer )</ID>
+    <ID>LongParameterList:GuidedPlayerManager.kt$GuidedPlayerManager$( segments: List&lt;VoiceAssignedSegment&gt;, paragraphText: String, narratorVoice: String, fallbackEngine: String, ritmo: Int, speedVal: Float )</ID>
+    <ID>LongParameterList:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$( activity: AppCompatActivity, pai: LinearLayout, titulo: Int, descricao: Int, minimo: Int, maximo: Int, atual: Int, rotulo: (Int) -&gt; String, aoSoltar: (Int) -&gt; Unit )</ID>
+    <ID>LongParameterList:NativePocketTts.kt$NativePocketTts$( modelsDir: String, voicesDir: String, precision: String = "int8", temperature: Float = 0.3f, lsdSteps: Int = 1, threads: Int = 2, sentencePauseMs: Int = 0, // Match pocket_tts.default_parameters.MAX_TOKEN_PER_CHUNK. The official // runtime keeps chunks short because long inputs can cause skipped words. maxTextTokens: Int = 50 )</ID>
+    <ID>LongParameterList:NativePocketTts.kt$NativePocketTts$( modelsDir: String, voicesDir: String, precision: String, temperature: Float, lsdSteps: Int, threads: Int, sentencePauseMs: Int, maxTextTokens: Int )</ID>
+    <ID>LongParameterList:ParagrafoAdapter.kt$ParagrafoAdapter$( private val activity: AppCompatActivity, private val recyclerView: RecyclerView, private val viewModel: ReaderViewModel, private val onLongPress: (Int) -&gt; Unit, private val onToque: (Int) -&gt; Unit, // T3.5 — destacar um trecho selecionado do parágrafo (posição, início, fim em char offset) private val onDestacarTrecho: (Int, Int, Int) -&gt; Unit, // Dicionário de pronúncia — palavra selecionada private val onDefinirPronuncia: (String) -&gt; Unit = {}, // "Ler sem áudio": sem a opção de pronúncia (que toca o texto) no menu de seleção private val mostrarPronuncia: Boolean = true, )</ID>
+    <ID>LongParameterList:PassosDialog.kt$PassosDialog$( activity: AppCompatActivity, @StringRes titulo: Int, @StringRes descricao: Int, minimo: Int, maximo: Int, atual: Int, aoAplicar: (Int) -&gt; Unit )</ID>
+    <ID>LongParameterList:PronunciationDialog.kt$PronunciationDialog$( activity: AppCompatActivity, palavra: String, caminhoDoLivro: String? = null, escopoInicial: EscopoPronuncia = if (caminhoDoLivro != null) EscopoPronuncia.LIVRO else EscopoPronuncia.TODOS, onOuvir: ((String) -&gt; Unit)? = null, onConcluido: () -&gt; Unit = {} )</ID>
     <ID>LongParameterList:PythonEngineUseCase.kt$PythonEngineUseCase$( arquivo: String, voz: String, velocidade: String, estilo: String, saida: String, motor: String, chaveGemini: String, onProgress: (Int, String) -&gt; Unit )</ID>
+    <ID>LongParameterList:PythonEngineUseCase.kt$PythonEngineUseCase$( motorTts: String, chaveGemini: String, pausaMs: Int = 600, tomMeiosTons: Int? = null, agudosDb: Int? = null, caminhoDoLivro: String? = null )</ID>
+    <ID>LongParameterList:PythonEngineUseCase.kt$PythonEngineUseCase$( texto: String, titulo: String, voz: String, velocidade: String, estilo: String, saida: String, motor: String, chaveGemini: String, speakerMapPath: String? = null, onProgress: (Int, String) -&gt; Unit )</ID>
+    <ID>LongParameterList:SpeakerVoiceSuggester.kt$SpeakerVoiceSuggester$( speakers: List&lt;DetectedSpeaker&gt;, genders: Map&lt;String, SpeakerGender&gt;, candidates: List&lt;VoiceOption&gt;, narratorVoiceId: String?, narratorLanguage: String?, narratorEngine: String? = null, isReady: (VoiceOption) -&gt; Boolean )</ID>
+    <ID>LongParameterList:SpeakerVoiceSuggesterTest.kt$SpeakerVoiceSuggesterTest$( id: String, masculina: Boolean, idioma: String = "pt-BR", generoConhecido: Boolean = true, generica: Boolean = false, baixarNoSistema: Boolean = false, motor: String = "kokoro" )</ID>
     <ID>LongParameterList:SupertonicTTS.kt$SupertonicTTS$(ptr: Long, text: String, lang: String, stylePath: String, speed: Float, bufferSeconds: Float, steps: Int, gain: Float)</ID>
     <ID>LongParameterList:SupertonicTTS.kt$SupertonicTTS$(text: String, lang: String, stylePath: String, speed: Float = 1.0f, bufferDuration: Float = 0.0f, steps: Int = 12, gain: Float = 1.0f, listener: ProgressListener? = null)</ID>
+    <ID>LongParameterList:TtsChunkCache.kt$TtsChunkCache$( context: Context, voice: String, speedPct: Int, text: String, output: File, synthesize: (File) -&gt; Boolean )</ID>
+    <ID>LongParameterList:VideoExportUseCase.kt$VideoExportUseCase$( audioFile: File, capa: Bitmap?, pastaSaida: File, opcoes: OpcoesVideo = OpcoesVideo(), fronteirasCapituloUs: List&lt;Long&gt; = emptyList(), onProgress: (Int) -&gt; Unit = {}, onParte: (Int) -&gt; Unit = {} )</ID>
+    <ID>LongParameterList:VoiceBottomSheet.kt$VoiceBottomSheet$( voices: List&lt;VoiceOption&gt;, selectedVoiceId: String?, onVoiceSelected: (VoiceOption) -&gt; Unit, onVoicePreview: ((VoiceOption, onFinished: () -&gt; Unit) -&gt; Unit)? = null, onAndroidVoiceRequested: (() -&gt; Unit)? = null, onCloneVoiceRequested: (() -&gt; Unit)? = null, restorable: Boolean = true )</ID>
+    <ID>LoopWithTooManyJumpStatements:AudioAacTranscoder.kt$while</ID>
     <ID>LoopWithTooManyJumpStatements:AudioPlayerService.kt$AudioPlayerService$while</ID>
+    <ID>LoopWithTooManyJumpStatements:BYOMManager.kt$BYOMManager$for</ID>
+    <ID>LoopWithTooManyJumpStatements:CachePolicy.kt$CachePolicy$for</ID>
+    <ID>LoopWithTooManyJumpStatements:DownloadCentral.kt$DownloadCentral$for</ID>
+    <ID>LoopWithTooManyJumpStatements:LinkDownloader.kt$LinkDownloader$while</ID>
     <ID>LoopWithTooManyJumpStatements:PlayAudioUseCase.kt$PlayAudioUseCase$while</ID>
+    <ID>LoopWithTooManyJumpStatements:PocketEncoderOficial.kt$PocketEncoderOficial$while</ID>
+    <ID>LoopWithTooManyJumpStatements:PocketTtsModelManager.kt$PocketTtsModelManager$while</ID>
+    <ID>LoopWithTooManyJumpStatements:SpeakerAi.kt$SpeakerAiPlanner$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SpeakerEdits.kt$SpeechLines$for</ID>
     <ID>LoopWithTooManyJumpStatements:SupertonicTTS.kt$SupertonicTTS$for</ID>
+    <ID>LoopWithTooManyJumpStatements:VoiceReferenceAudio.kt$VoiceReferenceAudio.Gravador$for</ID>
+    <ID>MagicNumber:AiClients.kt$OpenAiStyleClient$150_000</ID>
+    <ID>MagicNumber:AiClients.kt$OpenAiStyleClient$200</ID>
+    <ID>MagicNumber:AiClients.kt$OpenAiStyleClient$20_000</ID>
+    <ID>MagicNumber:AiClients.kt$OpenAiStyleClient$299</ID>
+    <ID>MagicNumber:AiClients.kt$OpenAiStyleClient$401</ID>
+    <ID>MagicNumber:AiClients.kt$OpenAiStyleClient$402</ID>
+    <ID>MagicNumber:AiClients.kt$OpenAiStyleClient$403</ID>
+    <ID>MagicNumber:AiClients.kt$OpenAiStyleClient$404</ID>
+    <ID>MagicNumber:AiClients.kt$OpenAiStyleClient$429</ID>
+    <ID>MagicNumber:AiSupport.kt$AiSupport$12f</ID>
+    <ID>MagicNumber:AiSupport.kt$AiSupport$20</ID>
+    <ID>MagicNumber:BibliotecaAdapter.kt$BibliotecaAdapter$100</ID>
+    <ID>MagicNumber:BuscarLivrosActivity.kt$BuscarLivrosActivity$6_000</ID>
+    <ID>MagicNumber:CachePolicy.kt$CachePolicy$1024</ID>
+    <ID>MagicNumber:CachePolicy.kt$CachePolicy$1024L</ID>
+    <ID>MagicNumber:CachePolicy.kt$CachePolicy$2048</ID>
+    <ID>MagicNumber:CachePolicy.kt$CachePolicy$256</ID>
+    <ID>MagicNumber:CachePolicy.kt$CachePolicy$4096</ID>
+    <ID>MagicNumber:CachePolicy.kt$CachePolicy$512</ID>
+    <ID>MagicNumber:CapaLoader.kt$CapaLoader$1024</ID>
+    <ID>MagicNumber:CapaLoader.kt$CapaLoader$8</ID>
+    <ID>MagicNumber:CapaLoader.kt$CapaLoader.&lt;no name provided&gt;$1024</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapaTipografica$0.006f</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapaTipografica$0.04f</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapaTipografica$0.06f</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapaTipografica$0.075f</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapaTipografica$0.10f</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapaTipografica$0.5f</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapaTipografica$1.05f</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapaTipografica$3</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapaView$3</ID>
+    <ID>MagicNumber:CapaTipografica.kt$CapasDaBiblioteca.&lt;no name provided&gt;$1024</ID>
+    <ID>MagicNumber:CapaTipograficaRegras.kt$0.095f</ID>
+    <ID>MagicNumber:CapaTipograficaRegras.kt$0.115f</ID>
+    <ID>MagicNumber:CapaTipograficaRegras.kt$0.14f</ID>
+    <ID>MagicNumber:CapaTipograficaRegras.kt$32</ID>
+    <ID>MagicNumber:CapaTipograficaRegras.kt$60</ID>
+    <ID>MagicNumber:ClonagemAssistente.kt$ClonagemAssistente$1.15f</ID>
+    <ID>MagicNumber:ClonagemAssistente.kt$ClonagemAssistente$10</ID>
+    <ID>MagicNumber:ClonagemAssistente.kt$ClonagemAssistente$100</ID>
+    <ID>MagicNumber:ClonagemAssistente.kt$ClonagemAssistente$15f</ID>
+    <ID>MagicNumber:ClonagemAssistente.kt$ClonagemAssistente$16f</ID>
+    <ID>MagicNumber:ClonagemAssistente.kt$ClonagemAssistente$22</ID>
+    <ID>MagicNumber:ClonagemAssistente.kt$ClonagemAssistente$4</ID>
+    <ID>MagicNumber:ClonagemAssistente.kt$ClonagemAssistente$8</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow$100</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow$12</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow$13f</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow$14f</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow$16</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow$2</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow$20</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow$22f</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow$8</ID>
+    <ID>MagicNumber:CloneVoiceFlow.kt$CloneVoiceFlow.&lt;no name provided&gt;$100</ID>
+    <ID>MagicNumber:CoachMark.kt$CoachMark$0.9f</ID>
+    <ID>MagicNumber:CoachMark.kt$CoachMark.CoachMarkView$12</ID>
+    <ID>MagicNumber:CoachMark.kt$CoachMark.CoachMarkView$14</ID>
+    <ID>MagicNumber:CoachMark.kt$CoachMark.CoachMarkView$16</ID>
+    <ID>MagicNumber:CoachMark.kt$CoachMark.CoachMarkView$24f</ID>
+    <ID>MagicNumber:CoachMark.kt$CoachMark.CoachMarkView$8</ID>
+    <ID>MagicNumber:DicaDeBateria.kt$DicaDeBateria$23</ID>
+    <ID>MagicNumber:DivisaoDePartes.kt$25.0</ID>
+    <ID>MagicNumber:DivisaoDePartes.kt$30.0</ID>
+    <ID>MagicNumber:DivisaoDePartes.kt$35.0</ID>
+    <ID>MagicNumber:DivisaoDePartes.kt$AnalisadorDeSilencios$20</ID>
+    <ID>MagicNumber:DownloadCentralAdapter.kt$DownloadCentralAdapter$100</ID>
+    <ID>MagicNumber:DownloadService.kt$DownloadService$100</ID>
+    <ID>MagicNumber:EpubMetadados.kt$1024</ID>
+    <ID>MagicNumber:EpubMetadados.kt$16</ID>
+    <ID>MagicNumber:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$100</ID>
+    <ID>MagicNumber:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$1000</ID>
+    <ID>MagicNumber:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$2500</ID>
+    <ID>MagicNumber:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$8000</ID>
+    <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$12f</ID>
+    <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$14f</ID>
+    <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$15f</ID>
+    <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$16</ID>
+    <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$18</ID>
+    <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$20</ID>
+    <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$2000</ID>
+    <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$6</ID>
+    <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$8</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$10</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$11</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$12</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$13</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$14</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$15</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$16</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$17</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$18</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$19</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$20</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$21</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$22</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$23</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$24</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$25</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$26</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$27</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$3</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$4</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$5</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$6</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$7</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$8</ID>
+    <ID>MagicNumber:KokoroTtsEngine.kt$9</ID>
+    <ID>MagicNumber:LibraryActivity.kt$LibraryActivity$840</ID>
+    <ID>MagicNumber:LimiteDeProgresso.kt$LimiteDeProgresso$95</ID>
+    <ID>MagicNumber:LinkDownloader.kt$LinkDownloader$1024</ID>
+    <ID>MagicNumber:LinkDownloader.kt$LinkDownloader$307</ID>
+    <ID>MagicNumber:LinkDownloader.kt$LinkDownloader$308</ID>
+    <ID>MagicNumber:LinkDownloader.kt$LinkDownloader$32</ID>
+    <ID>MagicNumber:LivroActivity.kt$LivroActivity$100</ID>
+    <ID>MagicNumber:LivrosClient.kt$LivrosClient$1024</ID>
+    <ID>MagicNumber:LivrosClient.kt$LivrosClient$16</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P144$144</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P144$256</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P240$240</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P240$432</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P360$360</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P360$640</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P480$480</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P480$848</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P720$1280</ID>
+    <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P720$720</ID>
+    <ID>MagicNumber:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$100</ID>
+    <ID>MagicNumber:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$1000</ID>
+    <ID>MagicNumber:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$2500</ID>
+    <ID>MagicNumber:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$8000</ID>
+    <ID>MagicNumber:MeusLivrosActivity.kt$MeusLivrosActivity$1.3f</ID>
+    <ID>MagicNumber:MeusLivrosActivity.kt$MeusLivrosActivity$3</ID>
+    <ID>MagicNumber:MeusLivrosActivity.kt$MeusLivrosActivity$4</ID>
     <ID>MagicNumber:OnnxModelManager.kt$OnnxModelManager$100</ID>
-    <ID>MagicNumber:OnnxSynthBridge.kt$OnnxSynthBridge$500</ID>
     <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$10</ID>
     <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$100.0f</ID>
     <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$16</ID>
@@ -42,92 +284,868 @@
     <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$36</ID>
     <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$4</ID>
     <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$44</ID>
-    <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$50</ID>
     <ID>MagicNumber:OnnxTtsEngine.kt$OnnxTtsEngine$500</ID>
+    <ID>MagicNumber:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$100</ID>
+    <ID>MagicNumber:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$14f</ID>
+    <ID>MagicNumber:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$24</ID>
+    <ID>MagicNumber:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$40</ID>
+    <ID>MagicNumber:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$48</ID>
+    <ID>MagicNumber:PassosDialog.kt$PassosDialog$12f</ID>
+    <ID>MagicNumber:PassosDialog.kt$PassosDialog$16f</ID>
+    <ID>MagicNumber:PassosDialog.kt$PassosDialog$20</ID>
+    <ID>MagicNumber:PassosDialog.kt$PassosDialog$8</ID>
+    <ID>MagicNumber:PerfilAudioLivro.kt$FalaNoTrecho$0.5f</ID>
+    <ID>MagicNumber:PerfilAudioLivro.kt$PerfilAudioLivro.Companion$500</ID>
+    <ID>MagicNumber:PiperVitsModelManager.kt$PiperVitsModelManager.Model$1_000_000L</ID>
+    <ID>MagicNumber:PiperVitsModelManager.kt$PiperVitsModelManager.Model$90</ID>
+    <ID>MagicNumber:PiperVitsModelManager.kt$PiperVitsModelManager.Model$999_999L</ID>
+    <ID>MagicNumber:PocketCustomVoices.kt$PocketCustomVoices$8</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$0x7F</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$0x80</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$0xFF</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$100f</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$1024</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$219_029_196L</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$256</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$3</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$4</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$5</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$7</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$8</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$9</ID>
+    <ID>MagicNumber:PocketEncoderOficial.kt$PocketEncoderOficial$90</ID>
+    <ID>MagicNumber:PocketTtsModelManager.kt$PocketTtsModelManager$100L</ID>
+    <ID>MagicNumber:PocketTtsModelManager.kt$PocketTtsModelManager$1024</ID>
+    <ID>MagicNumber:PreRenderService.kt$PreRenderService$100</ID>
+    <ID>MagicNumber:PronunciationAi.kt$PronunciationAiPlanner$3</ID>
+    <ID>MagicNumber:PronunciationAi.kt$PronunciationAiPlanner$6</ID>
+    <ID>MagicNumber:PronunciationAiFlow.kt$PronunciationAiFlow$100</ID>
+    <ID>MagicNumber:PronunciationAiFlow.kt$PronunciationAiFlow$20</ID>
+    <ID>MagicNumber:PronunciationAiFlow.kt$PronunciationAiFlow$40</ID>
+    <ID>MagicNumber:PronunciationAiFlow.kt$PronunciationAiFlow$4_000</ID>
+    <ID>MagicNumber:PronunciationDialog.kt$PronunciationDialog$12</ID>
+    <ID>MagicNumber:PronunciationDialog.kt$PronunciationDialog$12f</ID>
+    <ID>MagicNumber:PronunciationDialog.kt$PronunciationDialog$20</ID>
+    <ID>MagicNumber:PronunciationDialog.kt$PronunciationDialog$8</ID>
     <ID>MagicNumber:ReaderActivity.kt$ReaderActivity$100</ID>
+    <ID>MagicNumber:ReaderPersonagensController.kt$ReaderPersonagensController$100</ID>
+    <ID>MagicNumber:ReaderPersonagensController.kt$ReaderPersonagensController$1024</ID>
+    <ID>MagicNumber:ReaderPersonagensController.kt$ReaderPersonagensController$12f</ID>
+    <ID>MagicNumber:ReaderPersonagensController.kt$ReaderPersonagensController$20</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0.03f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0.09f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0.14f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0.22f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0.28f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0.2f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0.34f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0.45f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0.64f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$0x33808080</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$1.6f</ID>
+    <ID>MagicNumber:SeletorTemaSheet.kt$AmostraDeTema$2.4f</ID>
+    <ID>MagicNumber:SettingsActivity.kt$SettingsActivity$1024</ID>
+    <ID>MagicNumber:SettingsActivity.kt$SettingsActivity$840</ID>
+    <ID>MagicNumber:SilentWav.kt$SilentWav$1000</ID>
+    <ID>MagicNumber:SilentWav.kt$SilentWav$16</ID>
+    <ID>MagicNumber:SilentWav.kt$SilentWav$36</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient$120_000</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient$200</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient$20_000</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient$299</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient$400</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient$401</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient$403</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient$404</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient.Companion$15_000</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient.Companion$200</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient.Companion$299</ID>
+    <ID>MagicNumber:SpeakerAi.kt$GeminiSpeakerClient.Companion$30_000</ID>
+    <ID>MagicNumber:SpeakerAi.kt$SpeakerAiStore$24</ID>
+    <ID>MagicNumber:SpeakerAttribution.kt$OfflineSpeakerAttributor$100</ID>
+    <ID>MagicNumber:SpeakerAttribution.kt$OfflineSpeakerAttributor$101</ID>
+    <ID>MagicNumber:SpeakerAttribution.kt$OfflineSpeakerAttributor$110</ID>
+    <ID>MagicNumber:SpeakerEdits.kt$SpeakerEditsStore$24</ID>
+    <ID>MagicNumber:StaticImageVideoEncoder.kt$3</ID>
     <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$100</ID>
     <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$1_000</ID>
     <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$1_000L</ID>
     <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$416</ID>
     <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$429</ID>
     <ID>MagicNumber:SupertonicAssetManager.kt$SupertonicAssetManager$60L</ID>
-    <ID>MagicNumber:SupertonicSynthService.kt$SupertonicSynthService.&lt;no name provided&gt;$500</ID>
     <ID>MagicNumber:SupertonicTTS.kt$SupertonicTTS$120</ID>
     <ID>MagicNumber:SupertonicTTS.kt$SupertonicTTS$300</ID>
     <ID>MagicNumber:SupertonicTTS.kt$SupertonicTTS$80</ID>
+    <ID>MagicNumber:TimbreDialog.kt$TimbreDialog$12</ID>
+    <ID>MagicNumber:TimbreDialog.kt$TimbreDialog$12f</ID>
+    <ID>MagicNumber:TimbreDialog.kt$TimbreDialog$15f</ID>
+    <ID>MagicNumber:TimbreDialog.kt$TimbreDialog$16</ID>
+    <ID>MagicNumber:TimbreDialog.kt$TimbreDialog$20</ID>
+    <ID>MagicNumber:TimbreDialog.kt$TimbreDialog$8</ID>
+    <ID>MagicNumber:TimbreVoz.kt$TimbreVoz$24.0</ID>
+    <ID>MagicNumber:TtsChunkCache.kt$TtsChunkCache$0xE0</ID>
+    <ID>MagicNumber:TtsChunkCache.kt$TtsChunkCache$0xFF</ID>
+    <ID>MagicNumber:TtsChunkCache.kt$TtsChunkCache$12</ID>
+    <ID>MagicNumber:TtsChunkCache.kt$TtsChunkCache$3</ID>
+    <ID>MagicNumber:TtsChunkCache.kt$TtsChunkCache$4</ID>
+    <ID>MagicNumber:TtsChunkCache.kt$TtsChunkCache$8</ID>
+    <ID>MagicNumber:VideoExportService.kt$VideoExportService$100</ID>
+    <ID>MagicNumber:VideoExportService.kt$VideoExportService$4</ID>
+    <ID>MagicNumber:VideoExportService.kt$VideoExportService$5</ID>
+    <ID>MagicNumber:VideoExportUseCase.kt$60L</ID>
+    <ID>MagicNumber:VoiceBottomSheet.kt$VoiceBottomSheet$0.85f</ID>
+    <ID>MagicNumber:VoiceCatalog.kt$VoiceCatalog$5</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$0.25</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$0.9</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$1000</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$10_000</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$16</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$20_000</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$24_000.0</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$3.0</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$32767</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$32768</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$36</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$44</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$44L</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$500</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio$5L</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio.Gravador$1500</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio.Gravador$16_000</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio.Gravador$2048</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio.Gravador$32768f</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio.Gravador$4</ID>
+    <ID>MagicNumber:VoiceReferenceAudio.kt$VoiceReferenceAudio.Gravador$44_100</ID>
+    <ID>MatchingDeclarationName:EpubMetadados.kt$MetadadosEpub</ID>
+    <ID>MatchingDeclarationName:FilaDeDownloads.kt$EstadoDownload</ID>
+    <ID>MatchingDeclarationName:FileImportUseCase.kt$ImportedFileNamePolicy</ID>
+    <ID>MaxLineLength:AcoesDoLivro.kt$AcoesDoLivro$*</ID>
+    <ID>MaxLineLength:AcoesDoLivro.kt$AcoesDoLivro$activity.getString(R.string.gerar_fila_ok, com.jonjonesbr.audiobookgen.service.QueueManager.contarPendentes())</ID>
+    <ID>MaxLineLength:AcoesDoLivro.kt$AcoesDoLivro$activity.startActivity(intent, ActivityOptions.makeCustomAnimation(activity, android.R.anim.fade_in, android.R.anim.fade_out).toBundle())</ID>
+    <ID>MaxLineLength:AiClients.kt$OpenAiStyleClient$lastError</ID>
+    <ID>MaxLineLength:AiClients.kt$OpenAiStyleClient.Companion$JSONObject(json).optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")?.optString("content")</ID>
+    <ID>MaxLineLength:AiClients.kt$OpenAiStyleClient.Companion$if (content.isEmpty() || content == "{}") throw AiApiException(context.getString(R.string.ai_resposta_vazia), false)</ID>
+    <ID>MaxLineLength:AiSupport.kt$AiSupport$/** Cliente pronto para uso, ou null quando falta configuração (chave Gemini, endereço/modelo do serviço próprio). */</ID>
+    <ID>MaxLineLength:AiSupport.kt$AiSupport$AiProvider.CUSTOM -&gt; AppPrefs(context).iaPersonalizadaModelo.ifBlank { context.getString(R.string.ia_provider_custom_short) }</ID>
+    <ID>MaxLineLength:AiSupport.kt$AiSupport$android.widget.Toast.makeText(activity, R.string.character_ai_need_key, android.widget.Toast.LENGTH_LONG).show()</ID>
+    <ID>MaxLineLength:AiSupport.kt$AiSupport$android.widget.Toast.makeText(activity, R.string.ia_need_custom_config, android.widget.Toast.LENGTH_LONG).show()</ID>
+    <ID>MaxLineLength:AiSupport.kt$AiSupport$if (keys.isEmpty()) null else GeminiSpeakerClient(keys, prefs.geminiModeloAnalise, context = context.applicationContext)</ID>
+    <ID>MaxLineLength:AiSupport.kt$AiSupport$val url = campo(activity.getString(R.string.ia_custom_url_hint), prefs.iaPersonalizadaUrl, InputType.TYPE_TEXT_VARIATION_URI)</ID>
+    <ID>MaxLineLength:AjustesDaConversao.kt$AjustesDaConversaoRegras$*</ID>
+    <ID>MaxLineLength:AjustesDaConversaoRegrasTest.kt$AjustesDaConversaoRegrasTest$val a = montar(escolhaVoz = "voz-painel", escolhaMotor = "pocket", escolhaRitmo = 80, livroVoz = "voz-livro", livroMotor = "onnx", livroVelocidade = 1.5f)</ID>
+    <ID>MaxLineLength:AjustesDoLivro.kt$AjustesDoLivro$/** Ajustes da conversão de um livro: escolha na hora &gt; perfil do livro (voz, velocidade, tom) &gt; preferências globais. */</ID>
+    <ID>MaxLineLength:AppPrefs.kt$AppPrefs$/** IA usada nas análises: "gemini" (chave própria), "pollinations" (grátis, sem chave) ou "custom" (compatível com OpenAI). */</ID>
+    <ID>MaxLineLength:AppPrefs.kt$AppPrefs$/** Ids de [com.jonjonesbr.audiobookgen.domain.EventoAprendizado] já ocorridos (progresso da central "Aprender o app"). */</ID>
+    <ID>MaxLineLength:AppPrefs.kt$AppPrefs$/** O download offline silencioso do primeiro acesso (pacote recomendado) já foi enfileirado. Ver PoliticaDownloadSilencioso. */</ID>
+    <ID>MaxLineLength:AppPrefs.kt$AppPrefs$/** Posição de leitura (índice do primeiro parágrafo visível) gravada pelo leitor para o livro; [padrao] se nunca gravada. */</ID>
+    <ID>MaxLineLength:AprenderActivity.kt$AprenderActivity$Intent(this@AprenderActivity, LivroActivity::class.java).putExtra(LivroActivity.EXTRA_ID, livro.id)</ID>
+    <ID>MaxLineLength:AprenderActivity.kt$AprenderActivity$LicaoUi(Licao.ADICIONAR, R.string.licao_adicionar_titulo, R.string.licao_adicionar_resumo, R.string.licao_adicionar_passos)</ID>
+    <ID>MaxLineLength:AprenderActivity.kt$AprenderActivity$LicaoUi(Licao.DOWNLOADS, R.string.licao_downloads_titulo, R.string.licao_downloads_resumo, R.string.licao_downloads_passos)</ID>
+    <ID>MaxLineLength:AprenderActivity.kt$AprenderActivity$findViewById&lt;TextView&gt;(R.id.tvAprenderProgresso).text = getString(R.string.aprender_progresso, feitas, licoes.size)</ID>
+    <ID>MaxLineLength:ArquivoComPersonagens.kt$ArquivoComPersonagens$*</ID>
+    <ID>MaxLineLength:AudioAacTranscoder.kt$*</ID>
+    <ID>MaxLineLength:AudioAacTranscoder.kt$/** Tempo (us) do pedaço que começa [deslocamentoBytes] depois do início do bloco, a partir do tempo do bloco [ptsBaseUs]. */</ID>
+    <ID>MaxLineLength:AudioAacTranscoder.kt$// ---------------------------------------------------------------------------------------------------------------------------</ID>
+    <ID>MaxLineLength:AudioAacTranscoder.kt$// Nada andou: espera pelo estágio atrasado — o decoder (fila vazia) ou o encoder (entrada cheia) — em vez de girar à toa.</ID>
+    <ID>MaxLineLength:AudioAacTranscoder.kt$EntregaEmCurso$/** Bloco do decoder em entrega ao encoder: o buffer de entrada do encoder (~8 KB) é menor que vários blocos somados, então o bloco pode ir em pedaços. */</ID>
+    <ID>MaxLineLength:AudioAacTranscoder.kt$erroDecoder.get()?.let { throw IllegalStateException(context.getString(R.string.audio_falha_decodificar, it.message), it) }</ID>
+    <ID>MaxLineLength:AudioAacTranscoder.kt$private</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$*</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$/** Ajustes da conversão de um livro: escolha na hora &gt; perfil do livro (voz, velocidade, tom) &gt; preferências globais. */</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$// Livro inteiro com vozes de personagens: o texto do mapa (o mesmo que o leitor usa) é gravado fora da thread principal.</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$// Marca "processando" já agora, para um segundo toque não disparar outra conversão enquanto o texto é preparado.</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$// Montagem e início da conversão; com [comMapa] (texto reconstruído do mapa de personagens), usa-o no lugar de [arquivo].</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$ExportStatus.Erro(resultado.exportErro ?: getApplication&lt;Application&gt;().getString(R.string.status_export_error))</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$ExportStatus.Sucesso(com.jonjonesbr.audiobookgen.domain.ExportResult(uri, resultado.exportPasta.orEmpty()))</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$WorkManager.getInstance(getApplication()).getWorkInfosForUniqueWork(ConversionWorker.WORK_NAME).get()</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$_uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication&lt;Application&gt;().getString(R.string.amostra_pronta)) }</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$_uiState.update { it.copy(amostraGerando = false, statusMessage = getApplication&lt;Application&gt;().getString(R.string.status_amostra_falha)) }</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$_uiState.update { it.copy(amostraGerando = true, statusMessage = getApplication&lt;Application&gt;().getString(R.string.status_gerando_amostra)) }</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$_uiState.update { it.copy(statusMessage = getApplication&lt;Application&gt;().getString(R.string.status_conversion_canceled)) }</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$_uiState.update { it.copy(statusMessage = getApplication&lt;Application&gt;().getString(R.string.status_conversion_running)) }</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$it.copy(amostraGerando = false, statusMessage = " " + getApplication&lt;Application&gt;().getString(R.string.amostra_pronta))</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$statusMessage = getApplication&lt;Application&gt;().getString(R.string.status_conversion_canceled)</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$statusMessage = getApplication&lt;Application&gt;().getString(R.string.status_conversion_error, msg)</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$statusMessage = getApplication&lt;Application&gt;().getString(R.string.status_conversion_paused)</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$val</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$val msg = info.outputData.getString(ConversionWorker.KEY_ERROR_MSG) ?: getApplication&lt;Application&gt;().getString(R.string.erro_desconhecido)</ID>
+    <ID>MaxLineLength:AudiobookViewModel.kt$AudiobookViewModel$viewModelScope.launch { pythonEngine.sincronizarConfiguracoes(motor, chaveEfetiva, pausaMs, caminhoDoLivro = caminhoDoLivro) }</ID>
+    <ID>MaxLineLength:BackupUseCase.kt$/** Decodifica progresso.json. Entradas inválidas (caminho vazio, posição &lt; 0, duração &lt;= 0) são descartadas. JSON corrompido → null. */</ID>
+    <ID>MaxLineLength:BackupUseCase.kt$BackupUseCase$entradas[ENTRADA_CAPITULOS]?.let { ChapterMarksStore.importarMerge(context, mapaImportarJson(it, ENTRADA_CAPITULOS)) }</ID>
+    <ID>MaxLineLength:BackupUseCase.kt$BackupUseCase$entradas[ENTRADA_PERFIS_VOZ]?.let { GuidedBookPrefsStore.importarMerge(context, mapaImportarJson(it, ENTRADA_PERFIS_VOZ)) }</ID>
+    <ID>MaxLineLength:BackupUseCase.kt$BackupUseCase$entradas[ENTRADA_VINCULOS]?.let { LinkedBookStore.importarMerge(context, mapaImportarJson(it, ENTRADA_VINCULOS)) }</ID>
+    <ID>MaxLineLength:BackupUseCase.kt$BackupUseCase$val out = context.contentResolver.openOutputStream(destino) ?: error(context.getString(R.string.backup_destino_indisponivel))</ID>
+    <ID>MaxLineLength:BasePlayerActivity.kt$BasePlayerActivity$ViewCompat.setStateDescription(seekBar, "${formatarTempo(state.currentPosition)} / ${formatarTempo(state.duration)}")</ID>
+    <ID>MaxLineLength:Biblioteca.kt$/** Garante que o arquivo do livro não colida com `livro.json`/`capa.jpg` nem comece com ponto (arquivo oculto de importação). */</ID>
+    <ID>MaxLineLength:Biblioteca.kt$LivroBiblioteca.Companion$origem = runCatching { OrigemLivro.valueOf(o.optString("origem")) }.getOrDefault(OrigemLivro.ARQUIVO)</ID>
+    <ID>MaxLineLength:Biblioteca.kt$fun chave(n: String)</ID>
+    <ID>MaxLineLength:BibliotecaAdapter.kt$BibliotecaAdapter$/** Capa tipográfica na hora; se o livro tem imagem própria, troca quando ela carregar (a marca evita capa errada na rolagem). */</ID>
+    <ID>MaxLineLength:BibliotecaAdapter.kt$BibliotecaAdapter$item.progresso != null &amp;&amp; item.progresso &gt; 0f -&gt; ctx.getString(R.string.bib_progresso, (item.progresso * 100).toInt())</ID>
+    <ID>MaxLineLength:BibliotecaAdapter.kt$BibliotecaAdapter$literata = runCatching { androidx.core.content.res.ResourcesCompat.getFont(view.context, R.font.literata) }.getOrNull()</ID>
+    <ID>MaxLineLength:BibliotecaAdapter.kt$BibliotecaAdapter$override fun getItemViewType(position: Int)</ID>
+    <ID>MaxLineLength:BibliotecaStore.kt$BibliotecaStore$/** Fração lida (posição de rolagem ÷ total de parágrafos gravados pelo leitor); null se o leitor ainda não gravou o total. */</ID>
+    <ID>MaxLineLength:BibliotecaStore.kt$BibliotecaStore$/** O livro com este id (mesma validação de [listar]), ou null se não existe ou está inválido. Lê só a pasta dele. */</ID>
+    <ID>MaxLineLength:BibliotecaStore.kt$BibliotecaStore$/** Título (da biblioteca) do livro dono deste caminho, ou null se o caminho não é de um livro da biblioteca. Leitura rápida de um arquivo pequeno. */</ID>
+    <ID>MaxLineLength:BibliotecaStore.kt$BibliotecaStore$titulo = meta?.titulo ?: tituloPreferido?.ifBlank { null } ?: nomeExibicaoDoArquivo(nomeOriginal.ifBlank { nome })</ID>
+    <ID>MaxLineLength:BibliotecaTest.kt$BibliotecaTest$assertEquals(listOf("1"), filtrar(livros, AbaBiblioteca.TODOS, "ALIENISTA", semProgresso, semAudio).map { it.id })</ID>
+    <ID>MaxLineLength:BibliotecaTest.kt$BibliotecaTest$assertEquals(listOf("2"), filtrar(livros, AbaBiblioteca.TODOS, "graciliano", semProgresso, semAudio).map { it.id })</ID>
+    <ID>MaxLineLength:BibliotecaTest.kt$BibliotecaTest$assertEquals(true, mesmaObra("entrada_1_O_CAIR_DA_NOITE.txt", 679_268, "entrada_9_o_cair_da_noite.txt", 682_033))</ID>
+    <ID>MaxLineLength:BibliotecaTest.kt$BibliotecaTest$val livros = listOf(livro("1", "O Alienista", "Machado de Assis"), livro("2", "São Bernardo", "Graciliano Ramos"))</ID>
+    <ID>MaxLineLength:BibliotecaTest.kt$BibliotecaTest$val progresso: (LivroBiblioteca) -&gt; Float? = { mapOf("1" to 0.1f, "2" to 0.99f, "3" to 0.5f, "4" to 0.2f)[it.id] }</ID>
+    <ID>MaxLineLength:BlacklistDialog.kt$BlacklistDialog$Toast.makeText(activity, activity.getString(R.string.toast_blacklist_duplicate), Toast.LENGTH_SHORT).show()</ID>
+    <ID>MaxLineLength:BookmarkStore.kt$BookmarkStore$val migrados = ChavesDeLivro.migrarLista(atuais, antigo, novo, { it.caminhoLivro }) { b, c -&gt; b.copy(caminhoLivro = c) }</ID>
+    <ID>MaxLineLength:BuscarLivrosActivity.kt$BuscarLivrosActivity$*</ID>
+    <ID>MaxLineLength:BuscarLivrosActivity.kt$BuscarLivrosActivity$.</ID>
+    <ID>MaxLineLength:BuscarLivrosActivity.kt$BuscarLivrosActivity$com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), aviso, com.google.android.material.snackbar.Snackbar.LENGTH_LONG)</ID>
+    <ID>MaxLineLength:BuscarLivrosActivity.kt$BuscarLivrosActivity$findViewById&lt;View&gt;(R.id.btnBaixarTodosLivros).visibility = if (livros.isEmpty()) View.GONE else View.VISIBLE</ID>
+    <ID>MaxLineLength:BuscarLivrosActivity.kt$BuscarLivrosActivity$val aviso = if (entraram &gt; 0) getString(R.string.livros_na_fila, entraram) else getString(R.string.livros_nada_novo)</ID>
+    <ID>MaxLineLength:BuscarLivrosActivity.kt$BuscarLivrosActivity$val entraram = com.jonjonesbr.audiobookgen.service.DownloadCentral.baixarLivros(applicationContext, livros.take(limiteBaixar))</ID>
+    <ID>MaxLineLength:BuscarLivrosActivity.kt$BuscarLivrosActivity$val r = LivrosClient.buscar(fonteEscolhida(), etBusca.text.toString(), idiomaEscolhido(), proximoInicio)</ID>
+    <ID>MaxLineLength:CacheDeLista.kt$CacheDeLista$*</ID>
+    <ID>MaxLineLength:CachePolicyTest.kt$CachePolicyTest$val recentes = listOf(Arquivo("a", 900L * 1024 * 1024, agora - 1_000L), Arquivo("b", 900L * 1024 * 1024, agora - 2_000L))</ID>
+    <ID>MaxLineLength:CalibracaoManualTest.kt$CalibracaoManualTest$out.append(" com ao menos um trecho atribuído a personagem: $comPersonagem (${if (comFala.isEmpty()) 0 else 100 * comPersonagem / comFala.size}%)\n")</ID>
+    <ID>MaxLineLength:CalibracaoManualTest.kt$CalibracaoManualTest$out.append("\n--- INFERIDOS (nome ausente do parágrafo): ${inferidos.size} de ${atribuidos.size} atribuídos ---\n")</ID>
+    <ID>MaxLineLength:CalibracaoManualTest.kt$CalibracaoManualTest$out.append("personagens: " + resultado.speakers.joinToString(" | ") { "${it.name}(${it.utteranceCount})" } + "\n\n")</ID>
+    <ID>MaxLineLength:CalibracaoManualTest.kt$CalibracaoManualTest$val comFala = paragrafos.indices.filter { paragrafos[it].firstOrNull()?.let { c -&gt; c in marcadores } == true }</ID>
+    <ID>MaxLineLength:CalibracaoManualTest.kt$CalibracaoManualTest$val quem = if (seg.speakerId == OfflineSpeakerAttributor.NARRATOR_ID) "N" else nomes[seg.speakerId] ?: seg.speakerId</ID>
+    <ID>MaxLineLength:CapaLoader.kt$CapaLoader$BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = amostra })</ID>
+    <ID>MaxLineLength:CapaLoader.kt$CapaLoader$while</ID>
+    <ID>MaxLineLength:CapaTipografica.kt$CapaTipografica$canvas.drawRect(area.left + margem, yFilete, area.left + margem + util, yFilete + maxOf(1f, largura * 0.006f), paintFilete)</ID>
+    <ID>MaxLineLength:CapaTipografica.kt$CapaTipografica$canvas.drawRoundRect(area.left.toFloat(), area.top.toFloat(), area.right.toFloat(), area.bottom.toFloat(), raio, raio, fundo)</ID>
+    <ID>MaxLineLength:CapaTipografica.kt$CapaView$class</ID>
+    <ID>MaxLineLength:CapaTipografica.kt$CapasDaBiblioteca$while (limites.outWidth / (amostra * 2) &gt;= LADO_MAX_PX &amp;&amp; limites.outHeight / (amostra * 2) &gt;= LADO_MAX_PX) amostra *= 2</ID>
+    <ID>MaxLineLength:CatalogoArchiveTest.kt$CatalogoArchiveTest$"""{"files":[""" + arquivos.joinToString(",") { (n, f, t) -&gt; """{"name":"$n","format":"$f","size":"$t"}""" } + "]}"</ID>
+    <ID>MaxLineLength:CatalogoArchiveTest.kt$CatalogoArchiveTest$metadata(Triple("x.epub", "EPUB", CatalogoArchive.EPUB_MAX_BYTES + 1), Triple("x_djvu.txt", "DjVuTXT", 1000))</ID>
+    <ID>MaxLineLength:CatalogoGutenbergTest.kt$CatalogoGutenbergTest$val malicioso = """&lt;?xml version="1.0"?&gt;&lt;!DOCTYPE feed [&lt;!ENTITY x SYSTEM "file:///etc/passwd"&gt;]&gt;&lt;feed&gt;&amp;x;&lt;/feed&gt;"""</ID>
+    <ID>MaxLineLength:CatalogoWikisource.kt$CatalogoWikisource$"${EXPORT_BASE}?format=epub&amp;lang=${idiomaEfetivo(idioma)}&amp;page=${URLEncoder.encode(titulo.replace(' ', '_'), "UTF-8")}"</ID>
+    <ID>MaxLineLength:ChavesDeLivro.kt$ChavesDeLivro$fun</ID>
+    <ID>MaxLineLength:ChavesDeLivro.kt$ChavesDeLivro$if (antigo == novo || antigo !in caminhos) caminhos else caminhos.map { if (it == antigo) novo else it }.distinct()</ID>
+    <ID>MaxLineLength:ChavesDeLivroTest.kt$ChavesDeLivroTest$val r = ChavesDeLivro.migrarLista(itens, "/a", "/c", { it.substringBefore(':') }) { item, novo -&gt; novo + ":" + item.substringAfter(':') }</ID>
+    <ID>MaxLineLength:ClonagemAssistente.kt$ClonagemAssistente$.</ID>
+    <ID>MaxLineLength:ClonagemAssistente.kt$ClonagemAssistente$setOnCheckedChangeListener { g, id -&gt; (g.findViewById&lt;RadioButton&gt;(id)?.tag as? String)?.let { idiomaDoDownload = it } }</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$CloneVoiceFlow$.</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$CloneVoiceFlow$Toast.makeText(activity, activity.getString(R.string.clone_download_failed, activity.getString(mensagemDeErro(erro))), Toast.LENGTH_LONG).show()</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$CloneVoiceFlow$activity.registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -&gt; uri?.let(::converterArquivo) }</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$CloneVoiceFlow$addView(RadioButton(activity).apply { id = View.generateViewId(); setText(res); this.tag = tag; isChecked = tag == padrao })</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$CloneVoiceFlow$if</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$CloneVoiceFlow$if (qual == 0) gravar() else escolherArquivo.launch(arrayOf("audio/*", "video/*", "application/ogg", "application/octet-stream"))</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$CloneVoiceFlow$val idiomas = listOf("pt-BR" to R.string.clone_lang_pt, "en-US" to R.string.clone_lang_en, "es-ES" to R.string.clone_lang_es)</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$CloneVoiceFlow$val moldura = LinearLayout(activity).apply { setPadding(dp(20), dp(8), dp(20), 0); addView(campo, LinearLayout.LayoutParams(-1, -2)) }</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$CloneVoiceFlow.AbrirNosDownloads$android.provider.DocumentsContract.buildRootUri("com.android.providers.downloads.documents", "downloads")</ID>
+    <ID>MaxLineLength:CloneVoiceFlow.kt$DialogosAbertos$if (activity == null || activity.isDestroyed) return dialogo</ID>
+    <ID>MaxLineLength:CoachMark.kt$CoachMark$dica</ID>
+    <ID>MaxLineLength:CoachMark.kt$CoachMark$tela</ID>
+    <ID>MaxLineLength:CodificadorDeDadosDeTrabalho.kt$CodificadorDeDadosDeTrabalho$*</ID>
+    <ID>MaxLineLength:ConversaoComPersonagensRegras.kt$ConversaoComPersonagensRegras$*</ID>
+    <ID>MaxLineLength:ConversaoComPersonagensRegras.kt$ConversaoComPersonagensRegras$fun</ID>
+    <ID>MaxLineLength:ConversionNotificationManager.kt$ConversionNotificationManager$/** Botão "Cancelar": abre [com.jonjonesbr.audiobookgen.ui.ConversoesActivity] já com a confirmação de cancelamento. */</ID>
+    <ID>MaxLineLength:ConversionQueueCoordinator.kt$ConversionQueueCoordinator$/** Reconhece como atual o item que a fila está processando (o worker pode ter fechado um e iniciado outro sem a tela). */</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$/** Exigido pelo WorkManager para trabalho em primeiro plano; devolve a mesma notificação de [iniciarPrimeiroPlano]. */</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$// A partir daqui o dicionário do Python é deste livro: leitura e diálogos não o reescrevem até o fim da conversão.</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$// Dicionário de pronúncia efetivo: o global mais o do livro. Vai como caminho; o JSON é montado aqui, no processo.</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$// Finaliza aqui, e não na tela: se o usuário sair da tela de acompanhamento, o audiobook ainda é salvo na</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$// NOT_STOPPED: o WorkManager pode cancelar antes de gravar o motivo; tratar como cancelamento pelo app (comportamento anterior).</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$// Parada pelo app/usuário (cancelar) ou pelo sistema (cota, limite de runtime). Só o cancelamento do app fecha o</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$// Pausa pedida antes/durante a extração: o Python zera a flag em _reset_cancelar, então reforça a cada chamada.</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$// Pausa pedida pelo app interrompe o motor e chega aqui como erro ("Cancelado pelo usuário."): não é erro.</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$FilaDeConversao.aoTerminarExecucao(applicationContext, inputData.getString(KEY_FILA_ITEM_ID), runToken, null, mensagem)</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$KEY_RESULT_EXPORT_ERRO to exportacao.exceptionOrNull()?.let { it.message ?: "Erro ao exportar" }</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$applicationContext.getString(com.jonjonesbr.audiobookgen.R.string.status_conversion_canceled)</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$if</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$livroOrigem?.let { com.jonjonesbr.audiobookgen.data.LinkedBookStore.vincular(applicationContext, it, result.caminho) }</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$private fun tokenDaExecucao(): String?</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker$val motivoDaParada = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.S) stopReason else WorkInfo.STOP_REASON_NOT_STOPPED</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker.Companion$*</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker.Companion$/** Caminho do livro dono do texto, para somar o dicionário de pronúncia dele ao global (ausente = usa [KEY_LIVRO_ORIGEM]). */</ID>
+    <ID>MaxLineLength:ConversionWorker.kt$ConversionWorker.Companion$/** Parada pedida pelo app (pausa): não é erro nem conclusão; a conversão fica salva em [ConversaoPausadaStore]. */</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$*</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$.</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$/** Reconverter o mesmo livro sem perceber cria um audiobook duplicado; avisa antes (pode ser proposital: outra voz). */</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$/** Sugere, uma única vez, tirar o app da otimização de bateria (conversão longa com a tela apagada). Não bloqueia a conversão. */</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$/** Usuário confirmou o descarte; o ViewModel apaga o arquivo em segundo plano, então a tela esconde o card antes. */</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$// Só em build de depuração: enfileira os arquivos do extra (separados por |) e inicia a fila, sem tocar na tela.</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$?:</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$findViewById&lt;Button&gt;(R.id.btnConvVerFila).setOnClickListener { startActivity(Intent(this, QueueActivity::class.java)) }</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$findViewById&lt;TextView&gt;(R.id.tvConvLivro).text = tituloDoLivro.ifBlank { getString(R.string.conv_agora_generico) }</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$findViewById&lt;TextView&gt;(R.id.tvConvPausadaPct).text = pausada?.let { getString(R.string.conv_pausada_pct, it.pct) }.orEmpty()</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$getString(R.string.conv_pronto_info, File(evento.caminho).nameWithoutExtension, evento.duracao, evento.tamanhoMb)</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$if (resumo.pendentes &gt; 0 &amp;&amp; !viewModel.uiState.value.processando &amp;&amp; !pausadaVisivel()) View.VISIBLE else View.GONE</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity$listOf(cardAgora, cardPronto, cardErro, cardPausada, layoutVazio).forEach { it.visibility = if (it === alvo) View.VISIBLE else View.GONE }</ID>
+    <ID>MaxLineLength:ConversoesActivity.kt$ConversoesActivity.Companion$/** Arquivo a converter (o livro ou um trecho em texto). Sem ele, [EXTRA_LIVRO_CAMINHO] é o arquivo (livro inteiro). */</ID>
+    <ID>MaxLineLength:DadosDeTrabalhoRoundTripTest.kt$DadosDeTrabalhoRoundTripTest$val json = CodificadorDeDadosDeTrabalho.paraJson(CodificadorDeDadosDeTrabalho.semChavesDeSaida(entrada.keyValueMap))</ID>
+    <ID>MaxLineLength:DadosDoLivro.kt$DadosDoLivro$/** Copia os dados de [antigo] para [novo]; **nunca sobrescreve** o que o caminho novo já tem (a posição de leitura fica com a maior). */</ID>
+    <ID>MaxLineLength:DadosDoLivro.kt$DadosDoLivro$val resultado = ChavesDeLivro.migrarMapa(todos, antigo, novo, prefixo, resolver)[prefixo + novo] as? Int ?: return</ID>
+    <ID>MaxLineLength:DestinoDaParada.kt$RegraDaParada$*</ID>
+    <ID>MaxLineLength:DestinoDaParadaTest.kt$DestinoDaParadaTest$assertEquals(DestinoDaParada.PAUSADA, RegraDaParada.destino(MotivoParada.LIMITE_DO_SISTEMA, canceladoPeloApp = false))</ID>
+    <ID>MaxLineLength:DestinoDaParadaTest.kt$DestinoDaParadaTest$assertEquals(DestinoDaParada.PAUSADA, RegraDaParada.destino(MotivoParada.LIMITE_DO_SISTEMA, canceladoPeloApp = true))</ID>
+    <ID>MaxLineLength:DestinoDaParadaTest.kt$DestinoDaParadaTest$assertFalse(RegraDaParada.canceladoPeloApp(Build.VERSION_CODES.VANILLA_ICE_CREAM, WorkInfo.STOP_REASON_CONSTRAINT_BATTERY_NOT_LOW))</ID>
+    <ID>MaxLineLength:DestinoDaParadaTest.kt$DestinoDaParadaTest$assertTrue(RegraDaParada.canceladoPeloApp(Build.VERSION_CODES.O, WorkInfo.STOP_REASON_CONSTRAINT_BATTERY_NOT_LOW))</ID>
+    <ID>MaxLineLength:DicasRegras.kt$DicasRegras$/** Nunca durante o tour, antes da escolha de voz ou sobre o diálogo de novidades; nunca repetir uma dica já vista. */</ID>
+    <ID>MaxLineLength:DicasRegrasTest.kt$DicasRegrasTest$private</ID>
+    <ID>MaxLineLength:DicionarioDoLivroTest.kt$DicionarioDoLivroTest$val outroGlobal = DicionarioDoLivro.efetivo(PronunciationDictionary(listOf(PronunciationEntry("Nyx", "Nix"))), doLivro)</ID>
+    <ID>MaxLineLength:DicionarioDoLivroTest.kt$DicionarioDoLivroTest$val outroLivro = DicionarioDoLivro.efetivo(global, PronunciationDictionary(listOf(PronunciationEntry("Vox", "Voks"))))</ID>
+    <ID>MaxLineLength:DivisaoDePartes.kt$*</ID>
+    <ID>MaxLineLength:DivisaoDePartesTest.kt$DivisaoDePartesTest$val silencios = listOf(listOf(Silencio(100 * min, 101 * min), Silencio(690 * min, 691 * min), Silencio(705 * min, 706 * min)))</ID>
+    <ID>MaxLineLength:DocumentExportUseCase.kt$DocumentExportUseCase$throw IOException(context.getString(R.string.export_falha_capitulos, arquivos.size - sucessos, arquivos.size))</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$*</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$/** Livros em download (itens que só existem enquanto baixam; somem da lista pouco depois de entrar na biblioteca). */</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$// runBlocking aqui: só pode ser chamado fora da thread principal (hoje só roda em Dispatchers.IO, em atualizar/executar).</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$_andamento.update { it + (id to (it[id] ?: AndamentoDownload()).copy(estado = EstadoDownload.BAIXANDO, erro = null)) }</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$_andamento.update { it + (id to AndamentoDownload(EstadoDownload.NA_FILA, it[id]?.bytes ?: 0L, it[id]?.total ?: 0L)) }</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$_andamento.update { it + (item.id to AndamentoDownload(EstadoDownload.ERRO, erro = ctx.getString(R.string.dl_central_erro_verificacao))) }</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$_andamento.update { it + (item.id to AndamentoDownload(EstadoDownload.PRONTO, ocupadoBytes = item.ocupadoBytes(ctx))) }</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$download = { c, progresso -&gt; com.jonjonesbr.audiobookgen.data.LivrosDownloads.guardar(c, livro, progresso) }</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$else</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$idiomas = com.jonjonesbr.audiobookgen.domain.IdiomaDownload.codigos(p.vozes.map { it.language } + p.idiomas)</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$if (estado == EstadoDownload.NA_FILA || estado == EstadoDownload.BAIXANDO || estado == EstadoDownload.PRONTO) continue</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$isPronto = { c -&gt; kotlinx.coroutines.runBlocking { com.jonjonesbr.audiobookgen.data.BibliotecaStore.porChaveOrigem(c, livro.chave) != null } }</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$DownloadCentral$val naBiblioteca = com.jonjonesbr.audiobookgen.data.BibliotecaStore.listar(ctx).mapNotNull { it.chaveOrigem }.toSet()</ID>
+    <ID>MaxLineLength:DownloadCentral.kt$ItemBaixavel$/** Códigos de idioma das vozes do pacote ([com.jonjonesbr.audiobookgen.domain.IdiomaDownload]); vazio = sem idioma conhecido. */</ID>
+    <ID>MaxLineLength:DownloadCentralActivity.kt$DownloadCentralActivity$// O coach mark só é avaliado no primeiro render e quando os itens exibidos mudam (não a cada tick de progresso).</ID>
+    <ID>MaxLineLength:DownloadCentralActivity.kt$DownloadCentralActivity$android.widget.Toast.makeText(this, R.string.dl_central_nada_a_baixar, android.widget.Toast.LENGTH_SHORT).show()</ID>
+    <ID>MaxLineLength:DownloadCentralActivity.kt$DownloadCentralActivity$append(getString(R.string.dl_central_confirmar_msg, alvo.size, Formatter.formatShortFileSize(this@DownloadCentralActivity, totalBytes)))</ID>
+    <ID>MaxLineLength:DownloadCentralActivity.kt$DownloadCentralActivity$com.jonjonesbr.audiobookgen.data.AppPrefs(this).registrarEvento(com.jonjonesbr.audiobookgen.domain.EventoAprendizado.DOWNLOADS_ABERTO.id)</ID>
+    <ID>MaxLineLength:DownloadCentralActivity.kt$DownloadCentralActivity$filtro = com.jonjonesbr.audiobookgen.domain.IdiomaDownload.padraoDoIdioma(resources.configuration.locales[0].language)</ID>
+    <ID>MaxLineLength:DownloadCentralActivity.kt$DownloadCentralActivity$if (semEspaco) append("\n\n").append(getString(R.string.dl_central_pouco_espaco, Formatter.formatShortFileSize(this@DownloadCentralActivity, livre)))</ID>
+    <ID>MaxLineLength:EpubMetadados.kt$/** Lê a entrada (exata ou, na falta, sem diferenciar maiúsculas) com limite de tamanho; null se não existe ou passa do limite. */</ID>
+    <ID>MaxLineLength:EpubMetadados.kt$// Arquivo de terceiros: sem DTD/entidades externas (o parser do Android não tem o recurso, mas também não as resolve).</ID>
+    <ID>MaxLineLength:EpubMetadadosTest.kt$EpubMetadadosTest$"""&lt;item id="img1" href="a.png" media-type="image/png"/&gt;&lt;item id="outra" href="b.png" media-type="image/png"/&gt;"""</ID>
+    <ID>MaxLineLength:EpubMetadadosTest.kt$EpubMetadadosTest$"OEBPS/content.opf" to opf("""&lt;item id="x" href="../Imagens/minha%20capa.jpg" media-type="image/jpeg" properties="cover-image"/&gt;""").toByteArray()</ID>
+    <ID>MaxLineLength:EpubMetadadosTest.kt$EpubMetadadosTest$"content.opf" to opf("""&lt;item id="c1" href="cap1.xhtml" media-type="application/xhtml+xml"/&gt;""").toByteArray()</ID>
+    <ID>MaxLineLength:EpubMetadadosTest.kt$EpubMetadadosTest$"content.opf" to opf("""&lt;item id="i" href="images/cover.jpeg" media-type="image/jpeg"/&gt;""").toByteArray()</ID>
+    <ID>MaxLineLength:EpubMetadadosTest.kt$EpubMetadadosTest$"content.opf" to opf("""&lt;item id="x" href="img/capa.jpg" media-type="image/jpeg" properties="cover-image"/&gt;""").toByteArray()</ID>
+    <ID>MaxLineLength:EpubMetadadosTest.kt$EpubMetadadosTest$"content.opf" to opf("""&lt;item id="x" href="nao-existe.jpg" media-type="image/jpeg" properties="cover-image"/&gt;""").toByteArray()</ID>
+    <ID>MaxLineLength:EscolhaPrimeiroLivroActivity.kt$EscolhaPrimeiroLivroActivity$if (!PoliticaDownloadSilencioso.deveIniciar(false, redeTarifada, filesDir.usableSpace, tamanhoBytes)) return@launch</ID>
+    <ID>MaxLineLength:EscolhaPrimeiroLivroActivity.kt$EscolhaPrimeiroLivroActivity$val redeTarifada = NetworkStatus.isMetered(applicationContext) || !NetworkStatus.isOnline(applicationContext)</ID>
+    <ID>MaxLineLength:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$eq.setBandLevel(banda.toShort(), (-corteDb * 100).toInt().coerceIn(faixa[0].toInt(), faixa[1].toInt()).toShort())</ID>
+    <ID>MaxLineLength:ExtractTextUseCase.kt$ExtractTextUseCase$titulo = m[py.builtins.callAttr("str", "titulo")]?.toString() ?: context.getString(R.string.capitulo_sem_titulo)</ID>
+    <ID>MaxLineLength:FilaDeConversao.kt$FilaDeConversao$*</ID>
+    <ID>MaxLineLength:FilaDeConversao.kt$FilaDeConversao$private</ID>
+    <ID>MaxLineLength:FilaDeConversao.kt$FilaDeConversao$val comMapa = withContext(Dispatchers.IO) { ArquivoComPersonagens.preparar(app, inicio.item.caminhoLocal) }</ID>
+    <ID>MaxLineLength:FilaDeConversaoTest.kt$FilaDeConversaoTest$private fun fila(vararg nomes: String)</ID>
+    <ID>MaxLineLength:GuidedBookAudioStore.kt$GuidedBookAudioStore$/** Migração de caminho (livro foi para a biblioteca): copia o perfil para [novo] sem sobrescrever o que já existe. */</ID>
+    <ID>MaxLineLength:GuidedBookPrefsStore.kt$GuidedBookPrefsStore$/** Migração de caminho (livro foi para a biblioteca): copia o perfil para [novo] sem sobrescrever o que já existe. */</ID>
+    <ID>MaxLineLength:GuidedPlayerManager.kt$GuidedPlayerManager$"Falha ao sintetizar segmento $position/${segments.size}, voz=${segment.voiceId}, motivo=$motivo"</ID>
+    <ID>MaxLineLength:GuidedPlayerManager.kt$GuidedPlayerManager$CrashLogWriter.log(null, "prerender", "Falha ao preparar trecho: voz=$vozUnidade, motivo=$motivo")</ID>
+    <ID>MaxLineLength:GuidedPlayerManager.kt$GuidedPlayerManager$aplicarTimbreDoTrecho(partesParaTomDasFalas(paragraphText), 0, paragraphText.length, paragraphText.length)</ID>
+    <ID>MaxLineLength:GuidedPlayerManager.kt$GuidedPlayerManager$private</ID>
+    <ID>MaxLineLength:GuidedPlayerManagerTest.kt$GuidedPlayerManagerTest$every { com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para("edge", any(), any(), any(), any()) } returns synthesizer</ID>
+    <ID>MaxLineLength:GuidedPlayerManagerTest.kt$GuidedPlayerManagerTest$every { com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(motor, any(), any(), any(), any()) } returns sintetizador</ID>
+    <ID>MaxLineLength:GuidedReadingBarController.kt$GuidedReadingBarController$com.jonjonesbr.audiobookgen.data.AppPrefs(activity).registrarEvento(com.jonjonesbr.audiobookgen.domain.EventoAprendizado.LEITURA_GUIADA_INICIADA.id)</ID>
+    <ID>MaxLineLength:GuidedReadingBarController.kt$GuidedReadingBarController$if (passos != null) activity.getString(R.string.guided_steps_chip, passos) else activity.getString(R.string.guided_options_chip)</ID>
+    <ID>MaxLineLength:GuidedReadingBarController.kt$GuidedReadingBarController$views.btnGuidedVoz.post { CoachMark.tentar(activity, com.jonjonesbr.audiobookgen.domain.Dica.LEITOR_VOZ_E_MOTOR, views.btnGuidedVoz) }</ID>
+    <ID>MaxLineLength:GuidedReadingService.kt$GuidedReadingService$.</ID>
+    <ID>MaxLineLength:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$)</ID>
+    <ID>MaxLineLength:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$activity</ID>
+    <ID>MaxLineLength:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$else</ID>
+    <ID>MaxLineLength:HighlightStore.kt$HighlightStore$val migrados = ChavesDeLivro.migrarLista(atuais, antigo, novo, { it.caminhoLivro }) { h, c -&gt; h.copy(caminhoLivro = c) }</ID>
+    <ID>MaxLineLength:IdiomaDownload.kt$IdiomaDownload$/** Normaliza rótulos de idioma das vozes ("pt-BR", "en-US", "multilingual"…) em códigos curtos ("pt", "en", "*"). */</ID>
+    <ID>MaxLineLength:IdiomaDownload.kt$IdiomaDownload$IdiomaBusca.entries.firstOrNull { it.codigo == idiomaDoApp.lowercase().substringBefore('-') } ?: IdiomaBusca.TODOS</ID>
+    <ID>MaxLineLength:KokoroTtsEngine.kt$KokoroTtsEngine$Log.w(TAG, "Processo isolado morreu (tentativa $tentativa/$MAX_TENTATIVAS_PROCESSO_ISOLADO), aguardando ${ESPERA_ENTRE_TENTATIVAS_MS}ms e retentando")</ID>
+    <ID>MaxLineLength:LibraryActivity.kt$LibraryActivity$this</ID>
+    <ID>MaxLineLength:LicoesRegras.kt$EventoAprendizado$/** Fatos reais que provam que a pessoa fez algo no app (Fase J). Gravados por [com.jonjonesbr.audiobookgen.data.AppPrefs]. */</ID>
+    <ID>MaxLineLength:LinkDeLivro.kt$LinkDeLivro$*</ID>
+    <ID>MaxLineLength:LinkDeLivro.kt$LinkDeLivro$/** Valida o endereço e converte links de compartilhamento do Google Drive e do Dropbox em links de download direto. */</ID>
+    <ID>MaxLineLength:LinkDeLivro.kt$LinkDeLivro$if (id != null &amp;&amp; !uri.path.orEmpty().startsWith("/uc")) return "https://drive.google.com/uc?export=download&amp;id=$id"</ID>
+    <ID>MaxLineLength:LinkDeLivro.kt$LinkDeLivro$private fun decodificar(s: String): String</ID>
+    <ID>MaxLineLength:LinkDeLivro.kt$LinkDeLivro$val uri = runCatching { URI(comEsquema) }.getOrNull() ?: return Result.failure(LinkException(MotivoLink.INVALIDO))</ID>
+    <ID>MaxLineLength:LinkDeLivroTest.kt$LinkDeLivroTest$assertEquals("Café.pdf", LinkDeLivro.nomeDoArquivo("https://x.com/a", "attachment; filename*=UTF-8''Caf%C3%A9.pdf"))</ID>
+    <ID>MaxLineLength:LinkDeLivroTest.kt$LinkDeLivroTest$assertEquals("Meu Livro.epub", LinkDeLivro.nomeDoArquivo("https://x.com/a", "attachment; filename=\"Meu Livro.epub\""))</ID>
+    <ID>MaxLineLength:LinkDeLivroTest.kt$LinkDeLivroTest$assertEquals("https://www.dropbox.com/s/abc/livro.epub?dl=1", ok("https://www.dropbox.com/s/abc/livro.epub?dl=0"))</ID>
+    <ID>MaxLineLength:LinkDownloader.kt$LinkDownloader$*</ID>
+    <ID>MaxLineLength:LinkDownloader.kt$LinkDownloader$if (++tentativas &gt; MAX_REDIRECIONAMENTOS) throw LinkException(MotivoLink.REDE, "Redirecionamentos demais")</ID>
+    <ID>MaxLineLength:LinkDownloader.kt$LinkDownloader$if (codigo != HttpURLConnection.HTTP_OK) throw LinkException(MotivoLink.REDE, "O servidor respondeu $codigo")</ID>
+    <ID>MaxLineLength:LinkDownloader.kt$LinkDownloader$if (proximo.protocol != "https" &amp;&amp; proximo.protocol != "http") throw LinkException(MotivoLink.INVALIDO)</ID>
+    <ID>MaxLineLength:LinkDownloader.kt$LinkDownloader$val destino = conn.getHeaderField("Location") ?: throw LinkException(MotivoLink.REDE, "Redirecionamento sem destino")</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$// Se há vozes de personagens, a geração do livro inteiro (ArquivoComPersonagens) já as usa; o aviso só informa isso.</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$AcoesDoLivro.abrirNoLeitor(this, l, continuar = false, acaoInicial = ReaderActivity.ACAO_INICIAL_PERSONAGENS)</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$AcoesDoLivro.gerarAudiobookDireto(this, l, OpcoesConversao(voz = voz, motor = motor, ritmo = ritmo, estilo = estiloEscolhido()))</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$CoachMark</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$audiobookViewModel.gerarAmostra(voz.id, appPrefs.ritmo, voz.engine, chave, VoiceCatalog.previewSampleText(voz))</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$com.jonjonesbr.audiobookgen.data.DocumentRepository(this).processarPastaSaf(android.net.Uri.parse(salva)).nome</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$com.jonjonesbr.audiobookgen.domain.Dica.LIVRO_GERAR -&gt; findViewById&lt;View&gt;(R.id.btnLivroGerarAudiobook)</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$com.jonjonesbr.audiobookgen.domain.Dica.LIVRO_VOZ -&gt; findViewById&lt;View&gt;(R.id.btnTrocarVozLivro)</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$private</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$val</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$val rede = if (NetworkStatus.engineRequiresNetwork(motor)) getString(R.string.livro_voz_online) else getString(R.string.livro_voz_offline)</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity$vista.findViewById&lt;View&gt;(R.id.tvGerarAvisoPersonagens).visibility = if (temVozesDePersonagens) View.VISIBLE else View.GONE</ID>
+    <ID>MaxLineLength:LivroActivity.kt$LivroActivity.&lt;no name provided&gt;$val travado = (aplicarSnapVelocidade(ritmoDaPosicao(sb.progress) / PCT_POR_MULTIPLICADOR) * PCT_POR_MULTIPLICADOR).toInt()</ID>
+    <ID>MaxLineLength:LivrosClient.kt$LivrosClient$suspend</ID>
+    <ID>MaxLineLength:LivrosClient.kt$LivrosClient$val ok = if (arquivo.extensao == "epub") ehEpubValido(destino) else destino.isFile &amp;&amp; destino.length() &gt;= MIN_EPUB_BYTES</ID>
+    <ID>MaxLineLength:LivrosClient.kt$LivrosClient$val valido = if (arquivo.extensao == "epub") ehEpubValido(destino) else destino.isFile &amp;&amp; destino.length() &gt;= MIN_EPUB_BYTES</ID>
+    <ID>MaxLineLength:LivrosGratuitos.kt$LivroEncontrado$/** Um livro/obra encontrado numa fonte. [urlEpub] é o EPUB; no Internet Archive é o `metadata` do item (o arquivo é escolhido ao baixar). */</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$/** Devolve true quando ainda há algo em andamento (diálogo ou importação) e a activity deve esperar para se fechar. */</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$Toast.makeText(this, getString(R.string.status_unsupported_format, nome.substringAfterLast('.', "")), Toast.LENGTH_LONG).show()</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$arrayOf(biblioteca, Intent(this@MainActivity, LivroActivity::class.java).putExtra(LivroActivity.EXTRA_ID, livro.id))</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$startActivity(Intent(this, ConversoesActivity::class.java).putExtra(ConversoesActivity.EXTRA_INICIAR_FILA, true))</ID>
+    <ID>MaxLineLength:MediaEncoderShared.kt$/** Drena TUDO que o encoder já tem pronto, sem esperar (timeout 0) — não deixa a saída acumular enquanto a entrada é alimentada. */</ID>
+    <ID>MaxLineLength:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$eq.setBandLevel(banda.toShort(), (-corteDb * 100).toInt().coerceIn(faixa[0].toInt(), faixa[1].toInt()).toShort())</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$*</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$/** Link direto de um arquivo, com a declaração de que a pessoa tem o direito de usá-lo (a responsabilidade é dela). */</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$/** Transição curta (fade) ao abrir o leitor ou a tela do livro; o Android já a zera se as animações estiverem desligadas. */</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$// Fase N: leva uma única vez os livros do cache para a biblioteca; onboarding e novidades da versão (antes na tela inicial antiga).</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$ACAO_LER -&gt; AcoesDoLivro.abrirNoLeitor(this@MeusLivrosActivity, livro, continuar = false, comFade = true)</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$BibliotecaStore.importarArquivo(applicationContext, baixado.arquivo, baixado.nome, OrigemLivro.ARQUIVO, null)</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$EscolhaPrimeiroLivroActivity.ESCOLHA_BIBLIOTECA -&gt; buscaLivros.launch(Intent(this, BuscarLivrosActivity::class.java))</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$add("${getString(R.string.bib_det_adicionado)}: ${DateFormat.getMediumDateFormat(this@MeusLivrosActivity).format(Date(livro.adicionadoEm))}")</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$add("${getString(R.string.bib_det_tamanho)}: ${Formatter.formatShortFileSize(this@MeusLivrosActivity, livro.tamanhoBytes)}")</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$btnExemplo.visibility</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$com.jonjonesbr.audiobookgen.domain.MotivoLink.VAZIO, com.jonjonesbr.audiobookgen.domain.MotivoLink.INVALIDO -&gt; getString(R.string.link_erro_invalido)</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$intent.getStringExtra("extra_debug_link")?.takeIf { applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0 }</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$val baixado = com.jonjonesbr.audiobookgen.data.LinkDownloader.baixar(applicationContext, url) { _, _ -&gt; }</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$val filhos = DocumentsContract.buildChildDocumentsUriUsingTree(arvore, DocumentsContract.getTreeDocumentId(arvore))</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$val livro = runCatching { com.jonjonesbr.audiobookgen.data.LivroDeExemplo.garantir(applicationContext) }.getOrNull()</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$val nome = nomeConhecido ?: DocumentRepository(this@MeusLivrosActivity).extrairMetadadosArquivo(uri).nome</ID>
+    <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$val opcoes = arrayOf(getString(R.string.bib_ord_recentes), getString(R.string.bib_ord_titulo), getString(R.string.bib_ord_autor))</ID>
+    <ID>MaxLineLength:MigracaoBiblioteca.kt$MigracaoBiblioteca$/** Dispara em 2º plano (escopo próprio: não morre se a tela fechar). Não faz nada se já migrou ou já está rodando. */</ID>
+    <ID>MaxLineLength:MigracaoBiblioteca.kt$MigracaoBiblioteca$/** Recentes primeiro (mais novos antes), depois o resto do cache do mais novo ao mais antigo; sem repetir arquivo. */</ID>
+    <ID>MaxLineLength:MigracaoBiblioteca.kt$MigracaoBiblioteca$Log.i(TAG, "Migração concluída: $migrados livros, $fundidos versões fundidas, de ${candidatos.size} arquivos")</ID>
+    <ID>MaxLineLength:MostrarDialogo.kt$/** Como a versão com [AlertDialog.Builder], para quem já chamou `create()` (ex.: para ligar listeners antes de mostrar). */</ID>
+    <ID>MaxLineLength:OnboardingActivity.kt$OnboardingActivity.PaginaAdapter$com.google.android.material.color.MaterialColors.getColor(holder.ivIcon, androidx.appcompat.R.attr.colorPrimary)</ID>
     <ID>MaxLineLength:OnnxTtsEngine.kt$OnnxTtsEngine$Log.d(TAG, "Supertonic result: ${r?.size?.toString() ?: "null"} samples")</ID>
+    <ID>MaxLineLength:OnnxTtsEngine.kt$OnnxTtsEngine$val r = synthesizeSupertonicNative(chunk, voiceId, speed, versaoModelo)</ID>
+    <ID>MaxLineLength:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$activity.mostrarErro(activity.getString(R.string.toast_download_failed, activity.getString(mensagemDeErro(e))))</ID>
+    <ID>MaxLineLength:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$activity.mostrarErro(activity.getString(R.string.toast_erro_importar_voz_motivo, activity.getString(mensagemDeErro(e))))</ID>
+    <ID>MaxLineLength:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesVisiveis(activity.applicationContext)</ID>
+    <ID>MaxLineLength:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$linha.findViewById&lt;android.widget.TextView&gt;(R.id.tvPacoteNome).text = nomeExibidoDoPacote(activity, pacote.id, pacote.nomeExibicao)</ID>
+    <ID>MaxLineLength:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$val pacotes = withContext(Dispatchers.IO) { com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesRegistrados() }</ID>
+    <ID>MaxLineLength:ParametrosConversao.kt$ParametrosConversao$*</ID>
+    <ID>MaxLineLength:ParametrosConversao.kt$ParametrosConversao$/** Item da fila de processamento que esta execução atende; o worker o fecha e inicia o próximo (ver [FilaDeConversao]). */</ID>
+    <ID>MaxLineLength:PerfilAudioLivro.kt$FalaNoTrecho$fun</ID>
+    <ID>MaxLineLength:PerfilAudioLivroTest.kt$PerfilAudioLivroTest$val p = PerfilAudioLivro(tomMeiosTons = -2, agudosDb = 3, tomNasFalasMeiosTons = 1, pausaFinalFraseMs = 700, bufferAdiante = 4)</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$BYOMManager.validarConteudo(staging, parsed)?.let { throw IOException("Pacote ${model.name} incompleto: $it") }</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$Model("piper-ptbr-cadu", "Cadu", "média", "vits-piper-pt_BR-cadu-medium", "pt_BR-cadu-medium.onnx", "MIT / CC0", "Piper Voices Cadu; dataset CC0. https://huggingface.co/rhasspy/piper-voices")</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$Model("piper-ptbr-dii", "Dii", "alta", "vits-piper-pt_BR-dii-high", "pt_BR-dii-high.onnx", "CC BY-NC-SA 4.0", "Dii PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-dii-high")</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$Model("piper-ptbr-edresson", "Edresson", "baixa", "vits-piper-pt_BR-edresson-low", "pt_BR-edresson-low.onnx", "MIT / CC BY 4.0", "Piper Voices Edresson; corpus CC BY 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-edresson-low")</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$Model("piper-ptbr-faber", "Faber", "média", "vits-piper-pt_BR-faber-medium", "pt_BR-faber-medium.onnx", "MIT / CC0", "Piper Voices Faber; dataset CC0. https://huggingface.co/rhasspy/piper-voices")</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$Model("piper-ptbr-jeff", "Jeff", "média", "vits-piper-pt_BR-jeff-medium", "pt_BR-jeff-medium.onnx", "MIT / CC0", "Piper Voices Jeff; dataset CC0. https://huggingface.co/rhasspy/piper-voices")</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$Model("piper-ptbr-miro", "Miro", "alta", "vits-piper-pt_BR-miro-high", "pt_BR-miro-high.onnx", "CC BY-NC-SA 4.0", "Miro PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/TarcisoAmorim/piper-pt_BR-miro-high")</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$attribution = "Piper en_US-ljspeech-medium; the model repository is MIT-licensed and its card lists LJSpeech as public domain. https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/en/en_US/ljspeech/medium/MODEL_CARD"</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$attribution = "Piper en_US-norman-medium; the model repository is MIT-licensed and its card lists LibriVox recordings as public domain. https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/en/en_US/norman/medium/MODEL_CARD"</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$attribution = "Piper es_MX-claude-high; the model repository is MIT-licensed and its card lists the Piper-TTS-Spanish dataset under Apache-2.0. https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/es/es_MX/claude/high/MODEL_CARD"</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$onProgress("Baixando ${model.name} (Piper)", (downloaded.toFloat() / total).coerceIn(0f, 1f), downloaded, total)</ID>
+    <ID>MaxLineLength:PiperVitsModelManager.kt$PiperVitsModelManager$var downloaded = File(archive.parentFile, "${archive.name}.part").let { if (it.exists()) it.length() else 0L }</ID>
+    <ID>MaxLineLength:PlayerNotificationManager.kt$PlayerNotificationManager$.</ID>
+    <ID>MaxLineLength:PlayerNotificationManager.kt$PlayerNotificationManager$if (st.temCapitulos) context.getString(R.string.cd_widget_capitulo_anterior) else context.getString(R.string.notif_recuar)</ID>
+    <ID>MaxLineLength:PocketCustomVoices.kt$PocketCustomVoices$salvar(context, list(context).map { if (it.id == voiceId) it.copy(name = newName.trim().ifEmpty { it.name }) else it })</ID>
+    <ID>MaxLineLength:PocketEncoderImportador.kt$PocketEncoderImportador$context.assets.open(PLANTA).use { planta -&gt; PocketEncoderOficial.escreverOnnx(planta, mapa, lidos.pesos, saida) }</ID>
+    <ID>MaxLineLength:PocketEncoderOficial.kt$ArquivoOficialPocket$get() = "https://huggingface.co/kyutai/pocket-tts/resolve/$revisao/languages/$pasta/model.safetensors?download=true"</ID>
+    <ID>MaxLineLength:PocketEncoderOficial.kt$PocketEncoderOficial$System.arraycopy(buffer, (de - posicao).toInt(), pesos.getValue(chave), (de - ini).toInt(), (ate - de).toInt())</ID>
+    <ID>MaxLineLength:PocketEncoderOficial.kt$PocketEncoderOficial$fun</ID>
+    <ID>MaxLineLength:PocketEncoderOficial.kt$PocketEncoderOficial$fun porSha256(hex: String): ArquivoOficialPocket?</ID>
+    <ID>MaxLineLength:PocketEncoderOficial.kt$PocketEncoderOficial$tensores[chave] = TensorSafetensors(info.getString("dtype"), forma, posicoes.getLong(0), posicoes.getLong(1))</ID>
+    <ID>MaxLineLength:PocketEncoderOficial.kt$PocketEncoderOficial$val</ID>
+    <ID>MaxLineLength:PocketEncoderOficialTest.kt$PocketEncoderOficialTest$File(assets, "mimi_encoder_planta.onnx").inputStream().use { PocketEncoderOficial.escreverOnnx(it, mapa, lidos.pesos, saida) }</ID>
+    <ID>MaxLineLength:PocketEncoderOficialTest.kt$PocketEncoderOficialTest$assertFalse(PocketEncoderOficial.compativel(PesoMapeado("A", "a", false, listOf(2, 3)), tensor.copy(dtype = "F32")))</ID>
+    <ID>MaxLineLength:PocketEncoderOficialTest.kt$PocketEncoderOficialTest$val</ID>
+    <ID>MaxLineLength:PocketEncoderOficialTest.kt$PocketEncoderOficialTest$val lidos = PocketEncoderOficial.lerPesos(ByteArrayInputStream(arquivo), mapaSintetico, arquivo.size.toLong(), bloco = 3)</ID>
+    <ID>MaxLineLength:PocketProcessClient.kt$PocketProcessClient$null</ID>
+    <ID>MaxLineLength:PocketTtsModelManager.kt$PocketTtsModelManager$if</ID>
+    <ID>MaxLineLength:PoliticaPrimeiroPlanoTest.kt$PoliticaPrimeiroPlanoTest$assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(34, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 0L, agoraMs = limiteMs * 2))</ID>
+    <ID>MaxLineLength:PoliticaPrimeiroPlanoTest.kt$PoliticaPrimeiroPlanoTest$assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = false, appVisivel = false, inicioOrcamentoMs = 0L, agoraMs = limiteMs * 2))</ID>
+    <ID>MaxLineLength:PoliticaPrimeiroPlanoTest.kt$PoliticaPrimeiroPlanoTest$assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 0L, agoraMs = limiteMs - 1L))</ID>
+    <ID>MaxLineLength:PoliticaPrimeiroPlanoTest.kt$PoliticaPrimeiroPlanoTest$assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 10_000_000L, agoraMs = 1_000L))</ID>
+    <ID>MaxLineLength:PoliticaPrimeiroPlanoTest.kt$PoliticaPrimeiroPlanoTest$assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 1_000L, agoraMs = 1_000L + limiteMs - 60_000L))</ID>
+    <ID>MaxLineLength:PoliticaPrimeiroPlanoTest.kt$PoliticaPrimeiroPlanoTest$assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = limiteMs * 3, agoraMs = 0L))</ID>
+    <ID>MaxLineLength:PoliticaPrimeiroPlanoTest.kt$PoliticaPrimeiroPlanoTest$assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = true, inicioOrcamentoMs = 0L, agoraMs = limiteMs * 2))</ID>
+    <ID>MaxLineLength:PoliticaPrimeiroPlanoTest.kt$PoliticaPrimeiroPlanoTest$assertTrue(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 0L, agoraMs = limiteMs))</ID>
+    <ID>MaxLineLength:PoliticaPrimeiroPlanoTest.kt$PoliticaPrimeiroPlanoTest$assertTrue(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 1_000L, agoraMs = 1_000L + limiteMs))</ID>
+    <ID>MaxLineLength:PronunciationAi.kt$PronunciationAiPlanner$fun</ID>
+    <ID>MaxLineLength:PronunciationAiFlow.kt$PronunciationAiFlow$*</ID>
+    <ID>MaxLineLength:PronunciationAiFlow.kt$PronunciationAiFlow$.</ID>
+    <ID>MaxLineLength:PronunciationAiFlow.kt$PronunciationAiFlow$botao.text = activity.getString(R.string.pron_ai_save_to, PronunciationDialog.rotuloEscopo(activity, escopo))</ID>
+    <ID>MaxLineLength:PronunciationAiFlow.kt$PronunciationAiFlow$val answer = withContext(Dispatchers.IO) { client.generate(PronunciationAiPlanner.buildPrompt(names, language)) }</ID>
+    <ID>MaxLineLength:PronunciationAiTest.kt$PronunciationAiTest$assertEquals("https://x.dev/v1/chat/completions", OpenAiStyleClient.endpointFromBase("https://x.dev/v1/chat/completions"))</ID>
+    <ID>MaxLineLength:PronunciationAiTest.kt$PronunciationAiTest$assertEquals("ok", OpenAiStyleClient.extractContent("{\"choices\":[{\"message\":{\"content\":\"ok\"}}]}", contexto))</ID>
+    <ID>MaxLineLength:PronunciationAiTest.kt$PronunciationAiTest$listOf("Kvothe" to "Cuvouth", "Denna" to "Dena", "Bast" to "Bést", "Tehlu" to "Tê-lu", "Sheerin" to "Chirin")</ID>
+    <ID>MaxLineLength:PronunciationAiTest.kt$PronunciationAiTest$val</ID>
+    <ID>MaxLineLength:PronunciationAiTest.kt$PronunciationAiTest$val dic = PronunciationDictionary(listOf(PronunciationEntry("Kvothe", "Cuvouth"), PronunciationEntry("Denna", "Dena")))</ID>
+    <ID>MaxLineLength:PronunciationAiTest.kt$PronunciationAiTest$val raw = "```json\n[{\"nome\":\"Kvothe\",\"falado\":\"Cuvouth\"},{\"nome\":\"Denna\",\"falado\":\"Dena\"}]\n```"</ID>
+    <ID>MaxLineLength:PronunciationBookStore.kt$PronunciationBookStore$*</ID>
+    <ID>MaxLineLength:PronunciationBookStore.kt$PronunciationBookStore$// Cache por arquivo: a síntese consulta a cada trecho. Relê só se data ou tamanho mudaram (ou após save/apagar/migrar).</ID>
+    <ID>MaxLineLength:PronunciationBookStore.kt$PronunciationBookStore.Companion$/** Loja na pasta do app (`filesDir/pronuncias_livro`), a mesma que [com.jonjonesbr.audiobookgen.data.DadosDoLivro] migra e apaga. */</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$*</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$.</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$// Último valor carregado no campo (do escopo atual): ao trocar de escopo, só se substitui o que não foi editado.</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$Toast.makeText(activity, activity.getString(R.string.pron_import_done, entradas.size), Toast.LENGTH_LONG).show()</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$Toast.makeText(activity, if (ok) R.string.pron_export_done else R.string.pron_export_failed, Toast.LENGTH_LONG).show()</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$atualizado = if (falada.isEmpty()) atualizado.without(nova) else atualizado.with(PronunciationEntry(nova, falada))</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$com.jonjonesbr.audiobookgen.domain.PronunciationTransfer.merge(PronunciationStore.get(activity), entradas)</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$it.write(com.jonjonesbr.audiobookgen.domain.PronunciationTransfer.export(PronunciationStore.get(activity)).toByteArray(Charsets.UTF_8))</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$launcher.launch(arrayOf("application/json", "text/plain", "text/csv", "text/comma-separated-values", "application/octet-stream"))</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$val doLivro = caminhoDoLivro?.let { PronunciationBookStore.doApp(activity).load(it) } ?: PronunciationDictionary.EMPTY</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$val rotuloExportar = activity.getString(if (caminhoDoLivro != null) R.string.pron_export_all else R.string.pron_export)</ID>
+    <ID>MaxLineLength:PronunciationDialog.kt$PronunciationDialog$val rotuloImportar = activity.getString(if (caminhoDoLivro != null) R.string.pron_import_all else R.string.pron_import)</ID>
+    <ID>MaxLineLength:PronunciationDictionary.kt$PronunciationDictionary$fun find(word: String): PronunciationEntry?</ID>
+    <ID>MaxLineLength:PronunciationDictionaryTest.kt$PronunciationDictionaryTest$assertEquals("Gândalf, o Cinzento chegou; Gândalf ficou.", d.apply("Gandalf o Cinzento chegou; Gandalf ficou."))</ID>
+    <ID>MaxLineLength:PythonEngineUseCase.kt$PythonEngineUseCase$PreviewResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha crítica no preview")))</ID>
+    <ID>MaxLineLength:PythonEngineUseCase.kt$PythonEngineUseCase$ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha interna local")))</ID>
+    <ID>MaxLineLength:PythonEngineUseCase.kt$PythonEngineUseCase$ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha no Python")))</ID>
+    <ID>MaxLineLength:PythonEngineUseCase.kt$PythonEngineUseCase$SinteseResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha crítica na síntese")))</ID>
+    <ID>MaxLineLength:PythonInicio.kt$PythonInicio$*</ID>
+    <ID>MaxLineLength:QueueActivity.kt$QueueActivity$// O processamento da fila roda na tela Conversões (não devolve resultado para a tela antiga, que iniciaria de novo).</ID>
+    <ID>MaxLineLength:QueueActivity.kt$QueueActivity$// Remover um item pausado descarta a conversão guardada (só se ela for deste item); não há job rodando.</ID>
+    <ID>MaxLineLength:QueueActivity.kt$QueueActivity$startActivity(Intent(this, ConversoesActivity::class.java).putExtra(ConversoesActivity.EXTRA_INICIAR_FILA, true))</ID>
+    <ID>MaxLineLength:QueueActivity.kt$QueueActivity$val guardada = withContext(Dispatchers.IO) { ConversaoPausadaStore.carregar(this@QueueActivity) }</ID>
+    <ID>MaxLineLength:QueueActivity.kt$QueueActivity$val processando = QueueManager.items.any { it.status == QueueStatus.PROCESSANDO || it.status == QueueStatus.PAUSADO }</ID>
+    <ID>MaxLineLength:QueueAdapter.kt$QueueAdapter$com.jonjonesbr.audiobookgen.data.ERRO_FILA_INTERROMPIDA -&gt; ctx.getString(R.string.queue_erro_interrompida)</ID>
+    <ID>MaxLineLength:QueueAdapter.kt$QueueAdapter$else -&gt; if (erroItem.startsWith("Conversao interrompida")) ctx.getString(R.string.queue_erro_interrompida) else erroItem</ID>
+    <ID>MaxLineLength:QueueManager.kt$QueueManager$/** Carrega a fila persistida se a memória estiver vazia: mexer na fila antes disso e persistir apagaria a que está salva. */</ID>
+    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$/** Nulo no modo "Ler sem áudio" (não há manager para a barra conectar). Não acessar antes de o manager ser atribuído no onCreate. */</ID>
+    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$appPrefs.salvarPosicaoLeitura(caminhoArquivo, it, if (::adapter.isInitialized) adapter.itemCount else 0)</ID>
+    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$iniciarDownloadBackground(arquivoTemp.absolutePath, nomeCapitulo, speakerMapPath = speakerMapPath, caminhoDoLivro = caminhoArquivo)</ID>
+    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog</ID>
+    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$setTextColor(com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface))</ID>
+    <ID>MaxLineLength:ReaderAparenciaController.kt$ReaderAparenciaController$private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog</ID>
+    <ID>MaxLineLength:ReaderMarcacoesController.kt$ReaderMarcacoesController$private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog</ID>
+    <ID>MaxLineLength:ReaderPersonagensController.kt$ReaderPersonagensController$.</ID>
+    <ID>MaxLineLength:ReaderPersonagensController.kt$ReaderPersonagensController$PronunciationDialog</ID>
+    <ID>MaxLineLength:ReaderPersonagensController.kt$ReaderPersonagensController$private</ID>
+    <ID>MaxLineLength:ReaderPersonagensController.kt$ReaderPersonagensController$private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog</ID>
+    <ID>MaxLineLength:ReaderPersonagensController.kt$ReaderPersonagensController$val</ID>
+    <ID>MaxLineLength:ReaderPersonagensController.kt$ReaderPersonagensController$val barra = android.widget.ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100 }</ID>
+    <ID>MaxLineLength:ReaderPersonagensController.kt$ReaderPersonagensController$val opcoes = outros.map { it.name } + getString(R.string.character_edit_narrator) + getString(R.string.character_edit_other)</ID>
+    <ID>MaxLineLength:ReaderPersonagensController.kt$ReaderPersonagensController$val rotulos = falas.map { getString(R.string.character_edit_excerpt, it.paragraphIndex + 1, it.text.take(EXCERTO_FALA_MAX)) }</ID>
+    <ID>MaxLineLength:ReaderRetornoController.kt$ReaderRetornoController$/** "Manter edições": o texto editado vira um novo livro da biblioteca (`&lt;nome&gt;_editado`), pronto para ler ou gerar audiobook. */</ID>
+    <ID>MaxLineLength:ReaderRetornoController.kt$ReaderRetornoController$// Converter: vai direto para a tela Conversões, com a voz/velocidade/tom do livro (antes caía na tela antiga, que usava</ID>
+    <ID>MaxLineLength:ReaderRetornoController.kt$ReaderRetornoController$activity.applicationContext</ID>
+    <ID>MaxLineLength:ReaderRetornoController.kt$ReaderRetornoController$if (livro != null) activity.getString(R.string.toast_edicoes_salvas, livro.titulo) else activity.getString(R.string.toast_save_selection_error)</ID>
+    <ID>MaxLineLength:ReaderRetornoController.kt$ReaderRetornoController$private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog</ID>
+    <ID>MaxLineLength:ReaderViewModel.kt$ReaderViewModel$adapter?.let { it.buscaResultados = resultados; it.buscaIndiceAtual = indiceAtual; it.notifyDataSetChanged() }</ID>
+    <ID>MaxLineLength:RitmoConversao.kt$fun</ID>
+    <ID>MaxLineLength:RitmoConversaoTest.kt$RitmoConversaoTest$for (ritmo in RITMO_CONVERSAO_MIN..RITMO_CONVERSAO_MAX) assertEquals(ritmo, ritmoDaPosicao(posicaoDoRitmo(ritmo)))</ID>
+    <ID>MaxLineLength:SecurePreferences.kt$SecurePreferences$fun setIaPersonalizadaChave(context: Context, value: String): SaveResult</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$AmostraDeTema$canvas.drawRoundRect(RectF(b.left + m, b.top + h * 0.28f, b.right - m * 1.6f, b.top + h * 0.28f + h * 0.09f), h, h, paint)</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$AmostraDeTema$canvas.drawRoundRect(RectF(b.left + m, b.top + h * 0.45f, b.right - m * 2.4f, b.top + h * 0.45f + h * 0.09f), h, h, paint)</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$AmostraDeTema$canvas.drawRoundRect(RectF(b.left + m, b.top + h * 0.64f, b.left + m + w * 0.34f, b.top + h * 0.64f + h * 0.14f), h, h, paint)</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$AmostraDeTema$val recorte = android.graphics.Path().apply { addRoundRect(area, raio, raio, android.graphics.Path.Direction.CW) }</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$SeletorTemaSheet$*</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$SeletorTemaSheet$AmostraDeTema(opcao.fundo, opcao.destaque, opcao.texto, divididoComEscuro = opcao.modo == ThemePrefs.SYSTEM)</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$SeletorTemaSheet$Opcao</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$SeletorTemaSheet$Opcao(ThemePrefs.DARK, R.string.theme_dark, R.string.tema_desc_escuro, ESCURO.first, ESCURO.second, ESCURO.third)</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$SeletorTemaSheet$Opcao(ThemePrefs.SYSTEM, R.string.theme_system, R.string.tema_desc_sistema, CLARO.first, CLARO.second, CLARO.third)</ID>
+    <ID>MaxLineLength:SeletorTemaSheet.kt$SeletorTemaSheet$linha.findViewById&lt;View&gt;(R.id.ivTemaMarca).visibility = if (opcao.modo == atual) View.VISIBLE else View.INVISIBLE</ID>
+    <ID>MaxLineLength:SettingsActivity.kt$SettingsActivity$com.jonjonesbr.audiobookgen.domain.MotivoBackup.ARQUIVO_INVALIDO -&gt; getString(R.string.backup_erro_arquivo_invalido)</ID>
+    <ID>MaxLineLength:SettingsActivity.kt$SettingsActivity$com.jonjonesbr.audiobookgen.domain.MotivoBackup.VERSAO_MAIS_NOVA -&gt; getString(R.string.backup_erro_versao_mais_nova)</ID>
+    <ID>MaxLineLength:SettingsActivity.kt$SettingsActivity$findViewById&lt;android.widget.Button&gt;(R.id.btnGerenciarVozesClonadas).setOnClickListener { cloneVoiceFlow.gerenciar() }</ID>
+    <ID>MaxLineLength:SettingsActivity.kt$SettingsActivity$findViewById&lt;android.widget.TextView&gt;(R.id.tvTemaAtual).setText(SeletorTemaSheet.nomeDoModo(ThemePrefs.load(this)))</ID>
+    <ID>MaxLineLength:SettingsActivity.kt$SettingsActivity$private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog</ID>
+    <ID>MaxLineLength:SettingsActivity.kt$SettingsActivity$tvPocketPassosValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, passosPocket, passosPocket)</ID>
+    <ID>MaxLineLength:SettingsActivity.kt$SettingsActivity$tvSupertonicStepsValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, valor, valor)</ID>
+    <ID>MaxLineLength:SettingsActivity.kt$SettingsActivity.&lt;no name provided&gt;$tvPocketPassosValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, passos, passos)</ID>
+    <ID>MaxLineLength:SettingsActivity.kt$SettingsActivity.&lt;no name provided&gt;$tvSupertonicStepsValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, steps, steps)</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$GeminiSpeakerClient$.</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$GeminiSpeakerClient$code == 404 -&gt; throw ApiException(context.getString(R.string.ai_gemini_modelo_indisponivel, model), false)</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$GeminiSpeakerClient$if (parts != null) for (i in 0 until parts.length()) out.append(parts.optJSONObject(i)?.optString("text").orEmpty())</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$GeminiSpeakerClient.Companion$"gemini-3.5-flash-lite"</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$GeminiSpeakerClient.Companion$"tts"</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$GeminiSpeakerClient.Companion$if (generates &amp;&amp; name.startsWith("gemini") &amp;&amp; EXCLUDED_WORDS.none { name.contains(it) }) found += name</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$GeminiSpeakerClient.Companion$val generates = methods != null &amp;&amp; (0 until methods.length()).any { methods.optString(it) == "generateContent" }</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$SpeakerAiPlanner$if (current.isNotEmpty() &amp;&amp; (chars + size &gt; MAX_CHARS_PER_BATCH || current.size &gt;= MAX_PARAGRAPHS_PER_BATCH)) flush()</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$SpeakerAiPlanner$private val NARRATOR_WORDS = setOf("narrador", "narradora", "narrator", "desconhecido", "unknown", "ninguem", "indefinido")</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$SpeakerAiStore$.</ID>
+    <ID>MaxLineLength:SpeakerAi.kt$SpeakerAiStore$MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }</ID>
+    <ID>MaxLineLength:SpeakerAiTest.kt$SpeakerAiTest$listOf("gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.8-flash")</ID>
+    <ID>MaxLineLength:SpeakerAiTest.kt$SpeakerAiTest$listOf("gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.1-pro-preview")</ID>
+    <ID>MaxLineLength:SpeakerAttribution.kt$OfflineSpeakerAttributor$private const val ROLE = "(?:velho|velha|homem|mulher|moça|moço|rapaz|garoto|garota|menino|menina|professor|professora|capitão|rei|rainha|doutor|doutora|padre|soldado|guarda|médico|médica|jovem|estranho|estranha|man|woman|boy|girl|stranger)"</ID>
+    <ID>MaxLineLength:SpeakerAttribution.kt$OfflineSpeakerAttributor$private const val VERBS_1P = "falei|respondi|perguntei|comentei|retruquei|murmurei|sussurrei|gritei|exclamei|observei|insisti|expliquei|concluí|acrescentei|continuei|sugeri|pedi|ordenei|admiti|confessei|rebati|suspirei|declarei|afirmei|avisei|lembrei|alertei|interrompi|completei|emendei|indaguei|questionei|prossegui|anunciei|fiz|comecei|repeti|concordei|protestei|agradeci|reclamei|provoquei"</ID>
+    <ID>MaxLineLength:SpeakerAttribution.kt$OfflineSpeakerAttributor$private const val VERBS_EN = "said|says|asked|asks|replied|replies|answered|answers|whispered|whispers|shouted|shouts|cried|muttered|murmured|exclaimed|added|adds|continued|explained|demanded|called|yelled|snapped|sighed|laughed|remarked|declared|suggested|insisted|responded|inquired|announced|growled|stammered|gasped"</ID>
+    <ID>MaxLineLength:SpeakerAttribution.kt$OfflineSpeakerAttributor$private const val VERBS_ES = "dijo|dice|preguntó|pregunta|respondió|susurró|gritó|murmuró|exclamó|añadió|contestó|replicó|comentó|explicó|insistió|declaró|sugirió|ordenó|suspiró|balbuceó|interrumpió|continuó|afirmó"</ID>
+    <ID>MaxLineLength:SpeakerAttribution.kt$OfflineSpeakerAttributor$private const val VERBS_PT = "disse|diz|perguntou|pergunta|respondeu|responde|falou|fala|gritou|grita|sussurrou|sussurra|murmurou|murmura|comentou|comenta|retrucou|retruca|chamou|chama|resmungou|resmunga|pediu|pede|ordenou|ordena|exclamou|exclama|questionou|questiona|acrescentou|acrescenta|continuou|continua|insistiu|insiste|declarou|declara|explicou|explica|concluiu|conclui|replicou|replica|balbuciou|gemeu|berrou|bradou|rugiu|cochichou|sugeriu|sugere|ponderou|observou|observa|lembrou|lembra|avisou|alertou|gaguejou|interrompeu|completou|emendou|retorquiu|afirmou|afirma|negou|confessou|admitiu|rebateu|indagou|inquiriu|suspirou|suspira|riu|sorriu|anunciou|prosseguiu|sentenciou|confirmou|provocou|agradeceu|reclamou|protestou|concordou|repetiu|começou|fez|advertiu|prometeu|atalhou|gracejou|brincou|rosnou|grunhiu|cumprimentou"</ID>
+    <ID>MaxLineLength:SpeakerAttribution.kt$OfflineSpeakerAttributor$private val afterCommonSubject = Regex("^[\\s,;:!?$DASHES-]*(?i:o|a|os|as|um|uma)\\s+\\p{L}+(?:\\s+\\p{L}+)?\\s+$ADVERBIO(?i:$VERB)\\b")</ID>
+    <ID>MaxLineLength:SpeakerAttribution.kt$OfflineSpeakerAttributor$private val afterFirstPerson = Regex("^[\\s,;:!?$DASHES-]*(?:(?i:$VERB)\\s+(?i:eu)\\b|(?i:$VERBS_1P)\\b|(?i:eu)\\s+$ADVERBIO(?i:(?:$VERB|$VERBS_1P))\\b)")</ID>
+    <ID>MaxLineLength:SpeakerAttribution.kt$OfflineSpeakerAttributor$private val afterName = Regex("^[\\s,;:!?$DASHES-]*(?i:$VERB)\\s+(?:\\p{L}+mente\\s+)?(?:(?i:a|o|the|el|la)\\s+)?($NAME)")</ID>
+    <ID>MaxLineLength:SpeakerAttributionStore.kt$SpeakerAttributionStore$*</ID>
+    <ID>MaxLineLength:SpeakerAttributionStoreTest.kt$SpeakerAttributionStoreTest$gravarJsonDoMapa(root, mapaJson(UM_DOIS, capitulos = """[{"title":"Cap 1","start_paragraph":0,"end_paragraph":1}]"""))</ID>
+    <ID>MaxLineLength:SpeakerEdits.kt$SpeakerEdits$*</ID>
+    <ID>MaxLineLength:SpeakerEdits.kt$SpeakerEditsStore$MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }</ID>
+    <ID>MaxLineLength:SpeakerEdits.kt$SpeakerEditsStore$val aliases = json.optJSONObject("aliases")?.let { obj -&gt; obj.keys().asSequence().associateWith { obj.getString(it) } }.orEmpty()</ID>
+    <ID>MaxLineLength:SpeakerEdits.kt$SpeechLines$fun</ID>
+    <ID>MaxLineLength:SupertonicSynthService.kt$SupertonicSynthService.&lt;no name provided&gt;$!out.exists() || out.length() &lt; TAMANHO_MIN_ARQUIVO_VALIDO -&gt; "WAV inválido gerado (size=${out.length()})"</ID>
     <ID>MaxLineLength:SupertonicTTS.kt$SupertonicTTS$Log.i("SupertonicTTS", "Engine initialized successfully (ORT: $ortThreads, XNN: $xnnThreads) with model: $modelPath")</ID>
     <ID>MaxLineLength:SupertonicTTS.kt$SupertonicTTS$fun</ID>
     <ID>MaxLineLength:SupertonicTTS.kt$SupertonicTTS$private external fun synthesize(ptr: Long, text: String, lang: String, stylePath: String, speed: Float, bufferSeconds: Float, steps: Int, gain: Float): ByteArray</ID>
+    <ID>MaxLineLength:ThemePrefs.kt$ThemePrefs$/** Chamar como PRIMEIRA linha do `onCreate` de cada Activity (antes de `super.onCreate`): põe o tema Papel, se for o escolhido. */</ID>
+    <ID>MaxLineLength:ThemePrefs.kt$ThemePrefs$ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY, SYSTEM).takeIf { it in SYSTEM..PAPEL } ?: SYSTEM</ID>
+    <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$File(context.cacheDir, "audio_chunks").listFiles { f -&gt; f.isFile &amp;&amp; f.name.endsWith(".bin") }?.toList().orEmpty()</ID>
+    <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$if (agora - anterior &lt; INTERVALO_VERIFICACAO_TETO_MS || !ultimaVerificacaoTeto.compareAndSet(anterior, agora)) return</ID>
+    <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$voice == "pocket-ptbr-rafael" -&gt; "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2"</ID>
+    <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$voice.startsWith("pocket-") -&gt; "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-pause500-nodash-v2"</ID>
+    <ID>MaxLineLength:TtsChunkCacheTest.kt$TtsChunkCacheTest$val novoLeitor = File(context.cacheDir, "tts_v2_x.wav").apply { writeBytes(ByteArray(500)); setLastModified(agora - 2 * 3_600_000L) }</ID>
+    <ID>MaxLineLength:TtsChunkCacheTest.kt$TtsChunkCacheTest$val novoPython = File(pasta, "b.bin").apply { writeBytes(ByteArray(500)); setLastModified(agora - 1 * 3_600_000L) }</ID>
+    <ID>MaxLineLength:TtsChunkCacheTest.kt$TtsChunkCacheTest$val velhoPython = File(pasta, "a.bin").apply { writeBytes(ByteArray(500)); setLastModified(agora - 5 * 3_600_000L) }</ID>
+    <ID>MaxLineLength:VideoExportService.kt$VideoExportService$uc.extrairOuGerarCapa(caminhoLivro = null, titulo = pedido.nome, autor = "LylyReader")?.let { uc.carregarBitmap(it) }</ID>
+    <ID>MaxLineLength:VideoExportService.kt$VideoExportService$val base = pedido.nome.removeSuffix(".mp3").replace(Regex("[\\\\/:*?\"&lt;&gt;|]"), "_").trim().ifEmpty { "audiobook" }</ID>
+    <ID>MaxLineLength:VideoExportService.kt$VideoExportService$val entrada = contentResolver.openInputStream(pedido.uri) ?: error("Nao foi possivel abrir o audio de origem")</ID>
+    <ID>MaxLineLength:VideoExportUseCase.kt$// O vídeo acompanha o fim REAL do áudio gravado: a duração estimada do MP3 (sem cabeçalho de duração) pode ser menor.</ID>
+    <ID>MaxLineLength:VideoExportUseCase.kt$VideoExportUseCase$gravarPartes(context, audioFile, quadros, duracaoUs, pastaSaida, opcoes, fronteirasCapituloUs, partes, onProgress, onParte, ativo)</ID>
+    <ID>MaxLineLength:VisibilidadeDoApp.kt$VisibilidadeDoApp$/** Instante (ms) da última vez em que uma activity iniciou ou parou; 0 se nunca. Reinicia o orçamento de primeiro plano. */</ID>
+    <ID>MaxLineLength:VoiceBottomSheet.kt$VoiceBottomSheet.VoiceAdapter$val</ID>
+    <ID>MaxLineLength:VoiceCatalogTest.kt$VoiceCatalogTest$.</ID>
+    <ID>MaxLineLength:VoiceCatalogTest.kt$VoiceCatalogTest$assertEquals(listOf("piper-ptbr-cadu", "piper-ptbr-dii", "piper-ptbr-edresson", "piper-ptbr-faber", "piper-ptbr-jeff", "piper-ptbr-miro"), packages.map { it.id })</ID>
+    <ID>MaxLineLength:VoiceCatalogTest.kt$VoiceCatalogTest$listOf("piper-enus-ljspeech-medium::main", "piper-enus-norman-medium::main", "piper-esmx-claude-high::main")</ID>
+    <ID>MaxLineLength:VoiceCatalogTest.kt$VoiceCatalogTest$val packages = VoiceCatalog.pacotesRegistrados().filter { it.id.startsWith("piper-enus-") || it.id == "piper-esmx-claude-high" }</ID>
+    <ID>MaxLineLength:VoiceDownloadFlow.kt$VoiceDownloadFlow$.</ID>
+    <ID>MaxLineLength:VoiceDownloadFlow.kt$VoiceDownloadFlow$setTextColor(com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface))</ID>
+    <ID>MaxLineLength:VoiceReferenceAudio.kt$VoiceReferenceAudio$if (novo.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) canais = novo.getInteger(MediaFormat.KEY_CHANNEL_COUNT)</ID>
+    <ID>MaxLineLength:VoiceReferenceAudio.kt$VoiceReferenceAudio$if (novo.containsKey(MediaFormat.KEY_SAMPLE_RATE)) taxa = novo.getInteger(MediaFormat.KEY_SAMPLE_RATE)</ID>
+    <ID>MaxLineLength:VoiceReferenceAudio.kt$VoiceReferenceAudio$var canais = if (formato.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) formato.getInteger(MediaFormat.KEY_CHANNEL_COUNT) else 1</ID>
+    <ID>MaxLineLength:VoiceReferenceAudio.kt$VoiceReferenceAudio$var taxa = if (formato.containsKey(MediaFormat.KEY_SAMPLE_RATE)) formato.getInteger(MediaFormat.KEY_SAMPLE_RATE) else TARGET_RATE</ID>
+    <ID>MaxLineLength:VoiceReferenceAudio.kt$VoiceReferenceAudio.Gravador$val minimo = AudioRecord.getMinBufferSize(tentativa, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)</ID>
+    <ID>MemberNameEqualsClassName:VoiceReferenceAudio.kt$VoiceReferenceAudio.Gravador$private var gravador: AudioRecord? = null</ID>
+    <ID>NestedBlockDepth:AudioAacTranscoder.kt$@Suppress("LongParameterList") private fun rodarEncoder( context: Context, encoder: MediaCodec, fila: ArrayBlockingQueue&lt;BlocoPcm&gt;, estado: EstadoCodificacao, duracaoUs: Long, erroDecoder: AtomicReference&lt;Throwable?&gt;, onProgress: (Int) -&gt; Unit )</ID>
+    <ID>NestedBlockDepth:AudioAacTranscoder.kt$private fun rodarDecoder( extractor: MediaExtractor, decoder: MediaCodec, fila: ArrayBlockingQueue&lt;BlocoPcm&gt;, parar: AtomicBoolean, erro: AtomicReference&lt;Throwable?&gt; )</ID>
+    <ID>NestedBlockDepth:BYOMManager.kt$BYOMManager$internal fun extrairZipByom(zipFile: File, destino: File)</ID>
+    <ID>NestedBlockDepth:CatalogoGutenberg.kt$CatalogoGutenberg$private fun entrada(e: Element): LivroEncontrado?</ID>
+    <ID>NestedBlockDepth:ConversaoPausadaStore.kt$ConversaoPausadaStore$fun carregar(context: Context): Pausada?</ID>
+    <ID>NestedBlockDepth:DivisorDeOracoes.kt$DivisorDeOracoes$fun dividirEmOracoes(texto: String): List&lt;OracaoGuia&gt;</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$fun extrairMetadadosArquivo(uri: Uri): DocumentMetadata</ID>
-    <ID>NestedBlockDepth:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$override fun setPlaybackSpeed(speed: Float)</ID>
+    <ID>NestedBlockDepth:EpubMetadados.kt$fun lerMetadadosEpub(arquivo: File): MetadadosEpub</ID>
+    <ID>NestedBlockDepth:GuidedPlayerManager.kt$GuidedPlayerManager$private suspend fun tocarParagrafoPorFalantes( segments: List&lt;VoiceAssignedSegment&gt;, paragraphText: String, narratorVoice: String, fallbackEngine: String, ritmo: Int, speedVal: Float )</ID>
+    <ID>NestedBlockDepth:MigracaoBiblioteca.kt$MigracaoBiblioteca$@Suppress("TooGenericExceptionCaught") private suspend fun executar(ctx: Context)</ID>
     <ID>NestedBlockDepth:NativeCrashDetector.kt$NativeCrashDetector$fun checkForNativeCrashes(context: Context)</ID>
+    <ID>NestedBlockDepth:PocketTtsModelManager.kt$PocketTtsModelManager$internal fun replaceTokenizerFromTrustedSource(root: File, model: Spec, source: InputStream): Boolean</ID>
+    <ID>NestedBlockDepth:PocketTtsModelManager.kt$PocketTtsModelManager$private fun extractPack(archive: File, staging: File, model: Spec)</ID>
+    <ID>NestedBlockDepth:PronunciationAi.kt$PronunciationAiPlanner$fun parseResponse(raw: String): Map&lt;String, String&gt;</ID>
+    <ID>NestedBlockDepth:SpeakerAi.kt$GeminiSpeakerClient$override fun generate(prompt: String): String</ID>
+    <ID>NestedBlockDepth:SpeakerAi.kt$GeminiSpeakerClient$private fun request(model: String, key: String, prompt: String): String</ID>
+    <ID>NestedBlockDepth:SpeakerAttribution.kt$OfflineSpeakerAttributor$private fun dashSpans(text: String, quoted: List&lt;SpeechSpan&gt;): List&lt;SpeechSpan&gt;</ID>
+    <ID>NestedBlockDepth:SpeakerEdits.kt$SpeechLines$fun of(result: SpeakerAttributionResult, paragraphs: List&lt;String&gt;, speakerId: String, limit: Int = 200): List&lt;SpeechLine&gt;</ID>
     <ID>NestedBlockDepth:SupertonicTTS.kt$SupertonicTTS$private fun fallbackChunkText(text: String, lang: String): String</ID>
+    <ID>NestedBlockDepth:VideoExportService.kt$VideoExportService$private fun copiarAudioParaTemp(pedido: PedidoVideo, destino: File): Boolean</ID>
+    <ID>NestedBlockDepth:VoiceReferenceAudio.kt$VoiceReferenceAudio$fun converterArquivo(context: Context, uri: Uri, destino: File): Result</ID>
+    <ID>NewLineAtEndOfFile:AndroidSynthBridge.kt$com.jonjonesbr.audiobookgen.tts.AndroidSynthBridge.kt</ID>
+    <ID>NewLineAtEndOfFile:ElevenLabsSynthBridge.kt$com.jonjonesbr.audiobookgen.tts.ElevenLabsSynthBridge.kt</ID>
+    <ID>NewLineAtEndOfFile:KokoroSynthBridge.kt$com.jonjonesbr.audiobookgen.tts.KokoroSynthBridge.kt</ID>
+    <ID>NewLineAtEndOfFile:OnnxSynthBridge.kt$com.jonjonesbr.audiobookgen.tts.OnnxSynthBridge.kt</ID>
+    <ID>ReturnCount:AmostraVozUseCase.kt$AmostraVozUseCase$@Suppress("LongMethod", "CyclomaticComplexMethod") suspend fun gerar( voz: String, ritmo: Int, motor: String, chaveGemini: String, texto: String = "" ): ResultadoAmostra</ID>
+    <ID>ReturnCount:AndroidSynthBridge.kt$AndroidSynthBridge$@JvmStatic fun synthesize(text: String, voiceId: String, outPath: String): Boolean</ID>
+    <ID>ReturnCount:ArquivoComPersonagens.kt$ArquivoComPersonagens$fun preparar(context: Context, caminhoDoLivro: String): Pair&lt;String, String&gt;?</ID>
+    <ID>ReturnCount:AudioAacTranscoder.kt$private fun alimentarDecoder(extractor: MediaExtractor, decoder: MediaCodec): ResultadoEntrada</ID>
+    <ID>ReturnCount:AudioAacTranscoder.kt$private fun entregarPedaco(encoder: MediaCodec, entrega: EntregaEmCurso, bloco: BlocoPcm, estado: EstadoCodificacao): Boolean</ID>
+    <ID>ReturnCount:AudioPlayerService.kt$AudioPlayerService$override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int</ID>
+    <ID>ReturnCount:AudioPlayerService.kt$AudioPlayerService$private fun caminhoAceitoParaTocar(caminho: String): Boolean</ID>
+    <ID>ReturnCount:AudioPlayerService.kt$AudioPlayerService.&lt;no name provided&gt;$override fun onGetChildren( session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String, page: Int, pageSize: Int, params: MediaLibraryService.LibraryParams? ): ListenableFuture&lt;LibraryResult&lt;ImmutableList&lt;MediaItem&gt;&gt;&gt;</ID>
+    <ID>ReturnCount:BYOMManager.kt$BYOMManager$@Synchronized internal fun resolver(context: Context, voiceId: String): VozResolvidaByom?</ID>
+    <ID>ReturnCount:BYOMManager.kt$BYOMManager$internal fun lerManifesto(dir: File): ManifestoImportado?</ID>
+    <ID>ReturnCount:BYOMManager.kt$BYOMManager$internal fun validarConteudo(dir: File, manifesto: ManifestoImportado): String?</ID>
+    <ID>ReturnCount:BackupUseCase.kt$internal fun motivoRejeicaoBackup(entradas: Map&lt;String, String&gt;): MotivoBackup?</ID>
+    <ID>ReturnCount:BibliotecaStore.kt$BibliotecaStore$private fun porCaminhoSincrono(ctx: Context, caminho: String): LivroBiblioteca?</ID>
+    <ID>ReturnCount:CachePolicy.kt$CachePolicy$fun selecionarParaRemover( arquivos: List&lt;Arquivo&gt;, tetoBytes: Long, agora: Long, protegerMs: Long = PROTEGER_RECENTES_MS ): List&lt;Arquivo&gt;</ID>
+    <ID>ReturnCount:CaminhoPermitido.kt$fun caminhoPermitido(canonico: String, raizes: List&lt;String&gt;): Boolean</ID>
+    <ID>ReturnCount:CatalogoGutenberg.kt$CatalogoGutenberg$private fun entrada(e: Element): LivroEncontrado?</ID>
+    <ID>ReturnCount:ChavesDeLivro.kt$ChavesDeLivro$fun migrarMapa( mapa: Map&lt;String, Any?&gt;, antigo: String, novo: String, prefixo: String = "", resolver: (valorAntigo: Any?, valorExistente: Any?) -&gt; Any? = { _, existente -&gt; existente } ): Map&lt;String, Any?&gt;</ID>
+    <ID>ReturnCount:CoachMark.kt$CoachMark$private fun mostrar(activity: AppCompatActivity, dica: Dica, alvo: View)</ID>
+    <ID>ReturnCount:ConversaoPausadaStore.kt$ConversaoPausadaStore$fun salvar(context: Context, data: Data, titulo: String, pct: Int, job: String? = null): Boolean</ID>
+    <ID>ReturnCount:ConversionWorker.kt$ConversionWorker$private suspend fun executarConversao( arquivo: String, voz: String, velocidade: String, estilo: String, saida: String ): Result</ID>
+    <ID>ReturnCount:ConversionWorker.kt$ConversionWorker$private suspend fun iniciarPrimeiroPlano(notif: ConversionNotificationManager): Boolean</ID>
+    <ID>ReturnCount:DicionarioDoLivro.kt$DicionarioDoLivro$fun efetivo(global: PronunciationDictionary, doLivro: PronunciationDictionary): PronunciationDictionary</ID>
+    <ID>ReturnCount:DivisaoDePartes.kt$internal fun escolherCorteUs( silenciosPorLimiar: List&lt;List&lt;Silencio&gt;&gt;, limiteUs: Long, inicioParteUs: Long, janelaUs: Long = JANELA_BUSCA_CORTE_US, fronteirasUs: List&lt;Long&gt; = emptyList() ): Long</ID>
+    <ID>ReturnCount:DivisorDeOracoes.kt$DivisorDeOracoes$private fun terminaEmAbreviacao(texto: String, pos: Int, fim: Int): Boolean</ID>
+    <ID>ReturnCount:EpubMetadados.kt$private fun achaHrefDaCapa(opf: Element): String?</ID>
+    <ID>ReturnCount:EpubMetadados.kt$private fun lerEntrada(zip: ZipFile, nome: String, limite: Long): ByteArray?</ID>
+    <ID>ReturnCount:FilaDeConversao.kt$FilaDeConversao$fun fecharItem( items: MutableList&lt;QueueItem&gt;, itemId: String, runToken: String?, caminhoSaida: String?, erro: String?, avancar: Boolean, motorDoProximo: (QueueItem) -&gt; String ): Fechamento?</ID>
+    <ID>ReturnCount:FilaDeConversao.kt$FilaDeConversao$fun marcarEmAndamento(items: MutableList&lt;QueueItem&gt;, itemId: String, runToken: String?): Boolean</ID>
+    <ID>ReturnCount:FilaDeConversao.kt$FilaDeConversao$fun pausarItem(items: MutableList&lt;QueueItem&gt;, itemId: String, runToken: String?): Boolean</ID>
+    <ID>ReturnCount:GuidedPlayerManager.kt$GuidedPlayerManager$private fun prefetch(index: Int)</ID>
+    <ID>ReturnCount:GuidedPlayerManager.kt$GuidedPlayerManager$private fun unidadesDoParagrafo(index: Int, voz: String, motorEfetivo: String): List&lt;Pair&lt;String, String&gt;&gt;</ID>
+    <ID>ReturnCount:KokoroSynthBridge.kt$KokoroSynthBridge$@JvmStatic fun synthesize(text: String, voiceId: String, outPath: String): Boolean</ID>
+    <ID>ReturnCount:KokoroTtsEngine.kt$KokoroTtsEngine$private suspend fun synthesizeByom(texto: String, voiceId: String, outputFile: File): Result&lt;File&gt;</ID>
+    <ID>ReturnCount:LinkDeLivro.kt$LinkDeLivro$fun nomeComExtensao(nome: String?, contentType: String?): String?</ID>
+    <ID>ReturnCount:LinkDeLivro.kt$LinkDeLivro$fun nomeDoArquivo(urlFinal: String, contentDisposition: String?): String?</ID>
+    <ID>ReturnCount:LinkDeLivro.kt$LinkDeLivro$fun normalizar(entrada: String): Result&lt;String&gt;</ID>
+    <ID>ReturnCount:LinkDeLivro.kt$LinkDeLivro$private fun converterCompartilhamento(uri: URI, host: String): String</ID>
+    <ID>ReturnCount:LinkedBookStore.kt$LinkedBookStore$fun renomearTexto(ctx: Context, antigo: String, novo: String)</ID>
+    <ID>ReturnCount:MainActivity.kt$MainActivity$private fun rotear(intent: Intent): Boolean</ID>
     <ID>ReturnCount:OnnxSynthBridge.kt$OnnxSynthBridge$@JvmStatic fun synthesize(text: String, voiceId: String, outPath: String): Boolean</ID>
     <ID>ReturnCount:OnnxTtsEngine.kt$OnnxTtsEngine$private fun splitIntoChunks(texto: String, voiceId: String): List&lt;String&gt;</ID>
-    <ID>ReturnCount:OnnxTtsEngine.kt$OnnxTtsEngine$private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float): FloatArray?</ID>
+    <ID>ReturnCount:OnnxTtsEngine.kt$OnnxTtsEngine$private fun synthesizeSupertonicNative(texto: String, voiceId: String, speed: Float, version: String): FloatArray?</ID>
+    <ID>ReturnCount:PiperVitsModelManager.kt$PiperVitsModelManager$fun isReady(context: Context, packId: String): Boolean</ID>
+    <ID>ReturnCount:PocketEncoderManager.kt$PocketEncoderManager$fun installInto(context: Context, languageTag: String, packRoot: File): Boolean</ID>
+    <ID>ReturnCount:PocketSynthBridge.kt$PocketSynthBridge$@JvmStatic fun synthesize(text: String, voiceId: String, outPath: String): Boolean</ID>
+    <ID>ReturnCount:PocketSynthService.kt$PocketSynthService.&lt;no name provided&gt;$override fun synthesize(text: String, voiceId: String, outPath: String, lsdSteps: Int): String</ID>
+    <ID>ReturnCount:PocketTtsModelManager.kt$PocketTtsModelManager$fun isReady(context: Context, packId: String): Boolean</ID>
+    <ID>ReturnCount:PocketTtsModelManager.kt$PocketTtsModelManager$internal fun replaceTokenizerFromTrustedSource(root: File, model: Spec, source: InputStream): Boolean</ID>
+    <ID>ReturnCount:PocketTtsModelManager.kt$PocketTtsModelManager$private fun isReadyAt(root: File, model: Spec): Boolean</ID>
+    <ID>ReturnCount:PronunciationAi.kt$PronunciationAiPlanner$fun isUsable(name: String, spoken: String): Boolean</ID>
+    <ID>ReturnCount:PronunciationAi.kt$PronunciationTransfer$fun parse(text: String): List&lt;PronunciationEntry&gt;</ID>
+    <ID>ReturnCount:PronunciationAi.kt$PronunciationTransfer$private fun parseLine(raw: String): PronunciationEntry?</ID>
+    <ID>ReturnCount:PronunciationBookStore.kt$PronunciationBookStore$fun load(caminho: String): PronunciationDictionary</ID>
+    <ID>ReturnCount:PronunciationBookStore.kt$PronunciationBookStore$fun migrarIdentidade(antigo: String, novo: String): Boolean</ID>
+    <ID>ReturnCount:PronunciationBookStore.kt$PronunciationBookStore$fun save(caminho: String, dicionario: PronunciationDictionary): Boolean</ID>
+    <ID>ReturnCount:PythonEngineUseCase.kt$PythonEngineUseCase$private fun trocasDoRelatorio(json: String): List&lt;TrocaNormalizador&gt;</ID>
+    <ID>ReturnCount:ReaderActivity.kt$ReaderActivity$private fun prepararCapituloAtual()</ID>
+    <ID>ReturnCount:ReaderPersonagensController.kt$ReaderPersonagensController$private fun confirmarAnaliseComIa()</ID>
+    <ID>ReturnCount:SettingsActivity.kt$SettingsActivity$private fun lerJsonDeUri(uri: Uri): Pair&lt;JSONObject?, Exception?&gt;</ID>
+    <ID>ReturnCount:SpeakerAi.kt$SpeakerAiPlanner$fun parseResponse(raw: String): Map&lt;Pair&lt;Int, Int&gt;, String&gt;</ID>
+    <ID>ReturnCount:SpeakerAi.kt$SpeakerAiStore$fun load(bookIdentity: String, paragraphs: List&lt;String&gt;): State</ID>
+    <ID>ReturnCount:SpeakerAi.kt$SpeakerAiStore$fun migrarIdentidade(antiga: String, nova: String): Boolean</ID>
+    <ID>ReturnCount:SpeakerAttribution.kt$OfflineSpeakerAttributor$private fun announcedSpeaker(text: String): Attribution?</ID>
+    <ID>ReturnCount:SpeakerAttribution.kt$OfflineSpeakerAttributor$private fun attributionAfter(context: String): Attribution?</ID>
+    <ID>ReturnCount:SpeakerAttribution.kt$OfflineSpeakerAttributor$private fun attributionBefore(context: String): Attribution?</ID>
+    <ID>ReturnCount:SpeakerAttributionStore.kt$SpeakerAttributionStore$fun load(bookIdentity: String, paragraphs: List&lt;String&gt;): SpeakerAttributionResult?</ID>
+    <ID>ReturnCount:SpeakerAttributionStore.kt$SpeakerAttributionStore$fun migrarIdentidade(antiga: String, nova: String): Boolean</ID>
+    <ID>ReturnCount:SpeakerAttributionStore.kt$SpeakerAttributionStore$fun previousVoices(bookIdentity: String, paragraphs: List&lt;String&gt;): Map&lt;String, String&gt;</ID>
+    <ID>ReturnCount:SpeakerAttributionStore.kt$SpeakerAttributionStore$fun save( bookIdentity: String, paragraphs: List&lt;String&gt;, result: SpeakerAttributionResult, chapters: List&lt;Capitulo&gt; = emptyList() ): Boolean</ID>
+    <ID>ReturnCount:SpeakerAttributionStore.kt$SpeakerAttributionStore$private fun lerMapaValido(bookIdentity: String): JSONObject?</ID>
+    <ID>ReturnCount:SpeakerEdits.kt$SpeakerEditsStore$fun load(bookIdentity: String, paragraphs: List&lt;String&gt;): SpeakerEdits</ID>
+    <ID>ReturnCount:SpeakerEdits.kt$SpeakerEditsStore$fun migrarIdentidade(antiga: String, nova: String): Boolean</ID>
+    <ID>ReturnCount:SpeakerEdits.kt$SpeakerEditsStore$fun save(bookIdentity: String, paragraphs: List&lt;String&gt;, edits: SpeakerEdits): Boolean</ID>
+    <ID>ReturnCount:SpeakerVoiceSuggester.kt$SpeakerGenderInferrer$fun infer(speakerName: String, paragraphs: List&lt;String&gt;): SpeakerGender</ID>
     <ID>ReturnCount:SupertonicAssetManager.kt$SupertonicAssetManager$private fun checkReady(context: Context, version: String, files: List&lt;String&gt;): Boolean</ID>
     <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$@Synchronized fun generateAudio(text: String, lang: String, stylePath: String, speed: Float = 1.0f, bufferDuration: Float = 0.0f, steps: Int = 12, gain: Float = 1.0f, listener: ProgressListener? = null): ByteArray?</ID>
     <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$@Synchronized fun initialize(modelPath: String, libPath: String, ortThreads: Int = 4, xnnThreads: Int = 1): Boolean</ID>
     <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$@Synchronized fun isInitialized(modelPath: String): Boolean</ID>
     <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$private fun fallbackChunkText(text: String, lang: String): String</ID>
+    <ID>ReturnCount:TtsChunkCache.kt$TtsChunkCache$internal fun arquivoValido(file: File): Boolean</ID>
+    <ID>ReturnCount:TtsChunkCache.kt$TtsChunkCache$suspend fun getOrSynthesize( context: Context, voice: String, speedPct: Int, text: String, synthesize: suspend (File) -&gt; Boolean ): File?</ID>
+    <ID>ReturnCount:VersaoSupertonic.kt$fun idiomaNativoSupertonic(voiceId: String, texto: String, versao: String): String</ID>
+    <ID>ReturnCount:VideoExportService.kt$VideoExportService$private suspend fun gerar(pedido: PedidoVideo, pasta: File): Result&lt;Int&gt;</ID>
+    <ID>ReturnCount:VoiceBottomSheet.kt$VoiceBottomSheet.Companion$internal fun voiceFromBundle(bundle: Bundle?): VoiceOption?</ID>
+    <ID>ReturnCount:VoiceCatalog.kt$VoiceCatalog$fun previewAssetName(vozId: String, idioma: String = IDIOMA_PREVIA_SUPERTONIC): String?</ID>
+    <ID>ReturnCount:VoiceCatalog.kt$VoiceCatalog$fun previewClipUrl(vozId: String, idioma: String = IDIOMA_PREVIA_SUPERTONIC): String?</ID>
+    <ID>ReturnCount:VoiceCatalog.kt$VoiceCatalog$fun usarClipeEmbarcadoPrimeiro(vozId: String, pacotePronto: Boolean): Boolean</ID>
+    <ID>ReturnCount:VoiceCatalog.kt$VoiceCatalog$private fun parseLanguageTag(tag: String?): Locale?</ID>
+    <ID>ReturnCount:VoiceDownloadFlow.kt$VoiceDownloadFlow$@Suppress("TooGenericExceptionCaught") private suspend fun executarDownload(voice: VoiceOption, onProgress: (Int) -&gt; Unit): Result&lt;Unit&gt;</ID>
+    <ID>SwallowedException:AudiobookViewModel.kt$AudiobookViewModel$e: Exception</ID>
+    <ID>SwallowedException:CapaLoader.kt$CapaLoader$e: Exception</ID>
+    <ID>SwallowedException:CapaTipografica.kt$CapasDaBiblioteca$e: Exception</ID>
+    <ID>SwallowedException:ClonagemAssistente.kt$ClonagemAssistente$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:CodificadorDeDadosDeTrabalho.kt$CodificadorDeDadosDeTrabalho$e: Exception</ID>
+    <ID>SwallowedException:ConferirTrocasDialog.kt$ConferirTrocasDialog$e: Exception</ID>
+    <ID>SwallowedException:ConversaoPausadaStore.kt$ConversaoPausadaStore$e: Exception</ID>
     <ID>SwallowedException:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$e: Exception</ID>
     <ID>SwallowedException:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$e: Exception</ID>
+    <ID>SwallowedException:MeusLivrosActivity.kt$MeusLivrosActivity$e: Exception</ID>
+    <ID>SwallowedException:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$e: kotlinx.coroutines.CancellationException</ID>
+    <ID>SwallowedException:PocketEncoderImportador.kt$PocketEncoderImportador$e: PocketEncoderOficial.ArquivoInvalidoException</ID>
+    <ID>SwallowedException:PronunciationAiFlow.kt$PronunciationAiFlow$e: kotlinx.coroutines.CancellationException</ID>
+    <ID>SwallowedException:ReaderPersonagensController.kt$ReaderPersonagensController$e: kotlinx.coroutines.CancellationException</ID>
     <ID>SwallowedException:SupertonicTTS.kt$SupertonicTTS$e: Exception</ID>
     <ID>SwallowedException:SupertonicTTS.kt$SupertonicTTS$e: UnsatisfiedLinkError</ID>
-    <ID>ThrowsCount:SupertonicAssetManager.kt$SupertonicAssetManager$private suspend fun downloadFileWithResume( url: String, targetFile: File, onChunk: (bytesWritten: Long) -&gt; Unit )</ID>
+    <ID>SwallowedException:VideoExportService.kt$VideoExportService$e: CancellationException</ID>
+    <ID>ThrowsCount:AiClients.kt$OpenAiStyleClient$private fun request(prompt: String): String</ID>
+    <ID>ThrowsCount:BYOMManager.kt$BYOMManager$internal fun extrairZipByom(zipFile: File, destino: File)</ID>
+    <ID>ThrowsCount:DownloadCentral.kt$DownloadCentral$suspend fun baixarEAguardar(context: Context, id: String, onProgress: ProgressoDownload)</ID>
+    <ID>ThrowsCount:PocketEncoderOficial.kt$PocketEncoderOficial$fun lerPesos( entrada: java.io.InputStream, mapa: List&lt;PesoMapeado&gt;, tamanhoTotal: Long, bloco: Int = 256 * 1024, progresso: (Float) -&gt; Unit = {} ): PesosLidos</ID>
+    <ID>ThrowsCount:PocketTtsModelManager.kt$PocketTtsModelManager$private fun extractPack(archive: File, staging: File, model: Spec)</ID>
+    <ID>ThrowsCount:SpeakerAi.kt$GeminiSpeakerClient$private fun request(model: String, key: String, prompt: String): String</ID>
+    <ID>TooGenericExceptionCaught:AndroidSynthBridge.kt$AndroidSynthBridge$t: Throwable</ID>
     <ID>TooGenericExceptionCaught:AndroidTtsEngine.kt$AndroidTtsEngine$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AudioAacTranscoder.kt$e: Throwable</ID>
     <ID>TooGenericExceptionCaught:AudioPlayerService.kt$AudioPlayerService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AudiobookViewModel.kt$AudiobookViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BYOMManager.kt$BYOMManager$e: Exception</ID>
     <ID>TooGenericExceptionCaught:BasePlayerActivity.kt$BasePlayerActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CodificadorDeDadosDeTrabalho.kt$CodificadorDeDadosDeTrabalho$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ConferirTrocasDialog.kt$ConferirTrocasDialog$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ConversaoPausadaStore.kt$ConversaoPausadaStore$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ConversionWakeLock.kt$ConversionWakeLock$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ConversionWorker.kt$ConversionWorker$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocumentRepository.kt$DocumentRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ElevenLabsSynthBridge.kt$ElevenLabsSynthBridge$t: Throwable</ID>
     <ID>TooGenericExceptionCaught:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ExtractTextUseCase.kt$ExtractTextUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FilaDeConversao.kt$FilaDeConversao$e: Exception</ID>
     <ID>TooGenericExceptionCaught:GuidedPlayerManager.kt$GuidedPlayerManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GuidedReadingService.kt$GuidedReadingService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:KokoroSynthBridge.kt$KokoroSynthBridge$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:KokoroTtsEngine.kt$KokoroTtsEngine$e: Exception</ID>
     <ID>TooGenericExceptionCaught:LibraryActivity.kt$LibraryActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LinkDownloader.kt$LinkDownloader$e: Throwable</ID>
     <ID>TooGenericExceptionCaught:LylyApplication.kt$LylyApplication$e: Throwable</ID>
     <ID>TooGenericExceptionCaught:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MeusLivrosActivity.kt$MeusLivrosActivity$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NativeCrashDetector.kt$NativeCrashDetector$e: Exception</ID>
     <ID>TooGenericExceptionCaught:OnnxModelManager.kt$OnnxModelManager$e: Exception</ID>
     <ID>TooGenericExceptionCaught:OnnxSynthBridge.kt$OnnxSynthBridge$t: Throwable</ID>
     <ID>TooGenericExceptionCaught:OnnxTtsEngine.kt$OnnxTtsEngine$e: Exception</ID>
     <ID>TooGenericExceptionCaught:OnnxTtsEngine.kt$OnnxTtsEngine$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PiperVitsModelManager.kt$PiperVitsModelManager$error: Exception</ID>
     <ID>TooGenericExceptionCaught:PlayAudioUseCase.kt$PlayAudioUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PlayerNotificationManager.kt$PlayerNotificationManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PocketSynthBridge.kt$PocketSynthBridge$error: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PocketSynthService.kt$PocketSynthService.&lt;no name provided&gt;$error: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PocketTtsModelManager.kt$PocketTtsModelManager$error: Exception</ID>
+    <ID>TooGenericExceptionCaught:PronunciationAiFlow.kt$PronunciationAiFlow$e: Exception</ID>
     <ID>TooGenericExceptionCaught:PythonEngineUseCase.kt$PythonEngineUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ReaderActivity.kt$ReaderActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReaderPersonagensController.kt$ReaderPersonagensController$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ReaderRetornoController.kt$ReaderRetornoController$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ReaderViewModel.kt$ReaderViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SupertonicAssetManager.kt$SupertonicAssetManager$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SupertonicSynthService.kt$SupertonicSynthService.&lt;no name provided&gt;$t: Throwable</ID>
     <ID>TooGenericExceptionCaught:SupertonicTTS.kt$SupertonicTTS$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SupertonicTTS.kt$SupertonicTTS$e: Throwable</ID>
-    <ID>TooGenericExceptionCaught:VoiceDownloadActivity.kt$VoiceDownloadActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:TtsSynthesizer.kt$erro: Exception</ID>
+    <ID>TooGenericExceptionCaught:VideoExportService.kt$VideoExportService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:VideoExportUseCase.kt$VideoExportUseCase$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:VideoExportUseCase.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:VoiceCatalog.kt$VoiceCatalog$t: Throwable</ID>
     <ID>TooGenericExceptionThrown:SupertonicAssetManager.kt$SupertonicAssetManager$throw Exception("HTTP $responseCode for $url")</ID>
     <ID>TooGenericExceptionThrown:SupertonicAssetManager.kt$SupertonicAssetManager$throw Exception("HTTP $responseCode probing $urlString")</ID>
     <ID>TooGenericExceptionThrown:SupertonicAssetManager.kt$SupertonicAssetManager$throw Exception("HTTP 416 for $url")</ID>
     <ID>TooGenericExceptionThrown:SupertonicAssetManager.kt$SupertonicAssetManager$throw Exception("HTTP 429 for $url")</ID>
+    <ID>TooManyFunctions:AppPrefs.kt$AppPrefs</ID>
+    <ID>TooManyFunctions:AudioAacTranscoder.kt$com.jonjonesbr.audiobookgen.domain.AudioAacTranscoder.kt</ID>
     <ID>TooManyFunctions:AudioPlayerEngine.kt$AudioPlayerEngine</ID>
     <ID>TooManyFunctions:AudiobookViewModel.kt$AudiobookViewModel : AndroidViewModel</ID>
+    <ID>TooManyFunctions:BYOMManager.kt$BYOMManager</ID>
     <ID>TooManyFunctions:BasePlayerActivity.kt$BasePlayerActivity : AppCompatActivity</ID>
+    <ID>TooManyFunctions:Biblioteca.kt$com.jonjonesbr.audiobookgen.domain.Biblioteca.kt</ID>
+    <ID>TooManyFunctions:BibliotecaStore.kt$BibliotecaStore</ID>
+    <ID>TooManyFunctions:BookmarkStore.kt$BookmarkStore</ID>
+    <ID>TooManyFunctions:ClonagemAssistente.kt$ClonagemAssistente</ID>
+    <ID>TooManyFunctions:CloneVoiceFlow.kt$CloneVoiceFlow</ID>
+    <ID>TooManyFunctions:ConversoesActivity.kt$ConversoesActivity : AppCompatActivity</ID>
+    <ID>TooManyFunctions:DownloadCentral.kt$DownloadCentral</ID>
+    <ID>TooManyFunctions:DownloadCentralActivity.kt$DownloadCentralActivity : BasePlayerActivity</ID>
+    <ID>TooManyFunctions:ErrorLogsActivity.kt$ErrorLogsActivity : AppCompatActivity</ID>
     <ID>TooManyFunctions:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl : AudioPlayerEngine</ID>
     <ID>TooManyFunctions:GuidedPlayerManager.kt$GuidedPlayerManager</ID>
+    <ID>TooManyFunctions:GuidedReadingBarController.kt$GuidedReadingBarController</ID>
     <ID>TooManyFunctions:GuidedReadingService.kt$GuidedReadingService : Service</ID>
+    <ID>TooManyFunctions:HighlightStore.kt$HighlightStore</ID>
+    <ID>TooManyFunctions:KokoroTtsEngine.kt$KokoroTtsEngine</ID>
     <ID>TooManyFunctions:LibraryActivity.kt$LibraryActivity : BasePlayerActivity</ID>
-    <ID>TooManyFunctions:MainActivity.kt$MainActivity : BasePlayerActivity</ID>
+    <ID>TooManyFunctions:LivroActivity.kt$LivroActivity : BasePlayerActivity</ID>
     <ID>TooManyFunctions:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl : AudioPlayerEngine</ID>
+    <ID>TooManyFunctions:MeusLivrosActivity.kt$MeusLivrosActivity : BasePlayerActivity</ID>
+    <ID>TooManyFunctions:OnnxTtsEngine.kt$OnnxTtsEngine</ID>
+    <ID>TooManyFunctions:PocketEncoderManager.kt$PocketEncoderManager</ID>
+    <ID>TooManyFunctions:PocketEncoderOficial.kt$PocketEncoderOficial</ID>
+    <ID>TooManyFunctions:PocketTtsModelManager.kt$PocketTtsModelManager</ID>
+    <ID>TooManyFunctions:PythonEngineUseCase.kt$PythonEngineUseCase</ID>
     <ID>TooManyFunctions:QueueManager.kt$QueueManager</ID>
     <ID>TooManyFunctions:ReaderActivity.kt$ReaderActivity : BasePlayerActivity</ID>
+    <ID>TooManyFunctions:ReaderPersonagensController.kt$ReaderPersonagensController</ID>
     <ID>TooManyFunctions:ReaderRetornoController.kt$ReaderRetornoController</ID>
     <ID>TooManyFunctions:ReaderViewModel.kt$ReaderViewModel : AndroidViewModel</ID>
+    <ID>TooManyFunctions:SecurePreferences.kt$SecurePreferences</ID>
     <ID>TooManyFunctions:SettingsActivity.kt$SettingsActivity : BasePlayerActivity</ID>
+    <ID>TooManyFunctions:SpeakerAttribution.kt$OfflineSpeakerAttributor</ID>
+    <ID>TooManyFunctions:SpeakerAttributionStore.kt$SpeakerAttributionStore</ID>
     <ID>TooManyFunctions:SupertonicAssetManager.kt$SupertonicAssetManager</ID>
     <ID>TooManyFunctions:SupertonicTTS.kt$SupertonicTTS</ID>
+    <ID>TooManyFunctions:TtsChunkCache.kt$TtsChunkCache</ID>
+    <ID>TooManyFunctions:VideoExportService.kt$VideoExportService : Service</ID>
+    <ID>TooManyFunctions:VoiceBottomSheet.kt$VoiceBottomSheet$VoiceAdapter : Adapter</ID>
+    <ID>UnusedPrivateMember:GuidedReadingBarController.kt$GuidedReadingBarController$private fun mostrarDialogoPassos()</ID>
+    <ID>UnusedPrivateMember:MeusLivrosActivity.kt$MeusLivrosActivity$private fun caminhoDe(livro: LivroBiblioteca)</ID>
+    <ID>UnusedPrivateProperty:ConversoesActivity.kt$ConversoesActivity.Companion$private const val TAG = "ConversoesActivity"</ID>
+    <ID>UnusedPrivateProperty:PythonEngineUseCase.kt$PythonEngineUseCase.Companion$private val PYTHON_LOCK = Any()</ID>
     <ID>UseCheckOrError:ReaderActivity.kt$ReaderActivity$throw IllegalStateException("Output stream unavailable")</ID>
+    <ID>UseRequire:CacheDeListaTest.kt$CacheDeListaTest$throw IllegalArgumentException("JSON inválido")</ID>
     <ID>VariableNaming:DocumentRepository.kt$DocumentRepository$private val TAG = "DocumentRepository"</ID>
     <ID>VariableNaming:GuidedPlayerManager.kt$GuidedPlayerManager$private val TAG = "GuidedPlayerManager"</ID>
     <ID>VariableNaming:OnnxModelManager.kt$OnnxModelManager$private val TAG = "OnnxModelManager"</ID>
     <ID>VariableNaming:OnnxTtsEngine.kt$OnnxTtsEngine$private val TAG = "OnnxTtsEngine"</ID>
     <ID>VariableNaming:PlayAudioUseCase.kt$PlayAudioUseCase$private val TAG = "PlayAudioUseCase"</ID>
+    <ID>VariableNaming:PronunciationBookStoreTest.kt$PronunciationBookStoreTest$private val LIVRO = "livro-pronuncia.epub"</ID>
     <ID>VariableNaming:PythonEngineUseCase.kt$PythonEngineUseCase$private val TAG = "PythonEngineUseCase"</ID>
+    <ID>VariableNaming:SpeakerAttributionStoreTest.kt$SpeakerAttributionStoreTest$private val LIVRO_MAPA = "livro-mapa.epub"</ID>
+    <ID>VariableNaming:SpeakerAttributionStoreTest.kt$SpeakerAttributionStoreTest$private val UM_DOIS = """{"index":1,"segments":[],"source_text":"Dois."},""" + """{"index":0,"segments":[],"source_text":"Um."}"""</ID>
     <ID>VariableNaming:SupertonicSynthService.kt$SupertonicSynthService$private val TAG = "SupertonicSynthSvc"</ID>
     <ID>VariableNaming:TtsSynthesizer.kt$OnnxTtsSynthesizer$private val TAG = "OnnxTtsSynthesizer"</ID>
     <ID>VariableNaming:TtsSynthesizer.kt$PythonTtsSynthesizer$private val TAG = "PythonTtsSynthesizer"</ID>
