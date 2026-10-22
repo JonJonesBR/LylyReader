@@ -411,12 +411,12 @@ class SettingsActivity : BasePlayerActivity() {
 
         val steps = appPrefs.supertonicSteps.coerceIn(STEPS_MIN, STEPS_MAX)
         seekSupertonicSteps.progress = steps - STEPS_MIN
-        tvSupertonicStepsValor.text = getString(R.string.settings_steps_value, steps)
+        tvSupertonicStepsValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, steps, steps)
         ViewCompat.setStateDescription(seekSupertonicSteps, tvSupertonicStepsValor.text)
 
         val passosPocket = appPrefs.pocketPassos
         seekPocketPassos.progress = passosPocket - com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_MIN
-        tvPocketPassosValor.text = getString(R.string.settings_steps_value, passosPocket)
+        tvPocketPassosValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, passosPocket, passosPocket)
         ViewCompat.setStateDescription(seekPocketPassos, tvPocketPassosValor.text)
 
         val pausaFrase = appPrefs.pausaFinalFraseMs.coerceIn(0, PAUSA_FINAL_FRASE_MS_MAX)
@@ -587,7 +587,7 @@ class SettingsActivity : BasePlayerActivity() {
         seekPocketPassos.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
                 val passos = progress + com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_MIN
-                tvPocketPassosValor.text = getString(R.string.settings_steps_value, passos)
+                tvPocketPassosValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, passos, passos)
                 ViewCompat.setStateDescription(sb, tvPocketPassosValor.text)
                 if (fromUser) appPrefs.pocketPassos = passos
             }
@@ -600,7 +600,7 @@ class SettingsActivity : BasePlayerActivity() {
         seekSupertonicSteps.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
                 val steps = progress + STEPS_MIN
-                tvSupertonicStepsValor.text = getString(R.string.settings_steps_value, steps)
+                tvSupertonicStepsValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, steps, steps)
                 ViewCompat.setStateDescription(sb, tvSupertonicStepsValor.text)
                 appPrefs.supertonicSteps = steps
             }
@@ -624,7 +624,7 @@ class SettingsActivity : BasePlayerActivity() {
                     val valor = texto.toIntOrNull()
                     if (valor != null && valor in STEPS_MIN..STEPS_MAX) {
                         seekSupertonicSteps.progress = valor - STEPS_MIN
-                        tvSupertonicStepsValor.text = getString(R.string.settings_steps_value, valor)
+                        tvSupertonicStepsValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, valor, valor)
                         appPrefs.supertonicSteps = valor
                     } else {
                         android.widget.Toast.makeText(

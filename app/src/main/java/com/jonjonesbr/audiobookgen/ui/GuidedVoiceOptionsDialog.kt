@@ -98,12 +98,12 @@ object GuidedVoiceOptionsDialog {
             "onnx" -> controleDeslizante(
                 activity, conteudo, R.string.settings_supertonic_steps_title, R.string.guided_steps_desc_supertonic,
                 AppPrefs.SUPERTONIC_STEPS_MIN, AppPrefs.SUPERTONIC_STEPS_MAX, prefs.supertonicSteps,
-                { activity.getString(R.string.settings_steps_value, it) }
+                { activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, it, it) }
             ) { prefs.supertonicSteps = it; aoMudar() }
             "pocket" -> controleDeslizante(
                 activity, conteudo, R.string.settings_pocket_steps_title, R.string.settings_pocket_steps_desc,
                 AppPrefs.POCKET_PASSOS_MIN, AppPrefs.POCKET_PASSOS_MAX, prefs.pocketPassos,
-                { activity.getString(R.string.settings_steps_value, it) }
+                { activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, it, it) }
             ) { prefs.pocketPassos = it; aoMudar() }
         }
 

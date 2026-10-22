@@ -948,7 +948,8 @@ class ReaderActivity : BasePlayerActivity() {
             val resultado = DocumentExportUseCase(this@ReaderActivity)
                 .exportarTextos("${nomeLivro}_capitulos", arquivos, pastaUri)
             val mensagem = if (resultado.isSuccess) {
-                getString(R.string.toast_capitulos_exportados, resultado.getOrDefault(0))
+                val total = resultado.getOrDefault(0)
+                resources.getQuantityString(R.plurals.toast_capitulos_exportados_qtd, total, total)
             } else {
                 getString(
                     R.string.toast_erro_exportar_capitulos,
@@ -1160,8 +1161,9 @@ class ReaderActivity : BasePlayerActivity() {
                     bannerOtimizado.visibility = View.VISIBLE
                     bannerOtimizado.animate().alpha(1f).setDuration(DURACAO_FADE_BANNER_MS).start()
                 }
-                tvBannerInfo.text = getString(
-                    R.string.banner_info_trechos_capitulos,
+                tvBannerInfo.text = resources.getQuantityString(
+                    R.plurals.banner_info_trechos_capitulos_qtd,
+                    state.relatorioLinhasRemovidas,
                     state.relatorioLinhasRemovidas,
                     texto.capitulos.size
                 )

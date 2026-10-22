@@ -512,7 +512,7 @@ class LibraryActivity : BasePlayerActivity() {
         when {
             partes == 1 -> Toast.makeText(this, R.string.toast_video_exportado, Toast.LENGTH_LONG).show()
             partes != null -> Toast.makeText(
-                this, getString(R.string.toast_video_exportado_partes, partes), Toast.LENGTH_LONG
+                this, resources.getQuantityString(R.plurals.toast_video_exportado_partes_qtd, partes, partes), Toast.LENGTH_LONG
             ).show()
             estado.cancelado -> Toast.makeText(this, R.string.toast_video_cancelado, Toast.LENGTH_SHORT).show()
             else -> mostrarErro(getString(R.string.toast_erro_exportar_video, estado.erro.orEmpty()))

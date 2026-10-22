@@ -102,7 +102,10 @@
     <string name="cache_teto_gb">%1$d GB</string>
     <string name="settings_pocket_steps_title">Passos do Pocket TTS (experimental)</string>
     <string name="settings_pocket_steps_desc">Passos de decodificação por quadro de áudio nas vozes Pocket TTS. 1 é o padrão e o mais rápido. Mais passos deixam a síntese mais lenta e podem melhorar a fidelidade — teste 2 a 4 se notar palavras puladas e veja se a leitura continua acompanhando. Vale para novas sínteses; o áudio já preparado é refeito ao mudar isso.</string>
-    <string name="settings_steps_value">%1$d passos</string>
+    <plurals name="settings_steps_value_qtd">
+        <item quantity="one">%1$d passo</item>
+        <item quantity="other">%1$d passos</item>
+    </plurals>
     <string name="settings_supertonic_steps_title">Etapas Supertonic</string>
     <string name="settings_pausa_frase_title">Pausa entre frases (vozes locais)</string>
     <string name="settings_pausa_frase_desc">Pausa entre orações na leitura guiada com vozes locais (Kokoro, Supertonic, Pocket), para dar mais cadência natural à narração.</string>
@@ -188,7 +191,10 @@
     <string name="video_modo_maximo">Encher cada parte até o máximo</string>
     <string name="video_modo_iguais">Partes iguais</string>
     <string name="status_exportando_video_parte">Exportando vídeo — parte %1$d… %2$d%%</string>
-    <string name="toast_video_exportado_partes">%d vídeos exportados (um por parte).</string>
+    <plurals name="toast_video_exportado_partes_qtd">
+        <item quantity="one">%d vídeo exportado (um por parte).</item>
+        <item quantity="other">%d vídeos exportados (um por parte).</item>
+    </plurals>
     <string name="toast_video_cancelado">Exportação cancelada.</string>
     <string name="erro_espaco_video">Espaço livre insuficiente: são necessários cerca de %d MB.</string>
     <string name="video_channel">Exportação de vídeo</string>
@@ -361,14 +367,20 @@
 
     <!-- Fase 1 - Limpeza inteligente -->
     <string name="banner_otimizacao">Otimização de texto em andamento…</string>
-    <string name="banner_info_trechos_capitulos">%1$d trechos removidos. %2$d capítulos encontrados.</string>
+    <plurals name="banner_info_trechos_capitulos_qtd">
+        <item quantity="one">%1$d trecho removido. Capítulos encontrados: %2$d.</item>
+        <item quantity="other">%1$d trechos removidos. Capítulos encontrados: %2$d.</item>
+    </plurals>
     <string name="scope_full_book">Converter livro inteiro</string>
     <string name="scope_edit_text">Editar texto tratado</string>
     <string name="scope_redo_cleaning">Refazer limpeza</string>
     <string name="scope_export_clean_text">Exportar texto limpo sem áudio</string>
     <string name="scope_export_chapters_files">Exportar capítulos como arquivos separados</string>
     <string name="toast_sem_capitulos_para_exportar">Este livro não tem capítulos detectados para exportar.</string>
-    <string name="toast_capitulos_exportados">%d arquivo(s) de capítulo salvos.</string>
+    <plurals name="toast_capitulos_exportados_qtd">
+        <item quantity="one">%d arquivo de capítulo salvo.</item>
+        <item quantity="other">%d arquivos de capítulo salvos.</item>
+    </plurals>
     <string name="toast_erro_exportar_capitulos">Não foi possível exportar os capítulos: %1$s</string>
     <string name="toast_elevenlabs_configure_key">Configure sua chave de API da ElevenLabs em Ajustes para usar esta voz.</string>
     <string name="toast_clean_text_exported">Texto limpo exportado.</string>

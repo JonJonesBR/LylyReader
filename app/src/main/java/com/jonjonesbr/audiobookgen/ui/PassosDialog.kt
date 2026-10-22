@@ -30,7 +30,10 @@ object PassosDialog {
             max = maximo - minimo
             progress = atual.coerceIn(minimo, maximo) - minimo
         }
-        fun rotular() { valor.text = activity.getString(R.string.settings_steps_value, slider.progress + minimo) }
+        fun rotular() {
+            val n = slider.progress + minimo
+            valor.text = activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, n, n)
+        }
         rotular()
         slider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) = rotular()
