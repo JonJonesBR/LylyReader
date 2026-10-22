@@ -91,6 +91,24 @@ jobs:
           done
           echo "libonnxruntime_supertonic.so copiada (arm64-v8a, x86_64)."
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Cache pip (Chaquopy)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('app/build.gradle.kts') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
       - name: Run unit tests (gate)
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 

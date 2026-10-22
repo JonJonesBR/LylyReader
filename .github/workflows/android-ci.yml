@@ -62,6 +62,24 @@ jobs:
           done
           echo "libonnxruntime_supertonic.so copiada (arm64-v8a, x86_64)."
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Cache pip (Chaquopy)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('app/build.gradle.kts') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
 
@@ -77,3 +95,82 @@ jobs:
           name: lylyreader-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 3
+
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Run detekt (análise estática)
+        # Ainda não bloqueante: os achados atuais já estão no detekt-baseline.xml, mas o
+        # resultado ainda não foi confirmado no CI. Torne bloqueante (remova continue-on-error)
+        # só depois de um run verde.
+        continue-on-error: true
+        run: ./gradlew :app:detekt --stacktrace
+
+  release-r8:
+    # Job manual de conferência: assembleRelease (R8 + shrinkResources) sem segredos. Sem
+    # release.properties o APK sai sem assinatura — o objetivo é só pegar regressões de keep
+    # (ver comentários em app/proguard-rules.pro), não gerar APK de release.
+    if: github.ref_type != 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools"
+
+      - name: Set up Python for Chaquopy
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Install Android platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Fetch libonnxruntime_supertonic.so (ONNX Runtime para o Supertonic)
+        run: |
+          set -e
+          mkdir -p .ortdl
+          curl -fsSL -o .ortdl/ort.aar \
+            "https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime-android/${ORT_SUPERTONIC_VERSION}/onnxruntime-android-${ORT_SUPERTONIC_VERSION}.aar"
+          (cd .ortdl && unzip -q ort.aar -d x)
+          for abi in arm64-v8a x86_64; do
+            mkdir -p "app/src/main/jniLibs/$abi"
+            cp ".ortdl/x/jni/$abi/libonnxruntime.so" "app/src/main/jniLibs/$abi/libonnxruntime_supertonic.so"
+          done
+          echo "libonnxruntime_supertonic.so copiada (arm64-v8a, x86_64)."
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Cache pip (Chaquopy)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('app/build.gradle.kts') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
+      - name: Build release APK (R8 + shrinkResources, sem assinatura)
+        run: ./gradlew :app:assembleRelease --stacktrace
