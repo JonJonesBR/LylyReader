@@ -3,7 +3,8 @@ package com.jonjonesbr.audiobookgen.ui
 import com.jonjonesbr.audiobookgen.R
 
 import com.jonjonesbr.audiobookgen.domain.ExportStatus
-import com.jonjonesbr.audiobookgen.domain.PreviewResult
+import com.jonjonesbr.audiobookgen.domain.AmostraVozUseCase
+import com.jonjonesbr.audiobookgen.domain.ResultadoAmostra
 import com.jonjonesbr.audiobookgen.service.ArquivoComPersonagens
 import com.jonjonesbr.audiobookgen.service.ConversionNotificationManager
 import com.jonjonesbr.audiobookgen.service.ParametrosConversao
@@ -89,8 +90,6 @@ data class AudiobookUiState(
 class AudiobookViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
-        /** `ritmo` é percentual (100 = normal) — motores Android TTS esperam um multiplicador. */
-        private const val RITMO_BASE = 100f
         /** Pausa padrão entre blocos da conversão (ms) — default do AppPrefs.pausaMs. */
         private const val PAUSA_MS_PADRAO = 600
     }
@@ -122,6 +121,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
     private val exportUseCase = DocumentExportUseCase(application)
     private val playerUseCase = PlayAudioUseCase(application)
     private val pythonEngine = PythonEngineUseCase(application)
+    private val amostraVoz = AmostraVozUseCase(application, pythonEngine)
     private val conversionNotif = ConversionNotificationManager(getApplication())
 
     init {
@@ -185,7 +185,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    // ── Python Use Cases (Substituindo Service e AsyncTask) ────────────────
+    // ── Python Use Cases ──
 
     /** Sem [caminhoDoLivro], o dicionário de pronúncia enviado ao motor é só o global. */
     fun prepararConfiguracoesPython(motor: String, chaveEfetiva: String, pausaMs: Int, caminhoDoLivro: String? = null) {
@@ -193,216 +193,24 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch { pythonEngine.sincronizarConfiguracoes(motor, chaveEfetiva, pausaMs, caminhoDoLivro = caminhoDoLivro) }
     }
 
-    // Despacha entre 3 caminhos de síntese (android/onnx/python) — cada um com seu próprio
-    // fluxo de cache+erro; separar em funções menores fragmentaria a leitura do dispatch geral.
-    @Suppress("LongMethod", "CyclomaticComplexMethod")
     fun gerarAmostra(voz: String, ritmo: Int, motor: String, chaveGemini: String, texto: String = "") {
         if (_uiState.value.amostraGerando) return
         _uiState.update { it.copy(amostraGerando = true, statusMessage = getApplication<Application>().getString(R.string.status_gerando_amostra)) }
 
         viewModelScope.launch {
-            val velStr = com.jonjonesbr.audiobookgen.util.TtsRate.fromRitmo(ritmo)
-
-            val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motor)
-
-            if (motorEfetivo == "android") {
-                val speed = ritmo / RITMO_BASE
-                val textoDefault = "Hello! This is a sample text for the selected voice engine."
-                val textoAmostra = texto.ifBlank { textoDefault }
-                val cacheKey = "${voz.hashCode()}_${textoAmostra.hashCode()}"
-                val outFile = java.io.File(
-                    getApplication<android.app.Application>().cacheDir, "preview_android_$cacheKey.wav"
-                )
-                val result: Result<java.io.File> = if (outFile.exists() && outFile.length() > 0) {
-                    Result.success(outFile)
-                } else {
-                    com.jonjonesbr.audiobookgen.tts.AndroidTtsEngineCache.synthesize(
-                        getApplication(), voz, textoAmostra, outFile, speed
-                    )
-                }
-                if (result.isSuccess) {
-                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
-                    iniciarPreview(outFile.absolutePath)
-                } else {
-                    com.jonjonesbr.audiobookgen.util.CrashLogWriter.log(
-                        result.exceptionOrNull(), "gerarAmostra", "voz=$voz"
-                    )
-                    val msg = "⚠ " + getApplication<Application>().getString(R.string.amostra_falha_dispositivo)
-                    _uiState.update { it.copy(amostraGerando = false, statusMessage = msg) }
-                }
-                return@launch
-            }
-
-            // Bug #8: ONNX preview usa o engine Kotlin nativo diretamente (mais robusto)
-            if (motorEfetivo == "onnx") {
-                // Supertonic sem modelo baixado: ouve o clipe pré-renderizado antes do download (Q5).
-                // Sem clipe, ou com falha (404/rede), segue para a síntese local abaixo, como antes.
-                // Estilos multilíngues (f1/m1) tocam o clipe no idioma do aparelho (pt/es/en).
-                val idiomaPrevia = java.util.Locale.getDefault().language
-                // Clipe embarcado primeiro só quando o pacote ainda não está baixado (ou para
-                // vozes que sempre tocam clipe, ver usarClipeEmbarcadoPrimeiro); com pacote
-                // pronto a síntese local preserva ritmo e texto do usuário.
-                val pacotePronto = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    VoiceCatalog.modeloProntoParaVoz(voz, getApplication())
-                }
-                val clipe = (if (VoiceCatalog.usarClipeEmbarcadoPrimeiro(voz, pacotePronto)) {
-                    clipeEmbarcado(voz, idiomaPrevia)
-                } else {
-                    null
-                }) ?: run {
-                    val clipeSemModelo = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        VoiceCatalog.previewClipUrl(voz, idiomaPrevia) != null && !pacotePronto
-                    }
-                    if (clipeSemModelo) baixarClipePrevia(voz, idiomaPrevia) else null
-                }
-                if (clipe != null) {
-                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
-                    iniciarPreview(clipe)
-                    return@launch
-                }
-                val caminho = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    val engine = com.jonjonesbr.audiobookgen.tts.OnnxTtsEngine(getApplication())
-                    val textoDefault = "Hello! This is a sample text for the selected voice engine."
-                    val textoAmostra = texto.ifBlank { textoDefault }
-                    val cacheKey = "${voz.hashCode()}_${textoAmostra.hashCode()}"
-                    val outFile = java.io.File(
-                        getApplication<android.app.Application>().cacheDir,
-                        "preview_onnx_$cacheKey.wav"
-                    )
-                    val result: Result<java.io.File> = if (outFile.exists() && outFile.length() > 0) {
-                        Result.success(outFile)
-                    } else {
-                        engine.synthesize(textoAmostra, voz, outFile)
-                    }
-                    if (result.isSuccess) outFile.absolutePath else null
-                }
-                if (caminho != null) {
-                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
-                    iniciarPreview(caminho)
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            amostraGerando = false,
-                            statusMessage = getApplication<Application>().getString(R.string.status_amostra_onnx_falha)
-                        )
-                    }
-                }
-                return@launch
-            }
-
-            if (motorEfetivo == "kokoro") {
-                // Clipe embarcado toca antes de download ou síntese para Kokoro/MMS (sempre) e
-                // para Piper só com pacote ainda não baixado (ver usarClipeEmbarcadoPrimeiro).
-                val pacotePronto = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    VoiceCatalog.modeloProntoParaVoz(voz, getApplication())
-                }
-                val clipeAsset = if (VoiceCatalog.usarClipeEmbarcadoPrimeiro(voz, pacotePronto)) {
-                    clipeEmbarcado(voz)
-                } else {
-                    null
-                }
-                if (clipeAsset != null) {
-                    _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
-                    iniciarPreview(clipeAsset)
-                    return@launch
-                }
-            }
-
-            if (motorEfetivo == "kokoro" && VoiceCatalog.previewClipUrl(voz) == null) {
-                // Vozes Piper/VITS (mesmo motor "kokoro") não têm clipe pré-renderizado: a amostra
-                // é sintetizada localmente com o pacote já baixado (o seletor de vozes só libera o
-                // ▶ depois do download).
-                val app = getApplication<android.app.Application>()
-                val sampleText = texto.ifBlank {
-                    VoiceCatalog.findAny(voz)?.let(VoiceCatalog::previewSampleText)
-                        ?: "Olá, esta é uma amostra da voz selecionada."
-                }
-                val synthesizer = com.jonjonesbr.audiobookgen.tts.KokoroTtsSynthesizer(app)
-                val caminho = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    synthesizer.synthesize(sampleText, voz, ritmo)
-                }
-                if (caminho != null) {
+            when (val resultado = amostraVoz.gerar(voz, ritmo, motor, chaveGemini, texto)) {
+                is ResultadoAmostra.Pronta -> {
                     _uiState.update {
                         it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta))
                     }
-                    iniciarPreview(caminho)
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            amostraGerando = false,
-                            statusMessage = synthesizer.ultimoErro()
-                                ?: app.getString(R.string.preview_kokoro_falha)
-                        )
-                    }
+                    iniciarPreview(resultado.caminho)
                 }
-                return@launch
-            }
-
-            if (motorEfetivo == "kokoro") {
-                // Preview do Kokoro NÃO exige o bundle de ~350MB: baixa só o clipe
-                // pré-renderizado (poucos KB, HF) — o usuário ouve a voz antes de
-                // comprometer o download (V6 T1.5).
-                val caminho = baixarClipePrevia(voz)
-                if (caminho != null) {
-                    _uiState.update {
-                        it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta))
-                    }
-                    iniciarPreview(caminho)
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            amostraGerando = false,
-                            statusMessage = getApplication<android.app.Application>()
-                                .getString(R.string.preview_kokoro_falha)
-                        )
-                    }
-                }
-                return@launch
-            }
-
-            if (motorEfetivo == "pocket") {
-                val app = getApplication<android.app.Application>()
-                val sampleText = texto.ifBlank {
-                    VoiceCatalog.findAny(voz)?.let(VoiceCatalog::previewSampleText)
-                        ?: "Olá, esta é uma amostra da voz Pocket TTS."
-                }
-                val synthesizer = com.jonjonesbr.audiobookgen.tts.PocketTtsSynthesizer(app)
-                val caminho = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    synthesizer.synthesize(sampleText, voz, ritmo)
-                }
-                if (caminho != null) {
-                    _uiState.update {
-                        it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta))
-                    }
-                    iniciarPreview(caminho)
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            amostraGerando = false,
-                            statusMessage = synthesizer.ultimoErro()
-                                ?: app.getString(R.string.preview_pocket_failure)
-                        )
-                    }
-                }
-                return@launch
-            }
-
-            when (val result = pythonEngine.gerarPreviewVoz(voz, velStr, motorEfetivo, chaveGemini, texto)) {
-                is PreviewResult.Success -> {
-                    _uiState.update {
-                        it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta))
-                    }
-                    iniciarPreview(result.caminho)
-                }
-                is PreviewResult.Error -> {
-                    _uiState.update {
-                        it.copy(amostraGerando = false, statusMessage = "⚠ ${result.mensagem}")
-                    }
+                is ResultadoAmostra.Falha -> {
+                    _uiState.update { it.copy(amostraGerando = false, statusMessage = resultado.mensagem) }
                 }
             }
         }
     }
-
 
     /**
      * Monta os parâmetros de conversão (motor, voz, velocidade, pausa) a partir das preferências
@@ -910,61 +718,6 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 _uiState.update { it.copy(amostraGerando = false, statusMessage = getApplication<Application>().getString(R.string.status_amostra_falha)) }
             }
         }
-    }
-
-    /**
-     * Baixa (ou reaproveita do cache) o clipe pré-renderizado de [voz] e devolve o caminho local.
-     * Null se a voz não tem clipe ([VoiceCatalog.previewClipUrl]) ou o download falhou (404/rede);
-     * quem chama cai no comportamento anterior. Usado pela prévia Kokoro e pela Supertonic sem modelo.
-     * Clipes Supertonic embarcados em `assets/previas/` são copiados do APK, sem rede; o download
-     * só acontece quando não há asset para a voz.
-     */
-    private suspend fun baixarClipePrevia(voz: String, idioma: String = "pt"): String? =
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            val url = VoiceCatalog.previewClipUrl(voz, idioma) ?: return@withContext null
-            val app = getApplication<android.app.Application>()
-            // Nome derivado do clipe (não do id da voz): es/en/pt da mesma voz não podem colidir no cache.
-            val outFile = java.io.File(app.cacheDir, "preview_${url.substringAfterLast('/')}")
-            if (!outFile.exists() || outFile.length() == 0L) {
-                val copiadoDoAsset = copiarClipePrevia(app, VoiceCatalog.previewAssetName(voz, idioma), outFile)
-                if (!copiadoDoAsset) {
-                    val ok = kotlin.runCatching {
-                        com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager
-                            .downloadFileWithResume(url, outFile) { }
-                    }.isSuccess
-                    if (!ok) outFile.delete()
-                }
-            }
-            outFile.takeIf { it.exists() && it.length() > 0L }?.absolutePath
-        }
-
-    /**
-     * Copia o clipe embarcado de [voz] (`assets/previas/`, nome dado por
-     * [VoiceCatalog.previewAssetName]) para o cache e devolve o caminho. Null se a voz não tem
-     * asset ou a cópia falhou. Sem rede e sem exigir o pacote baixado.
-     */
-    private suspend fun clipeEmbarcado(voz: String, idioma: String = "pt"): String? =
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            val nome = VoiceCatalog.previewAssetName(voz, idioma) ?: return@withContext null
-            val app = getApplication<android.app.Application>()
-            // Mesmo nome que baixarClipePrevia usa para o arquivo remoto: os dois caminhos compartilham o cache.
-            val outFile = java.io.File(app.cacheDir, "preview_$nome")
-            if (!outFile.exists() || outFile.length() == 0L) {
-                if (!copiarClipePrevia(app, nome, outFile)) return@withContext null
-            }
-            outFile.takeIf { it.exists() && it.length() > 0L }?.absolutePath
-        }
-
-    /** Copia `assets/previas/<nomeAsset>` para [destino]. False se não há asset ou a cópia falhou. */
-    private fun copiarClipePrevia(app: android.app.Application, nomeAsset: String?, destino: java.io.File): Boolean {
-        if (nomeAsset == null) return false
-        val ok = kotlin.runCatching {
-            app.assets.open("previas/$nomeAsset").use { entrada ->
-                destino.outputStream().use { saida -> entrada.copyTo(saida) }
-            }
-        }.isSuccess
-        if (!ok) destino.delete()
-        return ok
     }
 
     fun iniciarPreview(caminho: String) = playerUseCase.iniciarPreview(caminho)
