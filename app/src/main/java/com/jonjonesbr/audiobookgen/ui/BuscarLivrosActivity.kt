@@ -58,6 +58,7 @@ class BuscarLivrosActivity : AppCompatActivity() {
     private var buscaAtual: Job? = null
     private var baixando: String? = null
     private var limiteBaixar = MAX_PARA_BAIXAR_TODOS
+    private val baixarTodosDebug = Runnable { baixarTodosOsResultados() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         com.jonjonesbr.audiobookgen.util.ThemePrefs.aplicarNaActivity(this)
@@ -100,8 +101,13 @@ class BuscarLivrosActivity : AppCompatActivity() {
         val n = intent.getIntExtra("extra_debug_baixar_n", -1)
         if (depuravel && n > 0) {
             limiteBaixar = n
-            findViewById<View>(R.id.btnBaixarTodosLivros).postDelayed({ baixarTodosOsResultados() }, 6_000)
+            findViewById<View>(R.id.btnBaixarTodosLivros).postDelayed(baixarTodosDebug, 6_000)
         }
+    }
+
+    override fun onDestroy() {
+        findViewById<View>(R.id.btnBaixarTodosLivros).removeCallbacks(baixarTodosDebug)
+        super.onDestroy()
     }
 
     private fun fonteEscolhida() = when (rgFonte.checkedChipId) {

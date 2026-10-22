@@ -45,7 +45,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
     private val prefs by lazy { AppPrefs(this) }
     private val selecionados = mutableSetOf<String>()
     private var itens: List<ItemBaixavel> = emptyList()
-    private var filtro = com.jonjonesbr.audiobookgen.domain.FiltroIdioma.TODOS
+    private var filtro = com.jonjonesbr.audiobookgen.domain.IdiomaBusca.TODOS
     private var andamentoAtual: Map<String, AndamentoDownload> = emptyMap()
     private var chavesCoach: Set<String>? = null
 
@@ -122,21 +122,21 @@ class DownloadCentralActivity : BasePlayerActivity() {
         grupo.check(idDoChip(filtro))
         grupo.setOnCheckedStateChangeListener { _, ids ->
             filtro = when (ids.firstOrNull()) {
-                R.id.chipIdiomaPt -> com.jonjonesbr.audiobookgen.domain.FiltroIdioma.PT
-                R.id.chipIdiomaEn -> com.jonjonesbr.audiobookgen.domain.FiltroIdioma.EN
-                R.id.chipIdiomaEs -> com.jonjonesbr.audiobookgen.domain.FiltroIdioma.ES
-                else -> com.jonjonesbr.audiobookgen.domain.FiltroIdioma.TODOS
+                R.id.chipIdiomaPt -> com.jonjonesbr.audiobookgen.domain.IdiomaBusca.PT
+                R.id.chipIdiomaEn -> com.jonjonesbr.audiobookgen.domain.IdiomaBusca.EN
+                R.id.chipIdiomaEs -> com.jonjonesbr.audiobookgen.domain.IdiomaBusca.ES
+                else -> com.jonjonesbr.audiobookgen.domain.IdiomaBusca.TODOS
             }
             selecionados.retainAll(visiveis().map { it.id }.toSet())
             montarLista()
         }
     }
 
-    private fun idDoChip(f: com.jonjonesbr.audiobookgen.domain.FiltroIdioma) = when (f) {
-        com.jonjonesbr.audiobookgen.domain.FiltroIdioma.PT -> R.id.chipIdiomaPt
-        com.jonjonesbr.audiobookgen.domain.FiltroIdioma.EN -> R.id.chipIdiomaEn
-        com.jonjonesbr.audiobookgen.domain.FiltroIdioma.ES -> R.id.chipIdiomaEs
-        com.jonjonesbr.audiobookgen.domain.FiltroIdioma.TODOS -> R.id.chipIdiomaTodos
+    private fun idDoChip(f: com.jonjonesbr.audiobookgen.domain.IdiomaBusca) = when (f) {
+        com.jonjonesbr.audiobookgen.domain.IdiomaBusca.PT -> R.id.chipIdiomaPt
+        com.jonjonesbr.audiobookgen.domain.IdiomaBusca.EN -> R.id.chipIdiomaEn
+        com.jonjonesbr.audiobookgen.domain.IdiomaBusca.ES -> R.id.chipIdiomaEs
+        com.jonjonesbr.audiobookgen.domain.IdiomaBusca.TODOS -> R.id.chipIdiomaTodos
     }
 
     /** Itens que o filtro de idioma mostra. */

@@ -19,13 +19,6 @@ fun Activity.mostrarErro(@StringRes msgRes: Int, acao: AcaoMensagem? = null) =
 fun Activity.mostrarErro(msg: CharSequence, acao: AcaoMensagem? = null) =
     mostrarMensagemComAcao(msg, acao)
 
-/** Confirmação de uma ação do usuário, com botão opcional. Mesma regra de [mostrarErro]. */
-fun Activity.mostrarConfirmacao(@StringRes msgRes: Int, acao: AcaoMensagem? = null) =
-    mostrarConfirmacao(getString(msgRes), acao)
-
-fun Activity.mostrarConfirmacao(msg: CharSequence, acao: AcaoMensagem? = null) =
-    mostrarMensagemComAcao(msg, acao)
-
 private fun Activity.mostrarMensagemComAcao(msg: CharSequence, acao: AcaoMensagem?) {
     val raiz = findViewById<View?>(android.R.id.content)
     if (raiz == null || isFinishing || isDestroyed) {
