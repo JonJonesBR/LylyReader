@@ -2,13 +2,24 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
+import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.View
+import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RadioButton
@@ -19,15 +30,23 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
+import com.jonjonesbr.audiobookgen.domain.Avaliacao
+import com.jonjonesbr.audiobookgen.domain.Aviso
+import com.jonjonesbr.audiobookgen.domain.Faixa
+import com.jonjonesbr.audiobookgen.domain.avaliar
+import com.jonjonesbr.audiobookgen.domain.classificarProgresso
 import com.jonjonesbr.audiobookgen.tts.PocketCustomVoiceCatalog
 import com.jonjonesbr.audiobookgen.tts.PocketCustomVoices
 import com.jonjonesbr.audiobookgen.tts.PocketEncoderManager
 import com.jonjonesbr.audiobookgen.tts.VoiceReferenceAudio
+import com.jonjonesbr.audiobookgen.util.TextoComMarcacao
+import com.jonjonesbr.audiobookgen.util.TipoTrecho
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import android.util.Log
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
@@ -36,6 +55,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+
+/** Meta de duração da gravação guiada: a barra de progresso chega cheia aqui (a gravação vai até 30 s). */
+private const val META_GRAVACAO_S = 15
 
 /**
  * Criação e gestão de vozes clonadas com o Pocket TTS. Instanciar ANTES de a Activity iniciar (registra
@@ -49,6 +71,8 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
     private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
     private var gravador: VoiceReferenceAudio.Gravador? = null
     private var dialogoGravacao: AlertDialog? = null
+    /** Idioma do texto-guia escolhido antes de gravar. Vale para a gravação que está por vir. */
+    private var idiomaGravacao = "pt-BR"
 
     init {
         // Sem isto, o Runnable de 100 ms da gravação continuaria agendado depois que a Activity morre.
@@ -127,10 +151,36 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
         AlertDialog.Builder(activity)
             .setTitle(R.string.clone_source_title)
             .setItems(arrayOf(activity.getString(R.string.clone_source_record), activity.getString(R.string.clone_source_file))) { _, qual ->
-                if (qual == 0) gravar() else escolherArquivo.launch(arrayOf("audio/*", "video/*", "application/ogg", "application/octet-stream"))
+                if (qual == 0) escolherIdiomaGravacao() else escolherArquivo.launch(arrayOf("audio/*", "video/*", "application/ogg", "application/octet-stream"))
             }
             .setNegativeButton(android.R.string.cancel, null)
             .exibir()
+    }
+
+    /** Idioma do texto-guia vem antes da gravação: é nele que o usuário vai ler. */
+    private fun escolherIdiomaGravacao() {
+        val tags = arrayOf("pt-BR", "en-US", "es-ES")
+        val nomes = arrayOf(
+            activity.getString(R.string.clone_lang_pt),
+            activity.getString(R.string.clone_lang_en),
+            activity.getString(R.string.clone_lang_es),
+        )
+        var escolhido = tags.indexOf(idiomaPadrao())
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.clone_lang_label)
+            .setSingleChoiceItems(nomes, escolhido) { _, qual -> escolhido = qual }
+            .setPositiveButton(R.string.clone_continue) { _, _ ->
+                idiomaGravacao = tags[escolhido]
+                gravar()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
+    }
+
+    private fun idiomaPadrao(): String = when (activity.resources.configuration.locales[0].language) {
+        "en" -> "en-US"
+        "es" -> "es-ES"
+        else -> "pt-BR"
     }
 
     private fun gravar() {
@@ -141,6 +191,10 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
         }
     }
 
+    /**
+     * Gravação guiada: o usuário lê o texto do idioma escolhido, vê o progresso até a meta e a qualidade.
+     * Para sozinha aos 30 s. Ao parar, avalia o áudio antes de salvar e mostra avisos, se houver.
+     */
     private fun mostrarGravacao() {
         val rec = VoiceReferenceAudio.Gravador()
         if (!rec.iniciar()) {
@@ -148,33 +202,95 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             return
         }
         gravador = rec
-        val tempo = TextView(activity).apply { textSize = 22f; gravity = android.view.Gravity.CENTER }
-        val nivel = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100 }
-        val conteudo = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(8), dp(20), 0)
-            addView(TextView(activity).apply { setText(R.string.clone_record_hint); textSize = 13f })
-            addView(tempo)
-            addView(nivel)
+        val vista = LayoutInflater.from(activity).inflate(R.layout.dialog_clone_gravacao, FrameLayout(activity), false)
+        val btnDicas = vista.findViewById<Button>(R.id.clone_btn_dicas)
+        val blocoDicas = vista.findViewById<View>(R.id.clone_gravacao_dicas)
+        val guia = vista.findViewById<TextView>(R.id.clone_guia_texto)
+        val tempo = vista.findViewById<TextView>(R.id.clone_tempo)
+        val meta = vista.findViewById<TextView>(R.id.clone_meta)
+        val barra = vista.findViewById<ProgressBar>(R.id.clone_barra_meta)
+        val nivel = vista.findViewById<ProgressBar>(R.id.clone_nivel)
+        val status = vista.findViewById<TextView>(R.id.clone_status)
+        val btnRegravar = vista.findViewById<Button>(R.id.clone_btn_regravar)
+        val btnParar = vista.findViewById<Button>(R.id.clone_btn_parar)
+        val btnCancelar = vista.findViewById<Button>(R.id.clone_btn_cancelar)
+
+        guia.text = montarTextoGuia(recursoDoTextoGuia(idiomaGravacao))
+        meta.text = activity.getString(R.string.clone_record_goal, META_GRAVACAO_S)
+        status.setText(R.string.clone_record_status_short)
+        btnDicas.setOnClickListener {
+            blocoDicas.visibility = View.VISIBLE
+            btnDicas.visibility = View.GONE
         }
+
         val dialogo = AlertDialog.Builder(activity)
-            .setTitle(R.string.clone_record_title)
-            .setView(conteudo)
+            .setView(vista)
             .setCancelable(false)
-            .setPositiveButton(R.string.clone_record_stop, null)
-            .setNegativeButton(android.R.string.cancel) { _, _ -> rec.cancelar(); gravador = null }
             .create()
-        dialogos.mostrar(dialogo)
-        dialogoGravacao = dialogo
+        // Só uma conclusão (parar, tempo esgotado ou toque repetido) processa a gravação.
+        var concluida = false
+
+        fun concluir() {
+            if (concluida) return
+            concluida = true
+            rec.pararCaptura()
+            gravador = null
+            val amostras = rec.copiaAmostras()
+            val taxa = rec.taxaAmostragem
+            dialogo.dismiss()
+            if (amostras.size < 2) {
+                toast(R.string.clone_audio_failed)
+                return
+            }
+            val avaliacao = avaliar(amostras, taxa)
+            if (avaliacao.segundos < PocketCustomVoices.MIN_RECORD_SECONDS) {
+                avisarCurto(PocketCustomVoices.MIN_RECORD_SECONDS)
+                return
+            }
+            if (avaliacao.boa) {
+                finalizarGravacao(amostras, taxa)
+            } else {
+                mostrarAvisos(avaliacao, usar = { finalizarGravacao(amostras, taxa) }, regravar = { mostrarGravacao() })
+            }
+        }
+
+        fun cancelar() {
+            if (concluida) return
+            concluida = true
+            rec.cancelar()
+            gravador = null
+            dialogo.dismiss()
+        }
+
         val atualizar = object : Runnable {
             override fun run() {
-                tempo.text = String.format("%.1f s", rec.segundos)
-                nivel.progress = (rec.nivel * 100).toInt()
+                if (concluida || !dialogo.isShowing) return
+                // A gravação parou sozinha (30 s): conclui pelo mesmo caminho do botão Parar.
                 if (rec.terminouSozinho) {
-                    dialogo.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-                } else if (dialogo.isShowing) {
-                    handler.postDelayed(this, 100)
+                    concluir()
+                    return
                 }
+                val segundos = rec.segundos
+                val faixa = classificarProgresso(segundos)
+                tempo.text = String.format(java.util.Locale.getDefault(), "%.1f s", segundos)
+                barra.progress = (minOf(segundos, META_GRAVACAO_S.toFloat()) * 10).toInt()
+                barra.progressTintList = ColorStateList.valueOf(corDaFaixa(faixa))
+                nivel.progress = (rec.nivel * 100).toInt()
+                status.setText(textoDoStatus(faixa, rec.nivel))
+                btnParar.isEnabled = segundos >= PocketCustomVoices.MIN_RECORD_SECONDS
+                handler.postDelayed(this, 100)
+            }
+        }
+
+        btnParar.setOnClickListener { concluir() }
+        btnCancelar.setOnClickListener { cancelar() }
+        btnRegravar.setOnClickListener {
+            if (concluida) return@setOnClickListener
+            if (!rec.reiniciar()) {
+                concluida = true
+                gravador = null
+                dialogo.dismiss()
+                toast(R.string.clone_record_failed)
             }
         }
         // Fechou o diálogo (parar, cancelar ou tempo esgotado): para o Runnable de 100 ms e esquece o diálogo.
@@ -182,13 +298,25 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             handler.removeCallbacks(atualizar)
             if (dialogoGravacao === dialogo) dialogoGravacao = null
         }
+        dialogoGravacao = dialogo
+        dialogos.mostrar(dialogo)
         handler.post(atualizar)
-        dialogo.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val resultado = rec.parar(rascunho())
-            gravador = null
-            dialogo.dismiss()
-            depoisDaCaptura(resultado?.seconds)
-        }
+    }
+
+    private fun finalizarGravacao(amostras: ShortArray, taxa: Int) {
+        val segundos = runCatching { VoiceReferenceAudio.salvar(amostras, taxa, rascunho()).seconds }.getOrNull()
+        depoisDaCaptura(segundos, PocketCustomVoices.MIN_RECORD_SECONDS, idiomaGravacao)
+    }
+
+    /** Lista os avisos de qualidade. "Usar assim mesmo" salva; "Regravar" abre a gravação de novo. */
+    private fun mostrarAvisos(avaliacao: Avaliacao, usar: () -> Unit, regravar: () -> Unit) {
+        val linhas = avaliacao.avisos.joinToString("\n") { "• " + activity.getString(textoDoAviso(it)) }
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.clone_quality_title)
+            .setMessage(linhas)
+            .setPositiveButton(R.string.clone_quality_use_anyway) { _, _ -> usar() }
+            .setNegativeButton(R.string.clone_quality_redo) { _, _ -> regravar() }
+            .exibir()
     }
 
     private fun converterArquivo(uri: Uri) {
@@ -196,19 +324,20 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             val segundos = withContext(Dispatchers.IO) {
                 runCatching { VoiceReferenceAudio.converterArquivo(activity, uri, rascunho()).seconds }.getOrNull()
             }
-            depoisDaCaptura(segundos)
+            depoisDaCaptura(segundos, PocketCustomVoices.MIN_SECONDS, null)
         }
     }
 
     // ── Passo 3: nome e idioma ───────────────────────────────────────────────
 
-    private fun depoisDaCaptura(segundos: Float?) {
+    /** [idiomaFixo] não é nulo quando o idioma já foi escolhido antes de gravar; senão o usuário escolhe aqui. */
+    private fun depoisDaCaptura(segundos: Float?, minimo: Int, idiomaFixo: String?) {
         if (segundos == null) {
             toast(R.string.clone_audio_failed)
             return
         }
-        if (segundos < PocketCustomVoices.MIN_SECONDS) {
-            toast(R.string.clone_audio_too_short)
+        if (segundos < minimo) {
+            avisarCurto(minimo)
             return
         }
         val nome = EditText(activity).apply {
@@ -217,13 +346,9 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             setSingleLine()
         }
         val idiomas = listOf("pt-BR" to R.string.clone_lang_pt, "en-US" to R.string.clone_lang_en, "es-ES" to R.string.clone_lang_es)
-        val grupo = RadioGroup(activity).apply {
+        val grupo: RadioGroup? = if (idiomaFixo != null) null else RadioGroup(activity).apply {
             orientation = RadioGroup.VERTICAL
-            val padrao = when (activity.resources.configuration.locales[0].language) {
-                "en" -> "en-US"
-                "es" -> "es-ES"
-                else -> "pt-BR"
-            }
+            val padrao = idiomaPadrao()
             idiomas.forEachIndexed { _, (tag, res) ->
                 addView(RadioButton(activity).apply { id = View.generateViewId(); setText(res); this.tag = tag; isChecked = tag == padrao })
             }
@@ -236,18 +361,26 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 textSize = 13f
             })
             addView(nome)
-            addView(TextView(activity).apply { setText(R.string.clone_lang_label); setPadding(0, dp(12), 0, 0) })
-            addView(grupo)
+            if (grupo != null) {
+                addView(TextView(activity).apply { setText(R.string.clone_lang_label); setPadding(0, dp(12), 0, 0) })
+                addView(grupo)
+            }
         }
         AlertDialog.Builder(activity)
             .setTitle(R.string.clone_name_title)
             .setView(conteudo)
             .setPositiveButton(R.string.clone_create) { _, _ ->
-                val tag = grupo.findViewById<RadioButton>(grupo.checkedRadioButtonId)?.tag as? String ?: "pt-BR"
+                val tag = idiomaFixo
+                    ?: grupo?.let { g -> g.findViewById<RadioButton>(g.checkedRadioButtonId)?.tag as? String }
+                    ?: "pt-BR"
                 criar(nome.text.toString(), tag)
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> rascunho().delete() }
             .exibir()
+    }
+
+    private fun avisarCurto(minimo: Int) {
+        Toast.makeText(activity, activity.getString(R.string.clone_audio_too_short, minimo), Toast.LENGTH_LONG).show()
     }
 
     // ── Passo 4: criar a voz e baixar o que falta ────────────────────────────
@@ -371,6 +504,59 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             .setNegativeButton(android.R.string.cancel) { _, _ -> gerenciar() }
             .exibir()
     }
+
+    // ── Texto-guia e cores ───────────────────────────────────────────────────
+
+    /** Negrito e dica de entonação são só realce: o texto continua inteiro e legível sem eles. */
+    private fun montarTextoGuia(recurso: Int): CharSequence {
+        val texto = SpannableStringBuilder()
+        val corDica = corSecundaria()
+        for (trecho in TextoComMarcacao.analisar(activity.getString(recurso))) {
+            val inicio = texto.length
+            texto.append(trecho.texto)
+            val fim = texto.length
+            if (trecho.tipo == TipoTrecho.NEGRITO) {
+                texto.setSpan(StyleSpan(Typeface.BOLD), inicio, fim, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            } else if (trecho.tipo == TipoTrecho.DICA) {
+                texto.setSpan(StyleSpan(Typeface.ITALIC), inicio, fim, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                texto.setSpan(ForegroundColorSpan(corDica), inicio, fim, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+        }
+        return texto
+    }
+
+    private fun corSecundaria(): Int {
+        val valor = TypedValue()
+        activity.theme.resolveAttribute(android.R.attr.textColorSecondary, valor, true)
+        return if (valor.resourceId != 0) ContextCompat.getColor(activity, valor.resourceId) else valor.data
+    }
+
+    private fun corDaFaixa(faixa: Faixa): Int = when (faixa) {
+        Faixa.INSUFICIENTE -> "#EF6C00".toColorInt()
+        Faixa.OK -> "#9CCC65".toColorInt()
+        Faixa.OTIMO -> "#43A047".toColorInt()
+    }
+}
+
+private fun recursoDoTextoGuia(tag: String): Int = when (tag) {
+    "en-US" -> R.string.clone_guide_text_en
+    "es-ES" -> R.string.clone_guide_text_es
+    else -> R.string.clone_guide_text_pt
+}
+
+private fun textoDoAviso(aviso: Aviso): Int = when (aviso) {
+    Aviso.CURTA -> R.string.clone_quality_short
+    Aviso.BAIXA -> R.string.clone_quality_low
+    Aviso.ESTOUROU -> R.string.clone_quality_clipped
+    Aviso.MUITO_SILENCIO -> R.string.clone_quality_silent
+    Aviso.RUIDOSA -> R.string.clone_quality_noisy
+}
+
+/** Abaixo de 5 s: se o nível está muito baixo, pede para falar mais perto; senão diz que ainda está curto. */
+private fun textoDoStatus(faixa: Faixa, nivelPico: Float): Int = when (faixa) {
+    Faixa.INSUFICIENTE -> if (nivelPico < 0.02f) R.string.clone_record_status_low else R.string.clone_record_status_short
+    Faixa.OK -> R.string.clone_record_status_ok
+    Faixa.OTIMO -> R.string.clone_record_status_great
 }
 
 /**

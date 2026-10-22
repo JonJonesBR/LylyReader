@@ -5,4 +5,6 @@
     <!-- Estado vazio da biblioteca: ícone e margem inferior (menores em paisagem). -->
     <dimen name="vazio_icone">72dp</dimen>
     <dimen name="vazio_icone_margem">16dp</dimen>
+    <!-- Altura do texto-guia da gravação da voz clonada (rolável quando o texto é maior). -->
+    <dimen name="clone_guia_altura_max">180dp</dimen>
 </resources>

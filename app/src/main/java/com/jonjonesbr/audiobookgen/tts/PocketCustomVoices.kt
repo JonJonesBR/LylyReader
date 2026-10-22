@@ -23,8 +23,10 @@ object PocketCustomVoices {
     const val MAX_SECONDS = 10
     /** Abaixo de ~3 s o timbre sai instável. */
     const val MIN_SECONDS = 3
-    /** A gravação pelo microfone pode ir até aqui; o app escolhe o melhor trecho de [MAX_SECONDS]. */
-    const val MAX_RECORD_SECONDS = 20
+    /** A gravação pelo microfone para sozinha aqui; o app escolhe o melhor trecho de [MAX_SECONDS]. */
+    const val MAX_RECORD_SECONDS = 30
+    /** Menor gravação pelo microfone aceita. Gravar mais ajuda a escolher o trecho, não a qualidade do motor. */
+    const val MIN_RECORD_SECONDS = 5
     /** Quanto de um arquivo importado é lido para procurar o melhor trecho. */
     const val MAX_IMPORT_SECONDS = 90
     const val SAMPLE_RATE = 24_000

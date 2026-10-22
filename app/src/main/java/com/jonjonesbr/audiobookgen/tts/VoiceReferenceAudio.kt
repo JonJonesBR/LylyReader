@@ -264,5 +264,29 @@ object VoiceReferenceAudio {
             gravador?.let { runCatching { it.stop() }; it.release() }
             gravador = null
         }
+
+        /** Taxa em que o áudio está sendo gravado (pode não ser 24 kHz, conforme o aparelho). */
+        val taxaAmostragem: Int get() = taxa
+
+        /** Cópia do que foi gravado até agora, na taxa de [taxaAmostragem]. Não encerra a gravação. */
+        fun copiaAmostras(): ShortArray {
+            val bytes = synchronized(acumulado) { acumulado.toByteArray() }
+            val curtas = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
+            return ShortArray(curtas.remaining()).also { curtas.get(it) }
+        }
+
+        /** Para a captura sem salvar nada; o áudio continua disponível em [copiaAmostras]. */
+        fun pararCaptura() {
+            gravando = false
+            thread?.join(1500)
+            gravador?.let { runCatching { it.stop() }; it.release() }
+            gravador = null
+        }
+
+        /** Descarta o que foi gravado e começa uma captura nova. Devolve false se o microfone não abrir. */
+        fun reiniciar(): Boolean {
+            cancelar()
+            return iniciar()
+        }
     }
 }

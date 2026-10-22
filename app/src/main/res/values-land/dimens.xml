@@ -3,4 +3,6 @@
     <!-- Estado vazio da biblioteca em paisagem: ícone menor e margem menor para caber na tela. -->
     <dimen name="vazio_icone">40dp</dimen>
     <dimen name="vazio_icone_margem">8dp</dimen>
+    <!-- Altura do texto-guia da gravação da voz clonada: menor em paisagem, para o botão caber. -->
+    <dimen name="clone_guia_altura_max">96dp</dimen>
 </resources>
