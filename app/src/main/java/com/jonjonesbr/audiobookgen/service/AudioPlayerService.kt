@@ -14,6 +14,8 @@ import com.jonjonesbr.audiobookgen.ui.PlayerWidget
 import com.jonjonesbr.audiobookgen.util.PlayerStateHolder
 import com.jonjonesbr.audiobookgen.util.calcularRecuoAutoRewind
 import com.jonjonesbr.audiobookgen.util.capituloAnteriorMs
+import com.jonjonesbr.audiobookgen.util.caminhoPermitido
+import com.jonjonesbr.audiobookgen.util.podeNavegar
 import com.jonjonesbr.audiobookgen.util.proximoCapituloMs
 import com.jonjonesbr.audiobookgen.util.proximoPresetSonecaMin
 import com.jonjonesbr.audiobookgen.ui.MainActivity
@@ -22,8 +24,10 @@ import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.FileObserver
 import android.os.IBinder
+import android.os.Process
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -254,6 +258,12 @@ class AudioPlayerService : MediaLibraryService() {
                     LibraryResult.ofError<ImmutableList<MediaItem>>(LibraryResult.RESULT_ERROR_BAD_VALUE)
                 )
             }
+            // Só controladores confiáveis listam a biblioteca (play/pause continua livre).
+            if (!controladorPodeNavegar(browser)) {
+                return Futures.immediateFuture(
+                    LibraryResult.ofError<ImmutableList<MediaItem>>(LibraryResult.RESULT_ERROR_PERMISSION_DENIED)
+                )
+            }
             val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
             serviceScope.launch {
                 val itens = AudiobookLibraryUseCase.listar(applicationContext).map { it.paraMediaItem() }
@@ -267,8 +277,22 @@ class AudioPlayerService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
             mediaItems: List<MediaItem>
         ): ListenableFuture<List<MediaItem>> {
-            val resolvidos = mediaItems.map { item -> item.buildUpon().setUri(uriPara(item.mediaId)).build() }
-            return Futures.immediateFuture(resolvidos)
+            // Controlador sem permissão de navegação não adiciona nada (lista vazia = no-op).
+            if (!controladorPodeNavegar(controller)) {
+                return Futures.immediateFuture(emptyList())
+            }
+            // Só aceita itens que existem na biblioteca: o mediaId vira Uri apenas se listado.
+            val future = SettableFuture.create<List<MediaItem>>()
+            serviceScope.launch {
+                val idsConhecidos = AudiobookLibraryUseCase.listar(applicationContext)
+                    .map { it.idNaBiblioteca() }
+                    .toSet()
+                val resolvidos = mediaItems
+                    .filter { it.mediaId in idsConhecidos }
+                    .map { item -> item.buildUpon().setUri(uriPara(item.mediaId)).build() }
+                future.set(resolvidos)
+            }
+            return future
         }
     }
 
@@ -407,6 +431,17 @@ class AudioPlayerService : MediaLibraryService() {
         when (intent.action) {
             ACTION_INICIAR    -> {
                 val caminho = intent.getStringExtra(EXTRA_CAMINHO) ?: return START_NOT_STICKY
+                // O serviço é exportado: qualquer app pode mandar ACTION_INICIAR. Só toca o que
+                // está nas pastas do app (filesDir, Downloads, MediaStore, pasta SAF escolhida).
+                if (!caminhoAceitoParaTocar(caminho)) {
+                    Log.w(TAG, "ACTION_INICIAR recusado: caminho fora das pastas permitidas")
+                    // startForegroundService exige startForeground em ~5 s, senão o sistema derruba
+                    // o processo. Por isso o serviço vira foreground antes de encerrar. Só encerra
+                    // se não estiver tocando, para não parar a reprodução atual.
+                    playerNotificationManager.iniciarForeground()
+                    if (!exoPlayer.isPlaying) stopSelf(startId)
+                    return START_NOT_STICKY
+                }
                 val nome    = intent.getStringExtra(EXTRA_NOME) ?: File(caminho).nameWithoutExtension
                 iniciar(caminho, nome)
             }
@@ -585,8 +620,45 @@ class AudioPlayerService : MediaLibraryService() {
     private fun uriPara(caminho: String): Uri =
         Uri.parse(caminho).let { if (it.scheme == null) Uri.fromFile(File(caminho)) else it }
 
+    /** Só navegação é restrita: play/pause e transporte seguem livres para qualquer controlador. */
+    private fun controladorPodeNavegar(controlador: MediaSession.ControllerInfo): Boolean =
+        podeNavegar(controlador.packageName, controlador.uid, Process.myUid(), controlador.isTrusted)
+
+    private fun AudiobookItem.idNaBiblioteca(): String = caminho ?: uri.toString()
+
+    /**
+     * Valida o caminho recebido em ACTION_INICIAR. Aceita arquivo sob filesDir ou Downloads,
+     * URI do MediaStore e a árvore SAF escolhida pelo usuário (pastaDestino). Qualquer outra
+     * coisa (inclusive `..` e `file://` fora das raízes) é recusada.
+     */
+    private fun caminhoAceitoParaTocar(caminho: String): Boolean {
+        val uri = Uri.parse(caminho)
+        if (uri.scheme == "content") {
+            val raizesContent = buildList {
+                add("content://media")
+                add("content://com.android.externalstorage.documents")
+                appPrefs.pastaDestino?.let { Uri.parse(it).authority }?.let { add("content://$it") }
+            }
+            return caminhoPermitido(caminho, raizesContent)
+        }
+        val caminhoArquivo = when (uri.scheme) {
+            null -> caminho
+            "file" -> uri.path ?: return false
+            else -> return false
+        }
+        @Suppress("DEPRECATION")
+        val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        return try {
+            val raizesArquivo = listOf(filesDir, downloads).map { it.canonicalPath }
+            caminhoPermitido(File(caminhoArquivo).canonicalPath, raizesArquivo)
+        } catch (e: java.io.IOException) {
+            Log.w(TAG, "Caminho não canonicalizável recusado: ${e.message}")
+            false
+        }
+    }
+
     private fun AudiobookItem.paraMediaItem(): MediaItem {
-        val mediaId = caminho ?: uri.toString()
+        val mediaId = idNaBiblioteca()
         return MediaItem.Builder()
             .setMediaId(mediaId)
             .setUri(uri)

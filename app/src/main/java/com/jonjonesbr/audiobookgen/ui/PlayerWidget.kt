@@ -10,17 +10,16 @@ import android.content.Intent
 import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.service.PlayerNotificationManager
 
 class PlayerWidget : AppWidgetProvider() {
 
     companion object {
-        const val ACTION_WIDGET_TOGGLE = "com.jonjonesbr.audiobookgen.WIDGET_TOGGLE"
         // Códigos de PendingIntent distintos dos REQ_* da notificação (PlayerNotificationManager,
         // 1-5) — mesmo target (AudioPlayerService) e mesma action, mas melhor não compartilhar o
         // código de requisição entre os dois (cancelar um não deve afetar o outro).
+        private const val REQ_WIDGET_PLAY_PAUSE = 12
         private const val REQ_WIDGET_RECUAR = 10
         private const val REQ_WIDGET_AVANCAR = 11
 
@@ -49,15 +48,6 @@ class PlayerWidget : AppWidgetProvider() {
         }
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-        if (intent.action == ACTION_WIDGET_TOGGLE) {
-            // Forward to MainActivity via LocalBroadcastManager (works if process is alive)
-            LocalBroadcastManager.getInstance(context)
-                .sendBroadcast(Intent(ACTION_WIDGET_TOGGLE))
-        }
-    }
-
     private fun construirViews(context: Context): RemoteViews {
         val views   = RemoteViews(context.packageName, R.layout.widget_player)
         val nome    = MainActivity.widgetTrackName
@@ -82,12 +72,13 @@ class PlayerWidget : AppWidgetProvider() {
         )
         views.setInt(R.id.widgetBtnPlayPause, "setColorFilter", Color.WHITE)
 
-        // Button click → toggle playback
-        val toggleIntent = Intent(context, PlayerWidget::class.java).apply {
-            action = ACTION_WIDGET_TOGGLE
-        }
-        val togglePi = PendingIntent.getBroadcast(
-            context, 0, toggleIntent,
+        // Botão play/pause → mesma ação da notificação, direto no AudioPlayerService. O antigo
+        // broadcast WIDGET_TOGGLE não tinha ouvinte, então o botão nunca funcionou.
+        val togglePi = PendingIntent.getService(
+            context, REQ_WIDGET_PLAY_PAUSE,
+            Intent(context, AudioPlayerService::class.java).apply {
+                action = PlayerNotificationManager.ACTION_PLAY_PAUSE
+            },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         views.setOnClickPendingIntent(R.id.widgetBtnPlayPause, togglePi)
