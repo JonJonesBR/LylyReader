@@ -67,7 +67,7 @@ class AudioAacTranscoderTest {
 
     @Test
     fun `capacidade menor que um quadro devolve a propria capacidade sem alinhar`() {
-        // Comportamento atual preservado (refatoração): um pedaço parcial de quadro é entregue como está.
+        // Ramo defensivo, não ocorre com codecs reais (ver KDoc).
         assertEquals(3, tamanhoAlinhado(3, 100, 4))
     }
 

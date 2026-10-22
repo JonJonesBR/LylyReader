@@ -64,15 +64,19 @@ object RecentReadingsStore {
     /** Recentes cujos arquivos ainda existem, mais recentes primeiro. */
     fun load(ctx: Context): List<Entry> = loadRaw(ctx).filter { File(it.caminho).exists() }
 
+    private val cache = CacheDeLista<Entry> { raw ->
+        val arr = JSONArray(raw)
+        (0 until arr.length()).mapNotNull { i ->
+            val o = arr.optJSONObject(i) ?: return@mapNotNull null
+            val c = o.optString("caminho", "")
+            if (c.isBlank()) null else Entry(c, o.optString("nome", ""), o.optLong("ts", 0L))
+        }
+    }
+
     private fun loadRaw(ctx: Context): List<Entry> {
         val raw = prefs(ctx).getString(KEY, "[]") ?: "[]"
         return try {
-            val arr = JSONArray(raw)
-            (0 until arr.length()).mapNotNull { i ->
-                val o = arr.optJSONObject(i) ?: return@mapNotNull null
-                val c = o.optString("caminho", "")
-                if (c.isBlank()) null else Entry(c, o.optString("nome", ""), o.optLong("ts", 0L))
-            }
+            cache.obter(raw)
         } catch (_: Exception) {
             emptyList()
         }

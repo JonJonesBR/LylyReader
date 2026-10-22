@@ -72,7 +72,7 @@ class LivroActivity : BasePlayerActivity() {
         // Recarrega sempre: o progresso e o vínculo com o audiobook mudam no leitor / na conversão.
         val id = intent.getStringExtra(EXTRA_ID)
         lifecycleScope.launch {
-            val encontrado = BibliotecaStore.listar(applicationContext).firstOrNull { it.id == id }
+            val encontrado = id?.let { BibliotecaStore.porId(applicationContext, it) }
             if (encontrado == null) {
                 finish()
             } else {

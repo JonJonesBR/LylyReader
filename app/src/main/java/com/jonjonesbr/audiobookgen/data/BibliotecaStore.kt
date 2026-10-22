@@ -27,6 +27,10 @@ import java.util.UUID
  *
  * Sem Room (nenhuma migração de schema): um JSON por livro. Toda função de disco roda em [Dispatchers.IO].
  */
+/** Id de livro seguro para virar nome de pasta: não vazio e sem separadores de caminho nem `..`. */
+internal fun idDeLivroValido(id: String): Boolean =
+    id.isNotEmpty() && !id.contains('/') && !id.contains('\\') && !id.contains("..")
+
 object BibliotecaStore {
     private const val ARQUIVO_JSON = "livro.json"
     private const val ARQUIVO_CAPA = "capa.jpg"
@@ -160,6 +164,13 @@ object BibliotecaStore {
     /** Livros válidos (pasta com `livro.json` legível e o arquivo do livro presente). */
     suspend fun listar(ctx: Context): List<LivroBiblioteca> = withContext(Dispatchers.IO) {
         listarSincrono(ctx)
+    }
+
+    /** O livro com este id (mesma validação de [listar]), ou null se não existe ou está inválido. Lê só a pasta dele. */
+    suspend fun porId(ctx: Context, id: String): LivroBiblioteca? = withContext(Dispatchers.IO) {
+        if (!idDeLivroValido(id)) return@withContext null
+        val pasta = pastaDo(ctx, id)
+        lerLivro(pasta)?.takeIf { it.id == pasta.name && File(pasta, it.nomeArquivo).isFile }
     }
 
     private fun listarSincrono(ctx: Context): List<LivroBiblioteca> =

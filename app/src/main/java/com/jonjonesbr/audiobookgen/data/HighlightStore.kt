@@ -27,6 +27,8 @@ object HighlightStore {
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
+    private val cache = CacheDeLista<Highlight> { raw -> paraLista(JSONArray(raw)) }
+
     /**
      * [trecho] é o intervalo de char offsets dentro do texto do parágrafo, EXCLUSIVO no fim
      * (construído com `inicio until fim`, no padrão de `String.substring`/`selectionEnd` do
@@ -77,7 +79,7 @@ object HighlightStore {
     fun loadAll(ctx: Context): List<Highlight> {
         val raw = prefs(ctx).getString(KEY, "[]") ?: "[]"
         return try {
-            paraLista(JSONArray(raw))
+            cache.obter(raw)
         } catch (_: Exception) {
             emptyList()
         }

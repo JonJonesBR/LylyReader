@@ -192,7 +192,7 @@ private fun entregarNaFila(fila: ArrayBlockingQueue<BlocoPcm>, bloco: BlocoPcm, 
 // Thread chamadora: fila de PCM → encoder AAC → amostras
 // ---------------------------------------------------------------------------------------------------------------------------
 
-/** Bloco do decoder em entrega ao encoder: o buffer de entrada do AAC é pequeno (1 quadro), então o bloco vai em pedaços. */
+/** Bloco do decoder em entrega ao encoder: o buffer de entrada do encoder (~8 KB) é menor que vários blocos somados, então o bloco pode ir em pedaços. */
 private class EntregaEmCurso {
     var bloco: BlocoPcm? = null
     var deslocamento = 0
@@ -264,7 +264,11 @@ private fun entregarPedaco(encoder: MediaCodec, entrega: EntregaEmCurso, bloco: 
     return true
 }
 
-/** Tamanho do pedaço a entregar: o menor entre a capacidade do buffer e o que falta, arredondado para baixo ao quadro de PCM. */
+/**
+ * Tamanho do pedaço a entregar: o menor entre a capacidade do buffer e o que falta, arredondado para baixo ao quadro de PCM.
+ * Os ramos sem alinhamento (capacidade ou resto menor que um quadro) não ocorrem na prática: o buffer do encoder AAC tem ≥ 8 KB e o
+ * decoder entrega quadros inteiros. Se ocorressem, o erro ficaria restrito ao bloco, porque o pts recomeça em `bloco.ptsUs`.
+ */
 internal fun tamanhoAlinhado(capacidade: Int, restante: Int, bytesPorQuadro: Int): Int {
     var n = minOf(capacidade, restante)
     if (n > bytesPorQuadro) n -= n % bytesPorQuadro

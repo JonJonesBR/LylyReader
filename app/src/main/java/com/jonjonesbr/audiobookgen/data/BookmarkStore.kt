@@ -20,6 +20,8 @@ object BookmarkStore {
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
+    private val cache = CacheDeLista<Bookmark> { raw -> paraLista(JSONArray(raw)) }
+
     fun adicionar(ctx: Context, caminhoLivro: String, nome: String, indiceParagrafo: Int) {
         if (caminhoLivro.isBlank()) return
         val bookmark = Bookmark(
@@ -57,7 +59,7 @@ object BookmarkStore {
     fun loadAll(ctx: Context): List<Bookmark> {
         val raw = prefs(ctx).getString(KEY, "[]") ?: "[]"
         return try {
-            paraLista(JSONArray(raw))
+            cache.obter(raw)
         } catch (_: Exception) {
             emptyList()
         }
