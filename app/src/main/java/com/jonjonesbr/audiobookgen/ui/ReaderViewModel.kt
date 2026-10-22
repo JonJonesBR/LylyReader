@@ -328,7 +328,8 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         com.jonjonesbr.audiobookgen.data.BlacklistStore(getApplication()).load()
 
     private fun salvarNaBlacklist(trecho: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        // NonCancellable: sair do leitor logo em seguida limpa o ViewModel e não pode perder a gravação.
+        viewModelScope.launch(Dispatchers.IO + kotlinx.coroutines.NonCancellable) {
             com.jonjonesbr.audiobookgen.data.BlacklistStore(getApplication()).add(trecho)
         }
     }
