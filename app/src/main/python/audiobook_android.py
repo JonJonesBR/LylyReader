@@ -19,6 +19,7 @@ Uso no Kotlin:
 """
 
 import asyncio
+import re
 import tarfile
 import threading
 from typing import Optional
@@ -278,7 +279,54 @@ def _montar_resultado(capitulos_raw, paragrafos_raw):
     }
 
 
-def _extrair_toc_epub3(zf, nav_path: str) -> dict:
+class ArquivoSuspeitoError(ValueError):
+    """Entrada de EPUB/DOCX recusada por parecer maliciosa (zip bomb, DTD/entidades)."""
+
+
+_RE_ENTITY = re.compile(rb"<!ENTITY", re.IGNORECASE)
+_RE_DOCTYPE = re.compile(rb"<!DOCTYPE", re.IGNORECASE)
+# DOCTYPE com subconjunto interno (`<!DOCTYPE x [ ... ]>`). O `<!DOCTYPE html>` simples é
+# usado por XHTML de EPUB válido, então no EPUB só o subconjunto interno é recusado.
+_RE_DOCTYPE_INTERNO = re.compile(rb"<!DOCTYPE[^>]*\[", re.IGNORECASE)
+
+
+def _verificar_xml_sem_dtd(dados: bytes, doctype_qualquer: bool) -> None:
+    """Recusa `<!ENTITY` e DOCTYPE (qualquer, ou só com subconjunto interno se
+    doctype_qualquer=False). Sem isso, entidades internas podem ser expandidas sem limite."""
+    if _RE_ENTITY.search(dados):
+        raise ArquivoSuspeitoError("XML com declaração <!ENTITY recusado")
+    padrao = _RE_DOCTYPE if doctype_qualquer else _RE_DOCTYPE_INTERNO
+    if padrao.search(dados):
+        raise ArquivoSuspeitoError("XML com DOCTYPE/DTD recusado")
+
+
+class _LeitorZipSeguro:
+    """Lê entradas de um ZipFile com teto por entrada (50 MB) e no total (200 MB).
+    O tamanho declarado no cabeçalho é checado antes; a leitura também é limitada, porque o
+    cabeçalho pode mentir. Entradas que estouram o teto levantam ArquivoSuspeitoError."""
+
+    LIMITE_ENTRADA = 50 * 1024 * 1024
+    LIMITE_TOTAL = 200 * 1024 * 1024
+
+    def __init__(self, zf, doctype_qualquer: bool = False):
+        self._zf = zf
+        self._doctype_qualquer = doctype_qualquer
+        self._lido = 0
+
+    def ler(self, nome: str) -> bytes:
+        info = self._zf.getinfo(nome)
+        if info.file_size > self.LIMITE_ENTRADA or self._lido + info.file_size > self.LIMITE_TOTAL:
+            raise ArquivoSuspeitoError(f"entrada grande demais: {nome}")
+        with self._zf.open(info) as f:
+            dados = f.read(self.LIMITE_ENTRADA + 1)
+        if len(dados) > self.LIMITE_ENTRADA or self._lido + len(dados) > self.LIMITE_TOTAL:
+            raise ArquivoSuspeitoError(f"entrada descomprimida grande demais: {nome}")
+        self._lido += len(dados)
+        _verificar_xml_sem_dtd(dados, self._doctype_qualquer)
+        return dados
+
+
+def _extrair_toc_epub3(leitor: "_LeitorZipSeguro", nav_path: str) -> dict:
     """Lê o Navigation Document do EPUB3 (`<nav epub:type="toc">`, obrigatório pela spec) e
     devolve capítulos no MESMO formato do NCX ({arquivo_minusculo: [(âncora, título), ...]}) —
     usado quando o EPUB não tem `toc.ncx` (comum em livros gerados por ferramentas modernas,
@@ -288,7 +336,7 @@ def _extrair_toc_epub3(zf, nav_path: str) -> dict:
 
     toc_chapters: dict = {}
     try:
-        soup = BeautifulSoup(zf.read(nav_path), "html.parser")
+        soup = BeautifulSoup(leitor.ler(nav_path), "html.parser")
         nav_dir = nav_path.rsplit("/", 1)[0] if "/" in nav_path else ""
         toc_nav = soup.find("nav", attrs={"epub:type": "toc"}) or soup.find("nav")
         if not toc_nav:
@@ -317,6 +365,7 @@ def _extrair_epub(caminho: str) -> dict:
     cap_idx = 0
 
     with zipfile.ZipFile(caminho) as zf:
+        leitor = _LeitorZipSeguro(zf)
         namelist_lower = {n.lower(): n for n in zf.namelist()}
 
         # 1. Parse NCX (EPUB2) first to get reliable TOC chapters mapped to files and anchors
@@ -324,7 +373,7 @@ def _extrair_epub(caminho: str) -> dict:
         toc_chapters = {}
         if ncx_path:
             try:
-                ncx_soup = BeautifulSoup(zf.read(ncx_path), "html.parser")
+                ncx_soup = BeautifulSoup(leitor.ler(ncx_path), "html.parser")
                 ncx_dir = ncx_path.rsplit("/", 1)[0] if "/" in ncx_path else ""
                 for np in ncx_soup.find_all("navpoint"):
                     nav_label = np.find("navlabel")
@@ -356,7 +405,7 @@ def _extrair_epub(caminho: str) -> dict:
         nav_full_path = None
         if opf_path:
             try:
-                soup = BeautifulSoup(zf.read(opf_path), "html.parser")
+                soup = BeautifulSoup(leitor.ler(opf_path), "html.parser")
                 item_map = {}
                 basedir = opf_path.rsplit("/", 1)[0] if "/" in opf_path else ""
                 for item in soup.find_all("item"):
@@ -387,11 +436,11 @@ def _extrair_epub(caminho: str) -> dict:
         if not toc_chapters and nav_full_path:
             nav_path = namelist_lower.get(nav_full_path.lower())
             if nav_path:
-                toc_chapters = _extrair_toc_epub3(zf, nav_path)
+                toc_chapters = _extrair_toc_epub3(leitor, nav_path)
 
         for item_path in items_in_order:
             try:
-                content = zf.read(item_path)
+                content = leitor.ler(item_path)
                 soup = BeautifulSoup(content, "html.parser")
             except Exception:
                 continue
@@ -631,7 +680,8 @@ def _extrair_docx(caminho: str) -> dict:
     with zipfile.ZipFile(caminho) as zf:
         if "word/document.xml" not in zf.namelist():
             return {"ok": False, "erro": "DOCX inválido"}
-        tree = ET.fromstring(zf.read("word/document.xml"))
+        # DOCX legítimo nunca tem DOCTYPE: recusa qualquer um (zip bomb/entidades) e o teto.
+        tree = ET.fromstring(_LeitorZipSeguro(zf, doctype_qualquer=True).ler("word/document.xml"))
 
     for p in tree.findall(f".//{W}p"):
         # Detecta estilo de heading
