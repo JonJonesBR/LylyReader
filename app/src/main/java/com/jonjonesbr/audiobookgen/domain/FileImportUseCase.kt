@@ -11,6 +11,7 @@ object ImportedFileNamePolicy {
             .substringAfterLast('\\')
             .replace(Regex("[^A-Za-z0-9._-]"), "_")
             .trim()
+            .let { if (it.all { c -> c == '.' }) "" else it }  // "." e ".." apontariam para pastas
             .ifBlank { "documento" }
         val currentExtension = base.substringAfterLast('.', "").lowercase()
         if (currentExtension in supportedExtensions) return base
