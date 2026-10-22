@@ -704,7 +704,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• O app ficou mais fácil de usar com leitor de tela: os controles deslizantes dizem o valor e os botões são anunciados como botões.\n• As mensagens de erro estão mais claras e aparecem numa barra na parte de baixo, que fica mais tempo na tela.\n• Títulos longos não são mais cortados com letra grande, e a lista de Downloads avisa quando um filtro não encontra nada.\n• Os menus abrem por inteiro e rolam com o celular deitado, e as telas trocam com uma transição suave.</string>
+    <string name="release_notes_corpo">• O botão de tocar/pausar do widget na tela inicial agora funciona, e o texto do widget ficou mais fácil de ler.\n• Abrir livros ficou mais seguro: arquivos EPUB e DOCX danificados ou grandes demais são recusados em vez de travar o app.\n• Os idiomas na busca de livros mostram o nome por extenso, e as contagens aparecem certas no singular e no plural.\n• Downloads e Audiobooks se ajustam melhor com o celular deitado, e o texto das estatísticas ficou maior.\n• Sair do leitor não perde mais a última alteração nas palavras bloqueadas.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>

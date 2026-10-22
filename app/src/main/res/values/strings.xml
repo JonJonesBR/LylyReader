@@ -713,7 +713,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• The app is now easier to use with a screen reader: sliders say their value and buttons are announced as buttons.\n• Error messages are clearer and appear in a bar at the bottom that stays on screen longer.\n• Long titles no longer get cut off with large text, and the Downloads list says when a filter finds nothing.\n• Menus now open fully and scroll when the phone is on its side, and screens fade smoothly into each other.</string>
+    <string name="release_notes_corpo">• The play/pause button on the home screen widget now works, and the widget text is easier to read.\n• Opening books is safer: damaged or oversized EPUB and DOCX files are refused instead of freezing the app.\n• Languages in the book search now show their full names, and counts read correctly in singular and plural.\n• Downloads and Audiobooks fit better when the phone is on its side, and stats text is larger.\n• Leaving the reader no longer loses your last blocked-words change.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
