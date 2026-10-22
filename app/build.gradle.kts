@@ -131,10 +131,6 @@ android {
         }
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
-    }
-
     packaging {
         resources {
             resources.excludes.add("/META-INF/{AL2.0,LGPL2.1}")
