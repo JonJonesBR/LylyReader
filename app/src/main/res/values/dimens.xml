@@ -2,4 +2,7 @@
 <resources>
     <!-- Padding horizontal extra das telas com rolagem (somado ao padding do conteúdo). 0 no celular. -->
     <dimen name="lyly_conteudo_pad_extra">0dp</dimen>
+    <!-- Estado vazio da biblioteca: ícone e margem inferior (menores em paisagem). -->
+    <dimen name="vazio_icone">72dp</dimen>
+    <dimen name="vazio_icone_margem">16dp</dimen>
 </resources>

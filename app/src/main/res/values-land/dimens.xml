@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Estado vazio da biblioteca em paisagem: ícone menor e margem menor para caber na tela. -->
+    <dimen name="vazio_icone">40dp</dimen>
+    <dimen name="vazio_icone_margem">8dp</dimen>
+</resources>

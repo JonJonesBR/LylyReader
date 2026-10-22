@@ -5,6 +5,7 @@ import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 
 object NativeCrashDetector {
     private const val TAG = "NativeCrashDetector"
@@ -17,11 +18,11 @@ object NativeCrashDetector {
     // low memory, etc.) é logado — inclui as saídas do processo isolado :supertonic, já que
     // getHistoricalProcessExitReasons retorna o histórico de TODOS os processos do pacote,
     // não só o principal.
-    private val benignReasons = setOf(
-        ApplicationExitInfo.REASON_EXIT_SELF,
-        ApplicationExitInfo.REASON_USER_REQUESTED,
-        ApplicationExitInfo.REASON_USER_STOPPED
-    )
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun ehSaidaBenigna(reason: Int): Boolean =
+        reason == ApplicationExitInfo.REASON_EXIT_SELF ||
+            reason == ApplicationExitInfo.REASON_USER_REQUESTED ||
+            reason == ApplicationExitInfo.REASON_USER_STOPPED
 
     private fun reasonName(reason: Int): String = when (reason) {
         ApplicationExitInfo.REASON_CRASH_NATIVE -> "REASON_CRASH_NATIVE"
@@ -49,7 +50,7 @@ object NativeCrashDetector {
             val newReasons = reasons.filter { it.timestamp > lastChecked }
             newReasons.forEach { if (it.timestamp > latestTimestamp) latestTimestamp = it.timestamp }
 
-            for (reason in newReasons.filterNot { it.reason in benignReasons }) {
+            for (reason in newReasons.filterNot { ehSaidaBenigna(it.reason) }) {
                 val description = reason.description ?: "unknown"
                 val status = String.format(java.util.Locale.US, "0x%08X", reason.status)
                 val reasonStr = reasonName(reason.reason)

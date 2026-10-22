@@ -71,4 +71,16 @@ class PoliticaPrimeiroPlanoTest {
     fun `autopausa nao dispara com 5h39 de primeiro plano`() {
         assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 1_000L, agoraMs = 1_000L + limiteMs - 60_000L))
     }
+
+    @Test
+    fun `autopausa no limite exato com inicio zero`() {
+        assertTrue(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 0L, agoraMs = limiteMs))
+        assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 0L, agoraMs = limiteMs - 1L))
+    }
+
+    @Test
+    fun `relogio retrocedendo nunca autopausa`() {
+        assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = 10_000_000L, agoraMs = 1_000L))
+        assertFalse(PoliticaPrimeiroPlano.deveAutoPausar(36, emPrimeiroPlano = true, appVisivel = false, inicioOrcamentoMs = limiteMs * 3, agoraMs = 0L))
+    }
 }

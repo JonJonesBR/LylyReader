@@ -196,10 +196,10 @@
             android:gravity="center">
 
         <ImageView
-            android:layout_width="72dp"
-            android:layout_height="72dp"
+            android:layout_width="@dimen/vazio_icone"
+            android:layout_height="@dimen/vazio_icone"
             android:src="@drawable/ic_empty_library"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="@dimen/vazio_icone_margem"
             android:contentDescription="@string/cd_biblioteca_vazia"/>
 
 
