@@ -64,8 +64,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/widget_tap_to_open"
-            android:textColor="#888888"
-            android:textSize="10sp"
+            android:textColor="#BBBBBB"
+            android:textSize="11sp"
             android:ellipsize="end"
             android:maxLines="1"/>
     </LinearLayout>

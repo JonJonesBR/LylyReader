@@ -42,7 +42,8 @@
             android:text="A"
             android:textSize="12sp"
             android:textColor="@color/color_on_surface_dim"
-            android:layout_marginEnd="8dp"/>
+            android:layout_marginEnd="8dp"
+            android:importantForAccessibility="no"/>
 
         <SeekBar
             android:id="@+id/seekBarFonte"
@@ -72,7 +73,8 @@
             android:text="A"
             android:textSize="20sp"
             android:textColor="@color/color_on_surface_dim"
-            android:layout_marginStart="4dp"/>
+            android:layout_marginStart="4dp"
+            android:importantForAccessibility="no"/>
     </LinearLayout>
 
     <!-- Espaçamento -->
