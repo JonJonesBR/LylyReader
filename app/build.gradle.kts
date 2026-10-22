@@ -187,7 +187,7 @@ tasks.withType<JavaCompile> {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = "17"
     // Algumas dependências .aar trazem classes.jar compilado com Kotlin 2.1+. Permite ler
-    // metadata mais nova que a versão do compilador Kotlin do projeto (1.9.0).
+    // metadata mais nova que a versão do compilador Kotlin do projeto (1.9.25).
     kotlinOptions.freeCompilerArgs += listOf("-Xskip-metadata-version-check")
 }
 
