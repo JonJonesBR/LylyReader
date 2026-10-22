@@ -103,6 +103,8 @@ class AudioPlayerService : MediaLibraryService() {
         /** Sem marcas de capítulo, recuar/avançar pula 15s (T4.4). */
         private const val PULO_SEM_CAPITULO_MS = 15_000
         private const val INTERVALO_SALVAR_PROGRESSO_MS = 5_000
+        /** Validade do cache da biblioteca usado pelo Android Auto (limita o tempo de dado desatualizado). */
+        private const val VALIDADE_CACHE_BIBLIOTECA_MS = 60_000L
     }
 
     inner class AudioBinder : Binder() {
@@ -126,6 +128,20 @@ class AudioPlayerService : MediaLibraryService() {
     private var ultimoSalvarProgressoMs = 0L
     private var msOuvidoAcumulado = 0L
     private var capitulosAtual: List<CapituloAudio> = emptyList()
+
+    /** Biblioteca já listada, com os mediaIds para validação rápida. Snapshot imutável. */
+    private class BibliotecaCacheada(
+        val itens: List<AudiobookItem>,
+        val ids: Set<String>,
+        val geradaEmMs: Long,
+    )
+
+    // Cache da biblioteca para os callbacks de navegação: evita recalcular a duração de todos os
+    // livros (MediaMetadataRetriever) a cada onGetChildren/onAddMediaItems. Lido e escrito só no
+    // thread principal (callbacks da media3 e serviceScope são Main); @Volatile dá visibilidade.
+    @Volatile private var bibliotecaCacheada: BibliotecaCacheada? = null
+    // Incrementado a cada invalidação: uma carga iniciada antes dela não sobrescreve o cache.
+    @Volatile private var geracaoCache = 0
 
     private var estavaTocandoAntesDoFoco = false
 
@@ -232,6 +248,8 @@ class AudioPlayerService : MediaLibraryService() {
             browser: MediaSession.ControllerInfo,
             params: MediaLibraryService.LibraryParams?
         ): ListenableFuture<LibraryResult<MediaItem>> {
+            // Cada conexão de navegador (ex.: Android Auto) começa aqui: lista de novo.
+            invalidarBibliotecaCacheada()
             val root = MediaItem.Builder()
                 .setMediaId(MEDIA_ROOT_ID)
                 .setMediaMetadata(
@@ -266,7 +284,7 @@ class AudioPlayerService : MediaLibraryService() {
             }
             val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
             serviceScope.launch {
-                val itens = AudiobookLibraryUseCase.listar(applicationContext).map { it.paraMediaItem() }
+                val itens = obterBiblioteca().itens.map { it.paraMediaItem() }
                 future.set(LibraryResult.ofItemList(ImmutableList.copyOf(itens), params))
             }
             return future
@@ -284,11 +302,14 @@ class AudioPlayerService : MediaLibraryService() {
             // Só aceita itens que existem na biblioteca: o mediaId vira Uri apenas se listado.
             val future = SettableFuture.create<List<MediaItem>>()
             serviceScope.launch {
-                val idsConhecidos = AudiobookLibraryUseCase.listar(applicationContext)
-                    .map { it.idNaBiblioteca() }
-                    .toSet()
+                var biblioteca = obterBiblioteca()
+                // mediaId fora do cache pode ser livro novo: relista uma vez antes de recusar.
+                if (mediaItems.any { it.mediaId !in biblioteca.ids }) {
+                    invalidarBibliotecaCacheada()
+                    biblioteca = obterBiblioteca()
+                }
                 val resolvidos = mediaItems
-                    .filter { it.mediaId in idsConhecidos }
+                    .filter { it.mediaId in biblioteca.ids }
                     .map { item -> item.buildUpon().setUri(uriPara(item.mediaId)).build() }
                 future.set(resolvidos)
             }
@@ -625,6 +646,29 @@ class AudioPlayerService : MediaLibraryService() {
         podeNavegar(controlador.packageName, controlador.uid, Process.myUid(), controlador.isTrusted)
 
     private fun AudiobookItem.idNaBiblioteca(): String = caminho ?: uri.toString()
+
+    /** Devolve a biblioteca do cache se ainda válida; senão lista de novo e guarda (se nenhuma
+     *  invalidação ocorreu durante a carga). */
+    private suspend fun obterBiblioteca(): BibliotecaCacheada {
+        val atual = bibliotecaCacheada
+        if (atual != null && System.currentTimeMillis() - atual.geradaEmMs < VALIDADE_CACHE_BIBLIOTECA_MS) {
+            return atual
+        }
+        val geracao = geracaoCache
+        val itens = AudiobookLibraryUseCase.listar(applicationContext)
+        val nova = BibliotecaCacheada(
+            itens = itens,
+            ids = itens.map { it.idNaBiblioteca() }.toSet(),
+            geradaEmMs = System.currentTimeMillis(),
+        )
+        if (geracao == geracaoCache) bibliotecaCacheada = nova
+        return nova
+    }
+
+    private fun invalidarBibliotecaCacheada() {
+        geracaoCache++
+        bibliotecaCacheada = null
+    }
 
     /**
      * Valida o caminho recebido em ACTION_INICIAR. Aceita arquivo sob filesDir ou Downloads,

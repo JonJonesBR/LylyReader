@@ -28,6 +28,18 @@ class ControladorConfiavelTest {
         assertTrue(podeNavegar("com.google.android.googlequicksearchbox", 20_000, meuUid, confiavel = false))
     }
 
+    @Test fun bluetoothPodeNavegarMesmoSemSerTrusted() {
+        assertTrue(podeNavegar("com.android.bluetooth", 1_002, meuUid, confiavel = false))
+    }
+
+    @Test fun wearPodeNavegarMesmoSemSerTrusted() {
+        assertTrue(podeNavegar("com.google.android.wearable.app", 20_000, meuUid, confiavel = false))
+    }
+
+    @Test fun assistenteDoCarroPodeNavegarMesmoSemSerTrusted() {
+        assertTrue(podeNavegar("com.google.android.carassistant", 20_000, meuUid, confiavel = false))
+    }
+
     @Test fun outroAppNaoConfiavelNaoPodeNavegar() {
         assertFalse(podeNavegar("com.exemplo.espiao", 20_000, meuUid, confiavel = false))
     }
@@ -35,5 +47,8 @@ class ControladorConfiavelTest {
     @Test fun pacoteParecidoComOsConfiaveisNaoPodeNavegar() {
         assertFalse(podeNavegar("com.android.systemui.falso", 20_000, meuUid, confiavel = false))
         assertFalse(podeNavegar("com.google.android.projection.gearhead.clone", 20_000, meuUid, confiavel = false))
+        assertFalse(podeNavegar("com.android.bluetooth.falso", 20_000, meuUid, confiavel = false))
+        assertFalse(podeNavegar("com.google.android.wearable.app.clone", 20_000, meuUid, confiavel = false))
+        assertFalse(podeNavegar("com.google.android.carassistant.clone", 20_000, meuUid, confiavel = false))
     }
 }

@@ -5,6 +5,9 @@ private val PACOTES_DE_NAVEGACAO_CONFIAVEIS = setOf(
     "com.google.android.projection.gearhead",
     "com.android.systemui",
     "com.google.android.googlequicksearchbox",
+    "com.android.bluetooth",
+    "com.google.android.wearable.app",
+    "com.google.android.carassistant",
 )
 
 /**
