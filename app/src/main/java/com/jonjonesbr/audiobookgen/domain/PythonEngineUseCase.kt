@@ -276,7 +276,7 @@ class PythonEngineUseCase(private val context: Context) {
                 )
             } else {
                 val erroRaw = resultado.callAttr("get", "erro")?.toString() ?: ""
-                ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(erroRaw)), jobDo(resultado))
+                ProcessamentoResult.Error(mensagemComDetalhe(erroRaw), jobDo(resultado))
             }
 
         } catch (e: CancellationException) {
@@ -288,6 +288,13 @@ class PythonEngineUseCase(private val context: Context) {
             CrashLogWriter.log(e, "processarArquivo", "voz=$voz, motor=$motor, arquivo=$arquivo")
             ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "Falha interna local")))
         }
+    }
+
+    /** Mensagem amigável; quando o erro não é reconhecido, anexa o texto bruto do motor para o diagnóstico. */
+    private fun mensagemComDetalhe(erroRaw: String): String {
+        val res = TtsErrorMapper.toUserMessageRes(erroRaw)
+        val base = context.getString(res)
+        return if (res == R.string.erro_tts_generico && erroRaw.isNotBlank()) "$base (${erroRaw.take(200)})" else base
     }
 
     /** Converte texto já extraído, preservando parágrafos e mapa de vozes do leitor. */
@@ -338,7 +345,7 @@ class PythonEngineUseCase(private val context: Context) {
                 )
             } else {
                 val erroRaw = resultado.callAttr("get", "erro")?.toString() ?: ""
-                ProcessamentoResult.Error(context.getString(TtsErrorMapper.toUserMessageRes(erroRaw)), jobDo(resultado))
+                ProcessamentoResult.Error(mensagemComDetalhe(erroRaw), jobDo(resultado))
             }
         } catch (e: CancellationException) {
             throw e

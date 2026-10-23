@@ -60,6 +60,12 @@ object TtsErrorMapper {
                 R.string.erro_tts_sem_texto
             "nenhum chunk" in r ->
                 R.string.erro_tts_texto_nao_separavel
+            // Mensagens finais do core_processor_android.py. Ficam depois das causas específicas
+            // (rede, chave, timeout) e antes do genérico.
+            "blocos nao puderam" in r || "blocos não puderam" in r ->
+                R.string.erro_tts_blocos_falharam
+            "falha na concatenacao" in r || "falha na concatenação" in r ->
+                R.string.erro_tts_juncao_falhou
             else ->
                 R.string.erro_tts_generico
         }

@@ -713,7 +713,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• O botão de tocar/pausar do widget na tela inicial agora funciona, e o texto do widget ficou mais fácil de ler.\n• Abrir livros ficou mais seguro: arquivos EPUB e DOCX danificados ou grandes demais são recusados em vez de travar o app.\n• Os idiomas na busca de livros mostram o nome por extenso, e as contagens aparecem certas no singular e no plural.\n• Downloads e Audiobooks se ajustam melhor com o celular deitado, e o texto das estatísticas ficou maior.\n• Sair do leitor não perde mais a última alteração nas palavras bloqueadas.</string>
+    <string name="release_notes_corpo">• Livros grandes não falham mais no final: a seção de notas e referências é pulada, e poucos trechos que não podem ser convertidos não cancelam mais o audiobook inteiro.\n• Mensagens mais claras quando uma conversão falha, dizendo o que aconteceu.\n• Clonagem de voz guiada: grave até 30 segundos, com dicas e avaliação de qualidade.\n• Bluetooth e relógio inteligente controlam seus audiobooks, e backups de uma versão mais nova são recusados com uma mensagem clara.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
@@ -1283,6 +1283,8 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="erro_tts_sem_texto">Nao foi encontrado texto legivel no documento.</string>
     <string name="erro_tts_texto_nao_separavel">O texto nao pode ser separado para narracao.</string>
     <string name="erro_tts_generico">Nao foi possivel concluir. Tente novamente ou use outro arquivo.</string>
+    <string name="erro_tts_blocos_falharam">Alguns trechos do livro não puderam ser convertidos. Verifique a conexão e tente novamente.</string>
+    <string name="erro_tts_juncao_falhou">Não foi possível juntar o áudio. Verifique o espaço livre e tente novamente.</string>
     <string name="python_motor_offline">Motor Python offline.</string>
     <string name="python_payload_incompleto">Python retornou um payload incompleto.</string>
     <string name="python_payload_vazio">Python retornou um payload vazio.</string>

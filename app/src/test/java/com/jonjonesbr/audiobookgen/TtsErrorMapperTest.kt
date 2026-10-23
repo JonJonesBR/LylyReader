@@ -163,4 +163,39 @@ class TtsErrorMapperTest {
 
         assertEquals(R.string.erro_tts_elevenlabs_recusada, message)
     }
+
+    // Mensagens finais do core_processor_android.py quando trechos do livro falham (motor Edge)
+
+    @Test
+    fun mapsEdgeBlocksFailureToPartialConversionMessage() {
+        val message = TtsErrorMapper.toUserMessageRes(
+            "19 de 201 blocos não puderam ser convertidos após 3 tentativas. " +
+                "Verifique a conexão com a internet."
+        )
+
+        assertEquals(R.string.erro_tts_blocos_falharam, message)
+    }
+
+    @Test
+    fun mapsEdgeBlocksFailureWithoutAccentsToPartialConversionMessage() {
+        val message = TtsErrorMapper.toUserMessageRes(
+            "19 de 201 blocos nao puderam ser convertidos apos 3 tentativas."
+        )
+
+        assertEquals(R.string.erro_tts_blocos_falharam, message)
+    }
+
+    @Test
+    fun mapsAudioJoinFailureToJoinMessage() {
+        val message = TtsErrorMapper.toUserMessageRes("Falha na concatenação do áudio.")
+
+        assertEquals(R.string.erro_tts_juncao_falhou, message)
+    }
+
+    @Test
+    fun mapsAudioJoinFailureWithoutAccentsToJoinMessage() {
+        val message = TtsErrorMapper.toUserMessageRes("Falha na concatenacao do audio.")
+
+        assertEquals(R.string.erro_tts_juncao_falhou, message)
+    }
 }

@@ -715,7 +715,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• The play/pause button on the home screen widget now works, and the widget text is easier to read.\n• Opening books is safer: damaged or oversized EPUB and DOCX files are refused instead of freezing the app.\n• Languages in the book search now show their full names, and counts read correctly in singular and plural.\n• Downloads and Audiobooks fit better when the phone is on its side, and stats text is larger.\n• Leaving the reader no longer loses your last blocked-words change.</string>
+    <string name="release_notes_corpo">• Big books no longer fail at the end: the notes and references section is skipped, and a few chunks that can\'t be converted no longer cancel the whole audiobook.\n• Clearer messages when a conversion fails, saying what happened.\n• Guided voice cloning: record up to 30 seconds, with tips and a quality check.\n• Bluetooth and smartwatch controls work with your audiobooks, and backups from a newer version are refused with a clear message.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1287,6 +1287,8 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="erro_tts_sem_texto">Nao foi encontrado texto legivel no documento.</string>
     <string name="erro_tts_texto_nao_separavel">O texto nao pode ser separado para narracao.</string>
     <string name="erro_tts_generico">Nao foi possivel concluir. Tente novamente ou use outro arquivo.</string>
+    <string name="erro_tts_blocos_falharam">Some parts of the book could not be converted. Check your connection and try again.</string>
+    <string name="erro_tts_juncao_falhou">Could not join the audio. Check the free space and try again.</string>
     <string name="python_motor_offline">Motor Python offline.</string>
     <string name="python_payload_incompleto">Python retornou um payload incompleto.</string>
     <string name="python_payload_vazio">Python retornou um payload vazio.</string>

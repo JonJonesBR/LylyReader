@@ -12,6 +12,7 @@ Diferenças em relação ao core_processor.py original:
 import asyncio
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -30,6 +31,7 @@ from utils import (
     formatar_duracao, dividir_em_sentencas, dividir_em_capitulos,
     garantir_temp_dir, ProgressTracker, aplicar_intervalo, ler_texto_pronto,
     extrair_texto_limpo, contar_estatisticas, estimar_duracao, sanitizar_trecho_para_tts,
+    remover_secao_notas_final,
 )
 from tts import (
     converter_tts_auto, concatenar_grupo_com_pausa, aplicar_timbre,
@@ -192,6 +194,11 @@ def _chunks_falhos(total: int, completed_valid: set, temp_files: list) -> list:
         or not os.path.exists(temp_files[i])
         or os.path.getsize(temp_files[i]) <= 500
     ]
+
+
+def _limite_falhas_toleradas(total: int) -> int:
+    """Quantos blocos podem falhar sem abortar a conversão: 5% do total, entre 1 e 10."""
+    return min(10, max(1, math.ceil(total * 0.05)))
 
 
 def _titulo_de_capitulo(texto: str, idx: int) -> str:
@@ -512,7 +519,13 @@ async def processar(
 
     # ── Verificação final: impede audiobook incompleto ────────────────────────
     falhos_final = _chunks_falhos(total, completed_valid, temp_files)
-    if falhos_final:
+    if falhos_final and len(falhos_final) <= _limite_falhas_toleradas(total):
+        logger.warning(
+            f"{len(falhos_final)}/{total} blocos ignorados após {_MAX_RODADAS_RETRY} retries "
+            "(dentro do limite de tolerância); seguindo com os demais."
+        )
+        _cb(95, f"{len(falhos_final)} trecho(s) não puderam ser convertidos e foram ignorados.")
+    elif falhos_final:
         logger.error(f"Conversão incompleta: {len(falhos_final)}/{total} blocos falharam após {_MAX_RODADAS_RETRY} retries.")
         if motor_ativo == "elevenlabs":
             dica = _dica_erro_elevenlabs()
@@ -533,7 +546,7 @@ async def processar(
     _cb(95, "Juntando áudio...")
     indices_validos = [
         i for i in range(total)
-        if os.path.exists(temp_files[i]) and os.path.getsize(temp_files[i]) > 500
+        if i in completed_valid and os.path.exists(temp_files[i]) and os.path.getsize(temp_files[i]) > 500
     ]
     arquivos_validos = [temp_files[i] for i in indices_validos]
     pausas_validas = [chunk_pauses[i] for i in indices_validos] if chunk_pauses else None
@@ -640,6 +653,11 @@ async def processar_arquivo(
 
     if not texto.strip():
         return {"ok": False, "erro": "O arquivo não contém texto extraível."}
+
+    tamanho_antes_notas = len(texto)
+    texto = remover_secao_notas_final(texto)
+    if len(texto) < tamanho_antes_notas:
+        logger.info(f"Seção de notas finais removida: {tamanho_antes_notas - len(texto)} caracteres.")
 
     titulo = Path(caminho_arquivo).stem
     stats  = contar_estatisticas(texto)

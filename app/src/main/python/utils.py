@@ -176,6 +176,45 @@ def contar_estatisticas(texto: str) -> dict:
     }
 
 
+_TITULOS_SECAO_NOTAS = frozenset({
+    "notas", "notas de rodapé", "notas do autor", "notas finais",
+    "referências", "referências bibliográficas", "referencias", "referencias bibliograficas",
+    "bibliografia", "notes", "endnotes", "references",
+})
+_RE_ITEM_NUMERADO = re.compile(r"\s*\d+\.")
+_MIN_ITENS_SECAO_NOTAS = 10
+_FRACAO_FINAL_SECAO_NOTAS = 0.7
+
+
+def remover_secao_notas_final(texto: str) -> str:
+    """Corta a seção de notas/referências do fim do livro (ex.: "Notas" seguido de 10+ itens
+    numerados). Só age se o último título de notas estiver nos últimos 30% do texto; caso
+    contrário devolve o texto intacto."""
+    if not texto:
+        return texto
+    linhas = texto.splitlines(keepends=True)
+    posicoes = []
+    pos = 0
+    for linha in linhas:
+        posicoes.append(pos)
+        pos += len(linha)
+
+    idx_titulo = None
+    for i in range(len(linhas) - 1, -1, -1):
+        if linhas[i].strip().lower() in _TITULOS_SECAO_NOTAS:
+            idx_titulo = i
+            break
+    if idx_titulo is None:
+        return texto
+    if posicoes[idx_titulo] < len(texto) * _FRACAO_FINAL_SECAO_NOTAS:
+        return texto
+
+    itens = sum(1 for linha in linhas[idx_titulo + 1:] if _RE_ITEM_NUMERADO.match(linha))
+    if itens < _MIN_ITENS_SECAO_NOTAS:
+        return texto
+    return texto[:posicoes[idx_titulo]].rstrip()
+
+
 def limpar_texto_avancado(texto: str) -> str:
     texto = sanitize_text_noise(texto)
     texto = re.sub(r"\n{3,}", "\n\n", texto)
