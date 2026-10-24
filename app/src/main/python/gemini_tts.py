@@ -21,6 +21,14 @@ import aiohttp
 
 from audio_cache import CACHE
 from config_android import logger
+from erros_tts import ErroDeChave
+
+# Texto que o Google devolve (HTTP 400) quando a chave é inválida ou mal formada.
+_MARCAS_CHAVE_INVALIDA_GEMINI = ("API_KEY_INVALID", "API key not valid")
+
+
+def _chave_invalida_gemini(texto_erro: str) -> bool:
+    return any(marca in texto_erro for marca in _MARCAS_CHAVE_INVALIDA_GEMINI)
 
 
 # =============================================================================
@@ -149,6 +157,7 @@ class GeminiTTSClient:
         text_input = self._text_to_ssml(text) if self.enable_ssml else text
 
         model_idx = 0
+        chaves_recusadas = set()
         for attempt in range(10):
             model = self._models[model_idx % len(self._models)]
             key = await self.km.current()
@@ -195,6 +204,22 @@ class GeminiTTSClient:
                         delay = min(60, 2 ** attempt)
                         await asyncio.sleep(delay)
 
+                    elif resp.status in (401, 403) or (
+                        # Google responde 400 (API_KEY_INVALID) para chave inválida ou mal formada.
+                        resp.status == 400 and _chave_invalida_gemini(await resp.text())
+                    ):
+                        # Chave recusada: tenta as outras chaves; só desiste quando todas foram recusadas.
+                        chaves_recusadas.add(self.km._idx)
+                        if len(chaves_recusadas) >= self.km.count:
+                            raise ErroDeChave(
+                                f"Gemini: chave recusada (HTTP {resp.status}). "
+                                "Verifique a chave Gemini em Configurações."
+                            )
+                        logger.error(f"Gemini: chave recusada (HTTP {resp.status}), rotacionando chave e modelo...")
+                        await self.km.rotate()
+                        model_idx += 1
+                        await asyncio.sleep(2)
+
                     elif resp.status in (400, 404):
                         body = await resp.text()
                         model_idx += 1
@@ -202,17 +227,13 @@ class GeminiTTSClient:
                         logger.warning(f"HTTP {resp.status} no modelo '{model}', tentando '{proximo}'... Body: {body[:500]}")
                         await asyncio.sleep(2)
 
-                    elif resp.status == 403:
-                        logger.error("Gemini: chave inválida (403), rotacionando chave e modelo...")
-                        await self.km.rotate()
-                        model_idx += 1
-                        await asyncio.sleep(2)
-
                     else:
                         logger.warning(f"Gemini HTTP {resp.status} (modelo '{model}'), rotacionando modelo...")
                         model_idx += 1
                         await asyncio.sleep(5)
 
+            except ErroDeChave:
+                raise
             except aiohttp.ClientError as e:
                 logger.warning(f"Gemini rede: {e}, aguardando 5s...")
                 await asyncio.sleep(5)

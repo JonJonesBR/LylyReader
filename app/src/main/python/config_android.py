@@ -111,7 +111,7 @@ OPENROUTER_CHUNK_LIMITE = 2500
 # ElevenLabs (API oficial, chave própria do usuário): planos gratuitos/básicos têm poucos
 # slots de requisição concorrente — mesmo conservadorismo do OpenRouter (que também
 # encaminha pra ElevenLabs por baixo).
-ELEVENLABS_TTS_WORKERS = 2
+ELEVENLABS_TTS_WORKERS = 1  # a ponte Kotlin roda em thread; 2 workers viraria requisições simultâneas (limite de planos grátis)
 ELEVENLABS_CHUNK_LIMITE = 2500
 
 # Chunk menor para Gemini: respostas mais rápidas, menos chance de timeout.

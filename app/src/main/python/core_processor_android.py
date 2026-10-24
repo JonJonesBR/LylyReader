@@ -42,6 +42,7 @@ from tts import (
     agrupar_blocos_por_limite, obter_duracao_ffprobe, validar_voz_tts,
 )
 from cover_art import obter_capa
+from erros_tts import ErroDeChave
 from smart_cleaner import normalize_blacklist
 from speaker_segments import build_speaker_chunk_plan
 
@@ -202,6 +203,11 @@ def _chunks_falhos(total: int, completed_valid: set, temp_files: list) -> list:
 def _limite_falhas_toleradas(total: int) -> int:
     """Quantos blocos podem falhar sem abortar a conversão: 5% do total, entre 1 e 10."""
     return min(10, max(1, math.ceil(total * 0.05)))
+
+
+def _voz_local(voz: str) -> bool:
+    """Vozes que rodam no aparelho (sem internet). O motor carrega o modelo antes do 1º bloco."""
+    return voz.startswith(("android::", "supertonic-", "kokoro-", "pocket-")) or "::" in voz
 
 
 def _iniciar_batimento(_cb, pct, mensagem, intervalo: float = 5.0) -> asyncio.Task:
@@ -517,17 +523,26 @@ async def processar(
     def _pct_concluidos() -> int:
         return len(completed_valid) * PCT_FIM_SINTESE // total
 
+    # Mensagem da chave recusada (ErroDeChave). Preenchida pelo 1º bloco que a recebe; para a conversão.
+    chave_recusada = [None]
+
     async def _converter_um(idx: int, chunk: str, semaforo: asyncio.Semaphore, texto_alt: Optional[str] = None):
-        if _cancelar_flag:
+        if _cancelar_flag or chave_recusada[0]:
             return
         async with semaforo:
-            if _cancelar_flag:
+            if _cancelar_flag or chave_recusada[0]:
                 return
             texto_envio = chunk
             if texto_alt and texto_alt != chunk:
                 logger.warning(f"Bloco {idx + 1}: última tentativa com texto sanitizado (fallback).")
                 texto_envio = texto_alt
-            ok = await converter_tts_auto(texto_envio, chunk_voices[idx], temp_files[idx], velocidade, tom)
+            try:
+                ok = await converter_tts_auto(texto_envio, chunk_voices[idx], temp_files[idx], velocidade, tom)
+            except ErroDeChave as e:
+                # Repetir o bloco não resolve chave recusada: aborta sem as rodadas de retry.
+                chave_recusada[0] = str(e)
+                logger.error(f"Conversão interrompida: {e}")
+                return
             if ok:
                 # BUG FIX: só marca como concluído se de fato gerou áudio válido
                 completed_valid.add(idx)
@@ -538,6 +553,9 @@ async def processar(
 
     # ── Rodada inicial ────────────────────────────────────────────────────────
     # Sinal de vida: reenvia o andamento a cada 5 s, para o Tempo/ETA andar mesmo sem bloco novo.
+    # Motor local: a 1ª síntese demora (carrega o modelo). Avisa já no início; o batimento segue depois.
+    if pending and any(_voz_local(v) for v in set(chunk_voices)):
+        _cb(_pct_sintese(), "Carregando o modelo de voz…")
     batimento = _iniciar_batimento(_cb, _pct_sintese, lambda: tracker.mensagem_simples(_pct_sintese()))
     try:
         await asyncio.gather(*[_converter_um(i, chunks[i], sem) for i in pending])
@@ -546,6 +564,8 @@ async def processar(
 
     if _cancelar_flag:
         return _retorno_cancelado(jh)
+    if chave_recusada[0]:
+        return {"ok": False, "erro": chave_recusada[0], "job": jh}
 
     # ── Rodadas de retry: garante que todos os chunks sejam convertidos ───────
     fase[0] = "retry"
@@ -579,6 +599,8 @@ async def processar(
 
         if _cancelar_flag:
             return _retorno_cancelado(jh)
+        if chave_recusada[0]:
+            return {"ok": False, "erro": chave_recusada[0], "job": jh}
 
     # ── Verificação final: impede audiobook incompleto ────────────────────────
     falhos_final = _chunks_falhos(total, completed_valid, temp_files)

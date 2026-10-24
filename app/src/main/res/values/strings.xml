@@ -715,7 +715,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Conversion progress is now real from 0 to 100%: it no longer sits at 99%, and it shows each step (joining audio, adjusting tone, finishing) and the elapsed time.\n• Books that would not open (some EPUBs, DOCX with tables, TXT in other encodings) now open and convert.\n• Scanned or password-protected PDFs now say clearly why they can\'t be read.</string>
+    <string name="release_notes_corpo">• Conversion progress is now real from 0 to 100%: it no longer sits at 99%, and it shows each step (joining audio, adjusting tone, finishing) and the elapsed time.\n• Books that would not open (some EPUBs, DOCX with tables, TXT in other encodings) now open and convert.\n• Scanned or password-protected PDFs now say clearly why they can\'t be read.\n• With on-device voices (Supertonic, Piper, Kokoro, Pocket) the conversion timer no longer freezes and the audiobook duration shows correctly.\n• An invalid voice key (Gemini, ElevenLabs) now reports in seconds instead of minutes.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1273,10 +1273,10 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="erro_tts_sem_conexao">Sem conexao. Verifique a internet e tente novamente.</string>
     <string name="erro_tts_tempo_esgotado">A conexao demorou demais. Tente novamente em alguns instantes.</string>
     <string name="erro_tts_limite_requisicoes">O servico de voz limitou as requisicoes. Aguarde um pouco e tente novamente.</string>
-    <string name="erro_tts_gemini_recusada">A chave Gemini foi recusada. Revise a chave salva nas configuracoes.</string>
-    <string name="erro_tts_gemini_invalida">A chave Gemini esta ausente ou invalida.</string>
-    <string name="erro_tts_elevenlabs_recusada">A chave ElevenLabs foi recusada. Revise a chave salva nas configuracoes.</string>
-    <string name="erro_tts_elevenlabs_invalida">A chave ElevenLabs esta ausente ou invalida.</string>
+    <string name="erro_tts_gemini_recusada">A chave Gemini foi recusada. Revise a chave salva nas configurações.</string>
+    <string name="erro_tts_gemini_invalida">A chave Gemini está ausente ou inválida.</string>
+    <string name="erro_tts_elevenlabs_recusada">A chave ElevenLabs foi recusada. Revise a chave salva nas configurações.</string>
+    <string name="erro_tts_elevenlabs_invalida">A chave ElevenLabs está ausente ou inválida.</string>
     <string name="erro_tts_voz_temporariamente_indisponivel">A voz selecionada esta temporariamente indisponivel.</string>
     <string name="erro_tts_voz_nao_disponivel">A voz selecionada nao esta disponivel neste motor.</string>
     <string name="erro_tts_sem_audio">O servico de voz nao devolveu audio. Tente novamente.</string>

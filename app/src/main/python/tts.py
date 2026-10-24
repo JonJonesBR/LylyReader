@@ -26,6 +26,7 @@ import config_android as _config
 from config_android import TTS_TIMEOUT, logger
 from text_normalizer import normalizar as _normalizar_texto
 import pronunciation_dict as _pronuncias
+from erros_tts import ErroDeChave
 
 _MAX_RETRIES = 5
 _CONCAT_BATCH_SIZE = 50  # Máx. de entradas por operação de concat
@@ -86,6 +87,38 @@ def _is_wav(path: str) -> bool:
             return f.read(4) == b'RIFF'
     except Exception:
         return False
+
+
+def _duracao_wav(caminho: str) -> float:
+    """
+    Duração de um WAV pelo cabeçalho, sem decodificar o áudio. Cobre o WAV disfarçado de .mp3
+    (motor sem FFmpeg), que o mutagen não lê. Chunk 'data' com tamanho 0xFFFFFFFF ou maior que o
+    arquivo usa o tamanho real do arquivo. Devolve 0.0 se o cabeçalho não tiver fmt/data válidos.
+    """
+    try:
+        with open(caminho, 'rb') as f:
+            data = f.read()
+    except Exception:
+        return 0.0
+    if data[:4] != b'RIFF' or data[8:12] != b'WAVE':
+        return 0.0
+    byte_rate = 0
+    tamanho_data = None
+    i = 12  # mesmo percurso de chunks de _concatenar_wav_puro
+    while i + 8 <= len(data):
+        chunk_id = data[i:i+4]
+        chunk_size = struct.unpack('<I', data[i+4:i+8])[0]
+        if chunk_id == b'fmt ' and chunk_size >= 16 and i + 20 <= len(data):
+            # fmt: audioFormat(H) channels(H) sampleRate(I) byteRate(I) ...
+            byte_rate = struct.unpack('<I', data[i+16:i+20])[0]
+        if chunk_id == b'data':
+            disponivel = len(data) - (i + 8)
+            tamanho_data = disponivel if chunk_size == 0xFFFFFFFF or chunk_size > disponivel else chunk_size
+            break
+        i += 8 + chunk_size + (chunk_size % 2)  # chunks RIFF são word-aligned
+    if not byte_rate or tamanho_data is None:
+        return 0.0
+    return tamanho_data / byte_rate
 
 
 def _concatenar_wav_puro(arquivos: list, saida: str) -> bool:
@@ -310,6 +343,15 @@ def _idioma_para_voz(voz: str) -> str:
     return "pt" if _qualquer_voz_pt(voz) else "en"
 
 
+def _motivo_eh_chave_elevenlabs(motivo: str) -> bool:
+    """Motivo da ponte ElevenLabs que indica chave recusada (HTTP 401/403) ou ausente.
+    Cota esgotada também volta como 401, mas não é problema de chave: fica de fora (segue o retry)."""
+    m = (motivo or "").lower()
+    if "quota" in m:
+        return False
+    return "http 401" in m or "http 403" in m or "chave elevenlabs ausente" in m
+
+
 async def converter_tts_auto(
     texto: str, voz: str, arquivo_saida: str,
     velocidade: str = "+0%", tom: str = "+0Hz"
@@ -359,9 +401,11 @@ async def converter_tts_auto(
         # A síntese Android (voz nativa instalada no aparelho) é delegada ao motor Kotlin via
         # AndroidSynthBridge — o TextToSpeech do Android precisa rodar numa thread com Looper,
         # que o Chaquopy não tem; o lado Kotlin cuida disso internamente.
+        # As pontes Kotlin são síncronas (bloqueiam até o fim da síntese). Para não travar o event
+        # loop (batimento e "Tempo" congelados), rodam numa thread de worker via to_thread.
         try:
             from com.jonjonesbr.audiobookgen.tts import AndroidSynthBridge
-            ok = bool(AndroidSynthBridge.synthesize(texto, voz, arquivo_saida))
+            ok = bool(await asyncio.to_thread(AndroidSynthBridge.synthesize, texto, voz, arquivo_saida))
             if not ok:
                 logger.warning(f"[TTS] Motor Android (Kotlin) falhou para voz '{voz}'.")
             return ok
@@ -376,7 +420,7 @@ async def converter_tts_auto(
         # e roda o Supertonic no processo isolado. Escreve um WAV.
         try:
             from com.jonjonesbr.audiobookgen.tts import OnnxSynthBridge
-            ok = bool(OnnxSynthBridge.synthesize(texto, voz, arquivo_saida))
+            ok = bool(await asyncio.to_thread(OnnxSynthBridge.synthesize, texto, voz, arquivo_saida))
             if not ok:
                 logger.warning(
                     f"[TTS] Motor ONNX (Kotlin) falhou para voz '{voz}'. "
@@ -393,7 +437,7 @@ async def converter_tts_auto(
         # a síntese no processo isolado e escreve um WAV por chunk.
         try:
             from com.jonjonesbr.audiobookgen.tts import KokoroSynthBridge
-            ok = bool(KokoroSynthBridge.synthesize(texto, voz, arquivo_saida))
+            ok = bool(await asyncio.to_thread(KokoroSynthBridge.synthesize, texto, voz, arquivo_saida))
             if not ok:
                 logger.warning(
                     f"[TTS] Motor Kokoro (Kotlin) falhou para voz '{voz}'. "
@@ -409,7 +453,7 @@ async def converter_tts_auto(
         # leitura guiada, sem carregar os pesos ONNX pelo Chaquopy/Python.
         try:
             from com.jonjonesbr.audiobookgen.tts import PocketSynthBridge
-            ok = bool(PocketSynthBridge.synthesize(texto, voz, arquivo_saida))
+            ok = bool(await asyncio.to_thread(PocketSynthBridge.synthesize, texto, voz, arquivo_saida))
             if not ok:
                 logger.warning(
                     f"[TTS] Pocket TTS falhou para '{voz}'. "
@@ -426,13 +470,20 @@ async def converter_tts_auto(
         # pacote pip novo no Chaquopy. Escreve um MP3.
         try:
             from com.jonjonesbr.audiobookgen.tts import ElevenLabsSynthBridge
-            ok = bool(ElevenLabsSynthBridge.synthesize(texto, voz, arquivo_saida))
+            ok = bool(await asyncio.to_thread(ElevenLabsSynthBridge.synthesize, texto, voz, arquivo_saida))
             if not ok:
                 motivo = ElevenLabsSynthBridge.ultimoMotivo() or "motivo desconhecido"
                 logger.warning(
                     f"[TTS] Motor ElevenLabs (Kotlin) falhou para voz '{voz}': {motivo}"
                 )
+                if _motivo_eh_chave_elevenlabs(motivo):
+                    raise ErroDeChave(
+                        f"ElevenLabs: chave recusada ou ausente ({motivo[:200]}). "
+                        "Revise a chave salva nas configurações."
+                    )
             return ok
+        except ErroDeChave:
+            raise
         except Exception as e:
             logger.error(f"Erro na síntese ElevenLabs via ponte Kotlin: {e}")
             return False
@@ -569,11 +620,14 @@ async def obter_duracao_ffprobe(caminho: str) -> float:
         return float(stdout.decode().strip())
     except Exception as e:
         # No Android não há ffprobe: o tempo do audiobook aparecia sempre como "0s". Plano B: mutagen (já embutido).
-        logger.warning(f"ffprobe indisponivel ({e}); usando mutagen")
+        logger.warning(f"ffprobe indisponível ({e}); usando mutagen")
+    # WAV disfarçado de .mp3 (motor local/Gemini sem FFmpeg): o mutagen não lê, então usa o cabeçalho.
+    if _is_wav(caminho):
+        return _duracao_wav(caminho)
     try:
         return float(MP3(caminho).info.length)
     except Exception as e:
-        logger.error(f"duracao via mutagen falhou: {e}")
+        logger.error(f"duração via mutagen falhou: {e}")
         return 0.0
 
 

@@ -18,6 +18,7 @@ import aiohttp
 
 from audio_cache import CACHE
 from config_android import logger
+from erros_tts import ErroDeChave
 
 
 # Modelos TTS disponíveis no OpenRouter (mais usados)
@@ -156,6 +157,7 @@ class OpenRouterTTSClient:
             "speed": self.speed,
         }
 
+        chaves_recusadas = set()
         for attempt in range(5):
             key = await self.km.current()
             if not key:
@@ -187,6 +189,13 @@ class OpenRouterTTSClient:
                         await self.km.rotate()
                         await asyncio.sleep(2 ** attempt * 5)
                     elif resp.status in (401, 403):
+                        # Só desiste quando todas as chaves foram recusadas; senão tenta a próxima.
+                        chaves_recusadas.add(self.km._idx)
+                        if len(chaves_recusadas) >= self.km.count:
+                            raise ErroDeChave(
+                                f"OpenRouter: chave recusada (HTTP {resp.status}). "
+                                "Verifique a chave OpenRouter em Configurações."
+                            )
                         logger.error(f"[OpenRouter] Chave inválida ou proibida (HTTP {resp.status}) na tentativa {attempt+1}, rotacionando...")
                         await self.km.rotate()
                     elif resp.status == 400:
@@ -203,6 +212,8 @@ class OpenRouterTTSClient:
                         await self.km.rotate()
                         await asyncio.sleep(2 ** attempt)
 
+            except ErroDeChave:
+                raise
             except asyncio.TimeoutError:
                 logger.error(f"[OpenRouter] Timeout na tentativa {attempt+1} (texto: {text[:50]}...)")
                 await asyncio.sleep(2)
