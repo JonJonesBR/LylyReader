@@ -102,6 +102,7 @@ class ExtractTextUseCase(private val context: android.content.Context) {
             if (!ok) {
                 val erro = resultado[py.builtins.callAttr("str", "erro")]
                     ?.toString() ?: "Erro ao abrir o arquivo. Tente converter diretamente."
+                Log.w(TAG, "Extração falhou: ${erro.take(500)}")
                 return@withContext ExtractionResult.Error(traduzirErro(erro))
             }
 
@@ -148,6 +149,7 @@ class ExtractTextUseCase(private val context: android.content.Context) {
     }
 
     private fun traduzirErro(erro: String): String = when {
+        "escaneado" in erro.lowercase() -> context.getString(R.string.extracao_pdf_escaneado)
         "senha" in erro.lowercase() || "drm" in erro.lowercase() || "password" in erro.lowercase() ->
             context.getString(R.string.extracao_protegido_senha)
         "encoding" in erro.lowercase() || "codec" in erro.lowercase() ->

@@ -10,10 +10,10 @@ import math
 import time
 import collections
 import unicodedata
+from typing import Optional
 import ebooklib
 from ebooklib import epub
 from pypdf import PdfReader
-from docx import Document
 from bs4 import BeautifulSoup
 
 import config_android as _config
@@ -56,7 +56,29 @@ def ler_texto_pronto(max_chars: int = 0) -> str:
     return texto[:max_chars] if max_chars > 0 else texto
 
 
-_SPINNERS = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+# Faixas do percentual global da conversão (0–100). A síntese dos blocos ocupa 0–PCT_FIM_SINTESE;
+# depois vêm junção, timbre, metadados e marcadores de capítulo, cada um com sua faixa.
+# O 100 só é reportado no "Pronto!" (core_processor_android.processar).
+PCT_FIM_SINTESE = 90
+PCT_FIM_JUNCAO = 95
+PCT_FIM_TIMBRE = 97
+PCT_FIM_METADADOS = 98
+PCT_FIM_CAPITULOS = 99
+
+
+def fracao_sintese(pct: int) -> float:
+    """Fração (0..1) da síntese dos blocos já feita, a partir do percentual global."""
+    return max(0.0, min(1.0, pct / PCT_FIM_SINTESE))
+
+
+def pct_sintese_global(pct_blocos: int) -> int:
+    """Converte o percentual de blocos (0–100) para a faixa global da síntese (0–PCT_FIM_SINTESE)."""
+    return pct_blocos * PCT_FIM_SINTESE // 100
+
+
+def pct_nao_regride(novo: int, maior_ate_agora: int) -> int:
+    """Percentual que não volta atrás: nunca menor que o maior já reportado nesta conversão."""
+    return max(novo, maior_ate_agora)
 
 
 class ProgressTracker:
@@ -72,7 +94,6 @@ class ProgressTracker:
         # Intervalos (s) entre sucessos consecutivos desta execução.
         self._janela: collections.deque = collections.deque(maxlen=10)
         self._ultimo_sucesso = inicio
-        self._spin = 0
         self._ultima_pct = -1
         self._ultima_atualizacao_ts = time.time()
 
@@ -126,26 +147,18 @@ class ProgressTracker:
         # Mínimo de 1s: nunca mostrar "0s" enquanto restam blocos.
         return formatar_duracao(max(1.0, taxa * restantes))
 
-    def _barra(self) -> str:
-        cheios = self.pct() // 5
-        return "█" * cheios + "░" * (20 - cheios)
-
-    def _spinner(self) -> str:
-        c = _SPINNERS[self._spin % len(_SPINNERS)]
-        self._spin += 1
-        return c
-
-    def mensagem_simples(self) -> str:
-        """Versão sem Markdown para uso no Android (TextView)."""
-        p = self.pct()
-        self._ultima_pct = p
+    def mensagem_simples(self, pct: Optional[int] = None) -> str:
+        """Versão sem Markdown para uso no Android (TextView). `pct` é o percentual já na faixa
+        global da conversão (ver pct_sintese_global); sem ele, usa o percentual dos blocos."""
+        self._ultima_pct = self.pct()
+        p = self.pct() if pct is None else pct
         decorrido = time.time() - self.inicio
         falhas_str = f" | {len(self.falhas)} falhas" if self.falhas else ""
         eta = self._eta()
         prefixo_eta = "" if eta == "calculando..." else "~"
         return (
-            f"Convertendo {self._spinner()} {p}%\n"
-            f"[{self._barra()}] {self.concluidos}/{self.total}{falhas_str}\n"
+            f"Convertendo {p}%\n"
+            f"{self.concluidos}/{self.total} blocos{falhas_str}\n"
             f"Tempo: {formatar_duracao(decorrido)} | ETA: {prefixo_eta}{eta}"
         )
 
@@ -484,24 +497,72 @@ def _processar_mobi_para_texto(caminho: str) -> str:
         shutil.rmtree(tempdir, ignore_errors=True)
 
 
-def _ler_texto_com_encoding(caminho: str) -> str:
-    """Lê .txt/.md detectando o encoding real em vez de assumir UTF-8.
+MENSAGEM_PDF_ESCANEADO = (
+    "vazio: O PDF parece ser escaneado (só imagens); sem texto não dá para ler/converter"
+)
 
-    Arquivos antigos de usuário costumam vir em cp1252/ANSI (Windows) ou UTF-16;
-    ler como UTF-8 com errors="ignore" apagava os acentos silenciosamente.
+
+def erro_pdf_legivel(e: Exception) -> str:
+    """Mensagem em português para falha ao abrir/ler um PDF. O prefixo ("senha:", "invalido:")
+    é o que o Kotlin usa para escolher a mensagem exibida ao usuário."""
+    if isinstance(e, FileNotFoundError):
+        return "invalido: arquivo PDF não encontrado"
+    nome = type(e).__name__.lower()
+    texto = str(e).lower()
+    if "decrypt" in nome or "encrypt" in nome or "password" in nome or "password" in texto:
+        return "senha: PDF protegido por senha; remova a proteção antes de abrir"
+    return f"invalido: PDF corrompido ou ilegível ({e})"
+
+
+def decodificar_texto_bruto(dados: bytes) -> str:
+    """Decodifica o conteúdo de um .txt/.md sem assumir UTF-8.
+
+    Ordem: BOM UTF-16 → BOM UTF-8 (removido) → UTF-16 sem BOM (detectado por bytes nulos) →
+    UTF-8 → cp1252 → latin-1 (cp1252 não tem todos os bytes; latin-1 nunca falha). Arquivos
+    antigos de usuário costumam vir em cp1252/ANSI ou UTF-16; ler como UTF-8 com
+    errors="ignore" apagava os acentos silenciosamente.
     """
-    with open(caminho, "rb") as f:
-        dados = f.read()
     if dados[:2] in (b"\xff\xfe", b"\xfe\xff"):
-        return dados.decode("utf-16")
+        return dados.decode("utf-16", errors="replace")
+    if dados.startswith(b"\xef\xbb\xbf"):
+        return dados[3:].decode("utf-8", errors="replace")
+    amostra = dados[:1000]
+    if b"\x00" in amostra:
+        # UTF-16 sem BOM: o byte nulo cai na posição par (BE) ou ímpar (LE) da amostra.
+        if amostra[0::2].count(0) > amostra[1::2].count(0):
+            return dados.decode("utf-16-be", errors="replace")
+        return dados.decode("utf-16-le", errors="replace")
     try:
         return dados.decode("utf-8")
     except UnicodeDecodeError:
+        pass
+    try:
         return dados.decode("cp1252")
+    except UnicodeDecodeError:
+        return dados.decode("latin-1")
 
 
-def extrair_texto_limpo(caminho: str, ext: str) -> str:
-    texto_final = []
+def _ler_texto_com_encoding(caminho: str) -> str:
+    """Lê .txt/.md detectando o encoding real (ver decodificar_texto_bruto). Quebras CRLF/CR
+    viram LF para a narração não carregar \r."""
+    with open(caminho, "rb") as f:
+        texto = decodificar_texto_bruto(f.read())
+    return texto.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _caminho_zip_do_item(nomes_zip: set, nome_relativo: str):
+    """Caminho completo, dentro do zip, de um item do ebooklib (que guarda o nome relativo ao
+    OPF). Entre candidatos com a mesma cauda, vale o mais raso (mais perto da raiz do zip)."""
+    candidatos = [n for n in nomes_zip if n == nome_relativo or n.endswith("/" + nome_relativo)]
+    return min(candidatos, key=len) if candidatos else None
+
+
+def _textos_epub_com_ebooklib(caminho: str) -> list:
+    """Texto de cada capítulo (ordem da spine) pelo ebooklib. Um item que falha é pulado."""
+    import zipfile
+
+    from audiobook_android import ArquivoSuspeitoError, _LeitorZipSeguro
+
     nomes_estruturais = [
         "cover", "toc", "nav", "copyright", "credito", "titlepage",
         "colophon", "imprint", "sobre_", "about",
@@ -510,40 +571,105 @@ def extrair_texto_limpo(caminho: str, ext: str) -> str:
         "créditos", "creditos", "sumário", "sumario", "copyright",
         "todos os direitos", "isbn",
     ]
-    try:
-        if ext == ".epub":
-            book = epub.read_epub(caminho)
-            id_map = {item.id: item for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT)}
-            itens_ordenados = []
-            for item_id, _ in book.spine:
-                item = id_map.get(item_id)
-                if item:
-                    itens_ordenados.append(item)
-            if not itens_ordenados:
-                itens_ordenados = list(book.get_items_of_type(ebooklib.ITEM_DOCUMENT))
-            for item in itens_ordenados:
+    textos = []
+    book = epub.read_epub(caminho)
+    id_map = {item.id: item for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT)}
+    itens_ordenados = []
+    for item_id, _ in book.spine:
+        item = id_map.get(item_id)
+        if item:
+            itens_ordenados.append(item)
+    if not itens_ordenados:
+        itens_ordenados = list(book.get_items_of_type(ebooklib.ITEM_DOCUMENT))
+    with zipfile.ZipFile(caminho) as zf:
+        nomes_zip = set(zf.namelist())
+        leitor = _LeitorZipSeguro(zf)
+        for item in itens_ordenados:
+            try:
                 nome = item.get_name().lower().split("/")[-1]
                 if any(nome.startswith(e) for e in nomes_estruturais):
                     continue
-                soup = BeautifulSoup(item.get_content(), "html.parser")
+                # Bytes originais do zip (pelo mesmo leitor seguro do app: teto de tamanho e
+                # recusa de DTD/entidades). O ebooklib regrava o XHTML com declaração UTF-8 e
+                # mantém bytes latin-1/cp1252, o que faz o bs4 adivinhar a codificação errada.
+                caminho_zip = _caminho_zip_do_item(nomes_zip, item.file_name)
+                bruto = leitor.ler(caminho_zip) if caminho_zip else item.get_content()
+                soup = BeautifulSoup(bruto, "html.parser")
                 for tag in soup(["script", "style"]):
                     tag.decompose()
                 conteudo = soup.get_text(separator="\n").strip()
-                if len(conteudo) < 50:
-                    continue
+                if not conteudo:
+                    continue  # capa só com imagem ou página vazia; capítulo curto ("Fim.") fica
                 primeira_linha = conteudo.splitlines()[0].strip().lower()
                 if len(conteudo) < 2000 and any(t in primeira_linha for t in termos_heading_estrutural):
                     continue
-                texto_final.append(conteudo)
+                textos.append(conteudo)
+            except ArquivoSuspeitoError:
+                # Recusado por segurança: não pode cair no except genérico e virar texto.
+                # Relançado para a conversão cair no extrator do leitor, que também o recusa.
+                raise
+            except Exception as e:
+                logger.warning(f"Item do EPUB pulado ({item.get_name()}): {e}")
+    return textos
+
+
+def _textos_epub_para_conversao(caminho: str) -> list:
+    """Texto do EPUB para conversão. Usa o ebooklib; se ele falhar ou render vazio, cai no
+    extrator do leitor (audiobook_android), que tolera EPUB sem container/OPF/spine válidos."""
+    textos = []
+    try:
+        textos = _textos_epub_com_ebooklib(caminho)
+    except Exception as e:
+        logger.warning(f"ebooklib não abriu o EPUB ({e}); usando o extrator do leitor")
+    if textos:
+        return textos
+
+    import audiobook_android
+
+    r = audiobook_android._extrair_epub(caminho)
+    if r.get("ok"):
+        return ["\n\n".join(p["texto"] for p in r["paragrafos"])]
+    if r.get("erro") == "vazio":
+        return []
+    raise ValueError(r.get("erro") or "invalido: EPUB sem texto legível")
+
+
+def _textos_pdf_para_conversao(caminho: str) -> list:
+    """Texto do PDF para conversão: pypdf; sem texto, o extrator do leitor (pdfminer, se
+    disponível); sem nada, erro de PDF escaneado."""
+    try:
+        reader = PdfReader(caminho)
+        paginas = remover_ruido_pdf_paginas([page.extract_text() or "" for page in reader.pages])
+    except Exception as e:
+        raise ValueError(erro_pdf_legivel(e)) from e
+    # Página só com números/símbolos (paginação, separadores) não é texto narrável.
+    textos = [corrigir_texto_pdf(t) for t in paginas if t and re.search(r"[^\W\d_]", t)]
+    if textos:
+        return textos
+
+    import audiobook_android
+
+    r = audiobook_android._extrair_pdf(caminho)
+    if r.get("ok"):
+        return ["\n\n".join(p["texto"] for p in r["paragrafos"])]
+    raise ValueError(MENSAGEM_PDF_ESCANEADO)
+
+
+def extrair_texto_limpo(caminho: str, ext: str) -> str:
+    texto_final = []
+    try:
+        if ext == ".epub":
+            texto_final.extend(_textos_epub_para_conversao(caminho))
         elif ext == ".pdf":
-            reader = PdfReader(caminho)
-            paginas = remover_ruido_pdf_paginas([page.extract_text() or "" for page in reader.pages])
-            texto_final.extend(corrigir_texto_pdf(t) for t in paginas if t)
+            texto_final.extend(_textos_pdf_para_conversao(caminho))
         elif ext in [".txt", ".md"]:
             texto_final.append(_ler_texto_com_encoding(caminho))
         elif ext == ".docx":
-            doc = Document(caminho)
-            texto_final.append("\n\n".join(p.text for p in doc.paragraphs if p.text.strip()))
+            import audiobook_android
+
+            # Mesmo leitor do app: inclui tabelas, listas, caixas de texto e hyperlinks.
+            paragrafos = audiobook_android._paragrafos_docx(caminho)
+            texto_final.append("\n\n".join(texto for texto, _ in paragrafos))
         elif ext == ".doc":
             import doc_extract
             texto_final.append(doc_extract.extrair_texto_doc(caminho))

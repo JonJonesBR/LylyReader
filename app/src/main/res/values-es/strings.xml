@@ -710,7 +710,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Los libros grandes ya no fallan al final: se omite la sección de notas y referencias, y unos pocos fragmentos que no se pueden convertir ya no cancelan todo el audiolibro.\n• Mensajes más claros cuando falla una conversión, indicando qué pasó.\n• Clonación de voz guiada: graba hasta 30 segundos, con consejos y evaluación de calidad.\n• Bluetooth y reloj inteligente controlan tus audiolibros, y las copias de seguridad de una versión más nueva se rechazan con un mensaje claro.</string>
+    <string name="release_notes_corpo">• El progreso de la conversión ahora es real de 0 a 100%: ya no se queda en 99% y muestra cada etapa (unir audio, ajustar timbre, finalizar) y el tiempo transcurrido.\n• Los libros que no se abrían (algunos EPUB, DOCX con tablas, TXT en otras codificaciones) ahora se abren y se convierten.\n• Un PDF escaneado o protegido con contraseña indica claramente el motivo.</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Haz las voces un poco más graves o más agudas y suaviza los agudos ásperos. El cambio se aplica al instante en la lectura guiada y en los audiolibros que conviertas a partir de ahora.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
@@ -1289,6 +1289,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="extracao_motor_indisponivel">Não foi possível iniciar o motor de leitura. Tente novamente.</string>
     <string name="extracao_erro_abrir">Erro ao abrir o arquivo. Tente converter diretamente.</string>
     <string name="extracao_sem_texto">Nenhum texto encontrado neste arquivo.</string>
+    <string name="extracao_pdf_escaneado">Este PDF parece estar escaneado (solo imágenes): no hay texto que leer ni convertir.</string>
     <string name="capitulo_sem_titulo">Sem título</string>
     <string name="extracao_protegido_senha">Arquivo protegido por senha não pode ser lido.</string>
     <string name="extracao_formato_nao_reconhecido">Formato de texto não reconhecido. Tente converter diretamente.</string>

@@ -12,7 +12,7 @@ import struct
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import Callable, List, Optional
 
 import edge_tts
 from mutagen.mp3 import MP3
@@ -653,18 +653,27 @@ async def _concatenar_lista(arquivos: list, saida: str) -> bool:
     return _concatenar_mp3_puro(arquivos, saida)
 
 
-async def concatenar_grupo(arquivos: list, saida: str) -> bool:
+async def concatenar_grupo(
+    arquivos: list, saida: str, on_progress: Optional[Callable[[float], None]] = None
+) -> bool:
+    """`on_progress(fracao)` (0..1) informa o andamento. Em listas grandes, os lotes ocupam 0..0.9
+    e a junção final o restante; em listas pequenas só há o 1.0 ao fim."""
     if not arquivos:
         return False
     if len(arquivos) == 1:
         # copyfile (não copy2): o Android bloqueia copiar xattr/metadados (SELinux) no
         # filesDir do app → copy2 lançava PermissionError em _copyxattr.
         shutil.copyfile(arquivos[0], saida)
+        if on_progress:
+            on_progress(1.0)
         return True
 
     # Para listas pequenas, concatena diretamente
     if len(arquivos) <= _CONCAT_BATCH_SIZE:
-        return await _concatenar_lista(arquivos, saida)
+        ok = await _concatenar_lista(arquivos, saida)
+        if ok and on_progress:
+            on_progress(1.0)
+        return ok
 
     # Para listas grandes (ebooks longos), concatenação hierárquica em lotes.
     # Divide a lista em lotes, concatena cada lote num arquivo temporário,
@@ -677,6 +686,7 @@ async def concatenar_grupo(arquivos: list, saida: str) -> bool:
     temp_dir = str(Path(saida).parent)
     nome_base = Path(saida).name
     lote_files: List[str] = []
+    fracao_lotes = 0.9  # o restante (10%) é a junção final dos lotes
     try:
         for idx, lote in enumerate(lotes):
             f_lote = os.path.join(temp_dir, f"_lote{idx}_{nome_base}")
@@ -684,8 +694,14 @@ async def concatenar_grupo(arquivos: list, saida: str) -> bool:
             if not ok:
                 return False
             lote_files.append(f_lote)
-        # Recursão: permite listas com qualquer número de arquivos
-        return await concatenar_grupo(lote_files, saida)
+            if on_progress:
+                on_progress(fracao_lotes * (idx + 1) / len(lotes))
+        # Recursão: permite listas com qualquer número de arquivos. Seu progresso é
+        # reescalado para a faixa final (0.9..1.0).
+        sub_progresso = (
+            (lambda f: on_progress(fracao_lotes + (1.0 - fracao_lotes) * f)) if on_progress else None
+        )
+        return await concatenar_grupo(lote_files, saida, sub_progresso)
     finally:
         for f in lote_files:
             if os.path.exists(f):
@@ -696,15 +712,19 @@ async def concatenar_grupo(arquivos: list, saida: str) -> bool:
 
 
 async def concatenar_grupo_com_pausa(
-    arquivos: list, saida: str, pausa_ms: int = 600, pausas_ms: list = None
+    arquivos: list, saida: str, pausa_ms: int = 600, pausas_ms: list = None,
+    on_progress: Optional[Callable[[float], None]] = None,
 ) -> bool:
     """Junta os arquivos com silêncio entre eles. `pausas_ms[i]` (opcional) é a pausa depois do
-    arquivo i; None ou ausente = `pausa_ms`. Usado pelo modo multi-personagem (trocas de voz curtas)."""
+    arquivo i; None ou ausente = `pausa_ms`. Usado pelo modo multi-personagem (trocas de voz curtas).
+    `on_progress` (opcional) recebe a fração 0..1 da junção (ver concatenar_grupo)."""
     if not arquivos:
         return False
     if len(arquivos) == 1:
         # copyfile (não copy2): evita PermissionError de xattr no Android (ver concatenar_grupo).
         shutil.copyfile(arquivos[0], saida)
+        if on_progress:
+            on_progress(1.0)
         return True
 
     pasta = str(Path(saida).parent)
@@ -734,9 +754,9 @@ async def concatenar_grupo_com_pausa(
                 arquivo_silencio = await _silencio(ms)
                 if arquivo_silencio is None:
                     # sem ffmpeg para gerar o silêncio: mantém o comportamento antigo (sem pausas)
-                    return await concatenar_grupo(arquivos, saida)
+                    return await concatenar_grupo(arquivos, saida, on_progress)
                 intercalados.append(arquivo_silencio)
-        return await concatenar_grupo(intercalados, saida)
+        return await concatenar_grupo(intercalados, saida, on_progress)
     finally:
         for caminho in silencios.values():
             if caminho and os.path.exists(caminho):

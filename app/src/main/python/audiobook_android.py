@@ -19,6 +19,7 @@ Uso no Kotlin:
 """
 
 import asyncio
+import posixpath
 import re
 import tarfile
 import threading
@@ -326,6 +327,13 @@ class _LeitorZipSeguro:
         return dados
 
 
+def _caminho_no_zip(diretorio: str, href: str) -> str:
+    """Caminho dentro do zip a partir do diretório do arquivo que referencia (OPF, NCX, nav) e
+    de um href relativo. Resolve `../` e `./`: EPUB com OPF em subpasta usa isso com frequência."""
+    bruto = f"{diretorio}/{href}" if diretorio else href
+    return posixpath.normpath(bruto).lstrip("/")
+
+
 def _extrair_toc_epub3(leitor: "_LeitorZipSeguro", nav_path: str) -> dict:
     """Lê o Navigation Document do EPUB3 (`<nav epub:type="toc">`, obrigatório pela spec) e
     devolve capítulos no MESMO formato do NCX ({arquivo_minusculo: [(âncora, título), ...]}) —
@@ -347,12 +355,86 @@ def _extrair_toc_epub3(leitor: "_LeitorZipSeguro", nav_path: str) -> dict:
             if not href or not titulo:
                 continue
             href_decoded = urllib.parse.unquote(href).replace("\\", "/")
-            full = (nav_dir + "/" + href_decoded).replace("//", "/").lstrip("/")
+            full = _caminho_no_zip(nav_dir, href_decoded)
             file_path, anchor = full.split("#", 1) if "#" in full else (full, "")
             toc_chapters.setdefault(file_path.lower(), []).append((anchor, titulo))
     except Exception:
         pass
     return toc_chapters
+
+
+def _chave_ordem_natural(nome: str):
+    """Chave de ordenação natural: "ch2" vem antes de "ch10" (números comparados como número)."""
+    return [int(p) if p.isdigit() else p for p in re.split(r"(\d+)", nome.lower())]
+
+
+class _LinhaDeTexto:
+    """Linha de texto que imita só o que o laço de parágrafos do EPUB usa de uma tag do
+    BeautifulSoup (`get`, `find_all`, `get_text`). Usada quando o arquivo não tem <p>, <blockquote>
+    nem <div> folha (texto solto no <body>, <br>, <span>…). `id_` é o id de um bloco simples
+    (<div id=...>) que contém esta linha, para o casamento com âncoras do TOC."""
+
+    def __init__(self, texto: str, id_: str = None):
+        self._texto = texto
+        self._id = id_
+
+    def get(self, _nome, padrao=None):
+        return self._id if (_nome == "id" and self._id) else padrao
+
+    def find_all(self, *_args, **_kwargs):
+        return []
+
+    def get_text(self) -> str:
+        return self._texto
+
+
+_TAGS_DE_BLOCO = [
+    "div", "section", "article", "aside", "header", "footer", "h1", "h2", "h3", "h4", "h5",
+    "h6", "li", "ul", "ol", "table", "tr", "td", "th", "caption", "dt", "dd", "hr",
+]
+_RE_ID_SIMPLES = re.compile(r"^[A-Za-z0-9_.:-]+$")
+_MARCA_ID = "\x01"  # delimita o id de bloco embutido no texto (nunca aparece em livro)
+_FIM_MARCA_ID = "\x02"
+
+
+def _blocos_de_texto_do_body(body) -> list:
+    """Quebra em blocos o texto de um <body> que não tem <p> nem <blockquote>.
+
+    Se as <div> folha cobrem todas as palavras do body, cada uma vira um bloco (comportamento
+    anterior). Senão há texto solto no body ou entre <div> aninhadas: então o texto é quebrado
+    em linhas nas fronteiras de <br> e de blocos, sem perder nada."""
+    folhas = [
+        d for d in body.find_all("div")
+        if not d.find(["div", "p", "blockquote"]) and d.get_text().strip()
+    ]
+    palavras_total = len(body.get_text().split())
+    palavras_folhas = sum(len(d.get_text().split()) for d in folhas)
+    if folhas and palavras_folhas >= palavras_total:
+        return folhas
+
+    for br in body.find_all("br"):
+        br.replace_with("\n")
+    for tag in body.find_all(_TAGS_DE_BLOCO):
+        id_bloco = tag.get("id")
+        if id_bloco and _RE_ID_SIMPLES.match(id_bloco):
+            # Marca o id logo antes do bloco; a linha seguinte herda o id (ver abaixo).
+            tag.insert_before(f"\n{_MARCA_ID}{id_bloco}{_FIM_MARCA_ID}")
+        tag.insert_before("\n")
+        tag.insert_after("\n")
+
+    blocos = []
+    id_pendente = None
+    for linha in body.get_text().splitlines():
+        if _MARCA_ID in linha:
+            antes, _, resto = linha.partition(_MARCA_ID)
+            id_pendente, _, depois = resto.partition(_FIM_MARCA_ID)
+            linha = antes + depois
+        linha = linha.strip()
+        if not linha:
+            continue
+        blocos.append(_LinhaDeTexto(linha, id_pendente))
+        id_pendente = None
+    return blocos
 
 
 def _extrair_epub(caminho: str) -> dict:
@@ -364,8 +446,14 @@ def _extrair_epub(caminho: str) -> dict:
     paragrafos_raw = []
     cap_idx = 0
 
-    with zipfile.ZipFile(caminho) as zf:
+    try:
+        zf_ctx = zipfile.ZipFile(caminho)
+    except zipfile.BadZipFile as e:
+        return {"ok": False, "erro": f"invalido: arquivo EPUB corrompido ou não é um ZIP ({e})"}
+
+    with zf_ctx as zf:
         leitor = _LeitorZipSeguro(zf)
+        nomes_zip = set(zf.namelist())
         namelist_lower = {n.lower(): n for n in zf.namelist()}
 
         # 1. Parse NCX (EPUB2) first to get reliable TOC chapters mapped to files and anchors
@@ -376,14 +464,16 @@ def _extrair_epub(caminho: str) -> dict:
                 ncx_soup = BeautifulSoup(leitor.ler(ncx_path), "html.parser")
                 ncx_dir = ncx_path.rsplit("/", 1)[0] if "/" in ncx_path else ""
                 for np in ncx_soup.find_all("navpoint"):
-                    nav_label = np.find("navlabel")
-                    content_tag = np.find("content")
+                    # recursive=False: um navPoint pai sem <content> próprio não pode pegar
+                    # o título/conteúdo do filho aninhado.
+                    nav_label = np.find("navlabel", recursive=False)
+                    content_tag = np.find("content", recursive=False)
                     if nav_label and content_tag:
                         title = nav_label.get_text().strip()
                         src = content_tag.get("src", "")
                         if title and src:
                             src_decoded = urllib.parse.unquote(src).replace("\\", "/")
-                            src_full = (ncx_dir + "/" + src_decoded).replace("//", "/").lstrip("/")
+                            src_full = _caminho_no_zip(ncx_dir, src_decoded)
                             if "#" in src_full:
                                 file_path, anchor = src_full.split("#", 1)
                             else:
@@ -410,26 +500,34 @@ def _extrair_epub(caminho: str) -> dict:
                 basedir = opf_path.rsplit("/", 1)[0] if "/" in opf_path else ""
                 for item in soup.find_all("item"):
                     href = item.get("href", "")
-                    href = urllib.parse.unquote(href).replace("\\", "/").replace("//", "/")
+                    href = urllib.parse.unquote(href).replace("\\", "/")
                     item_id = item.get("id", "")
                     item_map[item_id] = href
                     if "nav" in (item.get("properties", "") or "").split():
-                        nav_full_path = (basedir + "/" + href).replace("\\", "/").replace("//", "/").lstrip("/")
+                        nav_full_path = _caminho_no_zip(basedir, href)
 
                 for ref in soup.find_all("itemref"):
                     idref = ref.get("idref", "")
                     href = item_map.get(idref, "")
-                    full = (basedir + "/" + href).replace("\\", "/").replace("//", "/").lstrip("/")
+                    if not href:
+                        continue
+                    full = _caminho_no_zip(basedir, href)
 
-                    if full in zf.namelist():
+                    if full in nomes_zip:
                         items_in_order.append(full)
                     elif full.lower() in namelist_lower:
                         items_in_order.append(namelist_lower[full.lower()])
             except Exception:
                 pass
+            # Spine repetido ou com a mesma entrada duas vezes não pode duplicar o capítulo.
+            items_in_order = list(dict.fromkeys(items_in_order))
 
         if not items_in_order:
-            items_in_order = [n for n in zf.namelist() if n.lower().endswith((".xhtml", ".html", ".htm"))]
+            # Sem OPF/spine utilizável: todo HTML do zip, na ordem do nome (não a do arquivo).
+            items_in_order = sorted(
+                {n for n in zf.namelist() if n.lower().endswith((".xhtml", ".html", ".htm"))},
+                key=_chave_ordem_natural,
+            )
 
         # 3. EPUB3 sem toc.ncx (comum em livros sem o legado EPUB2): usa o Navigation Document
         # como fonte do TOC em vez de cair direto na heurística de headings h1/h2/h3 abaixo.
@@ -493,20 +591,7 @@ def _extrair_epub(caminho: str) -> dict:
             if not paras:
                 body = soup.find("body")
                 if body:
-                    divs = [d for d in body.find_all("div") if not d.find(["div", "p", "blockquote"])]
-                    divs = [d for d in divs if d.get_text().strip()]
-                    if divs:
-                        paras = divs
-                    else:
-                        text_content = body.get_text()
-                        paras = []
-                        for line in text_content.splitlines():
-                            line_stripped = line.strip()
-                            if line_stripped:
-                                class PseudoTag:
-                                    def __init__(self, t): self.t = t
-                                    def get_text(self): return self.t
-                                paras.append(PseudoTag(line_stripped))
+                    paras = _blocos_de_texto_do_body(body)
 
             for p in paras:
                 matched_title = None
@@ -565,6 +650,8 @@ def _extrair_epub(caminho: str) -> dict:
 
 
 def _extrair_pdf(caminho: str) -> dict:
+    from utils import MENSAGEM_PDF_ESCANEADO, erro_pdf_legivel
+
     pypdf_result = _extrair_pdf_fallback(caminho)
     if pypdf_result.get("ok"):
         return pypdf_result
@@ -573,20 +660,23 @@ def _extrair_pdf(caminho: str) -> dict:
         from pdfminer.high_level import extract_pages
         from pdfminer.layout import LTTextBox
     except ImportError:
-        # Fallback simples sem pdfminer
-        return _extrair_pdf_fallback(caminho)
+        # Sem pdfminer: fica com o resultado do pypdf (vazio → mensagem de escaneado)
+        return pypdf_result
 
-    blocos_por_pagina = []
-    for page_layout in extract_pages(caminho):
-        blocos_pagina = [
-            element.get_text().strip()
-            for element in page_layout
-            if isinstance(element, LTTextBox) and element.get_text().strip()
-        ]
-        blocos_por_pagina.append(blocos_pagina)
+    try:
+        blocos_por_pagina = []
+        for page_layout in extract_pages(caminho):
+            blocos_pagina = [
+                element.get_text().strip()
+                for element in page_layout
+                if isinstance(element, LTTextBox) and element.get_text().strip()
+            ]
+            blocos_por_pagina.append(blocos_pagina)
+    except Exception as e:
+        return {"ok": False, "erro": erro_pdf_legivel(e)}
 
     if not any(blocos_por_pagina):
-        return {"ok": False, "erro": "vazio"}
+        return {"ok": False, "erro": MENSAGEM_PDF_ESCANEADO}
 
     # Tenta capítulos reais (títulos textuais, "Capítulo N"/"Chapter N"/etc.) antes de cair
     # no fallback "1 capítulo por página" — mesma ordem de tentativa do caminho pypdf
@@ -614,13 +704,15 @@ def _extrair_pdf(caminho: str) -> dict:
                 capitulos_raw[-1]["fim"] = len(paragrafos_raw) - 1
 
     if not paragrafos_raw:
-        return {"ok": False, "erro": "vazio"}
+        return {"ok": False, "erro": MENSAGEM_PDF_ESCANEADO}
 
     return _montar_resultado(capitulos_raw, paragrafos_raw)
 
 
 def _extrair_pdf_fallback(caminho: str) -> dict:
     """Fallback simples para PDFs quando o pdfminer falha ou nao esta disponivel."""
+    from utils import MENSAGEM_PDF_ESCANEADO, corrigir_texto_pdf, erro_pdf_legivel, remover_ruido_pdf_paginas
+
     try:
         from pypdf import PdfReader
 
@@ -629,7 +721,6 @@ def _extrair_pdf_fallback(caminho: str) -> dict:
         paragrafos_raw = []
         blocos_documento = []
 
-        from utils import corrigir_texto_pdf, remover_ruido_pdf_paginas
         paginas = remover_ruido_pdf_paginas([page.extract_text() or "" for page in reader.pages])
 
         for page_num, texto in enumerate(paginas):
@@ -661,38 +752,115 @@ def _extrair_pdf_fallback(caminho: str) -> dict:
             return estruturado
 
         if not paragrafos_raw:
-            return {"ok": False, "erro": "vazio"}
+            return {"ok": False, "erro": MENSAGEM_PDF_ESCANEADO}
 
         return _montar_resultado(capitulos_raw, paragrafos_raw)
     except Exception as e:
-        return {"ok": False, "erro": str(e)}
+        return {"ok": False, "erro": erro_pdf_legivel(e)}
 
 
-def _extrair_docx(caminho: str) -> dict:
+_RE_NOME_ESTILO_TITULO = re.compile(
+    r"^(heading|t[ií]tulo|[üu]berschrift|titre|encabezado|titolo)\s*\d", re.IGNORECASE
+)
+_RE_ID_ESTILO_TITULO = re.compile(
+    r"^(heading|t[ií]tulo|ttulo|titulo|berschrift|titre)\d*$", re.IGNORECASE
+)
+
+
+def _paragrafos_docx(caminho: str) -> list:
+    """Lê todos os parágrafos de um DOCX, inclusive os de tabelas, listas, hyperlinks e caixas de
+    texto (uma vez só, mesmo quando a caixa vem em mc:AlternateContent). Quebras de linha viram
+    espaço. Devolve lista de (texto, eh_titulo); títulos são detectados pelo nome do estilo no
+    styles.xml (funciona em qualquer idioma do Word), pelo id do estilo e pelo nível de contorno.
+    Lança ValueError('invalido: ...') se o arquivo não for um DOCX legível."""
     import zipfile
     import xml.etree.ElementTree as ET
 
     W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    MC = "{http://schemas.openxmlformats.org/markup-compatibility/2006}"
+
+    try:
+        zf_ctx = zipfile.ZipFile(caminho)
+    except zipfile.BadZipFile as e:
+        raise ValueError(f"invalido: arquivo DOCX corrompido ou não é um ZIP ({e})") from e
+
+    with zf_ctx as zf:
+        if "word/document.xml" not in zf.namelist():
+            raise ValueError("invalido: DOCX sem word/document.xml")
+        # DOCX legítimo nunca tem DOCTYPE: recusa qualquer um (zip bomb/entidades) e o teto.
+        leitor = _LeitorZipSeguro(zf, doctype_qualquer=True)
+        tree = ET.fromstring(leitor.ler("word/document.xml"))
+        estilos_titulo = set()
+        if "word/styles.xml" in zf.namelist():
+            estilos_xml = ET.fromstring(leitor.ler("word/styles.xml"))
+            for st in estilos_xml.iter(f"{W}style"):
+                sid = st.get(f"{W}styleId", "")
+                nome_el = st.find(f"{W}name")
+                nome = nome_el.get(f"{W}val", "") if nome_el is not None else ""
+                nivel = st.find(f"{W}pPr/{W}outlineLvl")
+                if (
+                    _RE_NOME_ESTILO_TITULO.match(nome)
+                    or _RE_ID_ESTILO_TITULO.match(sid)
+                    or (nivel is not None and nivel.get(f"{W}val", "9") != "9")
+                ):
+                    estilos_titulo.add(sid)
+
+    # Parágrafos dentro do ramo mc:Fallback repetem os de mc:Choice (caixa de texto em dobro).
+    ignorados = set()
+    for fallback in tree.iter(f"{MC}Fallback"):
+        for p in fallback.iter(f"{W}p"):
+            ignorados.add(id(p))
+
+    def texto_do_paragrafo(p) -> str:
+        partes = []
+
+        def caminhar(el):
+            for filho in el:
+                if filho.tag in (f"{W}p", f"{W}txbxContent"):
+                    continue  # caixa de texto tem parágrafos próprios, lidos à parte
+                if filho.tag == f"{W}t":
+                    partes.append(filho.text or "")
+                elif filho.tag in (f"{W}br", f"{W}cr", f"{W}tab"):
+                    partes.append(" ")
+                else:
+                    caminhar(filho)
+
+        caminhar(p)
+        return " ".join("".join(partes).split())
+
+    resultado = []
+    for p in tree.iter(f"{W}p"):
+        if id(p) in ignorados:
+            continue
+        texto = texto_do_paragrafo(p)
+        if not texto:
+            continue
+        style_tag = p.find(f"{W}pPr/{W}pStyle")
+        style_val = style_tag.get(f"{W}val", "") if style_tag is not None else ""
+        nivel = p.find(f"{W}pPr/{W}outlineLvl")
+        eh_titulo = (
+            style_val in estilos_titulo
+            or _RE_ID_ESTILO_TITULO.match(style_val) is not None
+            or "heading" in style_val.lower()
+            or style_val in ("1", "2")
+            or (nivel is not None and nivel.get(f"{W}val", "9") != "9")
+        )
+        resultado.append((texto, eh_titulo))
+    return resultado
+
+
+def _extrair_docx(caminho: str) -> dict:
     capitulos_raw = []
     paragrafos_raw = []
     cap_idx = 0
 
-    with zipfile.ZipFile(caminho) as zf:
-        if "word/document.xml" not in zf.namelist():
-            return {"ok": False, "erro": "DOCX inválido"}
-        # DOCX legítimo nunca tem DOCTYPE: recusa qualquer um (zip bomb/entidades) e o teto.
-        tree = ET.fromstring(_LeitorZipSeguro(zf, doctype_qualquer=True).ler("word/document.xml"))
+    try:
+        paragrafos_lidos = _paragrafos_docx(caminho)
+    except ValueError as e:
+        return {"ok": False, "erro": str(e)}
 
-    for p in tree.findall(f".//{W}p"):
-        # Detecta estilo de heading
-        style_tag = p.find(f".//{W}pStyle")
-        style_val = style_tag.get(f"{W}val", "") if style_tag is not None else ""
-
-        texto = "".join(t.text or "" for t in p.findall(f".//{W}t")).strip()
-        if not texto:
-            continue
-
-        if "Heading" in style_val or "heading" in style_val or style_val in ("1", "2"):
+    for texto, eh_titulo in paragrafos_lidos:
+        if eh_titulo:
             capitulos_raw.append({
                 "titulo": texto,
                 "inicio": len(paragrafos_raw),
@@ -829,15 +997,13 @@ def _estruturar_texto_plano(conteudo: str) -> dict:
 
 
 def _extrair_txt_md(caminho: str) -> dict:
+    from utils import decodificar_texto_bruto
+
     try:
-        with open(caminho, "r", encoding="utf-8") as f:
-            conteudo = f.read()
-    except UnicodeDecodeError:
-        try:
-            with open(caminho, "r", encoding="latin-1") as f:
-                conteudo = f.read()
-        except Exception:
-            return {"ok": False, "erro": "encoding"}
+        with open(caminho, "rb") as f:
+            conteudo = decodificar_texto_bruto(f.read())
+    except Exception as e:
+        return {"ok": False, "erro": f"encoding: não foi possível ler o texto ({e})"}
 
     return _estruturar_texto_plano(conteudo)
 

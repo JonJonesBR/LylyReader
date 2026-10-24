@@ -715,7 +715,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Big books no longer fail at the end: the notes and references section is skipped, and a few chunks that can\'t be converted no longer cancel the whole audiobook.\n• Clearer messages when a conversion fails, saying what happened.\n• Guided voice cloning: record up to 30 seconds, with tips and a quality check.\n• Bluetooth and smartwatch controls work with your audiobooks, and backups from a newer version are refused with a clear message.</string>
+    <string name="release_notes_corpo">• Conversion progress is now real from 0 to 100%: it no longer sits at 99%, and it shows each step (joining audio, adjusting tone, finishing) and the elapsed time.\n• Books that would not open (some EPUBs, DOCX with tables, TXT in other encodings) now open and convert.\n• Scanned or password-protected PDFs now say clearly why they can\'t be read.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1296,6 +1296,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="extracao_motor_indisponivel">Não foi possível iniciar o motor de leitura. Tente novamente.</string>
     <string name="extracao_erro_abrir">Erro ao abrir o arquivo. Tente converter diretamente.</string>
     <string name="extracao_sem_texto">Nenhum texto encontrado neste arquivo.</string>
+    <string name="extracao_pdf_escaneado">This PDF seems to be scanned (images only), so there is no text to read or convert.</string>
     <string name="capitulo_sem_titulo">Sem título</string>
     <string name="extracao_protegido_senha">Arquivo protegido por senha não pode ser lido.</string>
     <string name="extracao_formato_nao_reconhecido">Formato de texto não reconhecido. Tente converter diretamente.</string>

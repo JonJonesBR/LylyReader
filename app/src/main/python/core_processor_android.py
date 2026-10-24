@@ -10,6 +10,7 @@ Diferenças em relação ao core_processor.py original:
 """
 
 import asyncio
+import contextlib
 import hashlib
 import json
 import math
@@ -32,6 +33,8 @@ from utils import (
     garantir_temp_dir, ProgressTracker, aplicar_intervalo, ler_texto_pronto,
     extrair_texto_limpo, contar_estatisticas, estimar_duracao, sanitizar_trecho_para_tts,
     remover_secao_notas_final,
+    PCT_FIM_SINTESE, PCT_FIM_JUNCAO, PCT_FIM_TIMBRE, PCT_FIM_METADADOS, PCT_FIM_CAPITULOS,
+    fracao_sintese, pct_sintese_global, pct_nao_regride,
 )
 from tts import (
     converter_tts_auto, concatenar_grupo_com_pausa, aplicar_timbre,
@@ -201,6 +204,42 @@ def _limite_falhas_toleradas(total: int) -> int:
     return min(10, max(1, math.ceil(total * 0.05)))
 
 
+def _iniciar_batimento(_cb, pct, mensagem, intervalo: float = 5.0) -> asyncio.Task:
+    """Sinal de vida: tarefa que reenvia _cb(pct(), mensagem()) a cada `intervalo` segundos.
+    Quem chama deve cancelá-la ao terminar (ver _parar_batimento)."""
+    async def _loop():
+        while True:
+            await asyncio.sleep(intervalo)
+            _cb(pct(), mensagem())
+    return asyncio.create_task(_loop())
+
+
+async def _parar_batimento(tarefa: asyncio.Task) -> None:
+    tarefa.cancel()
+    with contextlib.suppress(asyncio.CancelledError, Exception):
+        await tarefa
+
+
+async def _com_batimento(awaitable, _cb, pct, mensagem, intervalo: float = 5.0):
+    """Aguarda `awaitable` mostrando que segue vivo: a cada `intervalo` s envia
+    _cb(pct, "<mensagem> (<tempo decorrido>)"). `pct` e `mensagem` aceitam valor fixo ou
+    função sem argumentos. Devolve o resultado do awaitable; o batimento para ao terminar."""
+    inicio = time.time()
+
+    def _pct_atual():
+        return pct() if callable(pct) else pct
+
+    def _msg_atual():
+        texto = mensagem() if callable(mensagem) else mensagem
+        return f"{texto} ({formatar_duracao(time.time() - inicio)})"
+
+    tarefa = _iniciar_batimento(_cb, _pct_atual, _msg_atual, intervalo)
+    try:
+        return await awaitable
+    finally:
+        await _parar_batimento(tarefa)
+
+
 def _titulo_de_capitulo(texto: str, idx: int) -> str:
     """Extrai o título de um capítulo da primeira linha não-vazia do texto."""
     for linha in texto.strip().splitlines():
@@ -345,7 +384,12 @@ async def processar(
 
     blacklist_list = normalize_blacklist(blacklist)
 
+    # Maior percentual já reportado: o progresso nunca volta atrás (ver pct_nao_regride).
+    ultimo_pct = [-1]
+
     def _cb(pct: int, msg: str):
+        pct = pct_nao_regride(pct, ultimo_pct[0])
+        ultimo_pct[0] = pct
         if progress_cb:
             try:
                 progress_cb(pct, msg)
@@ -411,14 +455,17 @@ async def processar(
             total_estimado = max(len(chunks), 1)
 
             def cb_com_falantes(pct: int, msg: str) -> None:
-                chunk_estimado = int(pct / 100 * total_estimado)
-                cap_num = total_caps
-                for i, (ini, fim) in enumerate(limites):
-                    if chunk_estimado < fim:
-                        cap_num = i + 1
-                        break
+                # O capítulo só é informado durante a síntese; depois dela, a mensagem é da etapa.
+                if pct < PCT_FIM_SINTESE:
+                    chunk_estimado = int(fracao_sintese(pct) * total_estimado)
+                    cap_num = total_caps
+                    for i, (ini, fim) in enumerate(limites):
+                        if chunk_estimado < fim:
+                            cap_num = i + 1
+                            break
+                    msg = f"Capítulo {cap_num} de {total_caps}\n{msg}"
                 try:
-                    callback_original(pct, f"Capítulo {cap_num} de {total_caps}\n{msg}")
+                    callback_original(pct, msg)
                 except Exception:
                     pass
 
@@ -456,11 +503,19 @@ async def processar(
 
     ja_prontos = len(completed_valid)
     if ja_prontos > 0:
-        _cb(int(ja_prontos * 100 / total), f"Retomando: {ja_prontos}/{total} blocos prontos.")
+        _cb(ja_prontos * PCT_FIM_SINTESE // total, f"Retomando: {ja_prontos}/{total} blocos prontos.")
 
     inicio   = time.time()
     tracker  = ProgressTracker(total, inicio, ja_prontos)
     sem      = asyncio.Semaphore(_config.get_tts_workers())
+    # Fase do pipeline: "sintese" (blocos pendentes) ou "retry" (rodadas de reprocessamento).
+    fase = ["sintese"]
+
+    def _pct_sintese() -> int:
+        return pct_sintese_global(tracker.pct())
+
+    def _pct_concluidos() -> int:
+        return len(completed_valid) * PCT_FIM_SINTESE // total
 
     async def _converter_um(idx: int, chunk: str, semaforo: asyncio.Semaphore, texto_alt: Optional[str] = None):
         if _cancelar_flag:
@@ -478,16 +533,22 @@ async def processar(
                 completed_valid.add(idx)
                 _salvar_progresso(jh, completed_valid)
             tracker.registrar(idx, ok)
-            if tracker.deve_atualizar():
-                _cb(tracker.pct(), tracker.mensagem_simples())
+            if fase[0] == "sintese" and tracker.deve_atualizar():
+                _cb(_pct_sintese(), tracker.mensagem_simples(_pct_sintese()))
 
     # ── Rodada inicial ────────────────────────────────────────────────────────
-    await asyncio.gather(*[_converter_um(i, chunks[i], sem) for i in pending])
+    # Sinal de vida: reenvia o andamento a cada 5 s, para o Tempo/ETA andar mesmo sem bloco novo.
+    batimento = _iniciar_batimento(_cb, _pct_sintese, lambda: tracker.mensagem_simples(_pct_sintese()))
+    try:
+        await asyncio.gather(*[_converter_um(i, chunks[i], sem) for i in pending])
+    finally:
+        await _parar_batimento(batimento)
 
     if _cancelar_flag:
         return _retorno_cancelado(jh)
 
     # ── Rodadas de retry: garante que todos os chunks sejam convertidos ───────
+    fase[0] = "retry"
     _MAX_RODADAS_RETRY = 3
     for rodada in range(1, _MAX_RODADAS_RETRY + 1):
         falhos = _chunks_falhos(total, completed_valid, temp_files)
@@ -496,35 +557,39 @@ async def processar(
 
         espera = 2 ** rodada  # 2, 4, 8 segundos entre rodadas
         logger.warning(f"Retry {rodada}/{_MAX_RODADAS_RETRY}: {len(falhos)} blocos pendentes. Aguardando {espera}s.")
-        _cb(
-            int(len(completed_valid) * 90 / total),
-            f"Reprocessando {len(falhos)} blocos (tentativa {rodada}/{_MAX_RODADAS_RETRY})...",
-        )
-        await asyncio.sleep(espera)
+        msg_retry = f"Reprocessando {len(falhos)} bloco(s) (tentativa {rodada}/{_MAX_RODADAS_RETRY})…"
+        _cb(_pct_concluidos(), msg_retry)
 
         # Usa metade dos workers para dar mais folga à API
         workers_retry = max(1, _config.get_tts_workers() // 2)
         sem_retry = asyncio.Semaphore(workers_retry)
         ultima_rodada = rodada == _MAX_RODADAS_RETRY
-        await asyncio.gather(*[
-            _converter_um(
-                i, chunks[i], sem_retry,
-                sanitizar_trecho_para_tts(chunks[i]) if ultima_rodada else None,
-            )
-            for i in falhos
-        ])
+
+        async def _reprocessar(falhos=falhos, sem_retry=sem_retry, ultima_rodada=ultima_rodada):
+            await asyncio.sleep(espera)
+            await asyncio.gather(*[
+                _converter_um(
+                    i, chunks[i], sem_retry,
+                    sanitizar_trecho_para_tts(chunks[i]) if ultima_rodada else None,
+                )
+                for i in falhos
+            ])
+
+        await _com_batimento(_reprocessar(), _cb, _pct_concluidos, msg_retry)
 
         if _cancelar_flag:
             return _retorno_cancelado(jh)
 
     # ── Verificação final: impede audiobook incompleto ────────────────────────
     falhos_final = _chunks_falhos(total, completed_valid, temp_files)
+    aviso_ignorados = ""  # repetido nas mensagens seguintes, para não ser sobrescrito de imediato
     if falhos_final and len(falhos_final) <= _limite_falhas_toleradas(total):
         logger.warning(
             f"{len(falhos_final)}/{total} blocos ignorados após {_MAX_RODADAS_RETRY} retries "
             "(dentro do limite de tolerância); seguindo com os demais."
         )
-        _cb(95, f"{len(falhos_final)} trecho(s) não puderam ser convertidos e foram ignorados.")
+        aviso_ignorados = f" | {len(falhos_final)} trecho(s) ignorado(s)"
+        _cb(PCT_FIM_SINTESE, f"{len(falhos_final)} trecho(s) não puderam ser convertidos e foram ignorados.")
     elif falhos_final:
         logger.error(f"Conversão incompleta: {len(falhos_final)}/{total} blocos falharam após {_MAX_RODADAS_RETRY} retries.")
         if motor_ativo == "elevenlabs":
@@ -542,8 +607,20 @@ async def processar(
             "job": jh,
         }
 
-    # Concatenar todos os chunks em ordem
-    _cb(95, "Juntando áudio...")
+    # Concatenar todos os chunks em ordem (junção: faixa PCT_FIM_SINTESE..PCT_FIM_JUNCAO)
+    estado_juncao = {"fracao": 0.0}
+
+    def _pct_juncao() -> int:
+        return PCT_FIM_SINTESE + int(estado_juncao["fracao"] * (PCT_FIM_JUNCAO - PCT_FIM_SINTESE))
+
+    def _msg_juncao() -> str:
+        return f"Juntando áudio… {int(estado_juncao['fracao'] * 100)}%{aviso_ignorados}"
+
+    def _progresso_juncao(fracao: float) -> None:
+        estado_juncao["fracao"] = fracao
+        _cb(_pct_juncao(), _msg_juncao())
+
+    _cb(PCT_FIM_SINTESE, _msg_juncao())
     indices_validos = [
         i for i in range(total)
         if i in completed_valid and os.path.exists(temp_files[i]) and os.path.getsize(temp_files[i]) > 500
@@ -559,7 +636,12 @@ async def processar(
     if not saida_mp3:
         saida_mp3 = os.path.join(_config.FILES_DIR, f"{titulo}.mp3")
 
-    ok_concat = await concatenar_grupo_com_pausa(arquivos_validos, saida_mp3, pausa_ms, pausas_validas)
+    ok_concat = await _com_batimento(
+        concatenar_grupo_com_pausa(
+            arquivos_validos, saida_mp3, pausa_ms, pausas_validas, on_progress=_progresso_juncao,
+        ),
+        _cb, _pct_juncao, _msg_juncao,
+    )
     if not ok_concat or not os.path.exists(saida_mp3):
         return {"ok": False, "erro": "Falha na concatenação do áudio.", "job": jh}
 
@@ -567,46 +649,72 @@ async def processar(
     tom_meios_tons = int(CONFIG.get("timbre_tom_meios_tons", 0) or 0)
     agudos_db = int(CONFIG.get("timbre_agudos_db", 0) or 0)
     if tom_meios_tons or agudos_db:
-        _cb(96, "Ajustando o timbre...")
+        msg_timbre = f"Ajustando o timbre…{aviso_ignorados}"
+        _cb(PCT_FIM_JUNCAO, msg_timbre)
         try:
-            await aplicar_timbre(
-                saida_mp3, tom_meios_tons, agudos_db, int(CONFIG.get("audio_bitrate_kbps", 64) or 64)
+            await _com_batimento(
+                aplicar_timbre(
+                    saida_mp3, tom_meios_tons, agudos_db, int(CONFIG.get("audio_bitrate_kbps", 64) or 64)
+                ),
+                _cb, PCT_FIM_JUNCAO, msg_timbre,
             )
         except Exception as e:
             logger.warning(f"Ajuste de timbre falhou (não-crítico): {e}")
 
-    # Metadados ID3
+    # Metadados ID3 (faixa PCT_FIM_TIMBRE..PCT_FIM_METADADOS)
     capa_bytes = None
     try:
         capa_bytes = obter_capa(None, titulo)
     except Exception:
         pass
 
-    adicionar_metadados_mp3(
-        saida_mp3,
-        titulo=titulo,
-        artista="LylyReader",
-        album=titulo,
-        genero="Audiobook",
-        capa_bytes=capa_bytes,
+    msg_metadados = f"Adicionando metadados…{aviso_ignorados}"
+    _cb(PCT_FIM_TIMBRE, msg_metadados)
+    await _com_batimento(
+        asyncio.to_thread(
+            adicionar_metadados_mp3,
+            saida_mp3,
+            titulo=titulo,
+            artista="LylyReader",
+            album=titulo,
+            genero="Audiobook",
+            capa_bytes=capa_bytes,
+        ),
+        _cb, PCT_FIM_TIMBRE, msg_metadados,
     )
 
-    # Chapter marks (EPUB com múltiplos capítulos)
+    # Chapter marks (EPUB com múltiplos capítulos; faixa PCT_FIM_METADADOS..PCT_FIM_CAPITULOS)
     caps_com_ts: list = []
-    if capitulos_info and len(capitulos_info) > 1:
-        _cb(97, "Adicionando marcadores de capítulo...")
-        try:
-            caps_com_ts = _calcular_timestamps_capitulos(
+    tem_capitulos = bool(capitulos_info and len(capitulos_info) > 1)
+    _cb(PCT_FIM_METADADOS, (
+        f"Adicionando marcadores de capítulo…{aviso_ignorados}" if tem_capitulos
+        else f"Finalizando…{aviso_ignorados}"
+    ))
+    if tem_capitulos:
+        def _gravar_marcadores() -> list:
+            caps = _calcular_timestamps_capitulos(
                 capitulos_info, temp_files, arquivos_validos, saida_mp3
             )
+            if caps:
+                adicionar_chapter_marks(saida_mp3, caps)
+            return caps
+
+        msg_capitulos = f"Adicionando marcadores de capítulo…{aviso_ignorados}"
+        try:
+            caps_com_ts = await _com_batimento(
+                asyncio.to_thread(_gravar_marcadores), _cb, PCT_FIM_METADADOS, msg_capitulos,
+            )
             if caps_com_ts:
-                adicionar_chapter_marks(saida_mp3, caps_com_ts)
                 logger.info(f"Chapter marks adicionados: {len(caps_com_ts)} capítulos.")
         except Exception as e:
             logger.warning(f"Chapter marks falhou (não-crítico): {e}")
 
-    # Duração final
-    duracao_seg = await obter_duracao_ffprobe(saida_mp3)
+    # Duração final (faixa PCT_FIM_CAPITULOS)
+    msg_duracao = f"Calculando a duração…{aviso_ignorados}"
+    _cb(PCT_FIM_CAPITULOS, msg_duracao)
+    duracao_seg = await _com_batimento(
+        obter_duracao_ffprobe(saida_mp3), _cb, PCT_FIM_CAPITULOS, msg_duracao,
+    )
     duracao_str = formatar_duracao(duracao_seg)
     tam_mb      = round(os.path.getsize(saida_mp3) / (1024 * 1024), 1)
 
@@ -676,14 +784,17 @@ async def processar_arquivo(
 
             if progress_cb:
                 def cb_com_capitulo(pct: int, msg: str) -> None:
-                    chunk_estimado = int(pct / 100 * total_chunks_estimado)
-                    cap_num = total_caps
-                    for i, (ini, fim) in enumerate(limites_chunks):
-                        if chunk_estimado < fim:
-                            cap_num = i + 1
-                            break
+                    # O capítulo só é informado durante a síntese; depois dela, a mensagem é da etapa.
+                    if pct < PCT_FIM_SINTESE:
+                        chunk_estimado = int(fracao_sintese(pct) * total_chunks_estimado)
+                        cap_num = total_caps
+                        for i, (ini, fim) in enumerate(limites_chunks):
+                            if chunk_estimado < fim:
+                                cap_num = i + 1
+                                break
+                        msg = f"Capítulo {cap_num} de {total_caps}\n{msg}"
                     try:
-                        progress_cb(pct, f"Capítulo {cap_num} de {total_caps}\n{msg}")
+                        progress_cb(pct, msg)
                     except Exception:
                         pass
 
