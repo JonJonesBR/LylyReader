@@ -144,6 +144,7 @@
     <string name="voice_gender_male">masculina</string>
     <string name="voice_gender_female">feminina</string>
     <string name="voice_language_multilingual">multilíngue</string>
+    <string name="voice_nome_santa_ingles">Santa (inglês)</string>
     <string name="style_standard">Padrão</string>
     <string name="style_horror">Terror</string>
     <string name="style_action">Ação</string>
@@ -713,7 +714,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• O progresso da conversão agora é real de 0 a 100%: não fica mais parado em 99%, mostra cada etapa (juntar áudio, ajustar timbre, finalizar) e o tempo decorrido.\n• Livros que não abriam (alguns EPUBs, DOCX com tabelas, TXT em outras codificações) agora abrem e convertem.\n• PDF escaneado ou protegido por senha avisa claramente o motivo.\n• Com as vozes do aparelho (Supertonic, Piper, Kokoro, Pocket) o tempo da conversão não congela mais e a duração do audiobook aparece corretamente.\n• Chave de voz inválida (Gemini, ElevenLabs) agora avisa em segundos, em vez de minutos.\n• Geração mais rápida e estável com as vozes Edge: blocos problemáticos são tentados de novo na hora e o ajuste de conexões acompanha a sua rede.\n• A reta final (juntar áudio, metadados e capítulos) ficou mais rápida, e pausar ou cancelar funciona também nessa etapa.\n• Antes de gerar, o app mostra uma estimativa do tempo da conversão, que melhora conforme você usa.</string>
+    <string name="release_notes_corpo">• O progresso da conversão agora é real de 0 a 100%: não fica mais parado em 99%, mostra cada etapa (juntar áudio, ajustar timbre, finalizar) e o tempo decorrido.\n• Livros que não abriam (alguns EPUBs, DOCX com tabelas, TXT em outras codificações) agora abrem e convertem.\n• PDF escaneado ou protegido por senha avisa claramente o motivo.\n• Com as vozes do aparelho (Supertonic, Piper, Kokoro, Pocket) o tempo da conversão não congela mais e a duração do audiobook aparece corretamente.\n• Chave de voz inválida (Gemini, ElevenLabs) agora avisa em segundos, em vez de minutos.\n• Geração mais rápida e estável com as vozes Edge: blocos problemáticos são tentados de novo na hora e o ajuste de conexões acompanha a sua rede.\n• A reta final (juntar áudio, metadados e capítulos) ficou mais rápida, e pausar ou cancelar funciona também nessa etapa.\n• Antes de gerar, o app mostra uma estimativa do tempo da conversão, que melhora conforme você usa.\n• Audiobooks gerados com as vozes do aparelho agora saem comprimidos (muito menores) e com a duração correta.\n• Novo botão \"Ouvir o que já foi gerado\" na tela de Conversões: escute o começo enquanto o resto é gerado.\n• Piper pode gerar em paralelo em aparelhos com 4 ou mais núcleos, e a falha lenta do Edge agora desiste mais cedo.\n• A voz Santa em inglês agora aparece como \"Santa (inglês)\".</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
@@ -1128,6 +1129,10 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="conv_pronto_titulo">Audiobook pronto</string>
     <string name="conv_pronto_info">%1$s · %2$s · %3$s MB</string>
     <string name="conv_ouvir">Ouvir agora</string>
+    <string name="conv_ouvir_previa">Ouvir o que já foi gerado</string>
+    <string name="conv_previa_sem_blocos">Ainda não há trecho pronto para ouvir.</string>
+    <string name="conv_previa_titulo">Prévia: %1$s</string>
+    <string name="conv_comprimindo_audio">Comprimindo áudio…</string>
     <string name="conv_compartilhar">Compartilhar</string>
     <string name="conv_fechar">Fechar</string>
     <string name="conv_erro_titulo">Não foi possível gerar o audiobook</string>

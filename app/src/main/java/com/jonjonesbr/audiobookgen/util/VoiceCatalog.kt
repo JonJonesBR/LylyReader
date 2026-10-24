@@ -5,6 +5,9 @@ import android.util.Log
 import com.jonjonesbr.audiobookgen.R
 import java.util.Locale
 
+/** Id da Santa inglesa do Kokoro (`am_santa`), que tem o mesmo nome da Santa pt-BR. */
+private const val ID_SANTA_INGLES = "kokoro-en-am-santa"
+
 data class VoiceOption(
     val id: String,
     val name: String,
@@ -28,12 +31,17 @@ data class VoiceOption(
     /** False quando o gênero não está confirmado pela fonte do modelo. */
     val generoConhecido: Boolean = true
 ) {
-    fun displayLabel(context: Context): String =
-        displayLabel(
-            context.getString(R.string.voice_language_multilingual),
-            context.getString(R.string.voice_gender_male),
-            context.getString(R.string.voice_gender_female)
-        )
+    /**
+     * Nome mostrado ao usuário. A Santa inglesa (`am_santa`) tem o mesmo nome da Santa pt-BR; por isso
+     * recebe um rótulo que diz o idioma. O id e o sid não mudam.
+     */
+    fun nomeExibido(context: Context): String =
+        if (id == ID_SANTA_INGLES) context.getString(R.string.voice_nome_santa_ingles) else name
+
+    fun displayLabel(context: Context): String {
+        if (isGenerico) return name
+        return "${nomeExibido(context)} · ${metaLabel(context)}"
+    }
 
     fun displayLabel(multilingualLabel: String, maleLabel: String, femaleLabel: String): String {
         if (isGenerico) return name

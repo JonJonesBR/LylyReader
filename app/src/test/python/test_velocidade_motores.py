@@ -198,5 +198,57 @@ class RegistrarVelocidadeNoCoreTest(unittest.TestCase):
             cpa._registrar_velocidade([0], ["x"], ["edge"], {0}, 10.0)
 
 
+# Vozes reais do app (ids do catálogo Kotlin) e a chave de medição que o lado Kotlin
+# (EstimativaDeGeracao.motorDaVoz) lê para cada uma. Os dois lados têm de bater.
+CHAVES_DE_MEDICAO_ESPERADAS = {
+    "piper-ptbr-cadu::main-pt": "piper",
+    "piper-ptbr-faber::main-pt": "piper",
+    "kokoro-pf-dora": "kokoro",
+    "kokoro-en-am-santa": "kokoro",
+    "mms-por::main-pt": "kokoro",
+    "pocket-ptbr-rafael": "pocket",
+    "supertonic-m1": "onnx",
+    "android::pkg::voz": "android",
+    "pt-BR-FranciscaNeural": "edge",
+}
+
+
+@unittest.skipIf(tts is None, "módulo tts indisponível")
+class ChaveDeMedicaoPorVozTest(unittest.TestCase):
+    def test_chave_gravada_bate_com_a_lida_pelo_kotlin(self):
+        for voz, esperada in CHAVES_DE_MEDICAO_ESPERADAS.items():
+            with self.subTest(voz=voz):
+                self.assertEqual(esperada, vm.motor_medido(voz, tts.motor_da_voz(voz)))
+
+    def test_piper_nunca_cai_em_kokoro_nem_edge(self):
+        voz = "piper-ptbr-cadu::main-pt"
+        self.assertEqual("piper", vm.motor_medido(voz, tts.motor_da_voz(voz)))
+
+
+class RotuloMotorTest(unittest.TestCase):
+    def test_rotulo_mostra_o_motor_real(self):
+        casos = {
+            ("piper-ptbr-cadu::main-pt", "kokoro"): "piper",
+            ("mms-por::main-pt", "kokoro"): "mms",
+            ("kokoro-pf-dora", "kokoro"): "kokoro",
+            ("pocket-ptbr-rafael", "pocket"): "pocket",
+            ("supertonic-m1", "onnx"): "supertonic",
+            ("pacote::byom-voz", "kokoro"): "byom",
+            ("pt-BR-FranciscaNeural", "edge"): "edge",
+            ("android::pkg::voz", "android"): "android",
+        }
+        for (voz, roteado), esperado in casos.items():
+            with self.subTest(voz=voz):
+                self.assertEqual(esperado, vm.rotulo_motor(voz, roteado))
+
+    def test_rotulo_nao_vira_kokoro_para_piper(self):
+        self.assertNotEqual("kokoro", vm.rotulo_motor("piper-ptbr-cadu::main-pt", "kokoro"))
+
+    @unittest.skipIf(tts is None, "módulo tts indisponível")
+    def test_rotulo_com_roteamento_real(self):
+        self.assertEqual("piper", vm.rotulo_motor("piper-ptbr-cadu::main-pt", tts.motor_da_voz("piper-ptbr-cadu::main-pt")))
+        self.assertEqual("supertonic", vm.rotulo_motor("supertonic-m1", tts.motor_da_voz("supertonic-m1")))
+
+
 if __name__ == "__main__":
     unittest.main()

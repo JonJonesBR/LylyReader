@@ -45,6 +45,7 @@ from tts import (
 from cover_art import obter_capa
 from erros_tts import ErroDeChave
 from metricas_conversao import MetricasConversao, ms_desde
+from orcamento_retry import OrcamentoRetry
 import velocidade_motores
 from velocidade_motores import motor_medido
 from smart_cleaner import normalize_blacklist
@@ -65,6 +66,11 @@ _ESPERAS_RETRY_IMEDIATO = (0.5, 1.5)  # segundos antes da 1ª e da 2ª repetiç�
 # Motores que já repetem internamente (Edge em tts.py; Gemini e OpenRouter nos clientes). Para eles
 # não há retry imediato extra, para não multiplicar as tentativas (pior caso 3 x 5 x timeout).
 _MOTORES_COM_RETRY_INTERNO = frozenset({"edge", "gemini", "openrouter"})
+# Motores que rodam no aparelho, pelo roteamento de tts.motor_da_voz (Piper entra como "kokoro").
+_MOTORES_LOCAIS = frozenset({"onnx", "android", "kokoro", "pocket"})
+# Tempo total somado das rodadas globais de retry (depois da rodada inicial). Esgotado, a conversão
+# para de reprocessar e falha (ou tolera) com a mensagem de sempre. Rede boa não chega perto disso.
+_ORCAMENTO_RETRY_S = 480
 
 
 def _registrar_velocidade(pending: list, chunks: list, chunk_voices: list,
@@ -97,6 +103,91 @@ def cancelar_e_descartar():
     global _cancelar_flag, _descartar_ao_cancelar
     _cancelar_flag = True
     _descartar_ao_cancelar = True
+
+# Job da conversão em andamento, para a prévia "Ouvir o que já foi gerado". Preenchido em _processar_nucleo.
+_job_ativo = {"jh": None, "total": 0}
+# Limite de áudio da prévia: 15 min.
+_PREVIA_LIMITE_MS = 15 * 60 * 1000
+
+
+def _apagar_previa() -> None:
+    """Remove previa.mp3 e o temporário dela (se existirem). Nunca levanta exceção."""
+    for nome in ("previa.mp3", "previa.mp3.tmp"):
+        with contextlib.suppress(OSError):
+            os.remove(os.path.join(TEMP_DIR, nome))
+
+
+def _zerar_job_ativo() -> None:
+    _job_ativo.update(jh=None, total=0)
+
+
+def _prefixo_contiguo(concluidos, total: int) -> list:
+    """Índices 0..k-1 todos concluídos, sem pular nenhum. Para no primeiro bloco que falta."""
+    prefixo = []
+    for i in range(total):
+        if i not in concluidos:
+            break
+        prefixo.append(i)
+    return prefixo
+
+
+def _limitar_por_duracao(indices: list, duracoes_ms: dict, limite_ms: int) -> list:
+    """Corta a sequência antes de passar de `limite_ms`. Bloco sem duração conta 0. O primeiro bloco
+    sempre entra, mesmo que sozinho passe do limite."""
+    escolhidos = []
+    acumulado = 0
+    for i in indices:
+        duracao = int(duracoes_ms.get(i) or 0)
+        if escolhidos and acumulado + duracao > limite_ms:
+            break
+        escolhidos.append(i)
+        acumulado += duracao
+    return escolhidos
+
+
+def gerar_previa() -> str:
+    """Junta os blocos já prontos do início do job ativo (sem buraco, até ~60 min) em
+    TEMP_DIR/previa.mp3, por arquivo temporário + os.replace. Devolve o caminho, ou "" se não há
+    bloco pronto ou algo falhar. Nunca levanta exceção."""
+    try:
+        jh = _job_ativo.get("jh")
+        total = int(_job_ativo.get("total") or 0)
+        if not jh or total <= 0:
+            return ""
+        pasta = _job_dir(jh)
+        caminhos = [os.path.join(pasta, f"part_{i}.mp3") for i in range(total)]
+        concluidos = {
+            i for i in _carregar_progresso(jh)
+            if 0 <= i < total and os.path.exists(caminhos[i]) and os.path.getsize(caminhos[i]) > 500
+        }
+        indices = _prefixo_contiguo(concluidos, total)
+        if not indices:
+            return ""
+        duracoes = _carregar_duracoes(jh)
+        for i in indices:
+            if not duracoes.get(i):
+                lida = _duracao_ms_bloco(caminhos[i])
+                if lida:
+                    duracoes[i] = lida
+        escolhidos = _limitar_por_duracao(indices, duracoes, _PREVIA_LIMITE_MS)
+        arquivos = [caminhos[i] for i in escolhidos]
+        if not _formato_homogeneo(arquivos):
+            return ""
+        os.makedirs(TEMP_DIR, exist_ok=True)
+        saida = os.path.join(TEMP_DIR, "previa.mp3")
+        tmp = saida + ".tmp"
+        try:
+            if not _concatenar_mp3_puro(arquivos, tmp):
+                return ""
+            os.replace(tmp, saida)
+        finally:
+            if os.path.exists(tmp):
+                with contextlib.suppress(OSError):
+                    os.remove(tmp)
+        return saida
+    except Exception as e:
+        logger.warning(f"Prévia não gerada: {e}")
+        return ""
 
 def _reset_cancelar():
     global _cancelar_flag, _descartar_ao_cancelar
@@ -377,6 +468,28 @@ def _chunks_falhos(total: int, completed_valid: set, temp_files: list) -> list:
 def _limite_falhas_toleradas(total: int) -> int:
     """Quantos blocos podem falhar sem abortar a conversão: 5% do total, entre 1 e 10."""
     return min(10, max(1, math.ceil(total * 0.05)))
+
+
+def workers_para(vozes, padrao: int, cpu_count: Optional[int] = None) -> int:
+    """Workers de síntese para as vozes de um job. Só Piper (todas as vozes) com 4+ CPUs: 2.
+    Outros motores locais (Kokoro, Pocket, Supertonic, Android, MMS/BYOM): 1. Qualquer voz de
+    nuvem ou sem vozes: `padrao` (o valor de config de sempre)."""
+    if cpu_count is None:
+        cpu_count = os.cpu_count() or 1
+    lista = list(vozes)
+    if not lista:
+        return padrao
+    if not all(motor_da_voz(v) in _MOTORES_LOCAIS for v in lista):
+        return padrao
+    if all(velocidade_motores.motor_medido(v, motor_da_voz(v)) == "piper" for v in lista) and cpu_count >= 4:
+        return 2
+    return 1
+
+
+def orcamento_retry_aplicavel(vozes) -> bool:
+    """O orçamento de retry vale quando alguma voz do job é de nuvem ou edge. Job só de motores locais
+    (Kokoro, Pocket, Supertonic, Android, Piper, MMS/BYOM) não tem orçamento."""
+    return any(motor_da_voz(v) not in _MOTORES_LOCAIS for v in vozes)
 
 
 def _voz_local(voz: str) -> bool:
@@ -668,11 +781,17 @@ async def _processar_nucleo(
 
     if total == 0:
         return {"ok": False, "erro": "Texto vazio após processamento."}
-    metricas.definir_contexto(motor_ativo, voz, total, _config.get_tts_workers())
+    # Rótulo pelo motor real de cada voz (um livro multi-voz junta os nomes); não o motor de configuração.
+    rotulo_motores = "+".join(sorted({
+        velocidade_motores.rotulo_motor(v, motor_da_voz(v)) for v in set(chunk_voices)
+    })) or motor_ativo
+    metricas.definir_contexto(rotulo_motores, voz, total,
+                              workers_para(set(chunk_voices), padrao=_config.get_tts_workers()))
 
     # Retomada de progresso
     plan_for_hash = list(zip(chunks, chunk_voices)) if speaker_plan else None
     jh        = _job_hash(chunks, voz, estilo, plan_for_hash, velocidade, tom)
+    _job_ativo.update(jh=jh, total=total)
     limpar_jobs_antigos(manter=jh)
     job_directory = _job_dir(jh)
     os.makedirs(job_directory, exist_ok=True)
@@ -743,7 +862,7 @@ async def _processar_nucleo(
     tracker  = ProgressTracker(total, inicio, ja_prontos)
     # Edge: limite adaptativo (P1.4), começa em get_tts_workers() e sobe até TTS_WORKERS_TETO.
     # Motores locais e nuvem: semáforo fixo, como antes.
-    workers_inicial = _config.get_tts_workers()
+    workers_inicial = workers_para(set(chunk_voices), padrao=_config.get_tts_workers())
     adaptativo = motor_ativo == "edge"
     limitador = _config.LimiteAdaptativo(
         inicial=workers_inicial, minimo=2,
@@ -852,9 +971,17 @@ async def _processar_nucleo(
     # ── Rodadas de retry: garante que todos os chunks sejam convertidos ───────
     fase[0] = "retry"
     _MAX_RODADAS_RETRY = 3
+    # Tempo total das rodadas de retry (somado): ao esgotar, para e segue para a verificação final.
+    # Só motores de nuvem/edge têm orçamento; motores locais seguem sem limite (comportamento anterior).
+    orcamento_retry = OrcamentoRetry(_ORCAMENTO_RETRY_S) if orcamento_retry_aplicavel(set(chunk_voices)) else None
+    if orcamento_retry is not None:
+        orcamento_retry.iniciar()
     for rodada in range(1, _MAX_RODADAS_RETRY + 1):
         falhos = _chunks_falhos(total, completed_valid, temp_files)
         if not falhos:
+            break
+        if orcamento_retry is not None and orcamento_retry.esgotado():
+            logger.warning(f"Orçamento de retry esgotado antes da rodada {rodada}: {len(falhos)} bloco(s) sem converter.")
             break
 
         espera = 2 ** rodada  # 2, 4, 8 segundos entre rodadas
@@ -863,7 +990,7 @@ async def _processar_nucleo(
         _cb(_pct_concluidos(), msg_retry)
 
         # Usa metade dos workers para dar mais folga à API
-        workers_retry = max(1, _config.get_tts_workers() // 2)
+        workers_retry = workers_para(set(chunk_voices), padrao=max(1, _config.get_tts_workers() // 2))
         sem_retry = asyncio.Semaphore(workers_retry)
         ultima_rodada = rodada == _MAX_RODADAS_RETRY
 
@@ -878,7 +1005,16 @@ async def _processar_nucleo(
             ])
 
         inicio_retry = time.perf_counter()
-        await _com_batimento(_reprocessar(), _cb, _pct_concluidos, msg_retry)
+        orcamento_esgotou = False
+        try:
+            await asyncio.wait_for(
+                _com_batimento(_reprocessar(), _cb, _pct_concluidos, msg_retry),
+                timeout=orcamento_retry.restante() if orcamento_retry is not None else None,
+            )
+        except asyncio.TimeoutError:
+            # Blocos que não terminaram ficam como falhos; a verificação final decide (tolerância ou erro).
+            orcamento_esgotou = True
+            logger.warning(f"Orçamento de retry de {_ORCAMENTO_RETRY_S} s esgotado na rodada {rodada}.")
         _persistir_progresso(forcado=True)
         tempo_sintese_ms += ms_desde(inicio_retry)
         metricas.registrar_etapa("sintese", ms_desde(inicio_retry))
@@ -887,6 +1023,8 @@ async def _processar_nucleo(
             return await _cancelado()
         if chave_recusada[0]:
             return {"ok": False, "erro": chave_recusada[0], "job": jh}
+        if orcamento_esgotou:
+            break
 
     # ── Verificação final: impede audiobook incompleto ────────────────────────
     falhos_final = _chunks_falhos(total, completed_valid, temp_files)
@@ -1102,6 +1240,9 @@ async def processar(
     """
     metricas = MetricasConversao()
     lotes: list = []
+    # Prévia e job ativo são da conversão que começa agora: nada sobra de uma anterior.
+    _apagar_previa()
+    _zerar_job_ativo()
     try:
         resultado = await _processar_nucleo(
             texto, voz, velocidade, tom, estilo, titulo, saida_mp3, progress_cb,
@@ -1112,6 +1253,9 @@ async def processar(
         # (erro ou retorno antecipado): espera o que sobrou antes de sair.
         if lotes:
             await asyncio.gather(*lotes, return_exceptions=True)
+        # Fim da conversão (sucesso, erro ou pausa): a prévia só vale durante a geração.
+        _zerar_job_ativo()
+        _apagar_previa()
         try:
             logger.info(f"[METRICAS] {metricas.como_texto()}")
         except Exception:

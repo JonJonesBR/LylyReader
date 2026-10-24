@@ -143,6 +143,7 @@
     <string name="voice_gender_male">male</string>
     <string name="voice_gender_female">female</string>
     <string name="voice_language_multilingual">multilingual</string>
+    <string name="voice_nome_santa_ingles">Santa (English)</string>
     <string name="style_standard">Standard</string>
     <string name="style_horror">Horror</string>
     <string name="style_action">Action</string>
@@ -715,7 +716,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Conversion progress is now real from 0 to 100%: it no longer sits at 99%, and it shows each step (joining audio, adjusting tone, finishing) and the elapsed time.\n• Books that would not open (some EPUBs, DOCX with tables, TXT in other encodings) now open and convert.\n• Scanned or password-protected PDFs now say clearly why they can\'t be read.\n• With on-device voices (Supertonic, Piper, Kokoro, Pocket) the conversion timer no longer freezes and the audiobook duration shows correctly.\n• An invalid voice key (Gemini, ElevenLabs) now reports in seconds instead of minutes.\n• Faster, steadier generation with Edge voices: problem blocks are retried right away and the number of connections adapts to your network.\n• The final stretch (joining audio, metadata and chapters) is faster, and pause or cancel now works during it too.\n• Before generating, the app shows an estimated conversion time that improves as you use it.</string>
+    <string name="release_notes_corpo">• Conversion progress is now real from 0 to 100%: it no longer sits at 99%, and it shows each step (joining audio, adjusting tone, finishing) and the elapsed time.\n• Books that would not open (some EPUBs, DOCX with tables, TXT in other encodings) now open and convert.\n• Scanned or password-protected PDFs now say clearly why they can\'t be read.\n• With on-device voices (Supertonic, Piper, Kokoro, Pocket) the conversion timer no longer freezes and the audiobook duration shows correctly.\n• An invalid voice key (Gemini, ElevenLabs) now reports in seconds instead of minutes.\n• Faster, steadier generation with Edge voices: problem blocks are retried right away and the number of connections adapts to your network.\n• The final stretch (joining audio, metadata and chapters) is faster, and pause or cancel now works during it too.\n• Before generating, the app shows an estimated conversion time that improves as you use it.\n• Audiobooks made with on-device voices are now compressed (much smaller) and show the correct duration.\n• New \"Listen to what is already generated\" button on the Conversions screen: hear the beginning while the rest is generated.\n• Piper can generate in parallel on devices with 4 or more cores, and slow Edge failures now give up sooner.\n• The English Santa voice now appears as \"Santa (English)\".</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1133,6 +1134,10 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="conv_pronto_titulo">Audiobook ready</string>
     <string name="conv_pronto_info">%1$s · %2$s · %3$s MB</string>
     <string name="conv_ouvir">Listen now</string>
+    <string name="conv_ouvir_previa">Listen to what is already generated</string>
+    <string name="conv_previa_sem_blocos">No part is ready to listen to yet.</string>
+    <string name="conv_previa_titulo">Preview: %1$s</string>
+    <string name="conv_comprimindo_audio">Compressing audio…</string>
     <string name="conv_compartilhar">Share</string>
     <string name="conv_fechar">Close</string>
     <string name="conv_erro_titulo">Could not create the audiobook</string>

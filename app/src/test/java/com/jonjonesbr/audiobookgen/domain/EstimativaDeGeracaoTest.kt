@@ -34,6 +34,26 @@ class EstimativaDeGeracaoTest {
     }
 
     @Test
+    fun chaveDeMedicaoBateComAGravadaPeloPython() {
+        // Mesma tabela de test_velocidade_motores.py (CHAVES_DE_MEDICAO_ESPERADAS): o Python grava
+        // velocidade_motores.json com estas chaves e este lado as lê.
+        val esperado = mapOf(
+            "piper-ptbr-cadu::main-pt" to "piper",
+            "piper-ptbr-faber::main-pt" to "piper",
+            "kokoro-pf-dora" to "kokoro",
+            "kokoro-en-am-santa" to "kokoro",
+            "mms-por::main-pt" to "kokoro",
+            "pocket-ptbr-rafael" to "pocket",
+            "supertonic-m1" to "onnx",
+            "android::pkg::voz" to "android",
+            "pt-BR-FranciscaNeural" to "edge"
+        )
+        for ((voz, chave) in esperado) {
+            assertEquals(voz, chave, EstimativaDeGeracao.motorDaVoz(voz))
+        }
+    }
+
+    @Test
     fun motorDaVozDeNuvemSemEstimativaLocalDevolveNulo() {
         assertNull(EstimativaDeGeracao.motorDaVoz("elevenlabs-rachel"))
         assertNull(EstimativaDeGeracao.motorDaVoz("openrouter-algo"))

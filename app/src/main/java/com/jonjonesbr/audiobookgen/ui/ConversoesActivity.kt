@@ -25,6 +25,7 @@ import com.jonjonesbr.audiobookgen.data.nomeNormalizadoParaDedupe
 import com.jonjonesbr.audiobookgen.domain.AudiobookLibraryUseCase
 import com.jonjonesbr.audiobookgen.domain.DicaDeBateria
 import com.jonjonesbr.audiobookgen.domain.EventoAprendizado
+import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.domain.ExportStatus
 import com.jonjonesbr.audiobookgen.domain.MotivoParada
 import com.jonjonesbr.audiobookgen.domain.PausaRegras
@@ -97,6 +98,7 @@ class ConversoesActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnVoltarConv).setOnClickListener { finish() }
         findViewById<Button>(R.id.btnConvCancelar).setOnClickListener { confirmarCancelamento() }
         findViewById<Button>(R.id.btnConvPausar).setOnClickListener { pausarConversao() }
+        findViewById<Button>(R.id.btnConvOuvirPrevia).setOnClickListener { ouvirPrevia() }
         findViewById<Button>(R.id.btnConvContinuar).setOnClickListener { continuarPausada() }
         findViewById<Button>(R.id.btnConvDescartar).setOnClickListener { confirmarDescarte() }
         findViewById<Button>(R.id.btnConvFecharPronto).setOnClickListener { fecharResultado() }
@@ -256,6 +258,19 @@ class ConversoesActivity : AppCompatActivity() {
             .setPositiveButton(R.string.conv_cancelar) { _, _ -> viewModel.cancelarProcessamento() }
             .setNegativeButton(R.string.conv_continuar, null)
             .exibir()
+    }
+
+    /** Toca o que já foi gerado da conversão em andamento. Sem trecho pronto, avisa em vez de tocar. */
+    private fun ouvirPrevia() {
+        lifecycleScope.launch {
+            val caminho = PythonEngineUseCase(applicationContext).gerarPrevia()
+            if (caminho == null) {
+                Toast.makeText(this@ConversoesActivity, R.string.conv_previa_sem_blocos, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            val titulo = tituloDoLivro.ifBlank { getString(R.string.conv_agora_generico) }
+            viewModel.iniciarPlayer(caminho, getString(R.string.conv_previa_titulo, titulo))
+        }
     }
 
     // ── Pausar, continuar e descartar ────────────────────────────────────────

@@ -375,6 +375,38 @@ class PythonEngineUseCase(private val context: Context) {
     }
 
     /**
+     * Corrige o tamanho (MB) da entrada mais recente do histórico, depois da compressão WAV -> AAC. Só troca se a
+     * entrada ainda tiver o tamanho [antigo]. Devolve false se não trocou ou a conversa com o Python falhou; nunca lança.
+     */
+    suspend fun atualizarTamanhoHistorico(antigo: String, novo: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            if (!Python.isStarted()) return@withContext false
+            Python.getInstance().getModule("audiobook_android")
+                .callAttr("atualizar_tamanho_historico", antigo, novo).toBoolean()
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao atualizar tamanho no histórico: ${e.message}")
+            CrashLogWriter.log(e, "atualizarTamanhoHistorico")
+            false
+        }
+    }
+
+    /**
+     * Junta o que já foi gerado da conversão em andamento (previa.mp3). Devolve o caminho, ou null se não
+     * há trecho pronto ou a conversa com o Python falhou; nunca lança.
+     */
+    suspend fun gerarPrevia(): String? = withContext(Dispatchers.IO) {
+        try {
+            if (!Python.isStarted()) return@withContext null
+            Python.getInstance().getModule("audiobook_android").callAttr("gerar_previa")
+                .toString().takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao gerar prévia: ${e.message}")
+            CrashLogWriter.log(e, "gerarPrevia")
+            null
+        }
+    }
+
+    /**
      * Apaga o job dir de uma conversão pausada. Devolve false se não deu (job inválido ou falha); nunca lança.
      * É suspend porque inicializa o motor Python se ele ainda não subiu (app reaberto com a conversão pausada).
      */

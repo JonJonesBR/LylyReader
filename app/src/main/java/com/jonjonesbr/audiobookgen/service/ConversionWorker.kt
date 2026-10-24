@@ -1,6 +1,9 @@
 package com.jonjonesbr.audiobookgen.service
 
 import com.jonjonesbr.audiobookgen.domain.ProcessamentoResult
+import com.jonjonesbr.audiobookgen.domain.comprimirWavParaAac
+import com.jonjonesbr.audiobookgen.domain.ehWavArquivo
+import com.jonjonesbr.audiobookgen.domain.temEspacoParaCompressao
 import com.jonjonesbr.audiobookgen.domain.ExportStatus
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.data.ConversaoPausadaStore
@@ -27,6 +30,7 @@ import androidx.work.workDataOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.yield
 import java.io.File
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -95,6 +99,8 @@ class ConversionWorker(
         /** Pausa padrão entre blocos (ms) — default do AppPrefs.pausaMs. */
         private const val PAUSA_MS_PADRAO = 600
         private const val SEM_VALOR = Int.MIN_VALUE
+        /** Percentual mostrado durante a compressão do WAV (não regride: a conversão já está em 99). */
+        private const val PCT_COMPRIMINDO = 99
     }
 
     private fun tokenDaExecucao(): String? = inputData.getString(KEY_RUN_TOKEN_ENTRADA) ?: inputData.getString(KEY_RUN_TOKEN)
@@ -221,6 +227,26 @@ class ConversionWorker(
         return Result.success(workDataOf(KEY_RESULT_PAUSADA to true, KEY_RUN_TOKEN to runToken))
     }
 
+    /**
+     * Comprime o WAV disfarçado de .mp3 (motor local) para AAC, se houver espaço (≥ 0,2 × o WAV). Mostra a etapa com
+     * [PCT_COMPRIMINDO]. Devolve true se o arquivo foi substituído. Falhas ficam com o WAV; cancelamento propaga.
+     */
+    private suspend fun comprimirSeNecessario(arquivo: File, notif: ConversionNotificationManager, runToken: String?): Boolean {
+        if (!ehWavArquivo(arquivo)) return false
+        if (!temEspacoParaCompressao(arquivo.usableSpace, arquivo.length())) return false
+        val mensagem = applicationContext.getString(com.jonjonesbr.audiobookgen.R.string.conv_comprimindo_audio)
+        notif.mostrar(PCT_COMPRIMINDO, mensagem)
+        setProgressAsync(workDataOf(
+            KEY_PROGRESS_PCT to PCT_COMPRIMINDO,
+            KEY_PROGRESS_MSG to mensagem,
+            KEY_RUN_TOKEN to runToken
+        ))
+        return comprimirWavParaAac(arquivo)
+    }
+
+    /** Tamanho no mesmo formato que o Python devolve (MB com uma casa decimal, ponto como separador). */
+    private fun formatarTamanhoMb(bytes: Long): String = String.format(Locale.US, "%.1f", bytes / 1_048_576.0)
+
     private suspend fun executarConversao(
         arquivo: String,
         voz: String,
@@ -321,6 +347,12 @@ class ConversionWorker(
             is ProcessamentoResult.Success -> {
                 // Finaliza aqui, e não na tela: se o usuário sair da tela de acompanhamento, o audiobook ainda é salvo na
                 // pasta de saída (senão ele só apareceria na lista de Audiobooks depois de reabrir a tela).
+                // Motor local gravou WAV com nome .mp3: comprime para AAC no mesmo caminho antes de marcar, vincular e exportar.
+                val arquivoGerado = File(result.caminho)
+                val comprimido = comprimirSeNecessario(arquivoGerado, notif, runToken)
+                val tamanhoMb = if (comprimido) formatarTamanhoMb(arquivoGerado.length()) else result.tamanhoMb
+                // O histórico foi gravado pelo Python com o tamanho do WAV: corrige a entrada desta conversão.
+                if (comprimido) engine.atualizarTamanhoHistorico(result.tamanhoMb, tamanhoMb)
                 val capitulosJson = ChapterMarksStore.paraJson(result.capitulos)
                 ChapterMarksStore.salvarJson(applicationContext, result.caminho, capitulosJson)
                 livroOrigem?.let { com.jonjonesbr.audiobookgen.data.LinkedBookStore.vincular(applicationContext, it, result.caminho) }
@@ -336,7 +368,7 @@ class ConversionWorker(
                     workDataOf(
                         KEY_RESULT_CAMINHO to result.caminho,
                         KEY_RESULT_DURACAO to result.duracao,
-                        KEY_RESULT_TAMANHO to result.tamanhoMb,
+                        KEY_RESULT_TAMANHO to tamanhoMb,
                         KEY_RESULT_CAPITULOS to capitulosJson,
                         KEY_RESULT_LIVRO_ORIGEM to livroOrigem,
                         KEY_RESULT_FINALIZADO to true,

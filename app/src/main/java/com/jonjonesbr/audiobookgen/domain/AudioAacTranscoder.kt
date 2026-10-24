@@ -6,9 +6,11 @@ import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import android.media.MediaMuxer
 import com.jonjonesbr.audiobookgen.R
 import kotlinx.coroutines.CancellationException
 import java.io.File
+import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.ArrayBlockingQueue
@@ -295,4 +297,107 @@ private fun sinalizarFimDeEntrada(encoder: MediaCodec): Boolean {
     if (encInIdx < 0) return false
     encoder.queueInputBuffer(encInIdx, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
     return true
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// Plano B (WAV disfarçado de .mp3): PCM 16 bits lido do próprio arquivo, sem MediaExtractor nem decoder.
+// ---------------------------------------------------------------------------------------------------------------------------
+
+/**
+ * Lê [tamanhoDados] bytes de PCM 16 bits a partir de [offsetDados] do arquivo, em blocos (streaming), e grava AAC num MP4
+ * de uma trilha em [saida]. Usa o mesmo encoder e a mesma drenagem da transcodificação normal. [interrompido] é consultado
+ * a cada volta; quando devolve true, lança CancellationException. Qualquer falha propaga: quem chama apaga o arquivo parcial.
+ */
+internal fun codificarPcm16ParaMp4(
+    arquivo: RandomAccessFile,
+    offsetDados: Long,
+    tamanhoDados: Long,
+    canais: Int,
+    taxa: Int,
+    saida: File,
+    interrompido: () -> Boolean
+) {
+    val bytesPorQuadro = canais * BYTES_POR_AMOSTRA_PCM16
+    val formatoPcm = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_RAW, taxa, canais)
+    val encoder = criarEncoderAac(formatoPcm)
+    val estado = EstadoCodificacao()
+    estado.cancelado = interrompido
+    var muxer: MediaMuxer? = null
+    var trilha = -1
+    estado.aoReceberAmostra = { amostra ->
+        if (muxer == null) {
+            val formato = formatoComCsdGarantido(estado, "Encoder AAC nao reportou formato de saida")
+            muxer = MediaMuxer(saida.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4).also {
+                trilha = it.addTrack(formato)
+                it.start()
+            }
+        }
+        val info = MediaCodec.BufferInfo()
+        info.set(0, amostra.bytes.size, amostra.presentationTimeUs, amostra.flags)
+        muxer?.writeSampleData(trilha, ByteBuffer.wrap(amostra.bytes), info)
+    }
+    val bloco = ByteArray(bytesPorQuadro * 4096)
+    var restante = tamanhoDados
+    var bytesEnviados = 0L
+    var eosEnviado = false
+    var terminou = false
+    var iteracoes = 0
+    try {
+        arquivo.seek(offsetDados)
+        while (!terminou) {
+            check(iteracoes++ < MAX_ITERACOES_SEGURANCA) { "Codificacao de audio nao terminou (timeout de seguranca)" }
+            if (interrompido()) throw CancellationException("Compressao de audio cancelada")
+            var enviou = false
+            if (!eosEnviado) {
+                val inIdx = encoder.dequeueInputBuffer(0)
+                if (inIdx >= 0) {
+                    val encBuf = encoder.getInputBuffer(inIdx) ?: error("Buffer de entrada do encoder indisponivel")
+                    val pts = (bytesEnviados / bytesPorQuadro) * US_POR_SEGUNDO_PCM / taxa
+                    val lido = if (restante > 0) lerAlinhado(arquivo, bloco, encBuf.capacity(), restante, bytesPorQuadro) else 0
+                    if (lido > 0) {
+                        encBuf.clear()
+                        encBuf.put(bloco, 0, lido)
+                        encoder.queueInputBuffer(inIdx, 0, lido, pts, 0)
+                        bytesEnviados += lido
+                        restante -= lido
+                        enviou = true
+                    } else {
+                        encoder.queueInputBuffer(inIdx, 0, 0, pts, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                        eosEnviado = true
+                    }
+                }
+            }
+            val drenagem = escoarTudoDoEncoder(encoder, estado)
+            if (drenagem.terminou) {
+                terminou = true
+            } else if (!drenagem.houveSaida && !enviou && escoarSaidaEncoder(encoder, estado)) {
+                terminou = true
+            }
+        }
+        (muxer ?: error("Nenhuma amostra AAC foi gerada")).stop()
+    } finally {
+        pararComSeguranca(encoder)
+        runCatching { muxer?.release() }
+    }
+}
+
+/**
+ * Lê no máximo o que cabe no buffer do encoder e no bloco, arredondado ao quadro de PCM. Devolve os bytes lidos
+ * (0 = fim dos dados do WAV ou arquivo truncado).
+ */
+internal fun lerAlinhado(arquivo: RandomAccessFile, bloco: ByteArray, capacidadeEncoder: Int, restante: Long, bytesPorQuadro: Int): Int {
+    val limite = minOf(capacidadeEncoder.toLong(), restante, bloco.size.toLong()).toInt()
+    val pedido = maxOf(bytesPorQuadro, limite - limite % bytesPorQuadro)
+    val alvo = minOf(pedido.toLong(), restante).toInt()
+    // read() pode devolver menos que o pedido: lê até completar o alvo ou acabar o arquivo.
+    var lido = 0
+    while (lido < alvo) {
+        val r = arquivo.read(bloco, lido, alvo - lido)
+        if (r <= 0) break
+        lido += r
+    }
+    val alinhado = lido - lido % bytesPorQuadro
+    // Sobra de quadro incompleto (só no fim do arquivo): volta a posição para não desalinhar a próxima leitura.
+    if (lido > alinhado) arquivo.seek(arquivo.filePointer - (lido - alinhado))
+    return alinhado
 }

@@ -38,6 +38,21 @@ def motor_medido(voz: str, motor_roteado: str):
     return None
 
 
+def rotulo_motor(voz: str, motor_roteado: str) -> str:
+    """Nome do motor para o log [METRICAS]: o motor real (piper, mms, kokoro, pocket, supertonic,
+    edge...), e não o motor de configuração. Usa a classificação de tts.motor_da_voz."""
+    if motor_roteado == "onnx":
+        return "supertonic"
+    if motor_roteado == "kokoro" and "::" in voz:
+        minusculo = voz.lower()
+        if "mms-" in minusculo:
+            return "mms"
+        if "byom" in minusculo:
+            return "byom"
+    medido = motor_medido(voz, motor_roteado)
+    return medido or motor_roteado or "desconhecido"
+
+
 def ms_por_char(ms_sintese: float, chars: int):
     """Tempo de síntese por caractere. None se não há caracteres ou tempo positivo."""
     try:

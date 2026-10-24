@@ -138,6 +138,16 @@
                         android:textAllCaps="false"/>
 
                     <Button
+                        android:id="@+id/btnConvOuvirPrevia"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:minHeight="48dp"
+                        android:text="@string/conv_ouvir_previa"
+                        android:textAllCaps="false"/>
+
+                    <Button
                         android:id="@+id/btnConvCancelar"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="match_parent"

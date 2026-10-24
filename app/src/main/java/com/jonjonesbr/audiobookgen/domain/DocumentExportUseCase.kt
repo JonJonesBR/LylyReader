@@ -16,6 +16,19 @@ import java.io.IOException
 
 data class ExportResult(val destUri: Uri, val nomePasta: String)
 
+/**
+ * MIME do áudio exportado pelos primeiros bytes: contêiner MP4 (cabeçalho "ftyp" nos bytes 4..8) é audio/mp4, o resto
+ * (MP3 de verdade ou WAV com nome .mp3) segue audio/mpeg, como antes.
+ */
+internal fun mimeDoAudioExportado(primeirosBytes: ByteArray): String =
+    if (primeirosBytes.size >= 8 && String(primeirosBytes, 4, 4, Charsets.US_ASCII) == "ftyp") "audio/mp4" else "audio/mpeg"
+
+private fun lerInicioDoArquivo(arquivo: File): ByteArray {
+    val inicio = ByteArray(12)
+    val lidos = runCatching { arquivo.inputStream().use { it.read(inicio) } }.getOrDefault(0)
+    return if (lidos > 0) inicio.copyOf(lidos) else ByteArray(0)
+}
+
 sealed class ExportStatus {
     data class Sucesso(val result: ExportResult) : ExportStatus()
     data class Erro(val mensagem: String) : ExportStatus()
@@ -30,15 +43,17 @@ class DocumentExportUseCase(private val context: Context) {
 
     private val contentResolver = context.contentResolver
 
-    suspend fun exportar(mp3: File, pastaSafUri: Uri?, mimeType: String = "audio/mpeg"): Result<ExportResult> =
+    /** [mimeType] ausente: MIME pelo conteúdo do arquivo (MP4/AAC vira audio/mp4; o resto segue audio/mpeg). */
+    suspend fun exportar(mp3: File, pastaSafUri: Uri?, mimeType: String? = null): Result<ExportResult> =
         withContext(Dispatchers.IO) {
             runCatching {
+                val mime = mimeType ?: mimeDoAudioExportado(lerInicioDoArquivo(mp3))
                 val destUri =
                     if (pastaSafUri != null) {
-                        copiarParaSafFolder(mp3, pastaSafUri, mimeType)
+                        copiarParaSafFolder(mp3, pastaSafUri, mime)
                             ?: throw IOException(context.getString(R.string.export_falha_criar_saf))
                     } else {
-                        copiarParaDownloads(mp3, mimeType)
+                        copiarParaDownloads(mp3, mime)
                             ?: throw IOException(context.getString(R.string.export_falha_copiar_downloads))
                     }
                 val nomePasta =

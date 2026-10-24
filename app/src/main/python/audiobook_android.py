@@ -119,6 +119,19 @@ def cancelar_e_descartar():
     _cancelar_e_descartar()
 
 
+def atualizar_tamanho_historico(antigo: str, novo: str) -> bool:
+    """Depois de comprimir o WAV para AAC, corrige o tamanho da entrada do histórico desta conversão."""
+    import config_android
+    return config_android.atualizar_tamanho_historico(antigo, novo)
+
+
+def gerar_previa() -> str:
+    """Junta o que já foi gerado do job em andamento em previa.mp3. Devolve o caminho, ou "" se não há
+    bloco pronto."""
+    from core_processor_android import gerar_previa as _gerar_previa
+    return _gerar_previa()
+
+
 def descartar_job(jh: str) -> bool:
     """Apaga o job dir de uma conversão pausada descartada. Recusa hash em formato inválido."""
     from core_processor_android import descartar_job as _descartar_job

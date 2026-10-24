@@ -410,7 +410,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             val statusTag = statusTagPara(voice)
 
             val isSelected = voice.id == selectedVoiceId
-            holder.name.text = if (isSelected) "✓ ${voice.name}" else voice.name
+            holder.name.text = if (isSelected) "✓ ${voice.nomeExibido(requireContext())}" else voice.nomeExibido(requireContext())
             holder.name.setTextColor(
                 ContextCompat.getColor(
                     requireContext(),

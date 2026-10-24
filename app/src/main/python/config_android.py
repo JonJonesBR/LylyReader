@@ -507,6 +507,33 @@ def adicionar_historico(titulo: str, formato: str, voz: str, duracao: str, taman
     except Exception as e:
         logger.error(f"Erro ao salvar histórico: {e}")
 
+def _trocar_tamanho_do_primeiro(historico: list, antigo: str, novo: str) -> bool:
+    """Troca o tamanho da entrada mais recente (a da conversão que acabou de terminar), mas só se ela ainda
+    tiver o tamanho `antigo` (o do WAV). Não mexe em outra entrada. Devolve True se trocou."""
+    if not historico:
+        return False
+    try:
+        atual = float(historico[0].get("tamanho_mb"))
+        if abs(atual - float(antigo)) > 0.05:
+            return False
+        historico[0]["tamanho_mb"] = float(novo)
+    except (TypeError, ValueError, AttributeError):
+        return False
+    return True
+
+def atualizar_tamanho_historico(antigo: str, novo: str) -> bool:
+    """Corrige o tamanho da última entrada do histórico depois da compressão do áudio (WAV -> AAC)."""
+    historico = _carregar_historico()
+    if not _trocar_tamanho_do_primeiro(historico, antigo, novo):
+        return False
+    try:
+        with open(HISTORICO_FILE, "w", encoding="utf-8") as f:
+            json.dump(historico, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        logger.error(f"Erro ao atualizar histórico: {e}")
+        return False
+
 def _carregar_historico() -> list:
     if os.path.exists(HISTORICO_FILE):
         try:
