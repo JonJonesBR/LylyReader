@@ -713,7 +713,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• O progresso da conversão agora é real de 0 a 100%: não fica mais parado em 99%, mostra cada etapa (juntar áudio, ajustar timbre, finalizar) e o tempo decorrido.\n• Livros que não abriam (alguns EPUBs, DOCX com tabelas, TXT em outras codificações) agora abrem e convertem.\n• PDF escaneado ou protegido por senha avisa claramente o motivo.\n• Com as vozes do aparelho (Supertonic, Piper, Kokoro, Pocket) o tempo da conversão não congela mais e a duração do audiobook aparece corretamente.\n• Chave de voz inválida (Gemini, ElevenLabs) agora avisa em segundos, em vez de minutos.</string>
+    <string name="release_notes_corpo">• O progresso da conversão agora é real de 0 a 100%: não fica mais parado em 99%, mostra cada etapa (juntar áudio, ajustar timbre, finalizar) e o tempo decorrido.\n• Livros que não abriam (alguns EPUBs, DOCX com tabelas, TXT em outras codificações) agora abrem e convertem.\n• PDF escaneado ou protegido por senha avisa claramente o motivo.\n• Com as vozes do aparelho (Supertonic, Piper, Kokoro, Pocket) o tempo da conversão não congela mais e a duração do audiobook aparece corretamente.\n• Chave de voz inválida (Gemini, ElevenLabs) agora avisa em segundos, em vez de minutos.\n• Geração mais rápida e estável com as vozes Edge: blocos problemáticos são tentados de novo na hora e o ajuste de conexões acompanha a sua rede.\n• A reta final (juntar áudio, metadados e capítulos) ficou mais rápida, e pausar ou cancelar funciona também nessa etapa.\n• Antes de gerar, o app mostra uma estimativa do tempo da conversão, que melhora conforme você usa.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Deixe as vozes um pouco mais graves ou mais agudas e suavize os agudos ásperos. A mudança vale na hora para a leitura guiada e para os audiobooks que você converter daqui em diante.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
@@ -1155,6 +1155,19 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="gerar_pasta_padrao">Downloads (padrão)</string>
     <string name="gerar_escolher">Escolher</string>
     <string name="gerar_estilo_titulo">Estilo de narração (só vozes Gemini)</string>
+    <string name="gerar_tempo_estimado">Tempo estimado: cerca de %1$s neste aparelho</string>
+    <string name="gerar_tempo_estimado_aprox">Tempo estimado: cerca de %1$s (aproximado)</string>
+    <string name="gerar_tempo_calculando">Tempo estimado: calculando…</string>
+    <string name="gerar_tempo_aviso_lento">Esta voz local pode levar mais de 1 hora neste aparelho. As vozes Piper costumam ser mais rápidas.</string>
+    <string name="tempo_juntar">%1$s e %2$s</string>
+    <plurals name="tempo_horas">
+        <item quantity="one">%d hora</item>
+        <item quantity="other">%d horas</item>
+    </plurals>
+    <plurals name="tempo_minutos">
+        <item quantity="one">%d minuto</item>
+        <item quantity="other">%d minutos</item>
+    </plurals>
     <string name="conferir_trocas_botao">Conferir como o texto será falado</string>
     <string name="conferir_trocas_titulo">Como o texto será falado</string>
     <string name="conferir_trocas_explicacao">Veja o que muda antes de converter. Esta tela só mostra; nada é alterado.</string>

@@ -277,6 +277,29 @@ def sanitizar_trecho_para_tts(texto: str) -> str:
     return resultado
 
 
+_RE_SANEAR_URL = re.compile(r"https?://|\bwww\.", re.IGNORECASE)
+_RE_SANEAR_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+_RE_SANEAR_PROCESSO = re.compile(r"\b\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}\b")
+_RE_SANEAR_DIGITOS = re.compile(r"\d{9,}")
+_RE_SANEAR_SIMBOLOS = re.compile(r"[^\w\s]{4,}")
+_RE_SANEAR_DISPONIVEL = re.compile(r"disponível em:", re.IGNORECASE)
+
+
+def precisa_sanear(texto: str) -> bool:
+    """True se o bloco traz algo que costuma travar o motor de voz (URL, e-mail, número de processo,
+    sequência longa de dígitos ou de símbolos, ou 'Disponível em:'). Esses blocos recebem
+    sanitizar_trecho_para_tts já na 1ª tentativa, em vez de só na última."""
+    if not texto:
+        return False
+    return any(
+        padrao.search(texto) is not None
+        for padrao in (
+            _RE_SANEAR_URL, _RE_SANEAR_EMAIL, _RE_SANEAR_PROCESSO,
+            _RE_SANEAR_DIGITOS, _RE_SANEAR_SIMBOLOS, _RE_SANEAR_DISPONIVEL,
+        )
+    )
+
+
 _PALAVRAS_CHAVE_CAP = [
     r"prólogo", r"prolog", r"epílogo", r"epilog",
     r"introdução", r"introducao", r"prefácio", r"prefacio",

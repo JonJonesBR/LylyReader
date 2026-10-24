@@ -32,17 +32,21 @@ from utils import (
     formatar_duracao, dividir_em_sentencas, dividir_em_capitulos,
     garantir_temp_dir, ProgressTracker, aplicar_intervalo, ler_texto_pronto,
     extrair_texto_limpo, contar_estatisticas, estimar_duracao, sanitizar_trecho_para_tts,
-    remover_secao_notas_final,
+    precisa_sanear, remover_secao_notas_final,
     PCT_FIM_SINTESE, PCT_FIM_JUNCAO, PCT_FIM_TIMBRE, PCT_FIM_METADADOS, PCT_FIM_CAPITULOS,
     fracao_sintese, pct_sintese_global, pct_nao_regride,
 )
 from tts import (
-    converter_tts_auto, concatenar_grupo_com_pausa, aplicar_timbre,
-    adicionar_metadados_mp3, adicionar_chapter_marks,
+    converter_tts_auto, motor_da_voz, concatenar_grupo_com_pausa, aplicar_timbre,
+    adicionar_metadados_e_capitulos_mp3,
     agrupar_blocos_por_limite, obter_duracao_ffprobe, validar_voz_tts,
+    JuncaoCancelada, _CONCAT_BATCH_SIZE, _concatenar_mp3_puro, _is_wav,
 )
 from cover_art import obter_capa
 from erros_tts import ErroDeChave
+from metricas_conversao import MetricasConversao, ms_desde
+import velocidade_motores
+from velocidade_motores import motor_medido
 from smart_cleaner import normalize_blacklist
 from speaker_segments import build_speaker_chunk_plan
 
@@ -55,6 +59,33 @@ _cancelar_flag = False
 _descartar_ao_cancelar = False
 # Formato do hash de job gerado por _job_hash (usado por descartar_job para não aceitar caminho).
 _JOB_HASH_RE = re.compile(r"[0-9a-f]{16}")
+# Retries imediatos de um bloco que falhou (P1.2), antes de ele ir para as rodadas globais.
+_RETRIES_IMEDIATOS = 2
+_ESPERAS_RETRY_IMEDIATO = (0.5, 1.5)  # segundos antes da 1ª e da 2ª repetição
+# Motores que já repetem internamente (Edge em tts.py; Gemini e OpenRouter nos clientes). Para eles
+# não há retry imediato extra, para não multiplicar as tentativas (pior caso 3 x 5 x timeout).
+_MOTORES_COM_RETRY_INTERNO = frozenset({"edge", "gemini", "openrouter"})
+
+
+def _registrar_velocidade(pending: list, chunks: list, chunk_voices: list,
+                          completed_valid: set, ms_sintese: float) -> None:
+    """Grava a velocidade do motor desta execução em velocidade_motores.json. Só mede quando todos
+    os blocos pendentes usam o mesmo motor medível. Nunca levanta exceção (não quebra a conversão)."""
+    try:
+        if not pending or not _config.FILES_DIR:
+            return
+        motores = {motor_medido(chunk_voices[i], motor_da_voz(chunk_voices[i])) for i in pending}
+        if len(motores) != 1 or None in motores:
+            return
+        motor = motores.pop()
+        feitos = [i for i in pending if i in completed_valid]
+        chars = sum(len(chunks[i]) for i in feitos)
+        falhos = len(pending) - len(feitos)
+        velocidade_motores.registrar_execucao(
+            _config.FILES_DIR, motor, ms_sintese, chars, len(feitos), falhos,
+        )
+    except Exception as e:
+        logger.warning(f"Medição de velocidade ignorada: {e}")
 
 def cancelar():
     """Chamado pelo Kotlin quando o usuário aperta 'Cancelar'."""
@@ -114,11 +145,31 @@ def _carregar_progresso(jh: str) -> set:
             pass
     return set()
 
-def _salvar_progresso(jh: str, completed: set):
+def _carregar_duracoes(jh: str) -> dict:
+    """Durações (ms) por índice de bloco, gravadas ao concluir cada bloco (P3.3).
+    Checkpoint antigo, sem o campo, devolve {}: quem usa cai na leitura do arquivo."""
     pf = os.path.join(_job_dir(jh), "progress.json")
+    if os.path.exists(pf):
+        try:
+            with open(pf) as f:
+                bruto = json.load(f).get("duracoes_ms", {})
+            return {int(k): int(v) for k, v in bruto.items()}
+        except Exception:
+            pass
+    return {}
+
+def _salvar_progresso(jh: str, completed: set, duracoes: Optional[dict] = None):
+    """Grava o progresso por escrita atômica (arquivo temporário + os.replace): uma queda no meio
+    não deixa progress.json cortado."""
+    pf = os.path.join(_job_dir(jh), "progress.json")
+    dados = {"completed": sorted(completed)}
+    if duracoes:
+        dados["duracoes_ms"] = {str(k): int(v) for k, v in duracoes.items() if k in completed}
     try:
-        with open(pf, "w") as f:
-            json.dump({"completed": sorted(completed)}, f)
+        temporario = pf + ".tmp"
+        with open(temporario, "w") as f:
+            json.dump(dados, f)
+        os.replace(temporario, pf)
     except Exception:
         pass
 
@@ -126,6 +177,126 @@ def _limpar_job(jh: str):
     d = _job_dir(jh)
     if os.path.exists(d):
         shutil.rmtree(d, ignore_errors=True)
+
+
+# ── Junção incremental (P3.1): lotes derivados de _CONCAT_BATCH_SIZE blocos ───
+
+_PREFIXO_LOTE = "batch_"
+
+def _caminho_lote(jh: str, g: int) -> str:
+    return os.path.join(_job_dir(jh), f"{_PREFIXO_LOTE}{g}.mp3")
+
+def _caminho_manifesto_lote(jh: str, g: int) -> str:
+    return os.path.join(_job_dir(jh), f"{_PREFIXO_LOTE}{g}.json")
+
+def _assinatura_arquivos(arquivos: list) -> list:
+    """Tamanho e data de modificação de cada bloco: detecta bloco trocado depois de o lote ser feito."""
+    return [[os.path.getsize(a), os.stat(a).st_mtime_ns] for a in arquivos]
+
+def _formato_homogeneo(arquivos: list) -> bool:
+    """True se todos os blocos são do mesmo formato (todos WAV ou todos MP3). A junção mista descarta
+    arquivos, então lote só vale quando não há mistura."""
+    return len({_is_wav(a) for a in arquivos}) <= 1
+
+def _juncao_incremental_ativa() -> bool:
+    """Lotes só são usados sem FFmpeg (Android). Com FFmpeg as pausas entre blocos vêm de silêncios
+    gerados por ele, que o lote não reproduz: a junção segue o caminho antigo, sem lotes."""
+    return shutil.which("ffmpeg") is None
+
+def _lote_valido(jh: str, g: int, arquivos: list) -> bool:
+    """O lote g existe e o manifesto bate com os blocos atuais (mesmos nomes, tamanhos e datas)."""
+    saida = _caminho_lote(jh, g)
+    manifesto = _caminho_manifesto_lote(jh, g)
+    try:
+        if not (os.path.exists(saida) and os.path.getsize(saida) > 500 and os.path.exists(manifesto)):
+            return False
+        with open(manifesto, encoding="utf-8") as f:
+            dados = json.load(f)
+        return (
+            dados.get("arquivos") == [os.path.basename(a) for a in arquivos]
+            and dados.get("assinatura") == _assinatura_arquivos(arquivos)
+        )
+    except Exception:
+        return False
+
+def _gerar_lote_sync(jh: str, g: int, arquivos: list) -> bool:
+    """Junta os blocos de um grupo cheio num lote derivado (roda em thread). Reaproveita o lote se ele
+    já bater com os blocos. Ao regravar, apaga o manifesto antes: lote sem manifesto correspondente
+    nunca é usado."""
+    try:
+        if _lote_valido(jh, g, arquivos):
+            return True
+        if not _formato_homogeneo(arquivos):
+            return False
+        saida = _caminho_lote(jh, g)
+        manifesto = _caminho_manifesto_lote(jh, g)
+        tmp_saida = saida + ".tmp"
+        tmp_manifesto = manifesto + ".tmp"
+        assinatura = _assinatura_arquivos(arquivos)
+        try:
+            if not _concatenar_mp3_puro(arquivos, tmp_saida):
+                return False
+            if os.path.exists(manifesto):
+                os.remove(manifesto)
+            os.replace(tmp_saida, saida)
+            with open(tmp_manifesto, "w", encoding="utf-8") as f:
+                json.dump({"arquivos": [os.path.basename(a) for a in arquivos], "assinatura": assinatura}, f)
+            os.replace(tmp_manifesto, manifesto)
+            return True
+        finally:
+            for tmp in (tmp_saida, tmp_manifesto):
+                if os.path.exists(tmp):
+                    try:
+                        os.remove(tmp)
+                    except OSError:
+                        pass
+    except Exception as e:
+        logger.warning(f"Lote {g} de junção não foi gerado: {e}")
+        return False
+
+def _lista_para_juncao(total: int, indices_validos: list, temp_files: list, jh: str) -> list:
+    """Lista da junção final: cada grupo cheio de blocos válidos entra como o lote pronto (se o manifesto
+    bater); os demais entram bloco a bloco. Concatenar essa lista dá os mesmos bytes que concatenar
+    todos os blocos em ordem."""
+    validos = set(indices_validos)
+    lista = []
+    for g in range(math.ceil(total / _CONCAT_BATCH_SIZE)):
+        idxs = list(range(g * _CONCAT_BATCH_SIZE, min(total, (g + 1) * _CONCAT_BATCH_SIZE)))
+        if len(idxs) == _CONCAT_BATCH_SIZE and all(i in validos for i in idxs):
+            if _lote_valido(jh, g, [temp_files[i] for i in idxs]):
+                lista.append(_caminho_lote(jh, g))
+                continue
+        lista.extend(temp_files[i] for i in idxs if i in validos)
+    return lista
+
+def _limpar_lotes(jh: str) -> None:
+    """Apaga os lotes derivados do job (batch_*). Blocos (part_*) e checkpoint ficam para a retomada."""
+    pasta = _job_dir(jh)
+    try:
+        for nome in os.listdir(pasta):
+            if nome.startswith(_PREFIXO_LOTE):
+                try:
+                    os.remove(os.path.join(pasta, nome))
+                except OSError:
+                    pass
+    except OSError:
+        pass
+
+def _duracao_ms_bloco(caminho: str) -> Optional[int]:
+    """Duração (ms) de um bloco recém-sintetizado, lida na própria síntese (P3.3). A conta é a mesma
+    da leitura final antiga: WAV pelo byte rate do cabeçalho, MP3 pelo mutagen. None se não der para ler."""
+    try:
+        with open(caminho, 'rb') as fh:
+            magic = fh.read(4)
+            byte_rate = 0
+            if magic == b'RIFF':
+                fh.seek(28)  # ByteRate
+                byte_rate = int.from_bytes(fh.read(4), 'little')
+        if magic == b'RIFF':
+            return int(os.path.getsize(caminho) * 1000 / byte_rate) if byte_rate > 0 else 0
+        return int(_MutagenMP3(caminho).info.length * 1000)
+    except Exception:
+        return None
 
 
 def descartar_job(jh: str) -> bool:
@@ -184,9 +355,12 @@ def limpar_jobs_antigos(max_dias: int = 30, agora: Optional[float] = None, mante
 
 
 def _retorno_cancelado(jh: str) -> dict:
-    """Retorno de cancelamento. Se o cancelamento pediu descarte, apaga o job aqui: a síntese já terminou."""
+    """Retorno de cancelamento. Se o cancelamento pediu descarte, apaga o job aqui. Senão apaga só os
+    lotes derivados e preserva os blocos e o checkpoint para retomar (P4.2)."""
     if _descartar_ao_cancelar:
         _limpar_job(jh)
+    else:
+        _limpar_lotes(jh)
     return {"ok": False, "erro": "Cancelado pelo usuário.", "job": jh}
 
 
@@ -283,20 +457,25 @@ def _montar_capitulos_info(texto: str, chunk_limite: int):
 
 
 def _calcular_timestamps_capitulos(
-    capitulos_info: list, temp_files: list, arquivos_validos: list, saida_mp3: str
+    capitulos_info: list, temp_files: list, arquivos_validos: list, saida_mp3: str,
+    duracoes_ms: Optional[dict] = None,
 ) -> list:
     """
     Calcula os timestamps reais de cada capítulo.
 
-    Lê a duração de cada chunk via mutagen, deriva a pausa efetiva
+    Usa a duração de cada chunk guardada na síntese (`duracoes_ms`, índice -> ms); sem ela, lê via
+    mutagen/cabeçalho. Deriva a pausa efetiva
     (total_final − Σchunks) / (n−1) e mapeia chunk -> posição no áudio final.
     Retorna lista de {"titulo", "inicio_ms", "fim_ms"} pronta para
     adicionar_chapter_marks().
     """
     # Duração de cada chunk válido
     chunk_dur_map: dict = {}
-    for f in temp_files:
+    for i, f in enumerate(temp_files):
         if os.path.exists(f) and os.path.getsize(f) > 500:
+            if duracoes_ms and i in duracoes_ms:
+                chunk_dur_map[f] = duracoes_ms[i]
+                continue
             try:
                 # Detecta WAV pelo magic bytes (Gemini sem FFmpeg salva WAV como .mp3)
                 with open(f, 'rb') as _fh:
@@ -365,7 +544,7 @@ def _calcular_timestamps_capitulos(
 
 # ── Função principal ──────────────────────────────────────────────────────────
 
-async def processar(
+async def _processar_nucleo(
     texto: str,
     voz: str,
     velocidade: str = "+0%",
@@ -377,14 +556,13 @@ async def processar(
     capitulos_info: Optional[list] = None,  # [{"titulo", "inicio_chunk", "fim_chunk"}]
     blacklist=None,
     speaker_map_path: Optional[str] = None,
+    metricas: Optional[MetricasConversao] = None,
+    tarefas_lote: Optional[list] = None,
 ) -> dict:
-    """
-    Converte texto em audiobook MP3.
-
-    Retorna:
-        {"ok": True,  "caminho": "/path/to/file.mp3", "duracao": "1h 23min"}
-        {"ok": False, "erro": "mensagem de erro"}
-    """
+    """Corpo da conversão (ver `processar`). Registra tempos em `metricas`. Os lotes da junção
+    incremental entram em `tarefas_lote` (quem chama espera as que sobrarem)."""
+    if metricas is None:
+        metricas = MetricasConversao()
     _reset_cancelar()
     garantir_temp_dir()
 
@@ -490,6 +668,7 @@ async def processar(
 
     if total == 0:
         return {"ok": False, "erro": "Texto vazio após processamento."}
+    metricas.definir_contexto(motor_ativo, voz, total, _config.get_tts_workers())
 
     # Retomada de progresso
     plan_for_hash = list(zip(chunks, chunk_voices)) if speaker_plan else None
@@ -506,6 +685,55 @@ async def processar(
         and os.path.exists(temp_files[idx]) and os.path.getsize(temp_files[idx]) > 500
     }
     pending = [i for i in range(total) if i not in completed_valid]
+    # Durações por bloco (P3.3): as já salvas valem só para blocos concluídos e válidos.
+    duracoes_ms = {i: d for i, d in _carregar_duracoes(jh).items() if i in completed_valid}
+
+    # Junção incremental (P3.1): grupos cheios de _CONCAT_BATCH_SIZE blocos viram lotes assim que
+    # ficam prontos, durante a síntese. Só ativa sem FFmpeg (ver _juncao_incremental_ativa).
+    juncao_incremental = _juncao_incremental_ativa()
+    if tarefas_lote is None:
+        tarefas_lote = []
+    lotes_disparados: set = set()
+    # Um lote por vez: na retomada, todos os grupos prontos viram lote juntos, e cada lote carrega
+    # ~50 WAV na memória. Serializar limita o pico de memória.
+    sem_lotes = asyncio.Semaphore(1)
+
+    async def _gerar_lote_serial(g: int, arquivos: list):
+        async with sem_lotes:
+            return await asyncio.to_thread(_gerar_lote_sync, jh, g, arquivos)
+
+    # Progresso (P6): grava no máximo ~1 vez por segundo ou a cada 10 blocos. Gravação forçada no fim
+    # da síntese, em cada rodada de retry e no cancelamento/pausa, para a retomada não perder blocos.
+    ultimo_salvamento = {"t": 0.0, "n": 0}
+
+    def _persistir_progresso(forcado: bool = False) -> None:
+        ultimo_salvamento["n"] += 1
+        agora = time.monotonic()
+        if not forcado and ultimo_salvamento["n"] < 10 and agora - ultimo_salvamento["t"] < 1.0:
+            return
+        ultimo_salvamento["t"] = agora
+        ultimo_salvamento["n"] = 0
+        _salvar_progresso(jh, completed_valid, duracoes_ms)
+
+    def _disparar_lote_se_pronto(g: int) -> None:
+        if not juncao_incremental or g in lotes_disparados:
+            return
+        idxs = list(range(g * _CONCAT_BATCH_SIZE, (g + 1) * _CONCAT_BATCH_SIZE))
+        if idxs[-1] >= total or not all(i in completed_valid for i in idxs):
+            return  # grupo incompleto (ou último, parcial): fica para a junção final, bloco a bloco
+        lotes_disparados.add(g)
+        arquivos_grupo = [temp_files[i] for i in idxs]
+        tarefas_lote.append(asyncio.create_task(_gerar_lote_serial(g, arquivos_grupo)))
+
+    async def _aguardar_lotes() -> None:
+        if tarefas_lote:
+            await asyncio.gather(*tarefas_lote, return_exceptions=True)
+
+    async def _cancelado() -> dict:
+        # Espera os lotes em andamento antes de limpá-los, para nenhum ser gravado depois do cancelamento.
+        await _aguardar_lotes()
+        _persistir_progresso(forcado=True)  # pausa: a retomada precisa de todos os blocos prontos
+        return _retorno_cancelado(jh)
 
     ja_prontos = len(completed_valid)
     if ja_prontos > 0:
@@ -513,7 +741,15 @@ async def processar(
 
     inicio   = time.time()
     tracker  = ProgressTracker(total, inicio, ja_prontos)
-    sem      = asyncio.Semaphore(_config.get_tts_workers())
+    # Edge: limite adaptativo (P1.4), começa em get_tts_workers() e sobe até TTS_WORKERS_TETO.
+    # Motores locais e nuvem: semáforo fixo, como antes.
+    workers_inicial = _config.get_tts_workers()
+    adaptativo = motor_ativo == "edge"
+    limitador = _config.LimiteAdaptativo(
+        inicial=workers_inicial, minimo=2,
+        teto=_config.TTS_WORKERS_TETO if adaptativo else workers_inicial,
+        adaptativo=adaptativo,
+    )
     # Fase do pipeline: "sintese" (blocos pendentes) ou "retry" (rodadas de reprocessamento).
     fase = ["sintese"]
 
@@ -525,8 +761,13 @@ async def processar(
 
     # Mensagem da chave recusada (ErroDeChave). Preenchida pelo 1º bloco que a recebe; para a conversão.
     chave_recusada = [None]
+    # Número de tentativas de síntese por bloco (todas as rodadas), para as métricas.
+    tentativas_por_bloco: dict = {}
 
-    async def _converter_um(idx: int, chunk: str, semaforo: asyncio.Semaphore, texto_alt: Optional[str] = None):
+    async def _converter_um(
+        idx: int, chunk: str, semaforo, texto_alt: Optional[str] = None,
+        controle: Optional[_config.LimiteAdaptativo] = None,
+    ):
         if _cancelar_flag or chave_recusada[0]:
             return
         async with semaforo:
@@ -536,17 +777,50 @@ async def processar(
             if texto_alt and texto_alt != chunk:
                 logger.warning(f"Bloco {idx + 1}: última tentativa com texto sanitizado (fallback).")
                 texto_envio = texto_alt
-            try:
-                ok = await converter_tts_auto(texto_envio, chunk_voices[idx], temp_files[idx], velocidade, tom)
-            except ErroDeChave as e:
-                # Repetir o bloco não resolve chave recusada: aborta sem as rodadas de retry.
-                chave_recusada[0] = str(e)
-                logger.error(f"Conversão interrompida: {e}")
-                return
+            elif precisa_sanear(chunk):
+                # Bloco com URL, número de processo, símbolos etc.: envia já sanitizado (P1.3).
+                texto_envio = sanitizar_trecho_para_tts(chunk)
+            ok = False
+            retries_extra = 0 if motor_da_voz(chunk_voices[idx]) in _MOTORES_COM_RETRY_INTERNO else _RETRIES_IMEDIATOS
+            # Retries imediatos do próprio bloco, com espera curta (P1.2), só nos motores sem retry
+            # interno. Chave recusada e cancelamento interrompem sem nova tentativa.
+            for tentativa_imediata in range(retries_extra + 1):
+                if _cancelar_flag or chave_recusada[0]:
+                    break
+                if tentativa_imediata:
+                    await asyncio.sleep(_ESPERAS_RETRY_IMEDIATO[tentativa_imediata - 1])
+                    if _cancelar_flag or chave_recusada[0]:
+                        break
+                tentativas_por_bloco[idx] = tentativas_por_bloco.get(idx, 0) + 1
+                inicio_bloco = time.perf_counter()
+                try:
+                    ok = await converter_tts_auto(texto_envio, chunk_voices[idx], temp_files[idx], velocidade, tom)
+                except ErroDeChave as e:
+                    # Repetir o bloco não resolve chave recusada: aborta sem as rodadas de retry.
+                    chave_recusada[0] = str(e)
+                    logger.error(f"Conversão interrompida: {e}")
+                    metricas.registrar_bloco(idx, ms_desde(inicio_bloco), False, tentativas_por_bloco[idx])
+                    return
+                metricas.registrar_bloco(idx, ms_desde(inicio_bloco), bool(ok), tentativas_por_bloco[idx])
+                if ok:
+                    break
+                if tentativa_imediata < retries_extra:
+                    logger.warning(
+                        f"Bloco {idx + 1}: falha, nova tentativa imediata "
+                        f"({tentativa_imediata + 1}/{retries_extra})."
+                    )
+            if not ok and (_cancelar_flag or chave_recusada[0]):
+                return  # interrompido: não conta como falha para o ajuste de workers
+            if controle is not None:
+                controle.registrar(bool(ok))
             if ok:
                 # BUG FIX: só marca como concluído se de fato gerou áudio válido
                 completed_valid.add(idx)
-                _salvar_progresso(jh, completed_valid)
+                duracao = await asyncio.to_thread(_duracao_ms_bloco, temp_files[idx])
+                if duracao is not None:
+                    duracoes_ms[idx] = duracao
+                _persistir_progresso()
+                _disparar_lote_se_pronto(idx // _CONCAT_BATCH_SIZE)
             tracker.registrar(idx, ok)
             if fase[0] == "sintese" and tracker.deve_atualizar():
                 _cb(_pct_sintese(), tracker.mensagem_simples(_pct_sintese()))
@@ -556,14 +830,22 @@ async def processar(
     # Motor local: a 1ª síntese demora (carrega o modelo). Avisa já no início; o batimento segue depois.
     if pending and any(_voz_local(v) for v in set(chunk_voices)):
         _cb(_pct_sintese(), "Carregando o modelo de voz…")
+    # Grupos que já estavam completos (retomada) viram lote logo no início, sem esperar bloco novo.
+    for g in range(math.ceil(total / _CONCAT_BATCH_SIZE)):
+        _disparar_lote_se_pronto(g)
     batimento = _iniciar_batimento(_cb, _pct_sintese, lambda: tracker.mensagem_simples(_pct_sintese()))
+    inicio_sintese = time.perf_counter()
+    tempo_sintese_ms = 0.0  # parede da síntese desta execução (rodada inicial + retries globais)
     try:
-        await asyncio.gather(*[_converter_um(i, chunks[i], sem) for i in pending])
+        await asyncio.gather(*[_converter_um(i, chunks[i], limitador, controle=limitador) for i in pending])
     finally:
         await _parar_batimento(batimento)
+        _persistir_progresso(forcado=True)
+        tempo_sintese_ms += ms_desde(inicio_sintese)
+        metricas.registrar_etapa("sintese", ms_desde(inicio_sintese))
 
     if _cancelar_flag:
-        return _retorno_cancelado(jh)
+        return await _cancelado()
     if chave_recusada[0]:
         return {"ok": False, "erro": chave_recusada[0], "job": jh}
 
@@ -595,10 +877,14 @@ async def processar(
                 for i in falhos
             ])
 
+        inicio_retry = time.perf_counter()
         await _com_batimento(_reprocessar(), _cb, _pct_concluidos, msg_retry)
+        _persistir_progresso(forcado=True)
+        tempo_sintese_ms += ms_desde(inicio_retry)
+        metricas.registrar_etapa("sintese", ms_desde(inicio_retry))
 
         if _cancelar_flag:
-            return _retorno_cancelado(jh)
+            return await _cancelado()
         if chave_recusada[0]:
             return {"ok": False, "erro": chave_recusada[0], "job": jh}
 
@@ -629,6 +915,13 @@ async def processar(
             "job": jh,
         }
 
+    # Lotes em andamento precisam terminar antes de ler os blocos; cancelamento é checado antes da junção.
+    await _aguardar_lotes()
+    if _cancelar_flag:
+        return _retorno_cancelado(jh)
+
+    _registrar_velocidade(pending, chunks, chunk_voices, completed_valid, tempo_sintese_ms)
+
     # Concatenar todos os chunks em ordem (junção: faixa PCT_FIM_SINTESE..PCT_FIM_JUNCAO)
     estado_juncao = {"fracao": 0.0}
 
@@ -657,22 +950,50 @@ async def processar(
 
     if not saida_mp3:
         saida_mp3 = os.path.join(_config.FILES_DIR, f"{titulo}.mp3")
+    # Um MP3 que já existia (conversão anterior com o mesmo título) não é apagado se o cancelamento
+    # vier depois da junção; só o arquivo criado por esta execução é descartado.
+    saida_existia_antes = os.path.exists(saida_mp3)
 
-    ok_concat = await _com_batimento(
-        concatenar_grupo_com_pausa(
-            arquivos_validos, saida_mp3, pausa_ms, pausas_validas, on_progress=_progresso_juncao,
-        ),
-        _cb, _pct_juncao, _msg_juncao,
-    )
+    def _cancelado_pos_juncao() -> dict:
+        if not saida_existia_antes:
+            try:
+                if os.path.exists(saida_mp3):
+                    os.remove(saida_mp3)  # parcial ou sem ID3: não deixa um MP3 incompleto para trás
+            except OSError as e:
+                logger.warning(f"Não foi possível apagar o MP3 parcial: {e}")
+        return _retorno_cancelado(jh)
+
+    # Com lotes, a lista da junção são os lotes prontos + blocos avulsos (mesmos bytes; ver _lista_para_juncao).
+    # Sem lotes, a junção segue a lista de blocos com as pausas, como antes.
+    usa_lotes = juncao_incremental and _formato_homogeneo(arquivos_validos)
+    arquivos_juncao = _lista_para_juncao(total, indices_validos, temp_files, jh) if usa_lotes else arquivos_validos
+    pausas_juncao = None if usa_lotes else pausas_validas
+
+    inicio_etapa = time.perf_counter()
+    try:
+        ok_concat = await _com_batimento(
+            concatenar_grupo_com_pausa(
+                arquivos_juncao, saida_mp3, pausa_ms, pausas_juncao, on_progress=_progresso_juncao,
+                cancelado=lambda: _cancelar_flag,
+            ),
+            _cb, _pct_juncao, _msg_juncao,
+        )
+    except JuncaoCancelada:
+        metricas.registrar_etapa("juncao", ms_desde(inicio_etapa))
+        return _cancelado_pos_juncao()
+    metricas.registrar_etapa("juncao", ms_desde(inicio_etapa))
     if not ok_concat or not os.path.exists(saida_mp3):
         return {"ok": False, "erro": "Falha na concatenação do áudio.", "job": jh}
 
     # Timbre escolhido pelo usuário (tom e suavização de agudos). Mantém a duração; se falhar, segue sem.
     tom_meios_tons = int(CONFIG.get("timbre_tom_meios_tons", 0) or 0)
     agudos_db = int(CONFIG.get("timbre_agudos_db", 0) or 0)
+    if _cancelar_flag:
+        return _cancelado_pos_juncao()
     if tom_meios_tons or agudos_db:
         msg_timbre = f"Ajustando o timbre…{aviso_ignorados}"
         _cb(PCT_FIM_JUNCAO, msg_timbre)
+        inicio_etapa = time.perf_counter()
         try:
             await _com_batimento(
                 aplicar_timbre(
@@ -682,63 +1003,69 @@ async def processar(
             )
         except Exception as e:
             logger.warning(f"Ajuste de timbre falhou (não-crítico): {e}")
+        metricas.registrar_etapa("timbre", ms_desde(inicio_etapa))
 
-    # Metadados ID3 (faixa PCT_FIM_TIMBRE..PCT_FIM_METADADOS)
+    # Metadados ID3 e capítulos (faixa PCT_FIM_TIMBRE..PCT_FIM_METADADOS). Os capítulos são calculados
+    # antes e gravados junto com os metadados, numa única passada de tags (P3.4).
+    if _cancelar_flag:
+        return _cancelado_pos_juncao()
     capa_bytes = None
     try:
         capa_bytes = obter_capa(None, titulo)
     except Exception:
         pass
 
+    tem_capitulos = bool(capitulos_info and len(capitulos_info) > 1)
+    caps_com_ts: list = []
     msg_metadados = f"Adicionando metadados…{aviso_ignorados}"
     _cb(PCT_FIM_TIMBRE, msg_metadados)
+    if tem_capitulos:
+        inicio_etapa = time.perf_counter()
+        try:
+            caps_com_ts = await _com_batimento(
+                asyncio.to_thread(
+                    _calcular_timestamps_capitulos,
+                    capitulos_info, temp_files, arquivos_validos, saida_mp3, duracoes_ms,
+                ),
+                _cb, PCT_FIM_TIMBRE, msg_metadados,
+            )
+        except Exception as e:
+            logger.warning(f"Chapter marks falhou (não-crítico): {e}")
+            caps_com_ts = []
+        metricas.registrar_etapa("capitulos", ms_desde(inicio_etapa))
+
+    inicio_etapa = time.perf_counter()
     await _com_batimento(
         asyncio.to_thread(
-            adicionar_metadados_mp3,
+            adicionar_metadados_e_capitulos_mp3,
             saida_mp3,
             titulo=titulo,
             artista="LylyReader",
             album=titulo,
             genero="Audiobook",
             capa_bytes=capa_bytes,
+            capitulos=caps_com_ts,
         ),
         _cb, PCT_FIM_TIMBRE, msg_metadados,
     )
+    metricas.registrar_etapa("id3", ms_desde(inicio_etapa))
+    if caps_com_ts:
+        logger.info(f"Chapter marks adicionados: {len(caps_com_ts)} capítulos.")
 
-    # Chapter marks (EPUB com múltiplos capítulos; faixa PCT_FIM_METADADOS..PCT_FIM_CAPITULOS)
-    caps_com_ts: list = []
-    tem_capitulos = bool(capitulos_info and len(capitulos_info) > 1)
-    _cb(PCT_FIM_METADADOS, (
-        f"Adicionando marcadores de capítulo…{aviso_ignorados}" if tem_capitulos
-        else f"Finalizando…{aviso_ignorados}"
-    ))
-    if tem_capitulos:
-        def _gravar_marcadores() -> list:
-            caps = _calcular_timestamps_capitulos(
-                capitulos_info, temp_files, arquivos_validos, saida_mp3
-            )
-            if caps:
-                adicionar_chapter_marks(saida_mp3, caps)
-            return caps
-
-        msg_capitulos = f"Adicionando marcadores de capítulo…{aviso_ignorados}"
-        try:
-            caps_com_ts = await _com_batimento(
-                asyncio.to_thread(_gravar_marcadores), _cb, PCT_FIM_METADADOS, msg_capitulos,
-            )
-            if caps_com_ts:
-                logger.info(f"Chapter marks adicionados: {len(caps_com_ts)} capítulos.")
-        except Exception as e:
-            logger.warning(f"Chapter marks falhou (não-crítico): {e}")
+    # Faixa PCT_FIM_METADADOS..PCT_FIM_CAPITULOS
+    _cb(PCT_FIM_METADADOS, f"Finalizando…{aviso_ignorados}")
 
     # Duração final (faixa PCT_FIM_CAPITULOS)
     msg_duracao = f"Calculando a duração…{aviso_ignorados}"
     _cb(PCT_FIM_CAPITULOS, msg_duracao)
+    inicio_etapa = time.perf_counter()
     duracao_seg = await _com_batimento(
         obter_duracao_ffprobe(saida_mp3), _cb, PCT_FIM_CAPITULOS, msg_duracao,
     )
+    metricas.registrar_etapa("ffprobe", ms_desde(inicio_etapa))
     duracao_str = formatar_duracao(duracao_seg)
     tam_mb      = round(os.path.getsize(saida_mp3) / (1024 * 1024), 1)
+    metricas.definir_tamanho(os.path.getsize(saida_mp3))
 
     _config.adicionar_historico(titulo, "MP3", voz, duracao_str, tam_mb)
     _limpar_job(jh)
@@ -748,6 +1075,50 @@ async def processar(
         "ok": True, "caminho": saida_mp3, "duracao": duracao_str, "tamanho_mb": tam_mb,
         "capitulos": caps_com_ts,
     }
+
+
+async def processar(
+    texto: str,
+    voz: str,
+    velocidade: str = "+0%",
+    tom: str = "+0Hz",
+    estilo: str = "padrao",
+    titulo: str = "Audiobook",
+    saida_mp3: str = "",          # caminho completo do MP3 final; gerado automaticamente se vazio
+    progress_cb: Optional[ProgressCallback] = None,
+    capitulos_info: Optional[list] = None,  # [{"titulo", "inicio_chunk", "fim_chunk"}]
+    blacklist=None,
+    speaker_map_path: Optional[str] = None,
+) -> dict:
+    """
+    Converte texto em audiobook MP3.
+
+    Retorna:
+        {"ok": True,  "caminho": "/path/to/file.mp3", "duracao": "1h 23min"}
+        {"ok": False, "erro": "mensagem de erro"}
+
+    Em ambos os casos o dict traz "metricas" (resumo de tempos, ver MetricasConversao) e o
+    resumo é logado em INFO como "[METRICAS] ...", mesmo quando a conversão falha.
+    """
+    metricas = MetricasConversao()
+    lotes: list = []
+    try:
+        resultado = await _processar_nucleo(
+            texto, voz, velocidade, tom, estilo, titulo, saida_mp3, progress_cb,
+            capitulos_info, blacklist, speaker_map_path, metricas=metricas, tarefas_lote=lotes,
+        )
+    finally:
+        # Lotes da junção incremental ainda em voo não podem gravar depois que a conversão terminou
+        # (erro ou retorno antecipado): espera o que sobrou antes de sair.
+        if lotes:
+            await asyncio.gather(*lotes, return_exceptions=True)
+        try:
+            logger.info(f"[METRICAS] {metricas.como_texto()}")
+        except Exception:
+            pass
+    if isinstance(resultado, dict):
+        resultado["metricas"] = metricas.resumo()
+    return resultado
 
 
 async def processar_arquivo(

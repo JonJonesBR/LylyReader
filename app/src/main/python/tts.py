@@ -31,7 +31,13 @@ from erros_tts import ErroDeChave
 _MAX_RETRIES = 5
 _CONCAT_BATCH_SIZE = 50  # Máx. de entradas por operação de concat
 _VOICE_VALIDATION_TTL_SECONDS = 10 * 60
+_COPIA_BUFFER_BYTES = 4 * 1024 * 1024  # buffer da cópia binária da junção (P3.2)
+_ID3_PADDING_MINIMO = 8192  # padding reservado ao gravar tags, para updates futuros sem reescrever
 _validated_voices = {}
+
+
+class JuncaoCancelada(Exception):
+    """Levantada pela junção quando o cancelamento é pedido entre dois lotes (P4.2)."""
 
 
 def _voice_validation_key(voz: str, velocidade: str, tom: str) -> tuple:
@@ -212,7 +218,7 @@ def _concatenar_mp3_puro(arquivos: list, saida: str) -> bool:
                 if not primeiro_escrito:
                     # Primeiro arquivo: copia inteiro (inclui header ID3v2)
                     with open(arq, 'rb') as f:
-                        shutil.copyfileobj(f, out)
+                        shutil.copyfileobj(f, out, _COPIA_BUFFER_BYTES)
                     primeiro_escrito = True
                 else:
                     # Demais: pula o header ID3v2, copia só os frames MP3
@@ -220,11 +226,17 @@ def _concatenar_mp3_puro(arquivos: list, saida: str) -> bool:
                     with open(arq, 'rb') as f:
                         if offset > 0:
                             f.seek(offset)
-                        shutil.copyfileobj(f, out)
+                        shutil.copyfileobj(f, out, _COPIA_BUFFER_BYTES)
         return os.path.exists(saida) and os.path.getsize(saida) > 500
     except Exception as e:
         logger.error(f"Erro na concatenação MP3 puro: {e}")
         return False
+
+
+def timeout_para_texto(texto: str) -> float:
+    """Timeout (s) de uma chamada Edge para um bloco: 30 s + 1 s a cada 20 caracteres, entre 30 e 90 s.
+    Folga generosa para redes lentas; blocos curtos falham um pouco mais cedo e blocos longos mantêm o teto de 90 s."""
+    return min(90.0, max(30.0, 30.0 + len(texto or "") / 20.0))
 
 
 async def converter_tts_bloco(
@@ -262,7 +274,7 @@ async def converter_tts_bloco(
                 communicate = edge_tts.Communicate(texto, voz, rate=velocidade, pitch=tom)
                 await asyncio.wait_for(
                     communicate.save(arquivo_saida),
-                    timeout=TTS_TIMEOUT,
+                    timeout=timeout_para_texto(texto),
                 )
                 if os.path.exists(arquivo_saida) and os.path.getsize(arquivo_saida) > 500:
                     try:
@@ -352,6 +364,33 @@ def _motivo_eh_chave_elevenlabs(motivo: str) -> bool:
     return "http 401" in m or "http 403" in m or "chave elevenlabs ausente" in m
 
 
+def motor_da_voz(voz: str) -> str:
+    """Motor que converter_tts_auto usa para a voz: android, onnx, elevenlabs, pocket, kokoro,
+    openrouter, gemini ou edge (default). Única fonte da classificação por voz."""
+    if voz.startswith("android::"):
+        return "android"
+    if voz.startswith("supertonic-"):
+        return "onnx"
+    if voz.startswith("elevenlabs-"):
+        return "elevenlabs"
+    if voz.startswith("pocket-"):
+        return "pocket"
+    if voz.startswith("kokoro-"):
+        return "kokoro"
+    if "::" in voz:
+        # Voz de pacote local (BYOM da V6 Parte B, "byom-*", OU um pacote de 1ª classe que
+        # reaproveita o mesmo formato, como o MMS-TTS da Parte A, "mms-por") — mesma ponte
+        # Kotlin do kokoro (KokoroSynthBridge já é genérica por voiceId; o motor Kotlin resolve
+        # o pacote/arquitetura internamente). "android::" já foi tratado acima, então qualquer
+        # "::" que sobra até aqui é sempre um pacote local, nunca um motor de nuvem.
+        return "kokoro"
+    if voz.startswith("openrouter-"):
+        return "openrouter"
+    if voz in {v for cat in _config.GEMINI_VOICES.values() for v in cat.values()}:
+        return "gemini"
+    return "edge"
+
+
 async def converter_tts_auto(
     texto: str, voz: str, arquivo_saida: str,
     velocidade: str = "+0%", tom: str = "+0Hz"
@@ -373,29 +412,7 @@ async def converter_tts_auto(
         # Travessão/hífen no início abre o áudio com vazio + som avulso no Pocket e no Piper.
         sem_travessoes=voz.startswith(("pocket-", "piper-")),
     )
-    if voz.startswith("android::"):
-        motor = "android"
-    elif voz.startswith("supertonic-"):
-        motor = "onnx"
-    elif voz.startswith("elevenlabs-"):
-        motor = "elevenlabs"
-    elif voz.startswith("pocket-"):
-        motor = "pocket"
-    elif voz.startswith("kokoro-"):
-        motor = "kokoro"
-    elif "::" in voz:
-        # Voz de pacote local (BYOM da V6 Parte B, "byom-*", OU um pacote de 1ª classe que
-        # reaproveita o mesmo formato, como o MMS-TTS da Parte A, "mms-por") — mesma ponte
-        # Kotlin do kokoro (KokoroSynthBridge já é genérica por voiceId; o motor Kotlin resolve
-        # o pacote/arquitetura internamente). "android::" já foi tratado acima, então qualquer
-        # "::" que sobra até aqui é sempre um pacote local, nunca um motor de nuvem.
-        motor = "kokoro"
-    elif voz.startswith("openrouter-"):
-        motor = "openrouter"
-    elif voz in {v for cat in _config.GEMINI_VOICES.values() for v in cat.values()}:
-        motor = "gemini"
-    else:
-        motor = "edge"
+    motor = motor_da_voz(voz)
 
     if motor == "android":
         # A síntese Android (voz nativa instalada no aparelho) é delegada ao motor Kotlin via
@@ -708,10 +725,14 @@ async def _concatenar_lista(arquivos: list, saida: str) -> bool:
 
 
 async def concatenar_grupo(
-    arquivos: list, saida: str, on_progress: Optional[Callable[[float], None]] = None
+    arquivos: list, saida: str, on_progress: Optional[Callable[[float], None]] = None,
+    cancelado: Optional[Callable[[], bool]] = None,
 ) -> bool:
     """`on_progress(fracao)` (0..1) informa o andamento. Em listas grandes, os lotes ocupam 0..0.9
-    e a junção final o restante; em listas pequenas só há o 1.0 ao fim."""
+    e a junção final o restante; em listas pequenas só há o 1.0 ao fim.
+    `cancelado()` é consultado antes de cada lote: se devolver True, levanta JuncaoCancelada."""
+    if cancelado and cancelado():
+        raise JuncaoCancelada()
     if not arquivos:
         return False
     if len(arquivos) == 1:
@@ -743,6 +764,8 @@ async def concatenar_grupo(
     fracao_lotes = 0.9  # o restante (10%) é a junção final dos lotes
     try:
         for idx, lote in enumerate(lotes):
+            if cancelado and cancelado():
+                raise JuncaoCancelada()
             f_lote = os.path.join(temp_dir, f"_lote{idx}_{nome_base}")
             ok = await _concatenar_lista(lote, f_lote)
             if not ok:
@@ -755,7 +778,7 @@ async def concatenar_grupo(
         sub_progresso = (
             (lambda f: on_progress(fracao_lotes + (1.0 - fracao_lotes) * f)) if on_progress else None
         )
-        return await concatenar_grupo(lote_files, saida, sub_progresso)
+        return await concatenar_grupo(lote_files, saida, sub_progresso, cancelado)
     finally:
         for f in lote_files:
             if os.path.exists(f):
@@ -768,10 +791,12 @@ async def concatenar_grupo(
 async def concatenar_grupo_com_pausa(
     arquivos: list, saida: str, pausa_ms: int = 600, pausas_ms: list = None,
     on_progress: Optional[Callable[[float], None]] = None,
+    cancelado: Optional[Callable[[], bool]] = None,
 ) -> bool:
     """Junta os arquivos com silêncio entre eles. `pausas_ms[i]` (opcional) é a pausa depois do
     arquivo i; None ou ausente = `pausa_ms`. Usado pelo modo multi-personagem (trocas de voz curtas).
-    `on_progress` (opcional) recebe a fração 0..1 da junção (ver concatenar_grupo)."""
+    `on_progress` (opcional) recebe a fração 0..1 da junção (ver concatenar_grupo).
+    `cancelado` (opcional) é repassado à concatenação (ver concatenar_grupo)."""
     if not arquivos:
         return False
     if len(arquivos) == 1:
@@ -808,9 +833,9 @@ async def concatenar_grupo_com_pausa(
                 arquivo_silencio = await _silencio(ms)
                 if arquivo_silencio is None:
                     # sem ffmpeg para gerar o silêncio: mantém o comportamento antigo (sem pausas)
-                    return await concatenar_grupo(arquivos, saida, on_progress)
+                    return await concatenar_grupo(arquivos, saida, on_progress, cancelado)
                 intercalados.append(arquivo_silencio)
-        return await concatenar_grupo(intercalados, saida, on_progress)
+        return await concatenar_grupo(intercalados, saida, on_progress, cancelado)
     finally:
         for caminho in silencios.values():
             if caminho and os.path.exists(caminho):
@@ -858,6 +883,58 @@ async def aplicar_timbre(arquivo: str, tom_meios_tons: int, agudos_db: int, bitr
     return False
 
 
+def _carregar_tags_mp3(filepath: str) -> ID3:
+    try:
+        return ID3(filepath)
+    except ID3NoHeaderError:
+        return ID3()
+
+
+def _aplicar_metadados(
+    tags: ID3, titulo: str, artista: str, album: str, genero: str, comentario: str, capa_bytes: bytes,
+) -> None:
+    if titulo:
+        tags.add(TIT2(encoding=3, text=titulo))
+    if artista:
+        tags.add(TPE1(encoding=3, text=artista))
+    if album:
+        tags.add(TALB(encoding=3, text=album))
+    if genero:
+        tags.add(TCON(encoding=3, text=genero))
+    tags.add(TDRC(encoding=3, text=str(datetime.now().year)))
+    if comentario:
+        tags.add(COMM(encoding=3, lang='por', desc='', text=comentario))
+    if capa_bytes and len(capa_bytes) > 1000:
+        tags.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=capa_bytes))
+
+
+def _aplicar_capitulos(tags: ID3, capitulos: list) -> None:
+    for key in list(tags.keys()):
+        if key.startswith("CHAP:") or key.startswith("CTOC:"):
+            del tags[key]
+    ids = [f"ch{i}" for i in range(len(capitulos))]
+    tags.add(CTOC(
+        element_id="toc",
+        flags=CTOCFlags.TOP_LEVEL | CTOCFlags.ORDERED,
+        child_element_ids=ids,
+        sub_frames=[TIT2(encoding=3, text="Índice")],
+    ))
+    for i, cap in enumerate(capitulos):
+        tags.add(CHAP(
+            element_id=ids[i],
+            start_time=cap["inicio_ms"],
+            end_time=cap["fim_ms"],
+            start_offset=0xFFFFFFFF,
+            end_offset=0xFFFFFFFF,
+            sub_frames=[TIT2(encoding=3, text=cap["titulo"])],
+        ))
+
+
+def _padding_id3(info) -> int:
+    """Padding do ID3 ao salvar: o mínimo de _ID3_PADDING_MINIMO, ou o padrão do mutagen se for maior."""
+    return max(info.get_default_padding(), _ID3_PADDING_MINIMO)
+
+
 def adicionar_metadados_mp3(
     filepath: str, titulo: str = "", artista: str = "LylyReader",
     album: str = "Audiobook", genero: str = "Audiobook", comentario: str = "",
@@ -868,23 +945,8 @@ def adicionar_metadados_mp3(
         with open(filepath, 'rb') as _f:
             if _f.read(4) == b'RIFF':
                 return False
-        try:
-            tags = ID3(filepath)
-        except ID3NoHeaderError:
-            tags = ID3()
-        if titulo:
-            tags.add(TIT2(encoding=3, text=titulo))
-        if artista:
-            tags.add(TPE1(encoding=3, text=artista))
-        if album:
-            tags.add(TALB(encoding=3, text=album))
-        if genero:
-            tags.add(TCON(encoding=3, text=genero))
-        tags.add(TDRC(encoding=3, text=str(datetime.now().year)))
-        if comentario:
-            tags.add(COMM(encoding=3, lang='por', desc='', text=comentario))
-        if capa_bytes and len(capa_bytes) > 1000:
-            tags.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=capa_bytes))
+        tags = _carregar_tags_mp3(filepath)
+        _aplicar_metadados(tags, titulo, artista, album, genero, comentario, capa_bytes)
         tags.save(filepath)
         return True
     except Exception as e:
@@ -900,31 +962,42 @@ def adicionar_chapter_marks(filepath: str, capitulos: list) -> bool:
         with open(filepath, 'rb') as _f:
             if _f.read(4) == b'RIFF':
                 return False
-        try:
-            tags = ID3(filepath)
-        except ID3NoHeaderError:
-            tags = ID3()
-        for key in list(tags.keys()):
-            if key.startswith("CHAP:") or key.startswith("CTOC:"):
-                del tags[key]
-        ids = [f"ch{i}" for i in range(len(capitulos))]
-        tags.add(CTOC(
-            element_id="toc",
-            flags=CTOCFlags.TOP_LEVEL | CTOCFlags.ORDERED,
-            child_element_ids=ids,
-            sub_frames=[TIT2(encoding=3, text="Índice")],
-        ))
-        for i, cap in enumerate(capitulos):
-            tags.add(CHAP(
-                element_id=ids[i],
-                start_time=cap["inicio_ms"],
-                end_time=cap["fim_ms"],
-                start_offset=0xFFFFFFFF,
-                end_offset=0xFFFFFFFF,
-                sub_frames=[TIT2(encoding=3, text=cap["titulo"])],
-            ))
+        tags = _carregar_tags_mp3(filepath)
+        _aplicar_capitulos(tags, capitulos)
         tags.save(filepath)
         return True
     except Exception as e:
         logger.warning(f"Falha ao adicionar chapter marks: {e}")
+        return False
+
+
+def adicionar_metadados_e_capitulos_mp3(
+    filepath: str, titulo: str = "", artista: str = "LylyReader",
+    album: str = "Audiobook", genero: str = "Audiobook", comentario: str = "",
+    capa_bytes: bytes = None, capitulos: list = None,
+) -> bool:
+    """Grava metadados e chapter marks numa única passada de tags (P3.4): o arquivo inteiro é
+    reescrito uma vez, e não duas, como ocorria com adicionar_metadados_mp3 + adicionar_chapter_marks.
+    Sem capítulos, grava só os metadados. Reserva padding (_padding_id3) para updates futuros.
+    WAV disfarçado de .mp3 é ignorado (não recebe ID3)."""
+    try:
+        # WAV disfarçado de .mp3: ID3 corromperia o RIFF header
+        with open(filepath, 'rb') as _f:
+            if _f.read(4) == b'RIFF':
+                return False
+        tags = _carregar_tags_mp3(filepath)
+        _aplicar_metadados(tags, titulo, artista, album, genero, comentario, capa_bytes)
+        if capitulos:
+            try:
+                _aplicar_capitulos(tags, capitulos)
+            except Exception as e:
+                # Capítulos são opcionais: sem eles, metadados e capa seguem gravados.
+                logger.warning(f"Capítulos não gravados (metadados e capa seguem): {e}")
+                for key in list(tags.keys()):
+                    if key.startswith("CHAP:") or key.startswith("CTOC:"):
+                        del tags[key]
+        tags.save(filepath, padding=_padding_id3)
+        return True
+    except Exception as e:
+        logger.warning(f"Falha ao gravar metadados e capítulos: {e}")
         return False

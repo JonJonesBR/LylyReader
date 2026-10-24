@@ -19,6 +19,9 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
+import com.jonjonesbr.audiobookgen.domain.EstimativaDeGeracao
+import com.jonjonesbr.audiobookgen.domain.ExtractTextUseCase
+import com.jonjonesbr.audiobookgen.domain.ExtractionResult
 import com.jonjonesbr.audiobookgen.domain.LivroBiblioteca
 import com.jonjonesbr.audiobookgen.domain.OrigemLivro
 import com.jonjonesbr.audiobookgen.domain.posicaoDoRitmo
@@ -32,6 +35,7 @@ import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * Tela do livro: capa, ação principal (continuar a leitura guiada), gerar audiobook, a voz DESTE livro e atalhos para
@@ -158,6 +162,10 @@ class LivroActivity : BasePlayerActivity() {
     private var painelVozNome: TextView? = null
     private var painelVozDetalhe: TextView? = null
     private var painelPasta: TextView? = null
+    private var painelTempo: TextView? = null
+    /** Total de caracteres do livro, por caminho: a extração é cara, então calcula uma vez e reaproveita. */
+    private var totalCharsCalculado: Pair<String, Int>? = null
+    private var calculandoTotalChars = false
 
     private val seletorPasta = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri == null) return@registerForActivityResult
@@ -200,10 +208,11 @@ class LivroActivity : BasePlayerActivity() {
         vista.findViewById<View>(R.id.tvGerarAvisoPersonagens).visibility = if (temVozesDePersonagens) View.VISIBLE else View.GONE
         painelVozNome = vista.findViewById(R.id.tvGerarVozNome)
         painelVozDetalhe = vista.findViewById(R.id.tvGerarVozDetalhe)
+        painelTempo = vista.findViewById(R.id.tvGerarTempo)
         atualizarPainelVoz()
         painelPasta = vista.findViewById(R.id.tvGerarPasta)
         atualizarRotuloPasta()
-        folha.setOnDismissListener { painelVozNome = null; painelVozDetalhe = null; painelPasta = null }
+        folha.setOnDismissListener { painelVozNome = null; painelVozDetalhe = null; painelPasta = null; painelTempo = null }
         vista.findViewById<View>(R.id.btnGerarTrocarVoz).setOnClickListener { seletorDeVoz.abrirSeletorVozes() }
 
         val seek = vista.findViewById<android.widget.SeekBar>(R.id.seekGerarRitmo)
@@ -266,6 +275,59 @@ class LivroActivity : BasePlayerActivity() {
         painelVozNome?.text = opcao?.name ?: vozId
         val rede = if (NetworkStatus.engineRequiresNetwork(motor)) getString(R.string.livro_voz_online) else getString(R.string.livro_voz_offline)
         painelVozDetalhe?.text = listOfNotNull(rotuloDoMotor(motor), opcao?.language, rede).joinToString(" · ")
+        atualizarTempoEstimado()
+    }
+
+    /**
+     * Linha "Tempo estimado" do painel: usa a velocidade medida neste aparelho (`velocidade_motores.json`)
+     * ou o valor de referência, marcado como aproximado. Some quando não há como estimar (nuvem sem medição).
+     */
+    private fun atualizarTempoEstimado() {
+        val linha = painelTempo ?: return
+        val caminhoLivro = caminho()
+        val (voz, motorDoLivro) = vozDoLivro()
+        val motor = EstimativaDeGeracao.motorDaVoz(
+            voz, ehGemini = VoiceCatalog.effectiveEngine(voz, motorDoLivro) == "gemini"
+        )
+        val total = totalCharsCalculado?.takeIf { it.first == caminhoLivro }?.second
+        if (total == null) {
+            if (caminhoLivro.isBlank()) { linha.visibility = View.GONE; return }
+            linha.visibility = View.VISIBLE
+            linha.text = getString(R.string.gerar_tempo_calculando)
+            if (!calculandoTotalChars) {
+                calculandoTotalChars = true
+                lifecycleScope.launch {
+                    val resultado = ExtractTextUseCase(this@LivroActivity).invoke(caminhoLivro)
+                    calculandoTotalChars = false
+                    if (resultado is ExtractionResult.Success) {
+                        totalCharsCalculado = caminhoLivro to resultado.texto.totalChars
+                        atualizarTempoEstimado()
+                    } else {
+                        painelTempo?.visibility = View.GONE
+                    }
+                }
+            }
+            return
+        }
+        val estimativa = motor?.let {
+            EstimativaDeGeracao.lerDoArquivo(File(filesDir, EstimativaDeGeracao.ARQUIVO)).estimativa(total, it)
+        }
+        if (estimativa == null) { linha.visibility = View.GONE; return }
+        val tempo = EstimativaDeGeracao.formatar(
+            estimativa.duracao,
+            rotuloHoras = { h -> resources.getQuantityString(R.plurals.tempo_horas, h, h) },
+            rotuloMinutos = { m -> resources.getQuantityString(R.plurals.tempo_minutos, m, m) },
+            juntar = { a, b -> getString(R.string.tempo_juntar, a, b) }
+        )
+        val frase = getString(
+            if (estimativa.aproximada) R.string.gerar_tempo_estimado_aprox else R.string.gerar_tempo_estimado,
+            tempo
+        )
+        val aviso = if (EstimativaDeGeracao.deveAvisarLento(motor, estimativa.duracao)) {
+            getString(R.string.gerar_tempo_aviso_lento)
+        } else null
+        linha.text = listOfNotNull(frase, aviso).joinToString("\n")
+        linha.visibility = View.VISIBLE
     }
 
     // ── Voz deste livro ──────────────────────────────────────────────────────

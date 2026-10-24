@@ -715,7 +715,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Conversion progress is now real from 0 to 100%: it no longer sits at 99%, and it shows each step (joining audio, adjusting tone, finishing) and the elapsed time.\n• Books that would not open (some EPUBs, DOCX with tables, TXT in other encodings) now open and convert.\n• Scanned or password-protected PDFs now say clearly why they can\'t be read.\n• With on-device voices (Supertonic, Piper, Kokoro, Pocket) the conversion timer no longer freezes and the audiobook duration shows correctly.\n• An invalid voice key (Gemini, ElevenLabs) now reports in seconds instead of minutes.</string>
+    <string name="release_notes_corpo">• Conversion progress is now real from 0 to 100%: it no longer sits at 99%, and it shows each step (joining audio, adjusting tone, finishing) and the elapsed time.\n• Books that would not open (some EPUBs, DOCX with tables, TXT in other encodings) now open and convert.\n• Scanned or password-protected PDFs now say clearly why they can\'t be read.\n• With on-device voices (Supertonic, Piper, Kokoro, Pocket) the conversion timer no longer freezes and the audiobook duration shows correctly.\n• An invalid voice key (Gemini, ElevenLabs) now reports in seconds instead of minutes.\n• Faster, steadier generation with Edge voices: problem blocks are retried right away and the number of connections adapts to your network.\n• The final stretch (joining audio, metadata and chapters) is faster, and pause or cancel now works during it too.\n• Before generating, the app shows an estimated conversion time that improves as you use it.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1159,6 +1159,19 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="gerar_pasta_padrao">Downloads (default)</string>
     <string name="gerar_escolher">Choose</string>
     <string name="gerar_estilo_titulo">Narration style (Gemini voices only)</string>
+    <string name="gerar_tempo_estimado">Estimated time: about %1$s on this device</string>
+    <string name="gerar_tempo_estimado_aprox">Estimated time: about %1$s (approximate)</string>
+    <string name="gerar_tempo_calculando">Estimated time: calculating…</string>
+    <string name="gerar_tempo_aviso_lento">This local voice may take over an hour on this device. Piper voices are usually faster.</string>
+    <string name="tempo_juntar">%1$s and %2$s</string>
+    <plurals name="tempo_horas">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+    <plurals name="tempo_minutos">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
     <string name="conferir_trocas_botao">Check how the text will be spoken</string>
     <string name="conferir_trocas_titulo">How the text will be spoken</string>
     <string name="conferir_trocas_explicacao">See what changes before converting. This only shows the text; nothing is changed.</string>

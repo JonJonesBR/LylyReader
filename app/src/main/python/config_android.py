@@ -11,6 +11,7 @@ Diferenças em relação ao config.py original (VPS/Telegram):
 """
 
 import asyncio
+import collections
 import json
 import logging
 import os
@@ -84,6 +85,7 @@ def set_motor(motor: str):
 # Edge TTS: sem limites oficiais. 8 workers + espaçamento menor (ver wait_for_tts_slot)
 # acelera a geração; se aparecerem erros 429, reduzir TTS_WORKERS ou aumentar o min_interval.
 TTS_WORKERS       = 8    # Edge TTS
+TTS_WORKERS_TETO  = 10   # Edge: teto do ajuste dinâmico (LimiteAdaptativo) e do semáforo interno
 CHUNK_LIMITE      = 2500 # chars por chunk (Edge/Gemini/OpenRouter — motores de rede)
 
 # Supertonic (motor "onnx"), Pocket e vozes do sistema Android ("android") rodam localmente,
@@ -174,14 +176,86 @@ def _running_loop():
     except RuntimeError:
         return None
 
+def _workers_do_semaforo() -> int:
+    """Tamanho do semáforo interno de tts.py. Para o Edge (que usa TTS_WORKERS por padrão) é o teto
+    do ajuste dinâmico, para não barrar o LimiteAdaptativo antes dele; nos demais, get_tts_workers()."""
+    workers = get_tts_workers()
+    return TTS_WORKERS_TETO if workers == TTS_WORKERS else workers
+
 def get_semaforo() -> asyncio.Semaphore:
     """Retorna (ou cria) o semáforo vinculado ao loop atual."""
     global SEMAFORO_TTS, _SEM_LOOP
     loop = _running_loop()
     if SEMAFORO_TTS is None or _SEM_LOOP is not loop:
-        SEMAFORO_TTS = asyncio.Semaphore(get_tts_workers())
+        SEMAFORO_TTS = asyncio.Semaphore(_workers_do_semaforo())
         _SEM_LOOP = loop
     return SEMAFORO_TTS
+
+
+class LimiteAdaptativo:
+    """Limite de concorrência para os blocos de uma conversão, usado como `async with`.
+
+    Com adaptativo=True (Edge) segue AIMD: após `falhas_para_reduzir` falhas numa janela de
+    `janela` blocos, o limite cai pela metade (mínimo `minimo`); após `sucessos_para_subir`
+    sucessos seguidos, sobe 1 (máximo `teto`). Com adaptativo=False é um semáforo fixo em `inicial`
+    (motores locais e nuvem). Não faz rede nem depende de loop na criação (a Condition nasce no 1º uso).
+    """
+
+    def __init__(
+        self, inicial: int, minimo: int = 2, teto: int = 10, adaptativo: bool = True,
+        janela: int = 10, falhas_para_reduzir: int = 3, sucessos_para_subir: int = 20,
+    ):
+        self.adaptativo = bool(adaptativo)
+        self.minimo = max(1, int(minimo))
+        self.teto = max(1, int(teto))
+        self.limite = min(self.teto, max(1, int(inicial)))
+        self._janela = collections.deque(maxlen=max(1, int(janela)))
+        self._falhas_para_reduzir = max(1, int(falhas_para_reduzir))
+        self._sucessos_para_subir = max(1, int(sucessos_para_subir))
+        self._sucessos_seguidos = 0
+        self._em_uso = 0
+        self._cond: Optional[asyncio.Condition] = None
+
+    def registrar(self, sucesso: bool) -> None:
+        """Informa o resultado final de um bloco. Só ajusta o limite quando adaptativo=True."""
+        if not self.adaptativo:
+            return
+        self._janela.append(bool(sucesso))
+        self._sucessos_seguidos = self._sucessos_seguidos + 1 if sucesso else 0
+        falhas = sum(1 for ok in self._janela if not ok)
+        if falhas >= self._falhas_para_reduzir:
+            self.limite = min(self.limite, max(self.minimo, self.limite // 2))
+            self._janela.clear()
+            self._sucessos_seguidos = 0
+        elif self._sucessos_seguidos >= self._sucessos_para_subir:
+            self.limite = min(self.teto, self.limite + 1)
+            self._sucessos_seguidos = 0
+
+    def _get_cond(self) -> asyncio.Condition:
+        if self._cond is None:
+            self._cond = asyncio.Condition()
+        return self._cond
+
+    async def __aenter__(self):
+        cond = self._get_cond()
+        async with cond:
+            while self._em_uso >= self.limite:
+                try:
+                    await cond.wait()
+                except asyncio.CancelledError:
+                    # Se o aviso caiu neste waiter cancelado, repassa a vaga a outro que espera.
+                    cond.notify(1)
+                    raise
+            self._em_uso += 1
+        return self
+
+    async def __aexit__(self, *_exc):
+        cond = self._get_cond()
+        async with cond:
+            self._em_uso -= 1
+            # Acorda só o necessário (notify_all é quadrático com muitos blocos esperando).
+            cond.notify(max(1, self.limite - self._em_uso))
+        return False
 
 def _get_rate_lock() -> asyncio.Lock:
     global _RATE_LOCK, _RATE_LOCK_LOOP
