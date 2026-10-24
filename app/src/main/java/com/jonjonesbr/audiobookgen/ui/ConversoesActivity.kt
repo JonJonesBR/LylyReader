@@ -503,7 +503,9 @@ class ConversoesActivity : AppCompatActivity() {
             ?: runCatching { FileProvider.getUriForFile(this, "${packageName}.fileprovider", File(evento.caminho)) }.getOrNull()
             ?: return
         val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "audio/mpeg"
+            type = com.jonjonesbr.audiobookgen.domain.mimeParaCompartilhar(
+                this@ConversoesActivity, uri, File(evento.caminho),
+            )
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }

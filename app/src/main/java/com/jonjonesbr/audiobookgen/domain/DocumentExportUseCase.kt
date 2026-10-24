@@ -45,6 +45,13 @@ private fun lerInicioDoArquivo(arquivo: File): ByteArray {
     return if (lidos > 0) inicio.copyOf(lidos) else ByteArray(0)
 }
 
+/** MIME para ACTION_SEND/VIEW: pelo conteúdo do [arquivo] local; senão pelo tipo do [uri]; senão audio/mpeg. */
+internal fun mimeParaCompartilhar(context: Context, uri: Uri?, arquivo: File?): String {
+    if (arquivo != null && arquivo.isFile) return mimeDoAudioExportado(lerInicioDoArquivo(arquivo))
+    val tipo = uri?.let { runCatching { context.contentResolver.getType(it) }.getOrNull() }
+    return if (tipo != null && tipo.startsWith("audio/")) tipo else MIME_MP3
+}
+
 sealed class ExportStatus {
     data class Sucesso(val result: ExportResult) : ExportStatus()
     data class Erro(val mensagem: String) : ExportStatus()

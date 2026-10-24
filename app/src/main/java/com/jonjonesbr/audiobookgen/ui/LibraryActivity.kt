@@ -359,7 +359,9 @@ class LibraryActivity : BasePlayerActivity() {
         } catch (_: Exception) { item.uri }
 
         val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "audio/mpeg"
+            type = com.jonjonesbr.audiobookgen.domain.mimeParaCompartilhar(
+                this@LibraryActivity, shareUri, item.caminho?.let { File(it) },
+            )
             putExtra(Intent.EXTRA_STREAM, shareUri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }

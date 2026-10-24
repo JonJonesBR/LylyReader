@@ -134,7 +134,10 @@ class MainActivity : AppCompatActivity() {
     private fun abrirComAppExterno(caminho: String) {
         val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", File(caminho))
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "audio/mpeg")
+            setDataAndType(
+                uri,
+                com.jonjonesbr.audiobookgen.domain.mimeParaCompartilhar(this@MainActivity, uri, File(caminho)),
+            )
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         try {
