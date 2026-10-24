@@ -75,10 +75,10 @@ object AudiobookLibraryUseCase {
         // real (sniff), não pela extensão, então esses itens ficavam INVISÍVEIS aqui mesmo
         // tocando normalmente (MediaPlayer lê pelos magic bytes). Confirmado em teste real
         // de device (Android 16): arquivo gerado pelo Kokoro indexado como audio/x-wav.
-        val selection = "${MediaStore.Audio.Media.MIME_TYPE} IN (?, ?, ?) AND " +
+        val selection = "${MediaStore.Audio.Media.MIME_TYPE} IN (?, ?, ?, ?) AND " +
             "${MediaStore.Audio.Media.RELATIVE_PATH} = ?"
         val selectionArgs = arrayOf(
-            "audio/mpeg", "audio/x-wav", "audio/wav", "${Environment.DIRECTORY_DOWNLOADS}/"
+            MIME_MP3, "audio/x-wav", "audio/wav", MIME_M4A, "${Environment.DIRECTORY_DOWNLOADS}/"
         )
 
         try {
@@ -101,7 +101,7 @@ object AudiobookLibraryUseCase {
                     val duracao = obterDuracao(context, uri, null)
 
                     dest.add(AudiobookItem(
-                        nome          = nome.removeSuffix(".mp3"),
+                        nome          = semExtensaoDeAudio(nome),
                         uri           = uri,
                         caminho       = null,
                         tamanhoBytes  = tamanho,
@@ -189,7 +189,8 @@ object AudiobookLibraryUseCase {
         val mime = cursor.getString(colunas.mimeCol)
         val docId = cursor.getString(colunas.idCol)
         val nome = cursor.getString(colunas.nameCol)
-        if (mime != "audio/mpeg" || docId == null || nome == null) return null
+        // AAC comprimido (MP4) também é audiolivro: sai como audio/mp4 com extensão .m4a.
+        if ((mime != MIME_MP3 && mime != MIME_M4A) || docId == null || nome == null) return null
 
         val tamanho = cursor.getLong(colunas.sizeCol)
         val data = cursor.getLong(colunas.dateCol)
@@ -197,7 +198,7 @@ object AudiobookLibraryUseCase {
         val duracao = obterDuracao(context, fileUri, null)
 
         return AudiobookItem(
-            nome           = nome.removeSuffix(".mp3"),
+            nome           = semExtensaoDeAudio(nome),
             uri            = fileUri,
             caminho        = null,
             tamanhoBytes   = tamanho,

@@ -77,9 +77,20 @@ class GerarPreviaTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             jh = self._job(tmp, 5, {0, 1, 3}, duracoes={0: 1000, 1: 1000, 3: 1000})
             saida = self._gerar(tmp, jh, 5)
-            self.assertEqual(os.path.join(tmp, "previa.mp3"), saida)
+            self.assertEqual(tmp, os.path.dirname(saida))
+            self.assertRegex(os.path.basename(saida), r"^previa_\d+\.mp3$")
             self.assertGreater(os.path.getsize(saida), 0)
             self.assertFalse(os.path.exists(saida + ".tmp"))
+
+    def test_cada_previa_tem_nome_novo_e_so_uma_fica_no_disco(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            jh = self._job(tmp, 3, {0, 1}, duracoes={0: 1000, 1: 1000})
+            primeira = self._gerar(tmp, jh, 3)
+            segunda = self._gerar(tmp, jh, 3)
+            self.assertNotEqual(primeira, segunda)
+            self.assertFalse(os.path.exists(primeira))
+            previas = [n for n in os.listdir(tmp) if n.startswith("previa")]
+            self.assertEqual([os.path.basename(segunda)], previas)
 
     def test_sem_job_ativo_devolve_vazio(self):
         with mock.patch.dict(cpa._job_ativo, {"jh": None, "total": 0}):

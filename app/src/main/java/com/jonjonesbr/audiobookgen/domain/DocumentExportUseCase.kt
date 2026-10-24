@@ -21,7 +21,23 @@ data class ExportResult(val destUri: Uri, val nomePasta: String)
  * (MP3 de verdade ou WAV com nome .mp3) segue audio/mpeg, como antes.
  */
 internal fun mimeDoAudioExportado(primeirosBytes: ByteArray): String =
-    if (primeirosBytes.size >= 8 && String(primeirosBytes, 4, 4, Charsets.US_ASCII) == "ftyp") "audio/mp4" else "audio/mpeg"
+    if (primeirosBytes.size >= 8 && String(primeirosBytes, 4, 4, Charsets.US_ASCII) == "ftyp") MIME_M4A else MIME_MP3
+
+internal const val MIME_M4A = "audio/mp4"
+internal const val MIME_MP3 = "audio/mpeg"
+
+/**
+ * Nome do arquivo exportado. Com MIME audio/mp4 (AAC) a extensão vira `.m4a`, para o MediaStore não gerar
+ * "livro.mp3.m4a". Outros MIMEs mantêm o nome original.
+ */
+internal fun nomeDoArquivoExportado(nome: String, mime: String): String {
+    if (mime != MIME_M4A) return nome
+    val base = nome.replace(Regex("\\.mp3$", RegexOption.IGNORE_CASE), "").ifEmpty { "audiobook" }
+    return "$base.m4a"
+}
+
+/** Nome sem a extensão de áudio do audiolivro (.mp3 ou .m4a), para mostrar na biblioteca. */
+internal fun semExtensaoDeAudio(nome: String): String = nome.removeSuffix(".mp3").removeSuffix(".m4a")
 
 private fun lerInicioDoArquivo(arquivo: File): ByteArray {
     val inicio = ByteArray(12)
@@ -48,12 +64,13 @@ class DocumentExportUseCase(private val context: Context) {
         withContext(Dispatchers.IO) {
             runCatching {
                 val mime = mimeType ?: mimeDoAudioExportado(lerInicioDoArquivo(mp3))
+                val nomeDestino = nomeDoArquivoExportado(mp3.name, mime)
                 val destUri =
                     if (pastaSafUri != null) {
-                        copiarParaSafFolder(mp3, pastaSafUri, mime)
+                        copiarParaSafFolder(mp3, nomeDestino, pastaSafUri, mime)
                             ?: throw IOException(context.getString(R.string.export_falha_criar_saf))
                     } else {
-                        copiarParaDownloads(mp3, mime)
+                        copiarParaDownloads(mp3, nomeDestino, mime)
                             ?: throw IOException(context.getString(R.string.export_falha_copiar_downloads))
                     }
                 val nomePasta =
@@ -62,17 +79,17 @@ class DocumentExportUseCase(private val context: Context) {
             }
         }
 
-    private fun copiarParaDownloads(mp3: File, mimeType: String): Uri? =
+    private fun copiarParaDownloads(mp3: File, nomeDestino: String, mimeType: String): Uri? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            copiarParaDownloadsViaMediaStore(mp3, mimeType)
+            copiarParaDownloadsViaMediaStore(mp3, nomeDestino, mimeType)
         } else {
-            copiarParaDownloadsLegado(mp3)
+            copiarParaDownloadsLegado(mp3, nomeDestino)
         }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    private fun copiarParaDownloadsViaMediaStore(mp3: File, mimeType: String): Uri? {
+    private fun copiarParaDownloadsViaMediaStore(mp3: File, nomeDestino: String, mimeType: String): Uri? {
         val values = ContentValues().apply {
-            put(MediaStore.Downloads.DISPLAY_NAME, mp3.name)
+            put(MediaStore.Downloads.DISPLAY_NAME, nomeDestino)
             put(MediaStore.Downloads.MIME_TYPE, mimeType)
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
@@ -101,22 +118,22 @@ class DocumentExportUseCase(private val context: Context) {
     }
 
     @Suppress("DEPRECATION")
-    private fun copiarParaDownloadsLegado(mp3: File): Uri {
+    private fun copiarParaDownloadsLegado(mp3: File, nomeDestino: String): Uri {
         val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         downloadDir.mkdirs()
-        val dest = File(downloadDir, mp3.name)
+        val dest = File(downloadDir, nomeDestino)
         mp3.copyTo(dest, overwrite = true)
         return Uri.fromFile(dest)
     }
 
-    private fun copiarParaSafFolder(mp3: File, folderUri: Uri, mimeType: String): Uri? {
+    private fun copiarParaSafFolder(mp3: File, nomeDestino: String, folderUri: Uri, mimeType: String): Uri? {
         val docUri =
             DocumentsContract.buildDocumentUriUsingTree(
                 folderUri,
                 DocumentsContract.getTreeDocumentId(folderUri)
             )
         val fileUri =
-            DocumentsContract.createDocument(contentResolver, docUri, mimeType, mp3.name)
+            DocumentsContract.createDocument(contentResolver, docUri, mimeType, nomeDestino)
                 ?: return null
         val out = contentResolver.openOutputStream(fileUri)
         if (out != null) out.use { o -> mp3.inputStream().use { it.copyTo(o) } }

@@ -23,11 +23,14 @@ class LimitePreviaTest(unittest.TestCase):
 
     def test_apagar_previa_remove_arquivo_e_temporario(self):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(cpa, "TEMP_DIR", tmp):
-            for nome in ("previa.mp3", "previa.mp3.tmp"):
+            nomes = ("previa_1.mp3", "previa_1.mp3.tmp", "previa.mp3", "previa.mp3.tmp")
+            for nome in nomes:
                 open(os.path.join(tmp, nome), "wb").close()
+            open(os.path.join(tmp, "outro_arquivo.mp3"), "wb").close()
             cpa._apagar_previa()
-            self.assertFalse(os.path.exists(os.path.join(tmp, "previa.mp3")))
-            self.assertFalse(os.path.exists(os.path.join(tmp, "previa.mp3.tmp")))
+            for nome in nomes:
+                self.assertFalse(os.path.exists(os.path.join(tmp, nome)), nome)
+            self.assertTrue(os.path.exists(os.path.join(tmp, "outro_arquivo.mp3")))
 
     def test_apagar_previa_sem_arquivos_nao_levanta(self):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(cpa, "TEMP_DIR", tmp):

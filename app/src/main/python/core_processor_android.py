@@ -111,10 +111,17 @@ _PREVIA_LIMITE_MS = 15 * 60 * 1000
 
 
 def _apagar_previa() -> None:
-    """Remove previa.mp3 e o temporário dela (se existirem). Nunca levanta exceção."""
-    for nome in ("previa.mp3", "previa.mp3.tmp"):
-        with contextlib.suppress(OSError):
-            os.remove(os.path.join(TEMP_DIR, nome))
+    """Remove as prévias (previa*.mp3) e os temporários delas (previa*.tmp) de TEMP_DIR. Nunca levanta exceção.
+    Nome único por prévia: o player guarda a posição por arquivo, então reaproveitar o nome faria a prévia nova
+    retomar a posição da antiga."""
+    try:
+        nomes = os.listdir(TEMP_DIR)
+    except OSError:
+        return
+    for nome in nomes:
+        if nome.startswith("previa") and nome.endswith((".mp3", ".tmp")):
+            with contextlib.suppress(OSError):
+                os.remove(os.path.join(TEMP_DIR, nome))
 
 
 def _zerar_job_ativo() -> None:
@@ -174,7 +181,8 @@ def gerar_previa() -> str:
         if not _formato_homogeneo(arquivos):
             return ""
         os.makedirs(TEMP_DIR, exist_ok=True)
-        saida = os.path.join(TEMP_DIR, "previa.mp3")
+        _apagar_previa()  # a anterior sai antes: só uma prévia existe por vez
+        saida = os.path.join(TEMP_DIR, f"previa_{time.time_ns()}.mp3")
         tmp = saida + ".tmp"
         try:
             if not _concatenar_mp3_puro(arquivos, tmp):
