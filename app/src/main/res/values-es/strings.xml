@@ -209,7 +209,7 @@
 
     <!-- Reader Activity -->
     <string name="btn_converter_assim_mesmo">Convertir de todos modos</string>
-    <string name="fab_converter_selecao">✓ Convertir selección</string>
+    <string name="fab_converter_selecao">✓ Generar audiolibro de la selección</string>
     <string name="toast_save_selection_error">No se pudo guardar la selección. Verifique el almacenamiento e inténtelo de nuevo.</string>
 
     <!-- Queue Activity -->
@@ -438,7 +438,7 @@
     <string name="help_reader_step1">Toca cualquier párrafo para empezar la lectura guiada y escuchar mientras lees</string>
     <string name="help_reader_step2">Usa las flechas ‹ › de la barra del capítulo para ir al anterior o al siguiente; toca el nombre del capítulo para ver la lista y marcar capítulos para convertir</string>
     <string name="help_reader_step3">Mantén presionado un párrafo para iniciar la selección</string>
-    <string name="help_reader_step4">Toca \"Convertir selección\" para convertir solo el fragmento elegido</string>
+    <string name="help_reader_step4">Toca \"Generar audiolibro de la selección\" para generar solo el fragmento elegido; para el libro completo o el capítulo actual, usa ⋮ › Generar audiolibro</string>
     <string name="help_library_title">Tu biblioteca de audiolibros</string>
     <string name="help_library_step1">Los audiolibros generados aparecen automáticamente en la pestaña Audiolibros</string>
     <string name="help_library_step2">Toca un elemento para reproducirlo</string>
@@ -467,9 +467,9 @@
     <!-- Fase 3 - Recovery Fallback e Pitch Offline -->
 
     <plurals name="fab_converter_capitulos">
-        <item quantity="one">Convertir %d capítulo</item>
-        <item quantity="other">Convertir %d capítulos</item>
-        <item quantity="many">Convertir %d capítulos</item>
+        <item quantity="one">Generar %d capítulo</item>
+        <item quantity="other">Generar %d capítulos</item>
+        <item quantity="many">Generar %d capítulos</item>
     </plurals>
 
     <!-- Blacklist Strings -->
@@ -497,7 +497,7 @@
     <!-- UI redesign — Reader UX improvements -->
     <string name="cd_mais_opcoes">Más opciones</string>
     <string name="btn_concluir_modo">Listo</string>
-    <string name="fab_converter_principal">Convertir a audio</string>
+    <string name="fab_converter_principal">Generar audiolibro</string>
     <string name="sheet_section_reading">Lectura</string>
     <string name="action_help_tutorial">Ayuda &amp; Tutorial</string>
     <string name="label_ajuda">Ayuda</string>
@@ -1357,7 +1357,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="acao_dicionario_pronuncia">Diccionario de pronunciación</string>
     <string name="acao_gerar_audiobook">Generar audiolibro (MP3)</string>
     <string name="gerar_audiobook_titulo">Generar audiolibro</string>
-    <string name="gerar_audiobook_livro">Libro completo</string>
+    <string name="gerar_audiobook_livro">Libro completo (elegir voz y ritmo)</string>
     <string name="gerar_audiobook_capitulo">Solo este capítulo: %1$s</string>
     <string name="acao_exportar_texto">Exportar texto</string>
     <string name="exportar_texto_titulo">Exportar texto</string>

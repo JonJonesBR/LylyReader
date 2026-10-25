@@ -75,7 +75,7 @@ class ConversionWorker(
         // Chaves de progresso (setProgressAsync)
         const val KEY_PROGRESS_PCT = "progress_pct"
         const val KEY_PROGRESS_MSG = "progress_msg"
-        /** Nome do audiobook em geração, para o cartão "Gerando agora" das abas (sai do nome do arquivo de saída). */
+        /** Nome do audiobook em geração (do arquivo de saída), para o cartão "Gerando agora" das abas. */
         const val KEY_PROGRESS_NOME = "progress_nome"
 
         // Chaves de OutputData (sucesso)

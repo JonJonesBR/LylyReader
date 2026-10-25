@@ -323,7 +323,7 @@ class ReaderActivity : BasePlayerActivity() {
                 onExportarCapitulosPasta = { exportarCapitulosPasta.launch(null) },
                 onCompartilharTrecho = { compartilharTrechoAtual() },
                 onBaixarCapitulo = { baixarCapitulo() },
-                onBaixarLivro = { baixarLivroCompleto() },
+                onBaixarLivro = { gerarLivroInteiro() },
                 onOuvirAudiobook = { ouvirAudiobookDesteLivro() },
                 onConfigurarVozesPersonagens = { personagensController.abrirConfiguracaoVozesPersonagens() },
                 onAbrirMarcacoes = { marcacoesController.mostrarDialogListarMarcacoes() },
@@ -727,26 +727,20 @@ class ReaderActivity : BasePlayerActivity() {
         val state = viewModel.uiState.value
         val temCapitulos = capitulosSelecionados.isNotEmpty()
         val temSelecaoAtiva = state.selecaoInicio != null || temCapitulos
-        val emModoEspecial = state.modoEdicao || state.mostrandoAlteracoes
         val guiadaAtiva = manager.state.value.index >= 0
 
-        val fabVisivel = if (temSelecaoAtiva) !guiadaAtiva else !emModoEspecial && !guiadaAtiva
-        fabConverterPrincipal.visibility = if (fabVisivel) View.VISIBLE else View.GONE
-
-        if (temSelecaoAtiva) {
-            fabConverterPrincipal.setIconResource(android.R.drawable.checkbox_on_background)
-            fabConverterPrincipal.text = if (temCapitulos) {
-                resources.getQuantityString(
-                    R.plurals.fab_converter_capitulos,
-                    capitulosSelecionados.size,
-                    capitulosSelecionados.size
-                )
-            } else {
-                getString(R.string.fab_converter_selecao)
-            }
+        // Só com trecho ou capítulos marcados: o livro inteiro e o capítulo atual ficam em ⋮ › Gerar audiobook
+        // (antes o botão ficava sempre sobre o texto, com outro nome, "Converter para áudio").
+        fabConverterPrincipal.visibility = if (temSelecaoAtiva && !guiadaAtiva) View.VISIBLE else View.GONE
+        fabConverterPrincipal.setIconResource(android.R.drawable.checkbox_on_background)
+        fabConverterPrincipal.text = if (temCapitulos) {
+            resources.getQuantityString(
+                R.plurals.fab_converter_capitulos,
+                capitulosSelecionados.size,
+                capitulosSelecionados.size
+            )
         } else {
-            fabConverterPrincipal.setIconResource(android.R.drawable.ic_btn_speak_now)
-            fabConverterPrincipal.text = getString(R.string.fab_converter_principal)
+            getString(R.string.fab_converter_selecao)
         }
     }
 
@@ -881,6 +875,31 @@ class ReaderActivity : BasePlayerActivity() {
         } catch (e: Exception) {
             Log.w("ReaderActivity", "Erro ao preparar download de capítulo", e)
             mostrarErro(getString(R.string.toast_erro_preparar_download, getString(mensagemDeErro(e))))
+        }
+    }
+
+    /**
+     * "Gerar audiobook › Livro inteiro": abre o painel da tela do livro (voz, ritmo, tempo estimado, pasta, fila).
+     * Com o texto editado ou limpo aqui no leitor, ou um arquivo fora da biblioteca, gera direto deste texto.
+     */
+    private fun gerarLivroInteiro() {
+        val state = viewModel.uiState.value
+        lifecycleScope.launch {
+            val livro = if (state.temEdicoes || state.textoLimpo != null) {
+                null
+            } else {
+                com.jonjonesbr.audiobookgen.data.BibliotecaStore.porCaminho(applicationContext, caminhoArquivo)
+            }
+            if (livro == null) {
+                baixarLivroCompleto()
+            } else {
+                startActivity(
+                    Intent(this@ReaderActivity, LivroActivity::class.java)
+                        .putExtra(LivroActivity.EXTRA_ID, livro.id)
+                        .putExtra(LivroActivity.EXTRA_ABRIR_PAINEL_GERAR, true)
+                        .putExtra(LivroActivity.EXTRA_SO_PAINEL, true)
+                )
+            }
         }
     }
 

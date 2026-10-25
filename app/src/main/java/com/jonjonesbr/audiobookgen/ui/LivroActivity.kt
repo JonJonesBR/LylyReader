@@ -85,7 +85,7 @@ class LivroActivity : BasePlayerActivity() {
                 // Atalho de quem quer cair direto no painel de conversão (ex.: validação por adb).
                 if (intent.getBooleanExtra(EXTRA_ABRIR_PAINEL_GERAR, false)) {
                     intent.removeExtra(EXTRA_ABRIR_PAINEL_GERAR)
-                    mostrarPainelGerar(encontrado)
+                    mostrarPainelGerar(encontrado, fecharAoSair = intent.getBooleanExtra(EXTRA_SO_PAINEL, false))
                 } else {
                     findViewById<View>(R.id.btnLivroGerarAudiobook).post {
                         CoachMark.mostrarProxima(this@LivroActivity, com.jonjonesbr.audiobookgen.domain.TelaDica.LIVRO) { dica ->
@@ -196,7 +196,8 @@ class LivroActivity : BasePlayerActivity() {
         else -> getString(R.string.style_standard)
     }
 
-    private fun mostrarPainelGerar(l: LivroBiblioteca) {
+    /** Com [fecharAoSair] (aberto do leitor só para o painel), fechar o painel fecha a tela e volta ao leitor. */
+    private fun mostrarPainelGerar(l: LivroBiblioteca, fecharAoSair: Boolean = false) {
         val folha = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         val vista = layoutInflater.inflate(R.layout.bottom_sheet_gerar_audiobook, null)
         folha.setContentView(vista)
@@ -212,7 +213,7 @@ class LivroActivity : BasePlayerActivity() {
         atualizarPainelVoz()
         painelPasta = vista.findViewById(R.id.tvGerarPasta)
         atualizarRotuloPasta()
-        folha.setOnDismissListener { painelVozNome = null; painelVozDetalhe = null; painelPasta = null; painelTempo = null }
+        folha.setOnDismissListener { aoFecharPainel(fecharAoSair) }
         vista.findViewById<View>(R.id.btnGerarTrocarVoz).setOnClickListener { seletorDeVoz.abrirSeletorVozes() }
 
         val seek = vista.findViewById<android.widget.SeekBar>(R.id.seekGerarRitmo)
@@ -267,6 +268,11 @@ class LivroActivity : BasePlayerActivity() {
             AcoesDoLivro.adicionarAFila(this, l)
         }
         folha.show()
+    }
+
+    private fun aoFecharPainel(fecharTela: Boolean) {
+        painelVozNome = null; painelVozDetalhe = null; painelPasta = null; painelTempo = null
+        if (fecharTela) finish()
     }
 
     private fun atualizarPainelVoz() {
@@ -415,6 +421,8 @@ class LivroActivity : BasePlayerActivity() {
     companion object {
         const val EXTRA_ID = "livro_id"
         const val EXTRA_ABRIR_PAINEL_GERAR = "abrir_painel_gerar"
+        /** Só o painel "Gerar audiobook" (vindo do leitor): fechar o painel fecha a tela. */
+        const val EXTRA_SO_PAINEL = "so_painel"
         private const val BARRA_MAX = 1000
         private const val PCT_POR_MULTIPLICADOR = 100f
     }

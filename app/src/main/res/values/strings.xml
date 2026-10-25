@@ -207,7 +207,7 @@
 
     <!-- Reader Activity -->
     <string name="btn_converter_assim_mesmo">Convert anyway</string>
-    <string name="fab_converter_selecao">✓ Convert selection</string>
+    <string name="fab_converter_selecao">✓ Generate audiobook of selection</string>
     <string name="toast_save_selection_error">Could not save the selection. Check storage and try again.</string>
 
     <!-- Queue Activity -->
@@ -437,7 +437,7 @@
     <string name="help_reader_step1">Tap any paragraph to start guided reading and listen while you read</string>
     <string name="help_reader_step2">Use the ‹ › arrows in the chapter bar to go to the previous or next chapter; tap the chapter name to see the list and check chapters to convert</string>
     <string name="help_reader_step3">Long-press a paragraph to start excerpt selection</string>
-    <string name="help_reader_step4">Tap \"Convert selection\" to convert only the chosen excerpt</string>
+    <string name="help_reader_step4">Tap \"Generate audiobook of selection\" to turn only the chosen excerpt into audio; for the whole book or the current chapter, use ⋮ › Generate audiobook</string>
     <string name="help_library_title">Your audiobook library</string>
     <string name="help_library_step1">Generated audiobooks appear on the Audiobooks tab automatically</string>
     <string name="help_library_step2">Tap an item to play it</string>
@@ -466,8 +466,8 @@
     <!-- Fase 3 - Recovery Fallback e Pitch Offline -->
 
     <plurals name="fab_converter_capitulos">
-        <item quantity="one">Convert %d chapter</item>
-        <item quantity="other">Convert %d chapters</item>
+        <item quantity="one">Generate %d chapter</item>
+        <item quantity="other">Generate %d chapters</item>
     </plurals>
 
     <!-- Blacklist Strings -->
@@ -494,7 +494,7 @@
     <!-- UI redesign — Reader UX improvements -->
     <string name="cd_mais_opcoes">More options</string>
     <string name="btn_concluir_modo">Done</string>
-    <string name="fab_converter_principal">Convert to audio</string>
+    <string name="fab_converter_principal">Generate audiobook</string>
     <string name="sheet_section_reading">Reading</string>
     <string name="action_help_tutorial">Help &amp; Tutorial</string>
     <string name="label_ajuda">Help</string>
@@ -1372,7 +1372,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="acao_dicionario_pronuncia">Pronunciation dictionary</string>
     <string name="acao_gerar_audiobook">Generate audiobook (MP3)</string>
     <string name="gerar_audiobook_titulo">Generate audiobook</string>
-    <string name="gerar_audiobook_livro">Whole book</string>
+    <string name="gerar_audiobook_livro">Whole book (choose voice and pace)</string>
     <string name="gerar_audiobook_capitulo">Only this chapter: %1$s</string>
     <string name="acao_exportar_texto">Export text</string>
     <string name="exportar_texto_titulo">Export text</string>

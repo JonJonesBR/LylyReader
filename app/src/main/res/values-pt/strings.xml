@@ -209,7 +209,7 @@
 
     <!-- Reader Activity -->
     <string name="btn_converter_assim_mesmo">Converter assim mesmo</string>
-    <string name="fab_converter_selecao">✓ Converter seleção</string>
+    <string name="fab_converter_selecao">✓ Gerar audiobook da seleção</string>
     <string name="toast_save_selection_error">Não foi possível salvar a seleção. Verifique o armazenamento e tente novamente.</string>
 
     <!-- Queue Activity -->
@@ -442,7 +442,7 @@
     <string name="help_reader_step1">Toque em qualquer parágrafo para começar a leitura guiada e ouvir enquanto lê</string>
     <string name="help_reader_step2">Use as setas ‹ › da barra do capítulo para ir ao anterior ou ao próximo; toque no nome do capítulo para ver a lista e marcar capítulos para converter</string>
     <string name="help_reader_step3">Pressione um parágrafo para iniciar a seleção de trecho</string>
-    <string name="help_reader_step4">Toque em \"Converter seleção\" para converter só o trecho escolhido</string>
+    <string name="help_reader_step4">Toque em \"Gerar audiobook da seleção\" para gerar só o trecho escolhido; para o livro inteiro ou o capítulo atual, use ⋮ › Gerar audiobook</string>
     <string name="help_library_title">Sua biblioteca de audiobooks</string>
     <string name="help_library_step1">Os audiobooks gerados aparecem automaticamente na aba Audiobooks</string>
     <string name="help_library_step2">Toque em um item para reproduzir</string>
@@ -471,9 +471,9 @@
     <!-- Fase 3 - Recovery Fallback e Pitch Offline -->
 
     <plurals name="fab_converter_capitulos">
-        <item quantity="one">Converter %d capítulo</item>
-        <item quantity="other">Converter %d capítulos</item>
-        <item quantity="many">Converter %d capítulos</item>
+        <item quantity="one">Gerar %d capítulo</item>
+        <item quantity="other">Gerar %d capítulos</item>
+        <item quantity="many">Gerar %d capítulos</item>
     </plurals>
 
     <!-- Blacklist Strings -->
@@ -501,7 +501,7 @@
     <!-- UI redesign — Reader UX improvements -->
     <string name="cd_mais_opcoes">Mais opções</string>
     <string name="btn_concluir_modo">Concluir</string>
-    <string name="fab_converter_principal">Converter para áudio</string>
+    <string name="fab_converter_principal">Gerar audiobook</string>
     <string name="sheet_section_reading">Leitura</string>
     <string name="action_help_tutorial">Ajuda &amp; Tutorial</string>
     <string name="label_ajuda">Ajuda</string>
@@ -1369,7 +1369,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="acao_dicionario_pronuncia">Dicionário de pronúncias</string>
     <string name="acao_gerar_audiobook">Gerar audiobook (MP3)</string>
     <string name="gerar_audiobook_titulo">Gerar audiobook</string>
-    <string name="gerar_audiobook_livro">Livro inteiro</string>
+    <string name="gerar_audiobook_livro">Livro inteiro (escolher voz e ritmo)</string>
     <string name="gerar_audiobook_capitulo">Só este capítulo: %1$s</string>
     <string name="acao_exportar_texto">Exportar texto</string>
     <string name="exportar_texto_titulo">Exportar texto</string>
