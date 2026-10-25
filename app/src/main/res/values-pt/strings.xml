@@ -4,10 +4,8 @@
     <string name="app_slogan">LylyReader: Dê voz aos seus livros!</string>
 
     <!-- Content Descriptions -->
-    <string name="cd_abrir_audio">Abrir arquivo de áudio</string>
     <string name="cd_ajuda">Ajuda</string>
     <string name="cd_voltar">Voltar</string>
-    <string name="cd_ordenar">Ordenar</string>
     <string name="cd_aparencia">Aparência</string>
     <string name="cd_play_pause">Play/Pause</string>
     <string name="cd_guided_play">Iniciar leitura guiada</string>
@@ -41,7 +39,6 @@
     <string name="cd_reordenar_item_fila">Reordenar item da fila</string>
     <string name="cd_warning">Aviso</string>
     <string name="cd_ilustracao_tutorial">Ilustração do tutorial</string>
-    <string name="cd_biblioteca_vazia">Ilustração da biblioteca vazia</string>
 
     <!-- Main Activity -->
     <string name="btn_leitura_guiada">Leitura guiada</string>
@@ -156,21 +153,18 @@
     <string name="style_comedy">Comédia</string>
 
     <!-- Library Activity -->
-    <string name="label_ordenar_data">Data</string>
-    <string name="label_ordenar_nome">A->Z</string>
     <string name="library_progress_listened">%1$d%% ouvido</string>
     <string name="library_progress_done">✓ Concluído</string>
     <string name="library_search_hint">Buscar audiolivros</string>
     <string name="library_search_no_results">Nenhum resultado para a busca</string>
-    <string name="recent_section_title">Continuar lendo</string>
     <string name="recent_continue">Continuar</string>
     <string name="recent_remove">Remover da lista</string>
     <string name="settings_appearance">Aparência</string>
     <string name="theme_system">Padrão do sistema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Escuro</string>
-    <string name="msg_nenhum_audiobook">Nenhum audiobook encontrado</string>
-    <string name="msg_converta_livro">Converta um livro para começar</string>
+    <string name="msg_nenhum_audiobook">Nenhum audiobook ainda</string>
+    <string name="msg_converta_livro">Os audiobooks que você gerar aparecem aqui. Escolha um livro na Biblioteca e toque em Gerar audiobook.</string>
     <string name="library_perm_necessaria">Permissão de mídia necessária para ver seus audiobooks</string>
     <string name="library_perm_acao">Conceder acesso</string>
     <string name="player_erro_reproducao">Não foi possível reproduzir este arquivo. Ele pode ter sido movido ou corrompido.</string>
@@ -447,7 +441,7 @@
     <string name="help_library_step1">Os audiobooks gerados aparecem automaticamente na aba Audiobooks</string>
     <string name="help_library_step2">Toque em um item para reproduzir</string>
     <string name="help_library_step3">Use as ações do item para compartilhar ou deletar</string>
-    <string name="help_library_step4">Use o botão de ordenação para organizar por data ou nome</string>
+    <string name="help_library_step4">Toque em “Ordenar” para organizar por mais recentes, nome ou o que falta ouvir; importe arquivos de áudio pelo ⋮</string>
     <string name="help_queue_title">Processando vários arquivos</string>
     <string name="help_queue_step1">Abra um livro, toque em \"Gerar audiobook\" e escolha \"Adicionar à fila\"</string>
     <string name="help_queue_step2">Repita para quantos arquivos quiser converter</string>
@@ -670,7 +664,6 @@
     <string name="dialog_importar_backup_sucesso_mensagem">Restaurado: %1$d marcador(es), %2$d destaque(s), %3$d progressos de leitura adicionados. Nada que já existia neste aparelho foi alterado ou perdido.</string>
 
     <!-- Library Stats -->
-    <string name="cd_estatisticas">Estatísticas da biblioteca</string>
     <string name="toast_importando_audio">Importando…</string>
     <string name="toast_audio_importado">Audiobook importado</string>
     <string name="toast_audios_importados">%1$d audiobooks importados</string>
@@ -1431,4 +1424,10 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="guided_options_preload_botao">Pré-carregar este capítulo</string>
     <string name="guided_options_buffer_desc_curta">Quantos trechos a leitura prepara à frente. Mais = menos esperas, mais bateria.</string>
     <string name="bib_progresso_comecou">Começou a ler</string>
+    <!-- Aba Audiobooks -->
+    <string name="lib_ordem_recentes">Mais recentes</string>
+    <string name="lib_ordem_nome">Nome (A–Z)</string>
+    <string name="lib_ordenar_rotulo">Ordenar: %1$s</string>
+    <string name="lib_vazio_escolher_livro">Escolher um livro</string>
+    <string name="lib_importar_audio">Importar um áudio que já tenho</string>
 </resources>

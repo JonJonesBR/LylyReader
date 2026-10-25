@@ -81,15 +81,15 @@ class LibraryActivity : BasePlayerActivity() {
         private const val MAX_PARTE_VIDEO_MIN = 11 * 60 + 59
         private const val BATERIA_BAIXA_PCT = 20
         private const val SECONDS_PER_HOUR = 3600L
-        private const val SORT_MODES_COUNT = 3
         private const val SORT_MODE_DATE = 0
         private const val SORT_MODE_NAME = 1
         private const val SORT_MODE_PROGRESS = 2
+        private const val MENU_IMPORTAR = 1
+        private const val MENU_ESTATISTICAS = 2
     }
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var layoutVazio: LinearLayout
-    private lateinit var btnOrdenar: ImageButton
     private lateinit var tvOrdenar: TextView
     private var progressBarLibrary: ProgressBar? = null
 
@@ -128,8 +128,6 @@ class LibraryActivity : BasePlayerActivity() {
         recyclerView.limitarLarguraEmTelaAmpla(840)
         layoutVazio.limitarLarguraEmTelaAmpla(840)
         findViewById<View>(R.id.etBuscaLibrary).limitarLarguraEmTelaAmpla(840)
-        findViewById<View>(R.id.continuarLendoSection).limitarLarguraEmTelaAmpla(840)
-        btnOrdenar = findViewById(R.id.btnOrdenar)
         tvOrdenar = findViewById(R.id.tvOrdenar)
         progressBarLibrary = findViewById<ProgressBar?>(R.id.progressBarLibrary)
 
@@ -137,28 +135,23 @@ class LibraryActivity : BasePlayerActivity() {
         CartaoGerandoAgora.vincular(this)
         findViewById<ImageButton>(R.id.btnAjudaLibrary)
             .setOnClickListener { HelpActivity.start(this, HelpTopico.BIBLIOTECA) }
-        findViewById<ImageButton>(R.id.btnStatsLibrary)
-            .setOnClickListener { mostrarEstatisticas() }
-        findViewById<ImageButton>(R.id.btnImportarAudioLibrary)
-            .setOnClickListener { importarAudio.launch(arrayOf("audio/*")) }
+        findViewById<ImageButton>(R.id.btnMaisLibrary).setOnClickListener { mostrarMenuMais(it) }
+        findViewById<Button>(R.id.btnImportarVazio).setOnClickListener { importarAudio.launch(arrayOf("audio/*")) }
+        // Audiobook nasce de um livro: o vazio leva à Biblioteca, onde se escolhe o livro e se gera.
+        findViewById<Button>(R.id.btnEscolherLivroVazio).setOnClickListener {
+            startActivity(
+                Intent(this, MeusLivrosActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+        }
         findViewById<Button>(R.id.btnPermissaoVazio).setOnClickListener {
             // Re-pede a permissão de mídia (mesmo launcher usado no primeiro acesso); ao
             // conceder, o callback recarrega a lista e o vazio com hint some.
             solicitarPermissaoMidia.launch(permissaoMidia)
         }
 
-        btnOrdenar.setOnClickListener {
-            sortMode = (sortMode + 1) % SORT_MODES_COUNT
-            tvOrdenar.text = getString(
-                when (sortMode) {
-                    SORT_MODE_DATE -> R.string.label_ordenar_data
-                    SORT_MODE_NAME -> R.string.label_ordenar_nome
-                    SORT_MODE_PROGRESS -> R.string.ordenar_nao_concluidos_primeiro
-                    else -> R.string.label_ordenar_data
-                }
-            )
-            aplicarOrdenacao()
-        }
+        atualizarRotuloOrdem()
+        tvOrdenar.setOnClickListener { escolherOrdem() }
 
         adapter = AudiobookAdapter(
             onOuvir = { item -> abrirNoPlayer(item) },
@@ -186,15 +179,46 @@ class LibraryActivity : BasePlayerActivity() {
     override fun onResume() {
         super.onResume()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.AUDIOBOOKS) // volta de outra tela: realça de novo a aba certa
-        atualizarRecentes()
         // Recarrega a cada vez que a tela volta a ficar visível (não só na criação): a pasta
         // padrão é pública (Downloads), então arquivos podem sumir por fora do app (ex.:
         // limpeza automática do sistema/OEM) ou surgir de uma conversão feita nesse meio-tempo.
         carregarAudiobooks()
     }
 
-    private fun atualizarRecentes() {
-        RecentReadingsUi.attach(this, max = 4)
+    private val nomesDasOrdens = intArrayOf(
+        R.string.lib_ordem_recentes, R.string.lib_ordem_nome, R.string.ordenar_nao_concluidos_primeiro
+    )
+
+    private fun atualizarRotuloOrdem() {
+        tvOrdenar.text = getString(R.string.lib_ordenar_rotulo, getString(nomesDasOrdens[sortMode]))
+    }
+
+    /** "Ordenar: …" abre as três ordens de uma vez (antes um ícone trocava em ciclo, sem mostrar as opções). */
+    private fun escolherOrdem() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.bib_ordenar)
+            .setSingleChoiceItems(nomesDasOrdens.map { getString(it) }.toTypedArray(), sortMode) { dialogo, qual ->
+                sortMode = qual
+                atualizarRotuloOrdem()
+                aplicarOrdenacao()
+                dialogo.dismiss()
+            }
+            .exibir()
+    }
+
+    /** ⋮: importar um arquivo de áudio que já está no aparelho e as estatísticas da biblioteca. */
+    private fun mostrarMenuMais(ancora: View) {
+        android.widget.PopupMenu(this, ancora).apply {
+            menu.add(0, MENU_IMPORTAR, 0, R.string.lib_importar_audio)
+            menu.add(0, MENU_ESTATISTICAS, 1, R.string.btn_ver_estatisticas)
+            setOnMenuItemClickListener {
+                when (it.itemId) {
+                    MENU_IMPORTAR -> importarAudio.launch(arrayOf("audio/*"))
+                    MENU_ESTATISTICAS -> mostrarEstatisticas()
+                }
+                true
+            }
+        }.show()
     }
 
     private fun configurarCapas() {
@@ -301,31 +325,46 @@ class LibraryActivity : BasePlayerActivity() {
         adapter.submitList(ordenado.toList())
 
         val vazio = ordenado.isEmpty()
+        // Sem nenhum audiobook, buscar e ordenar não servem para nada: ficam só o aviso e as ações.
+        val semNenhum = audiobooks.isEmpty()
+        findViewById<View>(R.id.etBuscaLibrary).visibility = if (semNenhum) View.GONE else View.VISIBLE
+        tvOrdenar.visibility = if (semNenhum) View.GONE else View.VISIBLE
         layoutVazio.visibility    = if (vazio) View.VISIBLE else View.GONE
         recyclerView.visibility   = if (vazio) View.GONE    else View.VISIBLE
-        if (vazio) {
-            val tvMsgVazio    = findViewById<TextView>(R.id.tvMsgVazio)
-            val tvSubMsgVazio = findViewById<TextView>(R.id.tvSubMsgVazio)
-            val btnPermissao  = findViewById<Button>(R.id.btnPermissaoVazio)
-            // Gap P2 (confirmado em device): com READ_MEDIA_AUDIO negada, a query do MediaStore
-            // lança SecurityException engolida → biblioteca vazia SEM explicar o motivo. Aqui a
-            // mensagem vira um hint de permissão com ação, em vez do vazio genérico.
-            val bibliotecaVaziaDeVerdade = filtroBusca.isBlank() || audiobooks.isEmpty()
-            if (bibliotecaVaziaDeVerdade && !temPermissaoMidia()) {
-                tvMsgVazio.setText(R.string.library_perm_necessaria)
-                tvSubMsgVazio.visibility = View.GONE
-                btnPermissao.visibility  = View.VISIBLE
-            } else {
-                // Distingue "biblioteca vazia" de "busca sem resultados".
-                tvMsgVazio.setText(
-                    if (filtroBusca.isNotBlank() && audiobooks.isNotEmpty())
-                        R.string.library_search_no_results
-                    else R.string.msg_nenhum_audiobook
-                )
-                tvSubMsgVazio.visibility = View.VISIBLE
-                btnPermissao.visibility  = View.GONE
-            }
+        if (vazio) mostrarVazio(semNenhum)
+    }
+
+    /** Aviso do vazio: sem permissão de mídia, sem nenhum audiobook (com as ações) ou busca sem resultado. */
+    private fun mostrarVazio(semNenhum: Boolean) {
+        val tvMsgVazio    = findViewById<TextView>(R.id.tvMsgVazio)
+        val tvSubMsgVazio = findViewById<TextView>(R.id.tvSubMsgVazio)
+        val btnPermissao  = findViewById<Button>(R.id.btnPermissaoVazio)
+        // Gap P2 (confirmado em device): com READ_MEDIA_AUDIO negada, a query do MediaStore
+        // lança SecurityException engolida → biblioteca vazia SEM explicar o motivo. Aqui a
+        // mensagem vira um hint de permissão com ação, em vez do vazio genérico.
+        val bibliotecaVaziaDeVerdade = filtroBusca.isBlank() || audiobooks.isEmpty()
+        if (bibliotecaVaziaDeVerdade && !temPermissaoMidia()) {
+            tvMsgVazio.setText(R.string.library_perm_necessaria)
+            tvSubMsgVazio.visibility = View.GONE
+            btnPermissao.visibility  = View.VISIBLE
+            mostrarAcoesDoVazio(false)
+        } else {
+            // Distingue "biblioteca vazia" de "busca sem resultados".
+            tvMsgVazio.setText(
+                if (filtroBusca.isNotBlank() && audiobooks.isNotEmpty())
+                    R.string.library_search_no_results
+                else R.string.msg_nenhum_audiobook
+            )
+            tvSubMsgVazio.visibility = if (semNenhum) View.VISIBLE else View.GONE
+            btnPermissao.visibility  = View.GONE
+            mostrarAcoesDoVazio(semNenhum)
         }
+    }
+
+    private fun mostrarAcoesDoVazio(mostrar: Boolean) {
+        val v = if (mostrar) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.btnEscolherLivroVazio).visibility = v
+        findViewById<View>(R.id.btnImportarVazio).visibility = v
     }
 
     private fun temPermissaoMidia(): Boolean =

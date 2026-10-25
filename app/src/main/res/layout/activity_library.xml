@@ -36,36 +36,6 @@
             android:ellipsize="end"/>
 
         <ImageButton
-            android:id="@+id/btnOrdenar"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@android:color/transparent"
-            android:src="@drawable/ic_ordenar"
-            app:tint="@color/color_on_surface_dim"
-            android:contentDescription="@string/cd_ordenar"
-            android:tooltipText="@string/cd_ordenar"/>
-
-        <ImageButton
-            android:id="@+id/btnStatsLibrary"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@android:color/transparent"
-            android:src="@drawable/ic_estatisticas"
-            app:tint="@color/color_on_surface_dim"
-            android:contentDescription="@string/cd_estatisticas"
-            android:tooltipText="@string/cd_estatisticas"/>
-
-        <ImageButton
-            android:id="@+id/btnImportarAudioLibrary"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@android:color/transparent"
-            android:src="@drawable/ic_abrir_arquivo"
-            app:tint="@color/color_on_surface_dim"
-            android:contentDescription="@string/cd_abrir_audio"
-            android:tooltipText="@string/cd_abrir_audio"/>
-
-        <ImageButton
             android:id="@+id/btnAjudaLibrary"
             android:layout_width="48dp"
             android:layout_height="48dp"
@@ -74,6 +44,17 @@
             app:tint="@color/color_on_surface_dim"
             android:contentDescription="@string/cd_ajuda"
             android:tooltipText="@string/cd_ajuda"/>
+
+        <!-- ⋮: importar um áudio que já está no aparelho e estatísticas -->
+        <ImageButton
+            android:id="@+id/btnMaisLibrary"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_mais"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_mais_opcoes"
+            android:tooltipText="@string/cd_mais_opcoes"/>
 
     </LinearLayout>
 
@@ -110,50 +91,23 @@
         android:maxLines="1"
         android:contentDescription="@string/library_search_hint"/>
 
+    <!-- "Ordenar: Mais recentes ▾": abre as opções de ordem (antes um ícone que trocava em ciclo e
+         um rótulo solto "Data"). Busca e ordem somem quando ainda não há audiobooks. -->
     <TextView
         android:id="@+id/tvOrdenar"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="6dp"
-        android:text="@string/label_ordenar_data"
-        android:textSize="12sp"
+        android:minHeight="48dp"
+        android:layout_marginStart="8dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:gravity="center_vertical"
+        android:background="?attr/selectableItemBackground"
+        android:drawableEnd="@drawable/ic_seta_baixo"
+        android:drawableTint="@color/color_on_surface_dim"
+        android:drawablePadding="4dp"
+        android:textSize="13sp"
         android:textColor="@color/color_on_surface_dim"/>
-
-    <!-- Continuar lendo (livros recentes da leitura guiada) -->
-    <LinearLayout
-        android:id="@+id/continuarLendoSection"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingEnd="14dp"
-        android:paddingTop="8dp"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/recent_section_title"
-            android:textSize="12sp"
-            android:textColor="?attr/colorPrimary"
-            android:textAllCaps="true"
-            android:letterSpacing="0.1"
-            android:layout_marginBottom="4dp"/>
-
-        <LinearLayout
-            android:id="@+id/continuarLendoContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/color_divider"
-            android:layout_marginTop="8dp"/>
-    </LinearLayout>
 
     <!-- Carregando -->
     <ProgressBar
@@ -200,9 +154,9 @@
         <ImageView
             android:layout_width="@dimen/vazio_icone"
             android:layout_height="@dimen/vazio_icone"
-            android:src="@drawable/ic_empty_library"
+            android:src="@drawable/ic_empty_audiobooks"
             android:layout_marginBottom="@dimen/vazio_icone_margem"
-            android:contentDescription="@string/cd_biblioteca_vazia"/>
+            android:contentDescription="@null"/>
 
 
         <TextView
@@ -227,6 +181,22 @@
             android:text="@string/msg_converta_livro"
             android:textColor="@color/color_on_surface_dim"
             android:textSize="13sp"/>
+
+        <Button
+            android:id="@+id/btnEscolherLivroVazio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/lib_vazio_escolher_livro"
+            android:textAllCaps="false"/>
+
+        <Button
+            android:id="@+id/btnImportarVazio"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lib_importar_audio"
+            android:textAllCaps="false"/>
 
         <Button
             android:id="@+id/btnPermissaoVazio"

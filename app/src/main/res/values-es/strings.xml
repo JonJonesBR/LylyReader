@@ -4,10 +4,8 @@
     <string name="app_slogan">LylyReader: ¡Dale voz a tus libros!</string>
 
     <!-- Content Descriptions -->
-    <string name="cd_abrir_audio">Abrir archivo de audio</string>
     <string name="cd_ajuda">Ayuda</string>
     <string name="cd_voltar">Volver</string>
-    <string name="cd_ordenar">Ordenar</string>
     <string name="cd_aparencia">Apariencia</string>
     <string name="cd_play_pause">Reproducir/Pausar</string>
     <string name="cd_guided_play">Iniciar lectura guiada</string>
@@ -41,7 +39,6 @@
     <string name="cd_reordenar_item_fila">Reordenar item de la cola</string>
     <string name="cd_warning">Aviso</string>
     <string name="cd_ilustracao_tutorial">Ilustración del tutorial</string>
-    <string name="cd_biblioteca_vazia">Ilustración de biblioteca vacía</string>
 
     <!-- Main Activity -->
     <string name="btn_leitura_guiada">Lectura guiada</string>
@@ -156,21 +153,18 @@
     <string name="style_comedy">Comedia</string>
 
     <!-- Library Activity -->
-    <string name="label_ordenar_data">Fecha</string>
-    <string name="label_ordenar_nome">A->Z</string>
     <string name="library_progress_listened">%1$d%% escuchado</string>
     <string name="library_progress_done">✓ Terminado</string>
     <string name="library_search_hint">Buscar audiolibros</string>
     <string name="library_search_no_results">Sin resultados para la búsqueda</string>
-    <string name="recent_section_title">Seguir leyendo</string>
     <string name="recent_continue">Continuar</string>
     <string name="recent_remove">Quitar de la lista</string>
     <string name="settings_appearance">Apariencia</string>
     <string name="theme_system">Predeterminado del sistema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
-    <string name="msg_nenhum_audiobook">No se encontraron audiolibros</string>
-    <string name="msg_converta_livro">Convierte un libro para comenzar</string>
+    <string name="msg_nenhum_audiobook">Aún no hay audiolibros</string>
+    <string name="msg_converta_livro">Los audiolibros que generes aparecen aquí. Elige un libro en la Biblioteca y toca Generar audiolibro.</string>
     <string name="library_perm_necessaria">Se necesita acceso a los medios para ver tus audiolibros</string>
     <string name="library_perm_acao">Conceder acceso</string>
     <string name="player_erro_reproducao">No se pudo reproducir este archivo. Puede que se haya movido o dañado.</string>
@@ -443,7 +437,7 @@
     <string name="help_library_step1">Los audiolibros generados aparecen automáticamente en la pestaña Audiolibros</string>
     <string name="help_library_step2">Toca un elemento para reproducirlo</string>
     <string name="help_library_step3">Usa las acciones del elemento para compartir o eliminar</string>
-    <string name="help_library_step4">Usa el botón de ordenación para organizar por fecha o nombre</string>
+    <string name="help_library_step4">Toca “Ordenar” para organizar por más recientes, nombre o lo que falta escuchar; importa archivos de audio desde el ⋮</string>
     <string name="help_queue_title">Procesando varios archivos</string>
     <string name="help_queue_step1">Abre un libro, toca \"Generar audiolibro\" y elige \"Agregar a la cola\"</string>
     <string name="help_queue_step2">Repite para cuantos archivos quieras convertir</string>
@@ -660,7 +654,6 @@
     <string name="dialog_importar_backup_sucesso_mensagem">Restaurado: %1$d marcador(es), %2$d resaltado(s), %3$d progresos de lectura agregados. Nada que ya existiera en este dispositivo fue alterado o perdido.</string>
 
     <!-- Library Stats -->
-    <string name="cd_estatisticas">Estadísticas de biblioteca</string>
     <string name="toast_importando_audio">Importando…</string>
     <string name="toast_audio_importado">Audiolibro importado</string>
     <string name="toast_audios_importados">%1$d audiolibros importados</string>
@@ -1419,4 +1412,10 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="guided_options_preload_botao">Precargar este capítulo</string>
     <string name="guided_options_buffer_desc_curta">Cuántos fragmentos prepara la lectura por adelantado. Más = menos esperas, más batería.</string>
     <string name="bib_progresso_comecou">Empezaste a leer</string>
+    <!-- Aba Audiobooks -->
+    <string name="lib_ordem_recentes">Más recientes</string>
+    <string name="lib_ordem_nome">Nombre (A–Z)</string>
+    <string name="lib_ordenar_rotulo">Ordenar: %1$s</string>
+    <string name="lib_vazio_escolher_livro">Elegir un libro</string>
+    <string name="lib_importar_audio">Importar un audio que ya tengo</string>
 </resources>

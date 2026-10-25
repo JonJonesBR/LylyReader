@@ -4,10 +4,8 @@
     <string name="app_slogan">LylyReader: Give your books a voice!</string>
 
     <!-- Content Descriptions -->
-    <string name="cd_abrir_audio">Open audio file</string>
     <string name="cd_ajuda">Help</string>
     <string name="cd_voltar">Back</string>
-    <string name="cd_ordenar">Sort</string>
     <string name="cd_aparencia">Appearance</string>
     <string name="cd_play_pause">Play/Pause</string>
     <string name="cd_guided_play">Start guided reading</string>
@@ -41,7 +39,6 @@
     <string name="cd_reordenar_item_fila">Reorder queue item</string>
     <string name="cd_warning">Warning</string>
     <string name="cd_ilustracao_tutorial">Tutorial illustration</string>
-    <string name="cd_biblioteca_vazia">Empty library illustration</string>
 
     <!-- Main Activity -->
     <string name="btn_leitura_guiada">Guided reading</string>
@@ -155,21 +152,18 @@
     <string name="style_comedy">Comedy</string>
 
     <!-- Library Activity -->
-    <string name="label_ordenar_data">Date</string>
-    <string name="label_ordenar_nome">A->Z</string>
     <string name="library_progress_listened">%1$d%% listened</string>
     <string name="library_progress_done">✓ Finished</string>
     <string name="library_search_hint">Search audiobooks</string>
     <string name="library_search_no_results">No results for your search</string>
-    <string name="recent_section_title">Continue reading</string>
     <string name="recent_continue">Continue</string>
     <string name="recent_remove">Remove from list</string>
     <string name="settings_appearance">Appearance</string>
     <string name="theme_system">System default</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
-    <string name="msg_nenhum_audiobook">No audiobooks found</string>
-    <string name="msg_converta_livro">Convert a book to get started</string>
+    <string name="msg_nenhum_audiobook">No audiobooks yet</string>
+    <string name="msg_converta_livro">Audiobooks you create show up here. Pick a book in the Library and tap Generate audiobook.</string>
     <string name="library_perm_necessaria">Media access is needed to show your audiobooks</string>
     <string name="library_perm_acao">Grant access</string>
     <string name="player_erro_reproducao">Couldn\'t play this file. It may have been moved or corrupted.</string>
@@ -442,7 +436,7 @@
     <string name="help_library_step1">Generated audiobooks appear on the Audiobooks tab automatically</string>
     <string name="help_library_step2">Tap an item to play it</string>
     <string name="help_library_step3">Use item actions to share or delete</string>
-    <string name="help_library_step4">Use the sort button to organize by date or name</string>
+    <string name="help_library_step4">Tap “Sort” to order by newest, name or what is left to hear; import audio files from the ⋮ menu</string>
     <string name="help_queue_title">Processing multiple files</string>
     <string name="help_queue_step1">Open a book, tap \"Generate audiobook\" and choose \"Add to queue\"</string>
     <string name="help_queue_step2">Repeat for as many files as you want to convert</string>
@@ -683,7 +677,6 @@
     <string name="dialog_importar_backup_sucesso_mensagem">Restored: %1$d bookmark(s), %2$d highlight(s), %3$d reading-progress entries added. Nothing already on this device was changed or lost.</string>
 
     <!-- Library Stats -->
-    <string name="cd_estatisticas">Library stats</string>
     <string name="toast_importando_audio">Importing…</string>
     <string name="toast_audio_importado">Audiobook imported</string>
     <string name="toast_audios_importados">%1$d audiobooks imported</string>
@@ -1433,4 +1426,10 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="guided_options_preload_botao">Preload this chapter</string>
     <string name="guided_options_buffer_desc_curta">How many passages reading prepares ahead. More = fewer waits, more battery.</string>
     <string name="bib_progresso_comecou">Started</string>
+    <!-- Aba Audiobooks -->
+    <string name="lib_ordem_recentes">Newest</string>
+    <string name="lib_ordem_nome">Name (A–Z)</string>
+    <string name="lib_ordenar_rotulo">Sort: %1$s</string>
+    <string name="lib_vazio_escolher_livro">Choose a book</string>
+    <string name="lib_importar_audio">Import an audio file I already have</string>
 </resources>
