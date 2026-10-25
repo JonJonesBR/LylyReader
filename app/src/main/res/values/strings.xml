@@ -902,12 +902,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
 
     <!-- Central de downloads (Fase I) -->
     <string name="dl_central_abrir">Download center</string>
-    <string name="dl_central_desc">Voices and books in one place, downloading in the background. Pausing keeps what was already downloaded.</string>
-    <string name="dl_central_espaco">Free space: %1$s</string>
-    <string name="dl_central_simultaneos">At once: %1$d</string>
-    <string name="dl_central_grupo_motores">Voices and engines</string>
-    <string name="dl_central_grupo_codificadores">Voice encoders (cloning)</string>
-    <string name="dl_central_grupo_importadas">Imported voices</string>
     <string name="dl_central_estado_nao_baixado">Not downloaded · ~%1$d MB</string>
     <string name="dl_central_estado_fila">In the queue</string>
     <string name="dl_central_estado_baixando">Downloading · %1$s of %2$s (%3$d%%)</string>
@@ -923,8 +917,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_central_cancelar">Cancel</string>
     <string name="dl_central_descartar">Discard download</string>
     <string name="dl_central_apagar">Delete</string>
-    <string name="dl_central_baixar_selecionados">Download selected (%1$d)</string>
-    <string name="dl_central_baixar_tudo">Download all</string>
     <string name="dl_central_pausar_tudo">Pause all</string>
     <string name="dl_central_nada_a_baixar">Everything is already downloaded.</string>
     <string name="dl_central_vazio">No results for this filter.</string>
@@ -1206,7 +1198,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
 
     <string name="toast_edicoes_salvas">Edits saved as a new book: %1$s</string>
 
-    <string name="dl_central_baixar_todos">Download all (%1$d)</string>
 
     <string name="bib_add_link">From a link</string>
     <string name="bib_add_link_sub">Direct address of a file (EPUB, PDF, TXT...)</string>
@@ -1419,4 +1410,22 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="settings_avancado_mostrar">Show advanced settings</string>
     <string name="settings_avancado_esconder">Hide advanced settings</string>
     <string name="settings_avancado_desc">For those who know voice engines: audio quality, synthesis steps, pause between blocks and buffering. The defaults work well for most people.</string>
+    <!-- Aba Downloads em seções -->
+    <string name="dl_espaco_livre">%1$s free</string>
+    <string name="dl_menu_baixar_todas">Download all voices</string>
+    <string name="dl_menu_simultaneos">Downloads at the same time: %1$d</string>
+    <string name="dl_simultaneos_titulo">Downloads at the same time</string>
+    <string name="dl_secao_baixando">Downloading now</string>
+    <string name="dl_secao_no_aparelho">On this device</string>
+    <string name="dl_secao_para_baixar">Available to download</string>
+    <string name="dl_secao_minhas_vozes">My voices</string>
+    <string name="dl_tipo_supertonic">Natural voices</string>
+    <string name="dl_tipo_kokoro">Many voices</string>
+    <string name="dl_tipo_piper">Light, fast voice</string>
+    <string name="dl_tipo_pocket">Expressive voice, allows cloning</string>
+    <string name="dl_tipo_mms">Simple voice</string>
+    <string name="dl_tipo_clonada">Your cloned voice</string>
+    <string name="dl_tipo_importada">Imported voice</string>
+    <string name="dl_tipo_outro">Offline voice</string>
+    <string name="dl_varios_idiomas">many languages</string>
 </resources>

@@ -900,12 +900,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
 
     <!-- Central de downloads (Fase I) -->
     <string name="dl_central_abrir">Central de downloads</string>
-    <string name="dl_central_desc">Vozes e livros num só lugar, baixando em segundo plano. Pausar mantém o que já foi baixado.</string>
-    <string name="dl_central_espaco">Espaço livre: %1$s</string>
-    <string name="dl_central_simultaneos">Ao mesmo tempo: %1$d</string>
-    <string name="dl_central_grupo_motores">Vozes e motores</string>
-    <string name="dl_central_grupo_codificadores">Codificadores de voz (clonagem)</string>
-    <string name="dl_central_grupo_importadas">Vozes importadas</string>
     <string name="dl_central_estado_nao_baixado">Não baixado · ~%1$d MB</string>
     <string name="dl_central_estado_fila">Na fila</string>
     <string name="dl_central_estado_baixando">Baixando · %1$s de %2$s (%3$d%%)</string>
@@ -921,8 +915,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dl_central_cancelar">Cancelar</string>
     <string name="dl_central_descartar">Descartar download</string>
     <string name="dl_central_apagar">Apagar</string>
-    <string name="dl_central_baixar_selecionados">Baixar selecionados (%1$d)</string>
-    <string name="dl_central_baixar_tudo">Baixar tudo</string>
     <string name="dl_central_pausar_tudo">Pausar tudo</string>
     <string name="dl_central_nada_a_baixar">Tudo já está baixado.</string>
     <string name="dl_central_vazio">Nenhum resultado para este filtro.</string>
@@ -1203,7 +1195,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
 
     <string name="toast_edicoes_salvas">Edições salvas como um novo livro: %1$s</string>
 
-    <string name="dl_central_baixar_todos">Baixar todos (%1$d)</string>
 
     <string name="bib_add_link">De um link</string>
     <string name="bib_add_link_sub">Endereço direto de um arquivo (EPUB, PDF, TXT...)</string>
@@ -1417,4 +1408,22 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="settings_avancado_mostrar">Mostrar ajustes avançados</string>
     <string name="settings_avancado_esconder">Esconder ajustes avançados</string>
     <string name="settings_avancado_desc">Para quem entende de motores de voz: qualidade do áudio, passos de síntese, pausa entre blocos e buffering. Os valores padrão servem bem para a maioria.</string>
+    <!-- Aba Downloads em seções -->
+    <string name="dl_espaco_livre">%1$s livres</string>
+    <string name="dl_menu_baixar_todas">Baixar todas as vozes</string>
+    <string name="dl_menu_simultaneos">Downloads ao mesmo tempo: %1$d</string>
+    <string name="dl_simultaneos_titulo">Downloads ao mesmo tempo</string>
+    <string name="dl_secao_baixando">Baixando agora</string>
+    <string name="dl_secao_no_aparelho">No aparelho</string>
+    <string name="dl_secao_para_baixar">Para baixar</string>
+    <string name="dl_secao_minhas_vozes">Minhas vozes</string>
+    <string name="dl_tipo_supertonic">Vozes naturais</string>
+    <string name="dl_tipo_kokoro">Muitas vozes</string>
+    <string name="dl_tipo_piper">Voz leve e rápida</string>
+    <string name="dl_tipo_pocket">Voz expressiva, permite clonar</string>
+    <string name="dl_tipo_mms">Voz simples</string>
+    <string name="dl_tipo_clonada">Sua voz clonada</string>
+    <string name="dl_tipo_importada">Voz importada</string>
+    <string name="dl_tipo_outro">Voz offline</string>
+    <string name="dl_varios_idiomas">vários idiomas</string>
 </resources>

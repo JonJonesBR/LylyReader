@@ -4,35 +4,15 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/tvDownloadGrupo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="14dp"
-        android:paddingBottom="4dp"
-        android:textAppearance="?attr/textAppearanceTitleSmall"
-        android:textColor="@color/color_primary"
-        android:visibility="gone"/>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="8dp"
+        android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="6dp"
         android:paddingBottom="6dp">
-
-        <CheckBox
-            android:id="@+id/cbDownloadSelecionar"
-            android:layout_width="48dp"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:minHeight="48dp"
-            android:contentDescription="@null"/>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -46,6 +26,14 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/color_on_surface"
                 android:textSize="14sp"/>
+
+            <!-- O que é ("Vozes naturais · PT, EN, ES") -->
+            <TextView
+                android:id="@+id/tvDownloadDescricao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/color_on_surface_dim"
+                android:textSize="12sp"/>
 
             <TextView
                 android:id="@+id/tvDownloadEstado"

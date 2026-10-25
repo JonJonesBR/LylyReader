@@ -2,7 +2,6 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.os.Bundle
 import android.text.format.Formatter
-import android.widget.Button
 import android.widget.ImageButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -21,14 +20,14 @@ import com.jonjonesbr.audiobookgen.service.AndamentoDownload
 import com.jonjonesbr.audiobookgen.service.DownloadCentral
 import com.jonjonesbr.audiobookgen.service.ItemBaixavel
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
-import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Central de downloads: todos os pacotes de voz (e codificadores) com tamanho, estado e espaço; por item
- * baixar/pausar/continuar/cancelar/apagar, "baixar selecionados" e "baixar tudo". O trabalho roda na
+ * Aba Downloads: uma lista só, que rola inteira, com os filtros de idioma no começo e as seções Baixando
+ * agora, No aparelho, Para baixar, Minhas vozes (com "Criar ou importar voz") e Livros. Cada item tem o seu
+ * botão; "Baixar todas", downloads ao mesmo tempo e buscar livros ficam no ⋮. O trabalho roda na
  * [DownloadCentral] (sobrevive à tela); aqui só se observa o andamento.
  */
 class DownloadCentralActivity : BasePlayerActivity() {
@@ -37,13 +36,9 @@ class DownloadCentralActivity : BasePlayerActivity() {
     private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
 
     private lateinit var adapter: DownloadCentralAdapter
-    private lateinit var btnSelecionados: Button
-    private lateinit var btnTudo: Button
-    private lateinit var btnPausarTudo: Button
-    private lateinit var btnSimultaneos: Button
+    private lateinit var filtros: android.view.View
 
     private val prefs by lazy { AppPrefs(this) }
-    private val selecionados = mutableSetOf<String>()
     private var itens: List<ItemBaixavel> = emptyList()
     private var filtro = com.jonjonesbr.audiobookgen.domain.IdiomaBusca.TODOS
     private var andamentoAtual: Map<String, AndamentoDownload> = emptyMap()
@@ -70,40 +65,23 @@ class DownloadCentralActivity : BasePlayerActivity() {
         com.jonjonesbr.audiobookgen.data.AppPrefs(this).registrarEvento(com.jonjonesbr.audiobookgen.domain.EventoAprendizado.DOWNLOADS_ABERTO.id)
         configurarMiniPlayerBotoes()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.DOWNLOADS)
-        findViewById<android.view.View>(R.id.layoutFooterDownloads).aplicarPaddingInferiorComNavigationBar()
         findViewById<ImageButton>(R.id.btnVoltarDownloads).setOnClickListener { finish() }
-        btnSelecionados = findViewById(R.id.btnBaixarSelecionados)
-        btnTudo = findViewById(R.id.btnBaixarTudo)
-        btnPausarTudo = findViewById(R.id.btnPausarTudo)
-        btnSimultaneos = findViewById(R.id.btnSimultaneos)
+        findViewById<ImageButton>(R.id.btnMaisDownloads).setOnClickListener { mostrarMenuMais(it) }
+        filtros = layoutInflater.inflate(R.layout.view_downloads_filtros, findViewById(R.id.recyclerDownloads), false)
         configurarFiltroDeIdioma()
 
         adapter = DownloadCentralAdapter(
             onPrincipal = ::aoToquePrincipal,
             onSecundario = ::aoToqueSecundario,
-            onSelecionar = { id, marcado ->
-                if (marcado) selecionados += id else selecionados -= id
-                atualizarRodape()
-            }
+            onPausarTudo = { DownloadCentral.pausarTodos() },
+            onCriarVoz = ::mostrarCriarVoz
         )
         findViewById<RecyclerView>(R.id.recyclerDownloads).apply {
             layoutManager = LinearLayoutManager(this@DownloadCentralActivity)
-            this.adapter = this@DownloadCentralActivity.adapter
+            this.adapter = androidx.recyclerview.widget.ConcatAdapter(
+                CabecalhoFixoAdapter(filtros), this@DownloadCentralActivity.adapter
+            )
             itemAnimator = null // a barra de progresso atualiza ~10x/s; animar cada troca pisca
-        }
-
-        btnSelecionados.setOnClickListener { baixar(selecionados.toList()) }
-        btnTudo.setOnClickListener { baixarTudo() }
-        btnPausarTudo.setOnClickListener { DownloadCentral.pausarTodos() }
-        findViewById<Button>(R.id.btnCriarVozDownloads).setOnClickListener { mostrarCriarVoz() }
-        findViewById<Button>(R.id.btnBuscarLivrosDownloads).setOnClickListener {
-            startActivity(android.content.Intent(this, BuscarLivrosActivity::class.java))
-        }
-        btnSimultaneos.setOnClickListener {
-            val proximo = prefs.downloadsSimultaneos + 1
-            prefs.downloadsSimultaneos =
-                if (proximo > DOWNLOADS_SIMULTANEOS_MAX) DOWNLOADS_SIMULTANEOS_MIN else proximo
-            atualizarCabecalho()
         }
 
         // Só em build de depuração: enfileira os pacotes do extra (ids separados por |) sem tocar na tela.
@@ -160,7 +138,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
     }
 
     private fun configurarFiltroDeIdioma() {
-        val grupo = findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipsIdiomaDownloads)
+        val grupo = filtros.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipsIdiomaDownloads)
         // Começa no idioma do app (pt/en/es); qualquer outro idioma começa em "Todos".
         filtro = com.jonjonesbr.audiobookgen.domain.IdiomaDownload.padraoDoIdioma(resources.configuration.locales[0].language)
         grupo.check(idDoChip(filtro))
@@ -171,7 +149,6 @@ class DownloadCentralActivity : BasePlayerActivity() {
                 R.id.chipIdiomaEs -> com.jonjonesbr.audiobookgen.domain.IdiomaBusca.ES
                 else -> com.jonjonesbr.audiobookgen.domain.IdiomaBusca.TODOS
             }
-            selecionados.retainAll(visiveis().map { it.id }.toSet())
             montarLista()
         }
     }
@@ -196,53 +173,59 @@ class DownloadCentralActivity : BasePlayerActivity() {
 
     private fun atualizarCabecalho() {
         findViewById<android.widget.TextView>(R.id.tvEspacoLivre).text = getString(
-            R.string.dl_central_espaco, Formatter.formatShortFileSize(this, filesDir.usableSpace)
+            R.string.dl_espaco_livre, Formatter.formatShortFileSize(this, filesDir.usableSpace)
         )
-        btnSimultaneos.text = getString(R.string.dl_central_simultaneos, prefs.downloadsSimultaneos)
+    }
+
+    /** ⋮: baixar todas as vozes do filtro, quantos downloads ao mesmo tempo e buscar livros gratuitos. */
+    private fun mostrarMenuMais(ancora: android.view.View) {
+        android.widget.PopupMenu(this, ancora).apply {
+            menu.add(0, MENU_BAIXAR_TODAS, 0, R.string.dl_menu_baixar_todas)
+            menu.add(0, MENU_SIMULTANEOS, 1, getString(R.string.dl_menu_simultaneos, prefs.downloadsSimultaneos))
+            menu.add(0, MENU_BUSCAR_LIVROS, 2, R.string.dl_buscar_livros)
+            setOnMenuItemClickListener {
+                when (it.itemId) {
+                    MENU_BAIXAR_TODAS -> baixarTudo()
+                    MENU_SIMULTANEOS -> escolherSimultaneos()
+                    MENU_BUSCAR_LIVROS -> startActivity(
+                        android.content.Intent(this@DownloadCentralActivity, BuscarLivrosActivity::class.java)
+                    )
+                }
+                true
+            }
+        }.show()
+    }
+
+    private fun escolherSimultaneos() {
+        val opcoes = (DOWNLOADS_SIMULTANEOS_MIN..DOWNLOADS_SIMULTANEOS_MAX).toList()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dl_simultaneos_titulo)
+            .setSingleChoiceItems(
+                opcoes.map { it.toString() }.toTypedArray(), opcoes.indexOf(prefs.downloadsSimultaneos)
+            ) { dialogo, qual ->
+                prefs.downloadsSimultaneos = opcoes[qual]
+                dialogo.dismiss()
+            }
+            .exibir()
     }
 
     private fun montarLista() {
-        // Quem já entrou na fila / está baixando deixa a seleção.
-        selecionados.removeAll { (andamentoAtual[it]?.estado ?: EstadoDownload.NAO_BAIXADO).let { e ->
-            e != EstadoDownload.NAO_BAIXADO && e != EstadoDownload.PAUSADO && e != EstadoDownload.ERRO
-        } }
-        var grupoAnterior: Any? = null
-        val linhas = visiveis().sortedBy { it.grupo.ordinal }.map { item ->
-            val linha = LinhaDownload(
-                item = item,
-                andamento = andamentoAtual[item.id] ?: AndamentoDownload(),
-                abreGrupo = item.grupo != grupoAnterior,
-                selecionado = item.id in selecionados
-            )
-            grupoAnterior = item.grupo
-            linha
-        }
-        adapter.submitList(linhas)
-        val vazio = linhas.isEmpty()
-        findViewById<android.widget.TextView>(R.id.tvVazioDownloads).visibility =
-            if (vazio) android.view.View.VISIBLE else android.view.View.GONE
-        findViewById<RecyclerView>(R.id.recyclerDownloads).visibility =
-            if (vazio) android.view.View.GONE else android.view.View.VISIBLE
-        atualizarRodape()
+        val linhas = visiveis().map { item -> LinhaDownload(item, andamentoAtual[item.id] ?: AndamentoDownload()) }
+        val lista = LinhaLista.montar(linhas, DownloadCentral.temAtividade())
+        adapter.submitList(lista)
         // O coach mark só é avaliado no primeiro render e quando os itens exibidos mudam (não a cada tick de progresso).
         val chaves = linhas.map { it.item.id }.toSet()
         if (chaves != chavesCoach) {
             chavesCoach = chaves
-            findViewById<RecyclerView>(R.id.recyclerDownloads).post {
+            // +1: a primeira linha da lista são os filtros de idioma.
+            val posicaoPrimeiroItem = lista.indexOfFirst { it is LinhaLista.Item } + 1
+            val recycler = findViewById<RecyclerView>(R.id.recyclerDownloads)
+            recycler.post {
                 CoachMark.mostrarProxima(this, com.jonjonesbr.audiobookgen.domain.TelaDica.DOWNLOADS) { _ ->
-                    findViewById<RecyclerView>(R.id.recyclerDownloads).getChildAt(0)
+                    recycler.layoutManager?.findViewByPosition(posicaoPrimeiroItem)
                 }
             }
         }
-    }
-
-    private fun atualizarRodape() {
-        btnSelecionados.text = getString(R.string.dl_central_baixar_selecionados, selecionados.size)
-        btnSelecionados.isEnabled = selecionados.isNotEmpty()
-        val faltam = pendentes().size
-        btnTudo.text = getString(R.string.dl_central_baixar_todos, faltam)
-        btnTudo.isEnabled = faltam > 0
-        btnPausarTudo.isEnabled = DownloadCentral.temAtividade()
     }
 
     /** Pacotes baixáveis que ainda não estão prontos nem em andamento. */
@@ -316,11 +299,13 @@ class DownloadCentralActivity : BasePlayerActivity() {
     }
 
     private fun iniciar(ids: List<String>) {
-        selecionados.removeAll(ids.toSet())
         DownloadCentral.enfileirar(this, ids)
     }
 
     companion object {
         private const val BYTES_POR_MB = 1024L * 1024L
+        private const val MENU_BAIXAR_TODAS = 1
+        private const val MENU_SIMULTANEOS = 2
+        private const val MENU_BUSCAR_LIVROS = 3
     }
 }

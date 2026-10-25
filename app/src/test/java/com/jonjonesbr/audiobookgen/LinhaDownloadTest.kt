@@ -7,6 +7,7 @@ import com.jonjonesbr.audiobookgen.service.GrupoDownload
 import com.jonjonesbr.audiobookgen.service.ItemBaixavel
 import com.jonjonesbr.audiobookgen.ui.LinhaDownload
 import com.jonjonesbr.audiobookgen.util.ProgressoDownload
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -23,31 +24,56 @@ class LinhaDownloadTest {
     )
 
     private fun linha(item: ItemBaixavel, andamento: AndamentoDownload) =
-        LinhaDownload(item, andamento, abreGrupo = false, selecionado = false)
+        LinhaDownload(item, andamento)
 
-    @Test fun vozClonadaSemCodificadorNaoESelecionavelMasSeApaga() {
+    @Test fun vozClonadaSemCodificadorNaoEBaixavelMasSeApaga() {
         val l = linha(item(GrupoDownload.IMPORTADAS), AndamentoDownload(EstadoDownload.NAO_BAIXADO, bloqueio = 1))
         assertTrue(l.bloqueado)
-        assertFalse(l.selecionavel)
+        assertFalse(l.baixavel)
         assertTrue(l.apagavelSemEstarPronta)
     }
 
     @Test fun vozClonadaSemPacoteDoIdiomaSeBaixaESeApaga() {
         val l = linha(item(GrupoDownload.IMPORTADAS), AndamentoDownload(EstadoDownload.NAO_BAIXADO))
         assertFalse(l.bloqueado)
-        assertTrue(l.selecionavel)
+        assertTrue(l.baixavel)
         assertTrue(l.apagavelSemEstarPronta)
     }
 
     @Test fun pacoteDoCatalogoNaoBaixadoSoSeBaixa() {
         val l = linha(item(GrupoDownload.MOTORES), AndamentoDownload(EstadoDownload.NAO_BAIXADO))
-        assertTrue(l.selecionavel)
+        assertTrue(l.baixavel)
         assertFalse(l.apagavelSemEstarPronta)
     }
 
-    @Test fun vozImportadaSemDownloadNaoESelecionavel() {
+    @Test fun vozDoUsuarioFicaEmMinhasVozesEPacoteProntoNoAparelho() {
+        assertEquals(
+            com.jonjonesbr.audiobookgen.domain.SecaoDownload.MINHAS_VOZES,
+            linha(item(GrupoDownload.IMPORTADAS), AndamentoDownload(EstadoDownload.PRONTO)).secao
+        )
+        assertEquals(
+            com.jonjonesbr.audiobookgen.domain.SecaoDownload.NO_APARELHO,
+            linha(item(GrupoDownload.MOTORES), AndamentoDownload(EstadoDownload.PRONTO)).secao
+        )
+    }
+
+    @Test fun listaSempreTemMinhasVozesComCriarVoz() {
+        val lista = com.jonjonesbr.audiobookgen.ui.LinhaLista.montar(
+            listOf(linha(item(GrupoDownload.MOTORES), AndamentoDownload(EstadoDownload.NAO_BAIXADO))),
+            temAtividade = false
+        )
+        assertTrue(lista.last() == com.jonjonesbr.audiobookgen.ui.LinhaLista.CriarVoz)
+        assertEquals(
+            com.jonjonesbr.audiobookgen.ui.LinhaLista.Cabecalho(
+                com.jonjonesbr.audiobookgen.domain.SecaoDownload.PARA_BAIXAR, comPausarTudo = false
+            ),
+            lista.first()
+        )
+    }
+
+    @Test fun vozImportadaSemDownloadNaoEBaixavel() {
         val l = linha(item(GrupoDownload.IMPORTADAS, baixavel = false), AndamentoDownload(EstadoDownload.NAO_BAIXADO))
-        assertFalse(l.selecionavel)
+        assertFalse(l.baixavel)
         assertTrue(l.apagavelSemEstarPronta)
     }
 }
