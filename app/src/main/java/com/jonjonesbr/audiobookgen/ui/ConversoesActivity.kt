@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -173,8 +174,16 @@ class ConversoesActivity : AppCompatActivity() {
             resultadoLocal = null
             viewModel.pararPlayer()
             viewModel.iniciarConversao(arquivo, nome, caminhoDoLivro, livroInteiro, estilo, voz, motor, ritmo)
-            sugerirBateriaSeNecessario()
+            avisosAoIniciar()
         }
+    }
+
+    private val pedidoNotificacoes =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    /** Um aviso por vez: notificações desligadas têm prioridade; o de bateria fica para a próxima conversão. */
+    private fun avisosAoIniciar() {
+        if (!PermissoesDoApp.avisarNaConversaoUmaVez(this, pedidoNotificacoes)) sugerirBateriaSeNecessario()
     }
 
     /** Sugere, uma única vez, tirar o app da otimização de bateria (conversão longa com a tela apagada). Não bloqueia a conversão. */
@@ -381,7 +390,7 @@ class ConversoesActivity : AppCompatActivity() {
                 runToken = inicio.runToken,
                 filaItemId = inicio.item.id
             )
-            sugerirBateriaSeNecessario()
+            avisosAoIniciar()
             atualizarFila()
         }
     }

@@ -1515,4 +1515,25 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_problema">Report a problem</string>
     <string name="aj_sobre">About LylyReader</string>
     <string name="aj_sobre_sub">Supported formats and voice credits</string>
+    <!-- Downloads em abas e permissões -->
+    <string name="dl_aba_vozes">Voices</string>
+    <string name="dl_aba_livros">Free books</string>
+    <string name="dl_livro_na_biblioteca">“%1$s” is in your Library</string>
+    <string name="dl_abrir_livro">Open</string>
+    <string name="dl_livros_mais_na_fila">and %1$d more in the queue</string>
+    <string name="perm_pagina_titulo">For the app to work well</string>
+    <string name="perm_pagina_descricao">Allow whatever you like. Nothing is required, and you can change it later in the phone settings.</string>
+    <string name="perm_notif_titulo">Notifications</string>
+    <string name="perm_notif_desc">So you can follow conversions and know when the audiobook is ready.</string>
+    <string name="perm_audios_titulo">Audio on this device</string>
+    <string name="perm_audios_desc">To show your audiobooks in the Audiobooks tab.</string>
+    <string name="perm_bateria_titulo">Unrestricted battery</string>
+    <string name="perm_bateria_desc">Optional. So long conversions do not stop halfway.</string>
+    <string name="perm_permitir">Allow</string>
+    <string name="perm_liberado">✓ Allowed</string>
+    <string name="perm_aviso_titulo">Turn on notifications?</string>
+    <string name="perm_aviso_msg">With them you follow conversions and downloads and know when an audiobook is ready, even outside the app.</string>
+    <string name="perm_conversao_msg">Notifications are off: the conversion keeps going, but you will not see its progress outside the app or the notice when the audiobook is ready.</string>
+    <string name="perm_ativar">Turn on</string>
+    <string name="perm_agora_nao">Not now</string>
 </resources>

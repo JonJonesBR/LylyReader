@@ -192,6 +192,21 @@ class AppPrefs(context: Context) {
         get() = p.getBoolean("notification_permission_prompted", false)
         set(v) = p.edit().putBoolean("notification_permission_prompted", v).apply()
 
+    /** O pedido de acesso aos áudios do aparelho já foi feito (depois de recusado de vez, só pela tela do app). */
+    var permissaoAudiosPedida: Boolean
+        get() = p.getBoolean("permissao_audios_pedida", false)
+        set(v) = p.edit().putBoolean("permissao_audios_pedida", v).apply()
+
+    /** As permissões já foram oferecidas (página das boas-vindas ou o aviso único na Biblioteca). */
+    var avisoNotificacoesVisto: Boolean
+        get() = p.getBoolean("aviso_notificacoes_visto", false)
+        set(v) = p.edit().putBoolean("aviso_notificacoes_visto", v).apply()
+
+    /** O aviso de notificações desligadas ao iniciar uma conversão já apareceu. */
+    var dicaNotificacaoConversaoVista: Boolean
+        get() = p.getBoolean("dica_notificacao_conversao_vista", false)
+        set(v) = p.edit().putBoolean("dica_notificacao_conversao_vista", v).apply()
+
     var onboardingDone: Boolean
         get() = p.getBoolean("onboarding_done", false)
         set(v) = p.edit().putBoolean("onboarding_done", v).apply()

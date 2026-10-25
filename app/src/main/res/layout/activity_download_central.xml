@@ -8,7 +8,7 @@
     android:background="@color/color_background"
     android:fitsSystemWindows="true">
 
-    <!-- Topo enxuto: título, espaço livre e ⋮ (baixar todas, downloads ao mesmo tempo, buscar livros).
+    <!-- Topo enxuto: título, espaço livre e ⋮ das vozes (baixar todas, downloads ao mesmo tempo).
          Os filtros de idioma e o resto rolam junto com a lista (view_downloads_filtros + DownloadCentralAdapter). -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -66,12 +66,80 @@
         android:layout_height="1dp"
         android:background="@color/color_divider"/>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerDownloads"
+    <!-- Vozes | Livros grátis: a busca de livros ficava escondida no ⋮. -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabsDownloads"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/color_background"
+        app:tabIndicatorColor="?attr/colorPrimary"
+        app:tabSelectedTextColor="?attr/colorPrimary"
+        app:tabTextColor="@color/color_on_surface_muted"
+        app:tabMode="fixed"
+        app:tabGravity="fill">
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/dl_aba_vozes"/>
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/dl_aba_livros"/>
+    </com.google.android.material.tabs.TabLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_divider"/>
+
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:overScrollMode="never"/>
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerDownloads"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:overScrollMode="never"/>
+
+        <!-- Aba Livros grátis: os livros baixando agora (até 3) e a busca. -->
+        <LinearLayout
+            android:id="@+id/layoutAbaLivros"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerLivrosBaixando"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:overScrollMode="never"
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/tvMaisLivrosNaFila"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="6dp"
+                android:textColor="@color/color_on_surface_dim"
+                android:textSize="13sp"
+                android:visibility="gone"/>
+
+            <include
+                android:id="@+id/painelBuscaLivros"
+                layout="@layout/view_busca_livros"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+        </LinearLayout>
+    </FrameLayout>
 
     <include
         layout="@layout/view_mini_player"

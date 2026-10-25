@@ -1501,4 +1501,25 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="aj_problema">Informar un problema</string>
     <string name="aj_sobre">Acerca de LylyReader</string>
     <string name="aj_sobre_sub">Formatos admitidos y créditos de las voces</string>
+    <!-- Downloads em abas e permissões -->
+    <string name="dl_aba_vozes">Voces</string>
+    <string name="dl_aba_livros">Libros gratis</string>
+    <string name="dl_livro_na_biblioteca">“%1$s” está en tu Biblioteca</string>
+    <string name="dl_abrir_livro">Abrir</string>
+    <string name="dl_livros_mais_na_fila">y %1$d más en la cola</string>
+    <string name="perm_pagina_titulo">Para que la app funcione bien</string>
+    <string name="perm_pagina_descricao">Permite lo que quieras. Nada es obligatorio, y puedes cambiarlo después en los ajustes del teléfono.</string>
+    <string name="perm_notif_titulo">Notificaciones</string>
+    <string name="perm_notif_desc">Para seguir las conversiones y saber cuándo el audiolibro esté listo.</string>
+    <string name="perm_audios_titulo">Audios del dispositivo</string>
+    <string name="perm_audios_desc">Para mostrar tus audiolibros en la pestaña Audiolibros.</string>
+    <string name="perm_bateria_titulo">Batería sin restricción</string>
+    <string name="perm_bateria_desc">Opcional. Para que las conversiones largas no se detengan a mitad.</string>
+    <string name="perm_permitir">Permitir</string>
+    <string name="perm_liberado">✓ Permitido</string>
+    <string name="perm_aviso_titulo">¿Activar las notificaciones?</string>
+    <string name="perm_aviso_msg">Con ellas sigues las conversiones y las descargas y sabes cuándo un audiolibro está listo, incluso fuera de la app.</string>
+    <string name="perm_conversao_msg">Las notificaciones están desactivadas: la conversión sigue, pero no verás su avance fuera de la app ni el aviso cuando el audiolibro esté listo.</string>
+    <string name="perm_ativar">Activar</string>
+    <string name="perm_agora_nao">Ahora no</string>
 </resources>

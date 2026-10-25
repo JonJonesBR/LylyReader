@@ -1513,4 +1513,25 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_problema">Relatar um problema</string>
     <string name="aj_sobre">Sobre o LylyReader</string>
     <string name="aj_sobre_sub">Formatos aceitos e créditos das vozes</string>
+    <!-- Downloads em abas e permissões -->
+    <string name="dl_aba_vozes">Vozes</string>
+    <string name="dl_aba_livros">Livros grátis</string>
+    <string name="dl_livro_na_biblioteca">“%1$s” está na sua Biblioteca</string>
+    <string name="dl_abrir_livro">Abrir</string>
+    <string name="dl_livros_mais_na_fila">e mais %1$d na fila</string>
+    <string name="perm_pagina_titulo">Para o app funcionar bem</string>
+    <string name="perm_pagina_descricao">Libere o que quiser. Nada é obrigatório, e dá para mudar depois nas configurações do celular.</string>
+    <string name="perm_notif_titulo">Notificações</string>
+    <string name="perm_notif_desc">Para você acompanhar as conversões e saber quando o audiobook ficar pronto.</string>
+    <string name="perm_audios_titulo">Áudios do aparelho</string>
+    <string name="perm_audios_desc">Para mostrar seus audiobooks na aba Audiobooks.</string>
+    <string name="perm_bateria_titulo">Bateria sem restrição</string>
+    <string name="perm_bateria_desc">Opcional. Para conversões longas não pararem no meio.</string>
+    <string name="perm_permitir">Permitir</string>
+    <string name="perm_liberado">✓ Liberado</string>
+    <string name="perm_aviso_titulo">Ativar as notificações?</string>
+    <string name="perm_aviso_msg">Com elas, você acompanha as conversões e os downloads e sabe quando um audiobook ficar pronto, mesmo fora do app.</string>
+    <string name="perm_conversao_msg">As notificações estão desligadas: a conversão continua, mas você não vê o andamento fora do app nem o aviso quando o audiobook ficar pronto.</string>
+    <string name="perm_ativar">Ativar</string>
+    <string name="perm_agora_nao">Agora não</string>
 </resources>

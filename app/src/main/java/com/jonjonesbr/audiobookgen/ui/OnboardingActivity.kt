@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,7 +22,9 @@ class OnboardingActivity : AppCompatActivity() {
         val titulo: String,
         val descricao: String = "",
         val passos: List<String> = emptyList(),
-        val rodape: String = ""
+        val rodape: String = "",
+        /** Página "Para o app funcionar bem": mostra os botões das permissões. */
+        val permissoes: Boolean = false
     )
 
     private fun buildPaginas() = listOf(
@@ -50,8 +53,52 @@ class OnboardingActivity : AppCompatActivity() {
             iconRes   = R.drawable.ic_paleta,
             titulo    = getString(R.string.onboarding_t5_titulo),
             descricao = getString(R.string.onboarding_t5_descricao)
+        ),
+        Pagina(
+            iconRes    = R.drawable.ic_nav_ajustes,
+            titulo     = getString(R.string.perm_pagina_titulo),
+            descricao  = getString(R.string.perm_pagina_descricao),
+            permissoes = true
         )
     )
+
+    // ── Permissões (última página) ──────────────────────────────────────────
+    private val pedidoNotificacoes =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { atualizarPermissoes() }
+    private val pedidoAudios =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { atualizarPermissoes() }
+    private var viewPermissoes: View? = null
+
+    /** Cada botão vira "✓ Liberado" (e desabilita) quando a permissão já está dada. */
+    private fun atualizarPermissoes() {
+        val v = viewPermissoes ?: return
+        listOf(
+            R.id.btnPermNotificacoes to PermissoesDoApp.notificacoesLiberadas(this),
+            R.id.btnPermAudios to PermissoesDoApp.audiosLiberados(this),
+            R.id.btnPermBateria to PermissoesDoApp.bateriaLiberada(this)
+        ).forEach { (id, liberada) ->
+            v.findViewById<Button>(id).apply {
+                isEnabled = !liberada
+                setText(if (liberada) R.string.perm_liberado else R.string.perm_permitir)
+            }
+        }
+    }
+
+    private fun vincularPermissoes(container: View) {
+        viewPermissoes = container
+        container.findViewById<Button>(R.id.btnPermNotificacoes)
+            .setOnClickListener { PermissoesDoApp.pedirNotificacoes(this, pedidoNotificacoes) }
+        container.findViewById<Button>(R.id.btnPermAudios)
+            .setOnClickListener { PermissoesDoApp.pedirAudios(this, pedidoAudios) }
+        container.findViewById<Button>(R.id.btnPermBateria)
+            .setOnClickListener { PermissoesDoApp.pedirBateria(this) }
+        atualizarPermissoes()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        atualizarPermissoes() // volta da tela de bateria ou de configurações do Android
+    }
 
     private lateinit var paginas: List<Pagina>
     private lateinit var viewPager: ViewPager2
@@ -78,6 +125,10 @@ class OnboardingActivity : AppCompatActivity() {
             override fun onPageSelected(position: Int) {
                 dotsIndicator.atualizar(position)
                 atualizarBotoes(position)
+                // Viu a página das permissões: a Biblioteca não pergunta de novo sobre as notificações.
+                if (paginas[position].permissoes) {
+                    com.jonjonesbr.audiobookgen.data.AppPrefs(this@OnboardingActivity).avisoNotificacoesVisto = true
+                }
             }
         })
 
@@ -136,6 +187,7 @@ class OnboardingActivity : AppCompatActivity() {
             val tvDescricao: TextView = view.findViewById(R.id.tvOnboardingDescricao)
             val tvPassos:   TextView = view.findViewById(R.id.tvOnboardingPassos)
             val tvRodape:   TextView = view.findViewById(R.id.tvOnboardingRodape)
+            val permissoes: View = view.findViewById(R.id.containerPermissoes)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
@@ -174,6 +226,9 @@ class OnboardingActivity : AppCompatActivity() {
             } else {
                 holder.tvRodape.visibility = View.GONE
             }
+
+            holder.permissoes.visibility = if (p.permissoes) View.VISIBLE else View.GONE
+            if (p.permissoes) vincularPermissoes(holder.permissoes)
         }
     }
 }

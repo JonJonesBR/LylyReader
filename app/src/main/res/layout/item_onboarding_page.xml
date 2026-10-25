@@ -77,5 +77,7 @@
         android:fontFamily="monospace"
         android:visibility="gone"/>
 
+    <include layout="@layout/view_onboarding_permissoes"/>
+
 </LinearLayout>
 </ScrollView>

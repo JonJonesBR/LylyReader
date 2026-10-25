@@ -1,6 +1,9 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.TextView
 import android.text.format.Formatter
 import android.widget.ImageButton
 import androidx.appcompat.app.AlertDialog
@@ -15,9 +18,11 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MAX
 import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MIN
 import com.jonjonesbr.audiobookgen.domain.EstadoDownload
+import com.jonjonesbr.audiobookgen.domain.SecaoDownload
 import com.jonjonesbr.audiobookgen.domain.espacoSuficiente
 import com.jonjonesbr.audiobookgen.service.AndamentoDownload
 import com.jonjonesbr.audiobookgen.service.DownloadCentral
+import com.jonjonesbr.audiobookgen.service.GrupoDownload
 import com.jonjonesbr.audiobookgen.service.ItemBaixavel
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
 import kotlinx.coroutines.Dispatchers
@@ -25,10 +30,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Aba Downloads: uma lista só, que rola inteira, com os filtros de idioma no começo e as seções Baixando
- * agora, No aparelho, Para baixar, Minhas vozes (com "Criar ou importar voz") e Livros. Cada item tem o seu
- * botão; "Baixar todas", downloads ao mesmo tempo e buscar livros ficam no ⋮. O trabalho roda na
- * [DownloadCentral] (sobrevive à tela); aqui só se observa o andamento.
+ * Aba Downloads, com duas abas:
+ * - Vozes: uma lista só, que rola inteira, com os filtros de idioma no começo e as seções Baixando agora, No
+ *   aparelho, Para baixar e Minhas vozes (com "Criar ou importar voz"). Cada item tem o seu botão; "Baixar todas"
+ *   e downloads ao mesmo tempo ficam no ⋮.
+ * - Livros grátis: os livros baixando agora (até [MAX_LIVROS_VISIVEIS]) e a busca ([BuscaLivrosPainel]); ao
+ *   baixar, o livro vai para a Biblioteca e a tela continua aberta.
+ * O trabalho roda na [DownloadCentral] (sobrevive à tela); aqui só se observa o andamento.
  */
 class DownloadCentralActivity : BasePlayerActivity() {
 
@@ -36,6 +44,8 @@ class DownloadCentralActivity : BasePlayerActivity() {
     private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
 
     private lateinit var adapter: DownloadCentralAdapter
+    private lateinit var adapterLivros: DownloadCentralAdapter
+    private lateinit var painelLivros: BuscaLivrosPainel
     private lateinit var filtros: android.view.View
 
     private val prefs by lazy { AppPrefs(this) }
@@ -87,6 +97,9 @@ class DownloadCentralActivity : BasePlayerActivity() {
             itemAnimator = null // a barra de progresso atualiza ~10x/s; animar cada troca pisca
         }
 
+        configurarAbaLivros()
+        configurarAbas()
+
         // Só em build de depuração: enfileira os pacotes do extra (ids separados por |) sem tocar na tela.
         val depuravel = applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
         intent.getStringExtra("extra_debug_baixar_ids")?.takeIf { depuravel }?.split("|")?.let { ids ->
@@ -108,6 +121,76 @@ class DownloadCentralActivity : BasePlayerActivity() {
                     montarLista()
                 }
             }
+        }
+    }
+
+    /** Vozes | Livros grátis. A busca de livros só vai à rede na primeira vez que a aba abre. */
+    private fun configurarAbas() {
+        val abas = findViewById<com.google.android.material.tabs.TabLayout>(R.id.tabsDownloads)
+        abas.addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab) = mostrarAba(tab.position)
+            override fun onTabUnselected(tab: com.google.android.material.tabs.TabLayout.Tab) = Unit
+            override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab) = Unit
+        })
+        if (intent.getBooleanExtra(EXTRA_ABA_LIVROS, false)) abas.getTabAt(ABA_LIVROS)?.select()
+    }
+
+    private fun mostrarAba(posicao: Int) {
+        val livros = posicao == ABA_LIVROS
+        findViewById<View>(R.id.recyclerDownloads).visibility = if (livros) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.layoutAbaLivros).visibility = if (livros) View.VISIBLE else View.GONE
+        // O ⋮ só tem opções de vozes.
+        findViewById<View>(R.id.btnMaisDownloads).visibility = if (livros) View.INVISIBLE else View.VISIBLE
+        if (livros) painelLivros.iniciar(filtro)
+    }
+
+    private fun configurarAbaLivros() {
+        adapterLivros = DownloadCentralAdapter(
+            onPrincipal = ::aoToquePrincipal,
+            onSecundario = ::aoToqueSecundario,
+            onPausarTudo = { DownloadCentral.pausarTodos() },
+            onCriarVoz = {}
+        )
+        findViewById<RecyclerView>(R.id.recyclerLivrosBaixando).apply {
+            layoutManager = LinearLayoutManager(this@DownloadCentralActivity)
+            adapter = adapterLivros
+            itemAnimator = null
+        }
+        painelLivros = BuscaLivrosPainel(
+            this,
+            findViewById(R.id.painelBuscaLivros),
+            aoGuardar = { livro, noAcervo -> avisarLivroGuardado(livro.titulo, noAcervo.id) }
+        )
+    }
+
+    /** "“Título” está na sua Biblioteca · Abrir": a tela continua aberta para baixar outros. */
+    private fun avisarLivroGuardado(titulo: String, idLivro: String) {
+        com.google.android.material.snackbar.Snackbar.make(
+            findViewById<View>(R.id.layoutAbaLivros),
+            getString(R.string.dl_livro_na_biblioteca, titulo),
+            com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+        ).setAction(R.string.dl_abrir_livro) {
+            startActivity(Intent(this, LivroActivity::class.java).putExtra(LivroActivity.EXTRA_ID, idLivro))
+        }.show()
+    }
+
+    /** Livros baixando agora, no topo da aba Livros grátis (os prontos já estão na Biblioteca). */
+    private fun montarLivrosBaixando() {
+        val livros = itens.filter { it.grupo == GrupoDownload.LIVROS }
+            .map { LinhaDownload(it, andamentoAtual[it.id] ?: AndamentoDownload()) }
+            .filter { it.estado != EstadoDownload.PRONTO }
+        val lista: List<LinhaLista> = if (livros.isEmpty()) {
+            emptyList()
+        } else {
+            listOf<LinhaLista>(LinhaLista.Cabecalho(SecaoDownload.BAIXANDO, DownloadCentral.temAtividade())) +
+                livros.take(MAX_LIVROS_VISIVEIS).map { LinhaLista.Item(it) }
+        }
+        adapterLivros.submitList(lista)
+        findViewById<View>(R.id.recyclerLivrosBaixando).visibility = if (livros.isEmpty()) View.GONE else View.VISIBLE
+        val alem = livros.size - MAX_LIVROS_VISIVEIS
+        findViewById<TextView>(R.id.tvMaisLivrosNaFila).apply {
+            visibility = if (alem > 0) View.VISIBLE else View.GONE
+            text = if (alem > 0) getString(R.string.dl_livros_mais_na_fila, alem) else ""
         }
     }
 
@@ -163,9 +246,10 @@ class DownloadCentralActivity : BasePlayerActivity() {
         com.jonjonesbr.audiobookgen.domain.IdiomaBusca.TODOS -> R.id.chipIdiomaTodos
     }
 
-    /** Itens que o filtro de idioma mostra. */
+    /** Vozes que o filtro de idioma mostra (os livros ficam na aba Livros grátis). */
     private fun visiveis(): List<ItemBaixavel> = itens.filter { item ->
-        com.jonjonesbr.audiobookgen.domain.IdiomaDownload.combina(filtro, item.idiomas)
+        item.grupo != GrupoDownload.LIVROS &&
+            com.jonjonesbr.audiobookgen.domain.IdiomaDownload.combina(filtro, item.idiomas)
     }
 
     override fun onResume() {
@@ -180,19 +264,15 @@ class DownloadCentralActivity : BasePlayerActivity() {
         )
     }
 
-    /** ⋮: baixar todas as vozes do filtro, quantos downloads ao mesmo tempo e buscar livros gratuitos. */
+    /** ⋮: baixar todas as vozes do filtro e quantos downloads ao mesmo tempo. */
     private fun mostrarMenuMais(ancora: android.view.View) {
         android.widget.PopupMenu(this, ancora).apply {
             menu.add(0, MENU_BAIXAR_TODAS, 0, R.string.dl_menu_baixar_todas)
             menu.add(0, MENU_SIMULTANEOS, 1, getString(R.string.dl_menu_simultaneos, prefs.downloadsSimultaneos))
-            menu.add(0, MENU_BUSCAR_LIVROS, 2, R.string.dl_buscar_livros)
             setOnMenuItemClickListener {
                 when (it.itemId) {
                     MENU_BAIXAR_TODAS -> baixarTudo()
                     MENU_SIMULTANEOS -> escolherSimultaneos()
-                    MENU_BUSCAR_LIVROS -> startActivity(
-                        android.content.Intent(this@DownloadCentralActivity, BuscarLivrosActivity::class.java)
-                    )
                 }
                 true
             }
@@ -213,6 +293,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
     }
 
     private fun montarLista() {
+        montarLivrosBaixando()
         val linhas = visiveis().map { item -> LinhaDownload(item, andamentoAtual[item.id] ?: AndamentoDownload()) }
         val lista = LinhaLista.montar(linhas, DownloadCentral.temAtividade())
         adapter.submitList(lista)
@@ -309,6 +390,10 @@ class DownloadCentralActivity : BasePlayerActivity() {
         private const val BYTES_POR_MB = 1024L * 1024L
         private const val MENU_BAIXAR_TODAS = 1
         private const val MENU_SIMULTANEOS = 2
-        private const val MENU_BUSCAR_LIVROS = 3
+        private const val ABA_LIVROS = 1
+        private const val MAX_LIVROS_VISIVEIS = 3
+
+        /** Abre direto na aba Livros grátis (ex.: "Ver" depois de "Baixar todos" na busca da Biblioteca). */
+        const val EXTRA_ABA_LIVROS = "extra_aba_livros"
     }
 }
