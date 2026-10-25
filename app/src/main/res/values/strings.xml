@@ -1095,6 +1095,8 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dica_downloads_vozes_texto">Download a voice pack once, then read and create audiobooks without internet.</string>
     <string name="dica_leitor_guiada_titulo">More for this book</string>
     <string name="dica_leitor_guiada_texto">This menu has bookmarks, voice and pronunciation, audiobook generation and text options. To listen, tap any paragraph.</string>
+    <string name="dica_leitor_capitulos_titulo">Chapters</string>
+    <string name="dica_leitor_capitulos_texto">The arrows go to the previous or next chapter. Tap the title to see all chapters, jump to one or mark chapters to generate audio.</string>
     <string name="dica_leitor_voz_titulo">Change the voice on the go</string>
     <string name="dica_leitor_voz_texto">Tap the microphone to change the voice or engine while the reading keeps going.</string>
 

@@ -49,4 +49,10 @@ class DicasRegrasTest {
     fun `ids das dicas sao unicos`() {
         assertEquals(Dica.values().size, Dica.values().map { it.id }.toSet().size)
     }
+
+    @Test
+    fun `no leitor a dica dos capitulos vem depois da do menu`() {
+        assertEquals(Dica.LEITOR_GUIADA, proxima(TelaDica.LEITOR))
+        assertEquals(Dica.LEITOR_CAPITULOS, proxima(TelaDica.LEITOR, setOf("leitor_guiada")))
+    }
 }

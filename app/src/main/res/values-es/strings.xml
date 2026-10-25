@@ -1079,6 +1079,8 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dica_downloads_vozes_texto">Descarga un paquete de voz una vez y lee o crea audiolibros sin internet.</string>
     <string name="dica_leitor_guiada_titulo">Más funciones del libro</string>
     <string name="dica_leitor_guiada_texto">En este menú están los marcadores, la voz y la pronunciación, generar audiolibro y las opciones de texto. Para escuchar, toca cualquier párrafo.</string>
+    <string name="dica_leitor_capitulos_titulo">Capítulos</string>
+    <string name="dica_leitor_capitulos_texto">Las flechas van al capítulo anterior o al siguiente. Toca el título para ver todos, saltar a uno o marcar capítulos para generar audio.</string>
     <string name="dica_leitor_voz_titulo">Cambia la voz sin parar la lectura</string>
     <string name="dica_leitor_voz_texto">Toca el micrófono para cambiar la voz o el motor mientras la lectura continúa.</string>
 

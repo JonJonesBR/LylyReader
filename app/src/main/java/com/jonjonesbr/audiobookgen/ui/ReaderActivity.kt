@@ -1048,7 +1048,16 @@ class ReaderActivity : BasePlayerActivity() {
         executarAcaoInicialSeNecessario()
         if (!dicaLeitorTentada && !somenteLeitura) {
             dicaLeitorTentada = true
-            btnOpcoes.post { CoachMark.tentar(this, com.jonjonesbr.audiobookgen.domain.Dica.LEITOR_GUIADA, btnOpcoes) }
+            // Uma dica por abertura: primeiro o menu ⋮, na seguinte a barra de capítulos.
+            btnOpcoes.post {
+                CoachMark.mostrarProxima(this, com.jonjonesbr.audiobookgen.domain.TelaDica.LEITOR) { dica ->
+                    when (dica) {
+                        com.jonjonesbr.audiobookgen.domain.Dica.LEITOR_GUIADA -> btnOpcoes
+                        com.jonjonesbr.audiobookgen.domain.Dica.LEITOR_CAPITULOS -> barraCapitulo
+                        else -> null
+                    }
+                }
+            }
         }
 
         // ── FABs ──────────────────────────────────────────────────────────────

@@ -1091,6 +1091,8 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dica_downloads_vozes_texto">Baixe um pacote de voz uma vez e leia ou gere audiobooks sem internet.</string>
     <string name="dica_leitor_guiada_titulo">Mais recursos do livro</string>
     <string name="dica_leitor_guiada_texto">Neste menu ficam marcadores, voz e pronúncia, gerar audiobook e as opções de texto. Para ouvir, toque em qualquer parágrafo.</string>
+    <string name="dica_leitor_capitulos_titulo">Capítulos</string>
+    <string name="dica_leitor_capitulos_texto">As setas vão ao capítulo anterior ou ao próximo. Toque no título para ver todos, pular para um deles ou marcar capítulos para gerar áudio.</string>
     <string name="dica_leitor_voz_titulo">Troque a voz sem parar a leitura</string>
     <string name="dica_leitor_voz_texto">Toque no microfone para mudar a voz ou o motor enquanto a leitura continua.</string>
 
