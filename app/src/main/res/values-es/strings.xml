@@ -1255,7 +1255,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="clone_prep_failed">No se pudo preparar el archivo: %1$s</string>
     <string name="clone_prep_try_again">Intentar de nuevo</string>
     <string name="clone_prep_other_language">Este archivo era del idioma %1$s, que ahora también está habilitado. Su voz es en %2$s: repita el paso 3 eligiendo %2$s.</string>
-    <string name="clone_prep_needed">Habilite la clonación de este idioma en Ajustes → Voces clonadas.</string>
+    <string name="clone_prep_needed">Habilita la clonación de este idioma en Descargas › Crear o importar voz.</string>
     <string name="clone_prep_manage">Habilitar idioma</string>
     <string name="clone_prep_no_browser">No hay ningún navegador disponible para abrir esta página.</string>
     <string name="primeiro_livro_titulo">Elige tu libro</string>
@@ -1398,4 +1398,11 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="help_more_step2">Para destacar, selecciona un fragmento y toca \"Destacar\"</string>
     <string name="help_more_step3">⋮ › Temporizador detiene la lectura después de un tiempo; ⋮ › Apariencia cambia la fuente, el tamaño y el tema</string>
     <string name="help_more_step4">En la pantalla del libro, \"Leer sin audio\" abre solo el texto, sin voces</string>
+    <string name="dl_voz_criar">Crear o importar voz</string>
+    <string name="dl_voz_clonar">Clonar una voz a partir de una grabación</string>
+    <string name="dl_voz_clonadas">Mis voces clonadas</string>
+    <string name="dl_voz_importar">Importar archivo de voz (.zip)</string>
+    <string name="settings_avancado_mostrar">Mostrar ajustes avanzados</string>
+    <string name="settings_avancado_esconder">Ocultar ajustes avanzados</string>
+    <string name="settings_avancado_desc">Para quien entiende de motores de voz: calidad del audio, pasos de síntesis, pausa entre bloques y buffering. Los valores predeterminados funcionan bien para la mayoría.</string>
 </resources>

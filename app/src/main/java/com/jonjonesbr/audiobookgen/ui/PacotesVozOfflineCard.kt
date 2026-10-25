@@ -25,6 +25,8 @@ import kotlinx.coroutines.withContext
 class PacotesVozOfflineCard(
     private val activity: AppCompatActivity,
     private val abrirSeletorByom: () -> Unit,
+    /** Depois de importar ou apagar: a aba Downloads relê a lista (o card de Ajustes se recarrega sozinho). */
+    private val aoMudar: () -> Unit = {},
 ) {
     private val dialogos = DialogosAbertos(activity)
     private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
@@ -69,7 +71,9 @@ class PacotesVozOfflineCard(
 
     /** Recarrega o card no próprio container (mesmo view que a Activity usa em onResume). */
     private fun recarregar() {
-        carregar(activity.findViewById<LinearLayout>(R.id.layoutPacotesOffline))
+        // A aba Downloads usa só a importação: lá não existe o card de pacotes.
+        activity.findViewById<LinearLayout?>(R.id.layoutPacotesOffline)?.let { carregar(it) }
+        aoMudar()
     }
 
     private fun montarLinhaPacote(

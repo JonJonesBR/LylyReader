@@ -91,8 +91,6 @@ class SettingsActivity : BasePlayerActivity() {
     private lateinit var tvSupertonicStepsValor: TextView
     // Passos do Pocket TTS (experimental)
     private lateinit var seekPocketPassos: android.widget.SeekBar
-    // Precisa ser criado antes de a tela iniciar (registra os seletores de resultado).
-    private val cloneVoiceFlow = CloneVoiceFlow(this)
     private lateinit var tvPocketPassosValor: TextView
 
     // Pausa entre frases na leitura guiada com kokoro
@@ -439,6 +437,17 @@ class SettingsActivity : BasePlayerActivity() {
         carregarInfoBlacklist()
     }
 
+    /** Aba Áudio › "Mostrar ajustes avançados": qualidade, passos, pausa entre blocos e buffering. */
+    private fun configurarAvancado() {
+        val botao = findViewById<Button>(R.id.btnSettingsAvancado)
+        val grupo = findViewById<View>(R.id.grupoSettingsAudioAvancado)
+        botao.setOnClickListener {
+            val abrir = grupo.visibility != View.VISIBLE
+            grupo.visibility = if (abrir) View.VISIBLE else View.GONE
+            botao.setText(if (abrir) R.string.settings_avancado_esconder else R.string.settings_avancado_mostrar)
+        }
+    }
+
     private fun configurarListeners() {
         configurarCreditosVoz()
         findViewById<Button>(R.id.btnCentralDownloads).setOnClickListener {
@@ -488,8 +497,7 @@ class SettingsActivity : BasePlayerActivity() {
         findViewById<android.widget.Button>(R.id.btnGerenciarPronuncias).setOnClickListener {
             PronunciationDialog.showManager(this)
         }
-        findViewById<android.widget.Button>(R.id.btnCriarVozClonada).setOnClickListener { cloneVoiceFlow.iniciar() }
-        findViewById<android.widget.Button>(R.id.btnGerenciarVozesClonadas).setOnClickListener { cloneVoiceFlow.gerenciar() }
+        configurarAvancado()
         findViewById<android.widget.Button>(R.id.btnTimbre).setOnClickListener {
             TimbreDialog.show(this, appPrefs)
         }

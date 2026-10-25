@@ -1267,7 +1267,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="clone_prep_failed">Não foi possível preparar o arquivo: %1$s</string>
     <string name="clone_prep_try_again">Tentar de novo</string>
     <string name="clone_prep_other_language">Este arquivo era do idioma %1$s, que agora também está liberado. A sua voz é em %2$s: repita o passo 3 escolhendo %2$s.</string>
-    <string name="clone_prep_needed">Libere a clonagem deste idioma em Ajustes → Vozes clonadas.</string>
+    <string name="clone_prep_needed">Libere a clonagem deste idioma em Downloads › Criar ou importar voz.</string>
     <string name="clone_prep_manage">Liberar idioma</string>
     <string name="clone_prep_no_browser">Nenhum navegador disponível para abrir esta página.</string>
     <string name="primeiro_livro_titulo">Escolha seu livro</string>
@@ -1410,4 +1410,11 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="help_more_step2">Para destacar, selecione um trecho e toque em \"Destacar\"</string>
     <string name="help_more_step3">⋮ › Temporizador para a leitura depois de um tempo; ⋮ › Aparência muda fonte, tamanho e tema</string>
     <string name="help_more_step4">Na tela do livro, \"Ler sem áudio\" abre só o texto, sem vozes</string>
+    <string name="dl_voz_criar">Criar ou importar voz</string>
+    <string name="dl_voz_clonar">Clonar uma voz a partir de uma gravação</string>
+    <string name="dl_voz_clonadas">Minhas vozes clonadas</string>
+    <string name="dl_voz_importar">Importar arquivo de voz (.zip)</string>
+    <string name="settings_avancado_mostrar">Mostrar ajustes avançados</string>
+    <string name="settings_avancado_esconder">Esconder ajustes avançados</string>
+    <string name="settings_avancado_desc">Para quem entende de motores de voz: qualidade do áudio, passos de síntese, pausa entre blocos e buffering. Os valores padrão servem bem para a maioria.</string>
 </resources>

@@ -648,6 +648,388 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
+            <!-- ── PAUSA ENTRE FRASES (KOKORO) ──────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/settings_pausas_titulo"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPausaFinalFrase"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <CheckBox
+                        android:id="@+id/chkPausasNaturais"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pausas_naturais_title"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pausas_naturais_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="16dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pausa_frase_title"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pausa_frase_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <SeekBar
+                            android:id="@+id/seekPausaFinalFrase"
+                            android:contentDescription="@string/cd_seek_pausa_frase"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:max="2000"/>
+
+                        <TextView
+                            android:id="@+id/tvPausaFinalFraseValor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="64dp"
+                            android:gravity="end"
+                            tools:text="500 ms"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorPrimary"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── TIMBRE DA VOZ ───────────────────────────────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_timbre_title"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardTimbre"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_timbre_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <Button
+                        android:id="@+id/btnTimbre"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_timbre"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── DICIONÁRIO DE PRONÚNCIA ─────────────────────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_pron_title"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPronuncias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pron_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <Button
+                        android:id="@+id/btnGerenciarPronuncias"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_pron_manage"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── AUTO-REWIND ──────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_auto_rewind"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAutoRewind"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_auto_rewind"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnAutoRewindOff"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="48dp"
+                            android:text="@string/btn_auto_rewind_off"
+                            android:textSize="12sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnAutoRewindCurto"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="48dp"
+                            android:text="@string/btn_auto_rewind_curto"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnAutoRewindLongo"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="48dp"
+                            android:text="@string/btn_auto_rewind_longo"
+                            android:textSize="12sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── PLAYER DA CONVERSÃO CONCLUÍDA ────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_player_conversao_concluida"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.15"/>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPlayerConversao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/desc_player_conversao_concluida"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnPlayerConversaoPerguntar"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="48dp"
+                            android:text="@string/btn_player_conversao_perguntar"
+                            android:textSize="12sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnPlayerConversaoApp"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="48dp"
+                            android:text="@string/btn_player_conversao_app"
+                            android:textSize="12sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnPlayerConversaoSistema"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+        android:minHeight="48dp"
+                            android:text="@string/btn_player_conversao_sistema"
+                            android:textSize="12sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── AVANÇADO: ajustes técnicos dos motores, fechados por padrão ── -->
+            <Button
+                android:id="@+id/btnSettingsAvancado"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/settings_avancado_mostrar"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:text="@string/settings_avancado_desc"
+                android:textColor="@color/color_on_surface_dim"
+                android:textSize="12sp"/>
+
+            <LinearLayout
+                android:id="@+id/grupoSettingsAudioAvancado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+
             <!-- â”€â”€ PAUSA ENTRE BLOCOS / VOZES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -947,149 +1329,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ── DICIONÁRIO DE PRONÚNCIA ─────────────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_pron_title"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPronuncias"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pron_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <Button
-                        android:id="@+id/btnGerenciarPronuncias"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/btn_pron_manage"/>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── VOZES CLONADAS ─────────────────────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/clone_title"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardVozesClonadas"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/clone_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <Button
-                        android:id="@+id/btnCriarVozClonada"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/btn_clone_create"/>
-
-                    <Button
-                        android:id="@+id/btnGerenciarVozesClonadas"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="@string/btn_clone_manage"/>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── TIMBRE DA VOZ ───────────────────────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_timbre_title"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardTimbre"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_timbre_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <Button
-                        android:id="@+id/btnTimbre"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/btn_timbre"/>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
             <!-- ── PASSOS DO POCKET TTS (experimental) ─────────────────────────── -->
             <TextView
                 android:layout_width="match_parent"
@@ -1146,99 +1385,6 @@
                             android:minWidth="64dp"
                             android:gravity="end"
                             tools:text="1 passo"
-                            android:textSize="13sp"
-                            android:textColor="?attr/colorPrimary"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── PAUSA ENTRE FRASES (KOKORO) ──────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/settings_pausas_titulo"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPausaFinalFrase"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <CheckBox
-                        android:id="@+id/chkPausasNaturais"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pausas_naturais_title"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pausas_naturais_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="16dp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pausa_frase_title"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="4dp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pausa_frase_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <SeekBar
-                            android:id="@+id/seekPausaFinalFrase"
-                            android:contentDescription="@string/cd_seek_pausa_frase"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:max="2000"/>
-
-                        <TextView
-                            android:id="@+id/tvPausaFinalFraseValor"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="64dp"
-                            android:gravity="end"
-                            tools:text="500 ms"
                             android:textSize="13sp"
                             android:textColor="?attr/colorPrimary"/>
 
@@ -1418,179 +1564,9 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ── AUTO-REWIND ──────────────────────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_auto_rewind"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
             </LinearLayout>
+            <!-- fim grupoSettingsAudioAvancado -->
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardAutoRewind"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_auto_rewind"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <Button
-                            android:id="@+id/btnAutoRewindOff"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_auto_rewind_off"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnAutoRewindCurto"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_auto_rewind_curto"
-                            android:textSize="12sp"
-                            android:textColor="?attr/colorPrimary"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnAutoRewindLongo"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_auto_rewind_longo"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── PLAYER DA CONVERSÃO CONCLUÍDA ────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_player_conversao_concluida"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPlayerConversao"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_player_conversao_concluida"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <Button
-                            android:id="@+id/btnPlayerConversaoPerguntar"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_player_conversao_perguntar"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnPlayerConversaoApp"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_player_conversao_app"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnPlayerConversaoSistema"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_player_conversao_sistema"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
             <!-- fim grupoSettingsAudio -->

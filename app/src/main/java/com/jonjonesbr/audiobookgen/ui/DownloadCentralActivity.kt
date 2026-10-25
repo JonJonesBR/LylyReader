@@ -49,6 +49,19 @@ class DownloadCentralActivity : BasePlayerActivity() {
     private var andamentoAtual: Map<String, AndamentoDownload> = emptyMap()
     private var chavesCoach: Set<String>? = null
 
+    // "Criar ou importar voz": antes ficava em Ajustes › Áudio, longe das outras vozes.
+    private val cloneVoiceFlow = CloneVoiceFlow(this) { recarregarItens() }
+    private val importarVozLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri -> uri?.let { importadorDeVoz.importarPacoteByom(it) } }
+    private val importadorDeVoz by lazy {
+        PacotesVozOfflineCard(
+            this,
+            abrirSeletorByom = { importarVozLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
+            aoMudar = { recarregarItens() }
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         com.jonjonesbr.audiobookgen.util.ThemePrefs.aplicarNaActivity(this)
         super.onCreate(savedInstanceState)
@@ -81,6 +94,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
         btnSelecionados.setOnClickListener { baixar(selecionados.toList()) }
         btnTudo.setOnClickListener { baixarTudo() }
         btnPausarTudo.setOnClickListener { DownloadCentral.pausarTodos() }
+        findViewById<Button>(R.id.btnCriarVozDownloads).setOnClickListener { mostrarCriarVoz() }
         findViewById<Button>(R.id.btnBuscarLivrosDownloads).setOnClickListener {
             startActivity(android.content.Intent(this, BuscarLivrosActivity::class.java))
         }
@@ -112,6 +126,35 @@ class DownloadCentralActivity : BasePlayerActivity() {
                     montarLista()
                 }
             }
+        }
+    }
+
+    /** Clonar uma voz, ver as clonadas ou importar um pacote de voz (.zip). */
+    private fun mostrarCriarVoz() {
+        val opcoes = arrayOf(
+            getString(R.string.dl_voz_clonar),
+            getString(R.string.dl_voz_clonadas),
+            getString(R.string.dl_voz_importar)
+        )
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dl_voz_criar)
+            .setItems(opcoes) { _, qual ->
+                when (qual) {
+                    0 -> cloneVoiceFlow.iniciar()
+                    1 -> cloneVoiceFlow.gerenciar()
+                    else -> importadorDeVoz.mostrarAvisoLicencaEImportar()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
+    }
+
+    /** Relê os itens depois de criar, importar ou apagar uma voz fora da Central. */
+    private fun recarregarItens() {
+        lifecycleScope.launch {
+            DownloadCentral.atualizar(applicationContext)
+            itens = withContext(Dispatchers.IO) { DownloadCentral.itens(applicationContext) }
+            montarLista()
         }
     }
 

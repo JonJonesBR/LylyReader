@@ -55,13 +55,31 @@
             android:textColor="@color/color_on_surface_dim"
             android:textSize="12sp"/>
 
-        <Button
-            android:id="@+id/btnBuscarLivrosDownloads"
-            style="@style/Widget.Material3.Button.TonalButton"
+        <!-- Livros gratuitos e vozes próprias lado a lado: as duas coisas que se "trazem" para o app aqui -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="@string/dl_buscar_livros"/>
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnBuscarLivrosDownloads"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="@string/dl_buscar_livros"/>
+
+            <Button
+                android:id="@+id/btnCriarVozDownloads"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="@string/dl_voz_criar"/>
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"

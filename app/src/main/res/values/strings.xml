@@ -1270,7 +1270,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="clone_prep_failed">Could not prepare the file: %1$s</string>
     <string name="clone_prep_try_again">Try again</string>
     <string name="clone_prep_other_language">This file was for %1$s, and that language is now unlocked. Your voice is in %2$s: repeat step 3 choosing %2$s.</string>
-    <string name="clone_prep_needed">Unlock cloning for this language in Settings → Cloned voices.</string>
+    <string name="clone_prep_needed">Enable cloning for this language in Downloads › Create or import voice.</string>
     <string name="clone_prep_manage">Unlock language</string>
     <string name="clone_prep_no_browser">No browser is available to open this page.</string>
     <string name="primeiro_livro_titulo">Choose your book</string>
@@ -1412,4 +1412,11 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="help_more_step2">To highlight, select a passage and tap \"Highlight\"</string>
     <string name="help_more_step3">⋮ › Sleep timer stops reading after a while; ⋮ › Appearance changes the font, size and theme</string>
     <string name="help_more_step4">On the book screen, \"Read without audio\" opens just the text, without voices</string>
+    <string name="dl_voz_criar">Create or import voice</string>
+    <string name="dl_voz_clonar">Clone a voice from a recording</string>
+    <string name="dl_voz_clonadas">My cloned voices</string>
+    <string name="dl_voz_importar">Import a voice file (.zip)</string>
+    <string name="settings_avancado_mostrar">Show advanced settings</string>
+    <string name="settings_avancado_esconder">Hide advanced settings</string>
+    <string name="settings_avancado_desc">For those who know voice engines: audio quality, synthesis steps, pause between blocks and buffering. The defaults work well for most people.</string>
 </resources>
