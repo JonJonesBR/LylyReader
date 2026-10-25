@@ -454,9 +454,9 @@
     <string name="help_queue_step3">Abra a fila (menu da Biblioteca) e toque em \"Iniciar processamento\"</string>
     <string name="help_queue_step4">O app processa um por um e notifica ao concluir</string>
     <string name="help_settings_title">Personalizando o app</string>
-    <string name="help_settings_step1">Motor TTS: escolha Edge, Gemini ou Android</string>
+    <string name="help_settings_step1">Vozes: na tela do livro, toque em Trocar para escolher vozes online (Edge, Gemini, ElevenLabs) ou offline (Supertonic, Kokoro, Piper, Pocket)</string>
     <string name="help_settings_step2">Voz e ritmo: ajuste na tela do livro, em Gerar audiobook</string>
-    <string name="help_settings_step3">Pasta de destino: defina onde os MP3 gerados serão salvos</string>
+    <string name="help_settings_step3">Pasta de saída: em Gerar audiobook › Opções avançadas, escolha onde os MP3 são salvos</string>
     <string name="help_settings_step4">Cache: libere espaço removendo arquivos temporários em Ajustes</string>
 
     <!-- Diálogos Offline e FAB -->
@@ -1071,7 +1071,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="onboarding_t2_titulo">Monte sua biblioteca</string>
     <string name="onboarding_t2_descricao">Toque em Adicionar para importar um arquivo ou buscar livros gratuitos de domínio público. Tudo fica guardado no app.</string>
     <string name="onboarding_t3_titulo">Ouça lendo</string>
-    <string name="onboarding_t3_descricao">Abra um livro e toque em Continuar leitura guiada: o texto é lido frase por frase enquanto você acompanha.</string>
+    <string name="onboarding_t3_descricao">Abra um livro e toque em Começar a ouvir: o texto é lido em voz alta enquanto você acompanha. Toque em qualquer parágrafo para pular para ele.</string>
     <string name="onboarding_t4_titulo">Gere um audiobook</string>
     <string name="onboarding_t4_descricao">Na tela do livro, escolha a voz e o ritmo e toque em Gerar audiobook. Ele aparece na aba Audiobooks e toca até com a tela apagada.</string>
     <string name="onboarding_t5_titulo">Vozes e aparência</string>
@@ -1090,8 +1090,8 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dica_livro_voz_texto">Troque a voz só deste livro. Os outros continuam com a voz padrão.</string>
     <string name="dica_downloads_vozes_titulo">Vozes que funcionam offline</string>
     <string name="dica_downloads_vozes_texto">Baixe um pacote de voz uma vez e leia ou gere audiobooks sem internet.</string>
-    <string name="dica_leitor_guiada_titulo">Leitura guiada e mais</string>
-    <string name="dica_leitor_guiada_texto">Neste menu ficam a leitura guiada, os capítulos, a busca e os ajustes de voz e aparência.</string>
+    <string name="dica_leitor_guiada_titulo">Mais recursos do livro</string>
+    <string name="dica_leitor_guiada_texto">Neste menu ficam marcadores, voz e pronúncia, gerar audiobook e as opções de texto. Para ouvir, toque em qualquer parágrafo.</string>
     <string name="dica_leitor_voz_titulo">Troque a voz sem parar a leitura</string>
     <string name="dica_leitor_voz_texto">Toque no microfone para mudar a voz ou o motor enquanto a leitura continua.</string>
 
@@ -1111,13 +1111,13 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="licao_adicionar_passos">Toque em Adicionar na Biblioteca.\nEscolha um arquivo, busque livros gratuitos ou compartilhe de outro app.</string>
     <string name="licao_guiada_titulo">Ouvir com a leitura guiada</string>
     <string name="licao_guiada_resumo">Acompanhe o texto enquanto ele é lido em voz alta.</string>
-    <string name="licao_guiada_passos">Abra o livro de exemplo.\nToque em Continuar leitura guiada e depois em play.</string>
+    <string name="licao_guiada_passos">Abra o livro de exemplo.\nToque em Começar a ouvir. A leitura começa sozinha; toque em qualquer parágrafo para pular para ele.</string>
     <string name="licao_gerar_titulo">Gerar um audiobook</string>
     <string name="licao_gerar_resumo">Transforme um livro em um arquivo de áudio.</string>
-    <string name="licao_gerar_passos">Abra o painel Gerar audiobook.\nEscolha a voz e o ritmo e toque em Gerar agora.\nAcompanhe o andamento na Fila.</string>
+    <string name="licao_gerar_passos">Abra o painel Gerar audiobook.\nEscolha a voz e o ritmo e toque em Gerar agora.\nAcompanhe o andamento em Conversões.</string>
     <string name="licao_voz_titulo">Trocar a voz de um livro</string>
     <string name="licao_voz_resumo">Cada livro pode ter a sua voz.</string>
-    <string name="licao_voz_passos">Na tela do livro, toque em Trocar voz.\nEscolha uma voz e ouça a amostra antes.</string>
+    <string name="licao_voz_passos">Na tela do livro, toque em Trocar, ao lado de Voz deste livro.\nEscolha uma voz e ouça a amostra antes.</string>
     <string name="licao_downloads_titulo">Vozes offline e aparência</string>
     <string name="licao_downloads_resumo">Leia sem internet e escolha o tema.</string>
     <string name="licao_downloads_passos">Abra a aba Downloads e veja os pacotes de voz.\nUse o ícone de paleta na Biblioteca para escolher o tema.</string>

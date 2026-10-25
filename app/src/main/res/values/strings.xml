@@ -449,9 +449,9 @@
     <string name="help_queue_step3">Open the queue (Library menu) and tap \"Start processing\"</string>
     <string name="help_queue_step4">The app processes one at a time and notifies when finished</string>
     <string name="help_settings_title">Customizing the app</string>
-    <string name="help_settings_step1">TTS engine: choose Edge, Gemini or Android</string>
+    <string name="help_settings_step1">Voices: on the book screen, tap Change to pick online voices (Edge, Gemini, ElevenLabs) or offline ones (Supertonic, Kokoro, Piper, Pocket)</string>
     <string name="help_settings_step2">Voice and speed: adjust on the book screen, in Generate audiobook</string>
-    <string name="help_settings_step3">Output folder: choose where generated MP3 files are saved</string>
+    <string name="help_settings_step3">Output folder: in Generate audiobook › Advanced options, choose where the MP3 files are saved</string>
     <string name="help_settings_step4">Cache: free storage by removing temporary files in Settings</string>
 
     <!-- Diálogos Offline e FAB -->
@@ -1075,7 +1075,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="onboarding_t2_titulo">Build your library</string>
     <string name="onboarding_t2_descricao">Tap Add to import a file or search free public domain books. Everything stays saved in the app.</string>
     <string name="onboarding_t3_titulo">Listen while you read</string>
-    <string name="onboarding_t3_descricao">Open a book and tap Continue guided reading: the text is read sentence by sentence while you follow along.</string>
+    <string name="onboarding_t3_descricao">Open a book and tap Start listening: the text is read aloud while you follow along. Tap any paragraph to jump to it.</string>
     <string name="onboarding_t4_titulo">Create an audiobook</string>
     <string name="onboarding_t4_descricao">On the book screen, choose the voice and pace and tap Generate audiobook. It shows up in the Audiobooks tab and plays even with the screen off.</string>
     <string name="onboarding_t5_titulo">Voices and appearance</string>
@@ -1094,8 +1094,8 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dica_livro_voz_texto">Change the voice for this book only. Your other books keep the default voice.</string>
     <string name="dica_downloads_vozes_titulo">Voices that work offline</string>
     <string name="dica_downloads_vozes_texto">Download a voice pack once, then read and create audiobooks without internet.</string>
-    <string name="dica_leitor_guiada_titulo">Guided reading and more</string>
-    <string name="dica_leitor_guiada_texto">This menu has guided reading, chapters, search and the voice and appearance settings.</string>
+    <string name="dica_leitor_guiada_titulo">More for this book</string>
+    <string name="dica_leitor_guiada_texto">This menu has bookmarks, voice and pronunciation, audiobook generation and text options. To listen, tap any paragraph.</string>
     <string name="dica_leitor_voz_titulo">Change the voice on the go</string>
     <string name="dica_leitor_voz_texto">Tap the microphone to change the voice or engine while the reading keeps going.</string>
 
@@ -1115,13 +1115,13 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="licao_adicionar_passos">Tap Add in the Library.\nPick a file, search free books or share one from another app.</string>
     <string name="licao_guiada_titulo">Listen with guided reading</string>
     <string name="licao_guiada_resumo">Follow the text while it is read aloud.</string>
-    <string name="licao_guiada_passos">Open the sample book.\nTap Continue guided reading, then play.</string>
+    <string name="licao_guiada_passos">Open the sample book.\nTap Start listening. Reading begins on its own; tap any paragraph to jump to it.</string>
     <string name="licao_gerar_titulo">Create an audiobook</string>
     <string name="licao_gerar_resumo">Turn a book into an audio file.</string>
-    <string name="licao_gerar_passos">Open the Generate audiobook panel.\nPick the voice and pace and tap Generate now.\nFollow the progress in the Queue.</string>
+    <string name="licao_gerar_passos">Open the Generate audiobook panel.\nPick the voice and pace and tap Generate now.\nFollow the progress in Conversions.</string>
     <string name="licao_voz_titulo">Change a book voice</string>
     <string name="licao_voz_resumo">Each book can have its own voice.</string>
-    <string name="licao_voz_passos">On the book screen, tap Change voice.\nPick a voice and listen to the sample first.</string>
+    <string name="licao_voz_passos">On the book screen, tap Change next to Voice for this book.\nPick a voice and listen to the sample first.</string>
     <string name="licao_downloads_titulo">Offline voices and look</string>
     <string name="licao_downloads_resumo">Read without internet and choose your theme.</string>
     <string name="licao_downloads_passos">Open the Downloads tab and check the voice packs.\nUse the palette icon in the Library to choose the theme.</string>
