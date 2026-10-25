@@ -944,6 +944,17 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_central_confirmar_msg">Download %1$d package(s), about %2$s in total?</string>
     <string name="dl_central_pouco_espaco">There may not be enough free space (%1$s free; downloading and unpacking needs about twice the size).</string>
     <string name="dl_central_apagar_msg">Delete %1$s from this device? You can download it again later.</string>
+    <string name="voz_apagar_titulo">Delete voice</string>
+    <string name="voz_apagar_msg">Delete %1$s from this device? Frees %2$s. You can download it again later.</string>
+    <string name="voz_apagar_msg_clonada">Delete the cloned voice %1$s? Its reference audio is removed from this device and cannot be recovered.</string>
+    <string name="voz_apagar_em_uso">This is the voice in use: after deleting it, choose another one.</string>
+    <string name="voz_apagada">Voice deleted.</string>
+    <string name="voz_apagar_falhou">Could not delete the voice.</string>
+    <string name="cd_apagar_voz">Delete %1$s</string>
+    <plurals name="voz_apagar_msg_pacote">
+        <item quantity="one">%1$s is part of the %2$s package, which has %3$d more voice. Delete the whole package from this device? Frees %4$s; you can download it again later.</item>
+        <item quantity="other">%1$s is part of the %2$s package, which has %3$d more voices. Delete the whole package from this device? Frees %4$s; you can download it again later.</item>
+    </plurals>
     <string name="dl_central_cancelar_msg">Cancel and discard what was downloaded of %1$s?</string>
     <string name="dl_notif_canal">Downloads</string>
     <string name="dl_notif_titulo">Downloading files</string>

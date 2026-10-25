@@ -930,6 +930,18 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dl_central_confirmar_msg">¿Descargar %1$d paquete(s), unos %2$s en total?</string>
     <string name="dl_central_pouco_espaco">Puede faltar espacio (%1$s libres; descargar y descomprimir ocupa cerca del doble del tamaño).</string>
     <string name="dl_central_apagar_msg">¿Borrar %1$s del dispositivo? Puedes descargarlo de nuevo después.</string>
+    <string name="voz_apagar_titulo">Borrar voz</string>
+    <string name="voz_apagar_msg">¿Borrar %1$s del dispositivo? Libera %2$s. Puedes volver a descargarla después.</string>
+    <string name="voz_apagar_msg_clonada">¿Borrar la voz clonada %1$s? Su audio de referencia se borra del dispositivo y no se puede recuperar.</string>
+    <string name="voz_apagar_em_uso">Es la voz en uso: después de borrarla, elige otra.</string>
+    <string name="voz_apagada">Voz borrada.</string>
+    <string name="voz_apagar_falhou">No se pudo borrar la voz.</string>
+    <string name="cd_apagar_voz">Borrar %1$s</string>
+    <plurals name="voz_apagar_msg_pacote">
+        <item quantity="one">%1$s forma parte del paquete %2$s, que tiene %3$d voz más. ¿Borrar el paquete entero del dispositivo? Libera %4$s; puedes volver a descargarlo después.</item>
+        <item quantity="other">%1$s forma parte del paquete %2$s, que tiene %3$d voces más. ¿Borrar el paquete entero del dispositivo? Libera %4$s; puedes volver a descargarlo después.</item>
+        <item quantity="many">%1$s forma parte del paquete %2$s, que tiene %3$d voces más. ¿Borrar el paquete entero del dispositivo? Libera %4$s; puedes volver a descargarlo después.</item>
+    </plurals>
     <string name="dl_central_cancelar_msg">¿Cancelar y descartar lo que ya se descargó de %1$s?</string>
     <string name="dl_notif_canal">Descargas</string>
     <string name="dl_notif_titulo">Descargando archivos</string>

@@ -8,9 +8,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -120,6 +123,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
     }
 
     private var filtroVozes = ""
+    private var adapterVozes: VoiceAdapter? = null
     private var outrasVozesExpandidas = false
     private val callbacksPreviewPorVoz = mutableMapOf<String, () -> Unit>()
 
@@ -215,6 +219,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         val adapter = VoiceAdapter(grupos, outrasVozesExpandidas) { expanded ->
             outrasVozesExpandidas = expanded
         }
+        adapterVozes = adapter
         view.findViewById<RecyclerView>(R.id.rvVozes).apply {
             layoutManager = LinearLayoutManager(requireContext())
             this.adapter = adapter
@@ -247,8 +252,34 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         data class Voice(val option: VoiceOption) : VoiceRow()
     }
 
+    /**
+     * Apaga a voz baixada (o pacote dela) depois de confirmar. Vozes que deixam de existir (clonadas, importadas)
+     * saem da lista; as do catálogo ficam, agora como "baixar".
+     */
+    private fun apagarVoz(voz: VoiceOption, pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
+        ApagarVozFlow.confirmar(requireContext(), voz, pacote, selectedVoiceId) {
+            val app = requireContext().applicationContext
+            val idsDoPacote = pacote.vozes.map { it.id }.toSet()
+            viewLifecycleOwner.lifecycleScope.launch {
+                val ok = ApagarVozFlow.apagar(app, pacote)
+                prontidaoPorModelo.clear()
+                voices = voices.filterNot {
+                    it.id in idsDoPacote && com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacoteDaVoz(it.id) == null
+                }
+                arguments?.putParcelableArrayList(ARG_VOICES, ArrayList(voices.map(::voiceToBundle)))
+                val idioma = (resources.configuration.locales[0] ?: Locale.getDefault()).toLanguageTag()
+                adapterVozes?.trocarGrupos(
+                    com.jonjonesbr.audiobookgen.util.VoiceCatalog.agruparPorIdiomaPreferido(voices, idioma)
+                )
+                android.widget.Toast.makeText(
+                    app, if (ok) R.string.voz_apagada else R.string.voz_apagar_falhou, android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
     private inner class VoiceAdapter(
-        private val grupos: com.jonjonesbr.audiobookgen.util.GruposVozesPorIdioma,
+        private var grupos: com.jonjonesbr.audiobookgen.util.GruposVozesPorIdioma,
         inicialmenteExpandido: Boolean,
         private val aoAlterarExpansao: (Boolean) -> Unit
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -266,6 +297,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             val name: TextView = itemView.findViewById(R.id.tvVoiceName)
             val meta: TextView = itemView.findViewById(R.id.tvVoiceMeta)
             val preview: Button = itemView.findViewById(R.id.btnVoicePreview)
+            val apagar: ImageButton = itemView.findViewById(R.id.btnVoiceApagar)
         }
 
         override fun getItemViewType(position: Int): Int = when (items[position]) {
@@ -309,6 +341,13 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                     rebuildRows()
                 }
             }
+        }
+
+        /** Lista nova depois de apagar uma voz. */
+        fun trocarGrupos(novos: com.jonjonesbr.audiobookgen.util.GruposVozesPorIdioma) {
+            grupos = novos
+            rebuildRows()
+            notifyDataSetChanged() // o status das vozes do pacote apagado mudou ("baixar"), não só a lista
         }
 
         fun submitFilter(value: String) {
@@ -433,6 +472,12 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                 })
                 dismiss()
             }
+            val pacoteApagavel =
+                if (voice.isGenerico) null else ApagarVozFlow.pacoteApagavel(voice, isModeloPronto(voice))
+            holder.apagar.visibility = if (pacoteApagavel != null) View.VISIBLE else View.GONE
+            holder.apagar.contentDescription = getString(R.string.cd_apagar_voz, voice.nomeExibido(requireContext()))
+            holder.apagar.tooltipText = holder.apagar.contentDescription
+            holder.apagar.setOnClickListener { pacoteApagavel?.let { apagarVoz(voice, it) } }
             val canPreview = onVoicePreview != null || arguments?.getBoolean(ARG_HAS_PREVIEW) == true
             holder.preview.visibility = if (canPreview) View.VISIBLE else View.GONE
             // Reseta o botão ao estado padrão sempre que a view é (re)vinculada — evita que um

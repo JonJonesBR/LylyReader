@@ -942,6 +942,18 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dl_central_confirmar_msg">Baixar %1$d pacote(s), cerca de %2$s no total?</string>
     <string name="dl_central_pouco_espaco">Pode faltar espaço (%1$s livres; baixar e descompactar ocupa cerca do dobro do tamanho).</string>
     <string name="dl_central_apagar_msg">Apagar %1$s do aparelho? Você pode baixar de novo depois.</string>
+    <string name="voz_apagar_titulo">Apagar voz</string>
+    <string name="voz_apagar_msg">Apagar %1$s do aparelho? Libera %2$s. Você pode baixar de novo depois.</string>
+    <string name="voz_apagar_msg_clonada">Apagar a voz clonada %1$s? O áudio de referência é apagado do aparelho e não dá para recuperar.</string>
+    <string name="voz_apagar_em_uso">É a voz em uso: depois de apagar, escolha outra.</string>
+    <string name="voz_apagada">Voz apagada.</string>
+    <string name="voz_apagar_falhou">Não foi possível apagar a voz.</string>
+    <string name="cd_apagar_voz">Apagar %1$s</string>
+    <plurals name="voz_apagar_msg_pacote">
+        <item quantity="one">%1$s faz parte do pacote %2$s, que tem mais %3$d voz. Apagar o pacote inteiro do aparelho? Libera %4$s; você pode baixar de novo depois.</item>
+        <item quantity="other">%1$s faz parte do pacote %2$s, que tem mais %3$d vozes. Apagar o pacote inteiro do aparelho? Libera %4$s; você pode baixar de novo depois.</item>
+        <item quantity="many">%1$s faz parte do pacote %2$s, que tem mais %3$d vozes. Apagar o pacote inteiro do aparelho? Libera %4$s; você pode baixar de novo depois.</item>
+    </plurals>
     <string name="dl_central_cancelar_msg">Cancelar e descartar o que já foi baixado de %1$s?</string>
     <string name="dl_notif_canal">Downloads</string>
     <string name="dl_notif_titulo">Baixando arquivos</string>
