@@ -1392,4 +1392,20 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
         <item quantity="many">%1$d livros esperando para gerar</item>
         <item quantity="other">%1$d livros esperando para gerar</item>
     </plurals>
+    <!-- Ajuda: vozes, pronúncia e recursos da leitura -->
+    <string name="help_voices_title">Vozes</string>
+    <string name="help_voices_step1">Vozes online (Edge, Gemini, ElevenLabs) precisam de internet; as offline (Supertonic, Kokoro, Piper, Pocket) são baixadas uma vez na aba Downloads e funcionam sem internet</string>
+    <string name="help_voices_step2">Cada livro pode ter a sua voz: na tela do livro, toque em Trocar. Na leitura guiada, o botão do microfone troca a voz sem parar</string>
+    <string name="help_voices_step3">Crie uma voz a partir de uma gravação: no seletor de vozes, toque em \"Clonar minha voz\", ou vá em Downloads › Criar voz clonada</string>
+    <string name="help_voices_step4">Para liberar espaço, toque na lixeira ao lado de uma voz baixada, no seletor de vozes ou em Downloads</string>
+    <string name="help_pron_title">Pronúncia e personagens</string>
+    <string name="help_pron_step1">Alguma palavra lida errado? Selecione-a no texto e toque em \"Pronúncia\" para ensinar como se fala</string>
+    <string name="help_pron_step2">Veja tudo o que você ensinou em ⋮ › Dicionário de pronúncias; \"Sugerir com IA\" preenche nomes de personagens e lugares</string>
+    <string name="help_pron_step3">⋮ › Vozes dos personagens descobre quem fala cada fala e dá uma voz diferente a cada personagem</string>
+    <string name="help_pron_step4">Na tela do livro, Timbre da voz deixa a voz mais grave ou mais aguda</string>
+    <string name="help_more_title">Mais recursos da leitura</string>
+    <string name="help_more_step1">O ícone de marcador no topo marca onde você está; ⋮ › Marcadores e destaques lista tudo o que você marcou</string>
+    <string name="help_more_step2">Para destacar, selecione um trecho e toque em \"Destacar\"</string>
+    <string name="help_more_step3">⋮ › Temporizador para a leitura depois de um tempo; ⋮ › Aparência muda fonte, tamanho e tema</string>
+    <string name="help_more_step4">Na tela do livro, \"Ler sem áudio\" abre só o texto, sem vozes</string>
 </resources>

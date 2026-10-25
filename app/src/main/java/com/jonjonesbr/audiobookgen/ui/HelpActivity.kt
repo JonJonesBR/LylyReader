@@ -17,7 +17,8 @@ import androidx.viewpager2.widget.ViewPager2
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 
 enum class HelpTopico {
-    CONVERSAO, LEITOR, BIBLIOTECA, FILA, CONFIGURACOES
+    // A ordem é a das páginas da Ajuda (o tópico abre a página de mesmo índice).
+    CONVERSAO, LEITOR, VOZES, PRONUNCIA, RECURSOS_LEITURA, BIBLIOTECA, FILA, CONFIGURACOES
 }
 
 class HelpActivity : AppCompatActivity() {
@@ -65,6 +66,21 @@ class HelpActivity : AppCompatActivity() {
                     getString(R.string.help_reader_step4)
                 )
             ),
+            pagina(
+                R.drawable.ic_player_voz, R.string.help_voices_title,
+                R.string.help_voices_step1, R.string.help_voices_step2,
+                R.string.help_voices_step3, R.string.help_voices_step4
+            ),
+            pagina(
+                R.drawable.ic_onboarding_steps, R.string.help_pron_title,
+                R.string.help_pron_step1, R.string.help_pron_step2,
+                R.string.help_pron_step3, R.string.help_pron_step4
+            ),
+            pagina(
+                R.drawable.ic_bookmark_filled, R.string.help_more_title,
+                R.string.help_more_step1, R.string.help_more_step2,
+                R.string.help_more_step3, R.string.help_more_step4
+            ),
             Pagina(
                 iconRes = R.drawable.ic_onboarding_library,
                 titulo = getString(R.string.help_library_title),
@@ -97,6 +113,12 @@ class HelpActivity : AppCompatActivity() {
             )
         )
     }
+
+    private fun pagina(icone: Int, titulo: Int, vararg passos: Int) = Pagina(
+        iconRes = icone,
+        titulo = getString(titulo),
+        passos = passos.map { getString(it) }
+    )
 
     private lateinit var viewPager: ViewPager2
     private lateinit var btnFechar: Button

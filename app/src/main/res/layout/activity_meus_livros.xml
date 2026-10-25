@@ -51,6 +51,17 @@
             android:visibility="gone"
             android:importantForAutofill="no"/>
 
+        <!-- "Aprender o app" à vista (antes só no menu ⋮) -->
+        <ImageButton
+            android:id="@+id/btnAprenderBib"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_ajuda"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/aprender_titulo"
+            android:tooltipText="@string/aprender_titulo"/>
+
         <ImageButton
             android:id="@+id/btnTemaBib"
             android:layout_width="48dp"

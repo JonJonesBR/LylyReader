@@ -1380,4 +1380,20 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
         <item quantity="many">%1$d libros esperando para generarse</item>
         <item quantity="other">%1$d libros esperando para generarse</item>
     </plurals>
+    <!-- Ajuda: vozes, pronúncia e recursos da leitura -->
+    <string name="help_voices_title">Voces</string>
+    <string name="help_voices_step1">Las voces en línea (Edge, Gemini, ElevenLabs) necesitan internet; las sin conexión (Supertonic, Kokoro, Piper, Pocket) se descargan una vez en la pestaña Descargas y funcionan sin internet</string>
+    <string name="help_voices_step2">Cada libro puede tener su voz: en la pantalla del libro, toca Cambiar. En la lectura guiada, el botón del micrófono cambia la voz sin parar</string>
+    <string name="help_voices_step3">Crea una voz a partir de una grabación: en el selector de voces, toca \"Clonar mi voz\", o ve a Descargas › Crear voz clonada</string>
+    <string name="help_voices_step4">Para liberar espacio, toca la papelera junto a una voz descargada, en el selector de voces o en Descargas</string>
+    <string name="help_pron_title">Pronunciación y personajes</string>
+    <string name="help_pron_step1">¿Una palabra mal leída? Selecciónala en el texto y toca \"Pronunciación\" para enseñar cómo se dice</string>
+    <string name="help_pron_step2">Mira todo lo que enseñaste en ⋮ › Diccionario de pronunciación; \"Sugerir con IA\" completa nombres de personajes y lugares</string>
+    <string name="help_pron_step3">⋮ › Voces de los personajes descubre quién dice cada línea y da una voz distinta a cada personaje</string>
+    <string name="help_pron_step4">En la pantalla del libro, Timbre de la voz hace la voz más grave o más aguda</string>
+    <string name="help_more_title">Más funciones de lectura</string>
+    <string name="help_more_step1">El icono de marcador arriba marca dónde estás; ⋮ › Marcadores y destacados lista todo lo que marcaste</string>
+    <string name="help_more_step2">Para destacar, selecciona un fragmento y toca \"Destacar\"</string>
+    <string name="help_more_step3">⋮ › Temporizador detiene la lectura después de un tiempo; ⋮ › Apariencia cambia la fuente, el tamaño y el tema</string>
+    <string name="help_more_step4">En la pantalla del libro, \"Leer sin audio\" abre solo el texto, sin voces</string>
 </resources>

@@ -140,6 +140,9 @@ class MeusLivrosActivity : BasePlayerActivity() {
         findViewById<ImageButton>(R.id.btnVoltarBib).setOnClickListener { finish() }
         findViewById<ImageButton>(R.id.btnBuscarBib).setOnClickListener { alternarBusca() }
         findViewById<ImageButton>(R.id.btnTemaBib).setOnClickListener { SeletorTemaSheet.mostrar(this) }
+        findViewById<ImageButton>(R.id.btnAprenderBib).setOnClickListener {
+            startActivity(Intent(this, AprenderActivity::class.java))
+        }
         findViewById<ImageButton>(R.id.btnMaisBib).setOnClickListener { mostrarMenuMais(it) }
         fab.setOnClickListener { mostrarAdicionar() }
 
@@ -385,14 +388,12 @@ class MeusLivrosActivity : BasePlayerActivity() {
         val popup = PopupMenu(this, ancora).apply {
             menu.add(0, MENU_ORDENAR, 0, R.string.bib_ordenar)
             menu.add(0, MENU_CONVERSOES, 3, R.string.bib_menu_conversoes)
-            menu.add(0, MENU_APRENDER, 4, R.string.aprender_titulo)
             menu.add(0, MENU_ESPACO, 1, getString(R.string.bib_espaco, "…"))
                 .isEnabled = false
             setOnMenuItemClickListener {
                 when (it.itemId) {
                     MENU_ORDENAR -> escolherOrdem()
                     MENU_CONVERSOES -> startActivity(Intent(this@MeusLivrosActivity, ConversoesActivity::class.java))
-                    MENU_APRENDER -> startActivity(Intent(this@MeusLivrosActivity, AprenderActivity::class.java))
                 }
                 true
             }
@@ -589,7 +590,6 @@ class MeusLivrosActivity : BasePlayerActivity() {
         const val ACAO_APAGAR = 4
         const val MENU_ORDENAR = 1
         const val MENU_ESPACO = 2
-        const val MENU_APRENDER = 4
         const val MENU_CONVERSOES = 5
         const val LARGURA_COLUNA_DP = 120f
         const val COLUNAS_MIN = 3

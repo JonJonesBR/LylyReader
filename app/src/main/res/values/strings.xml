@@ -1394,4 +1394,20 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
         <item quantity="one">%1$d book waiting to be generated</item>
         <item quantity="other">%1$d books waiting to be generated</item>
     </plurals>
+    <!-- Ajuda: vozes, pronúncia e recursos da leitura -->
+    <string name="help_voices_title">Voices</string>
+    <string name="help_voices_step1">Online voices (Edge, Gemini, ElevenLabs) need internet; offline voices (Supertonic, Kokoro, Piper, Pocket) are downloaded once in the Downloads tab and work without internet</string>
+    <string name="help_voices_step2">Each book can have its own voice: on the book screen, tap Change. During guided reading, the microphone button changes the voice without stopping</string>
+    <string name="help_voices_step3">Create a voice from a recording: in the voice picker, tap \"Clone my voice\", or go to Downloads › Create cloned voice</string>
+    <string name="help_voices_step4">To free up space, tap the trash can next to a downloaded voice in the voice picker or in Downloads</string>
+    <string name="help_pron_title">Pronunciation and characters</string>
+    <string name="help_pron_step1">A word read wrong? Select it in the text and tap \"Pronunciation\" to teach how to say it</string>
+    <string name="help_pron_step2">See every word you taught in ⋮ › Pronunciation dictionary; \"Suggest with AI\" fills in character and place names</string>
+    <string name="help_pron_step3">⋮ › Character voices finds who speaks each line and gives each character a different voice</string>
+    <string name="help_pron_step4">On the book screen, Voice timbre makes the voice deeper or brighter</string>
+    <string name="help_more_title">More reading tools</string>
+    <string name="help_more_step1">The bookmark icon at the top marks where you are; ⋮ › Bookmarks &amp; highlights lists everything you marked</string>
+    <string name="help_more_step2">To highlight, select a passage and tap \"Highlight\"</string>
+    <string name="help_more_step3">⋮ › Sleep timer stops reading after a while; ⋮ › Appearance changes the font, size and theme</string>
+    <string name="help_more_step4">On the book screen, \"Read without audio\" opens just the text, without voices</string>
 </resources>
