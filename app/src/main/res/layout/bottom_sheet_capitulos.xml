@@ -28,6 +28,34 @@
         android:textAllCaps="true"
         android:letterSpacing="0.05"/>
 
+    <TextView
+        android:id="@+id/tvCapitulosDicaConverter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/capitulos_dica_converter"
+        android:textSize="12sp"
+        android:textColor="@color/color_on_surface_dim"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone"/>
+
+    <!-- Busca: só aparece em livros com muitos capítulos -->
+    <EditText
+        android:id="@+id/etBuscaCapitulos"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        android:hint="@string/busca_capitulos_hint"
+        android:importantForAutofill="no"
+        android:inputType="text"
+        android:imeOptions="actionSearch"
+        android:maxLines="1"
+        android:textSize="14sp"
+        android:visibility="gone"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCapitulosToc"
         android:layout_width="match_parent"

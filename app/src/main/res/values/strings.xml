@@ -438,7 +438,7 @@
     <string name="help_conversion_step4">Follow progress in Conversions; the finished audiobook shows up on the Audiobooks tab</string>
     <string name="help_reader_title">Reading and selecting excerpts</string>
     <string name="help_reader_step1">Open a book and tap \"Guided reading\" to read and listen at the same time</string>
-    <string name="help_reader_step2">Use the chips to navigate between chapters</string>
+    <string name="help_reader_step2">Use the ‹ › arrows in the chapter bar to go to the previous or next chapter; tap the chapter name to see the list and check chapters to convert</string>
     <string name="help_reader_step3">Long-press a paragraph to start excerpt selection</string>
     <string name="help_reader_step4">Tap \"Convert selection\" to convert only the chosen excerpt</string>
     <string name="help_library_title">Your audiobook library</string>
@@ -519,6 +519,24 @@
     <string name="guided_reading_indicator_paragrafo">📖 %1$s · Paragraph %2$d</string>
 
     <string name="action_capitulos">Chapters</string>
+
+    <string name="capitulo_barra">%1$d/%2$d · %3$s</string>
+
+    <string name="cd_capitulo_anterior">Previous chapter</string>
+
+    <string name="cd_capitulo_proximo">Next chapter</string>
+
+    <string name="cd_abrir_capitulos">%1$s. Open the chapter list</string>
+
+    <string name="busca_capitulos_hint">Search chapters</string>
+
+    <string name="capitulos_dica_converter">Check chapters to convert them into an audiobook.</string>
+
+    <string name="cd_marcar_capitulo_converter">Convert %1$s</string>
+
+    <string name="cd_capitulo_toc_atual">%1$s, current chapter</string>
+
+    <string name="cd_capitulo_toc_lido">%1$s, read</string>
     <string name="action_guided_reading">Guided Reading</string>
     <string name="action_config_livro">Voice and Speed for This Book</string>
     <string name="action_character_voices">Character voices</string>

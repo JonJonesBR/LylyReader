@@ -3,24 +3,41 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/itemCapituloToc"
     android:layout_width="match_parent"
-    android:layout_height="52dp"
+    android:layout_height="wrap_content"
+    android:minHeight="52dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingStart="20dp"
-    android:paddingEnd="20dp"
+    android:paddingStart="12dp"
+    android:paddingEnd="8dp"
     android:background="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true">
+
+    <!-- ✓ nos capítulos já lidos (antes do atual) -->
+    <TextView
+        android:id="@+id/tvCapituloTocLido"
+        android:layout_width="24dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="✓"
+        android:textSize="14sp"
+        android:textColor="@color/color_on_surface_dim"
+        android:importantForAccessibility="no"
+        android:visibility="invisible"/>
 
     <TextView
         android:id="@+id/tvCapituloTocTitulo"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:maxLines="1"
+        android:layout_marginStart="4dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:maxLines="2"
         android:ellipsize="end"
         android:textSize="14sp"
-        android:textColor="@color/color_on_surface"/>
+        android:textColor="@color/color_on_surface"
+        android:importantForAccessibility="no"/>
 
     <TextView
         android:id="@+id/tvCapituloTocAtivo"
@@ -30,6 +47,14 @@
         android:textSize="16sp"
         android:textColor="?attr/colorPrimary"
         android:paddingStart="8dp"
+        android:importantForAccessibility="no"
         android:visibility="invisible"/>
+
+    <!-- Marca o capítulo para converter em audiobook (o que os chips do leitor faziam) -->
+    <CheckBox
+        android:id="@+id/chkCapituloTocConverter"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:visibility="gone"/>
 
 </LinearLayout>

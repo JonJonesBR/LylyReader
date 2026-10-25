@@ -443,7 +443,7 @@
     <string name="help_conversion_step4">Acompanhe em Conversões; o audiobook pronto aparece na aba Audiobooks</string>
     <string name="help_reader_title">Lendo e selecionando trechos</string>
     <string name="help_reader_step1">Abra um livro e toque em \"Leitura guiada\" para ler e ouvir ao mesmo tempo</string>
-    <string name="help_reader_step2">Use os chips para navegar entre capítulos</string>
+    <string name="help_reader_step2">Use as setas ‹ › da barra do capítulo para ir ao anterior ou ao próximo; toque no nome do capítulo para ver a lista e marcar capítulos para converter</string>
     <string name="help_reader_step3">Pressione um parágrafo para iniciar a seleção de trecho</string>
     <string name="help_reader_step4">Toque em \"Converter seleção\" para converter só o trecho escolhido</string>
     <string name="help_library_title">Sua biblioteca de audiobooks</string>
@@ -526,6 +526,24 @@
     <string name="guided_reading_indicator_paragrafo">📖 %1$s · Parágrafo %2$d</string>
 
     <string name="action_capitulos">Capítulos</string>
+
+    <string name="capitulo_barra">%1$d/%2$d · %3$s</string>
+
+    <string name="cd_capitulo_anterior">Capítulo anterior</string>
+
+    <string name="cd_capitulo_proximo">Próximo capítulo</string>
+
+    <string name="cd_abrir_capitulos">%1$s. Abrir a lista de capítulos</string>
+
+    <string name="busca_capitulos_hint">Buscar capítulo</string>
+
+    <string name="capitulos_dica_converter">Marque capítulos para convertê-los em audiobook.</string>
+
+    <string name="cd_marcar_capitulo_converter">Converter %1$s</string>
+
+    <string name="cd_capitulo_toc_atual">%1$s, capítulo atual</string>
+
+    <string name="cd_capitulo_toc_lido">%1$s, lido</string>
     <string name="action_config_livro">Voz e Velocidade Deste Livro</string>
     <string name="action_character_voices">Vozes dos personagens</string>
     <string name="character_voices_title">Vozes dos personagens</string>

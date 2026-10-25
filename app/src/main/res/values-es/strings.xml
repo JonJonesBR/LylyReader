@@ -439,7 +439,7 @@
     <string name="help_conversion_step4">Sigue el progreso en Conversiones; el audiolibro listo aparece en la pestaña Audiolibros</string>
     <string name="help_reader_title">Lectura y selección de fragmentos</string>
     <string name="help_reader_step1">Abre un libro y toca \"Lectura guiada\" para leer y escuchar a la vez</string>
-    <string name="help_reader_step2">Usa los chips para navegar entre capítulos</string>
+    <string name="help_reader_step2">Usa las flechas ‹ › de la barra del capítulo para ir al anterior o al siguiente; toca el nombre del capítulo para ver la lista y marcar capítulos para convertir</string>
     <string name="help_reader_step3">Mantén presionado un párrafo para iniciar la selección</string>
     <string name="help_reader_step4">Toca \"Convertir selección\" para convertir solo el fragmento elegido</string>
     <string name="help_library_title">Tu biblioteca de audiolibros</string>
@@ -521,6 +521,15 @@
     <string name="guided_reading_status_capitulo">%1$s — Párrafo %2$d de %3$d</string>
     <string name="guided_reading_indicator_paragrafo">📖 %1$s · Párrafo %2$d</string>
     <string name="action_capitulos">Capítulos</string>
+    <string name="capitulo_barra">%1$d/%2$d · %3$s</string>
+    <string name="cd_capitulo_anterior">Capítulo anterior</string>
+    <string name="cd_capitulo_proximo">Capítulo siguiente</string>
+    <string name="cd_abrir_capitulos">%1$s. Abrir la lista de capítulos</string>
+    <string name="busca_capitulos_hint">Buscar capítulo</string>
+    <string name="capitulos_dica_converter">Marca capítulos para convertirlos en audiolibro.</string>
+    <string name="cd_marcar_capitulo_converter">Convertir %1$s</string>
+    <string name="cd_capitulo_toc_atual">%1$s, capítulo actual</string>
+    <string name="cd_capitulo_toc_lido">%1$s, leído</string>
     <string name="action_config_livro">Voz y Velocidad de Este Libro</string>
     <string name="action_character_voices">Voces de los personajes</string>
     <string name="character_voices_title">Voces de los personajes</string>

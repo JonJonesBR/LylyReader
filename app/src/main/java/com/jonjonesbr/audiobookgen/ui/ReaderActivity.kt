@@ -6,7 +6,7 @@ import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
-import com.jonjonesbr.audiobookgen.domain.Capitulo
+import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
 import com.jonjonesbr.audiobookgen.domain.ChapterExportPolicy
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.R
@@ -32,7 +32,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
-import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -49,8 +48,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -70,6 +67,9 @@ class ReaderActivity : BasePlayerActivity() {
         const val EXTRA_ABERTO_PARA_RESULTADO = "extra_aberto_para_resultado"
         const val EXTRA_TRECHO_PATH = "extra_trecho_path"
         private const val MS_POR_MINUTO = 60_000L
+        private const val ALFA_SETA_DESABILITADA = 0.3f
+        private const val CAPITULOS_ACIMA_DO_ATUAL = 2
+        private const val MIN_CAPITULOS_PARA_BUSCA = 12
         const val EXTRA_TRECHO_NOME = "extra_trecho_nome"
         const val EXTRA_ACAO_RETORNO = "extra_acao_retorno"
         const val EXTRA_AUTO_START_GUIDED = "extra_auto_start_guided"
@@ -120,8 +120,10 @@ class ReaderActivity : BasePlayerActivity() {
     private lateinit var tvTitulo: TextView
     private lateinit var btnOpcoes: ImageButton
     private var dicaLeitorTentada = false
-    private lateinit var scrollChips: HorizontalScrollView
-    private lateinit var chipGroup: ChipGroup
+    private lateinit var barraCapitulo: View
+    private lateinit var tvCapituloAtual: TextView
+    private lateinit var btnCapituloAnterior: android.widget.ImageButton
+    private lateinit var btnCapituloProximo: android.widget.ImageButton
     private lateinit var tvProgressoLeitura: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var layoutErro: LinearLayout
@@ -195,7 +197,9 @@ class ReaderActivity : BasePlayerActivity() {
     private var progressoIndiceAplicado = -1
     private var continuarGuiadaTriggered = false
     private val appPrefs by lazy { com.jonjonesbr.audiobookgen.data.AppPrefs(this) }
-    private var ultimosCapitulosChips: List<com.jonjonesbr.audiobookgen.domain.Capitulo>? = null
+    /** Capítulo da posição de leitura mostrado na barra (-1 = ainda não calculado). */
+    private var capituloNaBarra = -1
+    private var textoDaBarra: String? = null
 
     private val aparenciaController by lazy {
         ReaderAparenciaController(this, viewModel) { horizontal ->
@@ -512,8 +516,13 @@ class ReaderActivity : BasePlayerActivity() {
         btnVoltar            = findViewById(R.id.btnReaderVoltar)
         tvTitulo             = findViewById(R.id.tvReaderTitulo)
         btnOpcoes            = findViewById(R.id.btnReaderOpcoes)
-        scrollChips          = findViewById(R.id.scrollChips)
-        chipGroup            = findViewById(R.id.chipGroupCapitulos)
+        barraCapitulo        = findViewById(R.id.barraCapitulo)
+        tvCapituloAtual      = findViewById(R.id.tvCapituloAtual)
+        btnCapituloAnterior  = findViewById(R.id.btnCapituloAnterior)
+        btnCapituloProximo   = findViewById(R.id.btnCapituloProximo)
+        btnCapituloAnterior.setOnClickListener { irParaCapitulo(capituloNaBarra - 1) }
+        btnCapituloProximo.setOnClickListener { irParaCapitulo(capituloNaBarra + 1) }
+        findViewById<View>(R.id.areaCapituloAtual).setOnClickListener { mostrarBottomSheetCapitulos() }
         tvProgressoLeitura   = findViewById(R.id.tvProgressoLeitura)
         progressBar          = findViewById(R.id.readerProgressBar)
         layoutErro           = findViewById(R.id.layoutReaderErro)
@@ -989,7 +998,7 @@ class ReaderActivity : BasePlayerActivity() {
         if (state.erro != null) {
             layoutErro.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
-            scrollChips.visibility = View.GONE
+            barraCapitulo.visibility = View.GONE
             tvErro.text = state.erro
             return
         }
@@ -1004,7 +1013,7 @@ class ReaderActivity : BasePlayerActivity() {
         // Mostra conteúdo
         recyclerView.visibility = View.VISIBLE
 
-        atualizarChipsCapitulos(texto, state.capituloAtivo)
+        atualizarBarraCapitulo(texto)
 
         // ── Pill de status (banner de limpeza) ────────────────────────────────
         atualizarPillStatusLeitura(state, texto)
@@ -1095,21 +1104,57 @@ class ReaderActivity : BasePlayerActivity() {
         startActivity(proximaIntent)
     }
 
-    /** Extraído de [atualizarUI] (chips de capítulos). */
-    private fun atualizarChipsCapitulos(texto: TextoExtraido, ativo: Int) {
-        // Chips de capítulos — só reconstrói quando a lista de capítulos muda
-        if (texto.capitulos.isNotEmpty()) {
-            scrollChips.visibility = View.VISIBLE
-            if (ultimosCapitulosChips !== texto.capitulos) {
-                ultimosCapitulosChips = texto.capitulos
-                atualizarChips(texto.capitulos, ativo)
-            } else {
-                // Apenas atualiza a seleção visual sem recriar os chips
-                for (i in 0 until chipGroup.childCount) {
-                    (chipGroup.getChildAt(i) as? com.google.android.material.chip.Chip)
-                        ?.isChecked = capitulosSelecionados.contains(i)
-                }
-            }
+    /**
+     * Barra do capítulo atual (substitui a fila de chips): "3/42 · Título", com setas para o anterior e o
+     * próximo. O capítulo vem da posição de leitura (parágrafo visível ou o da leitura guiada).
+     */
+    private fun atualizarBarraCapitulo(texto: TextoExtraido) {
+        val capitulos = texto.capitulos
+        val temCapitulos = capitulos.isNotEmpty()
+        barraCapitulo.visibility =
+            if (temCapitulos || tvProgressoLeitura.visibility == View.VISIBLE) View.VISIBLE else View.GONE
+        tvCapituloAtual.visibility = if (temCapitulos) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.ivAbrirCapitulos).visibility = tvCapituloAtual.visibility
+        btnCapituloAnterior.visibility = if (temCapitulos) View.VISIBLE else View.INVISIBLE
+        btnCapituloProximo.visibility = btnCapituloAnterior.visibility
+        if (!temCapitulos) return
+
+        val atual = NavegacaoCapitulos.indiceDoCapitulo(capitulos, paragrafoAtualVisivel() ?: 0).coerceAtLeast(0)
+        val rotulo = getString(
+            R.string.capitulo_barra, atual + 1, capitulos.size,
+            NavegacaoCapitulos.tituloLimpo(capitulos[atual].titulo)
+        )
+        if (rotulo != textoDaBarra) {
+            textoDaBarra = rotulo
+            tvCapituloAtual.text = rotulo
+            findViewById<View>(R.id.areaCapituloAtual).contentDescription =
+                getString(R.string.cd_abrir_capitulos, rotulo)
+        }
+        if (atual != capituloNaBarra) {
+            capituloNaBarra = atual
+            btnCapituloAnterior.isEnabled = atual > 0
+            btnCapituloAnterior.alpha = if (atual > 0) 1f else ALFA_SETA_DESABILITADA
+            btnCapituloProximo.isEnabled = atual < capitulos.lastIndex
+            btnCapituloProximo.alpha = if (atual < capitulos.lastIndex) 1f else ALFA_SETA_DESABILITADA
+            // "Converter este capítulo" e a lista de capítulos usam o capítulo da posição de leitura.
+            if (viewModel.uiState.value.capituloAtivo != atual) viewModel.navegarParaCapitulo(atual)
+        }
+    }
+
+    /** Vai ao capítulo [indice]: na leitura guiada passa a ler dali; fora dela, rola o texto até ele. */
+    private fun irParaCapitulo(indice: Int) {
+        val capitulo = viewModel.textoEfetivo()?.capitulos?.getOrNull(indice) ?: return
+        viewModel.navegarParaCapitulo(indice)
+        val guiada = guidedReadingBarController
+        if (guiada != null && (guidedPlayerManager?.state?.value?.index ?: -1) >= 0) {
+            guiada.playGuidedFrom(capitulo.indiceParagrafoInicio)
+        } else {
+            (recyclerView.layoutManager as? LinearLayoutManager)
+                ?.scrollToPositionWithOffset(capitulo.indiceParagrafoInicio, 0)
+        }
+        recyclerView.post {
+            atualizarProgressoLeitura()
+            viewModel.textoEfetivo()?.let(::atualizarBarraCapitulo)
         }
     }
 
@@ -1373,45 +1418,8 @@ class ReaderActivity : BasePlayerActivity() {
             getString(R.string.progresso_leitura_sem_tempo, (pct * 100).toInt())
         }
         tvProgressoLeitura.visibility = View.VISIBLE
-    }
-
-    private fun atualizarChips(capitulos: List<Capitulo>, ativo: Int) {
-        if (false && chipGroup.childCount == capitulos.size) {
-            // Só atualiza seleção
-            for (i in 0 until chipGroup.childCount) {
-                (chipGroup.getChildAt(i) as? Chip)?.isChecked = i == ativo
-            }
-            return
-        }
-        chipGroup.removeAllViews()
-        capitulos.forEachIndexed { i, cap ->
-            val chip = Chip(this).apply {
-                text = cap.titulo
-                isCheckable = true
-                isChecked = capitulosSelecionados.contains(i)
-                setOnClickListener {
-                    // "Ler sem áudio": o chip só navega; não entra na seleção de conversão.
-                    if (somenteLeitura) {
-                        isChecked = false
-                    } else if (isChecked) {
-                        capitulosSelecionados.add(i)
-                        viewModel.limparSelecao()
-                    } else {
-                        capitulosSelecionados.remove(i)
-                    }
-
-                    if (capitulosSelecionados.isEmpty()) {
-                        viewModel.navegarParaCapitulo(i)
-                        val paragIdx = viewModel.textoEfetivo()
-                            ?.capitulos?.getOrNull(i)?.indiceParagrafoInicio ?: return@setOnClickListener
-                        recyclerView.scrollToPosition(paragIdx)
-                    } else {
-                        atualizarUI(viewModel.uiState.value)
-                    }
-                }
-            }
-            chipGroup.addView(chip)
-        }
+        // Rolar com o dedo não muda o estado da tela: a barra do capítulo acompanha por aqui.
+        viewModel.textoEfetivo()?.let(::atualizarBarraCapitulo)
     }
 
     // ── Resultado ─────────────────────────────────────────────────────────────
@@ -1477,16 +1485,38 @@ class ReaderActivity : BasePlayerActivity() {
         dialog.setContentView(view)
         dialog.expandirEmPaisagem()
 
-        val ativo = viewModel.uiState.value.capituloAtivo
-        val adapter = CapituloTocAdapter(texto.capitulos, ativo) { indice ->
-            dialog.dismiss()
-            viewModel.navegarParaCapitulo(indice)
-            val paragIdx = texto.capitulos.getOrNull(indice)?.indiceParagrafoInicio ?: return@CapituloTocAdapter
-            recyclerView.scrollToPosition(paragIdx)
-        }
-        view.findViewById<RecyclerView>(R.id.rvCapitulosToc).apply {
+        val atual = capituloNaBarra.takeIf { it in texto.capitulos.indices } ?: viewModel.uiState.value.capituloAtivo
+        // Marcar capítulos para converter (o que os chips faziam); não existe no "Ler sem áudio".
+        val selecionados = if (somenteLeitura) null else capitulosSelecionados
+        val adapter = CapituloTocAdapter(
+            texto.capitulos, atual, selecionados,
+            onCapituloTocado = { indice ->
+                dialog.dismiss()
+                irParaCapitulo(indice)
+            },
+            onSelecaoMudou = {
+                if (capitulosSelecionados.isNotEmpty()) viewModel.limparSelecao()
+                atualizarUI(viewModel.uiState.value)
+            }
+        )
+        view.findViewById<View>(R.id.tvCapitulosDicaConverter).visibility =
+            if (selecionados != null) View.VISIBLE else View.GONE
+        val lista = view.findViewById<RecyclerView>(R.id.rvCapitulosToc).apply {
             layoutManager = LinearLayoutManager(this@ReaderActivity)
             this.adapter = adapter
+        }
+        // Abre já no capítulo atual, com alguns acima dele à vista.
+        (lista.layoutManager as LinearLayoutManager)
+            .scrollToPositionWithOffset((adapter.posicaoDoAtual() - CAPITULOS_ACIMA_DO_ATUAL).coerceAtLeast(0), 0)
+        if (texto.capitulos.size > MIN_CAPITULOS_PARA_BUSCA) {
+            view.findViewById<android.widget.EditText>(R.id.etBuscaCapitulos).apply {
+                visibility = View.VISIBLE
+                addTextChangedListener(object : android.text.TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+                    override fun afterTextChanged(s: android.text.Editable?) = adapter.filtrar(s?.toString().orEmpty())
+                })
+            }
         }
 
         dialog.show()

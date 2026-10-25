@@ -40,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:ellipsize="end"
                 android:textSize="15sp"
                 android:textStyle="bold"
@@ -150,39 +150,92 @@
 
         </LinearLayout>
 
-        <!-- ── Chapter chips ──────────────────────────────────────────── -->
-        <HorizontalScrollView
-            android:id="@+id/scrollChips"
+        <!-- ── Barra do capítulo atual: ‹ "3/42 · Título ▾" › + progresso ──
+             Tocar no título abre a lista de capítulos; as setas vão ao anterior/próximo. -->
+        <LinearLayout
+            android:id="@+id/barraCapitulo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:paddingTop="8dp"
-            android:paddingBottom="4dp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
+            android:minHeight="52dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
             android:visibility="gone">
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupCapitulos"
-                android:layout_width="wrap_content"
+            <ImageButton
+                android:id="@+id/btnCapituloAnterior"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_capitulo_anterior"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@string/cd_capitulo_anterior"
+                android:tooltipText="@string/cd_capitulo_anterior"/>
+
+            <LinearLayout
+                android:id="@+id/areaCapituloAtual"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:singleSelection="false"
-                app:selectionRequired="false"/>
+                android:layout_weight="1"
+                android:minHeight="48dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
 
-        </HorizontalScrollView>
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-        <!-- ── Progresso rico: % lido + tempo restante no capítulo ─────── -->
-        <TextView
-            android:id="@+id/tvProgressoLeitura"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textSize="12sp"
-            android:textColor="@color/color_on_surface_dim"
-            android:paddingTop="2dp"
-            android:paddingBottom="4dp"
-            android:visibility="gone"
-            tools:text="42% · ~8 min restantes no capítulo"/>
+                    <TextView
+                        android:id="@+id/tvCapituloAtual"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_on_surface"
+                        tools:text="3/42 · O despertar"/>
+
+                    <ImageView
+                        android:id="@+id/ivAbrirCapitulos"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="2dp"
+                        android:src="@drawable/ic_lista_capitulos"
+                        app:tint="@color/color_on_surface_dim"
+                        android:importantForAccessibility="no"/>
+                </LinearLayout>
+
+                <!-- Progresso rico: % lido + tempo restante no capítulo -->
+                <TextView
+                    android:id="@+id/tvProgressoLeitura"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="@color/color_on_surface_dim"
+                    android:visibility="gone"
+                    tools:text="42% · ~8 min restantes no capítulo"/>
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/btnCapituloProximo"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_capitulo_proximo"
+                app:tint="@color/color_on_surface_dim"
+                android:contentDescription="@string/cd_capitulo_proximo"
+                android:tooltipText="@string/cd_capitulo_proximo"/>
+
+        </LinearLayout>
 
         <!-- ── Status pill (banner de texto otimizado) ────────────────── -->
         <LinearLayout
