@@ -238,7 +238,10 @@ class DownloadCentralAdapter(
 /** Primeira linha da lista: os filtros de idioma, que rolam junto com ela. */
 class CabecalhoFixoAdapter(private val vista: View) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     override fun getItemCount() = 1
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
-        object : RecyclerView.ViewHolder(vista) {}
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        // A mesma view serve a todo holder novo: se a lista recriar o holder, ela sai do pai antigo antes.
+        (vista.parent as? ViewGroup)?.removeView(vista)
+        return object : RecyclerView.ViewHolder(vista) {}
+    }
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) = Unit
 }

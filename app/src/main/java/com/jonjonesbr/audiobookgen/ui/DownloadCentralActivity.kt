@@ -67,7 +67,11 @@ class DownloadCentralActivity : BasePlayerActivity() {
         NavegacaoPrincipal.configurar(this, AbaPrincipal.DOWNLOADS)
         findViewById<ImageButton>(R.id.btnVoltarDownloads).setOnClickListener { finish() }
         findViewById<ImageButton>(R.id.btnMaisDownloads).setOnClickListener { mostrarMenuMais(it) }
-        filtros = layoutInflater.inflate(R.layout.view_downloads_filtros, findViewById(R.id.recyclerDownloads), false)
+        val recycler = findViewById<RecyclerView>(R.id.recyclerDownloads)
+        // O LayoutManager vem antes de inflar os filtros com a lista como pai: sem ele, a RecyclerView
+        // lança IllegalStateException ao gerar os LayoutParams (era o crash ao abrir a aba).
+        recycler.layoutManager = LinearLayoutManager(this)
+        filtros = layoutInflater.inflate(R.layout.view_downloads_filtros, recycler, false)
         configurarFiltroDeIdioma()
 
         adapter = DownloadCentralAdapter(
@@ -76,8 +80,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
             onPausarTudo = { DownloadCentral.pausarTodos() },
             onCriarVoz = ::mostrarCriarVoz
         )
-        findViewById<RecyclerView>(R.id.recyclerDownloads).apply {
-            layoutManager = LinearLayoutManager(this@DownloadCentralActivity)
+        recycler.apply {
             this.adapter = androidx.recyclerview.widget.ConcatAdapter(
                 CabecalhoFixoAdapter(filtros), this@DownloadCentralActivity.adapter
             )
