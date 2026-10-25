@@ -1708,12 +1708,16 @@ private:
         return trimmed.empty() ? 0 : tok_->encode(trimmed).size();
     }
 
-    // Match TTSModel._estimate_max_gen_len() from the upstream Python runtime.
+    // Based on TTSModel._estimate_max_gen_len() from the upstream Python runtime.
     // A fixed 500-frame ceiling allowed a missed EOS prediction to create up to
-    // roughly 40 seconds of audio even for a short sentence.
+    // roughly 40 seconds of audio even for a short sentence. LylyReader: the
+    // upstream 3 tokens/s + 2 s is tuned for English; Portuguese/Spanish packs and
+    // slow cloned voices speak fewer tokens per second, so the ceiling was hit
+    // mid-sentence and the end of the sentence was silently dropped. 2 tokens/s
+    // + 3 s still bounds a missed EOS while leaving room for slow speech.
     static int estimated_max_generation_frames(size_t text_tokens) {
-        static constexpr double TOKENS_PER_SECOND_ESTIMATE = 3.0;
-        static constexpr double GENERATION_SECONDS_PADDING = 2.0;
+        static constexpr double TOKENS_PER_SECOND_ESTIMATE = 2.0;
+        static constexpr double GENERATION_SECONDS_PADDING = 3.0;
         static constexpr double MODEL_FRAME_RATE = 12.5;
         const double seconds = text_tokens / TOKENS_PER_SECOND_ESTIMATE
             + GENERATION_SECONDS_PADDING;
@@ -1802,6 +1806,7 @@ private:
         PocketTTS& tts;
         int max_, idx_ = 0, extra_ = 0;
         int eos_frame_ = -1;
+        int min_eos_frame_ = 0;  // EOS predicted before this frame is ignored (see set_min_eos_frame)
         int eos_extra_;  // frames to generate after EOS
         bool done_ = false, eos_ = false;
         float temp_;
@@ -1925,7 +1930,7 @@ private:
                 eos_logit = outputs[1].GetTensorData<float>()[0];
             }
             
-            if (!eos_ && eos_logit > tts.cfg_.eos_threshold) {
+            if (!eos_ && idx_ >= min_eos_frame_ && eos_logit > tts.cfg_.eos_threshold) {
                 eos_ = true;
                 eos_frame_ = idx_;
             }
@@ -1973,6 +1978,10 @@ private:
         }
         
         int frame_idx() const { return idx_; }
+        // LylyReader: the model sometimes predicts EOS at a pause in the middle of the text
+        // (a comma, a long word), ending generation and dropping the rest of the chunk.
+        // An EOS before the shortest plausible duration of the text is ignored.
+        void set_min_eos_frame(int frame) { min_eos_frame_ = std::max(0, frame); }
         int eos_frame() const { return eos_frame_; }
     };
     
@@ -2098,6 +2107,11 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
                       << token_limited_frames << ")\n";
         }
         auto gen = make_gen(voice, text_tokens, effective_max_frames, eos_extra);
+        // Fastest plausible speech: ~4.5 words/s. EOS before that is premature.
+        static constexpr double MAX_WORDS_PER_SECOND = 4.5;
+        static constexpr double FRAME_RATE = 12.5;
+        gen.set_min_eos_frame(std::min(effective_max_frames - 1, static_cast<int>(
+            count_words(chunks[si].text) / MAX_WORDS_PER_SECOND * FRAME_RATE)));
         dec_runner_->reset_state();  // zero existing buffers, no reallocation
         
         // Pipelined: generator thread produces latent frames into a queue,
@@ -2705,6 +2719,9 @@ struct ptt_stream_ctx {
     std::deque<std::pair<float*, size_t>> chunks;
     bool done = false;
     bool aborted = false;
+    // LylyReader: an exception in a later sentence used to end the stream as if it had
+    // finished, returning partial audio as success (the remaining sentences went missing).
+    bool failed = false;
 };
 
 void* ptt_stream_start(void* handle, const char* text, const char* voice) {
@@ -2728,6 +2745,8 @@ void* ptt_stream_start(void* handle, const char* text, const char* voice) {
             });
         } catch (const std::exception& e) {
             std::cerr << "[pocket-tts] stream error: " << e.what() << "\n";
+            std::lock_guard<std::mutex> lock(ctx->mtx);
+            ctx->failed = true;
         }
         {
             std::lock_guard<std::mutex> lock(ctx->mtx);
@@ -2753,7 +2772,8 @@ int ptt_stream_read(void* stream_ctx, float** out_samples, int* out_len) {
         *out_len = static_cast<int>(len);
         return 1;
     }
-    return ctx->aborted ? -2 : 0;
+    if (ctx->aborted) return -2;
+    return ctx->failed ? -3 : 0;
 }
 
 // Request cancellation without freeing the context. The owner must subsequently

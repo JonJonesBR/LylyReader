@@ -51,12 +51,6 @@ class OnnxTtsEngine(
         private const val MAX_TENTATIVAS_PROCESSO_ISOLADO = 2
         private const val TAMANHO_MIN_ARQUIVO_VALIDO = 500
         private const val MAX_CHARS_PER_CHUNK = 450
-        // Chunk maior para Supertonic: cada chamada JNI re-parseia o JSON de estilo (~420KB)
-        // e o nativo re-divide o texto por frases (~300 chars) inserindo 0,1s de pausa entre
-        // elas. Chamadas maiores amortizam o parse/JNI e ganham as pausas naturais do nativo
-        // (a concatenação Kotlin entre chunks não insere pausa). 2000 chars ≈ 2min de áudio
-        // por chamada, mantendo o pico de memória do processo :supertonic baixo.
-        private const val MAX_CHARS_PER_SUPERTONIC_CALL = 500
         private const val SUPERTONIC_SR       = 44100
         // Todas as vozes Supertonic usam o pacote V2 (Supertone/supertonic-2) — multilíngue:
         // en/ko/es/pt/fr no mesmo modelo (~300 MB). Variantes do voice ID só mudam o `lang`
@@ -122,10 +116,12 @@ class OnnxTtsEngine(
                 Log.d(TAG, "Sintetizando chunk $i/${chunks.size} (${chunk.length} chars) via $voiceId")
                 val result = when {
                     // Supertonic via native backend C++/Rust (JNI)
-                    voiceId.startsWith("supertonic-") -> { sampleRate = SUPERTONIC_SR
-                                                           val r = synthesizeSupertonicNative(chunk, voiceId, speed, versaoModelo)
-                                                           Log.d(TAG, "Supertonic result: ${r?.size?.toString() ?: "null"} samples")
-                                                           r }
+                    voiceId.startsWith("supertonic-") -> {
+                        sampleRate = SUPERTONIC_SR
+                        val r = sintetizarSupertonicSemPularPalavras(chunk, voiceId, speed, versaoModelo)
+                        Log.d(TAG, "Supertonic result: ${r?.size?.toString() ?: "null"} samples")
+                        r
+                    }
                     else -> {
                         Log.e(TAG, "Voice ID '$voiceId' não reconhecido pelo engine.")
                         null
@@ -209,6 +205,26 @@ class OnnxTtsEngine(
     // ──────────────────────────────────────────────────────────────────────────
     //  Supertonic 3
     // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Sintetiza um trecho Supertonic e, se o áudio saiu rápido demais para o texto (o modelo comprimiu a fala
+     * e pulou palavras), refaz uma vez com mais tempo. Ver [TrechosSupertonic].
+     */
+    private fun sintetizarSupertonicSemPularPalavras(
+        texto: String,
+        voiceId: String,
+        speed: Float,
+        version: String
+    ): FloatArray? {
+        val primeira = synthesizeSupertonicNative(texto, voiceId, speed, version)
+        val segundos = (primeira?.size ?: 0).toFloat() / SUPERTONIC_SR
+        val novaVelocidade = TrechosSupertonic.velocidadeParaRefazer(texto, segundos, speed)
+        if (primeira == null || novaVelocidade == null) return primeira
+        Log.w(TAG, "Supertonic: áudio rápido demais (${texto.length} chars em ${"%.1f".format(segundos)}s); " +
+            "refazendo com velocidade $novaVelocidade em vez de $speed")
+        return synthesizeSupertonicNative(texto, voiceId, novaVelocidade, version)?.takeIf { it.isNotEmpty() }
+            ?: primeira
+    }
 
     /** Versão efetiva (v1 só se instalado; senão v2), com log quando o v1 foi pedido e não está pronto. */
     private fun versaoSupertonicEfetiva(voiceId: String, texto: String): String {
@@ -353,9 +369,8 @@ class OnnxTtsEngine(
     private fun splitIntoChunks(texto: String, voiceId: String): List<String> {
         val trimmed = texto.trim()
         if (trimmed.isEmpty()) return emptyList()
-        if (voiceId.startsWith("supertonic-")) {
-            return splitByChars(trimmed, MAX_CHARS_PER_SUPERTONIC_CALL)
-        }
+        // Supertonic: trechos curtos por frase (ver TrechosSupertonic); o 0,1s entre eles faz a pausa entre frases.
+        if (voiceId.startsWith("supertonic-")) return TrechosSupertonic.dividir(trimmed)
         return splitByChars(trimmed, MAX_CHARS_PER_CHUNK)
     }
 
