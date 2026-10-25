@@ -55,6 +55,11 @@ object PocketCustomVoiceCatalog {
             delete = { ctx ->
                 PocketCustomVoices.remove(ctx, voz.id)
                 VoiceCatalog.removerPacoteLocal(voz.id)
+            },
+            // Sem o codificador do idioma, baixar não resolve: ele vem do assistente de clonagem.
+            bloqueio = { ctx ->
+                if (PocketEncoderManager.isInstalled(ctx, voz.languageTag)) null
+                else com.jonjonesbr.audiobookgen.R.string.clone_prep_needed
             }
         )
     }

@@ -203,7 +203,8 @@ class DownloadCentralActivity : BasePlayerActivity() {
 
     /** Pacotes baixáveis que ainda não estão prontos nem em andamento. */
     private fun pendentes(): List<ItemBaixavel> = visiveis().filter { item ->
-        item.download != null && (andamentoAtual[item.id]?.estado ?: EstadoDownload.NAO_BAIXADO).let {
+        val andamento = andamentoAtual[item.id] ?: AndamentoDownload()
+        item.download != null && andamento.bloqueio == null && andamento.estado.let {
             it == EstadoDownload.NAO_BAIXADO || it == EstadoDownload.PAUSADO || it == EstadoDownload.ERRO
         }
     }
@@ -217,15 +218,16 @@ class DownloadCentralActivity : BasePlayerActivity() {
     }
 
     private fun aoToqueSecundario(linha: LinhaDownload) {
-        val mensagem = if (linha.estado == EstadoDownload.PRONTO) R.string.dl_central_apagar_msg
+        val apagando = linha.estado == EstadoDownload.PRONTO || linha.apagavelSemEstarPronta
+        val mensagem = if (apagando) R.string.dl_central_apagar_msg
         else R.string.dl_central_cancelar_msg
         AlertDialog.Builder(this)
             .setTitle(nomeExibidoDoPacote(this, linha.item.id, linha.item.nome))
             .setMessage(getString(mensagem, nomeExibidoDoPacote(this, linha.item.id, linha.item.nome)))
             .setPositiveButton(
-                if (linha.estado == EstadoDownload.PRONTO) R.string.dl_central_apagar else R.string.dl_central_descartar
+                if (apagando) R.string.dl_central_apagar else R.string.dl_central_descartar
             ) { _, _ ->
-                if (linha.estado == EstadoDownload.PRONTO) DownloadCentral.apagar(this, linha.item.id)
+                if (apagando) DownloadCentral.apagar(this, linha.item.id)
                 else DownloadCentral.cancelar(this, linha.item.id)
             }
             .setNegativeButton(android.R.string.cancel, null)

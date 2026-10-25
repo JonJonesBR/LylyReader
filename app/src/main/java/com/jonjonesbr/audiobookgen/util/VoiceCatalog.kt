@@ -111,7 +111,12 @@ data class PacoteVozes(
      * Idiomas do pacote quando ele não lista vozes próprias (ex.: pacote de idioma do motor que só
      * cobre o idioma, sem voz no catálogo). Usado pelo filtro de idioma da Central de downloads.
      */
-    val idiomas: List<String> = emptyList()
+    val idiomas: List<String> = emptyList(),
+    /**
+     * Motivo (string res) pelo qual o pacote não fica pronto com um download agora — ex.: voz clonada
+     * cujo codificador o usuário ainda não preparou. Null = baixar resolve.
+     */
+    val bloqueio: (Context) -> Int? = { null }
 )
 
 /** Vozes separadas pela correspondência com o idioma atual do app. */

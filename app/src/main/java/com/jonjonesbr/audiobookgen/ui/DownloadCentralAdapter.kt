@@ -25,8 +25,13 @@ data class LinhaDownload(
     val selecionado: Boolean
 ) {
     val estado: EstadoDownload get() = andamento.estado
+    /** Não pronto e baixar não resolve (ex.: voz clonada sem o codificador do idioma). */
+    val bloqueado: Boolean get() = estado == EstadoDownload.NAO_BAIXADO && andamento.bloqueio != null
+    /** Voz do usuário ainda não pronta: não se baixa pela Central (ou não resolve), mas se apaga. */
+    val apagavelSemEstarPronta: Boolean
+        get() = estado == EstadoDownload.NAO_BAIXADO && item.grupo == GrupoDownload.IMPORTADAS
     val selecionavel: Boolean
-        get() = item.download != null &&
+        get() = item.download != null && !bloqueado &&
             (estado == EstadoDownload.NAO_BAIXADO || estado == EstadoDownload.PAUSADO || estado == EstadoDownload.ERRO)
 }
 
@@ -90,7 +95,8 @@ class DownloadCentralAdapter(
         holder.barra.progress = (a.fracao * BARRA_MAX).toInt()
 
         val pct = (a.fracao * 100).toInt()
-        holder.estado.text = when (linha.estado) {
+        val bloqueio = a.bloqueio
+        holder.estado.text = if (linha.bloqueado && bloqueio != null) ctx.getString(bloqueio) else when (linha.estado) {
             EstadoDownload.NAO_BAIXADO -> ctx.getString(R.string.dl_central_estado_nao_baixado, linha.item.tamanhoMb)
             EstadoDownload.NA_FILA -> ctx.getString(R.string.dl_central_estado_fila)
             EstadoDownload.BAIXANDO ->
@@ -109,7 +115,10 @@ class DownloadCentralAdapter(
         }
 
         val (textoPrincipal, textoSecundario) = when (linha.estado) {
-            EstadoDownload.NAO_BAIXADO -> R.string.dl_central_baixar to null
+            EstadoDownload.NAO_BAIXADO -> {
+                val principal = if (linha.bloqueado || linha.item.download == null) null else R.string.dl_central_baixar
+                principal to (if (linha.apagavelSemEstarPronta) R.string.dl_central_apagar else null)
+            }
             EstadoDownload.NA_FILA -> R.string.dl_central_tirar_fila to null
             EstadoDownload.BAIXANDO -> R.string.dl_central_pausar to R.string.dl_central_cancelar
             EstadoDownload.PAUSADO -> R.string.dl_central_continuar to R.string.dl_central_cancelar

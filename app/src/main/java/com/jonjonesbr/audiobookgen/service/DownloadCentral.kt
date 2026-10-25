@@ -36,7 +36,9 @@ data class ItemBaixavel(
     val download: (suspend (Context, ProgressoDownload) -> Unit)?,
     val apagar: (Context) -> Unit,
     /** Códigos de idioma das vozes do pacote ([com.jonjonesbr.audiobookgen.domain.IdiomaDownload]); vazio = sem idioma conhecido. */
-    val idiomas: Set<String> = emptySet()
+    val idiomas: Set<String> = emptySet(),
+    /** Motivo (string res) pelo qual baixar não resolve agora; null = pode baixar. Ver `PacoteVozes.bloqueio`. */
+    val bloqueio: (Context) -> Int? = { null }
 )
 
 data class AndamentoDownload(
@@ -45,7 +47,9 @@ data class AndamentoDownload(
     val total: Long = 0L,
     /** Bytes em disco quando o pacote está pronto. */
     val ocupadoBytes: Long = 0L,
-    val erro: String? = null
+    val erro: String? = null,
+    /** Não pronto e baixar não resolve: string res com o que falta (a tela mostra no lugar do botão Baixar). */
+    val bloqueio: Int? = null
 ) {
     val fracao: Float get() = if (total <= 0L) 0f else (bytes.toFloat() / total).coerceIn(0f, 1f)
 }
@@ -129,7 +133,10 @@ object DownloadCentral {
                 ocupadoBytes = p.tamanhoOcupadoBytes,
                 download = p.download,
                 apagar = p.delete,
-                idiomas = com.jonjonesbr.audiobookgen.domain.IdiomaDownload.codigos(p.vozes.map { it.language } + p.idiomas)
+                idiomas = com.jonjonesbr.audiobookgen.domain.IdiomaDownload.codigos(
+                    p.vozes.map { it.language } + p.idiomas
+                ),
+                bloqueio = p.bloqueio
             )
         }
         // Os codificadores da clonagem não são baixados pelo app: o assistente de clonagem os prepara a
@@ -143,16 +150,25 @@ object DownloadCentral {
     /** Recalcula o que está pronto/ocupado em disco, sem mexer em quem está na fila ou baixando. */
     suspend fun atualizar(context: Context) = withContext(Dispatchers.IO) {
         val ctx = context.applicationContext
-        val medidos = itens(ctx).associate { it.id to (it.isPronto(ctx) to it.ocupadoBytes(ctx)) }
+        val medidos = itens(ctx).associate { item ->
+            val pronto = item.isPronto(ctx)
+            item.id to Triple(pronto, item.ocupadoBytes(ctx), if (pronto) null else item.bloqueio(ctx))
+        }
         _andamento.update { atual ->
             val novo = HashMap(atual)
+            // Item que deixou de existir (voz clonada/importada apagada) sai do mapa: a tela relê a lista.
+            novo.keys.retainAll { id ->
+                id in medidos || atual[id]?.estado.let { it == EstadoDownload.NA_FILA || it == EstadoDownload.BAIXANDO }
+            }
             for ((id, medida) in medidos) {
-                val (pronto, ocupado) = medida
+                val (pronto, ocupado, bloqueio) = medida
                 val corrente = atual[id]
                 val ativo = corrente?.estado == EstadoDownload.NA_FILA || corrente?.estado == EstadoDownload.BAIXANDO
                 novo[id] = when {
                     ativo -> corrente!!
                     pronto -> AndamentoDownload(EstadoDownload.PRONTO, ocupadoBytes = ocupado)
+                    bloqueio != null ->
+                        AndamentoDownload(EstadoDownload.NAO_BAIXADO, ocupadoBytes = ocupado, bloqueio = bloqueio)
                     corrente?.estado == EstadoDownload.PAUSADO || corrente?.estado == EstadoDownload.ERRO -> corrente
                     else -> AndamentoDownload(EstadoDownload.NAO_BAIXADO, ocupadoBytes = ocupado)
                 }
@@ -167,7 +183,7 @@ object DownloadCentral {
         synchronized(lock) {
             for (id in ids) {
                 val item = item(ctx, id) ?: continue
-                if (item.download == null) continue
+                if (item.download == null || item.bloqueio(ctx) != null) continue
                 val estado = _andamento.value[id]?.estado ?: EstadoDownload.NAO_BAIXADO
                 if (estado == EstadoDownload.NA_FILA || estado == EstadoDownload.BAIXANDO || estado == EstadoDownload.PRONTO) continue
                 _andamento.update { it + (id to AndamentoDownload(EstadoDownload.NA_FILA, it[id]?.bytes ?: 0L, it[id]?.total ?: 0L)) }
@@ -275,7 +291,10 @@ object DownloadCentral {
         scope.launch(Dispatchers.IO) {
             job?.cancelAndJoin()
             item.apagar(ctx)
-            _andamento.update { it + (id to AndamentoDownload(EstadoDownload.NAO_BAIXADO)) }
+            // Voz clonada/importada deixa de existir ao ser apagada: some do mapa (e da tela, que relê a
+            // lista quando o conjunto de ids muda). Pacote do catálogo volta a "não baixado".
+            if (item(ctx, id) == null) _andamento.update { it - id }
+            else _andamento.update { it + (id to AndamentoDownload(EstadoDownload.NAO_BAIXADO)) }
             atualizar(ctx)
         }
     }
@@ -288,6 +307,8 @@ object DownloadCentral {
      */
     suspend fun baixarEAguardar(context: Context, id: String, onProgress: ProgressoDownload) {
         val item = item(context, id) ?: throw IOException(context.getString(R.string.pacote_desconhecido, id))
+        // Baixar não resolve (ex.: voz clonada sem codificador): enfileirar ignoraria e a espera acabaria muda.
+        item.bloqueio(context)?.let { throw IOException(context.getString(it)) }
         enfileirar(context, listOf(id))
         _andamento.first { mapa ->
             val a = mapa[id] ?: AndamentoDownload()
