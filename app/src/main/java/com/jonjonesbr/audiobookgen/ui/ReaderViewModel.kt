@@ -126,9 +126,12 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         _uiState.update { it.copy(syncAtivo = false, paragrafoSyncAtual = -1) }
     }
 
+    /** Para o acompanhamento do audiobook (a leitura guiada assumiu) sem apagar o parágrafo em destaque. */
     fun pausarStandardSync() {
         syncJob?.cancel()
         syncJob = null
+        // Sem isso o syncAtivo do audiobook ficava ligado e o leitor seguia rolando por ele durante a guiada.
+        if (_uiState.value.syncAtivo) _uiState.update { it.copy(syncAtivo = false) }
     }
 
     fun retomarSync() {

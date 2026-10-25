@@ -588,11 +588,10 @@ class ReaderActivity : BasePlayerActivity() {
      * inalterada). Chamada tanto na criação quanto ao alternar a opção ao vivo. */
     private fun aplicarOrientacaoRolagem(horizontal: Boolean) {
         pagerSnapHelper?.attachToRecyclerView(null)
-        recyclerView.layoutManager = LinearLayoutManager(
+        recyclerView.layoutManager = LeitorLayoutManager(
             this,
-            if (horizontal) LinearLayoutManager.HORIZONTAL else LinearLayoutManager.VERTICAL,
-            false
-        )
+            if (horizontal) LinearLayoutManager.HORIZONTAL else LinearLayoutManager.VERTICAL
+        ) { leituraGuiadaConduzRolagem() }
         if (horizontal) {
             pagerSnapHelper = androidx.recyclerview.widget.PagerSnapHelper().apply {
                 attachToRecyclerView(recyclerView)
@@ -1280,9 +1279,16 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
-    /** Extraído de [atualizarUI] (scroll automático da leitura guiada). */
+    /** Leitura guiada ativa e o usuário não rolou com o dedo: só o acompanhamento dela mexe na rolagem. */
+    private fun leituraGuiadaConduzRolagem(): Boolean =
+        (guidedPlayerManager?.state?.value?.index ?: -1) >= 0 && guidedReadingBarController?.scrollManual != true
+
+    /** Extraído de [atualizarUI] (scroll automático do audiobook tocando, não da leitura guiada). */
     private fun sincronizarScrollAutomatico(state: ReaderUiState) {
         val controlador = guidedReadingBarController ?: return
+        // Na leitura guiada o acompanhamento fino (GuidedReadingBarController) já rola; este salto até o
+        // parágrafo brigava com ele (subia para o topo ou descia até o fim do parágrafo a cada troca).
+        if ((guidedPlayerManager?.state?.value?.index ?: -1) >= 0) return
         val paragrafoMudouDesdeUltimoSync =
             state.paragrafoSyncAtual != controlador.ultimoScrollSyncStandard
         val podeRolarAutomaticamente = !controlador.scrollManual && state.syncAtivo &&
