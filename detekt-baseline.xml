@@ -33,7 +33,7 @@
     <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private fun prefetch(index: Int)</ID>
     <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private suspend fun tocarParagrafoPorFalantes( segments: List&lt;VoiceAssignedSegment&gt;, paragraphText: String, narratorVoice: String, fallbackEngine: String, ritmo: Int, speedVal: Float )</ID>
     <ID>CyclomaticComplexMethod:GuidedReadingBarController.kt$GuidedReadingBarController$private fun atualizarGuidedPlayerUI(guidedState: GuidedState)</ID>
-    <ID>CyclomaticComplexMethod:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$fun show(activity: AppCompatActivity, manager: GuidedPlayerManager, aoMudar: () -&gt; Unit = {})</ID>
+    <ID>CyclomaticComplexMethod:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$fun show( activity: AppCompatActivity, manager: GuidedPlayerManager, prepararCapitulo: (() -&gt; Unit)? = null, aoMudar: () -&gt; Unit = {} )</ID>
     <ID>CyclomaticComplexMethod:LinkDownloader.kt$LinkDownloader$suspend fun baixar(ctx: Context, url: String, aoProgredir: (bytes: Long, total: Long) -&gt; Unit): Baixado</ID>
     <ID>CyclomaticComplexMethod:LivroActivity.kt$LivroActivity$private fun mostrar(l: LivroBiblioteca)</ID>
     <ID>CyclomaticComplexMethod:MeusLivrosActivity.kt$MeusLivrosActivity$private fun aplicar()</ID>
@@ -78,7 +78,7 @@
     <ID>LongMethod:GuidedPlayerManager.kt$GuidedPlayerManager$fun prepararCapitulo(desde: Int, ate: Int, titulo: String)</ID>
     <ID>LongMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private suspend fun tocarParagrafoPorFalantes( segments: List&lt;VoiceAssignedSegment&gt;, paragraphText: String, narratorVoice: String, fallbackEngine: String, ritmo: Int, speedVal: Float )</ID>
     <ID>LongMethod:GuidedReadingBarController.kt$GuidedReadingBarController$private fun atualizarGuidedPlayerUI(guidedState: GuidedState)</ID>
-    <ID>LongMethod:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$fun show(activity: AppCompatActivity, manager: GuidedPlayerManager, aoMudar: () -&gt; Unit = {})</ID>
+    <ID>LongMethod:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$fun show( activity: AppCompatActivity, manager: GuidedPlayerManager, prepararCapitulo: (() -&gt; Unit)? = null, aoMudar: () -&gt; Unit = {} )</ID>
     <ID>LongMethod:KokoroTtsEngine.kt$KokoroTtsEngine$@Suppress("TooGenericExceptionCaught") @Synchronized private fun byomEngine(resolved: BYOMManager.VozResolvidaByom): OfflineTts?</ID>
     <ID>LongMethod:KokoroTtsEngine.kt$KokoroTtsEngine$@Suppress("TooGenericExceptionCaught") suspend fun synthesize(texto: String, voiceId: String, outputFile: File): Result&lt;File&gt;</ID>
     <ID>LongMethod:LinkDownloader.kt$LinkDownloader$suspend fun baixar(ctx: Context, url: String, aoProgredir: (bytes: Long, total: Long) -&gt; Unit): Baixado</ID>

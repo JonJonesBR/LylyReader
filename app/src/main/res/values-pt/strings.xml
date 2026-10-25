@@ -378,11 +378,8 @@
         <item quantity="other">%1$d trechos removidos. Capítulos encontrados: %2$d.</item>
         <item quantity="many">%1$d trechos removidos. Capítulos encontrados: %2$d.</item>
     </plurals>
-    <string name="scope_full_book">Converter livro inteiro</string>
     <string name="scope_edit_text">Editar texto tratado</string>
     <string name="scope_redo_cleaning">Refazer limpeza</string>
-    <string name="scope_export_clean_text">Exportar texto limpo sem áudio</string>
-    <string name="scope_export_chapters_files">Exportar capítulos como arquivos separados</string>
     <string name="toast_sem_capitulos_para_exportar">Este livro não tem capítulos detectados para exportar.</string>
     <plurals name="toast_capitulos_exportados_qtd">
         <item quantity="one">%d arquivo de capítulo salvo.</item>
@@ -442,7 +439,7 @@
     <string name="help_conversion_step3">Escolha a voz e o ritmo e toque em \"Gerar agora\" ou em \"Adicionar à fila\"</string>
     <string name="help_conversion_step4">Acompanhe em Conversões; o audiobook pronto aparece na aba Audiobooks</string>
     <string name="help_reader_title">Lendo e selecionando trechos</string>
-    <string name="help_reader_step1">Abra um livro e toque em \"Leitura guiada\" para ler e ouvir ao mesmo tempo</string>
+    <string name="help_reader_step1">Toque em qualquer parágrafo para começar a leitura guiada e ouvir enquanto lê</string>
     <string name="help_reader_step2">Use as setas ‹ › da barra do capítulo para ir ao anterior ou ao próximo; toque no nome do capítulo para ver a lista e marcar capítulos para converter</string>
     <string name="help_reader_step3">Pressione um parágrafo para iniciar a seleção de trecho</string>
     <string name="help_reader_step4">Toque em \"Converter seleção\" para converter só o trecho escolhido</string>
@@ -505,10 +502,7 @@
     <string name="cd_mais_opcoes">Mais opções</string>
     <string name="btn_concluir_modo">Concluir</string>
     <string name="fab_converter_principal">Converter para áudio</string>
-    <string name="sheet_acoes_titulo">Ações</string>
-    <string name="sheet_section_conversion">Conversão</string>
     <string name="sheet_section_reading">Leitura</string>
-    <string name="sheet_section_editing">Edição</string>
     <string name="action_help_tutorial">Ajuda &amp; Tutorial</string>
     <string name="label_ajuda">Ajuda</string>
     <string name="desc_settings_tutorial">Aprenda a usar todos os recursos do LylyReader — conversão, leitor, biblioteca, fila e configurações.</string>
@@ -571,8 +565,6 @@
     <string name="label_voz_config_livro">Voz</string>
     <string name="label_velocidade_config_livro">Velocidade</string>
     <string name="action_guided_reading">Leitura Guiada</string>
-    <string name="btn_baixar_capitulo">Baixar Capítulo</string>
-    <string name="btn_baixar_livro">Baixar Livro Completo</string>
     <string name="btn_ouvir_audiobook_livro">Ouvir Audiobook</string>
     <string name="mini_player_ler_livro">📖 Ler este livro</string>
     <string name="toast_download_started">Download iniciado em segundo plano...</string>
@@ -621,8 +613,6 @@
     <string name="cd_bookmark">Marcador</string>
     <string name="cd_bookmark_adicionar">Marcar este trecho</string>
     <string name="cd_bookmark_remover">Remover marcador deste trecho</string>
-    <string name="bookmark_listar">Marcadores</string>
-    <string name="bookmark_sem_itens">Nenhum marcador para este livro</string>
     <string name="bookmark_nome_padrao">Página %1$d</string>
     <string name="bookmark_dialog_salvar">Salvar</string>
     <string name="toast_bookmark_adicionado">Marcador adicionado!</string>
@@ -633,8 +623,6 @@
     <string name="menu_destacar_trecho">Destacar</string>
     <string name="destaque_dialog_titulo">Destacar trecho</string>
     <string name="destaque_nota_hint">Nota (opcional)</string>
-    <string name="destaque_listar">Destaques</string>
-    <string name="destaque_sem_itens">Nenhum destaque neste livro</string>
     <string name="toast_destaque_adicionado">Destaque salvo!</string>
     <string name="toast_destaque_removido">Destaque removido</string>
 
@@ -809,8 +797,8 @@
     <string name="clone_rename">Renomear</string>
     <string name="clone_delete">Apagar</string>
     <string name="clone_delete_message">Apagar "%1$s"? O áudio de referência dela é removido deste aparelho.</string>
-    <string name="action_prepare_chapter">Preparar capítulo (sem pausas)</string>
-    <string name="prerender_confirm_title">Preparar capítulo</string>
+    <string name="action_prepare_chapter">Pré-carregar capítulo (tocar sem esperas)</string>
+    <string name="prerender_confirm_title">Pré-carregar capítulo</string>
     <string name="prerender_confirm_message">O app vai falar %1$d trechos de "%2$s" com a voz atual e guardá-los neste aparelho, para a leitura guiada tocar sem esperar. Pode demorar; uma notificação mostra o andamento e permite cancelar. Trocar a voz ou a velocidade cancela o preparo.</string>
     <string name="prerender_confirm_start">Preparar</string>
     <string name="prerender_started">Preparando o capítulo em segundo plano.</string>
@@ -1373,4 +1361,24 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="erro_amigavel_arquivo_ilegivel">Não foi possível ler o arquivo.</string>
     <string name="erro_amigavel_formato">O arquivo não está no formato esperado.</string>
     <string name="erro_amigavel_generico">Algo deu errado. Tente de novo.</string>
+    <!-- Menu de ações do leitor (lista agrupada) -->
+    <string name="acoes_secao_voz">Voz e pronúncia</string>
+    <string name="acoes_secao_audiobook">Audiobook</string>
+    <string name="acoes_mais_opcoes">Mais opções</string>
+    <string name="marcacoes_titulo">Marcadores e destaques</string>
+    <string name="marcacoes_sem_itens">Nenhum marcador ou destaque neste livro ainda</string>
+    <string name="acao_dicionario_pronuncia">Dicionário de pronúncias</string>
+    <string name="acao_gerar_audiobook">Gerar audiobook (MP3)</string>
+    <string name="gerar_audiobook_titulo">Gerar audiobook</string>
+    <string name="gerar_audiobook_livro">Livro inteiro</string>
+    <string name="gerar_audiobook_capitulo">Só este capítulo: %1$s</string>
+    <string name="acao_exportar_texto">Exportar texto</string>
+    <string name="exportar_texto_titulo">Exportar texto</string>
+    <string name="exportar_arquivo_unico">Arquivo único</string>
+    <string name="exportar_por_capitulo">Um arquivo por capítulo</string>
+    <string name="acao_excluir_ocorrencias">Excluir palavra ou frase do livro</string>
+    <string name="guided_options_preload_title">Pré-carregar capítulo</string>
+    <string name="guided_options_preload_desc">Gera antes o áudio do resto deste capítulo, para tocar sem esperas entre as frases.</string>
+    <string name="cd_section_expanded">aberto</string>
+    <string name="cd_section_collapsed">fechado</string>
 </resources>

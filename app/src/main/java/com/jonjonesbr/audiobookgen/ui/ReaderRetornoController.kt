@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import com.google.android.material.tabs.TabLayout
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
@@ -41,12 +40,9 @@ class ReaderRetornoController(
         val onBaixarCapitulo: () -> Unit,
         val onBaixarLivro: () -> Unit,
         val onOuvirAudiobook: () -> Unit,
-        val onAbrirCapitulos: () -> Unit,
         val onConfigurarVozesPersonagens: () -> Unit,
-        val onAbrirMarcadores: () -> Unit,
-        val onAbrirDestaques: () -> Unit,
-        val onIniciarLeituraGuiada: () -> Unit,
-        val onPrepararCapitulo: () -> Unit,
+        val onAbrirMarcacoes: () -> Unit,
+        val onAbrirPronuncia: () -> Unit,
         val onAbrirAparencia: () -> Unit,
         val onAbrirSleepTimer: () -> Unit,
         val onClonarVoz: () -> Unit = {},
@@ -124,135 +120,84 @@ class ReaderRetornoController(
         )
     }
 
-    /** Itens da seção "LEITURA" do bottom sheet de ações — extraído pra manter [mostrarBottomSheetAcoes] enxuto. */
-    private fun configurarItensSecaoLeitura(
+    /** Liga um item do menu: fecha o menu e executa [acao]. */
+    private fun android.view.View.item(
+        id: Int,
+        dialog: com.google.android.material.bottomsheet.BottomSheetDialog,
+        acao: () -> Unit
+    ) {
+        findViewById<android.view.View>(id).setOnClickListener {
+            dialog.dismiss()
+            acao()
+        }
+    }
+
+    /** Grupos "Leitura" e "Voz e pronúncia". */
+    private fun configurarItensLeituraEVoz(
         dialog: com.google.android.material.bottomsheet.BottomSheetDialog,
         view: android.view.View
     ) {
-        view.findViewById<android.view.View>(R.id.itemAcaoCapitulos).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onAbrirCapitulos()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoMarcadores).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onAbrirMarcadores()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoDestaques).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onAbrirDestaques()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoLeituraGuiada).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onIniciarLeituraGuiada()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoPrepararCapitulo).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onPrepararCapitulo()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoConfigLivro).setOnClickListener {
-            dialog.dismiss()
+        view.item(R.id.itemAcaoMarcacoes, dialog) { callbacks.onAbrirMarcacoes() }
+        view.item(R.id.itemAcaoSleepTimer, dialog) { callbacks.onAbrirSleepTimer() }
+        view.item(R.id.itemAcaoAparencia, dialog) { callbacks.onAbrirAparencia() }
+        view.item(R.id.itemAcaoConfigLivro, dialog) {
             ConfigLivroDialog.mostrar(activity, callbacks.obterCaminhoArquivo(), callbacks.onClonarVoz)
         }
-        view.findViewById<android.view.View>(R.id.itemAcaoVozesPersonagens).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onConfigurarVozesPersonagens()
-        }
+        view.item(R.id.itemAcaoVozesPersonagens, dialog) { callbacks.onConfigurarVozesPersonagens() }
+        view.item(R.id.itemAcaoPronuncia, dialog) { callbacks.onAbrirPronuncia() }
     }
 
-    /** Abas do bottom sheet de ações — alterna qual grupo de itens fica visível. */
-    private fun configurarTabsAcoesReader(view: android.view.View) {
-        val tabs = view.findViewById<TabLayout>(R.id.tabsAcoesReader)
-        val grupos = listOf(
-            view.findViewById<android.view.View>(R.id.grupoAcoesConversao),
-            view.findViewById<android.view.View>(R.id.grupoAcoesLeitura),
-            view.findViewById<android.view.View>(R.id.grupoAcoesEdicao)
-        )
-        tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
-                grupos.forEachIndexed { i, grupo ->
-                    grupo.visibility = if (i == tab.position) View.VISIBLE else View.GONE
-                }
-            }
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
-        })
-    }
-
-    /** Itens da aba "CONVERSÃO" do bottom sheet de ações — extraído pra manter [mostrarBottomSheetAcoes] enxuto. */
-    private fun configurarItensSecaoConversao(
+    /** Grupos "Audiobook" e "Mais opções" (texto e arquivo). */
+    private fun configurarItensAudiobookEMais(
         dialog: com.google.android.material.bottomsheet.BottomSheetDialog,
         view: android.view.View
     ) {
-        view.findViewById<android.view.View>(R.id.itemAcaoConverterTudo).setOnClickListener {
-            dialog.dismiss()
-            retornarDocumentoAtual()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoExportar).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onExportarTextoLimpo()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoExportarCapitulos).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onExportarCapitulosPasta()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoCompartilharTrecho).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onCompartilharTrecho()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoBaixarCapitulo).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onBaixarCapitulo()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoBaixarLivro).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onBaixarLivro()
-        }
-
+        view.item(R.id.itemAcaoGerarAudiobook, dialog) { mostrarDialogoGerarAudiobook() }
         val itemOuvirAudiobook = view.findViewById<android.view.View>(R.id.itemAcaoOuvirAudiobook)
         val mp3Vinculado =
             com.jonjonesbr.audiobookgen.data.LinkedBookStore.mp3Vinculado(activity, callbacks.obterCaminhoArquivo())
         itemOuvirAudiobook.visibility =
             if (mp3Vinculado != null && File(mp3Vinculado).exists()) View.VISIBLE else View.GONE
-        itemOuvirAudiobook.setOnClickListener {
-            dialog.dismiss()
-            callbacks.onOuvirAudiobook()
+        view.item(R.id.itemAcaoOuvirAudiobook, dialog) { callbacks.onOuvirAudiobook() }
+
+        val grupoMais = view.findViewById<android.view.View>(R.id.grupoAcoesMais)
+        val setaMais = view.findViewById<android.view.View>(R.id.ivAcoesMaisOpcoes)
+        val cabecalhoMais = view.findViewById<android.view.View>(R.id.itemAcaoMaisOpcoes)
+        fun mostrarMais(aberto: Boolean) {
+            grupoMais.visibility = if (aberto) View.VISIBLE else View.GONE
+            setaMais.rotation = if (aberto) SETA_ABERTA else SETA_FECHADA
+            androidx.core.view.ViewCompat.setStateDescription(
+                cabecalhoMais,
+                activity.getString(if (aberto) R.string.cd_section_expanded else R.string.cd_section_collapsed)
+            )
         }
+        mostrarMais(false)
+        cabecalhoMais.setOnClickListener { mostrarMais(grupoMais.visibility != View.VISIBLE) }
+
+        view.item(R.id.itemAcaoEditar, dialog) { viewModel.ativarModoEdicao() }
+        view.item(R.id.itemAcaoExcluirPalavras, dialog) { mostrarDialogoExcluirOcorrencias() }
+        view.item(R.id.itemAcaoRefazerLimpeza, dialog) {
+            aplicarEdicoesPendentes()
+            viewModel.executarLimpeza(File(callbacks.obterCaminhoArquivo()).extension.lowercase())
+        }
+        view.item(R.id.itemAcaoExportar, dialog) { mostrarDialogoExportarTexto() }
+        view.item(R.id.itemAcaoCompartilharTrecho, dialog) { callbacks.onCompartilharTrecho() }
     }
 
+    /**
+     * Menu de ações do leitor: uma lista agrupada (Leitura, Voz e pronúncia, Audiobook) e "Mais opções"
+     * fechado. Antes eram 3 abas com 19 itens, alguns repetidos.
+     */
     fun mostrarBottomSheetAcoes() {
         val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(activity)
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_acoes_reader, null)
         dialog.setContentView(view)
         dialog.expandirEmPaisagem()
-        configurarTabsAcoesReader(view)
         itensAcaoClicaveis.forEach { view.findViewById<android.view.View>(it).marcarComoBotao() }
 
-        configurarItensSecaoConversao(dialog, view)
-        configurarItensSecaoLeitura(dialog, view)
-        view.findViewById<android.view.View>(R.id.itemAcaoEditar).setOnClickListener {
-            dialog.dismiss()
-            viewModel.ativarModoEdicao()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoExcluirPalavras).setOnClickListener {
-            dialog.dismiss()
-            mostrarDialogoExcluirOcorrencias()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoAparencia).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onAbrirAparencia()
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoRefazerLimpeza).setOnClickListener {
-            dialog.dismiss()
-            aplicarEdicoesPendentes()
-            viewModel.executarLimpeza(File(callbacks.obterCaminhoArquivo()).extension.lowercase())
-        }
-        view.findViewById<android.view.View>(R.id.itemAcaoSleepTimer).setOnClickListener {
-            dialog.dismiss()
-            callbacks.onAbrirSleepTimer()
-        }
-
-        view.findViewById<android.view.View>(R.id.itemAcaoAjuda).setOnClickListener {
-            dialog.dismiss()
+        configurarItensLeituraEVoz(dialog, view)
+        configurarItensAudiobookEMais(dialog, view)
+        view.item(R.id.itemAcaoAjuda, dialog) {
             com.jonjonesbr.audiobookgen.ui.HelpActivity.start(
                 activity,
                 com.jonjonesbr.audiobookgen.ui.HelpTopico.LEITOR
@@ -260,39 +205,60 @@ class ReaderRetornoController(
         }
 
         if (somenteLeitura) {
-            esconderItensDeAudio(view)
-            // Abre direto na aba "Leitura" (índice 1: Conversão, Leitura, Edição). O listener já está registrado.
-            view.findViewById<TabLayout>(R.id.tabsAcoesReader).getTabAt(1)?.select()
+            // "Ler sem áudio": some tudo que converte, toca ou configura voz.
+            listOf(R.id.grupoAcoesVoz, R.id.grupoAcoesAudiobook, R.id.itemAcaoSleepTimer)
+                .forEach { view.findViewById<android.view.View>(it).visibility = View.GONE }
         }
 
         dialog.show()
     }
 
+    /** "Gerar audiobook": o livro inteiro ou só o capítulo em leitura (antes eram 3 itens no menu). */
+    private fun mostrarDialogoGerarAudiobook() {
+        val texto = viewModel.textoEfetivo() ?: return
+        val capitulo = texto.capitulos.getOrNull(viewModel.uiState.value.capituloAtivo)
+        if (capitulo == null) {
+            callbacks.onBaixarLivro()
+            return
+        }
+        val opcoes = arrayOf(
+            activity.getString(R.string.gerar_audiobook_livro),
+            activity.getString(
+                R.string.gerar_audiobook_capitulo,
+                com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos.tituloLimpo(capitulo.titulo)
+            )
+        )
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setTitle(R.string.gerar_audiobook_titulo)
+            .setItems(opcoes) { _, which ->
+                if (which == 0) callbacks.onBaixarLivro() else callbacks.onBaixarCapitulo()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
+    }
+
+    /** "Exportar texto": um arquivo só ou um por capítulo. */
+    private fun mostrarDialogoExportarTexto() {
+        val opcoes = arrayOf(
+            activity.getString(R.string.exportar_arquivo_unico),
+            activity.getString(R.string.exportar_por_capitulo)
+        )
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setTitle(R.string.exportar_texto_titulo)
+            .setItems(opcoes) { _, which ->
+                if (which == 0) callbacks.onExportarTextoLimpo() else callbacks.onExportarCapitulosPasta()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
+    }
+
     /** Todos os itens clicáveis do bottom sheet de ações: contêineres que o TalkBack anuncia como botão. */
     private val itensAcaoClicaveis = listOf(
-        R.id.itemAcaoConverterTudo, R.id.itemAcaoExportar, R.id.itemAcaoExportarCapitulos,
-        R.id.itemAcaoCompartilharTrecho, R.id.itemAcaoBaixarCapitulo, R.id.itemAcaoBaixarLivro,
-        R.id.itemAcaoOuvirAudiobook, R.id.itemAcaoCapitulos, R.id.itemAcaoMarcadores,
-        R.id.itemAcaoDestaques, R.id.itemAcaoLeituraGuiada, R.id.itemAcaoPrepararCapitulo,
-        R.id.itemAcaoConfigLivro, R.id.itemAcaoVozesPersonagens, R.id.itemAcaoEditar,
-        R.id.itemAcaoExcluirPalavras, R.id.itemAcaoAparencia, R.id.itemAcaoRefazerLimpeza,
-        R.id.itemAcaoSleepTimer, R.id.itemAcaoAjuda,
+        R.id.itemAcaoMarcacoes, R.id.itemAcaoSleepTimer, R.id.itemAcaoAparencia, R.id.itemAcaoConfigLivro,
+        R.id.itemAcaoVozesPersonagens, R.id.itemAcaoPronuncia, R.id.itemAcaoGerarAudiobook,
+        R.id.itemAcaoOuvirAudiobook, R.id.itemAcaoMaisOpcoes, R.id.itemAcaoEditar, R.id.itemAcaoExcluirPalavras,
+        R.id.itemAcaoRefazerLimpeza, R.id.itemAcaoExportar, R.id.itemAcaoCompartilharTrecho, R.id.itemAcaoAjuda,
     )
-
-    /** Itens do menu que convertem, tocam ou configuram voz/sleep timer — sumem no modo "Ler sem áudio". */
-    private fun esconderItensDeAudio(view: android.view.View) {
-        listOf(
-            R.id.itemAcaoConverterTudo,
-            R.id.itemAcaoBaixarCapitulo,
-            R.id.itemAcaoBaixarLivro,
-            R.id.itemAcaoOuvirAudiobook,
-            R.id.itemAcaoLeituraGuiada,
-            R.id.itemAcaoPrepararCapitulo,
-            R.id.itemAcaoConfigLivro,
-            R.id.itemAcaoVozesPersonagens,
-            R.id.itemAcaoSleepTimer,
-        ).forEach { view.findViewById<android.view.View>(it).visibility = View.GONE }
-    }
 
     private fun mostrarDialogoExcluirOcorrencias() {
         val campo = EditText(activity).apply {
@@ -309,17 +275,6 @@ class ReaderRetornoController(
             }
             .setNegativeButton(android.R.string.cancel, null)
             .exibir()
-    }
-
-    private fun retornarDocumentoAtual() {
-        aplicarEdicoesPendentes()
-        val state = viewModel.uiState.value
-        val texto = viewModel.textoEfetivo() ?: return
-        if (!state.temEdicoes && state.textoLimpo == null) {
-            finalizarComResultado(callbacks.obterCaminhoArquivo(), null, ReaderActivity.ACAO_CONVERTER)
-            return
-        }
-        salvarTextoTemporario(texto.paragrafos.joinToString("\n\n") { it.texto }, ReaderActivity.ACAO_CONVERTER)
     }
 
     private fun salvarTextoTemporario(
@@ -391,5 +346,11 @@ class ReaderRetornoController(
         callbacks.consumirEdicoesAdapter().forEach { (indice, texto) ->
             viewModel.atualizarParagrafoEditado(indice, texto)
         }
+    }
+
+    private companion object {
+        /** A seta de "Mais opções" é o chevron "próximo" girado: para baixo fechado, para cima aberto. */
+        const val SETA_FECHADA = 90f
+        const val SETA_ABERTA = -90f
     }
 }

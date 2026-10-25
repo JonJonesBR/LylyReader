@@ -24,7 +24,12 @@ object GuidedVoiceOptionsDialog {
 
     private val MOTORES_COM_PAUSA_ENTRE_FRASES = setOf("kokoro", "onnx", "pocket")
 
-    fun show(activity: AppCompatActivity, manager: GuidedPlayerManager, aoMudar: () -> Unit = {}) {
+    fun show(
+        activity: AppCompatActivity,
+        manager: GuidedPlayerManager,
+        prepararCapitulo: (() -> Unit)? = null,
+        aoMudar: () -> Unit = {}
+    ) {
         val prefs = AppPrefs(activity)
         val dp = activity.resources.displayMetrics.density
         val (voz, motorSalvo) = manager.vozEMotorDoLivro()
@@ -63,7 +68,7 @@ object GuidedVoiceOptionsDialog {
                 if (!marcado) {
                     // Os controles precisam mostrar de novo os valores globais.
                     dialogo.dismiss()
-                    show(activity, manager, aoMudar)
+                    show(activity, manager, prepararCapitulo, aoMudar)
                 }
             }
         })
@@ -117,7 +122,7 @@ object GuidedVoiceOptionsDialog {
                 aoMudar()
                 // Mostra (ou esconde) o controle da pausa fixa.
                 dialogo.dismiss()
-                show(activity, manager, aoMudar)
+                show(activity, manager, prepararCapitulo, aoMudar)
             }
         })
         conteudo.addView(TextView(activity).apply { setText(R.string.settings_pausas_naturais_desc); textSize = 12f })
@@ -151,6 +156,21 @@ object GuidedVoiceOptionsDialog {
                 setText(R.string.btn_paralelismo_reduzido)
                 isChecked = prefs.paralelismoKokoroReduzido
                 setOnCheckedChangeListener { _, marcado -> prefs.paralelismoKokoroReduzido = marcado; aoMudar() }
+            })
+        }
+
+        // Pré-carregar o capítulo: antes ficava no menu de ações do leitor, longe do player.
+        if (prepararCapitulo != null) {
+            secao(R.string.guided_options_preload_title)
+            conteudo.addView(TextView(activity).apply { setText(R.string.guided_options_preload_desc); textSize = 12f })
+            conteudo.addView(com.google.android.material.button.MaterialButton(
+                activity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                setText(R.string.action_prepare_chapter)
+                setOnClickListener {
+                    dialogo.dismiss()
+                    prepararCapitulo()
+                }
             })
         }
 

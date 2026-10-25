@@ -65,6 +65,8 @@ class GuidedReadingBarController(
         val esconderMiniPlayer: () -> Unit,
         val obterCaminhoArquivo: () -> String,
         val onLivroConcluido: () -> Unit = {},
+        /** "Pré-carregar capítulo" das opções do player. */
+        val prepararCapitulo: () -> Unit = {},
     )
 
     private val lifecycleScope = activity.lifecycleScope
@@ -142,7 +144,9 @@ class GuidedReadingBarController(
         views.btnGuidedVoz.setOnClickListener { callbacks.abrirSeletorVozes() }
         views.tvGuidedSoneca.setOnClickListener { callbacks.mostrarDialogoSleepTimer() }
         views.tvGuidedPassos.setOnClickListener {
-            GuidedVoiceOptionsDialog.show(activity, guidedPlayerManager) { atualizarRotuloPassos() }
+            GuidedVoiceOptionsDialog.show(activity, guidedPlayerManager, callbacks.prepararCapitulo) {
+                atualizarRotuloPassos()
+            }
         }
         views.btnGuidedVelocidade.setOnClickListener {
             VelocidadeSliderDialog.show(activity, guidedPlayerManager.playbackSpeedMultiplier) { novaVelocidade ->

@@ -71,35 +71,6 @@ class ReaderMarcacoesController(
         )
     }
 
-    fun mostrarDialogListarBookmarks() {
-        val bookmarks = BookmarkStore.listarPara(activity, callbacks.obterCaminhoArquivo())
-        if (bookmarks.isEmpty()) {
-            Toast.makeText(activity, R.string.bookmark_sem_itens, Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val nomes = bookmarks.map { it.nome }.toTypedArray()
-        androidx.appcompat.app.AlertDialog.Builder(activity)
-            .setTitle(R.string.bookmark_listar)
-            .setSingleChoiceItems(nomes, -1) { _, which ->
-                val bm = bookmarks[which]
-                callbacks.rolarParaParagrafo(bm.indiceParagrafo)
-            }
-            .setPositiveButton(R.string.btn_remover_marcador) { dialog, _ ->
-                (dialog as? androidx.appcompat.app.AlertDialog)?.listView?.let { lv ->
-                    val checkedItem = lv.checkedItemPosition
-                    if (checkedItem >= 0 && checkedItem < bookmarks.size) {
-                        BookmarkStore.remover(activity, bookmarks[checkedItem].id)
-                        Toast.makeText(activity, R.string.toast_bookmark_removido, Toast.LENGTH_SHORT).show()
-                        atualizarIconeBookmark(callbacks.obterParagrafoAtual())
-                        mostrarDialogListarBookmarks()
-                    }
-                }
-            }
-            .setNeutralButton(android.R.string.cancel, null)
-            .exibir()
-    }
-
     // ── Destaques (T3.5) ─────────────────────────────────────────────────────
 
     /** Recarrega os destaques salvos do livro atual para o adapter e força repintura. */
@@ -129,35 +100,51 @@ class ReaderMarcacoesController(
             .exibir()
     }
 
-    fun mostrarDialogListarDestaques() {
-        val destaques = HighlightStore.listarPara(activity, callbacks.obterCaminhoArquivo())
-        if (destaques.isEmpty()) {
-            Toast.makeText(activity, R.string.destaque_sem_itens, Toast.LENGTH_SHORT).show()
-            return
-        }
+    /** Uma marcação da lista unificada: onde está, como aparece e como se remove. */
+    private class Marcacao(val indiceParagrafo: Int, val rotulo: String, val remover: () -> Unit)
+
+    /**
+     * Marcadores e destaques numa lista só, na ordem do livro: tocar leva ao trecho, "Remover" apaga o marcado.
+     * Antes eram dois itens no menu de ações, cada um com o seu diálogo.
+     */
+    fun mostrarDialogListarMarcacoes() {
+        val caminho = callbacks.obterCaminhoArquivo()
         val texto = viewModel.textoEfetivo()
-        val rotulos = destaques.map { d ->
+        val marcadores = BookmarkStore.listarPara(activity, caminho).map { bm ->
+            Marcacao(bm.indiceParagrafo, "🔖 ${bm.nome}") {
+                BookmarkStore.remover(activity, bm.id)
+                Toast.makeText(activity, R.string.toast_bookmark_removido, Toast.LENGTH_SHORT).show()
+                atualizarIconeBookmark(callbacks.obterParagrafoAtual())
+            }
+        }
+        val destaques = HighlightStore.listarPara(activity, caminho).map { d ->
             val trecho = texto?.paragrafos?.getOrNull(d.indiceParagrafo)?.texto
                 ?.substring(d.inicio.coerceAtMost(d.fim), d.fim)
                 ?.take(BOOKMARK_NOME_MAX)
                 ?: "…"
-            if (d.nota.isNotBlank()) "${d.nota} — “$trecho”" else "“$trecho”"
-        }.toTypedArray()
+            val rotulo = if (d.nota.isNotBlank()) "${d.nota} — “$trecho”" else "“$trecho”"
+            Marcacao(d.indiceParagrafo, "🖍 $rotulo") {
+                HighlightStore.remover(activity, d.id)
+                carregarDestaques()
+                Toast.makeText(activity, R.string.toast_destaque_removido, Toast.LENGTH_SHORT).show()
+            }
+        }
+        val marcacoes = (marcadores + destaques).sortedBy { it.indiceParagrafo }
+        if (marcacoes.isEmpty()) {
+            Toast.makeText(activity, R.string.marcacoes_sem_itens, Toast.LENGTH_SHORT).show()
+            return
+        }
 
         androidx.appcompat.app.AlertDialog.Builder(activity)
-            .setTitle(R.string.destaque_listar)
-            .setSingleChoiceItems(rotulos, -1) { _, which ->
-                callbacks.rolarParaParagrafo(destaques[which].indiceParagrafo)
+            .setTitle(R.string.marcacoes_titulo)
+            .setSingleChoiceItems(marcacoes.map { it.rotulo }.toTypedArray(), -1) { _, which ->
+                callbacks.rolarParaParagrafo(marcacoes[which].indiceParagrafo)
             }
             .setPositiveButton(R.string.btn_remover_marcador) { dialog, _ ->
-                (dialog as? androidx.appcompat.app.AlertDialog)?.listView?.let { lv ->
-                    val checkedItem = lv.checkedItemPosition
-                    if (checkedItem >= 0 && checkedItem < destaques.size) {
-                        HighlightStore.remover(activity, destaques[checkedItem].id)
-                        carregarDestaques()
-                        Toast.makeText(activity, R.string.toast_destaque_removido, Toast.LENGTH_SHORT).show()
-                        mostrarDialogListarDestaques()
-                    }
+                val marcada = (dialog as? androidx.appcompat.app.AlertDialog)?.listView?.checkedItemPosition ?: -1
+                marcacoes.getOrNull(marcada)?.let {
+                    it.remover()
+                    mostrarDialogListarMarcacoes()
                 }
             }
             .setNeutralButton(android.R.string.cancel, null)

@@ -245,6 +245,7 @@ class ReaderActivity : BasePlayerActivity() {
                     },
                     obterCaminhoArquivo = { caminhoArquivo },
                     onLivroConcluido = { avancarSequenciaFila() },
+                    prepararCapitulo = { prepararCapituloAtual() },
                 ),
             )
         }
@@ -324,14 +325,9 @@ class ReaderActivity : BasePlayerActivity() {
                 onBaixarCapitulo = { baixarCapitulo() },
                 onBaixarLivro = { baixarLivroCompleto() },
                 onOuvirAudiobook = { ouvirAudiobookDesteLivro() },
-                onAbrirCapitulos = { mostrarBottomSheetCapitulos() },
                 onConfigurarVozesPersonagens = { personagensController.abrirConfiguracaoVozesPersonagens() },
-                onAbrirMarcadores = { marcacoesController.mostrarDialogListarBookmarks() },
-                onAbrirDestaques = { marcacoesController.mostrarDialogListarDestaques() },
-                onIniciarLeituraGuiada = {
-                    guidedReadingBarController?.let { it.playGuidedFrom(it.obterIndiceInicioLeitura()) }
-                },
-                onPrepararCapitulo = { prepararCapituloAtual() },
+                onAbrirMarcacoes = { marcacoesController.mostrarDialogListarMarcacoes() },
+                onAbrirPronuncia = { abrirDicionarioPronuncia() },
                 onAbrirAparencia = { aparenciaController.mostrarBottomSheet() },
                 onAbrirSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
                 onClonarVoz = { cloneVoiceFlow.iniciar() },
@@ -1243,7 +1239,9 @@ class ReaderActivity : BasePlayerActivity() {
         }
         val texto = viewModel.textoEfetivo() ?: return
         if (texto.paragrafos.isEmpty()) return
-        val inicio = (guidedReadingBarController?.obterIndiceInicioLeitura() ?: 0)
+        // Do trecho em leitura (ou visível) até o fim do capítulo dele; antes partia sempre do início do livro.
+        val emLeitura = manager.state.value.index.takeIf { it >= 0 }
+        val inicio = (emLeitura ?: paragrafoAtualVisivel() ?: 0)
             .coerceIn(0, texto.paragrafos.lastIndex)
         val capitulo = texto.capitulos.getOrNull(texto.paragrafos[inicio].indiceCapitulo)
         val fim = (capitulo?.indiceParagrafoFim ?: (inicio + PREPARO_PARAGRAFOS_SEM_CAPITULO))
@@ -1272,14 +1270,19 @@ class ReaderActivity : BasePlayerActivity() {
         when (acao) {
             ACAO_INICIAL_CAPITULOS -> mostrarBottomSheetCapitulos()
             ACAO_INICIAL_PERSONAGENS -> personagensController.abrirConfiguracaoVozesPersonagens()
-            ACAO_INICIAL_PRONUNCIA -> PronunciationDialog.showManager(
-                this, caminhoArquivo, ::ouvirPronuncia,
-                onSugerirIa = {
-                    val paragrafos = viewModel.textoEfetivo()?.paragrafos?.map { it.texto }.orEmpty()
-                    PronunciationAiFlow.start(this, paragrafos, caminhoArquivo)
-                }
-            )
+            ACAO_INICIAL_PRONUNCIA -> abrirDicionarioPronuncia()
         }
+    }
+
+    /** Dicionário de pronúncias do livro, com o botão de sugerir pronúncias por IA. */
+    private fun abrirDicionarioPronuncia() {
+        PronunciationDialog.showManager(
+            this, caminhoArquivo, ::ouvirPronuncia,
+            onSugerirIa = {
+                val paragrafos = viewModel.textoEfetivo()?.paragrafos?.map { it.texto }.orEmpty()
+                PronunciationAiFlow.start(this, paragrafos, caminhoArquivo)
+            }
+        )
     }
 
     /** Extraído de [atualizarUI] (contador da busca). */

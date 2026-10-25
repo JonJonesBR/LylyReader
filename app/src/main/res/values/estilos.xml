@@ -6,4 +6,19 @@
         <item name="android:maxLines">1</item>
         <item name="textAllCaps">false</item>
     </style>
+
+    <!-- Título de grupo no menu de ações do leitor ("Leitura", "Voz e pronúncia"...). -->
+    <style name="TituloSecaoAcoes">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/color_on_surface_muted</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.05</item>
+        <item name="android:accessibilityHeading">true</item>
+    </style>
 </resources>
