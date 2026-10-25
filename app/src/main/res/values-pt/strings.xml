@@ -268,9 +268,9 @@
     <string name="stats_livros_concluidos">Livros concluídos</string>
     <string name="stats_streak_dias">Sequência de dias</string>
     <string name="label_stats_ultimos_7_dias">ÚLTIMOS 7 DIAS</string>
-    <string name="settings_tab_geral">Geral</string>
-    <string name="settings_tab_audio">Áudio</string>
-    <string name="settings_tab_dados">Dados</string>
+    <string name="settings_tab_geral">Voz e leitura</string>
+    <string name="settings_tab_audio">Som</string>
+    <string name="settings_tab_dados">Backup e espaço</string>
     <string name="settings_tab_ajuda">Ajuda</string>
     <string name="cache_calculando">Calculando...</string>
     <string name="btn_limpar_cache">Limpar</string>
@@ -289,7 +289,7 @@
         <item>Supertonic — modelo de TTS neural (OpenRAIL-M). Copyright (c) Supertone.</item>
         <item>Pocket TTS 3.3 — pacotes ONNX públicos sem clonagem e presets fixos (CC BY 4.0). Copyright (c) Kyutai Labs. Runtime C++ PocketTTS.cpp (MIT), SentencePiece (Apache-2.0) e dr_libs (Unlicense).</item>
     </string-array>
-    <string name="desc_sobre_app">Converte livros em audiobooks de alta qualidade usando Microsoft Edge TTS e Google Gemini TTS, diretamente no seu dispositivo.</string>
+    <string name="desc_sobre_app">Lê seus livros em voz alta e os transforma em audiobooks, com vozes que funcionam no próprio aparelho ou pela internet.</string>
     <string name="label_formatos_suportados">Formatos suportados</string>
     <string name="formatos_suportados">EPUB · PDF · TXT · MD · DOC · DOCX · MOBI</string>
     <string name="hint_gemini_key">AIza...</string>
@@ -451,7 +451,7 @@
     <string name="help_settings_step1">Vozes: na tela do livro, toque em Trocar para escolher vozes online (Edge, Gemini, ElevenLabs) ou offline (Supertonic, Kokoro, Piper, Pocket)</string>
     <string name="help_settings_step2">Voz e ritmo: ajuste na tela do livro, em Gerar audiobook</string>
     <string name="help_settings_step3">Pasta de saída: em Gerar audiobook › Opções avançadas, escolha onde os MP3 são salvos</string>
-    <string name="help_settings_step4">Cache: libere espaço removendo arquivos temporários em Ajustes</string>
+    <string name="help_settings_step4">Em Ajustes: Som tem pausas e tom da voz; Backup e espaço faz backup e libera espaço</string>
 
     <!-- Diálogos Offline e FAB -->
     <string name="offline_titulo">Você está offline</string>
@@ -1436,4 +1436,81 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="alinhamento_esquerda">Esquerda</string>
     <string name="alinhamento_centro">Centro</string>
     <string name="alinhamento_direita">Direita</string>
+    <!-- Ajustes em linhas -->
+    <string name="aj_secao_voz">Voz</string>
+    <string name="aj_secao_leitura">Leitura</string>
+    <string name="aj_secao_pausas">Pausas</string>
+    <string name="aj_secao_ouvir">Ao ouvir</string>
+    <string name="aj_secao_tecnico">Para quem quer mexer em detalhes</string>
+    <string name="aj_secao_backup">Backup</string>
+    <string name="aj_secao_espaco">Espaço no aparelho</string>
+    <string name="aj_secao_aprender">Aprender</string>
+    <string name="aj_secao_suporte">Suporte</string>
+    <string name="aj_aviso_notificacao">As notificações estão desligadas: você não verá o andamento das conversões.</string>
+    <string name="aj_ativar">Ativar</string>
+    <string name="aj_aviso_bateria">O Android pode pausar conversões longas para economizar bateria.</string>
+    <string name="aj_permitir">Permitir</string>
+    <string name="aj_motor">Voz que lê os livros</string>
+    <string name="aj_motor_sub">Vozes no aparelho ou pela internet</string>
+    <string name="aj_motor_intro">Todas são grátis. As vozes no aparelho funcionam sem internet; as outras precisam de conexão ou de uma conta no site.</string>
+    <string name="aj_motor_nome_onnx_rec">Supertonic (recomendada)</string>
+    <string name="aj_motor_nome_kokoro">Kokoro</string>
+    <string name="aj_motor_nome_pocket">Pocket</string>
+    <string name="aj_motor_nome_android">Vozes do Android</string>
+    <string name="aj_motor_nome_edge">Microsoft Edge</string>
+    <string name="aj_motor_nome_gemini">Gemini (Google)</string>
+    <string name="aj_motor_nome_elevenlabs">ElevenLabs</string>
+    <string name="aj_selo_offline">Grátis · sem internet</string>
+    <string name="aj_selo_online">Grátis · precisa de internet</string>
+    <string name="aj_selo_conta">Precisa de uma chave da sua conta no site</string>
+    <string name="aj_desc_android">Usa as vozes que já vêm instaladas no celular.</string>
+    <string name="aj_vozes">Vozes no aparelho</string>
+    <string name="aj_vozes_sub">Baixar, criar ou apagar vozes</string>
+    <string name="aj_pron">Pronúncia de palavras</string>
+    <string name="aj_pron_sub">Ensine como a voz deve falar uma palavra</string>
+    <string name="aj_blacklist">Palavras que a voz pula</string>
+    <string name="aj_tema_sub">Claro, escuro ou igual ao celular</string>
+    <string name="aj_estatisticas">Estatísticas de leitura</string>
+    <string name="aj_estatisticas_sub">Quanto você leu e ouviu (fica só no aparelho)</string>
+    <string name="aj_pausas_naturais">Pausas naturais</string>
+    <string name="aj_pausas_naturais_sub">A voz respira conforme a pontuação, como uma pessoa lendo</string>
+    <string name="aj_pausa_frase">Pausa entre frases</string>
+    <string name="aj_pausa_frase_sub">Vale quando as pausas naturais estão desligadas</string>
+    <string name="aj_tom">Tom da voz</string>
+    <string name="aj_tom_sub">Deixa a voz mais grave ou mais aguda</string>
+    <string name="aj_retomar">Ao voltar a ouvir, repetir alguns segundos</string>
+    <string name="aj_retomar_sub">Ajuda a lembrar onde a história parou</string>
+    <string name="aj_retomar_nao">Não</string>
+    <string name="aj_retomar_curto">Um pouco</string>
+    <string name="aj_retomar_longo">Mais</string>
+    <string name="aj_fim_conversao">Quando um audiobook ficar pronto</string>
+    <string name="aj_fim_conversao_sub">Onde ele abre ao tocar no aviso</string>
+    <string name="aj_fim_perguntar">Perguntar</string>
+    <string name="aj_fim_app">Neste app</string>
+    <string name="aj_fim_sistema">Em outro app</string>
+    <string name="aj_avancado">Ajustes para quem entende do assunto</string>
+    <string name="aj_avancado_sub">Qualidade, velocidade de preparo e memória. Os padrões já funcionam bem.</string>
+    <string name="aj_avancado_titulo">Ajustes avançados</string>
+    <string name="aj_avancado_intro">Os valores padrão funcionam bem na maioria dos aparelhos. Se algo piorar, use "Restaurar o padrão do som" na aba Som.</string>
+    <string name="aj_restaurar_som">Restaurar o padrão do som</string>
+    <string name="aj_restaurar_som_msg">Pausas, tom da voz, repetir ao retomar, qualidade e os ajustes avançados voltam ao padrão. Suas vozes, livros e pronúncias não mudam.</string>
+    <string name="aj_restaurar">Restaurar</string>
+    <string name="aj_restaurado">Padrão do som restaurado</string>
+    <string name="aj_backup_fazer">Fazer backup</string>
+    <string name="aj_backup_fazer_sub">Salva um arquivo para guardar ou levar para outro celular</string>
+    <string name="aj_backup_restaurar">Restaurar um backup</string>
+    <string name="aj_backup_restaurar_sub">Escolha um arquivo de backup do LylyReader</string>
+    <string name="aj_backup_tudo">Tudo: configurações, marcadores, destaques e progresso (recomendado)</string>
+    <string name="aj_backup_so_config">Só as configurações</string>
+    <string name="aj_temporarios">Arquivos temporários</string>
+    <string name="aj_liberar_espaco">Liberar espaço</string>
+    <string name="aj_limite_falas">Limite para as falas guardadas</string>
+    <string name="aj_limite_falas_sub">O app guarda falas já geradas para não gerar de novo</string>
+    <string name="aj_guia">Guia passo a passo</string>
+    <string name="aj_guia_sub">Como transformar um livro em audiobook</string>
+    <string name="aj_rever_intro_sub">As telas de boas-vindas do primeiro uso</string>
+    <string name="aj_rever_dicas_sub">As dicas voltam a aparecer nas telas</string>
+    <string name="aj_problema">Relatar um problema</string>
+    <string name="aj_sobre">Sobre o LylyReader</string>
+    <string name="aj_sobre_sub">Formatos aceitos e créditos das vozes</string>
 </resources>

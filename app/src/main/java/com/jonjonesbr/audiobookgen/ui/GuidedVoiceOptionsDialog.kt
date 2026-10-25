@@ -157,7 +157,10 @@ object GuidedVoiceOptionsDialog {
         activity.mostrarDialogo(dialogo)
         dialogo.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
             dialogo.dismiss()
-            activity.startActivity(Intent(activity, SettingsActivity::class.java))
+            activity.startActivity(
+                Intent(activity, SettingsActivity::class.java)
+                    .putExtra(SettingsActivity.EXTRA_ABA, SettingsActivity.ABA_SOM)
+            )
         }
     }
 

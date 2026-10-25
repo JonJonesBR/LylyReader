@@ -48,11 +48,6 @@ class SettingsActivity : BasePlayerActivity() {
     private val blacklistDialog by lazy {
         BlacklistDialog(this, blacklistStore, onMudou = { carregarInfoBlacklist() })
     }
-    private val pacotesOffline: PacotesVozOfflineCard by lazy {
-        PacotesVozOfflineCard(this, abrirSeletorByom = {
-            importarVozByomLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
-        })
-    }
 
     // Tema
 
@@ -96,7 +91,7 @@ class SettingsActivity : BasePlayerActivity() {
     // Pausa entre frases na leitura guiada com kokoro
     private lateinit var seekPausaFinalFrase: android.widget.SeekBar
     private lateinit var tvPausaFinalFraseValor: TextView
-    private lateinit var chkPausasNaturais: android.widget.CheckBox
+    private lateinit var chkPausasNaturais: android.widget.CompoundButton
 
     // Buffering da leitura guiada (profundidade de prefetch + paralelismo do kokoro)
     private lateinit var seekBufferParagrafos: android.widget.SeekBar
@@ -113,26 +108,6 @@ class SettingsActivity : BasePlayerActivity() {
         btnParalelismoSupertonicoPadrao to false, btnParalelismoSupertonicoExperimental to true
     )
 
-    // Auto-rewind
-    private lateinit var btnAutoRewindOff: Button
-    private lateinit var btnAutoRewindCurto: Button
-    private lateinit var btnAutoRewindLongo: Button
-    private val botoesAutoRewind get() = listOf(
-        btnAutoRewindOff to com.jonjonesbr.audiobookgen.util.AutoRewindMode.OFF,
-        btnAutoRewindCurto to com.jonjonesbr.audiobookgen.util.AutoRewindMode.CURTO,
-        btnAutoRewindLongo to com.jonjonesbr.audiobookgen.util.AutoRewindMode.LONGO
-    )
-
-    // Player ao abrir audiobook pronto pela notificação (null = "perguntar")
-    private lateinit var btnPlayerConversaoPerguntar: Button
-    private lateinit var btnPlayerConversaoApp: Button
-    private lateinit var btnPlayerConversaoSistema: Button
-    private val botoesPlayerConversao get() = listOf(
-        btnPlayerConversaoPerguntar to null,
-        btnPlayerConversaoApp to "app",
-        btnPlayerConversaoSistema to "sistema"
-    )
-
     // Cache
     private lateinit var tvCacheInfo: TextView
     private lateinit var btnLimparCache: Button
@@ -144,24 +119,11 @@ class SettingsActivity : BasePlayerActivity() {
 
     // Blacklist
     private lateinit var tvBlacklistInfo: TextView
-    private lateinit var btnGerenciarBlacklist: Button
 
     // Logs de Erro
     private lateinit var tvLogsErroInfo: TextView
-    private lateinit var btnVisualizarLogs: Button
-    // Permissão de notificações
-    private lateinit var tvPermissaoNotificacaoInfo: TextView
-    private lateinit var btnAbrirConfigNotificacoes: Button
-    private lateinit var tvOtimizacaoBateriaInfo: TextView
-    private lateinit var btnConfigOtimizacaoBateria: Button
 
-    // Backup
-    private lateinit var btnExportarConfig: Button
-    private lateinit var btnImportarConfig: Button
-
-    // Backup completo (Fase 5)
-    private lateinit var btnExportarBackupCompleto: Button
-    private lateinit var btnImportarBackupCompleto: Button
+    // Backup (configurações em JSON ou backup completo em ZIP)
     private val backupUseCase by lazy { com.jonjonesbr.audiobookgen.domain.BackupUseCase(this) }
 
     // Abas (agrupam as ~14 seções em 4 categorias, ao invés de uma rolagem só)
@@ -169,18 +131,17 @@ class SettingsActivity : BasePlayerActivity() {
     private lateinit var scrollSettings: androidx.core.widget.NestedScrollView
     private lateinit var gruposSettings: List<View>
 
+    // Página aberta por uma linha (escolha da voz, ajustes avançados, Sobre); null = nas abas.
+    private var paginaAberta: View? = null
+    private val voltarDaPagina = object : androidx.activity.OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = fecharPagina()
+    }
+
     private val exportarConfigLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri == null) return@registerForActivityResult
         salvarConfigJson(uri)
-    }
-
-    private val importarConfigLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri == null) return@registerForActivityResult
-        carregarConfigJson(uri)
     }
 
     private val exportarBackupLauncher = registerForActivityResult(
@@ -190,18 +151,12 @@ class SettingsActivity : BasePlayerActivity() {
         salvarBackupCompleto(uri)
     }
 
-    private val importarBackupLauncher = registerForActivityResult(
+    // "Restaurar um backup": um arquivo só; o conteúdo diz se é o backup completo (ZIP) ou só as configurações.
+    private val restaurarLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@registerForActivityResult
-        restaurarBackupCompleto(uri)
-    }
-
-    private val importarVozByomLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri == null) return@registerForActivityResult
-        pacotesOffline.importarPacoteByom(uri)
+        restaurarDeArquivo(uri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -212,6 +167,7 @@ class SettingsActivity : BasePlayerActivity() {
         findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollSettings)
             .getChildAt(0).limitarLarguraEmTelaAmpla(840)
 
+        onBackPressedDispatcher.addCallback(this, voltarDaPagina)
         vincularViews()
         configurarTabsSettings()
         carregarConfigAtual()
@@ -223,14 +179,13 @@ class SettingsActivity : BasePlayerActivity() {
         super.onResume()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.AJUSTES) // volta de outra tela: realça de novo a aba certa
         carregarInfoCache()
-        pacotesOffline.carregar(findViewById<LinearLayout>(R.id.layoutPacotesOffline))
         carregarInfoLogsErro()
         carregarInfoPermissaoNotificacao()
         carregarInfoOtimizacaoBateria()
     }
 
     private fun vincularViews() {
-        findViewById<ImageButton>(R.id.btnVoltarSettings).setOnClickListener { finish() }
+        findViewById<ImageButton>(R.id.btnVoltarSettings).setOnClickListener { fecharPagina() }
         findViewById<ImageButton>(R.id.btnAjudaSettings)
             .setOnClickListener { HelpActivity.start(this, HelpTopico.CONFIGURACOES) }
 
@@ -270,13 +225,6 @@ class SettingsActivity : BasePlayerActivity() {
         btnParalelismoSupertonicoExperimental = findViewById(R.id.btnParalelismoSupertonicoExperimental)
         btnResetarBuffering     = findViewById(R.id.btnResetarBuffering)
 
-        btnAutoRewindOff   = findViewById(R.id.btnAutoRewindOff)
-        btnAutoRewindCurto = findViewById(R.id.btnAutoRewindCurto)
-        btnAutoRewindLongo = findViewById(R.id.btnAutoRewindLongo)
-        btnPlayerConversaoPerguntar = findViewById(R.id.btnPlayerConversaoPerguntar)
-        btnPlayerConversaoApp       = findViewById(R.id.btnPlayerConversaoApp)
-        btnPlayerConversaoSistema   = findViewById(R.id.btnPlayerConversaoSistema)
-
         tvCacheInfo   = findViewById(R.id.tvCacheInfo)
         btnLimparCache = findViewById(R.id.btnLimparCache)
         tvCacheAudioInfo = findViewById(R.id.tvCacheAudioInfo)
@@ -286,22 +234,12 @@ class SettingsActivity : BasePlayerActivity() {
 
         // Blacklist
         tvBlacklistInfo = findViewById(R.id.tvBlacklistInfo)
-        btnGerenciarBlacklist = findViewById(R.id.btnGerenciarBlacklist)
 
         // Logs de Erro
         tvLogsErroInfo = findViewById(R.id.tvLogsErroInfo)
-        btnVisualizarLogs = findViewById(R.id.btnVisualizarLogs)
 
         // Permissão de notificações
         configurarBotaoPermissaoNotificacao()
-
-        // Backup
-        btnExportarConfig = findViewById(R.id.btnExportarConfig)
-        btnImportarConfig = findViewById(R.id.btnImportarConfig)
-
-        // Backup completo (Fase 5)
-        btnExportarBackupCompleto = findViewById(R.id.btnExportarBackupCompleto)
-        btnImportarBackupCompleto = findViewById(R.id.btnImportarBackupCompleto)
 
         tabsSettings   = findViewById(R.id.tabsSettings)
         scrollSettings = findViewById(R.id.scrollSettings)
@@ -315,12 +253,13 @@ class SettingsActivity : BasePlayerActivity() {
         configurarBotoesAjuda()
 
         // Versão do app
-        try {
-            val pInfo = packageManager.getPackageInfo(packageName, 0)
-            findViewById<TextView>(R.id.tvVersao).text = "v${pInfo.versionName}"
+        val versao = try {
+            "v${packageManager.getPackageInfo(packageName, 0).versionName}"
         } catch (_: Exception) {
-            findViewById<TextView>(R.id.tvVersao).text = "v?"
+            "v?"
         }
+        findViewById<TextView>(R.id.tvVersao).text = versao
+        findViewById<TextView>(R.id.tvVersaoLinha).text = versao
     }
 
     // ── Abas ─────────────────────────────────────────────────────────────────
@@ -337,25 +276,47 @@ class SettingsActivity : BasePlayerActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {}
         })
-        // Só em build de depuração: abre direto uma aba (o MIUI bloqueia toque por adb).
-        val depuravel = applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
-        val aba = intent.getIntExtra("extra_debug_aba", -1)
-        if (depuravel && aba >= 0) tabsSettings.getTabAt(aba)?.select()
+        // Abrir direto numa aba (ex.: "Mais ajustes" da leitura guiada abre em Som).
+        val aba = intent.getIntExtra(EXTRA_ABA, intent.getIntExtra("extra_debug_aba", -1))
+        if (aba >= 0) tabsSettings.getTabAt(aba)?.select()
     }
 
     private fun mostrarGrupoSettings(posicao: Int) {
+        if (paginaAberta != null) fecharPagina()
         gruposSettings.forEachIndexed { i, grupo -> grupo.visibility = if (i == posicao) View.VISIBLE else View.GONE }
         scrollSettings.scrollTo(0, 0)
     }
 
+    // ── Páginas ──────────────────────────────────────────────────────────────
+    // O que é longo ou técnico (escolha da voz, ajustes avançados, Sobre) abre no lugar das abas, com a
+    // seta no topo para voltar; o voltar do sistema também volta para a aba.
+
+    private fun abrirPagina(id: Int, titulo: Int) {
+        gruposSettings.forEach { it.visibility = View.GONE }
+        paginaAberta?.visibility = View.GONE
+        paginaAberta = findViewById<View>(id).apply { visibility = View.VISIBLE }
+        tabsSettings.visibility = View.GONE
+        findViewById<View>(R.id.divisorTabsSettings).visibility = View.GONE
+        findViewById<View>(R.id.btnVoltarSettings).visibility = View.VISIBLE
+        findViewById<TextView>(R.id.tvTituloSettings).setText(titulo)
+        voltarDaPagina.isEnabled = true
+        scrollSettings.scrollTo(0, 0)
+    }
+
+    private fun fecharPagina() {
+        val pagina = paginaAberta ?: return
+        pagina.visibility = View.GONE
+        paginaAberta = null
+        tabsSettings.visibility = View.VISIBLE
+        findViewById<View>(R.id.divisorTabsSettings).visibility = View.VISIBLE
+        findViewById<View>(R.id.btnVoltarSettings).visibility = View.GONE
+        findViewById<TextView>(R.id.tvTituloSettings).setText(R.string.nav_ajustes)
+        voltarDaPagina.isEnabled = false
+        mostrarGrupoSettings(tabsSettings.selectedTabPosition)
+    }
+
     private fun configurarBotoesAjuda() {
-        // Botões de ajuda por seção
-        findViewById<ImageButton>(R.id.btnAjudaMotorTts).setOnClickListener {
-            mostrarAjuda(
-                getString(R.string.settings_help_tts_title),
-                getString(R.string.settings_help_tts_message)
-            )
-        }
+        // Botões de ajuda dos ajustes técnicos (o resto se explica na própria linha)
         findViewById<ImageButton>(R.id.btnAjudaPausa).setOnClickListener {
             mostrarAjuda(
                 getString(R.string.settings_help_pause_title),
@@ -366,18 +327,6 @@ class SettingsActivity : BasePlayerActivity() {
             mostrarAjuda(
                 getString(R.string.settings_help_bitrate_title),
                 getString(R.string.settings_help_bitrate_message)
-            )
-        }
-        findViewById<ImageButton>(R.id.btnAjudaCache).setOnClickListener {
-            mostrarAjuda(
-                getString(R.string.settings_help_cache_title),
-                getString(R.string.settings_help_cache_message)
-            )
-        }
-        findViewById<ImageButton>(R.id.btnAjudaBlacklist).setOnClickListener {
-            mostrarAjuda(
-                getString(R.string.settings_help_blacklist_title),
-                getString(R.string.settings_help_blacklist_message)
             )
         }
     }
@@ -403,6 +352,7 @@ class SettingsActivity : BasePlayerActivity() {
         etGeminiKey.setText(SecurePreferences.getGeminiKeys(this))
         layoutElevenLabsKey.visibility = if (motor == "elevenlabs") View.VISIBLE else View.GONE
         etElevenLabsKey.setText(SecurePreferences.getElevenLabsKey(this))
+        atualizarMotorAtual(motor)
 
         // Pausas
         atualizarBotoesPausa(com.jonjonesbr.audiobookgen.data.AppPrefs(this).pausaMs)
@@ -429,33 +379,16 @@ class SettingsActivity : BasePlayerActivity() {
 
         atualizarUiBuffering()
 
-        // Auto-rewind
-        atualizarBotoesAutoRewind(appPrefs.autoRewindMode)
-        atualizarBotoesPlayerConversao(appPrefs.playerConversaoConcluida)
+        // Ao retomar e audiobook pronto
+        atualizarTextosOuvir()
 
         // Blacklist
         carregarInfoBlacklist()
     }
 
-    /** Aba Áudio › "Mostrar ajustes avançados": qualidade, passos, pausa entre blocos e buffering. */
-    private fun configurarAvancado() {
-        val botao = findViewById<Button>(R.id.btnSettingsAvancado)
-        val grupo = findViewById<View>(R.id.grupoSettingsAudioAvancado)
-        botao.setOnClickListener {
-            val abrir = grupo.visibility != View.VISIBLE
-            grupo.visibility = if (abrir) View.VISIBLE else View.GONE
-            botao.setText(if (abrir) R.string.settings_avancado_esconder else R.string.settings_avancado_mostrar)
-        }
-    }
-
     private fun configurarListeners() {
         configurarCreditosVoz()
-        findViewById<Button>(R.id.btnCentralDownloads).setOnClickListener {
-            startActivity(Intent(this, DownloadCentralActivity::class.java))
-        }
-        findViewById<Button>(R.id.btnImportarVozByom).setOnClickListener {
-            pacotesOffline.mostrarAvisoLicencaEImportar()
-        }
+        configurarLinhas()
         // Tema — salva e aplica (recria as Activities com o novo modo)
         findViewById<android.view.View>(R.id.rowTema).marcarComoBotao()
         findViewById<android.view.View>(R.id.rowTema).setOnClickListener { SeletorTemaSheet.mostrar(this) }
@@ -473,6 +406,7 @@ class SettingsActivity : BasePlayerActivity() {
             }
             layoutGeminiKey.visibility = if (motor == "gemini") View.VISIBLE else View.GONE
             layoutElevenLabsKey.visibility = if (motor == "elevenlabs") View.VISIBLE else View.GONE
+            atualizarMotorAtual(motor)
             salvarMotor(motor)
         }
 
@@ -494,52 +428,126 @@ class SettingsActivity : BasePlayerActivity() {
 
         configurarSupertonicSeekbar()
         configurarPocketPassosSeekbar()
-        findViewById<android.widget.Button>(R.id.btnGerenciarPronuncias).setOnClickListener {
-            PronunciationDialog.showManager(this)
-        }
-        configurarAvancado()
-        findViewById<android.widget.Button>(R.id.btnTimbre).setOnClickListener {
-            TimbreDialog.show(this, appPrefs)
-        }
         configurarPausaFinalFraseSeekbar()
         configurarBufferingLeituraGuiada()
-
-        configurarListenersAutoRewind()
-        configurarListenersPlayerConversao()
 
         // Cache
         btnLimparCache.setOnClickListener { limparCache() }
         configurarTetoCache()
+    }
 
-        // Vozes Offline
-
-        // Blacklist
-        btnGerenciarBlacklist.setOnClickListener { blacklistDialog.mostrarDialogoBlacklist() }
-
-        // Logs de Erro
-        btnVisualizarLogs.setOnClickListener { abrirLogsErro() }
-
-        // Estatísticas
-        findViewById<Button>(R.id.btnVerEstatisticas).setOnClickListener { abrirEstatisticas() }
-
-        // Aprender o app / rever introdução e dicas (Fase J)
-        findViewById<Button>(R.id.btnAprenderApp).setOnClickListener {
-            startActivity(Intent(this, AprenderActivity::class.java))
-        }
-        findViewById<Button>(R.id.btnReverTour).setOnClickListener {
+    /** Cada linha abre a sua escolha, diálogo ou página. */
+    private fun configurarLinhas() {
+        linha(R.id.rowMotor) { abrirPagina(R.id.pagMotor, R.string.aj_motor) }
+        linha(R.id.rowAvancado) { abrirPagina(R.id.pagAvancado, R.string.aj_avancado_titulo) }
+        linha(R.id.rowSobre) { abrirPagina(R.id.pagSobre, R.string.aj_sobre) }
+        linha(R.id.rowVozesAparelho) { startActivity(Intent(this, DownloadCentralActivity::class.java)) }
+        linha(R.id.rowPronuncias) { PronunciationDialog.showManager(this) }
+        linha(R.id.rowBlacklist) { blacklistDialog.mostrarDialogoBlacklist() }
+        linha(R.id.rowEstatisticas) { abrirEstatisticas() }
+        linha(R.id.rowPausasNaturais) { chkPausasNaturais.toggle() }
+        linha(R.id.rowTimbre) { TimbreDialog.show(this, appPrefs) }
+        linha(R.id.rowAutoRewind) { escolherAutoRewind() }
+        linha(R.id.rowPlayerConversao) { escolherPlayerConversao() }
+        linha(R.id.rowBackupFazer) { escolherBackupAFazer() }
+        linha(R.id.rowBackupRestaurar) { restaurarBackup() }
+        linha(R.id.rowLogsErro) { abrirLogsErro() }
+        linha(R.id.rowAprenderApp) { startActivity(Intent(this, AprenderActivity::class.java)) }
+        linha(R.id.rowAbrirTutorial) { HelpActivity.start(this, HelpTopico.CONVERSAO) }
+        linha(R.id.rowReverTour) {
             startActivity(Intent(this, OnboardingActivity::class.java).putExtra(OnboardingActivity.EXTRA_REVISAO, true))
         }
-        findViewById<Button>(R.id.btnReverDicas).setOnClickListener {
-            com.jonjonesbr.audiobookgen.data.AppPrefs(this).dicasVistas = emptySet()
+        linha(R.id.rowReverDicas) {
+            appPrefs.dicasVistas = emptySet()
             Toast.makeText(this, R.string.aprender_dicas_reativadas, Toast.LENGTH_SHORT).show()
         }
+        findViewById<Button>(R.id.btnRestaurarSom).setOnClickListener { confirmarRestaurarSom() }
+    }
 
-        // Tutorial
-        findViewById<Button>(R.id.btnAbrirTutorial).setOnClickListener {
-            com.jonjonesbr.audiobookgen.ui.HelpActivity.start(this, com.jonjonesbr.audiobookgen.ui.HelpTopico.CONVERSAO)
+    private fun linha(id: Int, acao: () -> Unit) {
+        findViewById<View>(id).apply {
+            marcarComoBotao()
+            setOnClickListener { acao() }
         }
+    }
 
-        configurarListenersBackup()
+    /** Valor da linha "Voz que lê os livros": o nome curto da voz escolhida. */
+    private fun atualizarMotorAtual(motor: String) {
+        findViewById<TextView>(R.id.tvMotorAtual).text = when (motor) {
+            "gemini" -> "Gemini"
+            "onnx" -> "Supertonic"
+            "kokoro" -> "Kokoro"
+            "pocket" -> "Pocket"
+            "android" -> "Android"
+            "elevenlabs" -> "ElevenLabs"
+            else -> "Microsoft"
+        }
+    }
+
+    // ── Ao ouvir: repetir ao retomar e player do audiobook pronto ───────────
+
+    private val modosAutoRewind = com.jonjonesbr.audiobookgen.util.AutoRewindMode.entries
+    private val rotulosAutoRewind =
+        intArrayOf(R.string.aj_retomar_nao, R.string.aj_retomar_curto, R.string.aj_retomar_longo)
+    private val valoresPlayerConversao = listOf(null, "app", "sistema")
+    private val rotulosPlayerConversao =
+        intArrayOf(R.string.aj_fim_perguntar, R.string.aj_fim_app, R.string.aj_fim_sistema)
+
+    private fun atualizarTextosOuvir() {
+        findViewById<TextView>(R.id.tvAutoRewindAtual)
+            .setText(rotulosAutoRewind[modosAutoRewind.indexOf(appPrefs.autoRewindMode).coerceAtLeast(0)])
+        val player = valoresPlayerConversao.indexOf(appPrefs.playerConversaoConcluida).coerceAtLeast(0)
+        findViewById<TextView>(R.id.tvPlayerConversaoAtual).setText(rotulosPlayerConversao[player])
+    }
+
+    private fun escolherAutoRewind() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.aj_retomar)
+            .setSingleChoiceItems(
+                rotulosAutoRewind.map { getString(it) }.toTypedArray(),
+                modosAutoRewind.indexOf(appPrefs.autoRewindMode)
+            ) { dialogo, qual ->
+                appPrefs.autoRewindMode = modosAutoRewind[qual]
+                atualizarTextosOuvir()
+                dialogo.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
+    }
+
+    private fun escolherPlayerConversao() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.aj_fim_conversao)
+            .setSingleChoiceItems(
+                rotulosPlayerConversao.map { getString(it) }.toTypedArray(),
+                valoresPlayerConversao.indexOf(appPrefs.playerConversaoConcluida).coerceAtLeast(0)
+            ) { dialogo, qual ->
+                appPrefs.playerConversaoConcluida = valoresPlayerConversao[qual]
+                atualizarTextosOuvir()
+                dialogo.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
+    }
+
+    /** "Restaurar o padrão do som": pausas, tom, repetir ao retomar, qualidade, passos e buffering. */
+    private fun confirmarRestaurarSom() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.aj_restaurar_som)
+            .setMessage(R.string.aj_restaurar_som_msg)
+            .setPositiveButton(R.string.aj_restaurar) { _, _ ->
+                appPrefs.restaurarPadroesDeSom()
+                lifecycleScope.launch {
+                    pythonEngine.setBitrate(appPrefs.bitrate)
+                    pythonEngine.sincronizarConfiguracoes(
+                        appPrefs.motorTts, SecurePreferences.getGeminiKeys(this@SettingsActivity), appPrefs.pausaMs
+                    )
+                }
+                carregarConfigAtual()
+                Toast.makeText(this, R.string.aj_restaurado, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
     }
 
     // ── Motor ────────────────────────────────────────────────────────────────
@@ -825,49 +833,6 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
-    // ── Auto-rewind ──────────────────────────────────────────────────────────
-
-    private fun configurarListenersAutoRewind() {
-        for ((btn, modo) in botoesAutoRewind) {
-            btn.setOnClickListener {
-                appPrefs.autoRewindMode = modo
-                atualizarBotoesAutoRewind(modo)
-            }
-        }
-    }
-
-    private fun atualizarBotoesAutoRewind(selecionado: com.jonjonesbr.audiobookgen.util.AutoRewindMode) {
-        for ((btn, modo) in botoesAutoRewind) {
-            val sel = modo == selecionado
-            val colorPrimary = ContextCompat.getColor(this, R.color.color_primary)
-            btn.setTextColor(if (sel) colorPrimary
-                else ContextCompat.getColor(this, R.color.color_on_surface_muted))
-            btn.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this,
-                if (sel) R.color.color_primary_surface else R.color.color_surface_variant))
-        }
-    }
-
-    // ── Player da conversão concluída ──────────────────────────────────────────
-
-    private fun configurarListenersPlayerConversao() {
-        for ((btn, valor) in botoesPlayerConversao) {
-            btn.setOnClickListener {
-                appPrefs.playerConversaoConcluida = valor
-                atualizarBotoesPlayerConversao(valor)
-            }
-        }
-    }
-
-    private fun atualizarBotoesPlayerConversao(selecionado: String?) {
-        for ((btn, valor) in botoesPlayerConversao) {
-            val sel = valor == selecionado
-            btn.setTextColor(ContextCompat.getColor(this,
-                if (sel) R.color.color_primary else R.color.color_on_surface_muted))
-            btn.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this,
-                if (sel) R.color.color_primary_surface else R.color.color_surface_variant))
-        }
-    }
-
     // ── Cache ────────────────────────────────────────────────────────────────
 
     private fun rotuloTetoCache(mb: Int): String = when {
@@ -988,12 +953,9 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
     private fun configurarBotaoPermissaoNotificacao() {
-        tvPermissaoNotificacaoInfo = findViewById(R.id.tvPermissaoNotificacaoInfo)
-        btnAbrirConfigNotificacoes = findViewById(R.id.btnAbrirConfigNotificacoes)
-        tvOtimizacaoBateriaInfo = findViewById(R.id.tvOtimizacaoBateriaInfo)
-        btnConfigOtimizacaoBateria = findViewById(R.id.btnConfigOtimizacaoBateria)
-        btnConfigOtimizacaoBateria.setOnClickListener { abrirConfiguracaoOtimizacaoBateria() }
-        btnAbrirConfigNotificacoes.setOnClickListener {
+        findViewById<Button>(R.id.btnConfigOtimizacaoBateria)
+            .setOnClickListener { abrirConfiguracaoOtimizacaoBateria() }
+        findViewById<Button>(R.id.btnAbrirConfigNotificacoes).setOnClickListener {
             val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                 putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
             }
@@ -1006,12 +968,10 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
 
+    /** Aviso no topo de "Voz e leitura" só quando o Android pode pausar conversões longas. */
     private fun carregarInfoOtimizacaoBateria() {
         val ignorada = com.jonjonesbr.audiobookgen.util.BatteryOptimizationHelper.isIgnoringBatteryOptimizations(this)
-        tvOtimizacaoBateriaInfo.text = getString(
-            if (ignorada) R.string.otimizacao_bateria_desativada
-            else R.string.otimizacao_bateria_ativada
-        )
+        findViewById<View>(R.id.cardAvisoBateria).visibility = if (ignorada) View.GONE else View.VISIBLE
     }
 
     private fun abrirConfiguracaoOtimizacaoBateria() {
@@ -1019,12 +979,10 @@ class SettingsActivity : BasePlayerActivity() {
             mostrarErro(R.string.toast_config_bateria_indisponivel)
         }
     }
+    /** Aviso no topo de "Voz e leitura" só quando as notificações estão desligadas. */
     private fun carregarInfoPermissaoNotificacao() {
         val habilitadas = NotificationManagerCompat.from(this).areNotificationsEnabled()
-        tvPermissaoNotificacaoInfo.text = getString(
-            if (habilitadas) R.string.permissao_notificacao_ativada
-            else R.string.permissao_notificacao_desativada
-        )
+        findViewById<View>(R.id.cardAvisoNotificacao).visibility = if (habilitadas) View.GONE else View.VISIBLE
     }
 
     /** Se aberta com extra "focar_chave_gemini"/"focar_chave_elevenlabs" (seleção de voz sem
@@ -1035,6 +993,7 @@ class SettingsActivity : BasePlayerActivity() {
             intent.getBooleanExtra("focar_chave_elevenlabs", false) -> layoutElevenLabsKey
             else -> return
         }
+        abrirPagina(R.id.pagMotor, R.string.aj_motor)
         scrollSettings.post {
             val alvo = IntArray(2)
             val conteudo = IntArray(2)
@@ -1081,11 +1040,37 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
-    private fun configurarListenersBackup() {
-        btnExportarConfig.setOnClickListener { exportarConfiguracoes() }
-        btnImportarConfig.setOnClickListener { importarConfiguracoes() }
-        btnExportarBackupCompleto.setOnClickListener { exportarBackupCompleto() }
-        btnImportarBackupCompleto.setOnClickListener { importarBackupCompleto() }
+    /** "Fazer backup": tudo (recomendado) ou só as configurações. */
+    private fun escolherBackupAFazer() {
+        val opcoes = arrayOf(getString(R.string.aj_backup_tudo), getString(R.string.aj_backup_so_config))
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.aj_backup_fazer)
+            .setItems(opcoes) { _, qual -> if (qual == 0) exportarBackupCompleto() else exportarConfiguracoes() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
+    }
+
+    private fun restaurarBackup() {
+        try {
+            restaurarLauncher.launch(
+                arrayOf("application/zip", "application/json", "application/octet-stream", "text/plain")
+            )
+        } catch (e: android.content.ActivityNotFoundException) {
+            Log.w("SettingsActivity", "Erro ao iniciar restauracao", e)
+            mostrarErro(getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e))))
+        }
+    }
+
+    /** ZIP (começa com "PK") é o backup completo; o resto é tratado como o JSON das configurações. */
+    private fun restaurarDeArquivo(uri: Uri) {
+        lifecycleScope.launch {
+            val ehZip = withContext(Dispatchers.IO) {
+                runCatching {
+                    contentResolver.openInputStream(uri)?.use { it.read() == 'P'.code && it.read() == 'K'.code }
+                }.getOrNull() == true
+            }
+            if (ehZip) restaurarBackupCompleto(uri) else carregarConfigJson(uri)
+        }
     }
 
     private fun exportarConfiguracoes() {
@@ -1116,15 +1101,6 @@ class SettingsActivity : BasePlayerActivity() {
         } catch (e: org.json.JSONException) {
             Log.w("SettingsActivity", "Erro ao salvar configuracoes", e)
             mostrarErro(getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))))
-        }
-    }
-
-    private fun importarConfiguracoes() {
-        try {
-            importarConfigLauncher.launch(arrayOf("application/json"))
-        } catch (e: android.content.ActivityNotFoundException) {
-            Log.w("SettingsActivity", "Erro ao iniciar importacao", e)
-            mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(e))))
         }
     }
 
@@ -1202,16 +1178,6 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
-    private fun importarBackupCompleto() {
-        try {
-            importarBackupLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
-        } catch (e: android.content.ActivityNotFoundException) {
-            Log.w("SettingsActivity", "Erro ao iniciar importacao de backup", e)
-            val msg = getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e)))
-            mostrarErro(msg)
-        }
-    }
-
     private fun restaurarBackupCompleto(uri: Uri) {
         lifecycleScope.launch {
             val resultado = withContext(Dispatchers.IO) { backupUseCase.importar(uri) }
@@ -1255,6 +1221,9 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
     companion object {
+        /** Aba inicial (0 = Voz e leitura, 1 = Som, 2 = Backup e espaço, 3 = Ajuda). */
+        const val EXTRA_ABA = "extra_aba"
+        const val ABA_SOM = 1
         private const val JSON_INDENT = 4
         private const val STEPS_MIN = 2
         // Alinhado ao teto de segurança do motor (OnnxTtsEngine: supertonicSteps.coerceIn(1, 16))

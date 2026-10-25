@@ -28,6 +28,7 @@ class PacotesVozOfflineCard(
     /** Depois de importar ou apagar: a aba Downloads relê a lista (o card de Ajustes se recarrega sozinho). */
     private val aoMudar: () -> Unit = {},
 ) {
+    private var containerCarregado: LinearLayout? = null
     private val dialogos = DialogosAbertos(activity)
     private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
 
@@ -50,6 +51,7 @@ class PacotesVozOfflineCard(
      * progresso; aviso de dados móveis fora de WiFi via NetworkStatus, fonte única).
      */
     fun carregar(container: LinearLayout) {
+        containerCarregado = container
         container.removeAllViews()
         activity.lifecycleScope.launch {
             val pacotes = withContext(Dispatchers.IO) { com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesRegistrados() }
@@ -69,10 +71,9 @@ class PacotesVozOfflineCard(
         }
     }
 
-    /** Recarrega o card no próprio container (mesmo view que a Activity usa em onResume). */
+    /** Recarrega a lista no container do último [carregar]; quem só importa (aba Downloads) não tem lista. */
     private fun recarregar() {
-        // A aba Downloads usa só a importação: lá não existe o card de pacotes.
-        activity.findViewById<LinearLayout?>(R.id.layoutPacotesOffline)?.let { carregar(it) }
+        containerCarregado?.let { carregar(it) }
         aoMudar()
     }
 

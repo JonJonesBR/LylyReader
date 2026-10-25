@@ -265,6 +265,26 @@ class AppPrefs(context: Context) {
         get() = p.getBoolean("paralelismo_supertonico_aumentado", false)
         set(v) = p.edit().putBoolean("paralelismo_supertonico_aumentado", v).apply()
 
+    /**
+     * "Restaurar o padrão do som" (Ajustes › Som): pausas, tom da voz, repetir ao retomar, qualidade do
+     * áudio, passos das vozes e buffering voltam ao padrão. Vozes, livros e pronúncias não mudam.
+     */
+    fun restaurarPadroesDeSom() {
+        p.edit()
+            .remove("pausas_naturais")
+            .remove("pausa_final_frase_ms")
+            .remove("pausa_ms")
+            .remove("bitrate")
+            .remove("supertonic_steps")
+            .remove("pocket_passos")
+            .remove("auto_rewind_mode")
+            .remove("timbre_tom_meios_tons")
+            .remove("timbre_tom_falas")
+            .remove("timbre_agudos_db")
+            .apply()
+        resetarBufferingLeituraGuiada()
+    }
+
     /** Restaura buffer/paralelismo da leitura guiada para o padrão de fábrica (por motor). */
     fun resetarBufferingLeituraGuiada() {
         p.edit()

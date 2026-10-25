@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Ajustes em linhas compactas (nome, frase curta, valor atual e ›), em 4 abas: Voz e leitura, Som,
+     Backup e espaço e Ajuda. O que é longo ou técnico abre numa página dentro desta tela (pag*):
+     a escolha da voz, os ajustes avançados e o Sobre. -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -9,29 +12,36 @@
     android:background="@color/color_background"
     android:fitsSystemWindows="true">
 
-    <!-- Toolbar -->
+    <!-- Toolbar: a seta só aparece dentro de uma página (volta para a aba). -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:orientation="horizontal"
-        android:paddingStart="16dp"
+        android:paddingStart="4dp"
         android:paddingEnd="12dp"
         android:gravity="center_vertical"
         android:background="@color/color_background">
 
         <ImageButton
             android:id="@+id/btnVoltarSettings"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_voltar"
+            app:tint="@color/color_on_surface"
             android:visibility="gone"
             android:contentDescription="@string/cd_voltar"/>
 
         <TextView
+            android:id="@+id/tvTituloSettings"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginStart="12dp"
             android:text="@string/nav_ajustes"
             android:textSize="22sp"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:textColor="@color/color_on_surface"/>
 
         <ImageButton
@@ -58,6 +68,7 @@
         app:tabIndicatorColor="?attr/colorPrimary"
         app:tabSelectedTextColor="?attr/colorPrimary"
         app:tabTextColor="@color/color_on_surface_muted"
+        app:tabTextAppearance="@style/TextAppearance.Material3.LabelLarge"
         app:tabMode="scrollable"
         app:tabGravity="start">
 
@@ -88,6 +99,7 @@
     </com.google.android.material.tabs.TabLayout>
 
     <View
+        android:id="@+id/divisorTabsSettings"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/color_divider"/>
@@ -107,7 +119,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="14dp">
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="24dp">
 
             <LinearLayout
                 android:id="@+id/grupoSettingsGeral"
@@ -115,93 +130,905 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-            <!-- ── APARÊNCIA / TEMA ── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_appearance"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"
-                android:layout_marginTop="4dp"/>
-
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
+                android:id="@+id/cardAvisoNotificacao"
+                style="@style/AjusteCartao"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/color_primary_surface">
 
                 <LinearLayout
-                    android:id="@+id/rowTema"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="56dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true">
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/tema_titulo"
+                        android:text="@string/aj_aviso_notificacao"
                         android:textColor="@color/color_on_surface"
-                        android:textSize="14sp"/>
+                        android:textSize="13sp"/>
 
-                    <TextView
-                        android:id="@+id/tvTemaAtual"
+                    <Button
+                        android:id="@+id/btnAbrirConfigNotificacoes"
+                        style="@style/Widget.Material3.Button.TextButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="14sp"/>
+                        android:minHeight="48dp"
+                        android:text="@string/aj_ativar"
+                        android:textAllCaps="false"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- â”€â”€ MOTOR TTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp"
-                android:layout_marginTop="4dp">
-                <TextView
-                    android:layout_width="0dp"
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAvisoBateria"
+                style="@style/AjusteCartao"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/color_primary_surface">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_motor_tts"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-                <ImageButton
-                    android:id="@+id/btnAjudaMotorTts"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:padding="10dp"
-                    android:background="@android:color/transparent"
-                    android:src="@drawable/ic_ajuda"
-                    app:tint="@color/color_on_surface_dim"
-                    android:contentDescription="@string/cd_ajuda_motor_tts"/>
-            </LinearLayout>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/aj_aviso_bateria"
+                        android:textColor="@color/color_on_surface"
+                        android:textSize="13sp"/>
+
+                    <Button
+                        android:id="@+id/btnConfigOtimizacaoBateria"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/aj_permitir"
+                        android:textAllCaps="false"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_voz"/>
 
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardMotorTts"
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowMotor"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_motor"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_motor_sub"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvMotorAtual"
+                            style="@style/AjusteValor"/>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowVozesAparelho"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_vozes"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_vozes_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowPronuncias"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_pron"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_pron_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowBlacklist"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_blacklist"/>
+
+                            <TextView
+                                android:id="@+id/tvBlacklistInfo"
+                                style="@style/AjusteSub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_leitura"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowTema"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/tema_titulo"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_tema_sub"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvTemaAtual"
+                            style="@style/AjusteValor"/>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowEstatisticas"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_estatisticas"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_estatisticas_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+            <!-- fim grupoSettingsGeral -->
+
+
+            <LinearLayout
+                android:id="@+id/grupoSettingsAudio"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_pausas"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowPausasNaturais"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_pausas_naturais"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_pausas_naturais_sub"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/chkPausasNaturais"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/aj_pausas_naturais"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="6dp">
+
+                        <TextView
+                            style="@style/AjusteTitulo"
+                            android:text="@string/aj_pausa_frase"/>
+
+                        <TextView
+                            style="@style/AjusteSub"
+                            android:text="@string/aj_pausa_frase_sub"/>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <SeekBar
+                                android:id="@+id/seekPausaFinalFrase"
+                                android:contentDescription="@string/cd_seek_pausa_frase"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:max="2000"/>
+
+                            <TextView
+                                android:id="@+id/tvPausaFinalFraseValor"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="64dp"
+                                android:gravity="end"
+                                tools:text="500 ms"
+                                android:textSize="13sp"
+                                android:textColor="?attr/colorPrimary"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_ouvir"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowTimbre"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_tom"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_tom_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowAutoRewind"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_retomar"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_retomar_sub"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvAutoRewindAtual"
+                            style="@style/AjusteValor"/>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowPlayerConversao"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_fim_conversao"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_fim_conversao_sub"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvPlayerConversaoAtual"
+                            style="@style/AjusteValor"/>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_tecnico"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowAvancado"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_avancado"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_avancado_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <Button
+                android:id="@+id/btnRestaurarSom"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="48dp"
+                android:text="@string/aj_restaurar_som"
+                android:textAllCaps="false"/>
+
+            </LinearLayout>
+            <!-- fim grupoSettingsAudio -->
+
+
+            <LinearLayout
+                android:id="@+id/grupoSettingsDados"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_backup"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowBackupFazer"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_backup_fazer"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_backup_fazer_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowBackupRestaurar"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_backup_restaurar"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_backup_restaurar_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_espaco"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:minHeight="64dp"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="8dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_temporarios"/>
+
+                            <TextView
+                                android:id="@+id/tvCacheInfo"
+                                style="@style/AjusteSub"
+                                android:text="@string/cache_calculando"/>
+                        </LinearLayout>
+
+                        <Button
+                            android:id="@+id/btnLimparCache"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/aj_liberar_espaco"
+                            android:textAllCaps="false"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="6dp">
+
+                        <TextView
+                            style="@style/AjusteTitulo"
+                            android:text="@string/aj_limite_falas"/>
+
+                        <TextView
+                            style="@style/AjusteSub"
+                            android:text="@string/aj_limite_falas_sub"/>
+
+                        <TextView
+                            android:id="@+id/tvCacheAudioInfo"
+                            style="@style/AjusteSub"
+                            android:text="@string/cache_calculando"/>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <SeekBar
+                                android:id="@+id/seekTetoCache"
+                                android:contentDescription="@string/cd_seek_teto_cache"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:max="5"/>
+
+                            <TextView
+                                android:id="@+id/tvTetoCacheValor"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="72dp"
+                                android:gravity="end"
+                                tools:text="1 GB"
+                                android:textSize="13sp"
+                                android:textColor="?attr/colorPrimary"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+            <!-- fim grupoSettingsDados -->
+
+
+            <LinearLayout
+                android:id="@+id/grupoSettingsAjuda"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_aprender"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowAprenderApp"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aprender_titulo"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aprender_ajustes_desc"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowAbrirTutorial"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_guia"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_guia_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowReverTour"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aprender_rever_intro"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_rever_intro_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowReverDicas"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aprender_rever_dicas"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_rever_dicas_sub"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_suporte"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowLogsErro"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_problema"/>
+
+                            <TextView
+                                android:id="@+id/tvLogsErroInfo"
+                                style="@style/AjusteSub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowSobre"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_sobre"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_sobre_sub"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvVersaoLinha"
+                            style="@style/AjusteValor"/>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+            <!-- fim grupoSettingsAjuda -->
+
+            <!-- ── Páginas (abertas por uma linha; a seta do topo volta para a aba) ── -->
+
+            <LinearLayout
+                android:id="@+id/pagMotor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="10dp"
+                android:paddingStart="4dp"
+                android:text="@string/aj_motor_intro"
+                android:textColor="@color/color_on_surface_dim"
+                android:textSize="13sp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -216,140 +1043,195 @@
                         android:orientation="vertical">
 
                         <RadioButton
-                            android:id="@+id/radioEdge"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/radio_edge_tts"
-                            android:textColor="@color/color_on_surface"
-                            android:textSize="14sp"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:layout_marginBottom="4dp"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/desc_edge_tts"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_dim"
-                            android:layout_marginStart="32dp"
-                            android:layout_marginBottom="12dp"/>
-
-                        <RadioButton
-                            android:id="@+id/radioGemini"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/radio_gemini_tts"
-                            android:textColor="@color/color_on_surface"
-                            android:textSize="14sp"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:layout_marginBottom="4dp"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/desc_gemini_tts"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_dim"
-                            android:layout_marginStart="32dp"
-                            android:layout_marginBottom="12dp"/>
-
-                        <RadioButton
                             android:id="@+id/radioOnnx"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/radio_onnx_tts"
+                            android:minHeight="48dp"
+                            android:text="@string/aj_motor_nome_onnx_rec"
                             android:textColor="@color/color_on_surface"
-                            android:textSize="14sp"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:layout_marginBottom="4dp"/>
+                            android:textSize="15sp"
+                            android:buttonTint="?attr/colorPrimary"/>
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/aj_selo_offline"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
                             android:text="@string/desc_onnx_tts"
-                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
-                            android:layout_marginStart="32dp"
-                            android:layout_marginBottom="12dp"/>
-
-                        <RadioButton
-                            android:id="@+id/radioAndroidTts"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/radio_android_tts"
-                            android:textColor="@color/color_on_surface"
-                            android:textSize="14sp"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:layout_marginBottom="4dp"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/motor_android_descricao"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_dim"
-                            android:layout_marginStart="32dp"
-                            android:layout_marginBottom="12dp"/>
-
-                        <RadioButton
-                            android:id="@+id/radioElevenLabs"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/radio_elevenlabs_tts"
-                            android:textColor="@color/color_on_surface"
-                            android:textSize="14sp"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:layout_marginBottom="4dp"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/desc_elevenlabs_tts"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_dim"
-                            android:layout_marginStart="32dp"
-                            android:layout_marginBottom="12dp"/>
+                            android:textSize="12sp"/>
 
                         <RadioButton
                             android:id="@+id/radioKokoro"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/radio_kokoro_tts"
+                            android:layout_marginTop="12dp"
+                            android:minHeight="48dp"
+                            android:text="@string/aj_motor_nome_kokoro"
                             android:textColor="@color/color_on_surface"
-                            android:textSize="14sp"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:layout_marginBottom="4dp"/>
+                            android:textSize="15sp"
+                            android:buttonTint="?attr/colorPrimary"/>
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/aj_selo_offline"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
                             android:text="@string/desc_kokoro_tts"
-                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
-                            android:layout_marginStart="32dp"/>
+                            android:textSize="12sp"/>
 
                         <RadioButton
                             android:id="@+id/radioPocket"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/radio_pocket_tts"
-                            android:textColor="@color/color_on_surface"
-                            android:textSize="14sp"
-                            android:buttonTint="?attr/colorPrimary"
                             android:layout_marginTop="12dp"
-                            android:layout_marginBottom="4dp"/>
+                            android:minHeight="48dp"
+                            android:text="@string/aj_motor_nome_pocket"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="15sp"
+                            android:buttonTint="?attr/colorPrimary"/>
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/aj_selo_offline"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
                             android:text="@string/desc_pocket_tts"
-                            android:textSize="12sp"
                             android:textColor="@color/color_on_surface_dim"
-                            android:layout_marginStart="32dp"/>
+                            android:textSize="12sp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioAndroidTts"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:minHeight="48dp"
+                            android:text="@string/aj_motor_nome_android"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="15sp"
+                            android:buttonTint="?attr/colorPrimary"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/aj_selo_offline"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/aj_desc_android"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:textSize="12sp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioEdge"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:minHeight="48dp"
+                            android:text="@string/aj_motor_nome_edge"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="15sp"
+                            android:buttonTint="?attr/colorPrimary"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/aj_selo_online"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/desc_edge_tts"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:textSize="12sp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioGemini"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:minHeight="48dp"
+                            android:text="@string/aj_motor_nome_gemini"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="15sp"
+                            android:buttonTint="?attr/colorPrimary"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/aj_selo_conta"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/desc_gemini_tts"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:textSize="12sp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioElevenLabs"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:minHeight="48dp"
+                            android:text="@string/aj_motor_nome_elevenlabs"
+                            android:textColor="@color/color_on_surface"
+                            android:textSize="15sp"
+                            android:buttonTint="?attr/colorPrimary"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/aj_selo_conta"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/desc_elevenlabs_tts"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:textSize="12sp"/>
 
                     </RadioGroup>
 
-                    <!-- Gemini API key, visible only when Gemini is selected -->
                     <LinearLayout
                         android:id="@+id/layoutGeminiKey"
                         android:layout_width="match_parent"
@@ -357,12 +1239,6 @@
                         android:orientation="vertical"
                         android:layout_marginTop="16dp"
                         android:visibility="gone">
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="@color/color_divider_faint"
-                            android:layout_marginBottom="16dp"/>
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -391,15 +1267,13 @@
                             android:id="@+id/btnSalvarChave"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+                            android:minHeight="48dp"
                             android:text="@string/btn_salvar_chave"
                             android:textColor="?attr/colorOnPrimary"
                             android:textSize="13sp"
                             android:backgroundTint="?attr/colorPrimary"/>
-
                     </LinearLayout>
 
-                    <!-- ElevenLabs API key, visible only when ElevenLabs is selected -->
                     <LinearLayout
                         android:id="@+id/layoutElevenLabsKey"
                         android:layout_width="match_parent"
@@ -407,12 +1281,6 @@
                         android:orientation="vertical"
                         android:layout_marginTop="16dp"
                         android:visibility="gone">
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="@color/color_divider_faint"
-                            android:layout_marginBottom="16dp"/>
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -441,595 +1309,36 @@
                             android:id="@+id/btnSalvarChaveElevenLabs"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+                            android:minHeight="48dp"
                             android:text="@string/btn_salvar_chave"
                             android:textColor="?attr/colorOnPrimary"
                             android:textSize="13sp"
                             android:backgroundTint="?attr/colorPrimary"/>
-
                     </LinearLayout>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ── VOZES OFFLINE ────────────────────────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_vozes_offline"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
             </LinearLayout>
+            <!-- fim pagMotor -->
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardVozesOffline"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_vozes_offline"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <!-- Uma linha por pacote registrado (V6 T2.2): Supertonic, Kokoro e,
-                         futuramente, MMS-por (Parte A) e modelos BYOM (Parte B) — sem UI nova
-                         por motor. Populado por SettingsActivity.carregarInfoVozesOffline. -->
-                    <LinearLayout
-                        android:id="@+id/layoutPacotesOffline"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"/>
-
-                    <Button
-                        android:id="@+id/btnCentralDownloads"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="48dp"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/dl_central_abrir"
-                        android:textSize="12sp"
-                        android:textColor="?attr/colorPrimary"
-                        android:backgroundTint="@color/color_surface_variant"/>
-
-                    <Button
-                        android:id="@+id/btnImportarVozByom"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="48dp"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/btn_importar_voz"
-                        android:textSize="12sp"
-                        android:textColor="?attr/colorPrimary"
-                        android:backgroundTint="@color/color_surface_variant"/>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_permissao_notificacao"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPermissaoNotificacao"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_permissao_notificacao"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:id="@+id/tvPermissaoNotificacaoInfo"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:textSize="13sp"
-                            android:fontFamily="monospace"/>
-
-                        <Button
-                            android:id="@+id/btnAbrirConfigNotificacoes"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minHeight="48dp"
-                            android:minWidth="48dp"
-                            android:text="@string/btn_abrir_config_notificacoes"
-                            android:textColor="@color/color_on_surface"
-                            android:textSize="13sp"
-                            android:backgroundTint="@color/color_surface_variant"
-                            android:paddingStart="20dp"
-                            android:paddingEnd="20dp"/>
-
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="@string/desc_otimizacao_bateria"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/tvOtimizacaoBateriaInfo"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:textSize="13sp" />
-
-                        <Button
-                            android:id="@+id/btnConfigOtimizacaoBateria"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minHeight="48dp"
-                            android:minWidth="48dp"
-                            android:backgroundTint="@color/color_surface_variant"
-                            android:paddingStart="20dp"
-                            android:paddingEnd="20dp"
-                            android:text="@string/btn_config_otimizacao_bateria"
-                            android:textColor="@color/color_on_surface"
-                            android:textSize="13sp" />
-                    </LinearLayout>                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            </LinearLayout>
-            <!-- fim grupoSettingsGeral -->
-
-            <LinearLayout
-                android:id="@+id/grupoSettingsAudio"
+                android:id="@+id/pagAvancado"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
 
-            <!-- ── PAUSA ENTRE FRASES (KOKORO) ──────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/settings_pausas_titulo"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPausaFinalFrase"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <CheckBox
-                        android:id="@+id/chkPausasNaturais"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pausas_naturais_title"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pausas_naturais_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="16dp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pausa_frase_title"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="4dp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pausa_frase_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <SeekBar
-                            android:id="@+id/seekPausaFinalFrase"
-                            android:contentDescription="@string/cd_seek_pausa_frase"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:max="2000"/>
-
-                        <TextView
-                            android:id="@+id/tvPausaFinalFraseValor"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="64dp"
-                            android:gravity="end"
-                            tools:text="500 ms"
-                            android:textSize="13sp"
-                            android:textColor="?attr/colorPrimary"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── TIMBRE DA VOZ ───────────────────────────────────────────────── -->
             <TextView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_timbre_title"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardTimbre"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_timbre_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <Button
-                        android:id="@+id/btnTimbre"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/btn_timbre"/>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── DICIONÁRIO DE PRONÚNCIA ─────────────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_pron_title"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPronuncias"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_pron_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <Button
-                        android:id="@+id/btnGerenciarPronuncias"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/btn_pron_manage"/>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── AUTO-REWIND ──────────────────────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_auto_rewind"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardAutoRewind"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_auto_rewind"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <Button
-                            android:id="@+id/btnAutoRewindOff"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_auto_rewind_off"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnAutoRewindCurto"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_auto_rewind_curto"
-                            android:textSize="12sp"
-                            android:textColor="?attr/colorPrimary"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnAutoRewindLongo"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_auto_rewind_longo"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── PLAYER DA CONVERSÃO CONCLUÍDA ────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_player_conversao_concluida"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPlayerConversao"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_player_conversao_concluida"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <Button
-                            android:id="@+id/btnPlayerConversaoPerguntar"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_player_conversao_perguntar"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnPlayerConversaoApp"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_player_conversao_app"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnPlayerConversaoSistema"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_player_conversao_sistema"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── AVANÇADO: ajustes técnicos dos motores, fechados por padrão ── -->
-            <Button
-                android:id="@+id/btnSettingsAvancado"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="@string/settings_avancado_mostrar"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
-                android:text="@string/settings_avancado_desc"
+                android:paddingStart="4dp"
+                android:text="@string/aj_avancado_intro"
                 android:textColor="@color/color_on_surface_dim"
-                android:textSize="12sp"/>
-
-            <LinearLayout
-                android:id="@+id/grupoSettingsAudioAvancado"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-
+                android:textSize="13sp"/>
             <!-- â”€â”€ PAUSA ENTRE BLOCOS / VOZES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -1563,625 +1872,16 @@
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             </LinearLayout>
-            <!-- fim grupoSettingsAudioAvancado -->
+            <!-- fim pagAvancado -->
 
-
-            </LinearLayout>
-            <!-- fim grupoSettingsAudio -->
 
             <LinearLayout
-                android:id="@+id/grupoSettingsDados"
+                android:id="@+id/pagSobre"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
-
-            <!-- â”€â”€ CACHE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_cache"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-                <ImageButton
-                    android:id="@+id/btnAjudaCache"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:padding="10dp"
-                    android:background="@android:color/transparent"
-                    android:src="@drawable/ic_ajuda"
-                    app:tint="@color/color_on_surface_dim"
-                    android:contentDescription="@string/cd_ajuda_cache"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardCache"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_cache"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:id="@+id/tvCacheInfo"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/cache_calculando"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:textSize="13sp"
-                            android:fontFamily="monospace"/>
-
-                        <Button
-                            android:id="@+id/btnLimparCache"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_limpar_cache"
-                            android:textColor="@color/color_error"
-                            android:textSize="13sp"
-                            android:backgroundTint="@color/color_surface_variant"
-                            android:paddingStart="20dp"
-                            android:paddingEnd="20dp"/>
-
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tvCacheAudioInfo"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:text="@string/cache_calculando"
-                        android:textColor="@color/color_on_surface_muted"
-                        android:textSize="13sp"
-                        android:fontFamily="monospace"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="@string/cache_teto_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="6dp">
-
-                        <SeekBar
-                            android:id="@+id/seekTetoCache"
-                            android:contentDescription="@string/cd_seek_teto_cache"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:max="5"/>
-
-                        <TextView
-                            android:id="@+id/tvTetoCacheValor"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="72dp"
-                            android:gravity="end"
-                            tools:text="1 GB"
-                            android:textSize="13sp"
-                            android:textColor="?attr/colorPrimary"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── PALAVRAS EXCLUÍDAS ────────────────────────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_blacklist"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-                <ImageButton
-                    android:id="@+id/btnAjudaBlacklist"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="@android:color/transparent"
-                    android:src="@drawable/ic_ajuda"
-                    app:tint="@color/color_on_surface_dim"
-                    android:contentDescription="@string/cd_ajuda_blacklist"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardBlacklist"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_blacklist"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:id="@+id/tvBlacklistInfo"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/cache_calculando"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:textSize="13sp"
-                            android:fontFamily="monospace"/>
-
-                        <Button
-                            android:id="@+id/btnGerenciarBlacklist"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_gerenciar_blacklist"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="13sp"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:paddingStart="20dp"
-                            android:paddingEnd="20dp"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── LOGS DE ERRO ────────────────────────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_logs_erro"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardLogsErro"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_logs_erro"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:id="@+id/tvLogsErroInfo"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/logs_erro_calculando"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:textSize="13sp"
-                            android:fontFamily="monospace"/>
-
-                        <Button
-                            android:id="@+id/btnVisualizarLogs"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_visualizar_logs"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="13sp"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:paddingStart="20dp"
-                            android:paddingEnd="20dp"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── ESTATÍSTICAS ─────────────────────────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_estatisticas"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_estatisticas_privacidade"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <Button
-                        android:id="@+id/btnVerEstatisticas"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                        android:text="@string/btn_ver_estatisticas"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="13sp"
-                        android:backgroundTint="@color/color_primary_surface"/>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── BACKUP ────────────────────────────────────────────────────────── -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/label_backup"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_backup"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="end">
-
-                        <Button
-                            android:id="@+id/btnImportarConfig"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_importar_config"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="13sp"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:paddingStart="20dp"
-                            android:paddingEnd="20dp"
-                            android:layout_marginEnd="8dp"/>
-
-                        <Button
-                            android:id="@+id/btnExportarConfig"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_exportar_config"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="13sp"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:paddingStart="20dp"
-                            android:paddingEnd="20dp"/>
-
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="14dp"
-                        android:layout_marginBottom="12dp"
-                        android:background="@color/color_divider"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/label_backup_completo"
-                        android:textColor="@color/color_on_surface"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="4dp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_backup_completo"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="end">
-
-                        <Button
-                            android:id="@+id/btnImportarBackupCompleto"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_importar_config"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="13sp"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:paddingStart="20dp"
-                            android:paddingEnd="20dp"
-                            android:layout_marginEnd="8dp"/>
-
-                        <Button
-                            android:id="@+id/btnExportarBackupCompleto"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_exportar_config"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="13sp"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:paddingStart="20dp"
-                            android:paddingEnd="20dp"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            </LinearLayout>
-            <!-- fim grupoSettingsDados -->
-
-            <LinearLayout
-                android:id="@+id/grupoSettingsAjuda"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-            <!-- ── APRENDER (Fase J) ────────────────────────────────────────────── -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/label_aprender"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/aprender_ajustes_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="13sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <Button
-                        android:id="@+id/btnAprenderApp"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="48dp"
-                        android:text="@string/aprender_titulo"
-                        android:textAllCaps="false"/>
-
-                    <Button
-                        android:id="@+id/btnReverTour"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="48dp"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/aprender_rever_intro"
-                        android:textAllCaps="false"/>
-
-                    <Button
-                        android:id="@+id/btnReverDicas"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="48dp"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/aprender_rever_dicas"
-                        android:textAllCaps="false"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── AJUDA ─────────────────────────────────────────────────────────── -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/label_ajuda"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/desc_settings_tutorial"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <Button
-                        android:id="@+id/btnAbrirTutorial"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                        android:text="@string/btn_ver_tutorial"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="13sp"
-                        android:backgroundTint="@color/color_primary_surface"
-                        android:paddingStart="20dp"
-                        android:paddingEnd="20dp"
-                        android:layout_gravity="end"/>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── SOBRE ────────────────────────────────────────────────────────── -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/label_sobre"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -2279,9 +1979,8 @@
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             </LinearLayout>
-            <!-- fim grupoSettingsAjuda -->
+            <!-- fim pagSobre -->
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

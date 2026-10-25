@@ -266,9 +266,9 @@
     <string name="stats_livros_concluidos">Books finished</string>
     <string name="stats_streak_dias">Day streak</string>
     <string name="label_stats_ultimos_7_dias">LAST 7 DAYS</string>
-    <string name="settings_tab_geral">General</string>
-    <string name="settings_tab_audio">Audio</string>
-    <string name="settings_tab_dados">Data</string>
+    <string name="settings_tab_geral">Voice &amp; reading</string>
+    <string name="settings_tab_audio">Sound</string>
+    <string name="settings_tab_dados">Backup &amp; storage</string>
     <string name="settings_tab_ajuda">Help</string>
     <string name="cache_calculando">Calculating…</string>
     <string name="btn_limpar_cache">Clear</string>
@@ -287,7 +287,7 @@
         <item>Supertonic — neural TTS model (OpenRAIL-M). Copyright (c) Supertone.</item>
         <item>Pocket TTS 3.3 — public no-voice-cloning ONNX packs and fixed presets (CC BY 4.0). Copyright (c) Kyutai Labs. C++ runtime PocketTTS.cpp (MIT), SentencePiece (Apache-2.0), and dr_libs (Unlicense).</item>
     </string-array>
-    <string name="desc_sobre_app">Converts books into high-quality audiobooks using Microsoft Edge TTS and Google Gemini TTS, directly on your device.</string>
+    <string name="desc_sobre_app">Reads your books aloud and turns them into audiobooks, with voices that work on the device itself or over the internet.</string>
     <string name="label_formatos_suportados">Supported formats</string>
     <string name="formatos_suportados">EPUB · PDF · TXT · MD · DOC · DOCX · MOBI</string>
     <string name="hint_gemini_key">AIza...</string>
@@ -446,7 +446,7 @@
     <string name="help_settings_step1">Voices: on the book screen, tap Change to pick online voices (Edge, Gemini, ElevenLabs) or offline ones (Supertonic, Kokoro, Piper, Pocket)</string>
     <string name="help_settings_step2">Voice and speed: adjust on the book screen, in Generate audiobook</string>
     <string name="help_settings_step3">Output folder: in Generate audiobook › Advanced options, choose where the MP3 files are saved</string>
-    <string name="help_settings_step4">Cache: free storage by removing temporary files in Settings</string>
+    <string name="help_settings_step4">In Settings: Sound has pauses and voice pitch; Backup &amp; storage makes backups and frees up space</string>
 
     <!-- Diálogos Offline e FAB -->
     <string name="offline_titulo">You\'re offline</string>
@@ -1438,4 +1438,81 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="alinhamento_esquerda">Left</string>
     <string name="alinhamento_centro">Center</string>
     <string name="alinhamento_direita">Right</string>
+    <!-- Ajustes em linhas -->
+    <string name="aj_secao_voz">Voice</string>
+    <string name="aj_secao_leitura">Reading</string>
+    <string name="aj_secao_pausas">Pauses</string>
+    <string name="aj_secao_ouvir">While listening</string>
+    <string name="aj_secao_tecnico">For those who like to tweak</string>
+    <string name="aj_secao_backup">Backup</string>
+    <string name="aj_secao_espaco">Storage on this device</string>
+    <string name="aj_secao_aprender">Learn</string>
+    <string name="aj_secao_suporte">Support</string>
+    <string name="aj_aviso_notificacao">Notifications are off: you will not see conversion progress.</string>
+    <string name="aj_ativar">Turn on</string>
+    <string name="aj_aviso_bateria">Android may pause long conversions to save battery.</string>
+    <string name="aj_permitir">Allow</string>
+    <string name="aj_motor">Voice that reads the books</string>
+    <string name="aj_motor_sub">Voices on the device or over the internet</string>
+    <string name="aj_motor_intro">All of them are free. Voices on the device work offline; the others need a connection or an account on the website.</string>
+    <string name="aj_motor_nome_onnx_rec">Supertonic (recommended)</string>
+    <string name="aj_motor_nome_kokoro">Kokoro</string>
+    <string name="aj_motor_nome_pocket">Pocket</string>
+    <string name="aj_motor_nome_android">Android voices</string>
+    <string name="aj_motor_nome_edge">Microsoft Edge</string>
+    <string name="aj_motor_nome_gemini">Gemini (Google)</string>
+    <string name="aj_motor_nome_elevenlabs">ElevenLabs</string>
+    <string name="aj_selo_offline">Free · no internet needed</string>
+    <string name="aj_selo_online">Free · needs internet</string>
+    <string name="aj_selo_conta">Needs a key from your account on the website</string>
+    <string name="aj_desc_android">Uses the voices already installed on the phone.</string>
+    <string name="aj_vozes">Voices on this device</string>
+    <string name="aj_vozes_sub">Download, create or delete voices</string>
+    <string name="aj_pron">Word pronunciation</string>
+    <string name="aj_pron_sub">Teach the voice how to say a word</string>
+    <string name="aj_blacklist">Words the voice skips</string>
+    <string name="aj_tema_sub">Light, dark or same as the phone</string>
+    <string name="aj_estatisticas">Reading statistics</string>
+    <string name="aj_estatisticas_sub">How much you read and listened (stays on the device)</string>
+    <string name="aj_pausas_naturais">Natural pauses</string>
+    <string name="aj_pausas_naturais_sub">The voice breathes with the punctuation, like a person reading</string>
+    <string name="aj_pausa_frase">Pause between sentences</string>
+    <string name="aj_pausa_frase_sub">Used when natural pauses are off</string>
+    <string name="aj_tom">Voice pitch</string>
+    <string name="aj_tom_sub">Makes the voice deeper or higher</string>
+    <string name="aj_retomar">When you resume, repeat a few seconds</string>
+    <string name="aj_retomar_sub">Helps you remember where the story stopped</string>
+    <string name="aj_retomar_nao">No</string>
+    <string name="aj_retomar_curto">A little</string>
+    <string name="aj_retomar_longo">More</string>
+    <string name="aj_fim_conversao">When an audiobook is ready</string>
+    <string name="aj_fim_conversao_sub">Where it opens when you tap the notice</string>
+    <string name="aj_fim_perguntar">Ask</string>
+    <string name="aj_fim_app">In this app</string>
+    <string name="aj_fim_sistema">In another app</string>
+    <string name="aj_avancado">Settings for experts</string>
+    <string name="aj_avancado_sub">Quality, preparation speed and memory. The defaults already work well.</string>
+    <string name="aj_avancado_titulo">Advanced settings</string>
+    <string name="aj_avancado_intro">The default values work well on most devices. If something gets worse, use "Restore default sound" in the Sound tab.</string>
+    <string name="aj_restaurar_som">Restore default sound</string>
+    <string name="aj_restaurar_som_msg">Pauses, voice pitch, repeat on resume, quality and the advanced settings go back to default. Your voices, books and pronunciations do not change.</string>
+    <string name="aj_restaurar">Restore</string>
+    <string name="aj_restaurado">Default sound restored</string>
+    <string name="aj_backup_fazer">Make a backup</string>
+    <string name="aj_backup_fazer_sub">Saves a file to keep or take to another phone</string>
+    <string name="aj_backup_restaurar">Restore a backup</string>
+    <string name="aj_backup_restaurar_sub">Choose a LylyReader backup file</string>
+    <string name="aj_backup_tudo">Everything: settings, bookmarks, highlights and progress (recommended)</string>
+    <string name="aj_backup_so_config">Settings only</string>
+    <string name="aj_temporarios">Temporary files</string>
+    <string name="aj_liberar_espaco">Free up space</string>
+    <string name="aj_limite_falas">Limit for saved speech</string>
+    <string name="aj_limite_falas_sub">The app keeps speech it already generated so it does not generate it again</string>
+    <string name="aj_guia">Step-by-step guide</string>
+    <string name="aj_guia_sub">How to turn a book into an audiobook</string>
+    <string name="aj_rever_intro_sub">The welcome screens from the first use</string>
+    <string name="aj_rever_dicas_sub">Tips show up on the screens again</string>
+    <string name="aj_problema">Report a problem</string>
+    <string name="aj_sobre">About LylyReader</string>
+    <string name="aj_sobre_sub">Supported formats and voice credits</string>
 </resources>
