@@ -497,6 +497,67 @@ _NOMES_DAS_LETRAS = {
 }
 
 
+_PALAVRA = re.compile(r"[^\W\d_]+")
+_ROMANO_IVX = re.compile(r"[IVX]{2,}")
+
+
+def _eh_sigla_conhecida(palavra: str) -> bool:
+    return palavra in _SIGLAS_LIDAS_COMO_PALAVRA or palavra in _SIGLAS_SOLETRADAS
+
+
+def _suavizar_caixa_alta(texto: str) -> str:
+    """Passa para minúsculas o texto escrito em CAIXA ALTA (títulos, gritos).
+
+    Sem isso, "O DIA EM QUE TUDO MUDOU" virava "dê i á é eme..." no passo de siglas, e os
+    motores soletravam o resto. Continua em maiúsculas (para o passo de siglas): sigla
+    conhecida, palavra maiúscula isolada de até 4 letras ("A OAB decidiu") e romano no fim de
+    uma sequência ("CHAPTER XII"). Letra solta ("A", "O") não forma sequência sozinha.
+    """
+    palavras = list(_PALAVRA.finditer(texto))
+    if not palavras:
+        return texto
+    caixa_alta = [p.group(0).isupper() for p in palavras]
+    # Sem nenhuma minúscula (título de uma palavra só, como "PRÓLOGO" ou "FIM"): tudo é caixa alta.
+    so_caixa_alta = all(caixa_alta)
+    # Sequências de palavras maiúsculas seguidas; conta as de 2+ letras em cada uma.
+    sequencia = [0] * len(palavras)
+    longas = [0]
+    for i, maiuscula in enumerate(caixa_alta):
+        if maiuscula and i > 0 and caixa_alta[i - 1]:
+            sequencia[i] = sequencia[i - 1]
+        elif maiuscula:
+            sequencia[i] = len(longas)
+            longas.append(0)
+        if maiuscula and len(palavras[i].group(0)) > 1:
+            longas[sequencia[i]] += 1
+    partes = []
+    fim_anterior = 0
+    for i, p in enumerate(palavras):
+        w = p.group(0)
+        partes.append(texto[fim_anterior:p.start()])
+        fim_anterior = p.end()
+        if not caixa_alta[i] or _eh_sigla_conhecida(w):
+            partes.append(w)
+            continue
+        inicio = i == 0 or not caixa_alta[i - 1]
+        em_sequencia = so_caixa_alta or longas[sequencia[i]] >= 2
+        if len(w) == 1:
+            # Letra solta só acompanha a sequência ("A CASA" → "a casa"); a do começo fica.
+            partes.append(w.lower() if em_sequencia and i > 0 else w)
+            continue
+        # Romano fecha a sequência ("CHAPTER XII", "LUÍS XIV, O REI"): segue para os números/siglas.
+        seguinte_colado = (
+            i + 1 < len(palavras) and caixa_alta[i + 1]
+            and not texto[p.end():palavras[i + 1].start()].strip()
+        )
+        romano_final = not inicio and not seguinte_colado and _ROMANO_IVX.fullmatch(w)
+        if (em_sequencia or len(w) >= 5) and not romano_final:
+            w = w.capitalize() if inicio else w.lower()
+        partes.append(w)
+    partes.append(texto[fim_anterior:])
+    return "".join(partes)
+
+
 def _expandir_siglas(texto: str) -> str:
     """Expande siglas: lidas como palavra ou soletradas."""
 
@@ -750,6 +811,10 @@ def normalizar(
 
     # 2. Símbolos (antes da expansão de números)
     t = _expandir_simbolos(t)
+
+    # Texto em CAIXA ALTA (títulos) vira minúsculas, senão cada palavra curta dele seria
+    # soletrada como sigla. Antes dos números: "um" por extenso esconderia que o título é todo maiúsculo.
+    t = _suavizar_caixa_alta(t)
 
     # 3. Expansões específicas do idioma
     lang = idioma.lower()[:2]
