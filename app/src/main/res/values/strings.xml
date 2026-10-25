@@ -1522,13 +1522,13 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_abrir_livro">Open</string>
     <string name="dl_livros_mais_na_fila">and %1$d more in the queue</string>
     <string name="perm_pagina_titulo">For the app to work well</string>
-    <string name="perm_pagina_descricao">Allow whatever you like. Nothing is required, and you can change it later in the phone settings.</string>
+    <string name="perm_pagina_descricao">Tap Allow below. Android will ask one thing at a time: answer Allow each time.</string>
     <string name="perm_notif_titulo">Notifications</string>
-    <string name="perm_notif_desc">So you can follow conversions and know when the audiobook is ready.</string>
+    <string name="perm_notif_desc">To follow conversions and know when the audiobook is ready.</string>
     <string name="perm_audios_titulo">Audio on this device</string>
-    <string name="perm_audios_desc">To show your audiobooks in the Audiobooks tab.</string>
-    <string name="perm_bateria_titulo">Unrestricted battery</string>
-    <string name="perm_bateria_desc">Optional. So long conversions do not stop halfway.</string>
+    <string name="perm_audios_desc">To list your audiobooks in the Audiobooks tab.</string>
+    <string name="perm_bateria_titulo">Work in the background</string>
+    <string name="perm_bateria_desc">Optional. On the Android screen, tap Allow (or pick “No restrictions”) so long conversions do not stop.</string>
     <string name="perm_permitir">Allow</string>
     <string name="perm_liberado">✓ Allowed</string>
     <string name="perm_aviso_titulo">Turn on notifications?</string>
@@ -1536,4 +1536,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="perm_conversao_msg">Notifications are off: the conversion keeps going, but you will not see its progress outside the app or the notice when the audiobook is ready.</string>
     <string name="perm_ativar">Turn on</string>
     <string name="perm_agora_nao">Not now</string>
+    <string name="perm_toque_para_permitir">Tap to allow</string>
+    <string name="perm_permitir_tudo">Allow</string>
 </resources>

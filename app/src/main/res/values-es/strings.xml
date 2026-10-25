@@ -1508,13 +1508,13 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dl_abrir_livro">Abrir</string>
     <string name="dl_livros_mais_na_fila">y %1$d más en la cola</string>
     <string name="perm_pagina_titulo">Para que la app funcione bien</string>
-    <string name="perm_pagina_descricao">Permite lo que quieras. Nada es obligatorio, y puedes cambiarlo después en los ajustes del teléfono.</string>
+    <string name="perm_pagina_descricao">Toca Permitir, abajo. Android preguntará una cosa a la vez: responde Permitir en cada una.</string>
     <string name="perm_notif_titulo">Notificaciones</string>
     <string name="perm_notif_desc">Para seguir las conversiones y saber cuándo el audiolibro esté listo.</string>
     <string name="perm_audios_titulo">Audios del dispositivo</string>
-    <string name="perm_audios_desc">Para mostrar tus audiolibros en la pestaña Audiolibros.</string>
-    <string name="perm_bateria_titulo">Batería sin restricción</string>
-    <string name="perm_bateria_desc">Opcional. Para que las conversiones largas no se detengan a mitad.</string>
+    <string name="perm_audios_desc">Para listar tus audiolibros en la pestaña Audiolibros.</string>
+    <string name="perm_bateria_titulo">Funcionar en segundo plano</string>
+    <string name="perm_bateria_desc">Opcional. En la pantalla de Android, toca Permitir (o elige “Sin restricciones”) para que las conversiones largas no se detengan.</string>
     <string name="perm_permitir">Permitir</string>
     <string name="perm_liberado">✓ Permitido</string>
     <string name="perm_aviso_titulo">¿Activar las notificaciones?</string>
@@ -1522,4 +1522,6 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="perm_conversao_msg">Las notificaciones están desactivadas: la conversión sigue, pero no verás su avance fuera de la app ni el aviso cuando el audiolibro esté listo.</string>
     <string name="perm_ativar">Activar</string>
     <string name="perm_agora_nao">Ahora no</string>
+    <string name="perm_toque_para_permitir">Toca para permitir</string>
+    <string name="perm_permitir_tudo">Permitir</string>
 </resources>

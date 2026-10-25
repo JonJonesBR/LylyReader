@@ -1,137 +1,211 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Última página das boas-vindas: o que o app pede e para quê, com um botão por permissão. Nada é obrigatório. -->
+<!-- Última página das boas-vindas: um cartão por permissão (toque pede só aquela) e o botão "Permitir" do rodapé
+     pede todas, uma de cada vez. Nada é obrigatório. -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/containerPermissoes"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:visibility="gone">
 
-    <LinearLayout
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardPermNotificacoes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp">
+        android:layout_marginTop="10dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="@color/color_surface"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:minHeight="64dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="36dp"
                 android:layout_height="wrap_content"
-                android:text="@string/perm_notif_titulo"
-                android:textColor="@color/color_on_surface"
-                android:textSize="16sp"
-                android:textStyle="bold"/>
+                android:gravity="center"
+                android:text="🔔"
+                android:textSize="22sp"
+                android:importantForAccessibility="no"/>
 
-            <TextView
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/perm_notif_desc"
-                android:textColor="@color/color_on_surface_muted"
-                android:textSize="14sp"/>
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/perm_notif_titulo"
+                    android:textColor="@color/color_on_surface"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/perm_notif_desc"
+                    android:textColor="@color/color_on_surface_muted"
+                    android:textSize="13sp"/>
+
+                <TextView
+                    android:id="@+id/tvStatusPermNotificacoes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/perm_toque_para_permitir"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
         </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
-        <Button
-            android:id="@+id/btnPermNotificacoes"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:minHeight="48dp"
-            android:text="@string/perm_permitir"
-            android:textAllCaps="false"/>
-    </LinearLayout>
-
-    <LinearLayout
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardPermAudios"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp">
+        android:layout_marginTop="10dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="@color/color_surface"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:minHeight="64dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="36dp"
                 android:layout_height="wrap_content"
-                android:text="@string/perm_audios_titulo"
-                android:textColor="@color/color_on_surface"
-                android:textSize="16sp"
-                android:textStyle="bold"/>
+                android:gravity="center"
+                android:text="🎧"
+                android:textSize="22sp"
+                android:importantForAccessibility="no"/>
 
-            <TextView
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/perm_audios_desc"
-                android:textColor="@color/color_on_surface_muted"
-                android:textSize="14sp"/>
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/perm_audios_titulo"
+                    android:textColor="@color/color_on_surface"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/perm_audios_desc"
+                    android:textColor="@color/color_on_surface_muted"
+                    android:textSize="13sp"/>
+
+                <TextView
+                    android:id="@+id/tvStatusPermAudios"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/perm_toque_para_permitir"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
         </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
-        <Button
-            android:id="@+id/btnPermAudios"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:minHeight="48dp"
-            android:text="@string/perm_permitir"
-            android:textAllCaps="false"/>
-    </LinearLayout>
-
-    <LinearLayout
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardPermBateria"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp">
+        android:layout_marginTop="10dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="@color/color_surface"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:minHeight="64dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="36dp"
                 android:layout_height="wrap_content"
-                android:text="@string/perm_bateria_titulo"
-                android:textColor="@color/color_on_surface"
-                android:textSize="16sp"
-                android:textStyle="bold"/>
+                android:gravity="center"
+                android:text="🔋"
+                android:textSize="22sp"
+                android:importantForAccessibility="no"/>
 
-            <TextView
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/perm_bateria_desc"
-                android:textColor="@color/color_on_surface_muted"
-                android:textSize="14sp"/>
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/perm_bateria_titulo"
+                    android:textColor="@color/color_on_surface"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/perm_bateria_desc"
+                    android:textColor="@color/color_on_surface_muted"
+                    android:textSize="13sp"/>
+
+                <TextView
+                    android:id="@+id/tvStatusPermBateria"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/perm_toque_para_permitir"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
         </LinearLayout>
-
-        <Button
-            android:id="@+id/btnPermBateria"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:minHeight="48dp"
-            android:text="@string/perm_permitir"
-            android:textAllCaps="false"/>
-    </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 </LinearLayout>

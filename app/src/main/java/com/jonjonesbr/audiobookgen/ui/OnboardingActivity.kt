@@ -2,7 +2,6 @@ package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
 import android.os.Bundle
-import androidx.activity.result.contract.ActivityResultContracts
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -63,41 +62,13 @@ class OnboardingActivity : AppCompatActivity() {
     )
 
     // ── Permissões (última página) ──────────────────────────────────────────
-    private val pedidoNotificacoes =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { atualizarPermissoes() }
-    private val pedidoAudios =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { atualizarPermissoes() }
-    private var viewPermissoes: View? = null
-
-    /** Cada botão vira "✓ Liberado" (e desabilita) quando a permissão já está dada. */
-    private fun atualizarPermissoes() {
-        val v = viewPermissoes ?: return
-        listOf(
-            R.id.btnPermNotificacoes to PermissoesDoApp.notificacoesLiberadas(this),
-            R.id.btnPermAudios to PermissoesDoApp.audiosLiberados(this),
-            R.id.btnPermBateria to PermissoesDoApp.bateriaLiberada(this)
-        ).forEach { (id, liberada) ->
-            v.findViewById<Button>(id).apply {
-                isEnabled = !liberada
-                setText(if (liberada) R.string.perm_liberado else R.string.perm_permitir)
-            }
-        }
-    }
-
-    private fun vincularPermissoes(container: View) {
-        viewPermissoes = container
-        container.findViewById<Button>(R.id.btnPermNotificacoes)
-            .setOnClickListener { PermissoesDoApp.pedirNotificacoes(this, pedidoNotificacoes) }
-        container.findViewById<Button>(R.id.btnPermAudios)
-            .setOnClickListener { PermissoesDoApp.pedirAudios(this, pedidoAudios) }
-        container.findViewById<Button>(R.id.btnPermBateria)
-            .setOnClickListener { PermissoesDoApp.pedirBateria(this) }
-        atualizarPermissoes()
+    private val permissoes = OnboardingPermissoes(this) {
+        if (::viewPager.isInitialized) atualizarBotoes(viewPager.currentItem)
     }
 
     override fun onResume() {
         super.onResume()
-        atualizarPermissoes() // volta da tela de bateria ou de configurações do Android
+        permissoes.aoRetomar()
     }
 
     private lateinit var paginas: List<Pagina>
@@ -140,23 +111,30 @@ class OnboardingActivity : AppCompatActivity() {
 
         btnProximo.setOnClickListener {
             val pos = viewPager.currentItem
-            if (pos < paginas.lastIndex) {
-                viewPager.currentItem = pos + 1
-            } else {
-                concluir()
+            when {
+                pos < paginas.lastIndex -> viewPager.currentItem = pos + 1
+                mostrandoPermitir() -> permissoes.pedirTodas()
+                else -> concluir()
             }
         }
     }
 
     // ── Botões ────────────────────────────────────────────────────────────────
 
+    /** Na página das permissões, enquanto falta alguma e o "Permitir" ainda não foi usado. */
+    private fun mostrandoPermitir() =
+        viewPager.currentItem == paginas.lastIndex && !permissoes.sequenciaFeita && permissoes.pendentes().isNotEmpty()
+
     private fun atualizarBotoes(posicao: Int) {
         val ultima = posicao == paginas.lastIndex
-        btnPular.visibility = if (ultima) View.INVISIBLE else View.VISIBLE
-        btnProximo.text = if (ultima) {
-            getString(R.string.onboarding_btn_comecar)
-        } else {
-            getString(R.string.onboarding_btn_proximo_seta)
+        val permitir = ultima && mostrandoPermitir()
+        // Na página das permissões: "Permitir" (pede uma de cada vez) e "Agora não"; depois, "Começar".
+        btnPular.visibility = if (ultima && !permitir) View.INVISIBLE else View.VISIBLE
+        btnPular.setText(if (permitir) R.string.perm_agora_nao else R.string.onboarding_btn_pular)
+        btnProximo.text = when {
+            permitir -> getString(R.string.perm_permitir_tudo)
+            ultima -> getString(R.string.onboarding_btn_comecar)
+            else -> getString(R.string.onboarding_btn_proximo_seta)
         }
     }
 
@@ -199,6 +177,8 @@ class OnboardingActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: VH, position: Int) {
             val p = lista[position]
             holder.ivIcon.setImageResource(p.iconRes)
+            // Página das permissões: sem o ícone grande, para os três cartões caberem sem rolar.
+            holder.ivIcon.visibility = if (p.permissoes) View.GONE else View.VISIBLE
             holder.ivIcon.imageTintList = android.content.res.ColorStateList.valueOf(
                 com.google.android.material.color.MaterialColors.getColor(holder.ivIcon, androidx.appcompat.R.attr.colorPrimary)
             )
@@ -228,7 +208,7 @@ class OnboardingActivity : AppCompatActivity() {
             }
 
             holder.permissoes.visibility = if (p.permissoes) View.VISIBLE else View.GONE
-            if (p.permissoes) vincularPermissoes(holder.permissoes)
+            if (p.permissoes) permissoes.vincular(holder.permissoes)
         }
     }
 }
