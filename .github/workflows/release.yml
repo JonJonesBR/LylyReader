@@ -1,21 +1,19 @@
 name: Release Build
 
-# Dispara automaticamente ao publicar uma tag "v*" (ex.: v1.7.0) e também pode ser rodado
-# manualmente. Builda o APK de DEPURAÇÃO (debug, sem assinatura de release) e o anexa à Release
-# do GitHub da tag, nomeado com a versão: LylyReader-v<versão>-debug.apk.
+# Só roda quando disparado à mão (Actions › Release Build › Run workflow); commits e pushes não geram APK.
+# Testa, builda o APK de DEPURAÇÃO (debug, sem assinatura de release), cria a tag v<versão> no commit
+# disparado, publica a Release do GitHub com o APK (LylyReader-v<versão>-debug.apk) e apaga as Releases
+# anteriores (as tags antigas ficam, como histórico).
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       version_name:
-        description: "Version name (ex.: 1.7.0). Se vazio em tag, usa a tag sem o 'v'."
+        description: "Versão (ex.: 1.8.47). Vazio = a seguinte à última tag v* (1.8.46 → 1.8.47)."
         required: false
         default: ""
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release
   cancel-in-progress: false
 
 permissions:
@@ -66,17 +64,28 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Derive version
+        env:
+          VERSION_INPUT: ${{ github.event.inputs.version_name }}
         run: |
-          if [ -n "${{ github.event.inputs.version_name }}" ]; then
-            VN="${{ github.event.inputs.version_name }}"
-          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            VN="${GITHUB_REF_NAME#v}"
+          set -e
+          ULTIMA="$(git tag -l 'v*' --sort=-v:refname | head -1)"
+          if [ -n "$VERSION_INPUT" ]; then
+            VN="${VERSION_INPUT#v}"
+          elif [ -n "$ULTIMA" ]; then
+            # Próxima versão: soma 1 ao último número da última tag (v1.8.46 → 1.8.47; v1.9.0-beta.1 → 1.9.0-beta.2).
+            BASE="${ULTIMA#v}"
+            NUM="$(echo "$BASE" | grep -oE '[0-9]+$')"
+            VN="${BASE%$NUM}$((NUM + 1))"
           else
-            VN="dev-${GITHUB_SHA::7}"
+            VN="1.0.0"
+          fi
+          if git rev-parse -q --verify "refs/tags/v$VN" >/dev/null; then
+            echo "::error::A tag v$VN já existe. Informe outra versão em version_name."
+            exit 1
           fi
           echo "VERSION_NAME=$VN" >> "$GITHUB_ENV"
           echo "VERSION_CODE=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
-          echo "Building version $VN (code $(git rev-list --count HEAD))"
+          echo "Building version $VN (code $(git rev-list --count HEAD)); última tag: ${ULTIMA:-nenhuma}"
 
       - name: Fetch libonnxruntime_supertonic.so (ONNX Runtime para o Supertonic)
         run: |
@@ -150,47 +159,29 @@ jobs:
           echo "APK_ASSET=$OUT" >> "$GITHUB_ENV"
           echo "Asset: $OUT (origem: $APK)"
 
-      - name: Upload APK artifact
-        # Retenção curta de propósito: em push de tag, o próximo passo já anexa o mesmo APK
-        # à GitHub Release (permanente, fora da cota de armazenamento de Actions) — este
-        # artefato aqui só serve pra runs manuais (workflow_dispatch sem tag), onde é o único
-        # jeito de baixar o APK. Sem isso, cada release deixava ~97MB parados sem expirar,
-        # estourando a cota de 500MB de artefatos em poucas releases.
-        # continue-on-error: essencial — sem isso, a cota de artefatos (que já bloqueou builds
-        # antes, ver histórico) derruba este passo E impede o próximo (Attach APK to GitHub
-        # Release) de rodar, porque um passo falho para o job por padrão. O artefato aqui é só
-        # conveniência pra workflow_dispatch manual; a Release em si (o que importa de verdade
-        # em push de tag) nunca pode depender dele ter sucesso.
-        uses: actions/upload-artifact@v6
-        continue-on-error: true
-        with:
-          name: lylyreader-${{ env.VERSION_NAME }}-apk
-          path: ${{ env.APK_ASSET }}
-          retention-days: 3
-
-      - name: Attach APK to GitHub Release
-        if: ${{ github.ref_type == 'tag' }}
+      - name: Publish GitHub Release (cria a tag v<versão> no commit disparado)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: v${{ env.VERSION_NAME }}
+          target_commitish: ${{ github.sha }}
           name: LylyReader ${{ env.VERSION_NAME }}
           files: ${{ env.APK_ASSET }}
           fail_on_unmatched_files: true
           generate_release_notes: true
-          # Tags com hífen (ex.: v1.6.1-beta.2) são pré-releases; v1.6.1 é release final.
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          # Versões com hífen (ex.: 1.6.1-beta.2) são pré-releases; 1.6.1 é release final.
+          prerelease: ${{ contains(env.VERSION_NAME, '-') }}
 
       - name: Delete older releases (mantém só a mais recente, "uma release por vez")
         # Roda só depois da nova release já estar publicada com sucesso (passo acima) — limpeza,
-        # nunca crítico ao processo de release em si. cleanup-tag NUNCA usado: as tags de versões
-        # antigas são mantidas pra sempre, só a Release (card + assets anexados) é removida.
-        if: ${{ github.ref_type == 'tag' }}
+        # nunca crítico ao processo de release em si. As tags de versões antigas são mantidas
+        # (histórico); só a Release (card + APK anexado) é removida.
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOVA: v${{ env.VERSION_NAME }}
         run: |
           for tag in $(gh release list --limit 50 --json tagName --jq '.[].tagName'); do
-            if [ "$tag" != "${{ github.ref_name }}" ]; then
+            if [ "$tag" != "$NOVA" ]; then
               echo "Apagando release antiga: $tag (tag mantida)"
               gh release delete "$tag" --yes --cleanup-tag=false
             fi
