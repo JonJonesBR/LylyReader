@@ -299,6 +299,11 @@ class AppPrefs(context: Context) {
         get() = p.getInt("reader_margem_nivel", MARGEM_NIVEL_PADRAO)
         set(v) = p.edit().putInt("reader_margem_nivel", v).apply()
 
+    /** Alinhamento do texto do leitor: nome de [com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto]. */
+    var readerAlinhamento: String
+        get() = p.getString("reader_alinhamento", null) ?: "JUSTIFICADO"
+        set(v) = p.edit().putString("reader_alinhamento", v).apply()
+
     /** Rolagem horizontal (paginada) no lugar do scroll vertical contínuo no leitor. */
     var readerRolagemHorizontal: Boolean
         get() = p.getBoolean("reader_rolagem_horizontal", false)

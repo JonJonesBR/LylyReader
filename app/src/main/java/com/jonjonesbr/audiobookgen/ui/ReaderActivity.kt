@@ -536,6 +536,9 @@ class ReaderActivity : BasePlayerActivity() {
         // sem isso, ficam atrás da barra de gestos em telas sem botões de navegação físicos.
         fabConverterPrincipal.aplicarMargemInferiorComNavigationBar()
         findViewById<View>(R.id.layoutGuidedPlayer).aplicarPaddingInferiorComNavigationBar()
+        EspacoSobControles.manter(
+            recyclerView, listOf(findViewById(R.id.layoutGuidedPlayer), findViewById(R.id.miniPlayerRoot))
+        )
         if (somenteLeitura) {
             // "Ler sem áudio": sem FAB de conversão, sem barra da leitura guiada e sem "converter assim mesmo".
             fabConverterPrincipal.visibility = View.GONE
@@ -1270,7 +1273,8 @@ class ReaderActivity : BasePlayerActivity() {
             tema                = state.tema,
             modo                = modoAdapter,
             paragrafosOriginais = state.textoOriginalBruto?.paragrafos ?: emptyList(),
-            fonteSerifada       = state.fonteSerifada
+            fonteSerifada       = state.fonteSerifada,
+            alinhamento         = state.alinhamento
         )
         return paragrafosExibidos
     }

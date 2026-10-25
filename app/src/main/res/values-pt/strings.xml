@@ -1430,4 +1430,10 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="lib_ordenar_rotulo">Ordenar: %1$s</string>
     <string name="lib_vazio_escolher_livro">Escolher um livro</string>
     <string name="lib_importar_audio">Importar um áudio que já tenho</string>
+    <!-- Leitor › Aparência › Alinhamento -->
+    <string name="label_alinhamento">Alinhamento do texto</string>
+    <string name="alinhamento_justificado">Justificado</string>
+    <string name="alinhamento_esquerda">Esquerda</string>
+    <string name="alinhamento_centro">Centro</string>
+    <string name="alinhamento_direita">Direita</string>
 </resources>

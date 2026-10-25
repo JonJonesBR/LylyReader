@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
@@ -11,6 +12,7 @@ import android.text.TextWatcher
 import android.text.style.ForegroundColorSpan
 import android.text.style.StrikethroughSpan
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
@@ -92,6 +94,7 @@ class ParagrafoAdapter(
     private var espacamento: Float = ESPACAMENTO_PADRAO
     private var tema: TemaLeitura = TemaLeitura.CLARO
     private var fonteSerifada: Boolean = false
+    private var alinhamento: AlinhamentoTexto = AlinhamentoTexto.JUSTIFICADO
     var modo: AdapterModo = AdapterModo.LEITURA
         private set
 
@@ -134,7 +137,8 @@ class ParagrafoAdapter(
         tema: TemaLeitura,
         modo: AdapterModo = this.modo,
         paragrafosOriginais: List<Paragrafo> = this.paragrafosOriginais,
-        fonteSerifada: Boolean = this.fonteSerifada
+        fonteSerifada: Boolean = this.fonteSerifada,
+        alinhamento: AlinhamentoTexto = this.alinhamento
     ) {
         val mudouModo = this.modo != modo
         val mudouLista = this.paragrafos !== paragrafos || mudouModo
@@ -144,7 +148,8 @@ class ParagrafoAdapter(
             this.selecaoInicio != selecaoInicio ||
             this.selecaoFim != selecaoFim ||
             this.paragrafosOriginais !== paragrafosOriginais ||
-            this.fonteSerifada != fonteSerifada
+            this.fonteSerifada != fonteSerifada ||
+            this.alinhamento != alinhamento
         val syncAntigo = this.syncAtual
         this.paragrafos = paragrafos
         this.selecaoInicio = selecaoInicio
@@ -157,6 +162,7 @@ class ParagrafoAdapter(
         this.modo = modo
         this.paragrafosOriginais = paragrafosOriginais
         this.fonteSerifada = fonteSerifada
+        this.alinhamento = alinhamento
         when {
             mudouLista -> notifyDataSetChanged()
             mudouAparencia -> notifyItemRangeChanged(0, paragrafos.size)
@@ -250,7 +256,7 @@ class ParagrafoAdapter(
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
         tv.setTextColor(corTexto)
-        tv.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado)
+        tv.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamento)
 
         // Highlight
         val inicio = selecaoInicio
@@ -375,7 +381,7 @@ class ParagrafoAdapter(
         et.textSize = tamanhoFonte
         et.setLineSpacing(0f, espacamento)
         et.setTextColor(corTexto)
-        et.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado)
+        et.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamento)
         val watcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
             override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
@@ -392,7 +398,7 @@ class ParagrafoAdapter(
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
         tv.setBackgroundColor(Color.TRANSPARENT)
-        tv.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado)
+        tv.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamento)
 
         // Em modo ALTERACOES, `paragrafos` = parágrafos limpos, `paragrafosOriginais` = originais
         // Exibe todos os parágrafos originais: removidos = tachado vermelho, mantidos = cor normal
@@ -430,8 +436,23 @@ class ParagrafoAdapter(
  * Função de topo (não membro da classe) para não empurrar ParagrafoAdapter acima do
  * limite de funções do detekt.
  */
-private fun TextView.aplicarTipografiaLeitor(serifada: Boolean, tipografiaSerifada: android.graphics.Typeface?) {
+private fun TextView.aplicarTipografiaLeitor(
+    serifada: Boolean,
+    tipografiaSerifada: android.graphics.Typeface?,
+    alinhamento: AlinhamentoTexto
+) {
     typeface = if (serifada) tipografiaSerifada else android.graphics.Typeface.DEFAULT
+    // Justificado distribui o espaço entre as palavras; a última linha do parágrafo fica à esquerda.
+    justificationMode = if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
+        android.text.Layout.JUSTIFICATION_MODE_INTER_WORD
+    } else {
+        android.text.Layout.JUSTIFICATION_MODE_NONE
+    }
+    textAlignment = when (alinhamento) {
+        AlinhamentoTexto.CENTRO -> View.TEXT_ALIGNMENT_CENTER
+        AlinhamentoTexto.DIREITA -> View.TEXT_ALIGNMENT_VIEW_END
+        AlinhamentoTexto.JUSTIFICADO, AlinhamentoTexto.ESQUERDA -> View.TEXT_ALIGNMENT_VIEW_START
+    }
 }
 
 /**

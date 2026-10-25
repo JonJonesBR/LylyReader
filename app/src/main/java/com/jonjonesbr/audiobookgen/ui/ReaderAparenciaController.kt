@@ -11,7 +11,9 @@ import androidx.core.view.ViewCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
+import com.google.android.material.chip.ChipGroup
 
 // Constantes do bottom sheet de aparência — movidas do companion de ReaderActivity (T2.2).
 private const val FONTE_MIN = 12f
@@ -60,6 +62,7 @@ class ReaderAparenciaController(
             state.espacamento
         )
         configurarBotoesAparencia(view)
+        configurarAlinhamento(view.findViewById(R.id.chipsAlinhamento), state.alinhamento)
 
         configurarBrilhoSlider(
             view.findViewById(R.id.seekBarBrilho),
@@ -175,6 +178,20 @@ class ReaderAparenciaController(
         view.findViewById<Button>(R.id.btnRolagemHorizontal).setOnClickListener {
             viewModel.setRolagemHorizontal(true)
             onOrientacaoRolagem(true)
+        }
+    }
+
+    /** Justificado (padrão), à esquerda, centralizado ou à direita; o chip marcado mostra o atual. */
+    private fun configurarAlinhamento(grupo: ChipGroup, atual: AlinhamentoTexto) {
+        val chips = mapOf(
+            AlinhamentoTexto.JUSTIFICADO to R.id.chipAlinhJustificado,
+            AlinhamentoTexto.ESQUERDA to R.id.chipAlinhEsquerda,
+            AlinhamentoTexto.CENTRO to R.id.chipAlinhCentro,
+            AlinhamentoTexto.DIREITA to R.id.chipAlinhDireita
+        )
+        chips[atual]?.let { grupo.check(it) }
+        grupo.setOnCheckedStateChangeListener { _, ids ->
+            chips.entries.firstOrNull { it.value == ids.firstOrNull() }?.let { viewModel.setAlinhamento(it.key) }
         }
     }
 

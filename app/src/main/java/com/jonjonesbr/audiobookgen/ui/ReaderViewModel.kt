@@ -189,6 +189,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
                 tema = TemaLeitura.entries[prefs.readerTema],
                 fonteSerifada = prefs.readerFonteSerifada,
                 margemNivel = prefs.readerMargemNivel,
+                alinhamento = com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto.porNome(prefs.readerAlinhamento),
                 rolagemHorizontal = prefs.readerRolagemHorizontal
             )
         }
@@ -204,9 +205,13 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
             margemNivel = state.margemNivel,
             rolagemHorizontal = state.rolagemHorizontal
         )
+        prefs.readerAlinhamento = state.alinhamento.name
     }
 
     fun setFonteSerifada(serifada: Boolean) = _uiState.update { it.copy(fonteSerifada = serifada) }
+
+    fun setAlinhamento(alinhamento: com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto) =
+        _uiState.update { it.copy(alinhamento = alinhamento) }
 
     fun setRolagemHorizontal(horizontal: Boolean) =
         _uiState.update { it.copy(rolagemHorizontal = horizontal) }

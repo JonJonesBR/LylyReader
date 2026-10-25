@@ -1432,4 +1432,10 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="lib_ordenar_rotulo">Sort: %1$s</string>
     <string name="lib_vazio_escolher_livro">Choose a book</string>
     <string name="lib_importar_audio">Import an audio file I already have</string>
+    <!-- Leitor › Aparência › Alinhamento -->
+    <string name="label_alinhamento">Text alignment</string>
+    <string name="alinhamento_justificado">Justified</string>
+    <string name="alinhamento_esquerda">Left</string>
+    <string name="alinhamento_centro">Center</string>
+    <string name="alinhamento_direita">Right</string>
 </resources>

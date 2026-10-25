@@ -65,6 +65,7 @@ data class ReaderUiState(
     // T3.2 — Tipografia
     val fonteSerifada: Boolean = false,
     val margemNivel: Int = MARGEM_NIVEL_PADRAO,
+    val alinhamento: AlinhamentoTexto = AlinhamentoTexto.JUSTIFICADO,
     // Rolagem horizontal (paginada) como alternativa ao scroll vertical contínuo.
     val rolagemHorizontal: Boolean = false
 )
