@@ -1251,6 +1251,12 @@ async def processar(
     # Prévia e job ativo são da conversão que começa agora: nada sobra de uma anterior.
     _apagar_previa()
     _zerar_job_ativo()
+    # Vocabulário do livro: diz ao normalizador que "CASA" num título é palavra e "OAB" é sigla.
+    try:
+        from text_normalizer import registrar_vocabulario
+        registrar_vocabulario("conversao", texto)
+    except Exception as e:
+        logger.warning(f"Vocabulário do livro não registrado: {e}")
     try:
         resultado = await _processar_nucleo(
             texto, voz, velocidade, tom, estilo, titulo, saida_mp3, progress_cb,

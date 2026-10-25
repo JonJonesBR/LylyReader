@@ -472,6 +472,9 @@ class GuidedPlayerManager(
             // Sem isso, minutos acumulados do livro anterior eram creditados às estatísticas
             // do livro novo assim que o tick de escuta cruzasse o próximo minuto inteiro.
             msOuvidoAcumulado = 0L
+            com.jonjonesbr.audiobookgen.tts.VocabularioDoLivro.registrar(
+                context, "leitura", newParagraphs.joinToString("\n") { it.texto }
+            )
         }
         this.paragraphs = newParagraphs
     }

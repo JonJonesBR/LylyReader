@@ -10,8 +10,10 @@ class PronunciationSynthesizer(
     private val inner: TtsSynthesizer,
     private val dicionario: () -> PronunciationDictionary
 ) : TtsSynthesizer {
-    override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? =
-        inner.synthesize(dicionario().apply(texto), voz, ritmo)
+    override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
+        VocabularioDoLivro.aguardar() // o normalizador do motor consulta o vocabulário do livro
+        return inner.synthesize(dicionario().apply(texto), voz, ritmo)
+    }
 
     override fun ultimoErro(): String? = inner.ultimoErro()
 }

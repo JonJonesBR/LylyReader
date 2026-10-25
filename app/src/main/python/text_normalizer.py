@@ -481,37 +481,122 @@ _SIGLAS_LIDAS_COMO_PALAVRA = frozenset({
     "SESC", "IPTU", "IPVA", "FGTS", "PIS", "COFINS", "ICMS", "IPI",
     "UNESCO", "UNICEF", "ONU", "UE", "NASA", "NATO", "OPEP", "MERCOSUL",
     "BNDES", "INSS", "SUS", "FAB", "MEC",
+    "OTAN", "FIFA", "AIDS", "OVNI", "DETRAN", "PROCON", "ANVISA", "IBAMA", "FUNAI", "ENEM",
+    "INMETRO", "SEBRAE", "EMBRAPA", "CAPES", "USP", "UNICAMP", "UNESP", "UNIFESP", "FUVEST",
+    "PUC", "ONG", "ABIN", "DOPS", "FEBEM", "INPE", "IPEA", "ANATEL", "ANEEL", "ANAC", "BOPE",
+    "SAMU", "VIP", "NAFTA", "OPEC", "LASER", "RADAR", "SONAR", "UNAM", "SIDA",
 })
 
 _SIGLAS_SOLETRADAS = frozenset({
     "CPF", "RG", "CNPJ", "SSP", "TV", "HD", "DVD", "CD", "USB",
-    "CPU", "RAM", "HDMI", "USB", "FPS", "RGB", "CEO", "CTO", "CFO",
+    "CPU", "RAM", "HDMI", "FPS", "RGB", "CEO", "CTO", "CFO",
     "HR", "RH", "TI", "EUA", "UK", "US", "BRL", "USD", "EUR",
+    "STF", "STJ", "TSE", "TST", "TRF", "TJ", "OAB", "PT", "PSDB", "MDB", "PSOL", "PF", "PM",
+    "PIB", "CEP", "CNH", "UTI", "SP", "RJ", "MG", "DF", "CBF", "ABL", "ABNT", "UFRJ", "UFMG",
+    "DNA", "RNA", "HIV", "FBI", "CIA", "KGB", "BBC", "CNN", "IBM", "NBA", "NFL", "MIT", "URSS",
+    "PC", "PDF", "SMS", "GPS", "DJ", "VHS", "MPB", "EEUU", "USA",
 })
 
+# Palavras curtas e frequentes (pt, en, es) que podem aparecer em títulos e nunca são siglas.
+_PALAVRAS_CURTAS_COMUNS = frozenset("""
+a o e é os as um uns de da do das dos em no na nos nas ao à aos às por que se me te ti lhe eu tu ele
+vi ir vou vai foi ser era ver dar sou há boa bom mau má lar ar rio mal bem tão mim
+ela nós vós eles elas meu teu seu sua mas nem ou já não sim lá cá aí ali só sem com pra pro mar sol
+lua céu rei paz fim dia mês ano vez voz luz mãe pai avó avô fé dor amor vida
+the of and to in on at by for an as is it be we he she you me my his her our its not no yes all
+end day sun sea war man men god old new one two red
+el la lo los las un una y del al en con por para su sus mi tu yo es son no si sí más fin día rey dios
+""".split())
 
 _NOMES_DAS_LETRAS = {
-    "A": "á", "B": "bê", "C": "cê", "D": "dê", "E": "é", "F": "efe", "G": "gê", "H": "agá", "I": "i",
-    "J": "jota", "K": "cá", "L": "ele", "M": "eme", "N": "ene", "O": "ó", "P": "pê", "Q": "quê",
-    "R": "erre", "S": "esse", "T": "tê", "U": "u", "V": "vê", "W": "dáblio", "X": "xis", "Y": "ípsilon", "Z": "zê",
+    "pt": {
+        "A": "á", "B": "bê", "C": "cê", "D": "dê", "E": "é", "F": "efe", "G": "gê", "H": "agá", "I": "i",
+        "J": "jota", "K": "cá", "L": "ele", "M": "eme", "N": "ene", "O": "ó", "P": "pê", "Q": "quê",
+        "R": "erre", "S": "esse", "T": "tê", "U": "u", "V": "vê", "W": "dáblio", "X": "xis", "Y": "ípsilon",
+        "Z": "zê",
+    },
+    "en": {
+        "A": "ay", "B": "bee", "C": "see", "D": "dee", "E": "ee", "F": "ef", "G": "jee", "H": "aitch",
+        "I": "eye", "J": "jay", "K": "kay", "L": "el", "M": "em", "N": "en", "O": "oh", "P": "pee",
+        "Q": "cue", "R": "ar", "S": "ess", "T": "tee", "U": "you", "V": "vee", "W": "double you", "X": "ex",
+        "Y": "why", "Z": "zee",
+    },
+    "es": {
+        "A": "a", "B": "be", "C": "ce", "D": "de", "E": "e", "F": "efe", "G": "ge", "H": "hache", "I": "i",
+        "J": "jota", "K": "ka", "L": "ele", "M": "eme", "N": "ene", "O": "o", "P": "pe", "Q": "cu",
+        "R": "erre", "S": "ese", "T": "te", "U": "u", "V": "uve", "W": "uve doble", "X": "equis", "Y": "ye",
+        "Z": "zeta",
+    },
 }
-
 
 _PALAVRA = re.compile(r"[^\W\d_]+")
 _ROMANO_IVX = re.compile(r"[IVX]{2,}")
+_VOGAIS = frozenset("AEIOUYÁÉÍÓÚÂÊÔÃÕÀÜ")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Vocabulário do livro
+# ═══════════════════════════════════════════════════════════════════════════════
+# Palavras que o livro escreve em minúsculas em algum lugar: "CASA" num título é palavra porque
+# "casa" aparece no texto; "OAB" nunca aparece assim, então é sigla. Guarda os últimos livros
+# registrados (leitura guiada e conversão podem estar abertas ao mesmo tempo, com livros diferentes).
+
+_MAX_VOCABULARIOS = 3
+_vocabularios: dict = {}
+_vocabulario_unido: frozenset = frozenset()
+
+
+def registrar_vocabulario(chave: str, texto: str) -> int:
+    """Registra as palavras que [texto] escreve com minúsculas. Devolve quantas são."""
+    global _vocabulario_unido
+    palavras = frozenset(
+        m.group(0).lower() for m in _PALAVRA.finditer(texto or "") if not m.group(0).isupper()
+    )
+    _vocabularios.pop(chave, None)
+    _vocabularios[chave] = palavras
+    while len(_vocabularios) > _MAX_VOCABULARIOS:
+        _vocabularios.pop(next(iter(_vocabularios)))
+    _vocabulario_unido = frozenset().union(*_vocabularios.values())
+    return len(palavras)
+
+
+def esquecer_vocabularios() -> None:
+    global _vocabulario_unido
+    _vocabularios.clear()
+    _vocabulario_unido = frozenset()
 
 
 def _eh_sigla_conhecida(palavra: str) -> bool:
     return palavra in _SIGLAS_LIDAS_COMO_PALAVRA or palavra in _SIGLAS_SOLETRADAS
 
 
+def _eh_palavra(palavra: str) -> bool:
+    minuscula = palavra.lower()
+    return minuscula in _vocabulario_unido or minuscula in _PALAVRAS_CURTAS_COMUNS
+
+
+def _le_como_palavra(w: str, em_sequencia: bool) -> bool:
+    """Decide se a palavra maiúscula [w] (2+ letras) é lida como palavra ou fica como sigla."""
+    if em_sequencia and _eh_palavra(w):
+        return True  # título: "PARA TI", "TAKE US HOME" (o vocabulário vence a lista de siglas)
+    if _eh_sigla_conhecida(w) or not any(c in _VOGAIS for c in w):
+        return False  # "OAB", "STF", "CNPJ"
+    if _eh_palavra(w):
+        return True  # "viu A CASA"
+    if em_sequencia:
+        # Num título, palavra curta que o livro nunca escreve em minúsculas é sigla ("A HISTÓRIA DA
+        # OAB"). Sem vocabulário registrado não há como saber: lê como palavra.
+        return len(w) >= 4 or not _vocabulario_unido
+    return len(w) >= 5
+
+
 def _suavizar_caixa_alta(texto: str) -> str:
     """Passa para minúsculas o texto escrito em CAIXA ALTA (títulos, gritos).
 
     Sem isso, "O DIA EM QUE TUDO MUDOU" virava "dê i á é eme..." no passo de siglas, e os
-    motores soletravam o resto. Continua em maiúsculas (para o passo de siglas): sigla
-    conhecida, palavra maiúscula isolada de até 4 letras ("A OAB decidiu") e romano no fim de
-    uma sequência ("CHAPTER XII"). Letra solta ("A", "O") não forma sequência sozinha.
+    motores soletravam o resto. Continua em maiúsculas (para o passo de siglas) o que parece
+    sigla (ver _le_como_palavra) e o romano no fim de uma sequência ("CHAPTER XII", "LUÍS XIV").
+    Letra solta ("A", "O") não forma sequência sozinha.
     """
     palavras = list(_PALAVRA.finditer(texto))
     if not palavras:
@@ -536,7 +621,7 @@ def _suavizar_caixa_alta(texto: str) -> str:
         w = p.group(0)
         partes.append(texto[fim_anterior:p.start()])
         fim_anterior = p.end()
-        if not caixa_alta[i] or _eh_sigla_conhecida(w):
+        if not caixa_alta[i]:
             partes.append(w)
             continue
         inicio = i == 0 or not caixa_alta[i - 1]
@@ -550,26 +635,123 @@ def _suavizar_caixa_alta(texto: str) -> str:
             i + 1 < len(palavras) and caixa_alta[i + 1]
             and not texto[p.end():palavras[i + 1].start()].strip()
         )
-        romano_final = not inicio and not seguinte_colado and _ROMANO_IVX.fullmatch(w)
-        if (em_sequencia or len(w) >= 5) and not romano_final:
+        romano = bool(_ROMANO_IVX.fullmatch(w)) and _romano(w) > 0
+        romano_final = romano and not inicio and not seguinte_colado
+        # Romano que abre o título ("XII", "XII. O RETORNO") segue para _expandir_romanos.
+        romano_titulo = romano and i == 0 and (
+            len(palavras) == 1 or texto[p.end():palavras[1].start()].strip()
+        )
+        if romano_final or romano_titulo:
+            partes.append(w)
+            continue
+        # No meio de um título, "VI" de "EU VI O MAR" é palavra, não número nem sigla.
+        if (em_sequencia and romano) or _le_como_palavra(w, em_sequencia):
             w = w.capitalize() if inicio else w.lower()
         partes.append(w)
     partes.append(texto[fim_anterior:])
     return "".join(partes)
 
 
-def _expandir_siglas(texto: str) -> str:
-    """Expande siglas: lidas como palavra ou soletradas."""
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Algarismos romanos (fora de "capítulo/século..." do português, tratados em _expandir_numeros_pt)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_ROMANO_VALIDO = re.compile(r"M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})")
+_ORDINAIS_EN = (
+    "", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
+    "eleventh", "twelfth",
+)
+_ORDINAIS_ES = (
+    "", "primero", "segundo", "tercero", "cuarto", "quinto", "sexto", "séptimo", "octavo", "noveno", "décimo",
+)
+# Depois destas palavras o romano é cardinal em inglês ("World War two"), não "the second".
+_ANTES_DE_CARDINAL_EN = frozenset({"War", "Phase", "Type", "Class", "Level", "Stage", "Mark", "Grade"})
+_NOMES_FEMININOS = frozenset({"Isabel", "Elizabeth", "Elisabete", "Beatriz", "Leonor", "Ester"})
+_SECOES = (
+    r"chapter|part|book|volume|section|act|scene|canto|cap[íi]tulo|parte|libro|tomo|secci[óo]n|acto|escena"
+)
+
+
+def _romano(r: str) -> int:
+    return _romano_para_int(r) if r and _ROMANO_VALIDO.fullmatch(r) else 0
+
+
+def _cardinal(n: int, lang: str) -> str:
+    if lang == "en":
+        return _numero_extenso_en(n)
+    if lang == "es":
+        return _numero_extenso_es(n)
+    return _numero_extenso(n)
+
+
+def _ordinal_en(n: int) -> str:
+    if n < len(_ORDINAIS_EN):
+        return _ORDINAIS_EN[n]
+    if n < 20:
+        return _numero_extenso_en(n) + "th"  # thirteenth..nineteenth
+    if n < 100:
+        dezena, unidade = divmod(n, 10)
+        if not unidade:
+            return _DEZ_EN[dezena][:-1] + "ieth"  # twentieth, thirtieth
+        return _DEZ_EN[dezena] + "-" + _ORDINAIS_EN[unidade]
+    return _numero_extenso_en(n)
+
+
+def _numero_de_nome(nome: str, n: int, lang: str) -> str:
+    """Romano depois de nome: "Pedro I" → "primeiro", "Luís XIV" → "catorze", "Henry VIII" → "the eighth"."""
+    if lang == "en":
+        return _cardinal(n, lang) if nome in _ANTES_DE_CARDINAL_EN else "the " + _ordinal_en(n)
+    if n > 10:
+        return _cardinal(n, lang)
+    ordinal = _ORDINAIS_ES[n] if lang == "es" else _ordinal_masculino(n)
+    if nome.endswith("a") or nome in _NOMES_FEMININOS:
+        return " ".join(p[:-1] + "a" for p in ordinal.split())
+    return ordinal
+
+
+def _expandir_romanos(texto: str, lang: str) -> str:
+    """Romanos com contexto seguro: parágrafo só com o número, início de título ("XII. O retorno"),
+    depois de seção (chapter, capítulo, libro...) e depois de nome ("Luís XIV", "Henry VIII")."""
+    # Parágrafo que é só o romano ("XII", "IV."): título de capítulo.
+    sozinho = re.fullmatch(r"(\s*)([IVXLCDM]+)(\s*[.:]?\s*)", texto)
+    if sozinho and _romano(sozinho.group(2)):
+        return sozinho.group(1) + _cardinal(_romano(sozinho.group(2)), lang) + sozinho.group(3)
+
+    def _inicio(m):
+        n = _romano(m.group(2))
+        return m.group(1) + _cardinal(n, lang) + m.group(3) if n else m.group(0)
+
+    texto = re.sub(r"(?m)^(\s*)([IVXL]{2,})(\s*[.:)\-–—]\s)", _inicio, texto)
+
+    def _secao(m):
+        n = _romano(m.group(2))
+        return m.group(1) + " " + _cardinal(n, lang) if n else m.group(0)
+
+    texto = re.sub(r"\b((?i:" + _SECOES + r"))\s+([IVXLCDM]+)\b", _secao, texto)
+
+    def _nome(m):
+        nome, romano = m.group(1), m.group(2)
+        n = _romano(romano)
+        if not n or (lang == "en" and romano == "I"):  # "Then I went"
+            return m.group(0)
+        return nome + " " + _numero_de_nome(nome, n, lang)
+
+    return re.sub(r"\b([A-ZÀ-Ý][a-zà-ÿ]+)\s+([IVX]+)\b(?![\w'’])", _nome, texto)
+
+
+def _expandir_siglas(texto: str, idioma: str = "pt") -> str:
+    """Expande siglas: lidas como palavra ou soletradas (nomes das letras no idioma do texto)."""
+    nomes = _NOMES_DAS_LETRAS.get(idioma.lower()[:2], _NOMES_DAS_LETRAS["pt"])
 
     def _soletrar(sigla: str) -> str:
         # Nomes das letras ("efe cê dê"): letras soltas ("f c d") os motores leem mal ou engolem.
-        return " ".join(_NOMES_DAS_LETRAS.get(c, c.lower()) for c in sigla.upper())
+        return " ".join(nomes.get(c, c.lower()) for c in sigla.upper())
 
     def _substituir_sigla(m):
         s = m.group(0).upper().strip()
         if s in _SIGLAS_LIDAS_COMO_PALAVRA:
             return s.lower()
-        if s in _SIGLAS_SOLETRADAS:
+        if s in _SIGLAS_SOLETRADAS or not any(c in _VOGAIS for c in s):
             return _soletrar(s)
         if len(s) <= 4 and s.isalpha() and s != s.lower():
             return _soletrar(s)
@@ -831,8 +1013,9 @@ def normalizar(
     elif lang == "es" and numeros_soltos:
         t = _expandir_numeros_soltos_en_es(t, "es")
 
-    # 4. Siglas (após expansão de abreviações para evitar conflito)
-    t = _expandir_siglas(t)
+    # 4. Romanos com contexto (título, seção, nome) e siglas (após as abreviações, para evitar conflito)
+    t = _expandir_romanos(t, lang)
+    t = _expandir_siglas(t, lang)
 
     # 5. Normalização final de pontuação e espaços
     t = _normalizar_pontuacao(t)
