@@ -134,6 +134,7 @@ class LibraryActivity : BasePlayerActivity() {
         progressBarLibrary = findViewById<ProgressBar?>(R.id.progressBarLibrary)
 
         findViewById<ImageButton>(R.id.btnVoltarLibrary).setOnClickListener { finish() }
+        CartaoGerandoAgora.vincular(this)
         findViewById<ImageButton>(R.id.btnAjudaLibrary)
             .setOnClickListener { HelpActivity.start(this, HelpTopico.BIBLIOTECA) }
         findViewById<ImageButton>(R.id.btnStatsLibrary)

@@ -215,7 +215,7 @@
     <!-- Queue Activity -->
     <string name="titulo_fila">Fila</string>
     <string name="msg_fila_vazia">Nenhum arquivo na fila.\nAbra um livro na Biblioteca e escolha Gerar audiobook.</string>
-    <string name="btn_iniciar_fila">Iniciar processamento</string>
+    <string name="btn_iniciar_fila">Iniciar a fila</string>
     <string name="btn_ler_tudo_fila">Ler tudo (leitura guiada)</string>
     <string name="btn_limpar_fila">Limpar</string>
     <string name="btn_limpar_historico">Limpar histórico</string>
@@ -437,7 +437,7 @@
     <string name="help_conversion_step1">Na aba Biblioteca, adicione um livro: de um arquivo, de uma busca ou de um link</string>
     <string name="help_conversion_step2">Abra o livro e toque em \"Gerar audiobook\"</string>
     <string name="help_conversion_step3">Escolha a voz e o ritmo e toque em \"Gerar agora\" ou em \"Adicionar à fila\"</string>
-    <string name="help_conversion_step4">Acompanhe em Conversões; o audiobook pronto aparece na aba Audiobooks</string>
+    <string name="help_conversion_step4">Acompanhe o andamento no cartão do topo da Biblioteca; o audiobook pronto aparece na aba Audiobooks</string>
     <string name="help_reader_title">Lendo e selecionando trechos</string>
     <string name="help_reader_step1">Toque em qualquer parágrafo para começar a leitura guiada e ouvir enquanto lê</string>
     <string name="help_reader_step2">Use as setas ‹ › da barra do capítulo para ir ao anterior ou ao próximo; toque no nome do capítulo para ver a lista e marcar capítulos para converter</string>
@@ -451,7 +451,7 @@
     <string name="help_queue_title">Processando vários arquivos</string>
     <string name="help_queue_step1">Abra um livro, toque em \"Gerar audiobook\" e escolha \"Adicionar à fila\"</string>
     <string name="help_queue_step2">Repita para quantos arquivos quiser converter</string>
-    <string name="help_queue_step3">Abra a fila (menu da Biblioteca) e toque em \"Iniciar processamento\"</string>
+    <string name="help_queue_step3">Abra Conversões (menu ⋮ da Biblioteca, ou o cartão de geração) e toque em \"Iniciar a fila\"</string>
     <string name="help_queue_step4">O app processa um por um e notifica ao concluir</string>
     <string name="help_settings_title">Personalizando o app</string>
     <string name="help_settings_step1">Vozes: na tela do livro, toque em Trocar para escolher vozes online (Edge, Gemini, ElevenLabs) ou offline (Supertonic, Kokoro, Piper, Pocket)</string>
@@ -1039,7 +1039,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="nav_audiobooks">Audiobooks</string>
     <string name="nav_downloads">Downloads</string>
     <string name="nav_ajustes">Ajustes</string>
-    <string name="bib_menu_fila">Fila de processamento</string>
 
     <!-- Tela do livro (Fase O) -->
     <string name="livro_continuar">Continuar leitura guiada</string>
@@ -1144,7 +1143,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="conv_vazio_titulo">Nenhuma conversão em andamento</string>
     <string name="conv_vazio_texto">Abra um livro e toque em Gerar audiobook para começar.</string>
     <string name="conv_ir_biblioteca">Ir para a Biblioteca</string>
-    <string name="conv_ver_fila">Fila de processamento</string>
+    <string name="conv_ver_fila">Ver e organizar a fila</string>
     <string name="conv_ver_audiobooks">Ver meus audiobooks</string>
     <string name="conv_pronto_titulo">Audiobook pronto</string>
     <string name="conv_pronto_info">%1$s · %2$s · %3$s MB</string>
@@ -1381,4 +1380,16 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="guided_options_preload_desc">Gera antes o áudio do resto deste capítulo, para tocar sem esperas entre as frases.</string>
     <string name="cd_section_expanded">aberto</string>
     <string name="cd_section_collapsed">fechado</string>
+    <!-- Cartão "Gerando agora" -->
+    <string name="gerando_agora_rotulo">Gerando audiobook · %1$d%%</string>
+    <string name="gerando_agora_pausada_rotulo">Conversão pausada · %1$d%%</string>
+    <string name="gerando_agora_fila_rotulo">Fila de conversão</string>
+    <string name="gerando_agora_sem_nome">Seu audiobook</string>
+    <string name="gerando_agora_ver">Ver</string>
+    <string name="bib_menu_conversoes">Conversões e fila</string>
+    <plurals name="gerando_agora_fila_texto">
+        <item quantity="one">%1$d livro esperando para gerar</item>
+        <item quantity="many">%1$d livros esperando para gerar</item>
+        <item quantity="other">%1$d livros esperando para gerar</item>
+    </plurals>
 </resources>

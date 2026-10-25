@@ -75,6 +75,8 @@ class ConversionWorker(
         // Chaves de progresso (setProgressAsync)
         const val KEY_PROGRESS_PCT = "progress_pct"
         const val KEY_PROGRESS_MSG = "progress_msg"
+        /** Nome do audiobook em geração, para o cartão "Gerando agora" das abas (sai do nome do arquivo de saída). */
+        const val KEY_PROGRESS_NOME = "progress_nome"
 
         // Chaves de OutputData (sucesso)
         const val KEY_RESULT_CAMINHO    = "result_caminho"
@@ -239,6 +241,7 @@ class ConversionWorker(
         setProgressAsync(workDataOf(
             KEY_PROGRESS_PCT to PCT_COMPRIMINDO,
             KEY_PROGRESS_MSG to mensagem,
+            KEY_PROGRESS_NOME to arquivo.nameWithoutExtension,
             KEY_RUN_TOKEN to runToken
         ))
         return comprimirWavParaAac(arquivo)
@@ -299,6 +302,7 @@ class ConversionWorker(
                     setProgressAsync(workDataOf(
                         KEY_PROGRESS_PCT to pct,
                         KEY_PROGRESS_MSG to msg,
+                        KEY_PROGRESS_NOME to File(saida).nameWithoutExtension,
                         KEY_RUN_TOKEN to runToken
                     ))
                     ultimaAtualizacaoMs = agora

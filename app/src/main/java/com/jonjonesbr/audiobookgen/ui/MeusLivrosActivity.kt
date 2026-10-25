@@ -133,6 +133,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
         tvTitulo = findViewById(R.id.tvTituloBib)
         progresso = findViewById(R.id.pbBib)
         fab = findViewById(R.id.fabAdicionarBib)
+        CartaoGerandoAgora.vincular(this)
 
         ordem = runCatching { OrdemBiblioteca.valueOf(appPrefs.bibliotecaOrdem) }.getOrDefault(OrdemBiblioteca.RECENTES)
 
@@ -383,15 +384,13 @@ class MeusLivrosActivity : BasePlayerActivity() {
     private fun mostrarMenuMais(ancora: View) {
         val popup = PopupMenu(this, ancora).apply {
             menu.add(0, MENU_ORDENAR, 0, R.string.bib_ordenar)
-            menu.add(0, MENU_FILA, 2, R.string.bib_menu_fila)
-            menu.add(0, MENU_CONVERSOES, 3, R.string.conv_titulo)
+            menu.add(0, MENU_CONVERSOES, 3, R.string.bib_menu_conversoes)
             menu.add(0, MENU_APRENDER, 4, R.string.aprender_titulo)
             menu.add(0, MENU_ESPACO, 1, getString(R.string.bib_espaco, "…"))
                 .isEnabled = false
             setOnMenuItemClickListener {
                 when (it.itemId) {
                     MENU_ORDENAR -> escolherOrdem()
-                    MENU_FILA -> startActivity(Intent(this@MeusLivrosActivity, QueueActivity::class.java))
                     MENU_CONVERSOES -> startActivity(Intent(this@MeusLivrosActivity, ConversoesActivity::class.java))
                     MENU_APRENDER -> startActivity(Intent(this@MeusLivrosActivity, AprenderActivity::class.java))
                 }
@@ -590,7 +589,6 @@ class MeusLivrosActivity : BasePlayerActivity() {
         const val ACAO_APAGAR = 4
         const val MENU_ORDENAR = 1
         const val MENU_ESPACO = 2
-        const val MENU_FILA = 3
         const val MENU_APRENDER = 4
         const val MENU_CONVERSOES = 5
         const val LARGURA_COLUNA_DP = 120f

@@ -126,6 +126,8 @@
         android:layout_height="1dp"
         android:background="@color/color_divider"/>
 
+    <include layout="@layout/view_cartao_gerando_agora"/>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"

@@ -213,7 +213,7 @@
     <!-- Queue Activity -->
     <string name="titulo_fila">Queue</string>
     <string name="msg_fila_vazia">No files in the queue.\nOpen a book in your Library and choose Generate audiobook.</string>
-    <string name="btn_iniciar_fila">Start processing</string>
+    <string name="btn_iniciar_fila">Start the queue</string>
     <string name="btn_ler_tudo_fila">Read all (guided reading)</string>
     <string name="btn_limpar_fila">Clear</string>
     <string name="btn_limpar_historico">Clear history</string>
@@ -432,7 +432,7 @@
     <string name="help_conversion_step1">On the Library tab, add a book: from a file, a search or a link</string>
     <string name="help_conversion_step2">Open the book and tap \"Generate audiobook\"</string>
     <string name="help_conversion_step3">Choose voice and speed, then tap \"Generate now\" or \"Add to queue\"</string>
-    <string name="help_conversion_step4">Follow progress in Conversions; the finished audiobook shows up on the Audiobooks tab</string>
+    <string name="help_conversion_step4">Follow the progress in the card at the top of the Library; the finished audiobook shows up in the Audiobooks tab</string>
     <string name="help_reader_title">Reading and selecting excerpts</string>
     <string name="help_reader_step1">Tap any paragraph to start guided reading and listen while you read</string>
     <string name="help_reader_step2">Use the ‹ › arrows in the chapter bar to go to the previous or next chapter; tap the chapter name to see the list and check chapters to convert</string>
@@ -446,7 +446,7 @@
     <string name="help_queue_title">Processing multiple files</string>
     <string name="help_queue_step1">Open a book, tap \"Generate audiobook\" and choose \"Add to queue\"</string>
     <string name="help_queue_step2">Repeat for as many files as you want to convert</string>
-    <string name="help_queue_step3">Open the queue (Library menu) and tap \"Start processing\"</string>
+    <string name="help_queue_step3">Open Conversions (Library ⋮ menu, or the Generating card) and tap \"Start the queue\"</string>
     <string name="help_queue_step4">The app processes one at a time and notifies when finished</string>
     <string name="help_settings_title">Customizing the app</string>
     <string name="help_settings_step1">Voices: on the book screen, tap Change to pick online voices (Edge, Gemini, ElevenLabs) or offline ones (Supertonic, Kokoro, Piper, Pocket)</string>
@@ -1043,7 +1043,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="nav_audiobooks">Audiobooks</string>
     <string name="nav_downloads">Downloads</string>
     <string name="nav_ajustes">Settings</string>
-    <string name="bib_menu_fila">Processing queue</string>
 
     <!-- Tela do livro (Fase O) -->
     <string name="livro_continuar">Continue guided reading</string>
@@ -1148,7 +1147,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="conv_vazio_titulo">No conversion in progress</string>
     <string name="conv_vazio_texto">Open a book and tap Generate audiobook to start.</string>
     <string name="conv_ir_biblioteca">Go to the Library</string>
-    <string name="conv_ver_fila">Processing queue</string>
+    <string name="conv_ver_fila">View and arrange the queue</string>
     <string name="conv_ver_audiobooks">See my audiobooks</string>
     <string name="conv_pronto_titulo">Audiobook ready</string>
     <string name="conv_pronto_info">%1$s · %2$s · %3$s MB</string>
@@ -1384,4 +1383,15 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="guided_options_preload_desc">Generates the audio of the rest of this chapter in advance, so it plays without waits between sentences.</string>
     <string name="cd_section_expanded">expanded</string>
     <string name="cd_section_collapsed">collapsed</string>
+    <!-- Cartão "Gerando agora" -->
+    <string name="gerando_agora_rotulo">Generating audiobook · %1$d%%</string>
+    <string name="gerando_agora_pausada_rotulo">Conversion paused · %1$d%%</string>
+    <string name="gerando_agora_fila_rotulo">Conversion queue</string>
+    <string name="gerando_agora_sem_nome">Your audiobook</string>
+    <string name="gerando_agora_ver">View</string>
+    <string name="bib_menu_conversoes">Conversions and queue</string>
+    <plurals name="gerando_agora_fila_texto">
+        <item quantity="one">%1$d book waiting to be generated</item>
+        <item quantity="other">%1$d books waiting to be generated</item>
+    </plurals>
 </resources>

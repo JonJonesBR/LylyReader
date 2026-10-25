@@ -82,6 +82,8 @@
         android:layout_height="1dp"
         android:background="@color/color_divider"/>
 
+    <include layout="@layout/view_cartao_gerando_agora"/>
+
     <!-- Busca -->
     <EditText
         android:id="@+id/etBuscaLibrary"
