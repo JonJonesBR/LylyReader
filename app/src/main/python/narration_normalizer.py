@@ -31,9 +31,26 @@ def remover_digitos_isolados(texto: str) -> str:
     return _DIGITOS_ISOLADOS_NO_MEIO_DO_TEXTO.sub("", texto)
 
 
+# Ligaduras tipográficas que PDFs e alguns EPUBs trazem como um caractere só ("ﬁm" em vez de "fim"):
+# o TTS não reconhece a palavra e lê errado ou pula.
+_LIGADURAS = {
+    "\ufb00": "ff", "\ufb01": "fi", "\ufb02": "fl", "\ufb03": "ffi", "\ufb04": "ffl", "\ufb05": "st", "\ufb06": "st",
+}
+# Chamada de nota no meio do texto: algarismos sobrescritos ("palavra¹²") e número entre colchetes
+# grudado no fim de palavra ou pontuação ("disse[12]."). Lidos em voz alta, viram "um dois" no meio da frase.
+# Exceção: unidade de medida ("10 m²", "5 cm³"), em que o sobrescrito é o expoente.
+_NOTA_SOBRESCRITA = re.compile(r"(?<!\b[kcdm]m)(?<!\bm)[\u00b9\u00b2\u00b3\u2070\u2074-\u2079]+")
+_NOTA_ENTRE_COLCHETES = re.compile(r"(?<=[\w.,;:!?\"'\)\]\u00bb])\[\d{1,3}\]")
+
+
 def sanitize_text_noise(text: str) -> str:
     """Remove extraction artifacts which never add useful narration."""
     text = text.replace("\u00a0", " ").replace("\u202f", " ")
+    text = text.replace("\u00ad", "")  # hífen invisível de quebra de linha
+    for ligadura, letras in _LIGADURAS.items():
+        text = text.replace(ligadura, letras)
+    text = _NOTA_SOBRESCRITA.sub("", text)
+    text = _NOTA_ENTRE_COLCHETES.sub("", text)
     text = text.replace("\uf0fe", "").replace("\ufffe", "")
     text = re.sub(r"[\u200b-\u200d\u2060\ufeff]", "", text)
     text = text.replace("\u201c", '"').replace("\u201d", '"')

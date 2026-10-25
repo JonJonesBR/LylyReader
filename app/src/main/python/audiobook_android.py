@@ -274,6 +274,16 @@ def extrair_texto_estruturado(caminho_arquivo: str) -> dict:
         return {"ok": False, "erro": type(e).__name__ + ": " + str(e) + "\n" + _tb.format_exc()}
 
 
+def extrair_texto_estruturado_json(caminho_arquivo: str) -> str:
+    """
+    O mesmo de `extrair_texto_estruturado`, serializado em JSON numa string só. O leitor lia o dicionário
+    campo a campo pela ponte Java↔Python (umas 6 chamadas por parágrafo, dezenas de milhares num livro);
+    uma string atravessa a ponte de uma vez e o Kotlin a decodifica em milissegundos.
+    """
+    import json
+    return json.dumps(extrair_texto_estruturado(caminho_arquivo), ensure_ascii=False)
+
+
 def _montar_resultado(capitulos_raw, paragrafos_raw):
     """Monta o dicionário de retorno calculando charOffset acumulado."""
     offset = 0

@@ -247,7 +247,11 @@ class MeusLivrosActivity : BasePlayerActivity() {
         )
         val itens = mutableListOf<ItemBiblioteca>()
         if (aba == AbaBiblioteca.TODOS && consulta.isBlank()) {
-            continuar(todos) { prog[it.id] }?.let { itens += ItemBiblioteca.Continuar(it, prog[it.id] ?: 0f) }
+            continuar(todos) { prog[it.id] }?.let {
+                itens += ItemBiblioteca.Continuar(it, prog[it.id] ?: 0f)
+                // Tocar em "Continuar" abre o leitor direto: adianta a extração do texto.
+                com.jonjonesbr.audiobookgen.domain.PreparoDoLeitor.preparar(this, caminhoDe(it))
+            }
         }
         filtrados.mapTo(itens) { ItemBiblioteca.Livro(it, prog[it.id], audio[it.id] == true) }
         adapter.submitList(itens)

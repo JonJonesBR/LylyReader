@@ -3,6 +3,8 @@ package com.jonjonesbr.audiobookgen.domain
 import android.util.Log
 import com.jonjonesbr.audiobookgen.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 // ── Modelos de domínio ────────────────────────────────────────────────────────
@@ -77,13 +79,26 @@ private const val MAX_BYTES = 50L * 1024 * 1024 // 50 MB
 
 class ExtractTextUseCase(private val context: android.content.Context) {
 
-    suspend fun invoke(caminho: String): ExtractionResult = withContext(Dispatchers.IO) {
+    /**
+     * Um livro é extraído por vez: se o preparo em segundo plano ([PreparoDoLeitor]) ainda está extraindo
+     * quando o leitor abre, o leitor espera e pega o resultado do cache, em vez de extrair tudo de novo.
+     */
+    suspend fun invoke(caminho: String): ExtractionResult =
+        travas.getOrPut(caminho) { Mutex() }.withLock { extrair(caminho) }
+
+    private suspend fun extrair(caminho: String): ExtractionResult = withContext(Dispatchers.IO) {
         try {
             val arquivo = java.io.File(caminho)
             if (arquivo.length() > MAX_BYTES) {
                 return@withContext ExtractionResult.Error(
                     context.getString(R.string.extracao_arquivo_grande)
                 )
+            }
+
+            // Já aberto antes: o texto guardado dispensa o Python (abertura quase instantânea).
+            val chave = com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.chaveBruto(context, caminho)
+            com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.ler(context, chave)?.let {
+                return@withContext ExtractionResult.Success(it)
             }
 
             // Python é iniciado sob demanda (não mais eager no app startup) — a leitura
@@ -94,58 +109,30 @@ class ExtractTextUseCase(private val context: android.content.Context) {
                 )
             }
 
-            val py = com.chaquo.python.Python.getInstance()
-            val mod = py.getModule("audiobook_android")
-            val resultado = mod.callAttr("extrair_texto_estruturado", caminho).asMap()
-
-            val ok = resultado[py.builtins.callAttr("str", "ok")]?.toBoolean() ?: false
-            if (!ok) {
-                val erro = resultado[py.builtins.callAttr("str", "erro")]
-                    ?.toString() ?: "Erro ao abrir o arquivo. Tente converter diretamente."
-                Log.w(TAG, "Extração falhou: ${erro.take(500)}")
-                return@withContext ExtractionResult.Error(traduzirErro(erro))
-            }
-
-            val capitulosPy = resultado[py.builtins.callAttr("str", "capitulos")]
-                ?.asList() ?: emptyList()
-            val paragrafosPy = resultado[py.builtins.callAttr("str", "paragrafos")]
-                ?.asList() ?: emptyList()
-            val totalChars = resultado[py.builtins.callAttr("str", "total_chars")]
-                ?.toInt() ?: 0
-
-            if (paragrafosPy.isEmpty()) {
+            // Uma string JSON atravessa a ponte Java↔Python de uma vez (antes, ~6 chamadas por parágrafo).
+            val json = com.chaquo.python.Python.getInstance().getModule("audiobook_android")
+                .callAttr("extrair_texto_estruturado_json", caminho).toString()
+            val texto = TextoExtraidoJson.daExtracao(json, context.getString(R.string.capitulo_sem_titulo))
+                .getOrElse { erro ->
+                    Log.w(TAG, "Extração falhou: ${erro.message.orEmpty().take(500)}")
+                    val mensagem = erro.message.orEmpty()
+                    return@withContext ExtractionResult.Error(
+                        if (mensagem.isBlank()) context.getString(R.string.extracao_erro_abrir) else traduzirErro(mensagem)
+                    )
+                }
+            if (texto.paragrafos.isEmpty()) {
                 return@withContext ExtractionResult.Error(context.getString(R.string.extracao_sem_texto))
             }
-
-            val capitulos = capitulosPy.map { cap ->
-                val m = cap.asMap()
-                Capitulo(
-                    titulo = m[py.builtins.callAttr("str", "titulo")]?.toString() ?: context.getString(R.string.capitulo_sem_titulo),
-                    indiceParagrafoInicio = m[py.builtins.callAttr("str", "inicio")]?.toInt() ?: 0,
-                    indiceParagrafoFim = m[py.builtins.callAttr("str", "fim")]?.toInt() ?: 0
-                )
-            }
-
-            val paragrafos = paragrafosPy.map { par ->
-                val m = par.asMap()
-                Paragrafo(
-                    texto = m[py.builtins.callAttr("str", "texto")]?.toString() ?: "",
-                    charOffset = m[py.builtins.callAttr("str", "char_offset")]?.toInt() ?: 0,
-                    indiceCapitulo = m[py.builtins.callAttr("str", "capitulo_idx")]?.toInt() ?: 0
-                )
-            }
-
-            ExtractionResult.Success(
-                TextoExtraido(
-                    capitulos = capitulos,
-                    paragrafos = paragrafos,
-                    totalChars = totalChars
-                )
-            )
+            com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.gravar(context, chave, texto)
+            ExtractionResult.Success(texto)
         } catch (e: Exception) {
             Log.e(TAG, "Erro na extração: ${e.message}", e)
             ExtractionResult.Error(context.getString(R.string.extracao_erro_abrir))
         }
+    }
+
+    private companion object {
+        val travas = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
     }
 
     private fun traduzirErro(erro: String): String = when {

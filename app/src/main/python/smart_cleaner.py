@@ -20,6 +20,9 @@ _TOC_LINE = re.compile(r'^.{3,80}[\s.…·]{3,}\s*\d{1,4}\s*$')
 
 # "[1] Texto da nota" ou "1. Texto da nota" no início de parágrafo
 _FOOTNOTE_LINE = re.compile(r'^\s*(\[\d+\]|\d+[\.\)])\s+\S')
+# "1. A partida" / "12) O retorno": título numerado curto, sem ponto final — não é nota de rodapé
+# (antes sumia da leitura, e o ouvinte perdia o nome do capítulo).
+_TITULO_NUMERADO = re.compile(r'^\s*\d{1,3}[\.\)]\s+[^\n]{1,60}(?<![.;:,])\s*$')
 
 # ── Padrões de Dedicatória / Epígrafe ─────────────────────────────────────────
 
@@ -48,7 +51,7 @@ def _classificar_linha(linha: str) -> str | None:
         return "sumário"
     if _TOC_LINE.match(s):
         return "sumário"
-    if _FOOTNOTE_LINE.match(s):
+    if _FOOTNOTE_LINE.match(s) and not _TITULO_NUMERADO.match(s):
         return "nota_rodape"
     if _DEDICATION_HEADER.match(s):
         return "dedicatoria"
@@ -253,6 +256,22 @@ def smart_clean_paragraphs_for_tts(
                 limpos[i] = re.sub(r"[ \t]{2,}", " ", texto).strip()
 
     return limpos, total_removidas
+
+
+def smart_clean_paragraphs_json(
+    paragrafos_json: str,
+    formato: str,
+    idioma: str = "pt",
+    blacklist: Any = None
+) -> str:
+    """
+    `smart_clean_paragraphs_for_tts` com entrada e saída em JSON: a lista de parágrafos atravessa a ponte
+    Java↔Python como uma string só (antes, elemento por elemento, nas duas direções).
+    Retorna {"paragrafos": [...], "removidas": int}.
+    """
+    paragrafos = json.loads(paragrafos_json) if paragrafos_json else []
+    limpos, removidas = smart_clean_paragraphs_for_tts(paragrafos, formato, idioma, blacklist)
+    return json.dumps({"paragrafos": limpos, "removidas": removidas}, ensure_ascii=False)
 
 
 def remove_global_occurrences(paragrafos: List[str], trecho: str) -> Tuple[List[str], int]:

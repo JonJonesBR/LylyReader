@@ -235,38 +235,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
 
         viewModelScope.launch {
             try {
-                val resultado = withContext(Dispatchers.IO) {
-                    val py = Python.getInstance()
-                    val module = py.getModule("smart_cleaner")
-                    val blacklist = obterBlacklist()
-                    val blacklistJson = org.json.JSONArray(blacklist).toString()
-                    module.callAttr(
-                        "smart_clean_paragraphs_for_tts",
-                        textoAtual.paragrafos.map { it.texto },
-                        formato,
-                        Locale.getDefault().language,
-                        blacklistJson
-                    )
+                val (textoLimpo, totalLinhasRemovidas) = withContext(Dispatchers.IO) {
+                    limparComCache(textoAtual, formato)
                 }
-
-                // resultado é uma tupla Python: (paragrafos_limpos: list[str], linhas_removidas: int)
-                val lista = resultado.asList()
-                var offset = 0
-                val paragrafosLimpos = lista[0].asList().mapIndexedNotNull { indice, pyTexto ->
-                    val texto = pyTexto.toString().trim()
-                    if (texto.isBlank()) return@mapIndexedNotNull null
-                    textoAtual.paragrafos[indice].copy(texto = texto, charOffset = offset).also {
-                        offset += texto.length + 2
-                    }
-                }
-
-                val textoLimpo = TextoExtraido(
-                    capitulos = reconstruirCapitulos(textoAtual.capitulos, paragrafosLimpos),
-                    paragrafos = paragrafosLimpos,
-                    totalChars = offset
-                )
-
-                val totalLinhasRemovidas = lista[1].toInt()
 
                 _uiState.update {
                     it.copy(
@@ -284,6 +255,48 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
                 _uiState.update { it.copy(limpandoTexto = false) }
             }
         }
+    }
+
+    /**
+     * Limpeza para a narração do texto bruto [textoAtual]. O resultado fica guardado
+     * ([com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro]): abrir o livro de novo não chama o Python.
+     * Parágrafos vão e voltam em JSON, uma string só pela ponte Java↔Python.
+     */
+    private suspend fun limparComCache(textoAtual: TextoExtraido, formato: String): Pair<TextoExtraido, Int> {
+        val app = getApplication<Application>()
+        val idioma = Locale.getDefault().language
+        val blacklist = obterBlacklist()
+        val chave = com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.chaveBruto(app, caminhoArquivoAtual)
+            ?.let { com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.chaveLimpo(it, formato, idioma, blacklist) }
+        com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.lerComRemovidas(app, chave)?.let { return it }
+        // O texto bruto pode ter vindo do cache, sem o Python ter sido iniciado nesta sessão.
+        check(com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase(app).inicializarMotorSeNecessario()) {
+            "Motor Python indisponível para a limpeza"
+        }
+
+        val entrada = org.json.JSONArray(textoAtual.paragrafos.map { it.texto }).toString()
+        val saida = org.json.JSONObject(
+            Python.getInstance().getModule("smart_cleaner").callAttr(
+                "smart_clean_paragraphs_json", entrada, formato, idioma, org.json.JSONArray(blacklist).toString()
+            ).toString()
+        )
+        val limpos = saida.getJSONArray("paragrafos")
+        var offset = 0
+        val paragrafosLimpos = (0 until limpos.length()).mapNotNull { indice ->
+            val texto = limpos.getString(indice).trim()
+            if (texto.isBlank()) return@mapNotNull null
+            textoAtual.paragrafos[indice].copy(texto = texto, charOffset = offset).also {
+                offset += texto.length + 2
+            }
+        }
+        val textoLimpo = TextoExtraido(
+            capitulos = reconstruirCapitulos(textoAtual.capitulos, paragrafosLimpos),
+            paragrafos = paragrafosLimpos,
+            totalChars = offset
+        )
+        val removidas = saida.optInt("removidas")
+        com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.gravar(app, chave, textoLimpo, removidas)
+        return textoLimpo to removidas
     }
 
     fun ativarModoEdicao() {

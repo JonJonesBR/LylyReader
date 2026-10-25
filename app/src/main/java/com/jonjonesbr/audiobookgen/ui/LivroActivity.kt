@@ -82,6 +82,8 @@ class LivroActivity : BasePlayerActivity() {
             } else {
                 livro = encontrado
                 mostrar(encontrado)
+                // O próximo passo provável é ler: adianta a extração do texto para o leitor abrir rápido.
+                com.jonjonesbr.audiobookgen.domain.PreparoDoLeitor.preparar(this@LivroActivity, caminho())
                 // Atalho de quem quer cair direto no painel de conversão (ex.: validação por adb).
                 if (intent.getBooleanExtra(EXTRA_ABRIR_PAINEL_GERAR, false)) {
                     intent.removeExtra(EXTRA_ABRIR_PAINEL_GERAR)
