@@ -27,7 +27,6 @@ import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -198,6 +197,7 @@ class ReaderActivity : BasePlayerActivity() {
     private var scrollRestaurado = false
     private var reconectandoGuided = false
     private var margemNivelAplicado = -1
+    private var temaBarrasAplicado: TemaLeitura? = null
     private var progressoIndiceAplicado = -1
     private var continuarGuiadaTriggered = false
     private val appPrefs by lazy { com.jonjonesbr.audiobookgen.data.AppPrefs(this) }
@@ -1400,13 +1400,11 @@ class ReaderActivity : BasePlayerActivity() {
 
     /** Extraído de [atualizarUI] (tema de fundo do leitor). */
     private fun aplicarTemaFundo(state: ReaderUiState) {
-        val corFundo = when (state.tema) {
-            TemaLeitura.CLARO  -> Color.parseColor("#F8F8F8")
-            TemaLeitura.ESCURO -> Color.parseColor("#1A1A1A")
-            TemaLeitura.SEPIA  -> Color.parseColor("#F5ECD7")
-            TemaLeitura.OLED   -> Color.parseColor("#000000")
-        }
-        findViewById<View>(R.id.readerRoot).setBackgroundColor(corFundo)
+        if (temaBarrasAplicado == state.tema) return // roda a cada atualização da tela: só repinta quando muda
+        temaBarrasAplicado = state.tema
+        val paleta = paletaDoLeitor(state.tema)
+        findViewById<View>(R.id.readerRoot).setBackgroundColor(paleta.fundo)
+        aplicarPaletaNasBarrasDoLeitor(paleta)
     }
 
     /** Extraído de [atualizarUI] (margem horizontal da lista de parágrafos). */
