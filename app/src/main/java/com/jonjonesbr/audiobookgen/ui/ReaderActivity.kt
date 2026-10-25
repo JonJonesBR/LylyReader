@@ -105,6 +105,7 @@ class ReaderActivity : BasePlayerActivity() {
         private const val DIALOG_PROGRESSO_TEXTO_BAIXO_DP = 16
         private const val PROGRESSO_MAX = 100
         private const val DURACAO_FADE_BANNER_MS = 300L
+        private const val DURACAO_PILL_LIMPEZA_MS = 5000L
         private const val PARAGRAFOS_PREVIEW = 3
         private const val PREPARO_PARAGRAFOS_SEM_CAPITULO = 120
         private const val LARGURA_MAXIMA_LEITURA_DP = 720
@@ -125,7 +126,10 @@ class ReaderActivity : BasePlayerActivity() {
     private lateinit var btnCapituloAnterior: android.widget.ImageButton
     private lateinit var btnCapituloProximo: android.widget.ImageButton
     private lateinit var tvProgressoLeitura: TextView
-    private lateinit var progressBar: ProgressBar
+    private lateinit var layoutCarregando: View
+    private lateinit var tvCarregando: TextView
+    /** O resultado da limpeza aparece uma vez por abertura do leitor. */
+    private var pillDaLimpezaMostrada = false
     private lateinit var layoutErro: LinearLayout
     private lateinit var tvErro: TextView
     private lateinit var btnConverterAssim: Button
@@ -520,7 +524,8 @@ class ReaderActivity : BasePlayerActivity() {
         btnCapituloProximo.setOnClickListener { irParaCapitulo(capituloNaBarra + 1) }
         findViewById<View>(R.id.areaCapituloAtual).setOnClickListener { mostrarBottomSheetCapitulos() }
         tvProgressoLeitura   = findViewById(R.id.tvProgressoLeitura)
-        progressBar          = findViewById(R.id.readerProgressBar)
+        layoutCarregando     = findViewById(R.id.layoutCarregandoReader)
+        tvCarregando         = findViewById(R.id.tvCarregandoReader)
         layoutErro           = findViewById(R.id.layoutReaderErro)
         tvErro               = findViewById(R.id.tvReaderErro)
         btnConverterAssim    = findViewById(R.id.btnConverterAssim)
@@ -1007,7 +1012,7 @@ class ReaderActivity : BasePlayerActivity() {
 
     private fun atualizarUI(state: ReaderUiState) {
         // Loading
-        progressBar.visibility = if (state.carregando) View.VISIBLE else View.GONE
+        mostrarCarregando(state.carregando, R.string.leitor_abrindo_livro)
 
         // Erro
         if (state.erro != null) {
@@ -1182,20 +1187,33 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
+    /** Mostra ou esconde o aviso de carregamento com o que está acontecendo ([texto]). */
+    private fun mostrarCarregando(visivel: Boolean, texto: Int) {
+        layoutCarregando.visibility = if (visivel) View.VISIBLE else View.GONE
+        if (visivel) tvCarregando.setText(texto)
+    }
+
     /** Extraído de [atualizarUI] (banner de limpeza). */
     private fun atualizarPillStatusLeitura(state: ReaderUiState, texto: TextoExtraido) {
         // ── Pill de status (banner de limpeza) ────────────────────────────────
         when {
             state.limpandoTexto -> {
-                progressBar.visibility = View.VISIBLE
+                mostrarCarregando(true, R.string.leitor_preparando_texto)
                 bannerOtimizado.visibility = View.GONE
             }
             state.textoLimpo != null -> {
-                progressBar.visibility = View.GONE
-                if (bannerOtimizado.visibility != View.VISIBLE) {
+                mostrarCarregando(false, 0)
+                // O resultado da limpeza aparece uma vez, por alguns segundos, e só quando algo foi tirado
+                // (antes ficava sempre na tela, inclusive com "Otimização em andamento" ao abrir).
+                if (!pillDaLimpezaMostrada && state.relatorioLinhasRemovidas > 0) {
+                    pillDaLimpezaMostrada = true
                     bannerOtimizado.alpha = 0f
                     bannerOtimizado.visibility = View.VISIBLE
                     bannerOtimizado.animate().alpha(1f).setDuration(DURACAO_FADE_BANNER_MS).start()
+                    bannerOtimizado.postDelayed({
+                        bannerOtimizado.animate().alpha(0f).setDuration(DURACAO_FADE_BANNER_MS)
+                            .withEndAction { bannerOtimizado.visibility = View.GONE }.start()
+                    }, DURACAO_PILL_LIMPEZA_MS)
                 }
                 tvBannerInfo.text = resources.getQuantityString(
                     R.plurals.banner_info_trechos_capitulos_qtd,

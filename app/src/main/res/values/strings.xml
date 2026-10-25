@@ -727,7 +727,7 @@
     <string name="release_notes_titulo">What\'s new in %1$s</string>
     <string name="release_notes_corpo">• Conversion progress is now real from 0 to 100%: it no longer sits at 99%, and it shows each step (joining audio, adjusting tone, finishing) and the elapsed time.\n• Books that would not open (some EPUBs, DOCX with tables, TXT in other encodings) now open and convert.\n• Scanned or password-protected PDFs now say clearly why they can\'t be read.\n• With on-device voices (Supertonic, Piper, Kokoro, Pocket) the conversion timer no longer freezes and the audiobook duration shows correctly.\n• An invalid voice key (Gemini, ElevenLabs) now reports in seconds instead of minutes.\n• Faster, steadier generation with Edge voices: problem blocks are retried right away and the number of connections adapts to your network.\n• The final stretch (joining audio, metadata and chapters) is faster, and pause or cancel now works during it too.\n• Before generating, the app shows an estimated conversion time that improves as you use it.\n• Audiobooks made with on-device voices are now compressed (much smaller) and show the correct duration.\n• New \"Listen to what is already generated\" button on the Conversions screen: hear the beginning while the rest is generated.\n• Piper can generate in parallel on devices with 4 or more cores, and slow Edge failures now give up sooner.\n• The English Santa voice now appears as \"Santa (English)\".\n• Compressed files are now exported as .m4a, and the preview always starts from the beginning.</string>
     <string name="timbre_title">Voice tone</string>
-    <string name="timbre_desc">Make voices a little deeper or higher and soften harsh high frequencies. Changes apply right away to guided reading and to audiobooks you convert from now on.</string>
+    <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
     <string name="timbre_treble_label">Treble smoothing: %1$s</string>
     <string name="timbre_pitch_default">original</string>
@@ -877,13 +877,13 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="pron_import_all">Import a dictionary (all books)</string>
     <string name="pron_export_all">Export the dictionary (all books)</string>
     <string name="guided_options_title">Voice and engine: %1$s</string>
-    <string name="guided_options_more">All audio settings</string>
+    <string name="guided_options_more">More settings</string>
     <string name="guided_options_chip">⚙ Voice</string>
     <string name="guided_options_engine_android">Android voice</string>
     <string name="guided_options_only_book">Only for this book</string>
-    <string name="guided_options_only_book_desc">Pitch, dialogue pitch, sentence pause and look-ahead are saved for this book. Unchecked, they change the general settings.</string>
+    <string name="guided_options_only_book_desc">Keeps pitch, pauses and look-ahead for this book only.</string>
     <string name="guided_options_dialogue_pitch_title">Narrator pitch in dialogue and quotes</string>
-    <string name="guided_options_dialogue_pitch_desc">Changes the narrator voice slightly while it speaks a character or a quote, so you can tell them apart. Off by default.</string>
+    <string name="guided_options_dialogue_pitch_desc">Slightly changes the voice of the narrator in dialogue and quotes.</string>
     <string name="guided_options_dialogue_pitch_off">Off</string>
     <string name="character_edit_lines">Review and correct this character\'s lines</string>
     <string name="character_edit_merge">Merge with another character…</string>
@@ -1373,7 +1373,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="exportar_por_capitulo">One file per chapter</string>
     <string name="acao_excluir_ocorrencias">Remove word or phrase from the book</string>
     <string name="guided_options_preload_title">Preload chapter</string>
-    <string name="guided_options_preload_desc">Generates the audio of the rest of this chapter in advance, so it plays without waits between sentences.</string>
+    <string name="guided_options_preload_desc">Generates the rest of this chapter ahead of time, so it plays with no waits.</string>
     <string name="cd_section_expanded">expanded</string>
     <string name="cd_section_collapsed">collapsed</string>
     <!-- Cartão "Gerando agora" -->
@@ -1428,4 +1428,9 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_tipo_importada">Imported voice</string>
     <string name="dl_tipo_outro">Offline voice</string>
     <string name="dl_varios_idiomas">many languages</string>
+    <string name="leitor_abrindo_livro">Opening the book…</string>
+    <string name="leitor_preparando_texto">Preparing the text for narration… The next time, this book opens right away.</string>
+    <string name="guided_options_preload_botao">Preload this chapter</string>
+    <string name="guided_options_buffer_desc_curta">How many passages reading prepares ahead. More = fewer waits, more battery.</string>
+    <string name="bib_progresso_comecou">Started</string>
 </resources>

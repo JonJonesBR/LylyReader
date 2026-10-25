@@ -713,7 +713,7 @@
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
     <string name="release_notes_corpo">• El progreso de la conversión ahora es real de 0 a 100%: ya no se queda en 99% y muestra cada etapa (unir audio, ajustar timbre, finalizar) y el tiempo transcurrido.\n• Los libros que no se abrían (algunos EPUB, DOCX con tablas, TXT en otras codificaciones) ahora se abren y se convierten.\n• Un PDF escaneado o protegido con contraseña indica claramente el motivo.\n• Con las voces del dispositivo (Supertonic, Piper, Kokoro, Pocket) el tiempo de la conversión ya no se congela y la duración del audiolibro se muestra bien.\n• Una clave de voz inválida (Gemini, ElevenLabs) ahora avisa en segundos, no en minutos.\n• Generación más rápida y estable con las voces Edge: los bloques problemáticos se reintentan al instante y las conexiones se adaptan a tu red.\n• La recta final (unir audio, metadatos y capítulos) es más rápida, y pausar o cancelar también funciona en esa etapa.\n• Antes de generar, la app muestra una estimación del tiempo de conversión que mejora con el uso.\n• Los audiolibros hechos con las voces del dispositivo ahora salen comprimidos (mucho más pequeños) y con la duración correcta.\n• Nuevo botón \"Escuchar lo ya generado\" en la pantalla de Conversiones: escucha el inicio mientras se genera el resto.\n• Piper puede generar en paralelo en dispositivos con 4 o más núcleos, y el fallo lento de Edge ahora se rinde antes.\n• La voz Santa en inglés ahora aparece como \"Santa (inglés)\".\n• Los archivos comprimidos ahora se exportan como .m4a y la vista previa siempre empieza desde el inicio.</string>
     <string name="timbre_title">Timbre de la voz</string>
-    <string name="timbre_desc">Haz las voces un poco más graves o más agudas y suaviza los agudos ásperos. El cambio se aplica al instante en la lectura guiada y en los audiolibros que conviertas a partir de ahora.</string>
+    <string name="timbre_desc">Voz más grave o más aguda, y agudos más suaves. Se aplica al instante.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
     <string name="timbre_treble_label">Suavizar agudos: %1$s</string>
     <string name="timbre_pitch_default">original</string>
@@ -863,13 +863,13 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="pron_import_all">Importar un diccionario (todos los libros)</string>
     <string name="pron_export_all">Exportar el diccionario (todos los libros)</string>
     <string name="guided_options_title">Voz y motor: %1$s</string>
-    <string name="guided_options_more">Todos los ajustes de audio</string>
+    <string name="guided_options_more">Más ajustes</string>
     <string name="guided_options_chip">⚙ Voz</string>
     <string name="guided_options_engine_android">Voz de Android</string>
     <string name="guided_options_only_book">Solo para este libro</string>
-    <string name="guided_options_only_book_desc">Tono, tono en los diálogos, pausa entre frases y preparación por adelantado se guardan para este libro. Sin marcar, cambian los ajustes generales.</string>
+    <string name="guided_options_only_book_desc">Guarda el tono, las pausas y la preparación solo para este libro.</string>
     <string name="guided_options_dialogue_pitch_title">Tono del narrador en diálogos y citas</string>
-    <string name="guided_options_dialogue_pitch_desc">Cambia levemente la voz del narrador cuando habla un personaje o una cita, para distinguirlos. Desactivado por defecto.</string>
+    <string name="guided_options_dialogue_pitch_desc">Cambia un poco la voz del narrador en diálogos y citas.</string>
     <string name="guided_options_dialogue_pitch_off">Desactivado</string>
     <string name="character_edit_lines">Revisar y corregir los diálogos de este personaje</string>
     <string name="character_edit_merge">Fusionar con otro personaje…</string>
@@ -1358,7 +1358,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="exportar_por_capitulo">Un archivo por capítulo</string>
     <string name="acao_excluir_ocorrencias">Eliminar palabra o frase del libro</string>
     <string name="guided_options_preload_title">Precargar capítulo</string>
-    <string name="guided_options_preload_desc">Genera antes el audio del resto de este capítulo, para que suene sin esperas entre frases.</string>
+    <string name="guided_options_preload_desc">Genera antes el resto de este capítulo, para que suene sin esperas.</string>
     <string name="cd_section_expanded">abierto</string>
     <string name="cd_section_collapsed">cerrado</string>
     <!-- Cartão "Gerando agora" -->
@@ -1414,4 +1414,9 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dl_tipo_importada">Voz importada</string>
     <string name="dl_tipo_outro">Voz sin conexión</string>
     <string name="dl_varios_idiomas">varios idiomas</string>
+    <string name="leitor_abrindo_livro">Abriendo el libro…</string>
+    <string name="leitor_preparando_texto">Preparando el texto para la narración… La próxima vez, este libro se abre al instante.</string>
+    <string name="guided_options_preload_botao">Precargar este capítulo</string>
+    <string name="guided_options_buffer_desc_curta">Cuántos fragmentos prepara la lectura por adelantado. Más = menos esperas, más batería.</string>
+    <string name="bib_progresso_comecou">Empezaste a leer</string>
 </resources>

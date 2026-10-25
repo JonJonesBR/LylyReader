@@ -116,9 +116,12 @@ class ExtractTextUseCase(private val context: android.content.Context) {
                 .getOrElse { erro ->
                     Log.w(TAG, "Extração falhou: ${erro.message.orEmpty().take(500)}")
                     val mensagem = erro.message.orEmpty()
-                    return@withContext ExtractionResult.Error(
-                        if (mensagem.isBlank()) context.getString(R.string.extracao_erro_abrir) else traduzirErro(mensagem)
-                    )
+                    val amigavel = if (mensagem.isBlank()) {
+                        context.getString(R.string.extracao_erro_abrir)
+                    } else {
+                        traduzirErro(mensagem)
+                    }
+                    return@withContext ExtractionResult.Error(amigavel)
                 }
             if (texto.paragrafos.isEmpty()) {
                 return@withContext ExtractionResult.Error(context.getString(R.string.extracao_sem_texto))

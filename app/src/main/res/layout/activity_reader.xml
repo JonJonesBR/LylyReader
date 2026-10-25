@@ -246,7 +246,8 @@
 
             <include layout="@layout/banner_texto_otimizado"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:visibility="gone"/>
 
         </LinearLayout>
 
@@ -283,13 +284,35 @@
         </LinearLayout>
 
         <!-- ── Loading ───────────────────────────────────────────────── -->
-        <ProgressBar
-            android:id="@+id/readerProgressBar"
-            android:layout_width="wrap_content"
+        <!-- Carregando: diz o que está acontecendo (abrindo o livro / preparando o texto para a narração) -->
+        <LinearLayout
+            android:id="@+id/layoutCarregandoReader"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:visibility="gone"
-            style="?android:attr/progressBarStyle"/>
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="32dp"
+            android:paddingBottom="16dp"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:id="@+id/readerProgressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="?android:attr/progressBarStyle"/>
+
+            <TextView
+                android:id="@+id/tvCarregandoReader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:gravity="center"
+                android:textColor="@color/color_on_surface_muted"
+                android:textSize="14sp"/>
+        </LinearLayout>
 
         <!-- ── Erro ──────────────────────────────────────────────────── -->
         <LinearLayout

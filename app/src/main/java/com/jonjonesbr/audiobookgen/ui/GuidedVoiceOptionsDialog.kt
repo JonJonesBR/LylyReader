@@ -23,6 +23,7 @@ import java.util.Locale
 object GuidedVoiceOptionsDialog {
 
     private val MOTORES_COM_PAUSA_ENTRE_FRASES = setOf("kokoro", "onnx", "pocket")
+    private const val PAUSA_FIXA_MAX_MS = 2000
 
     fun show(
         activity: AppCompatActivity,
@@ -74,11 +75,25 @@ object GuidedVoiceOptionsDialog {
         })
         conteudo.addView(TextView(activity).apply { setText(R.string.guided_options_only_book_desc); textSize = 12f })
 
-        fun secao(titulo: Int) = conteudo.addView(TextView(activity).apply {
+        fun secao(titulo: Int, pai: LinearLayout = conteudo) = pai.addView(TextView(activity).apply {
             setText(titulo)
             textSize = 14f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setPadding(0, (18 * dp).toInt(), 0, 0)
+        })
+
+        // Pausas naturais valem para qualquer motor; a pausa fixa (avançado) só aparece com elas desligadas.
+        secao(R.string.settings_pausas_titulo)
+        conteudo.addView(CheckBox(activity).apply {
+            setText(R.string.settings_pausas_naturais_title)
+            isChecked = prefs.pausasNaturais
+            setOnCheckedChangeListener { _, marcado ->
+                prefs.pausasNaturais = marcado
+                aoMudar()
+                // Mostra (ou esconde) o controle da pausa fixa.
+                dialogo.dismiss()
+                show(activity, manager, prepararCapitulo, aoMudar)
+            }
         })
 
         // Timbre e tom nas falas: valem para qualquer motor.
@@ -99,66 +114,6 @@ object GuidedVoiceOptionsDialog {
             }
         ) { valor -> alterar { it.copy(tomNasFalasMeiosTons = valor) } }
 
-        when (motor) {
-            "onnx" -> controleDeslizante(
-                activity, conteudo, R.string.settings_supertonic_steps_title, R.string.guided_steps_desc_supertonic,
-                AppPrefs.SUPERTONIC_STEPS_MIN, AppPrefs.SUPERTONIC_STEPS_MAX, prefs.supertonicSteps,
-                { activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, it, it) }
-            ) { prefs.supertonicSteps = it; aoMudar() }
-            "pocket" -> controleDeslizante(
-                activity, conteudo, R.string.settings_pocket_steps_title, R.string.settings_pocket_steps_desc,
-                AppPrefs.POCKET_PASSOS_MIN, AppPrefs.POCKET_PASSOS_MAX, prefs.pocketPassos,
-                { activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, it, it) }
-            ) { prefs.pocketPassos = it; aoMudar() }
-        }
-
-        // Pausas naturais valem para qualquer motor; a pausa fixa só aparece com elas desligadas.
-        secao(R.string.settings_pausas_titulo)
-        conteudo.addView(CheckBox(activity).apply {
-            setText(R.string.settings_pausas_naturais_title)
-            isChecked = prefs.pausasNaturais
-            setOnCheckedChangeListener { _, marcado ->
-                prefs.pausasNaturais = marcado
-                aoMudar()
-                // Mostra (ou esconde) o controle da pausa fixa.
-                dialogo.dismiss()
-                show(activity, manager, prepararCapitulo, aoMudar)
-            }
-        })
-        conteudo.addView(TextView(activity).apply { setText(R.string.settings_pausas_naturais_desc); textSize = 12f })
-
-        if (motor in MOTORES_COM_PAUSA_ENTRE_FRASES && !prefs.pausasNaturais) {
-            controleDeslizante(
-                activity, conteudo, R.string.settings_pausa_frase_title, R.string.settings_pausa_frase_desc,
-                0, 2000, atuais.pausaFinalFraseMs,
-                { activity.getString(R.string.settings_pausa_frase_value, it) }
-            ) { valor -> alterar { it.copy(pausaFinalFraseMs = valor) } }
-        }
-
-        // Quantas unidades preparar à frente: 0 = automático, 1..8 explícito.
-        val atualBuffer = if (atuais.bufferAdiante == AppPrefs.BUFFER_ADIANTE_AUTOMATICO) 0 else atuais.bufferAdiante
-        controleDeslizante(
-            activity, conteudo, R.string.settings_buffering_title, R.string.settings_buffer_paragrafos_desc,
-            0, AppPrefs.BUFFER_ADIANTE_MAX, atualBuffer,
-            {
-                if (it == 0) activity.getString(R.string.settings_buffer_paragrafos_valor_automatico)
-                else activity.getString(R.string.settings_buffer_paragrafos_valor, it)
-            }
-        ) { valor -> alterar { it.copy(bufferAdiante = if (valor == 0) AppPrefs.BUFFER_ADIANTE_AUTOMATICO else valor) } }
-
-        if (motor == "kokoro") {
-            conteudo.addView(TextView(activity).apply {
-                setText(R.string.settings_paralelismo_kokoro_desc)
-                textSize = 12f
-                setPadding(0, (16 * dp).toInt(), 0, 0)
-            })
-            conteudo.addView(CheckBox(activity).apply {
-                setText(R.string.btn_paralelismo_reduzido)
-                isChecked = prefs.paralelismoKokoroReduzido
-                setOnCheckedChangeListener { _, marcado -> prefs.paralelismoKokoroReduzido = marcado; aoMudar() }
-            })
-        }
-
         // Pré-carregar o capítulo: antes ficava no menu de ações do leitor, longe do player.
         if (prepararCapitulo != null) {
             secao(R.string.guided_options_preload_title)
@@ -166,13 +121,32 @@ object GuidedVoiceOptionsDialog {
             conteudo.addView(com.google.android.material.button.MaterialButton(
                 activity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
             ).apply {
-                setText(R.string.action_prepare_chapter)
+                setText(R.string.guided_options_preload_botao)
                 setOnClickListener {
                     dialogo.dismiss()
                     prepararCapitulo()
                 }
             })
         }
+
+        // Ajustes técnicos (passos, pausa fixa, preparo à frente, paralelismo) ficam fechados.
+        val avancado = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = android.view.View.GONE
+        }
+        val botaoAvancado = com.google.android.material.button.MaterialButton(
+            activity, null, com.google.android.material.R.attr.borderlessButtonStyle
+        ).apply { setText(R.string.settings_avancado_mostrar) }
+        botaoAvancado.setOnClickListener {
+            val abrir = avancado.visibility != android.view.View.VISIBLE
+            avancado.visibility = if (abrir) android.view.View.VISIBLE else android.view.View.GONE
+            botaoAvancado.setText(
+                if (abrir) R.string.settings_avancado_esconder else R.string.settings_avancado_mostrar
+            )
+        }
+        conteudo.addView(botaoAvancado)
+        conteudo.addView(avancado)
+        controlesAvancados(activity, avancado, motor, prefs, atuais, aoMudar) { mudanca -> alterar(mudanca) }
 
         dialogo = AlertDialog.Builder(activity)
             .setTitle(activity.getString(R.string.guided_options_title, rotuloMotor(activity, motor)))
@@ -184,6 +158,57 @@ object GuidedVoiceOptionsDialog {
         dialogo.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
             dialogo.dismiss()
             activity.startActivity(Intent(activity, SettingsActivity::class.java))
+        }
+    }
+
+    /** Passos do motor, pausa fixa (com as pausas naturais desligadas), preparo à frente e paralelismo do Kokoro. */
+    @Suppress("LongParameterList")
+    private fun controlesAvancados(
+        activity: AppCompatActivity,
+        pai: LinearLayout,
+        motor: String,
+        prefs: AppPrefs,
+        atuais: PerfilAudioLivro,
+        aoMudar: () -> Unit,
+        alterar: ((PerfilAudioLivro) -> PerfilAudioLivro) -> Unit
+    ) {
+        when (motor) {
+            "onnx" -> controleDeslizante(
+                activity, pai, R.string.settings_supertonic_steps_title, R.string.guided_steps_desc_supertonic,
+                AppPrefs.SUPERTONIC_STEPS_MIN, AppPrefs.SUPERTONIC_STEPS_MAX, prefs.supertonicSteps,
+                { activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, it, it) }
+            ) { prefs.supertonicSteps = it; aoMudar() }
+            "pocket" -> controleDeslizante(
+                activity, pai, R.string.settings_pocket_steps_title, R.string.settings_pocket_steps_desc,
+                AppPrefs.POCKET_PASSOS_MIN, AppPrefs.POCKET_PASSOS_MAX, prefs.pocketPassos,
+                { activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, it, it) }
+            ) { prefs.pocketPassos = it; aoMudar() }
+        }
+        if (motor in MOTORES_COM_PAUSA_ENTRE_FRASES && !prefs.pausasNaturais) {
+            controleDeslizante(
+                activity, pai, R.string.settings_pausa_frase_title, R.string.settings_pausa_frase_desc,
+                0, PAUSA_FIXA_MAX_MS, atuais.pausaFinalFraseMs,
+                { activity.getString(R.string.settings_pausa_frase_value, it) }
+            ) { valor -> alterar { it.copy(pausaFinalFraseMs = valor) } }
+        }
+        // Quantas unidades preparar à frente: 0 = automático, 1..8 explícito.
+        val atualBuffer = if (atuais.bufferAdiante == AppPrefs.BUFFER_ADIANTE_AUTOMATICO) 0 else atuais.bufferAdiante
+        controleDeslizante(
+            activity, pai, R.string.settings_buffering_title, R.string.guided_options_buffer_desc_curta,
+            0, AppPrefs.BUFFER_ADIANTE_MAX, atualBuffer,
+            {
+                if (it == 0) activity.getString(R.string.settings_buffer_paragrafos_valor_automatico)
+                else activity.getString(R.string.settings_buffer_paragrafos_valor, it)
+            }
+        ) { valor ->
+            alterar { it.copy(bufferAdiante = if (valor == 0) AppPrefs.BUFFER_ADIANTE_AUTOMATICO else valor) }
+        }
+        if (motor == "kokoro") {
+            pai.addView(CheckBox(activity).apply {
+                setText(R.string.btn_paralelismo_reduzido)
+                isChecked = prefs.paralelismoKokoroReduzido
+                setOnCheckedChangeListener { _, marcado -> prefs.paralelismoKokoroReduzido = marcado; aoMudar() }
+            })
         }
     }
 

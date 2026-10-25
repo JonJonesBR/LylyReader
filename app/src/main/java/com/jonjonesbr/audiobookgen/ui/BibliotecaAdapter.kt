@@ -76,7 +76,7 @@ class BibliotecaAdapter(
                 h.autor.text = livro.autor.orEmpty()
                 h.autor.visibility = if (livro.autor.isNullOrBlank()) View.GONE else View.VISIBLE
                 h.barra.progress = (item.progresso * BARRA_MAX).toInt()
-                h.pct.text = h.itemView.context.getString(R.string.bib_progresso, (item.progresso * 100).toInt())
+                h.pct.text = textoDoProgresso(h.itemView.context, item.progresso)
                 mostrarCapa(h.capa, livro)
                 h.cartao.marcarComoBotao()
                 h.cartao.setOnClickListener { onAbrir(livro, true) }
@@ -89,7 +89,7 @@ class BibliotecaAdapter(
                 h.titulo.text = livro.titulo
                 h.estado.text = when {
                     item.temAudio -> ctx.getString(R.string.bib_audio_pronto)
-                    item.progresso != null && item.progresso > 0f -> ctx.getString(R.string.bib_progresso, (item.progresso * 100).toInt())
+                    item.progresso != null && item.progresso > 0f -> textoDoProgresso(ctx, item.progresso)
                     else -> ctx.getString(R.string.bib_nao_iniciado)
                 }
                 mostrarCapa(h.capa, livro)
@@ -130,9 +130,20 @@ class BibliotecaAdapter(
         const val TIPO_CONTINUAR = 0
         const val TIPO_LIVRO = 1
         const val BARRA_MAX = 1000
+        const val PCT = 100
         val DIFF = object : DiffUtil.ItemCallback<ItemBiblioteca>() {
             override fun areItemsTheSame(a: ItemBiblioteca, b: ItemBiblioteca) = a.chave == b.chave
             override fun areContentsTheSame(a: ItemBiblioteca, b: ItemBiblioteca) = a == b
+        }
+    }
+
+    /** "42% lido"; abaixo de 1% diz "Começou a ler" (antes aparecia "0% lido" num livro já começado). */
+    private fun textoDoProgresso(ctx: android.content.Context, progresso: Float): String {
+        val pct = (progresso * PCT).toInt()
+        return if (pct < 1) {
+            ctx.getString(R.string.bib_progresso_comecou)
+        } else {
+            ctx.getString(R.string.bib_progresso, pct)
         }
     }
 }

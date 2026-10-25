@@ -246,14 +246,18 @@ class MeusLivrosActivity : BasePlayerActivity() {
             ordem
         )
         val itens = mutableListOf<ItemBiblioteca>()
+        var idContinuar: String? = null
         if (aba == AbaBiblioteca.TODOS && consulta.isBlank()) {
             continuar(todos) { prog[it.id] }?.let {
                 itens += ItemBiblioteca.Continuar(it, prog[it.id] ?: 0f)
+                idContinuar = it.id
                 // Tocar em "Continuar" abre o leitor direto: adianta a extração do texto.
                 com.jonjonesbr.audiobookgen.domain.PreparoDoLeitor.preparar(this, caminhoDe(it))
             }
         }
-        filtrados.mapTo(itens) { ItemBiblioteca.Livro(it, prog[it.id], audio[it.id] == true) }
+        // O livro do cartão "Continuar" não se repete logo abaixo, na grade (continua em "Lendo").
+        filtrados.filter { it.id != idContinuar }
+            .mapTo(itens) { ItemBiblioteca.Livro(it, prog[it.id], audio[it.id] == true) }
         adapter.submitList(itens)
 
         val vazio = itens.isEmpty()
