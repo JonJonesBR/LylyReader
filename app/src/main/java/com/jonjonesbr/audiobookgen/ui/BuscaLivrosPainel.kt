@@ -13,10 +13,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
@@ -54,12 +56,22 @@ class BuscaLivrosPainel(
 ) {
     private val etBusca: EditText = raiz.findViewById(R.id.etBuscaLivro)
     private val rgIdioma: ChipGroup = raiz.findViewById(R.id.rgIdiomaLivro)
-    private val rgFonte: ChipGroup = raiz.findViewById(R.id.rgFonteLivro)
+    private val chipFonte: Chip = raiz.findViewById(R.id.chipFonteLivro)
     private val tvStatus: TextView = raiz.findViewById(R.id.tvStatusLivros)
     private val pbBusca: LinearProgressIndicator = raiz.findViewById(R.id.pbBuscaLivros)
-    private val btnMais: Button = raiz.findViewById(R.id.btnMaisLivros)
-    private val btnBaixarTodos: Button = raiz.findViewById(R.id.btnBaixarTodosLivros)
     private val adapter = LivrosAdapter(activity.lifecycleScope, onBaixar = ::baixar)
+
+    // O LayoutManager vem antes de inflar o rodapé com a lista como pai (sem ele a RecyclerView lança exceção).
+    private val recycler: RecyclerView = raiz.findViewById<RecyclerView>(R.id.recyclerLivros).apply {
+        layoutManager = LinearLayoutManager(activity)
+    }
+
+    /** Fim da lista: rola junto com os livros, para eles ficarem com a tela quase toda. */
+    private val rodape: View =
+        LayoutInflater.from(activity).inflate(R.layout.view_busca_livros_rodape, recycler, false)
+    private val btnMais: Button = rodape.findViewById(R.id.btnMaisLivros)
+    private val btnBaixarTodos: Button = rodape.findViewById(R.id.btnBaixarTodosLivros)
+    private var fonteAtual = FonteLivros.GUTENBERG
 
     private val livros = mutableListOf<LivroEncontrado>()
     private var proximoInicio: Int? = null
@@ -71,21 +83,16 @@ class BuscaLivrosPainel(
     var limiteBaixar = MAX_PARA_BAIXAR_TODOS
 
     init {
-        raiz.findViewById<RecyclerView>(R.id.recyclerLivros).apply {
-            layoutManager = LinearLayoutManager(activity)
-            adapter = this@BuscaLivrosPainel.adapter
-            itemAnimator = null
-        }
+        recycler.adapter = ConcatAdapter(adapter, CabecalhoFixoAdapter(rodape))
+        recycler.itemAnimator = null
         raiz.findViewById<Button>(R.id.btnBuscarLivro).setOnClickListener { buscar(reiniciar = true) }
         etBusca.setOnEditorActionListener { _, acao, _ ->
             if (acao == EditorInfo.IME_ACTION_SEARCH) buscar(reiniciar = true)
             acao == EditorInfo.IME_ACTION_SEARCH
         }
         rgIdioma.setOnCheckedStateChangeListener { _, _ -> buscar(reiniciar = true) }
-        rgFonte.setOnCheckedStateChangeListener { _, _ ->
-            ajustarParaFonte()
-            buscar(reiniciar = true)
-        }
+        chipFonte.setOnClickListener { escolherFonte() }
+        chipFonte.setOnCloseIconClickListener { escolherFonte() }
         btnMais.setOnClickListener { buscar(reiniciar = false) }
         btnBaixarTodos.setOnClickListener { baixarTodosOsResultados() }
     }
@@ -104,19 +111,40 @@ class BuscaLivrosPainel(
         if (chip != null && rgIdioma.checkedChipId != chip) rgIdioma.check(chip) else buscar(reiniciar = true)
     }
 
-    private fun fonteEscolhida() = when (rgFonte.checkedChipId) {
-        R.id.rbFonteWikisource -> FonteLivros.WIKISOURCE
-        R.id.rbFonteArchive -> FonteLivros.ARCHIVE
-        else -> FonteLivros.GUTENBERG
+    /** Acervo: Gutenberg, Wikisource ou Internet Archive (antes três chips numa linha só deles). */
+    private fun escolherFonte() {
+        val fontes = listOf(FonteLivros.GUTENBERG, FonteLivros.WIKISOURCE, FonteLivros.ARCHIVE)
+        val nomes = intArrayOf(
+            R.string.livros_fonte_gutenberg, R.string.livros_fonte_wikisource, R.string.livros_fonte_archive
+        )
+        val rotulos = nomes.map { activity.getString(it) }.toTypedArray()
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setTitle(R.string.livros_acervo)
+            .setSingleChoiceItems(rotulos, fontes.indexOf(fonteAtual)) { d, i ->
+                d.dismiss()
+                if (fontes[i] == fonteAtual) return@setSingleChoiceItems
+                fonteAtual = fontes[i]
+                chipFonte.setText(nomes[i])
+                ajustarParaFonte()
+                buscar(reiniciar = true)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /** Linha de estado (buscando, nada encontrado, erro): some quando não tem o que dizer. */
+    private fun status(texto: CharSequence) {
+        tvStatus.text = texto
+        tvStatus.visibility = if (texto.isBlank()) View.GONE else View.VISIBLE
     }
 
     /** O Wikisource é um site por idioma (não há "todos") e só busca com texto digitado. */
     private fun ajustarParaFonte() {
-        val wiki = fonteEscolhida() == FonteLivros.WIKISOURCE
+        val wiki = fonteAtual == FonteLivros.WIKISOURCE
         raiz.findViewById<View>(R.id.rbIdiomaTodos).visibility = if (wiki) View.GONE else View.VISIBLE
         if (wiki && rgIdioma.checkedChipId == R.id.rbIdiomaTodos) rgIdioma.check(R.id.rbIdiomaPt)
-        raiz.findViewById<TextView>(R.id.tvAvisoLivros).setText(
-            when (fonteEscolhida()) {
+        rodape.findViewById<TextView>(R.id.tvAvisoLivros).setText(
+            when (fonteAtual) {
                 FonteLivros.WIKISOURCE -> R.string.livros_aviso_wikisource
                 FonteLivros.ARCHIVE -> R.string.livros_aviso_archive
                 FonteLivros.GUTENBERG -> R.string.livros_aviso
@@ -142,13 +170,13 @@ class BuscaLivrosPainel(
             adapter.submitList(emptyList())
             btnMais.visibility = View.GONE
         }
-        val fonte = fonteEscolhida()
+        val fonte = fonteAtual
         val inicio = if (reiniciar) null else proximoInicio ?: return
         if (fonte == FonteLivros.WIKISOURCE && etBusca.text.isBlank()) {
-            tvStatus.setText(R.string.livros_digite_busca)
+            status(activity.getString(R.string.livros_digite_busca))
             return
         }
-        tvStatus.setText(R.string.livros_buscando)
+        status(activity.getString(R.string.livros_buscando))
         pbBusca.visibility = View.VISIBLE
         buscaAtual = activity.lifecycleScope.launch {
             try {
@@ -159,13 +187,13 @@ class BuscaLivrosPainel(
                 marcarJaBaixados()
                 btnMais.visibility = if (proximoInicio != null) View.VISIBLE else View.GONE
                 btnBaixarTodos.visibility = if (livros.isEmpty()) View.GONE else View.VISIBLE
-                tvStatus.text = if (livros.isEmpty()) activity.getString(R.string.livros_nada) else ""
+                status(if (livros.isEmpty()) activity.getString(R.string.livros_nada) else "")
                 pbBusca.visibility = View.GONE
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Falha na busca de livros", e)
-                tvStatus.text = activity.getString(R.string.livros_erro_busca, activity.getString(mensagemDeErro(e)))
+                status(activity.getString(R.string.livros_erro_busca, activity.getString(mensagemDeErro(e))))
                 pbBusca.visibility = View.GONE
             }
         }
@@ -183,16 +211,16 @@ class BuscaLivrosPainel(
         activity.lifecycleScope.launch {
             try {
                 while (proximoInicio != null && livros.size < limiteBaixar) {
-                    tvStatus.text = activity.getString(R.string.livros_carregando_todos, livros.size)
+                    status(activity.getString(R.string.livros_carregando_todos, livros.size))
                     val r = LivrosClient.buscar(
-                        fonteEscolhida(), etBusca.text.toString(), idiomaEscolhido(), proximoInicio
+                        fonteAtual, etBusca.text.toString(), idiomaEscolhido(), proximoInicio
                     )
                     livros += r.livros
                     proximoInicio = r.proximoInicio
                 }
                 adapter.submitList(livros.toList())
                 val entraram = DownloadCentral.baixarLivros(activity.applicationContext, livros.take(limiteBaixar))
-                tvStatus.text = ""
+                status("")
                 val aviso = if (entraram > 0) {
                     activity.getString(R.string.livros_na_fila, entraram)
                 } else {
@@ -205,7 +233,7 @@ class BuscaLivrosPainel(
                 throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Falha na busca de livros", e)
-                tvStatus.text = activity.getString(R.string.livros_erro_busca, activity.getString(mensagemDeErro(e)))
+                status(activity.getString(R.string.livros_erro_busca, activity.getString(mensagemDeErro(e))))
             } finally {
                 btnBaixarTodos.isEnabled = true
             }

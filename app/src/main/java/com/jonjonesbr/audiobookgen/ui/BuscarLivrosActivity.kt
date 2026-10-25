@@ -24,7 +24,8 @@ class BuscarLivrosActivity : AppCompatActivity() {
         com.jonjonesbr.audiobookgen.util.ThemePrefs.aplicarNaActivity(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_buscar_livros)
-        findViewById<View>(R.id.tvAvisoLivros).aplicarPaddingInferiorComNavigationBar()
+        // O fim da lista (aviso do acervo) fica acima da barra de gestos.
+        findViewById<View>(R.id.recyclerLivros).aplicarPaddingInferiorComNavigationBar()
         findViewById<ImageButton>(R.id.btnVoltarBuscarLivros).setOnClickListener { finish() }
 
         painel = BuscaLivrosPainel(
@@ -50,12 +51,12 @@ class BuscarLivrosActivity : AppCompatActivity() {
         val n = intent.getIntExtra("extra_debug_baixar_n", -1)
         if (depuravel && n > 0) {
             painel.limiteBaixar = n
-            findViewById<View>(R.id.btnBaixarTodosLivros).postDelayed(baixarTodosDebug, ESPERA_DEBUG_MS)
+            findViewById<View>(R.id.painelBuscaLivros).postDelayed(baixarTodosDebug, ESPERA_DEBUG_MS)
         }
     }
 
     override fun onDestroy() {
-        findViewById<View>(R.id.btnBaixarTodosLivros).removeCallbacks(baixarTodosDebug)
+        findViewById<View>(R.id.painelBuscaLivros).removeCallbacks(baixarTodosDebug)
         super.onDestroy()
     }
 

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fim da lista de livros: mais resultados, baixar todos e o aviso do acervo (rolam junto com a lista). -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <Button
+        android:id="@+id/btnMaisLivros"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/livros_mais"
+        android:textAllCaps="false"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/btnBaixarTodosLivros"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/livros_baixar_todos"
+        android:textAllCaps="false"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/tvAvisoLivros"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="8dp"
+        android:text="@string/livros_aviso"
+        android:textColor="@color/color_on_surface_muted"
+        android:textSize="12sp"/>
+</LinearLayout>

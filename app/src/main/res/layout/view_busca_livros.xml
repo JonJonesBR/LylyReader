@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Busca de livros grátis (BuscaLivrosPainel): usada na tela "Livros grátis" da Biblioteca e na aba
-     "Livros grátis" de Downloads. -->
+     "Livros grátis" de Downloads. Fixos no topo só a busca e uma linha de filtros (acervo ▾ e idioma); a lista
+     fica com o resto da tela e termina em "Mais resultados", "Baixar todos" e o aviso do acervo
+     (view_busca_livros_rodape). -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -14,7 +16,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="16dp"
+        android:paddingStart="12dp"
         android:paddingEnd="8dp"
         android:paddingTop="8dp">
 
@@ -23,7 +25,14 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
+            android:background="@drawable/bg_card"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:drawableStart="@drawable/ic_buscar"
+            android:drawableTint="@color/color_on_surface_dim"
+            android:drawablePadding="8dp"
             android:hint="@string/livros_busca_hint"
+            android:textColorHint="@color/color_on_surface_dim"
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:maxLines="1"
@@ -32,14 +41,73 @@
 
         <Button
             android:id="@+id/btnBuscarLivro"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:text="@string/livros_buscar"
-            android:textSize="13sp"
-            android:backgroundTint="?attr/colorPrimary"
-            android:textColor="?attr/colorOnPrimary"/>
+            android:textAllCaps="false"/>
     </LinearLayout>
+
+    <!-- Uma linha só, rolando para o lado: acervo (abre a escolha) e idioma. -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFonteLivro"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="@string/livros_fonte_gutenberg"
+                app:closeIcon="@drawable/ic_seta_baixo"
+                app:closeIconVisible="true"/>
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/rgIdiomaLivro"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true"
+                app:singleLine="true">
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/rbIdiomaTodos"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/livros_idioma_todos"
+                    android:checked="true"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/rbIdiomaPt"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/chip_idioma_pt"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/rbIdiomaEn"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/chip_idioma_en"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/rbIdiomaEs"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/chip_idioma_es"/>
+            </com.google.android.material.chip.ChipGroup>
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/pbBuscaLivros"
@@ -47,93 +115,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginTop="4dp"
         android:indeterminate="true"
-        android:visibility="gone"/>
-
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/rgFonteLivro"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="4dp"
-        app:singleSelection="true"
-        app:selectionRequired="true"
-        app:singleLine="false">
-        <com.google.android.material.chip.Chip
-            android:id="@+id/rbFonteGutenberg"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/livros_fonte_gutenberg"
-            android:checked="true"/>
-        <com.google.android.material.chip.Chip
-            android:id="@+id/rbFonteWikisource"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/livros_fonte_wikisource"
-            android:checked="false"/>
-        <com.google.android.material.chip.Chip
-            android:id="@+id/rbFonteArchive"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/livros_fonte_archive"
-            android:checked="false"/>
-    </com.google.android.material.chip.ChipGroup>
-
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/rgIdiomaLivro"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        app:singleSelection="true"
-        app:selectionRequired="true"
-        app:singleLine="false">
-        <com.google.android.material.chip.Chip
-            android:id="@+id/rbIdiomaTodos"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/livros_idioma_todos"
-            android:checked="true"/>
-        <com.google.android.material.chip.Chip
-            android:id="@+id/rbIdiomaPt"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/chip_idioma_pt"
-            android:checked="false"/>
-        <com.google.android.material.chip.Chip
-            android:id="@+id/rbIdiomaEn"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/chip_idioma_en"
-            android:checked="false"/>
-        <com.google.android.material.chip.Chip
-            android:id="@+id/rbIdiomaEs"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/chip_idioma_es"
-            android:checked="false"/>
-    </com.google.android.material.chip.ChipGroup>
-
-    <Button
-        android:id="@+id/btnBaixarTodosLivros"
-        style="@style/Widget.Material3.Button.TonalButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="4dp"
-        android:minHeight="48dp"
-        android:text="@string/livros_baixar_todos"
-        android:textAllCaps="false"
         android:visibility="gone"/>
 
     <TextView
@@ -142,36 +124,17 @@
         android:layout_height="wrap_content"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
+        android:paddingTop="4dp"
         android:paddingBottom="4dp"
         android:textColor="@color/color_on_surface_dim"
-        android:textSize="12sp"/>
+        android:textSize="13sp"
+        android:visibility="gone"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerLivros"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:clipToPadding="false"
         android:overScrollMode="never"/>
-
-    <Button
-        android:id="@+id/btnMaisLivros"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:layout_marginStart="14dp"
-        android:layout_marginEnd="14dp"
-        android:text="@string/livros_mais"
-        android:textColor="?attr/colorPrimary"
-        android:textSize="13sp"
-        android:visibility="gone"/>
-
-    <TextView
-        android:id="@+id/tvAvisoLivros"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="14dp"
-        android:text="@string/livros_aviso"
-        android:textColor="@color/color_on_surface_muted"
-        android:textSize="12sp"/>
 </LinearLayout>

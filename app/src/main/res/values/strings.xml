@@ -1207,7 +1207,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="link_erro_rede">Could not download: %1$s</string>
 
     <string name="dl_central_grupo_livros">Books</string>
-    <string name="livros_baixar_todos">Download all results (in the background)</string>
+    <string name="livros_baixar_todos">Download all these books</string>
     <string name="livros_carregando_todos">Loading the list... %1$d books</string>
     <string name="livros_na_fila">%1$d books added to the downloads queue.</string>
     <string name="livros_nada_novo">These books are already in your library.</string>
@@ -1538,4 +1538,5 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="perm_agora_nao">Not now</string>
     <string name="perm_toque_para_permitir">Tap to allow</string>
     <string name="perm_permitir_tudo">Allow</string>
+    <string name="livros_acervo">Collection</string>
 </resources>

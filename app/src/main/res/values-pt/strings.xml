@@ -1204,7 +1204,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="link_erro_rede">Não foi possível baixar: %1$s</string>
 
     <string name="dl_central_grupo_livros">Livros</string>
-    <string name="livros_baixar_todos">Baixar todos os resultados (em segundo plano)</string>
+    <string name="livros_baixar_todos">Baixar todos estes livros</string>
     <string name="livros_carregando_todos">Carregando a lista... %1$d livros</string>
     <string name="livros_na_fila">%1$d livros na fila de downloads.</string>
     <string name="livros_nada_novo">Esses livros já estão na sua biblioteca.</string>
@@ -1536,4 +1536,5 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="perm_agora_nao">Agora não</string>
     <string name="perm_toque_para_permitir">Toque para permitir</string>
     <string name="perm_permitir_tudo">Permitir</string>
+    <string name="livros_acervo">Acervo</string>
 </resources>

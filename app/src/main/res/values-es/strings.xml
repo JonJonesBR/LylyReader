@@ -1192,7 +1192,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="link_erro_rede">No se pudo descargar: %1$s</string>
 
     <string name="dl_central_grupo_livros">Libros</string>
-    <string name="livros_baixar_todos">Descargar todos los resultados (en segundo plano)</string>
+    <string name="livros_baixar_todos">Descargar todos estos libros</string>
     <string name="livros_carregando_todos">Cargando la lista... %1$d libros</string>
     <string name="livros_na_fila">%1$d libros en la cola de descargas.</string>
     <string name="livros_nada_novo">Estos libros ya están en tu biblioteca.</string>
@@ -1524,4 +1524,5 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="perm_agora_nao">Ahora no</string>
     <string name="perm_toque_para_permitir">Toca para permitir</string>
     <string name="perm_permitir_tudo">Permitir</string>
+    <string name="livros_acervo">Colección</string>
 </resources>
