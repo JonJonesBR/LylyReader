@@ -181,9 +181,14 @@ class BuscaLivrosPainel(
         buscaAtual = activity.lifecycleScope.launch {
             try {
                 val r = LivrosClient.buscar(fonte, etBusca.text.toString(), idiomaEscolhido(), inicio)
+                val primeiroNovo = livros.size
                 livros += r.livros
                 proximoInicio = r.proximoInicio
-                adapter.submitList(livros.toList())
+                // Com a lista vazia, o rodapé é o único item e a rolagem fica presa a ele: os livros entram acima
+                // e a tela abria já no fim. Busca nova começa no primeiro livro; "Mais resultados", no primeiro novo.
+                adapter.submitList(livros.toList()) {
+                    (recycler.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(primeiroNovo, 0)
+                }
                 marcarJaBaixados()
                 btnMais.visibility = if (proximoInicio != null) View.VISIBLE else View.GONE
                 btnBaixarTodos.visibility = if (livros.isEmpty()) View.GONE else View.VISIBLE
