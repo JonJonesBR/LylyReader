@@ -1165,7 +1165,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/settings_pausa_frase_title"
+                    android:text="@string/settings_pausas_titulo"
                     android:textSize="12sp"
                     android:textColor="?attr/colorPrimary"
                     android:textAllCaps="true"
@@ -1187,6 +1187,28 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
+
+                    <CheckBox
+                        android:id="@+id/chkPausasNaturais"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pausas_naturais_title"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pausas_naturais_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="16dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_pausa_frase_title"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp"/>
 
                     <TextView
                         android:layout_width="match_parent"

@@ -107,7 +107,22 @@ object GuidedVoiceOptionsDialog {
             ) { prefs.pocketPassos = it; aoMudar() }
         }
 
-        if (motor in MOTORES_COM_PAUSA_ENTRE_FRASES) {
+        // Pausas naturais valem para qualquer motor; a pausa fixa só aparece com elas desligadas.
+        secao(R.string.settings_pausas_titulo)
+        conteudo.addView(CheckBox(activity).apply {
+            setText(R.string.settings_pausas_naturais_title)
+            isChecked = prefs.pausasNaturais
+            setOnCheckedChangeListener { _, marcado ->
+                prefs.pausasNaturais = marcado
+                aoMudar()
+                // Mostra (ou esconde) o controle da pausa fixa.
+                dialogo.dismiss()
+                show(activity, manager, aoMudar)
+            }
+        })
+        conteudo.addView(TextView(activity).apply { setText(R.string.settings_pausas_naturais_desc); textSize = 12f })
+
+        if (motor in MOTORES_COM_PAUSA_ENTRE_FRASES && !prefs.pausasNaturais) {
             controleDeslizante(
                 activity, conteudo, R.string.settings_pausa_frase_title, R.string.settings_pausa_frase_desc,
                 0, 2000, atuais.pausaFinalFraseMs,

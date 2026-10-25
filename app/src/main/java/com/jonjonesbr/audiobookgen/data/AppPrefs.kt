@@ -152,6 +152,15 @@ class AppPrefs(context: Context) {
         get() = p.getInt("pausa_final_frase_ms", PAUSA_FINAL_FRASE_MS_PADRAO)
         set(v) = p.edit().putInt("pausa_final_frase_ms", v).apply()
 
+    /**
+     * Pausas naturais na leitura guiada (padrão): duração conforme a pontuação, o fôlego e o fim do parágrafo,
+     * com variação aleatória (ver [com.jonjonesbr.audiobookgen.domain.PausasNaturais]). Desligado volta à pausa
+     * fixa de [pausaFinalFraseMs] entre frases das vozes locais e nenhuma pausa entre parágrafos.
+     */
+    var pausasNaturais: Boolean
+        get() = p.getBoolean("pausas_naturais", true)
+        set(v) = p.edit().putBoolean("pausas_naturais", v).apply()
+
     /** True depois que o aviso "personagens encontrados" já foi mostrado para este livro. */
     fun avisoPersonagensVisto(caminhoLivro: String): Boolean =
         p.getBoolean("aviso_personagens_visto_$caminhoLivro", false)

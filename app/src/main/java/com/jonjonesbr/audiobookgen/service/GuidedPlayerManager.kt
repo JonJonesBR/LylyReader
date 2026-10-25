@@ -4,6 +4,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.FalaNoTrecho
 import com.jonjonesbr.audiobookgen.domain.OfflineSpeakerAttributor
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
+import com.jonjonesbr.audiobookgen.domain.PausasNaturais
 import com.jonjonesbr.audiobookgen.domain.PerfilAudioLivro
 import com.jonjonesbr.audiobookgen.domain.SpeakerAttributionResult
 import com.jonjonesbr.audiobookgen.util.DivisorDeOracoes
@@ -366,7 +367,7 @@ class GuidedPlayerManager(
             if (modoOracoes && completarOracao != null) {
                 completarOracao.complete(Unit)
             } else {
-                onPlaybackCompleted()
+                aoTerminarParagrafoInteiro()
             }
         }
         playerEngine?.setErrorListener { error ->
@@ -759,6 +760,10 @@ class GuidedPlayerManager(
                     startProgressPolling()
                 }
                 oracaoCompletada?.await()
+                val pausaMs = pausaDepoisDe(
+                    segment.text, paragraphText, position == segments.lastIndex, speedVal, pausaFixaMs = 0
+                )
+                if (pausaMs > 0) delay(pausaMs.toLong())
             }
         } finally {
             nextSynthesis?.cancel()
@@ -933,11 +938,14 @@ class GuidedPlayerManager(
                     startProgressPolling()
                 }
                 oracaoCompletada?.await()
-                // Pausa editável (Ajustes) a cada ponto final — sem ela, orações consecutivas
-                // tocavam coladas (o "gap" do KokoroTtsEngine só existe DENTRO de uma síntese
-                // que precisou dividir por tamanho; cada oração aqui é um arquivo separado,
-                // tocado sequencialmente pelo player, sem pausa nenhuma entre eles).
-                val pausaMs = ajustesDeAudio().pausaFinalFraseMs
+                // Pausa a cada ponto final — sem ela, orações consecutivas tocavam coladas (o "gap"
+                // do KokoroTtsEngine só existe DENTRO de uma síntese que precisou dividir por
+                // tamanho; cada oração aqui é um arquivo separado, tocado em sequência pelo player).
+                // Natural (padrão) ou a fixa editável dos Ajustes.
+                val pausaMs = pausaDepoisDe(
+                    oracao.texto, paragraphText, posicao == oracoes.lastIndex, speedVal,
+                    pausaFixaMs = ajustesDeAudio().pausaFinalFraseMs
+                )
                 if (pausaMs > 0) delay(pausaMs.toLong())
             }
         } finally {
@@ -951,6 +959,8 @@ class GuidedPlayerManager(
             }
         }
         // Parágrafo concluído (todas as orações tocaram): avança como no fim do arquivo único.
+        // Uma pausa do usuário durante a última pausa entre frases segura o avanço.
+        aguardarRetomada()
         onPlaybackCompleted()
     }
 
@@ -1279,6 +1289,46 @@ class GuidedPlayerManager(
                     release()
                 }
             }
+        }
+    }
+
+    /**
+     * Pausa depois de um trecho (frase, oração ou fala). Com as pausas naturais (padrão), varia com a
+     * pontuação, o tamanho da frase e o fim do parágrafo (ver [PausasNaturais]); sem elas, vale
+     * [pausaFixaMs] (a "Pausa entre frases" das vozes locais, ou nenhuma).
+     */
+    private fun pausaDepoisDe(
+        trecho: String,
+        paragrafo: String,
+        fimDoParagrafo: Boolean,
+        speedVal: Float,
+        pausaFixaMs: Int
+    ): Int {
+        val velocidade = speedVal * speedMultiplier
+        return when {
+            !appPrefs.pausasNaturais -> pausaFixaMs
+            fimDoParagrafo -> PausasNaturais.aposParagrafo(paragrafo, velocidade)
+            else -> PausasNaturais.aposTrecho(trecho, velocidade)
+        }
+    }
+
+    /**
+     * Fim do áudio de um parágrafo tocado inteiro (Edge, Android, nuvem): com as pausas naturais, espera a
+     * pausa de fim de parágrafo antes de avançar — antes o seguinte começava colado. A espera vira o
+     * [playJob]: tocar outro parágrafo ou parar a cancela, e pausar a segura (ver [aguardarRetomada]).
+     */
+    private fun aoTerminarParagrafoInteiro() {
+        val indice = currentIndex
+        val texto = paragraphs.getOrNull(indice)?.texto
+        if (!appPrefs.pausasNaturais || texto == null) {
+            onPlaybackCompleted()
+            return
+        }
+        val pausaMs = PausasNaturais.aposParagrafo(texto, currentBaseSpeed * speedMultiplier)
+        playJob = coroutineScope.launch {
+            delay(pausaMs.toLong())
+            aguardarRetomada()
+            if (currentIndex == indice) onPlaybackCompleted()
         }
     }
 

@@ -111,6 +111,9 @@
     <string name="settings_pausa_frase_title">Pausa entre frases (vozes locais)</string>
     <string name="settings_pausa_frase_desc">Pausa entre orações na leitura guiada com vozes locais (Kokoro, Supertonic, Pocket), para dar mais cadência natural à narração.</string>
     <string name="settings_pausa_frase_value">%1$d ms</string>
+    <string name="settings_pausas_titulo">Pausas da leitura guiada</string>
+    <string name="settings_pausas_naturais_title">Pausas naturais (recomendado)</string>
+    <string name="settings_pausas_naturais_desc">Pausas que variam como as de um narrador: mais longas nas reticências e no fim do parágrafo, mais curtas nas vírgulas, com um respiro depois de frases longas. Vale para todas as vozes. Desligue para usar uma pausa fixa entre frases.</string>
     <string name="settings_buffering_title">Buffering da leitura guiada</string>
     <string name="settings_buffer_paragrafos_desc">Quantas unidades de texto (parágrafo ou oração, dependendo do motor de voz) a leitura guiada prepara à frente da que está tocando agora. Vale para qualquer motor de voz. Mais à frente: menos chance de silêncio entre trechos, mas usa mais memória/bateria e pode sintetizar texto que você nunca vai ouvir se pular de posição. Menos à frente: economiza recursos, mas aumenta o risco de pausas se a síntese não acompanhar a leitura.</string>
     <string name="settings_buffer_paragrafos_valor_automatico">Automático</string>

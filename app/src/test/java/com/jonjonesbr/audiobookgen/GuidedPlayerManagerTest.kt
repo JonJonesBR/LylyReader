@@ -165,6 +165,42 @@ class GuidedPlayerManagerTest {
         }
     }
 
+    @Test
+    fun pausaNaturalSeguraOAvancoEntreParagrafosTocadosInteiros() {
+        val arquivo = java.io.File.createTempFile("guiada-pausa-", ".wav")
+        val synthesizer = mockk<com.jonjonesbr.audiobookgen.tts.TtsSynthesizer>()
+        io.mockk.coEvery { synthesizer.synthesize(any(), any(), 100) } returns arquivo.absolutePath
+        mockkObject(com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.Companion)
+        every { com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para("edge", any(), any(), any(), any()) } returns synthesizer
+        mockkObject(com.jonjonesbr.audiobookgen.service.GuidedReadingService.Companion)
+        every { com.jonjonesbr.audiobookgen.service.GuidedReadingService.ativo } returns true
+        every { anyConstructed<AppPrefs>().motorTts } returns "edge"
+        every { anyConstructed<AppPrefs>().vozSelecionada } returns "pt-BR-ThalitaMultilingualNeural"
+        every { anyConstructed<AppPrefs>().ritmo } returns 100
+        every { anyConstructed<AppPrefs>().pausasNaturais } returns true
+        every { anyConstructed<MediaPlayerEngineImpl>().play(any(), any()) } just Runs
+        mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
+        every { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) } returns false
+
+        val manager = createManager()
+        try {
+            manager.setParagraphs(paragraphs(2))
+            manager.play(0)
+            aguardar { manager.state.value.isPlaying }
+
+            lastCompletionListener()
+            testDispatcher.scheduler.runCurrent()
+            // Parágrafo curto: pausa natural de 0,5 s a 0,85 s antes do próximo.
+            assertEquals(0, manager.state.value.index)
+            testDispatcher.scheduler.advanceTimeBy(1_000)
+            aguardar { manager.state.value.index == 1 }
+        } finally {
+            manager.stop()
+            testDispatcher.scheduler.runCurrent()
+            arquivo.delete()
+        }
+    }
+
     private fun aguardar(condicao: () -> Boolean) {
         val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5)
         while (!condicao() && System.nanoTime() < deadline) {
