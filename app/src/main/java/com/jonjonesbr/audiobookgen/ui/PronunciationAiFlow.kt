@@ -15,6 +15,7 @@ import android.util.Log
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -24,34 +25,59 @@ import kotlinx.coroutines.withContext
  * Com [caminhoDoLivro], as sugestões são salvas em "Este livro" por padrão (o usuário pode trocar para "Todos os livros").
  */
 object PronunciationAiFlow {
+    private const val ROUNDS = 2
+    private const val RETRY_PAUSE_MS = 8_000L
     private var job: Job? = null
 
     fun start(activity: AppCompatActivity, paragraphs: List<String>, caminhoDoLivro: String? = null) {
-        val dictionary = PronunciationDialog.dicionarioEfetivo(activity, caminhoDoLivro)
-        val candidates = PronunciationAiPlanner.candidates(paragraphs, dictionary)
-        if (candidates.isEmpty()) {
-            Toast.makeText(activity, R.string.pron_ai_none, Toast.LENGTH_LONG).show()
-            return
-        }
         val client = AiSupport.client(activity)
         if (client == null) {
             AiSupport.explainMissing(activity)
             return
         }
-        val batches = PronunciationAiPlanner.batches(candidates.map { it.word })
-        activity.mostrarDialogo(AlertDialog.Builder(activity)
-            .setTitle(R.string.pron_ai_title)
-            .setMessage(
-                activity.getString(R.string.pron_ai_confirm_message, candidates.size, batches.size) +
-                    "\n\n" + activity.getString(R.string.ia_provider_line, AiSupport.label(activity))
-            )
-            .setPositiveButton(R.string.character_ai_send) { _, _ -> run(activity, paragraphs, batches, client, caminhoDoLivro) }
-            .setNeutralButton(R.string.ia_change) { _, _ ->
-                AiSupport.chooseProvider(activity) { start(activity, paragraphs, caminhoDoLivro) }
+        // Varrer o livro inteiro atrás de nomes leva segundos num livro grande: fora da thread principal
+        // (antes travava a tela ao tocar no botão).
+        activity.lifecycleScope.launch {
+            val candidates = withContext(Dispatchers.Default) {
+                val dictionary = PronunciationDialog.dicionarioEfetivo(activity, caminhoDoLivro)
+                PronunciationAiPlanner.candidates(paragraphs, dictionary)
             }
-            .setNegativeButton(android.R.string.cancel, null))
+            if (candidates.isEmpty()) {
+                Toast.makeText(activity, R.string.pron_ai_none, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            val batches = PronunciationAiPlanner.batches(candidates.map { it.word })
+            activity.mostrarDialogo(AlertDialog.Builder(activity)
+                .setTitle(R.string.pron_ai_title)
+                .setMessage(
+                    activity.getString(R.string.pron_ai_confirm_message, candidates.size, batches.size) +
+                        "\n\n" + activity.getString(R.string.ia_provider_line, AiSupport.label(activity))
+                )
+                .setPositiveButton(R.string.character_ai_send) { _, _ ->
+                    run(activity, paragraphs, batches, client, caminhoDoLivro)
+                }
+                .setNeutralButton(R.string.ia_change) { _, _ ->
+                    AiSupport.chooseProvider(activity) { start(activity, paragraphs, caminhoDoLivro) }
+                }
+                .setNegativeButton(android.R.string.cancel, null))
+        }
     }
 
+    /** Erro em que repetir não adianta (chave recusada, modelo inexistente): para tudo. */
+    private fun isFatal(e: Exception) =
+        (e is com.jonjonesbr.audiobookgen.domain.AiApiException && e.fatal) ||
+            (e is com.jonjonesbr.audiobookgen.domain.GeminiSpeakerClient.ApiException && e.fatal)
+
+    private fun errorMessage(activity: AppCompatActivity, e: Exception): String =
+        if (e is com.jonjonesbr.audiobookgen.domain.AiApiException ||
+            e is com.jonjonesbr.audiobookgen.domain.GeminiSpeakerClient.ApiException
+        ) {
+            e.message.orEmpty()
+        } else {
+            activity.getString(mensagemDeErro(e))
+        }
+
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth", "TooGenericExceptionCaught")
     private fun run(
         activity: AppCompatActivity,
         paragraphs: List<String>,
@@ -72,45 +98,82 @@ object PronunciationAiFlow {
             .setView(content)
             .setCancelable(false)
             .setNegativeButton(android.R.string.cancel) { _, _ -> job?.cancel() })
-        val language = languageName(activity, paragraphs)
+        val language = languageCode(paragraphs)
         job?.cancel()
         job = activity.lifecycleScope.launch {
             val found = LinkedHashMap<String, String>()
-            var failure: String? = null
+            var stop: String? = null
+            var lastError: String? = null
+            // Cada lote é independente: um que falha (limite de uso, resposta cortada) não derruba os outros.
+            // Os que falharem são tentados de novo uma vez, no fim, depois de uma pausa.
+            var pending = batches
             try {
-                batches.forEachIndexed { index, names ->
-                    text.text = activity.getString(R.string.pron_ai_progress, index + 1, batches.size)
-                    bar.progress = index * 100 / batches.size
-                    val answer = withContext(Dispatchers.IO) { client.generate(PronunciationAiPlanner.buildPrompt(names, language)) }
-                    val byName = PronunciationAiPlanner.parseResponse(answer)
-                    names.forEach { name ->
-                        val spoken = byName.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
-                        if (spoken != null && PronunciationAiPlanner.isUsable(name, spoken)) found[name] = spoken
+                for (round in 0 until ROUNDS) {
+                    if (pending.isEmpty() || stop != null) break
+                    if (round > 0) {
+                        text.text = activity.getString(R.string.pron_ai_retrying, pending.size)
+                        delay(RETRY_PAUSE_MS)
                     }
+                    val failed = ArrayList<List<String>>()
+                    for ((index, names) in pending.withIndex()) {
+                        if (stop != null) {
+                            failed += names
+                            continue
+                        }
+                        if (round == 0) {
+                            text.text = activity.getString(R.string.pron_ai_progress, index + 1, pending.size)
+                        }
+                        bar.progress = index * 100 / pending.size
+                        try {
+                            val answer = withContext(Dispatchers.IO) {
+                                client.generate(PronunciationAiPlanner.buildPrompt(names, language))
+                            }
+                            val byName = PronunciationAiPlanner.parseResponse(answer)
+                            if (byName.isEmpty()) {
+                                failed += names
+                                lastError = activity.getString(R.string.ai_resposta_vazia)
+                            }
+                            names.forEach { name ->
+                                val spoken = PronunciationAiPlanner.spokenFor(name, byName)
+                                if (spoken != null && PronunciationAiPlanner.isUsable(name, spoken)) {
+                                    found[name] = spoken
+                                }
+                            }
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Log.w("PronunciationAiFlow", "Falha num lote da pronúncia por IA", e)
+                            lastError = errorMessage(activity, e)
+                            // Chave recusada ou modelo inexistente: repetir não adianta, os lotes restantes param.
+                            if (isFatal(e)) stop = lastError
+                            failed += names
+                        }
+                    }
+                    pending = failed
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
-                failure = activity.getString(R.string.character_ai_cancelled)
-            } catch (e: Exception) {
-                Log.w("PronunciationAiFlow", "Falha na pronuncia por IA", e)
-                failure = activity.getString(
-                    R.string.pron_ai_failed,
-                    if (e is com.jonjonesbr.audiobookgen.domain.AiApiException) e.message.orEmpty()
-                    else activity.getString(mensagemDeErro(e))
-                )
+                stop = activity.getString(R.string.character_ai_cancelled)
             }
             dialog.dismiss()
-            if (failure != null) Toast.makeText(activity, failure, Toast.LENGTH_LONG).show()
+            val missing = pending.sumOf { it.size }
+            val aviso = when {
+                stop != null -> activity.getString(R.string.pron_ai_failed, stop)
+                missing > 0 -> activity.getString(R.string.pron_ai_partial, missing, lastError.orEmpty())
+                found.isEmpty() -> activity.getString(R.string.pron_ai_result_none)
+                else -> null
+            }
+            aviso?.let { Toast.makeText(activity, it, Toast.LENGTH_LONG).show() }
             if (found.isNotEmpty()) review(activity, found, caminhoDoLivro)
-            else if (failure == null) Toast.makeText(activity, R.string.pron_ai_result_none, Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun languageName(activity: AppCompatActivity, paragraphs: List<String>): String {
+    /** Idioma do livro ("pt", "en" ou "es"): define as regras de escrita do prompt. */
+    private fun languageCode(paragraphs: List<String>): String {
         val sample = paragraphs.take(40).joinToString(" ").take(4_000)
         return when (LanguageDetector.detectLanguage(sample)) {
-            "en-US" -> activity.getString(R.string.pron_ai_lang_en)
-            "es-ES" -> activity.getString(R.string.pron_ai_lang_es)
-            else -> activity.getString(R.string.pron_ai_lang_pt)
+            "en-US" -> "en"
+            "es-ES" -> "es"
+            else -> "pt"
         }
     }
 
@@ -136,7 +199,13 @@ object PronunciationAiFlow {
                 Toast.makeText(activity, activity.getString(R.string.pron_ai_added, added), Toast.LENGTH_LONG).show()
             }
             .setNegativeButton(android.R.string.cancel, null)
-        if (caminhoDoLivro != null) builder.setNeutralButton("", null)
+        // O rótulo entra já na criação: com texto vazio o diálogo media a barra de botões sem ele e, ao trocar
+        // depois por "Salvar em: Este livro" (que empilha os botões), cortava o "Cancelar".
+        if (caminhoDoLivro != null) {
+            builder.setNeutralButton(
+                activity.getString(R.string.pron_ai_save_to, PronunciationDialog.rotuloEscopo(activity, escopo)), null
+            )
+        }
         val dialogo = activity.mostrarDialogo(builder)
         if (caminhoDoLivro != null) {
             // Botão de escopo: troca entre "Este livro" e "Todos os livros" sem fechar a revisão.

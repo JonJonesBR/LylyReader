@@ -11,31 +11,35 @@ import java.text.Normalizer
  */
 object PronunciationAiPlanner {
     const val MAX_CANDIDATES = 150
-    const val BATCH_SIZE = 40
+    // Lotes menores: com 40 nomes a resposta ficava longa e às vezes chegava cortada (JSON inválido).
+    const val BATCH_SIZE = 25
     private const val MIN_MID_SENTENCE_OCCURRENCES = 2
 
     data class Candidate(val word: String, val count: Int)
 
     private val NAME = Regex("\\p{Lu}[\\p{L}'’-]{2,}")
+    private val WORD = Regex("\\p{L}[\\p{L}'’-]*")
+    private val MARKS = Regex("\\p{M}+")
     private val SENTENCE_END = setOf('.', '!', '?', '…', ':')
     private val OPENERS = setOf('"', '“', '«', '(', '[', '—', '–', '-', '\'', '‘', '*', '_')
 
     /**
      * Nomes próprios prováveis, do mais frequente ao menos: palavra capitalizada que aparece pelo menos 2 vezes
-     * no meio de frases e nunca em minúscula no livro (descarta "Terra", "Escola", "Você"). Já exclui o que está
-     * no dicionário do usuário.
+     * no meio de frases e nunca em minúscula no livro (descarta "Terra", "Escola", "Você"). Palavras todas em
+     * maiúsculas ("SURGE", "EUE") são siglas ou gritos, que o normalizador já trata: ficam de fora. Já exclui o
+     * que está no dicionário do usuário.
      */
     fun candidates(paragraphs: List<String>, dictionary: PronunciationDictionary, max: Int = MAX_CANDIDATES): List<Candidate> {
         val midSentence = HashMap<String, Int>()
         val shown = HashMap<String, String>()
         val lowercaseForms = HashSet<String>()
         for (paragraph in paragraphs) {
-            for (m in Regex("\\p{L}[\\p{L}'’-]*").findAll(paragraph)) {
+            for (m in WORD.findAll(paragraph)) {
                 val w = m.value
                 if (w[0].isLowerCase()) lowercaseForms += key(w)
             }
             for (m in NAME.findAll(paragraph)) {
-                if (isSentenceStart(paragraph, m.range.first)) continue
+                if (isAllCaps(m.value) || isSentenceStart(paragraph, m.range.first)) continue
                 val k = key(m.value)
                 midSentence[k] = (midSentence[k] ?: 0) + 1
                 shown.putIfAbsent(k, m.value)
@@ -49,6 +53,8 @@ object PronunciationAiPlanner {
             .take(max)
     }
 
+    private fun isAllCaps(word: String) = word.none { it.isLowerCase() }
+
     private fun isSentenceStart(text: String, index: Int): Boolean {
         var i = index - 1
         while (i >= 0 && (text[i].isWhitespace() || text[i] in OPENERS)) i--
@@ -56,22 +62,66 @@ object PronunciationAiPlanner {
     }
 
     private fun key(word: String) =
-        Normalizer.normalize(word, Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").lowercase()
+        Normalizer.normalize(word, Normalizer.Form.NFD).replace(MARKS, "").lowercase()
 
     fun batches(names: List<String>): List<List<String>> = names.chunked(BATCH_SIZE)
 
-    fun buildPrompt(names: List<String>, language: String): String = """
-Você prepara um livro para ser lido em voz alta por um sintetizador de voz (TTS) em $language, que costuma errar nomes estrangeiros ou inventados (de ficção, fantasia, ficção científica).
+    /**
+     * Prompt para um lote de nomes. [languageCode] é o idioma do livro (e da voz que vai lê-lo): "pt", "en" ou "es".
+     * A regra central é uma só: manter o som ORIGINAL do nome e só adaptar a escrita às regras de leitura da voz
+     * (Travis → Trévis, não "Travís"). O português tem regras e exemplos próprios, que é onde a voz mais erra.
+     */
+    fun buildPrompt(names: List<String>, languageCode: String): String {
+        val header = when (languageCode) {
+            "en" -> PROMPT_EN
+            "es" -> PROMPT_ES
+            else -> PROMPT_PT
+        }
+        return header + "\n\n" + PROMPT_FORMAT + "\n\nNomes:\n" + names.joinToString("\n")
+    }
 
-Para cada nome abaixo, escreva uma grafia FONÉTICA usando apenas as regras de leitura de $language, de modo que o TTS fale o nome do jeito mais natural: como um leitor nativo leria, ou como o nome é pronunciado no idioma de origem quando isso for conhecido. Use sílabas simples, acentue a sílaba tônica quando ajudar, não use símbolos IPA, hífens nem maiúsculas no meio. Mantenha a inicial maiúscula.
-Se o nome já é lido corretamente por um leitor nativo (ex.: Pedro, Maria), devolva-o igual.
+    private val PROMPT_PT = """
+Você prepara um livro em português para ser lido em voz alta por um sintetizador de voz (TTS) brasileiro. O TTS lê toda palavra com as regras de leitura do português do Brasil, por isso erra nomes estrangeiros: lê "Travis" como "Tra-VÍS" em vez de "TRÉ-vis".
 
-Responda SOMENTE com um JSON: uma lista de objetos {"nome": "...", "falado": "..."}, um para cada nome, sem texto fora do JSON.
+Para cada nome da lista, escreva como um brasileiro escreveria o SOM desse nome falado do jeito natural no idioma de origem (em geral, inglês), para que o TTS, lendo em português, fale o nome como ele é falado de verdade.
 
-Nomes:
-${names.joinToString("\n")}""".trimIndent()
+Regras:
+1. Mantenha a pronúncia original; só adapte a escrita. Não traduza nem aportuguese o nome (William soa "Uíliam", nunca "Guilherme").
+2. Marque a sílaba tônica com acento (agudo ou circunflexo) sempre que o TTS puder errar a tônica.
+3. Sons do inglês: "a" de Jake/Kate → "ei"; "i" de Mike/Riker → "ai"; "ee"/"ea"/"ie" → "i"; "oo" → "u"; "y" final → "i"; "j" e "g" suave → "dj"; "h" aspirado no início → "r" (o "r" inicial do português tem esse som); "w" → "u"; "th" → "t" ou "d"; "a" de Travis/Jack → "é".
+4. Não acrescente vogal no fim de nome terminado em consoante e não troque "n" final por "m".
+5. Se um leitor brasileiro já fala o nome certo (Pedro, Ana, Victor, Laura), devolva o nome igual.
+6. Se não for nome (sigla, palavra comum, palavra inventada sem pronúncia conhecida), devolva igual.
+7. Só letras (acentuadas ou não) e espaços: sem IPA, hífens, aspas ou explicações. Inicial maiúscula.
 
-    /** Lê a resposta da IA (tolera cercas de código, texto ao redor e objeto {nome: falado}). */
+Exemplos: Travis → Trévis; Homer → Rômer; Riker → Ráiker; Mike → Máik; Jake → Djêik; Steve → Stív; George → Djórdj; Harry → Rári; Hermione → Ermáioni; William → Uíliam; Marvin → Márvin; Eridani → Erídani; Pedro → Pedro.""".trimIndent()
+
+    private val PROMPT_ES = """
+Preparas un libro en español para que lo lea en voz alta un sintetizador de voz (TTS) en español. El TTS lee toda palabra con las reglas de lectura del español, por eso se equivoca con los nombres extranjeros.
+
+Para cada nombre de la lista, escribe con la ortografía del español el SONIDO de ese nombre tal como se pronuncia de forma natural en su idioma de origen (en general, inglés), para que el TTS lo diga como se dice de verdad. Mantén la pronunciación original, solo adapta la escritura; no traduzcas el nombre. Marca la sílaba tónica con tilde cuando ayude. Si el nombre ya se lee bien en español, o no es un nombre, devuélvelo igual. Solo letras y espacios: sin IPA, guiones ni explicaciones. Inicial mayúscula.
+
+Ejemplos: Travis → Trávis; Mike → Máik; George → Yórch; Steve → Stív; Harry → Jári; Pedro → Pedro.""".trimIndent()
+
+    private val PROMPT_EN = """
+You are preparing an English book to be read aloud by an English text-to-speech voice (TTS). The TTS reads every word with English spelling rules, so it mispronounces invented or foreign names (fantasy, science fiction).
+
+For each name in the list, respell its SOUND using simple English spelling, keeping the name's natural pronunciation (the one used in the story or in its language of origin), so the TTS says it correctly. If the TTS already reads the name correctly (John, Mary, London), or it is not a name, return it unchanged. Letters and spaces only: no IPA, hyphens or explanations. Keep the initial capital.
+
+Examples: Siobhan → Shivawn; Saoirse → Seersha; Kvothe → Kvoth; John → John.""".trimIndent()
+
+    private val PROMPT_FORMAT = """
+Responda SOMENTE com um JSON: uma lista de objetos {"nome": "...", "falado": "..."}, um para cada nome, na mesma ordem, sem texto fora do JSON.""".trimIndent()
+
+    private val PAIR = Regex(
+        "\"(?:nome|name|word|palavra)\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*" +
+            "\"(?:falado|spoken|fala|pronuncia)\"\\s*:\\s*\"([^\"]+)\""
+    )
+
+    /**
+     * Lê a resposta da IA (tolera cercas de código, texto ao redor, objeto {nome: falado} e JSON cortado no meio,
+     * do qual aproveita os pares completos).
+     */
     fun parseResponse(raw: String): Map<String, String> {
         val result = LinkedHashMap<String, String>()
         val arrayStart = raw.indexOf('[')
@@ -88,9 +138,11 @@ ${names.joinToString("\n")}""".trimIndent()
                 if (result.isNotEmpty()) return result
             }
         }
+        // JSON cortado (resposta longa interrompida): aproveita os pares que chegaram inteiros.
+        PAIR.findAll(raw).forEach { m -> result[m.groupValues[1].trim()] = m.groupValues[2].trim() }
         val objStart = raw.indexOf('{')
         val objEnd = raw.lastIndexOf('}')
-        if (objStart >= 0 && objEnd > objStart) {
+        if (result.isEmpty() && objStart >= 0 && objEnd > objStart) {
             val obj = runCatching { JSONObject(raw.substring(objStart, objEnd + 1)) }.getOrNull()
             obj?.keys()?.forEach { name ->
                 val spoken = obj.optString(name).trim()
@@ -99,6 +151,10 @@ ${names.joinToString("\n")}""".trimIndent()
         }
         return result
     }
+
+    /** Sugestão da IA para [name] na resposta já lida (ignora maiúsculas e acentos que a IA tenha mudado). */
+    fun spokenFor(name: String, byName: Map<String, String>): String? =
+        byName[name] ?: byName.entries.firstOrNull { key(it.key) == key(name) }?.value
 
     private fun firstNonBlank(o: JSONObject, vararg keys: String): String =
         keys.firstNotNullOfOrNull { k -> o.optString(k).trim().takeIf { it.isNotEmpty() } }.orEmpty()

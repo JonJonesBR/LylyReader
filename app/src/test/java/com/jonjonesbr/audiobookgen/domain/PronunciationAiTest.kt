@@ -68,9 +68,45 @@ class PronunciationAiTest {
     }
 
     @Test
-    fun `lotes de ate 40 nomes`() {
-        val lotes = PronunciationAiPlanner.batches((1..95).map { "N$it" })
-        assertEquals(listOf(40, 40, 15), lotes.map { it.size })
+    fun `lotes de ate 25 nomes`() {
+        val lotes = PronunciationAiPlanner.batches((1..60).map { "N$it" })
+        assertEquals(listOf(25, 25, 10), lotes.map { it.size })
+    }
+
+    @Test
+    fun `palavras todas em maiusculas nao sao candidatas`() {
+        val texto = listOf("Ele viu o SURGE e o SURGE de novo. Depois Travis e Travis.")
+        val nomes = PronunciationAiPlanner.candidates(texto, PronunciationDictionary.EMPTY).map { it.word }
+        assertFalse("SURGE" in nomes)
+        assertTrue("Travis" in nomes)
+    }
+
+    @Test
+    fun `json cortado aproveita os pares completos`() {
+        val raw = "[{\"nome\": \"Travis\", \"falado\": \"Trévis\"}, {\"nome\": \"Homer\", \"falado\": \"Rô"
+        assertEquals(mapOf("Travis" to "Trévis"), PronunciationAiPlanner.parseResponse(raw))
+    }
+
+    @Test
+    fun `resposta com nome em outra caixa ou sem acento ainda casa`() {
+        val respostas = mapOf("TRAVIS" to "Trévis", "Eridani" to "Erídani")
+        assertEquals("Trévis", PronunciationAiPlanner.spokenFor("Travis", respostas))
+        assertEquals("Erídani", PronunciationAiPlanner.spokenFor("Erídani", respostas))
+        assertEquals(null, PronunciationAiPlanner.spokenFor("Bob", respostas))
+    }
+
+    @Test
+    fun `prompt em portugues pede o som original com exemplos`() {
+        val prompt = PronunciationAiPlanner.buildPrompt(listOf("Travis", "Riker"), "pt")
+        assertTrue("Travis → Trévis" in prompt)
+        assertTrue("Mantenha a pronúncia original" in prompt)
+        assertTrue(prompt.trimEnd().endsWith("Travis\nRiker"))
+    }
+
+    @Test
+    fun `prompt segue o idioma do livro`() {
+        assertTrue("English" in PronunciationAiPlanner.buildPrompt(listOf("Kvothe"), "en"))
+        assertTrue("español" in PronunciationAiPlanner.buildPrompt(listOf("Kvothe"), "es"))
     }
 
     @Test

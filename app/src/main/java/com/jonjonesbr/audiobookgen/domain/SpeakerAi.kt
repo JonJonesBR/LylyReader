@@ -164,7 +164,8 @@ class GeminiSpeakerClient(
                     attempts++
                     Thread.sleep(BACKOFF_MS * attempts)
                 } catch (e: java.io.IOException) {
-                    lastError = ApiException(context.getString(R.string.ai_falha_rede, e.message), false)
+                    val motivo = context.getString(com.jonjonesbr.audiobookgen.util.mensagemDeErro(e))
+                    lastError = ApiException(context.getString(R.string.ai_falha_rede, motivo), false)
                     attempts++
                     Thread.sleep(BACKOFF_MS * attempts)
                 }

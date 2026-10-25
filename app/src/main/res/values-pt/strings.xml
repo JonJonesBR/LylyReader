@@ -857,9 +857,8 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="pron_ai_result_none">A IA não trouxe sugestões.</string>
     <string name="pron_ai_added">%1$d pronúncias adicionadas.</string>
     <string name="pron_ai_failed">A IA falhou: %1$s</string>
-    <string name="pron_ai_lang_pt">português do Brasil</string>
-    <string name="pron_ai_lang_en">inglês</string>
-    <string name="pron_ai_lang_es">espanhol</string>
+    <string name="pron_ai_retrying">Tentando de novo o(s) %1$d pedido(s) que falharam…</string>
+    <string name="pron_ai_partial">%1$d nome(s) ficaram sem sugestão porque a IA falhou (%2$s). Peça de novo mais tarde: os nomes que você adicionar agora não são enviados outra vez.</string>
     <string name="pron_scope_title">Vale para</string>
     <string name="pron_scope_book">Este livro</string>
     <string name="pron_scope_all">Todos os livros</string>

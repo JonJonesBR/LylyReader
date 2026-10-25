@@ -859,9 +859,8 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="pron_ai_result_none">The AI had no suggestions.</string>
     <string name="pron_ai_added">%1$d pronunciations added.</string>
     <string name="pron_ai_failed">The AI failed: %1$s</string>
-    <string name="pron_ai_lang_pt">Brazilian Portuguese</string>
-    <string name="pron_ai_lang_en">English</string>
-    <string name="pron_ai_lang_es">Spanish</string>
+    <string name="pron_ai_retrying">Retrying the %1$d failed request(s)…</string>
+    <string name="pron_ai_partial">%1$d name(s) got no suggestion because the AI failed (%2$s). Ask again later: names you add now are not sent again.</string>
     <string name="pron_scope_title">Applies to</string>
     <string name="pron_scope_book">This book</string>
     <string name="pron_scope_all">All books</string>

@@ -854,9 +854,8 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="pron_ai_result_none">La IA no trajo sugerencias.</string>
     <string name="pron_ai_added">%1$d pronunciaciones añadidas.</string>
     <string name="pron_ai_failed">La IA falló: %1$s</string>
-    <string name="pron_ai_lang_pt">portugués de Brasil</string>
-    <string name="pron_ai_lang_en">inglés</string>
-    <string name="pron_ai_lang_es">español</string>
+    <string name="pron_ai_retrying">Reintentando la(s) %1$d solicitud(es) que fallaron…</string>
+    <string name="pron_ai_partial">%1$d nombre(s) quedaron sin sugerencia porque la IA falló (%2$s). Vuelve a pedirlo más tarde: los nombres que añadas ahora no se envían otra vez.</string>
     <string name="pron_scope_title">Vale para</string>
     <string name="pron_scope_book">Este libro</string>
     <string name="pron_scope_all">Todos los libros</string>
