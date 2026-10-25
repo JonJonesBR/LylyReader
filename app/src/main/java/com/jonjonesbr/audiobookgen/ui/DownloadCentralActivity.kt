@@ -51,10 +51,11 @@ class DownloadCentralActivity : BasePlayerActivity() {
 
     // "Criar ou importar voz": antes ficava em Ajustes › Áudio, longe das outras vozes.
     private val cloneVoiceFlow = CloneVoiceFlow(this) { recarregarItens() }
-    private val importarVozLauncher = registerForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
-    ) { uri -> uri?.let { importadorDeVoz.importarPacoteByom(it) } }
-    private val importadorDeVoz by lazy {
+    private val importarVozLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>> =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+            uri?.let { importadorDeVoz.importarPacoteByom(it) }
+        }
+    private val importadorDeVoz: PacotesVozOfflineCard by lazy {
         PacotesVozOfflineCard(
             this,
             abrirSeletorByom = { importarVozLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
