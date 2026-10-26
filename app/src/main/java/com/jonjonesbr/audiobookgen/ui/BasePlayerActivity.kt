@@ -268,6 +268,15 @@ abstract class BasePlayerActivity : AppCompatActivity() {
     /** Telas com sua própria UI de leitura guiada (ReaderActivity) sobrescrevem para false. */
     protected open fun mostrarIndicadorGuided(): Boolean = true
 
+    /**
+     * Telas que já mostram o livro [caminho] com os próprios controles (o cartão "Continuar" da Biblioteca)
+     * escondem o indicador para não repetir o mesmo livro com dois botões de tocar.
+     */
+    protected open fun livroJaNaTela(caminho: String): Boolean = false
+
+    /** Recalcula o indicador quando o que a tela mostra muda (ex.: outro livro no cartão "Continuar"). */
+    protected fun reavaliarIndicadorGuided() = atualizarIndicadorGuided(GuidedPlaybackBridge.activeState.value)
+
     private fun observarIndicadorGuided() {
         if (!mostrarIndicadorGuided()) return
         lifecycleScope.launch {
@@ -280,7 +289,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
     private fun atualizarIndicadorGuided(st: GuidedState?) {
         val root = findViewById<View>(R.id.miniPlayerRoot) ?: return
         val bar = root.findViewById<View>(R.id.guidedIndicatorBar) ?: return
-        guidedAtivo = st != null && mostrarIndicadorGuided()
+        guidedAtivo = st != null && mostrarIndicadorGuided() && !livroJaNaTela(GuidedPlaybackBridge.caminhoArquivo)
         bar.visibility = if (guidedAtivo) View.VISIBLE else View.GONE
         if (guidedAtivo && st != null) {
             root.findViewById<TextView>(R.id.guidedIndicatorText)?.text =

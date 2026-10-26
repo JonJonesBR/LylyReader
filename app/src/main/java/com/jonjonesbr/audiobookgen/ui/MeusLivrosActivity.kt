@@ -20,7 +20,9 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -44,6 +46,9 @@ import com.jonjonesbr.audiobookgen.domain.continuar
 import com.jonjonesbr.audiobookgen.domain.ehFormatoSuportado
 import com.jonjonesbr.audiobookgen.domain.filtrar
 import com.jonjonesbr.audiobookgen.domain.ordenar
+import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -81,6 +86,8 @@ class MeusLivrosActivity : BasePlayerActivity() {
     private var progressos: Map<String, Float?> = emptyMap()
     private var audios: Map<String, Boolean> = emptyMap()
     private var cargaJob: Job? = null
+    /** Livro do cartão "Continuar" (null quando o cartão não aparece). */
+    private var caminhoContinuar: String? = null
     private var aba = AbaBiblioteca.TODOS
     private var consulta = ""
     private var ordem = OrdemBiblioteca.RECENTES
@@ -155,7 +162,8 @@ class MeusLivrosActivity : BasePlayerActivity() {
             scope = lifecycleScope,
             capaDe = { BibliotecaStore.capaDo(applicationContext, it) },
             onAbrir = ::abrirLivro,
-            onMenu = ::mostrarMenuDoLivro
+            onMenu = ::mostrarMenuDoLivro,
+            onTocar = ::tocarContinuar
         )
         val grade = GridLayoutManager(this, colunas)
         grade.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
@@ -185,6 +193,17 @@ class MeusLivrosActivity : BasePlayerActivity() {
                 aplicar()
             }
         })
+
+        // O botão do cartão "Continuar" mostra tocar/pausar conforme a leitura guiada deste livro.
+        // Só depois da primeira carga: antes disso a lista vazia mostraria "biblioteca vazia" por um instante.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                GuidedPlaybackBridge.activeState
+                    .map { st -> (st?.isPlaying == true) to (st != null) }
+                    .distinctUntilChanged()
+                    .collect { if (cargaJob?.isCompleted == true) aplicar() }
+            }
+        }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -256,10 +275,14 @@ class MeusLivrosActivity : BasePlayerActivity() {
         )
         val itens = mutableListOf<ItemBiblioteca>()
         var idContinuar: String? = null
+        caminhoContinuar = null
         if (aba == AbaBiblioteca.TODOS && consulta.isBlank()) {
             continuar(todos) { prog[it.id] }?.let {
-                itens += ItemBiblioteca.Continuar(it, prog[it.id] ?: 0f)
+                val caminho = caminhoDe(it)
+                val tocando = guiadaAbertaDe(caminho) && GuidedPlaybackBridge.activeState.value?.isPlaying == true
+                itens += ItemBiblioteca.Continuar(it, prog[it.id] ?: 0f, tocando)
                 idContinuar = it.id
+                caminhoContinuar = caminho
                 // Tocar em "Continuar" abre o leitor direto: adianta a extração do texto.
                 com.jonjonesbr.audiobookgen.domain.PreparoDoLeitor.preparar(this, caminhoDe(it))
             }
@@ -268,6 +291,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
         filtrados.filter { it.id != idContinuar }
             .mapTo(itens) { ItemBiblioteca.Livro(it, prog[it.id], audio[it.id] == true) }
         adapter.submitList(itens)
+        reavaliarIndicadorGuided() // o mini-player some quando o cartão já mostra o mesmo livro
 
         val vazio = itens.isEmpty()
         layoutVazio.visibility = if (vazio) View.VISIBLE else View.GONE
@@ -326,7 +350,25 @@ class MeusLivrosActivity : BasePlayerActivity() {
 
     // ── Abrir / ações por livro ──────────────────────────────────────────────
 
-    /** Cartão "Continuar" → direto na leitura guiada; toque num livro → tela do livro. */
+    override fun livroJaNaTela(caminho: String) = caminho.isNotEmpty() && caminho == caminhoContinuar
+
+    private fun guiadaAbertaDe(caminho: String) =
+        GuidedPlaybackBridge.activeState.value != null && GuidedPlaybackBridge.caminhoArquivo == caminho
+
+    /**
+     * Botão do cartão "Continuar": com a leitura guiada deste livro já aberta (em segundo plano), pausa ou retoma
+     * ali mesmo, como fazia o mini-player; senão abre o leitor e continua de onde parou.
+     */
+    private fun tocarContinuar(livro: LivroBiblioteca) {
+        val manager = GuidedPlaybackBridge.manager
+        if (manager != null && guiadaAbertaDe(caminhoDe(livro))) {
+            if (manager.state.value.isPlaying) manager.pause() else manager.resume()
+        } else {
+            abrirLivro(livro, continuarGuiada = true)
+        }
+    }
+
+    /** Botão de tocar do cartão "Continuar" → leitura guiada; toque num livro (ou no cartão) → tela do livro. */
     private fun abrirLivro(livro: LivroBiblioteca, continuarGuiada: Boolean) {
         if (continuarGuiada) {
             AcoesDoLivro.abrirNoLeitor(this, livro, continuar = true, comFade = true)

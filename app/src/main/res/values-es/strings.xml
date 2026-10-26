@@ -955,6 +955,8 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="bib_aba_audio">Con audio</string>
     <string name="bib_aba_baixados">Descargados</string>
     <string name="bib_continuar">Continuar</string>
+    <string name="bib_continuar_ouvir">Seguir escuchando</string>
+    <string name="bib_continuar_pausar">Pausar</string>
     <string name="bib_progresso">%1$d%% leído</string>
     <string name="bib_nao_iniciado">Sin empezar</string>
     <string name="bib_audio_pronto">Audio listo</string>

@@ -4,6 +4,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -21,7 +22,8 @@ import java.io.File
 sealed interface ItemBiblioteca {
     val chave: String
 
-    data class Continuar(val livro: LivroBiblioteca, val progresso: Float) : ItemBiblioteca {
+    /** [tocando]: a leitura guiada deste livro está tocando agora (o botão vira "pausar"). */
+    data class Continuar(val livro: LivroBiblioteca, val progresso: Float, val tocando: Boolean = false) : ItemBiblioteca {
         override val chave get() = "continuar"
     }
 
@@ -34,7 +36,9 @@ class BibliotecaAdapter(
     private val scope: CoroutineScope,
     private val capaDe: (LivroBiblioteca) -> File?,
     private val onAbrir: (LivroBiblioteca, continuar: Boolean) -> Unit,
-    private val onMenu: (View, LivroBiblioteca) -> Unit
+    private val onMenu: (View, LivroBiblioteca) -> Unit,
+    /** Botão de tocar do cartão "Continuar": retoma a leitura guiada (ou pausa/retoma a que já está aberta). */
+    private val onTocar: (LivroBiblioteca) -> Unit
 ) : ListAdapter<ItemBiblioteca, RecyclerView.ViewHolder>(DIFF) {
 
     override fun getItemViewType(position: Int) = if (getItem(position) is ItemBiblioteca.Continuar) TIPO_CONTINUAR else TIPO_LIVRO
@@ -49,6 +53,7 @@ class BibliotecaAdapter(
         val autor: TextView = view.findViewById(R.id.tvContinuarAutor)
         val barra: ProgressBar = view.findViewById(R.id.pbContinuar)
         val pct: TextView = view.findViewById(R.id.tvContinuarPct)
+        val tocar: ImageView = view.findViewById(R.id.btnContinuarTocar)
     }
 
     class VHLivro(view: View) : RecyclerView.ViewHolder(view) {
@@ -79,8 +84,14 @@ class BibliotecaAdapter(
                 h.pct.text = textoDoProgresso(h.itemView.context, item.progresso)
                 mostrarCapa(h.capa, livro)
                 h.cartao.marcarComoBotao()
-                h.cartao.setOnClickListener { onAbrir(livro, true) }
+                // Cartão → tela do livro (voz, capítulos, ler sem áudio, gerar audiobook); botão → ouvir.
+                h.cartao.setOnClickListener { onAbrir(livro, false) }
                 h.cartao.setOnLongClickListener { onMenu(h.cartao, livro); true }
+                h.tocar.setImageResource(if (item.tocando) R.drawable.ic_player_pause else R.drawable.ic_player_play)
+                h.tocar.contentDescription = h.itemView.context.getString(
+                    if (item.tocando) R.string.bib_continuar_pausar else R.string.bib_continuar_ouvir
+                )
+                h.tocar.setOnClickListener { onTocar(livro) }
             }
             is ItemBiblioteca.Livro -> {
                 val h = holder as VHLivro

@@ -77,15 +77,25 @@
                 android:textColor="@color/color_on_surface_dim"
                 android:textSize="12sp"/>
         </LinearLayout>
-        <!-- Tocar no cartão retoma a leitura guiada de onde parou -->
-        <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="8dp"
-            android:padding="8dp"
-            android:background="@drawable/bg_botao_tocar"
-            android:src="@drawable/ic_player_play"
-            app:tint="?attr/colorOnPrimary"
-            android:contentDescription="@null"/>
+        <!-- Tocar no cartão abre a tela do livro; este botão retoma (ou pausa) a leitura guiada -->
+        <FrameLayout
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="4dp">
+
+            <ImageView
+                android:id="@+id/btnContinuarTocar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:padding="10dp"
+                android:background="@drawable/bg_botao_tocar"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_player_play"
+                app:tint="?attr/colorOnPrimary"
+                android:contentDescription="@string/bib_continuar_ouvir"/>
+        </FrameLayout>
     </LinearLayout>
 </LinearLayout>

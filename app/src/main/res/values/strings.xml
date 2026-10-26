@@ -971,6 +971,8 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="bib_aba_audio">With audio</string>
     <string name="bib_aba_baixados">Downloaded</string>
     <string name="bib_continuar">Continue</string>
+    <string name="bib_continuar_ouvir">Continue listening</string>
+    <string name="bib_continuar_pausar">Pause</string>
     <string name="bib_progresso">%1$d%% read</string>
     <string name="bib_nao_iniciado">Not started</string>
     <string name="bib_audio_pronto">Audio ready</string>

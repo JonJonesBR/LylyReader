@@ -967,6 +967,8 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="bib_aba_audio">Com áudio</string>
     <string name="bib_aba_baixados">Baixados</string>
     <string name="bib_continuar">Continuar</string>
+    <string name="bib_continuar_ouvir">Continuar ouvindo</string>
+    <string name="bib_continuar_pausar">Pausar</string>
     <string name="bib_progresso">%1$d%% lido</string>
     <string name="bib_nao_iniciado">Não iniciado</string>
     <string name="bib_audio_pronto">Áudio pronto</string>
