@@ -140,8 +140,19 @@ class LivroActivity : BasePlayerActivity() {
         }
 
         val principal = findViewById<Button>(R.id.btnLivroContinuar)
-        principal.setText(if (iniciado) R.string.livro_continuar else R.string.livro_comecar)
-        principal.setOnClickListener { AcoesDoLivro.abrirNoLeitor(this, l, continuar = true) }
+        val leituraGuiada = findViewById<Button>(R.id.btnLivroLeituraGuiada)
+        val mp3 = AcoesDoLivro.audiobookPronto(this, l)
+        if (mp3 != null) {
+            // Audiobook já gerado: tocar o arquivo pronto (sem gerar a voz de novo); a leitura guiada fica para outra voz.
+            principal.setText(R.string.livro_ouvir_audiobook)
+            principal.setOnClickListener { AcoesDoLivro.ouvirAudiobookPronto(this, l, mp3, abrirTexto = true) }
+            leituraGuiada.visibility = View.VISIBLE
+            leituraGuiada.setOnClickListener { AcoesDoLivro.abrirNoLeitor(this, l, continuar = true) }
+        } else {
+            principal.setText(if (iniciado) R.string.livro_continuar else R.string.livro_comecar)
+            principal.setOnClickListener { AcoesDoLivro.abrirNoLeitor(this, l, continuar = true) }
+            leituraGuiada.visibility = View.GONE
+        }
         findViewById<Button>(R.id.btnLivroLerSemAudio).setOnClickListener {
             AcoesDoLivro.abrirNoLeitor(this, l, continuar = false, somenteLeitura = true)
         }

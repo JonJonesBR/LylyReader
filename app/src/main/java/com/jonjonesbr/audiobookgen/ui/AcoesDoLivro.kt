@@ -21,6 +21,38 @@ object AcoesDoLivro {
      * [somenteLeitura] abre o leitor sem nenhuma parte de áudio (ver `ReaderActivity.EXTRA_SOMENTE_LEITURA`).
      * [comFade] troca a transição padrão por um fade curto (aberturas a partir de Meus livros).
      */
+    /**
+     * MP3 já gerado deste livro (vínculo gravado ao fim da conversão), se ainda estiver no aparelho; senão null.
+     * Com ele, ouvir o livro toca o arquivo pronto em vez de sintetizar a voz de novo.
+     */
+    fun audiobookPronto(ctx: android.content.Context, livro: LivroBiblioteca): String? {
+        val mp3 = com.jonjonesbr.audiobookgen.data.LinkedBookStore
+            .mp3Vinculado(ctx, BibliotecaStore.arquivoDo(ctx, livro).absolutePath) ?: return null
+        val existe = if (mp3.startsWith("content://")) {
+            runCatching {
+                ctx.contentResolver.openFileDescriptor(android.net.Uri.parse(mp3), "r")?.use { true } ?: false
+            }.getOrDefault(false)
+        } else {
+            java.io.File(mp3).isFile
+        }
+        return mp3.takeIf { existe }
+    }
+
+    /**
+     * Toca o audiobook pronto [mp3] (continua de onde parou nele). A leitura guiada aberta é encerrada: um player por vez.
+     * Com [abrirTexto], abre o leitor sem leitura guiada, com o texto acompanhando o áudio.
+     */
+    fun ouvirAudiobookPronto(activity: AppCompatActivity, livro: LivroBiblioteca, mp3: String, abrirTexto: Boolean) {
+        com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge.manager?.stop()
+        val servico = Intent(activity, com.jonjonesbr.audiobookgen.service.AudioPlayerService::class.java).apply {
+            action = com.jonjonesbr.audiobookgen.service.AudioPlayerService.ACTION_INICIAR
+            putExtra(com.jonjonesbr.audiobookgen.service.AudioPlayerService.EXTRA_CAMINHO, mp3)
+            putExtra(com.jonjonesbr.audiobookgen.service.AudioPlayerService.EXTRA_NOME, livro.titulo)
+        }
+        androidx.core.content.ContextCompat.startForegroundService(activity, servico)
+        if (abrirTexto) abrirNoLeitor(activity, livro, continuar = false)
+    }
+
     fun abrirNoLeitor(
         activity: AppCompatActivity,
         livro: LivroBiblioteca,

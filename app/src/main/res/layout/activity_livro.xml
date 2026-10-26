@@ -125,6 +125,18 @@
                 android:backgroundTint="?attr/colorPrimary"
                 android:textColor="?attr/colorOnPrimary"/>
 
+            <!-- Só com audiobook já gerado: o botão principal toca o MP3 e este gera a fala na hora (outra voz). -->
+            <Button
+                android:id="@+id/btnLivroLeituraGuiada"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/livro_ouvir_outra_voz"
+                android:textSize="15sp"
+                android:visibility="gone"/>
+
             <Button
                 android:id="@+id/btnLivroLerSemAudio"
                 style="@style/Widget.Material3.Button.OutlinedButton"

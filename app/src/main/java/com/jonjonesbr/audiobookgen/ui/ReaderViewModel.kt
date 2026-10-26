@@ -152,9 +152,13 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
             PlayerStateHolder.state.collect { playerState ->
                 val texto = textoEfetivo() ?: return@collect
 
+                // O audiobook gerado deste livro (vínculo gravado na conversão); o nome só vale para MP3 sem vínculo.
+                val mp3DoLivro = com.jonjonesbr.audiobookgen.data.LinkedBookStore
+                    .mp3Vinculado(getApplication(), caminhoArquivoAtual)
                 val nomeArquivo = java.io.File(caminhoArquivoAtual).nameWithoutExtension
-                val coincide = playerState.trackName.contains(nomeArquivo, ignoreCase = true)
-                    || nomeArquivo.contains(playerState.trackName, ignoreCase = true)
+                val coincide = (mp3DoLivro != null && playerState.caminho == mp3DoLivro) ||
+                    playerState.trackName.contains(nomeArquivo, ignoreCase = true) ||
+                    nomeArquivo.contains(playerState.trackName, ignoreCase = true)
 
                 if (!playerState.isPlaying || !coincide || playerState.duration == 0) {
                     if (_uiState.value.syncAtivo) {
@@ -163,11 +167,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
                     return@collect
                 }
 
-                val charEstimado = (playerState.currentPosition.toFloat() /
-                        playerState.duration) * texto.totalChars
-                val paragrafoAtual = texto.paragrafos
-                    .indexOfLast { it.charOffset <= charEstimado }
-                    .coerceAtLeast(0)
+                val paragrafoAtual = com.jonjonesbr.audiobookgen.domain.paragrafoNoAudiobook(
+                    playerState.currentPosition.toLong(), playerState.duration.toLong(), playerState.capitulos, texto
+                ).coerceAtLeast(0)
 
                 val current = _uiState.value
                 if (!current.syncAtivo || current.paragrafoSyncAtual != paragrafoAtual) {

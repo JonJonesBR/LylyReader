@@ -204,6 +204,15 @@ class MeusLivrosActivity : BasePlayerActivity() {
                     .collect { if (cargaJob?.isCompleted == true) aplicar() }
             }
         }
+        // ...e conforme o audiobook pronto do livro, quando é ele que está tocando.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state
+                    .map { st -> st.isPlaying to st.caminho }
+                    .distinctUntilChanged()
+                    .collect { if (cargaJob?.isCompleted == true) aplicar() }
+            }
+        }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -279,7 +288,8 @@ class MeusLivrosActivity : BasePlayerActivity() {
         if (aba == AbaBiblioteca.TODOS && consulta.isBlank()) {
             continuar(todos) { prog[it.id] }?.let {
                 val caminho = caminhoDe(it)
-                val tocando = guiadaAbertaDe(caminho) && GuidedPlaybackBridge.activeState.value?.isPlaying == true
+                val tocando = (guiadaAbertaDe(caminho) && GuidedPlaybackBridge.activeState.value?.isPlaying == true) ||
+                    audiobookTocandoDe(it)
                 itens += ItemBiblioteca.Continuar(it, prog[it.id] ?: 0f, tocando)
                 idContinuar = it.id
                 caminhoContinuar = caminho
@@ -352,6 +362,12 @@ class MeusLivrosActivity : BasePlayerActivity() {
 
     override fun livroJaNaTela(caminho: String) = caminho.isNotEmpty() && caminho == caminhoContinuar
 
+    /** O audiobook pronto deste livro é o que está tocando no player. */
+    private fun audiobookTocandoDe(livro: LivroBiblioteca): Boolean {
+        val player = com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state.value
+        return player.isPlaying && player.caminho.isNotEmpty() && player.caminho == AcoesDoLivro.audiobookPronto(this, livro)
+    }
+
     private fun guiadaAbertaDe(caminho: String) =
         GuidedPlaybackBridge.activeState.value != null && GuidedPlaybackBridge.caminhoArquivo == caminho
 
@@ -372,7 +388,17 @@ class MeusLivrosActivity : BasePlayerActivity() {
                 if (!depois.isPlaying && !depois.isLoading) abrirLivro(livro, continuarGuiada = true)
             }
         } else {
-            abrirLivro(livro, continuarGuiada = true)
+            val mp3 = AcoesDoLivro.audiobookPronto(this, livro)
+            when {
+                // Audiobook já gerado: toca/pausa o arquivo pronto ali mesmo, sem gerar a voz de novo.
+                mp3 != null && com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state.value.caminho == mp3 ->
+                    startService(
+                        Intent(this, com.jonjonesbr.audiobookgen.service.AudioPlayerService::class.java)
+                            .setAction(com.jonjonesbr.audiobookgen.service.PlayerNotificationManager.ACTION_PLAY_PAUSE)
+                    )
+                mp3 != null -> AcoesDoLivro.ouvirAudiobookPronto(this, livro, mp3, abrirTexto = false)
+                else -> abrirLivro(livro, continuarGuiada = true)
+            }
         }
     }
 
