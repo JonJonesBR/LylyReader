@@ -2073,6 +2073,7 @@ AudioData PocketTTS::generate(const std::string& text, const Tensor& voice, int 
     std::vector<float> samples;
     samples.reserve(max_frames * 2000);
     stream(text, voice, [&](const float* values, size_t count) {
+        if (count == 0) return true;  // progress probe from stream()
         samples.insert(samples.end(), values, values + count);
         return true;
     }, max_frames);
@@ -2083,47 +2084,51 @@ void PocketTTS::stream(const std::string& text, const std::string& voice, Stream
     stream(text, get_voice(voice), cb, max_frames);
 }
 
+// LylyReader: letters of a chunk (UTF-8 aware), used to judge whether the generated speech is
+// long enough for its text. Punctuation from the General Punctuation block (— … “ ”) is ignored.
+static int count_letters(const std::string& text) {
+    int count = 0;
+    for (size_t i = 0; i < text.size(); ++i) {
+        const unsigned char c = static_cast<unsigned char>(text[i]);
+        if (c < 0x80) {
+            if (std::isalnum(c)) count++;
+        } else if ((c & 0xC0) == 0xC0) {
+            const bool general_punctuation = c == 0xE2 && i + 1 < text.size() &&
+                (static_cast<unsigned char>(text[i + 1]) == 0x80 || static_cast<unsigned char>(text[i + 1]) == 0x81);
+            if (!general_punctuation) count++;
+        }
+    }
+    return count;
+}
+
 void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallback cb, int max_frames) {
     const auto chunks = make_text_chunks(text);
     const size_t pause_samples = static_cast<size_t>(
         std::max(0, cfg_.sentence_pause_ms) * SR / 1000);
     const std::vector<float> silence(pause_samples, 0.0f);
-    
-    for (size_t si = 0; si < chunks.size(); ++si) {
-        if (cfg_.verbose) {
-            std::cerr << "  Text chunk " << (si + 1) << "/" << chunks.size()
-                      << " (" << token_count(chunks[si].text) << " tokens): \""
-                      << chunks[si].text.substr(0, 60)
-                      << (chunks[si].text.size() > 60 ? "..." : "") << "\"\n";
-        }
-        auto [prepared, eos_extra] = prepare_text(chunks[si].text, cfg_.eos_extra_frames);
-        if (prepared.empty()) continue;
-        auto text_tokens = tokenize(prepared);
-        const int token_limited_frames = estimated_max_generation_frames(text_tokens.numel());
-        const int effective_max_frames = std::min(max_frames, token_limited_frames);
-        if (cfg_.verbose) {
-            std::cerr << "  Generation frame limit: " << effective_max_frames
-                      << " (requested " << max_frames << ", token estimate "
-                      << token_limited_frames << ")\n";
-        }
-        auto gen = make_gen(voice, text_tokens, effective_max_frames, eos_extra);
-        // Fastest plausible speech: ~4.5 words/s. EOS before that is premature.
-        static constexpr double MAX_WORDS_PER_SECOND = 4.5;
-        static constexpr double FRAME_RATE = 12.5;
-        gen.set_min_eos_frame(std::min(effective_max_frames - 1, static_cast<int>(
-            count_words(chunks[si].text) / MAX_WORDS_PER_SECOND * FRAME_RATE)));
+
+    struct ChunkAudio {
+        std::vector<float> samples;
+        int speech_frames = 0;  // frames until EOS (or all frames when EOS never came)
+        bool hit_limit = false;
+        bool aborted = false;
+    };
+
+    // Generates one chunk into memory. The generator and the Mimi decoder still run on two
+    // threads; `cb(nullptr, 0)` only asks the caller whether it wants to continue.
+    auto generate_chunk = [&](const TensorI64& text_tokens, int frame_limit, int eos_extra,
+                              int min_eos_frame) -> ChunkAudio {
+        ChunkAudio out;
+        auto gen = make_gen(voice, text_tokens, frame_limit, eos_extra);
+        gen.set_min_eos_frame(min_eos_frame);
         dec_runner_->reset_state();  // zero existing buffers, no reallocation
-        
-        // Pipelined: generator thread produces latent frames into a queue,
-        // decoder (main thread) consumes them in chunks. The two ONNX sessions
-        // (flow_lm_main and mimi_decoder) run on separate threads simultaneously.
-        
+
         std::mutex mtx;
         std::condition_variable cv;
         std::deque<Tensor> queue;
         bool gen_done = false;
         bool aborted = false;
-        
+
         std::thread gen_thread([&]() {
             while (gen.has_next()) {
                 {
@@ -2145,18 +2150,17 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
             }
             cv.notify_one();
         });
-        
+
         bool first = true;
-        
         while (true) {
             int want = first ? cfg_.first_chunk_frames : cfg_.max_chunk_frames;
-            
+
             std::vector<Tensor> batch;
             {
                 std::unique_lock<std::mutex> lock(mtx);
                 cv.wait(lock, [&]{ return (int)queue.size() >= want || gen_done || aborted; });
                 if (aborted) break;
-                
+
                 // Never decode more than `want` frames per call, even when draining the queue:
                 // the exported Mimi decoder is only faithful for very short blocks and produces
                 // ~1 s noise bursts for larger ones.
@@ -2166,21 +2170,23 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
                     queue.pop_front();
                 }
             }
-            
+
             if (batch.empty() && gen_done) break;
-            
+
             if (!batch.empty()) {
                 auto lat = Tensor::concat(batch, 1);
                 std::vector<Ort::Value> inputs;
                 inputs.push_back(Ort::Value::CreateTensor<float>(dec_runner_->mem(), lat.ptr(), lat.numel(),
                                                                   lat.shape.data(), lat.shape.size()));
-                
+
                 auto outputs = dec_runner_->run(inputs);
                 auto shape = outputs[0].GetTensorTypeAndShapeInfo().GetShape();
                 size_t n = 1;
                 for (auto d : shape) n *= d;
-                
-                if (!cb(outputs[0].GetTensorData<float>(), n)) {
+                const float* data = outputs[0].GetTensorData<float>();
+                out.samples.insert(out.samples.end(), data, data + n);
+
+                if (!cb(nullptr, 0)) {
                     std::lock_guard<std::mutex> lock(mtx);
                     aborted = true;
                     break;
@@ -2188,11 +2194,81 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
                 first = false;
             }
         }
-        
+
         if (gen_thread.joinable()) {
             gen_thread.join();
         }
-        if (aborted) return;
+        out.aborted = aborted;
+        out.speech_frames = gen.eos_frame() >= 0 ? gen.eos_frame() : gen.frame_idx();
+        out.hit_limit = gen.eos_frame() < 0 && gen.frame_idx() >= frame_limit;
+        return out;
+    };
+
+    // LylyReader: the model sometimes predicts the end of speech at a pause (a comma) or jumps
+    // over words; the chunk then comes out much shorter than its text and words go missing.
+    // Speech faster than MAX_LETTERS_PER_SECOND is taken as such a failure and the chunk is
+    // generated again (new noise sample); the last attempt also refuses an EOS before the point
+    // where the previous attempts stopped. The first plausible attempt wins; if none is, the
+    // longest one that ended by itself.
+    static constexpr double MAX_WORDS_PER_SECOND = 4.5;   // EOS before this is ignored outright
+    static constexpr double MAX_LETTERS_PER_SECOND = 19.0;
+    static constexpr int MIN_LETTERS_TO_CHECK = 20;
+    static constexpr int MAX_ATTEMPTS = 3;
+    static constexpr double FRAME_RATE = 12.5;
+
+    for (size_t si = 0; si < chunks.size(); ++si) {
+        if (cfg_.verbose) {
+            std::cerr << "  Text chunk " << (si + 1) << "/" << chunks.size()
+                      << " (" << token_count(chunks[si].text) << " tokens): \""
+                      << chunks[si].text.substr(0, 60)
+                      << (chunks[si].text.size() > 60 ? "..." : "") << "\"\n";
+        }
+        auto [prepared, eos_extra] = prepare_text(chunks[si].text, cfg_.eos_extra_frames);
+        if (prepared.empty()) continue;
+        auto text_tokens = tokenize(prepared);
+        const int token_limited_frames = estimated_max_generation_frames(text_tokens.numel());
+        const int effective_max_frames = std::min(max_frames, token_limited_frames);
+        if (cfg_.verbose) {
+            std::cerr << "  Generation frame limit: " << effective_max_frames
+                      << " (requested " << max_frames << ", token estimate "
+                      << token_limited_frames << ")\n";
+        }
+        const int min_eos_frame = std::min(effective_max_frames - 1, static_cast<int>(
+            count_words(chunks[si].text) / MAX_WORDS_PER_SECOND * FRAME_RATE));
+        const int letters = count_letters(chunks[si].text);
+
+        auto plausible = [&](const ChunkAudio& a) {
+            if (letters < MIN_LETTERS_TO_CHECK || a.hit_limit) return true;
+            const double seconds = a.speech_frames / FRAME_RATE;
+            return seconds > 0 && letters / seconds <= MAX_LETTERS_PER_SECOND;
+        };
+
+        ChunkAudio best;
+        bool have_best = false;
+        int longest_stop = -1;
+        for (int attempt = 0; attempt < MAX_ATTEMPTS; ++attempt) {
+            const int min_eos = attempt == MAX_ATTEMPTS - 1 && longest_stop >= 0
+                ? std::min(effective_max_frames - 1, std::max(min_eos_frame, longest_stop + 1))
+                : min_eos_frame;
+            ChunkAudio audio = generate_chunk(text_tokens, effective_max_frames, eos_extra, min_eos);
+            if (audio.aborted) return;
+            const bool ok = plausible(audio);
+            if (!audio.hit_limit) longest_stop = std::max(longest_stop, audio.speech_frames);
+            if (cfg_.verbose || !ok) {
+                std::cerr << "[pocket-tts] chunk " << (si + 1) << " attempt " << (attempt + 1)
+                          << ": " << letters << " letters in " << audio.speech_frames / FRAME_RATE
+                          << " s" << (ok ? "" : " (too short, retrying)") << "\n";
+            }
+            const bool better = !have_best ||
+                (!audio.hit_limit && (best.hit_limit || audio.speech_frames > best.speech_frames));
+            if (ok || better) {
+                best = std::move(audio);
+                have_best = true;
+            }
+            if (ok) break;
+        }
+
+        if (!best.samples.empty() && !cb(best.samples.data(), best.samples.size())) return;
         if (chunks[si].sentence_end && !silence.empty() && !cb(silence.data(), silence.size())) return;
     }
 }
@@ -2579,6 +2655,7 @@ private:
                 {
                     std::lock_guard<std::mutex> lock(tts_mutex_);
                     tts_.stream(text, voice, [&](const float* samples, size_t n) {
+                        if (n == 0) return true;  // progress probe from stream()
                         if (first_chunk) {
                             auto now = std::chrono::high_resolution_clock::now();
                             double latency = std::chrono::duration<double, std::milli>(now - start).count();
@@ -2732,6 +2809,10 @@ void* ptt_stream_start(void* handle, const char* text, const char* voice) {
     ctx->thread = std::thread([tts, t = std::string(text), v = std::string(voice), ctx]() {
         try {
             tts->stream(t, v, [ctx](const float* samples, size_t n) -> bool {
+                if (n == 0) {  // LylyReader: probe from stream(): keep going unless cancelled
+                    std::lock_guard<std::mutex> lock(ctx->mtx);
+                    return !ctx->aborted;
+                }
                 float* copy = static_cast<float*>(malloc(n * sizeof(float)));
                 if (!copy) return false;
                 std::memcpy(copy, samples, n * sizeof(float));

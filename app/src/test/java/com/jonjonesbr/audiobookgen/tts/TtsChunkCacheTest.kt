@@ -117,11 +117,11 @@ class TtsChunkCacheTest {
         assertEquals("supertonic-v2", TtsChunkCache.revisaoModelo("supertonic-f4-pt"))
         assertEquals("kokoro-multilang-v1_0-fp32", TtsChunkCache.revisaoModelo("kokoro-pf-dora"))
         assertEquals(
-            "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2",
+            "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2-retry1",
             TtsChunkCache.revisaoModelo("pocket-ptbr-rafael")
         )
         assertEquals(
-            "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-pause500-nodash-v2",
+            "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-pause500-nodash-v2-retry1",
             TtsChunkCache.revisaoModelo("pocket-en-alba")
         )
         val rafaelPrevious = TtsChunkCache.file(

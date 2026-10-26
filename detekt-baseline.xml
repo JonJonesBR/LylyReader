@@ -870,8 +870,8 @@
     <ID>MaxLineLength:ThemePrefs.kt$ThemePrefs$ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY, SYSTEM).takeIf { it in SYSTEM..PAPEL } ?: SYSTEM</ID>
     <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$File(context.cacheDir, "audio_chunks").listFiles { f -&gt; f.isFile &amp;&amp; f.name.endsWith(".bin") }?.toList().orEmpty()</ID>
     <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$if (agora - anterior &lt; INTERVALO_VERIFICACAO_TETO_MS || !ultimaVerificacaoTeto.compareAndSet(anterior, agora)) return</ID>
-    <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$voice == "pocket-ptbr-rafael" -&gt; "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2"</ID>
-    <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$voice.startsWith("pocket-") -&gt; "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-pause500-nodash-v2"</ID>
+    <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$voice == "pocket-ptbr-rafael" -&gt; "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2-retry1"</ID>
+    <ID>MaxLineLength:TtsChunkCache.kt$TtsChunkCache$voice.startsWith("pocket-") -&gt; "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-pause500-nodash-v2-retry1"</ID>
     <ID>MaxLineLength:TtsChunkCacheTest.kt$TtsChunkCacheTest$val novoLeitor = File(context.cacheDir, "tts_v2_x.wav").apply { writeBytes(ByteArray(500)); setLastModified(agora - 2 * 3_600_000L) }</ID>
     <ID>MaxLineLength:TtsChunkCacheTest.kt$TtsChunkCacheTest$val novoPython = File(pasta, "b.bin").apply { writeBytes(ByteArray(500)); setLastModified(agora - 1 * 3_600_000L) }</ID>
     <ID>MaxLineLength:TtsChunkCacheTest.kt$TtsChunkCacheTest$val velhoPython = File(pasta, "a.bin").apply { writeBytes(ByteArray(500)); setLastModified(agora - 5 * 3_600_000L) }</ID>
