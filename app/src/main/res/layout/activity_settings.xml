@@ -1849,18 +1849,18 @@
                         app:singleSelection="true">
 
                         <com.google.android.material.chip.Chip
-                            android:id="@+id/chipExprMinima"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/pocket_expr_minima"/>
-
-                        <com.google.android.material.chip.Chip
                             android:id="@+id/chipExprPadrao"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/pocket_expr_padrao"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipExprModerada"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pocket_expr_moderada"/>
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipExprExpressiva"

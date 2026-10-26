@@ -12,7 +12,7 @@ import java.util.Locale
 
 /**
  * Ajustes › Som › "Naturalidade da voz (experimental)" (três interruptores) e, em Ajustes avançados, a
- * expressividade do Pocket TTS: deslizante de mínimo a máximo, com atalhos (Mínima, Padrão, Expressiva, Máxima).
+ * expressividade do Pocket TTS: deslizante de mínimo a máximo, com atalhos (Padrão, Moderada, Expressiva, Máxima).
  */
 class NaturalidadeVozUi(private val activity: AppCompatActivity) {
 
@@ -74,24 +74,26 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
     }
 
     companion object {
+        /** 0,3: o padrão anterior do app. */
+        private const val POCKET_MODERADA = 3
         /** 0,7: o padrão dos autores do Pocket TTS (Kyutai). */
         private const val POCKET_EXPRESSIVA = 7
         private const val DECIMOS = 10f
 
         /** Atalhos: chip → expressividade em décimos. */
         private val PRESETS = linkedMapOf(
-            R.id.chipExprMinima to AppPrefs.POCKET_EXPRESSIVIDADE_MIN,
             R.id.chipExprPadrao to AppPrefs.POCKET_EXPRESSIVIDADE_PADRAO,
+            R.id.chipExprModerada to POCKET_MODERADA,
             R.id.chipExprExpressiva to POCKET_EXPRESSIVA,
             R.id.chipExprMaxima to AppPrefs.POCKET_EXPRESSIVIDADE_MAX
         )
 
-        /** "0,3 · Padrão", "0,5", "0,7 · Expressiva"… (o nome só aparece nos atalhos). */
+        /** "0,1 · Padrão", "0,5", "0,7 · Expressiva"… (o nome só aparece nos atalhos). */
         fun rotuloExpressividade(context: Context, decimos: Int): String {
             val numero = String.format(Locale.getDefault(), "%.1f", decimos / DECIMOS)
             val nome = when (decimos) {
-                AppPrefs.POCKET_EXPRESSIVIDADE_MIN -> R.string.pocket_expr_minima
                 AppPrefs.POCKET_EXPRESSIVIDADE_PADRAO -> R.string.pocket_expr_padrao
+                POCKET_MODERADA -> R.string.pocket_expr_moderada
                 POCKET_EXPRESSIVA -> R.string.pocket_expr_expressiva
                 AppPrefs.POCKET_EXPRESSIVIDADE_MAX -> R.string.pocket_expr_maxima
                 else -> null

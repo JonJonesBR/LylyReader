@@ -167,7 +167,7 @@ class PocketSynthService : Service() {
         const val MIN_AUDIO_BYTES = 500L
         const val DEFAULT_THREADS = 2
         const val DEFAULT_LSD_STEPS = 1
-        const val DEFAULT_TEMPERATURE = 0.3f
+        const val DEFAULT_TEMPERATURE = 0.1f
         // Pausa entre frases DENTRO de um mesmo trecho (a guiada agrupa frases curtas). Igual ao
         // padrão de "Pausa entre frases" dos Ajustes; este serviço roda em outro processo e não
         // acompanha o slider.

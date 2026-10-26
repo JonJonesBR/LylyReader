@@ -428,7 +428,8 @@ class AppPrefs(context: Context) {
         const val TIMBRE_AGUDOS_MAX = 8
         const val POCKET_PASSOS_PADRAO = 1
         /** Temperatura do Pocket em décimos: 3 (0,3) é o valor estável no aparelho; 7 é o padrão da Kyutai. */
-        const val POCKET_EXPRESSIVIDADE_PADRAO = 3
+        /** 0,1: no uso, a expressividade baixa é a que menos suprime palavras. */
+        const val POCKET_EXPRESSIVIDADE_PADRAO = 1
         const val POCKET_EXPRESSIVIDADE_MIN = 1
         const val POCKET_EXPRESSIVIDADE_MAX = 10
         /** Tamanho de fonte padrão do leitor (sp). */

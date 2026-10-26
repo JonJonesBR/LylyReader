@@ -1552,7 +1552,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="pocket_expr_titulo">Pocket TTS expressiveness</string>
     <string name="pocket_expr_desc">Higher makes the intonation livelier and more varied, with more risk of small glitches. Lower sounds calmer and steadier. Applies to guided reading and audiobook creation.</string>
     <string name="pocket_expr_valor">%1$s · %2$s</string>
-    <string name="pocket_expr_minima">Minimum</string>
+    <string name="pocket_expr_moderada">Moderate</string>
     <string name="pocket_expr_padrao">Default</string>
     <string name="pocket_expr_expressiva">Expressive</string>
     <string name="pocket_expr_maxima">Maximum</string>

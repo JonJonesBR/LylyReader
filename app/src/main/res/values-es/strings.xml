@@ -1538,7 +1538,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="pocket_expr_titulo">Expresividad de Pocket TTS</string>
     <string name="pocket_expr_desc">Más alta hace la entonación más viva y variada, con más riesgo de pequeños fallos. Más baja suena más contenida y estable. Vale para la lectura guiada y la creación de audiolibros.</string>
     <string name="pocket_expr_valor">%1$s · %2$s</string>
-    <string name="pocket_expr_minima">Mínima</string>
+    <string name="pocket_expr_moderada">Moderada</string>
     <string name="pocket_expr_padrao">Predeterminada</string>
     <string name="pocket_expr_expressiva">Expresiva</string>
     <string name="pocket_expr_maxima">Máxima</string>
