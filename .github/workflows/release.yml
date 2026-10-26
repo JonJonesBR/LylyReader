@@ -2,8 +2,9 @@ name: Release Build
 
 # Só roda quando disparado à mão (Actions › Release Build › Run workflow); commits e pushes não geram APK.
 # Testa, builda o APK de DEPURAÇÃO (debug, sem assinatura de release), cria a tag v<versão> no commit
-# disparado, publica a Release do GitHub com o APK (LylyReader-v<versão>-debug.apk) e apaga as Releases
-# anteriores (as tags antigas ficam, como histórico).
+# disparado, publica a Release do GitHub com o APK (LylyReader-v<versão>-debug.apk) e mantém só as 3 Releases
+# mais recentes (as tags antigas ficam, como histórico). Antes do APK, também compila o build de produção (R8)
+# como verificação e roda os testes Python (por enquanto só informativos).
 on:
   workflow_dispatch:
     inputs:
@@ -121,6 +122,20 @@ jobs:
       - name: Run unit tests (gate)
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
+      - name: Python tests (informativo)
+        # Cobrem a geração do audiobook (app/src/main/python). Ainda não bloqueiam a release: passam a bloquear
+        # depois de alguns runs verdes. Versões dos pacotes puros iguais às de app/build.gradle.kts.
+        continue-on-error: true
+        run: |
+          python -m pip install --quiet pytest "edge-tts==7.3.1" aiohttp "mutagen==1.48.1" Pillow "pypdf==6.21.2" \
+            "python-docx==1.2.0" "ebooklib==0.20" "beautifulsoup4==4.15.0" "httpx==0.28.1" numpy "olefile==0.47" "mobi==0.4.1"
+          python -m pytest app/src/test/python -q
+
+      - name: Build release APK (R8, verificação)
+        # Problemas de R8/ProGuard (JNI, Chaquopy, reflexão) só aparecem no build de produção. O APK publicado
+        # continua sendo o debug; este passo só garante que o release compila.
+        run: ./gradlew :app:assembleRelease --stacktrace
+
       - name: Prepare fixed debug signing key
         # Chave fixa do APK debug, guardada só como segredo do repositório (nunca no Git): mantém a
         # mesma assinatura em toda versão, para instalar a nova por cima da antiga. Sem os segredos
@@ -171,17 +186,22 @@ jobs:
           # Versões com hífen (ex.: 1.6.1-beta.2) são pré-releases; 1.6.1 é release final.
           prerelease: ${{ contains(env.VERSION_NAME, '-') }}
 
-      - name: Delete older releases (mantém só a mais recente, "uma release por vez")
+      - name: Delete older releases (mantém as 3 mais recentes)
         # Roda só depois da nova release já estar publicada com sucesso (passo acima) — limpeza,
-        # nunca crítico ao processo de release em si. As tags de versões antigas são mantidas
-        # (histórico); só a Release (card + APK anexado) é removida.
+        # nunca crítico ao processo de release em si. As 3 mais recentes ficam como caminho de volta caso
+        # uma versão saia com defeito; das mais antigas só a Release (card + APK) é removida, a tag fica.
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NOVA: v${{ env.VERSION_NAME }}
+          MANTER: "3"
         run: |
-          for tag in $(gh release list --limit 50 --json tagName --jq '.[].tagName'); do
-            if [ "$tag" != "$NOVA" ]; then
+          # gh release list vem da mais nova para a mais antiga; a recém-publicada sempre fica.
+          n=0
+          for tag in $(gh release list --limit 50 --json tagName,createdAt --jq 'sort_by(.createdAt) | reverse | .[].tagName'); do
+            if [ "$tag" = "$NOVA" ]; then continue; fi
+            n=$((n + 1))
+            if [ "$n" -ge "$MANTER" ]; then
               echo "Apagando release antiga: $tag (tag mantida)"
               gh release delete "$tag" --yes --cleanup-tag=false
             fi

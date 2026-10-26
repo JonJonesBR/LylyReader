@@ -146,6 +146,12 @@ class ConversionWorker(
             val mensagem = e.message ?: e.javaClass.simpleName
             FilaDeConversao.aoTerminarExecucao(applicationContext, filaItemId, runToken, null, mensagem)
             Result.failure(workDataOf(KEY_ERROR_MSG to mensagem, KEY_RUN_TOKEN to runToken))
+        } catch (t: Throwable) {
+            // Error (ex.: OutOfMemoryError com livro muito grande): antes o item ficava em PROCESSANDO.
+            CrashLogWriter.log(t, "conversionWorker", "Erro grave na conversão")
+            val mensagem = applicationContext.getString(com.jonjonesbr.audiobookgen.R.string.erro_conversao_memoria)
+            FilaDeConversao.aoTerminarExecucao(applicationContext, filaItemId, runToken, null, mensagem)
+            Result.failure(workDataOf(KEY_ERROR_MSG to mensagem, KEY_RUN_TOKEN to runToken))
         } finally {
             ConversionWakeLock.release()
             // O pedido não pode sobreviver ao worker: a próxima execução começa sem pausa/cancelamento pendente.

@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/85d1265c-99d0-4d1c-a38f-a593696509f6
 ## Destacados
 
 - **Audiolibro de cualquier libro:** importa un archivo o busca libros gratuitos de dominio público (Proyecto Gutenberg, Wikisource, Internet Archive) sin salir de la app.
-- **Voces neuronales, en línea y sin conexión:** Edge, Gemini, ElevenLabs y OpenRouter en línea; Supertonic, Kokoro, Piper y Pocket sin conexión, en el propio dispositivo.
+- **Voces neuronales, en línea y sin conexión:** Edge, Gemini y ElevenLabs en línea; Supertonic, Kokoro, Piper y Pocket sin conexión, en el propio dispositivo.
 - **Lectura guiada:** el texto sigue la narración frase a frase, sigue sonando en segundo plano y retoma donde lo dejaste.
 - **Cola de conversiones:** convierte varios libros seguidos; la cola sigue aunque cierres la app.
 - **Voz por libro:** cada libro guarda su voz, velocidad y tono, y puedes dar voces distintas a los personajes.
@@ -82,7 +82,7 @@ https://github.com/user-attachments/assets/85d1265c-99d0-4d1c-a38f-a593696509f6
 | Italiano | Giuseppe |
 | Coreano | Hyunsu |
 
-Las voces en línea vienen de Microsoft Edge TTS. Las voces de Gemini, ElevenLabs y OpenRouter usan tu propia clave de API.
+Las voces en línea vienen de Microsoft Edge TTS. Las voces de Gemini y ElevenLabs usan tu propia clave de API.
 
 **Paquetes sin conexión para descargar:**
 
@@ -98,6 +98,7 @@ Cada paquete sin conexión mantiene su propia licencia. Consulta [THIRD_PARTY_LI
 ## Seguridad y privacidad
 
 - Sin cuenta y sin analítica. Libros, progreso y estadísticas se quedan en el dispositivo.
+- Las voces sin conexión leen todo en el propio dispositivo. Con una voz en línea (Edge, Gemini, ElevenLabs) o una función de IA (Gemini, OpenRouter), el texto que se lee se envía al servicio que elegiste, bajo la política de privacidad de ese servicio.
 - La clonación de voz no pide iniciar sesión en la app: entras en tu cuenta solo en el navegador, y la muestra de tu voz se queda en el dispositivo.
 - Las claves de API (Gemini, ElevenLabs, OpenRouter) se guardan en el almacenamiento cifrado del dispositivo y nunca se envían a este proyecto.
 - Las claves reales de API no se versionan en el repositorio.

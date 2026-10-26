@@ -37,6 +37,8 @@ object SupertonicAssetManager {
     private const val CONNECT_TIMEOUT_MS = 15_000
     private const val READ_TIMEOUT_MS = 60_000
     private const val MAX_RETRIES = 3
+    /** Teto do Retry-After (s): um valor absurdo do servidor não deixa o download parado por horas. */
+    private const val RETRY_AFTER_MAX_S = 120L
     private const val BUFFER_SIZE = 65_536
 
 
@@ -166,7 +168,7 @@ object SupertonicAssetManager {
                     conn.connect()
                     val responseCode = conn.responseCode
                     if (responseCode == 429) {
-                        val retryAfter = conn.getHeaderField("Retry-After")?.toLongOrNull() ?: 60L
+                        val retryAfter = conn.getHeaderField("Retry-After")?.toLongOrNull()?.coerceIn(1L, RETRY_AFTER_MAX_S) ?: 60L
                         Log.w(TAG, "Rate limited probing $urlString, waiting ${retryAfter}s")
                         delay(retryAfter * 1_000)
                         lastException = Exception("HTTP 429 for $urlString")
@@ -221,7 +223,7 @@ object SupertonicAssetManager {
                 try {
                     val responseCode = conn.responseCode
                     if (responseCode == 429) {
-                        val retryAfter = conn.getHeaderField("Retry-After")?.toLongOrNull() ?: 60L
+                        val retryAfter = conn.getHeaderField("Retry-After")?.toLongOrNull()?.coerceIn(1L, RETRY_AFTER_MAX_S) ?: 60L
                         Log.w(TAG, "Rate limited downloading $url, waiting ${retryAfter}s")
                         delay(retryAfter * 1_000)
                         throw Exception("HTTP 429 for $url")

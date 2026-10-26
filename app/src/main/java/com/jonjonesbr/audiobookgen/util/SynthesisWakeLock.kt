@@ -9,6 +9,9 @@ object SynthesisWakeLock {
     private const val WAKE_LOCK_TAG = "LylyReader:SynthesisWakeLock"
     private const val ACQUIRE_TIMEOUT_MS = 10 * 60 * 1000L
     private var wakeLock: PowerManager.WakeLock? = null
+    // Sínteses podem se sobrepor (ex.: prévia de voz em Ajustes durante a leitura guiada): a trava só é
+    // solta quando a última termina. O timeout de 10 min continua como teto se um release se perder.
+    private var emUso = 0
 
     @Synchronized
     fun acquire(context: Context) {
@@ -17,13 +20,15 @@ object SynthesisWakeLock {
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
             wakeLock?.setReferenceCounted(false)
         }
+        emUso++
         wakeLock?.acquire(ACQUIRE_TIMEOUT_MS)
-        Log.d(TAG, "WakeLock acquired")
+        Log.d(TAG, "WakeLock acquired ($emUso)")
     }
 
     @Synchronized
     fun release() {
-        if (wakeLock?.isHeld == true) {
+        emUso = (emUso - 1).coerceAtLeast(0)
+        if (emUso == 0 && wakeLock?.isHeld == true) {
             wakeLock?.release()
             Log.d(TAG, "WakeLock released")
         }

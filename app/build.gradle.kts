@@ -163,19 +163,23 @@ chaquopy {
     defaultConfig {
         version = "3.11"
         chaquopyBuildPythonOverride?.let { buildPython(it) }
+        // Pacotes Python puros com versão fixa: cada release embute exatamente o mesmo código, e uma mudança
+        // do upstream (ex.: edge-tts, que segue um serviço não oficial) só entra quando a versão for trocada aqui.
+        // aiohttp, Pillow e numpy têm partes nativas e vêm do repositório do Chaquopy, que só oferece algumas
+        // versões por Python: ficam sem fixar para o Chaquopy escolher a compatível.
         pip {
-            install("edge-tts")
+            install("edge-tts==7.3.1")
             install("aiohttp")
-            install("mutagen")
+            install("mutagen==1.48.1")
             install("Pillow")
-            install("pypdf")
-            install("python-docx")
-            install("ebooklib")
-            install("beautifulsoup4")
-            install("httpx")
+            install("pypdf==6.21.2")
+            install("python-docx==1.2.0")
+            install("ebooklib==0.20")
+            install("beautifulsoup4==4.15.0")
+            install("httpx==0.28.1")
             install("numpy")                 // Requerido pelos motores ONNX locais
-            install("olefile")               // Leitura do container OLE2 dos .doc (Word 97-2003)
-            install("mobi")                  // Desempacotamento de .mobi/.azw3 (Kindle) em EPUB/HTML
+            install("olefile==0.47")         // Leitura do container OLE2 dos .doc (Word 97-2003)
+            install("mobi==0.4.1")           // Desempacotamento de .mobi/.azw3 (Kindle) em EPUB/HTML
         }
     }
 }

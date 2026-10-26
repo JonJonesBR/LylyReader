@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/3f099670-c9ce-47a4-8846-af99d97583c0
 ## Highlights
 
 - **Audiobooks from any book:** import a file, or search free public-domain books (Project Gutenberg, Wikisource, Internet Archive) without leaving the app.
-- **Neural voices, online and offline:** Edge, Gemini, ElevenLabs and OpenRouter online; Supertonic, Kokoro, Piper and Pocket offline, on the device.
+- **Neural voices, online and offline:** Edge, Gemini and ElevenLabs online; Supertonic, Kokoro, Piper and Pocket offline, on the device.
 - **Guided reading:** the text follows the narration sentence by sentence, keeps playing in the background, and resumes where you stopped.
 - **Conversion queue:** convert several books in a row, and the queue keeps going with the app closed.
 - **Per-book voice:** each book keeps its own voice, speed and tone, and you can give characters their own voices.
@@ -82,7 +82,7 @@ https://github.com/user-attachments/assets/3f099670-c9ce-47a4-8846-af99d97583c0
 | Italiano | Giuseppe |
 | Korean | Hyunsu |
 
-Online voices come from Microsoft Edge TTS. Gemini, ElevenLabs and OpenRouter voices use your own API key.
+Online voices come from Microsoft Edge TTS. Gemini and ElevenLabs voices use your own API key.
 
 **Downloadable offline packages:**
 
@@ -102,6 +102,7 @@ LylyReader stands on the work of many open-source projects and communities. The 
 ## Security And Privacy
 
 - No account and no analytics. Books, progress and statistics stay on the device.
+- Offline voices read everything on the device. With an online voice (Edge, Gemini, ElevenLabs) or an AI feature (Gemini, OpenRouter), the text being read is sent to the service you chose, under that service's own privacy policy.
 - Voice cloning needs no login in the app: you sign in only in your browser, and your voice sample stays on the device.
 - API keys (Gemini, ElevenLabs, OpenRouter) are stored in the device's encrypted storage and are never sent to this project.
 - Real API keys are not committed to the repository.

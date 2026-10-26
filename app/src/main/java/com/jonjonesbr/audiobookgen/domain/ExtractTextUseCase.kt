@@ -129,6 +129,9 @@ class ExtractTextUseCase(private val context: android.content.Context) {
             }
             com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.gravar(context, chave, texto)
             ExtractionResult.Success(texto)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Sair da tela durante a extração cancela a coroutine: não é erro, não mostra mensagem.
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Erro na extração: ${e.message}", e)
             ExtractionResult.Error(context.getString(R.string.extracao_erro_abrir))

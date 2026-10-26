@@ -14,7 +14,6 @@ object AppPrefsBackup {
             put("motor_tts", appPrefs.motorTts)
             put("voz_selecionada", appPrefs.vozSelecionada ?: "")
             put("pausa_ms", appPrefs.pausaMs)
-            put("bitrate", appPrefs.bitrate)
             put("supertonic_steps", appPrefs.supertonicSteps)
             put("pocket_passos", appPrefs.pocketPassos)
             put("pocket_expressividade", appPrefs.pocketExpressividade)
@@ -51,7 +50,6 @@ object AppPrefsBackup {
             appPrefs.vozSelecionada = voz.ifEmpty { null }
         }
         if (json.has("pausa_ms")) appPrefs.pausaMs = json.optInt("pausa_ms", appPrefs.pausaMs)
-        if (json.has("bitrate")) appPrefs.bitrate = json.optInt("bitrate", appPrefs.bitrate)
         if (json.has("supertonic_steps")) {
             appPrefs.supertonicSteps = json.optInt("supertonic_steps", appPrefs.supertonicSteps)
         }

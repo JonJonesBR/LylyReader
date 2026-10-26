@@ -74,6 +74,7 @@ class GuidedReadingBarController(
     var scrollManual = false
     var aguardandoAutoScroll = false
     var ultimoIndiceGuided = -1
+    private var ultimoEstadoUi: GuidedState? = null
     var ultimoScrollSyncStandard = -1
     var recenteRegistrado = false
 
@@ -183,6 +184,8 @@ class GuidedReadingBarController(
     fun observarGuidedPlayer() {
         lifecycleScope.launch {
             activity.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Ao voltar para a tela, refaz a barra inteira na primeira emissão.
+                ultimoEstadoUi = null
                 guidedPlayerManager.state.collect { guidedState ->
                     atualizarGuidedPlayerUI(guidedState)
                 }
@@ -238,6 +241,16 @@ class GuidedReadingBarController(
     }
 
     private fun atualizarGuidedPlayerUI(guidedState: GuidedState) {
+        // O progresso do parágrafo chega a cada ~50 ms: nesses ticks só move o destaque e a rolagem. Rótulos,
+        // botões e preferências só se refazem quando parágrafo, play/pausa, carregamento ou erro mudam.
+        val soProgresso = guidedState.index >= 0 && guidedState.error == null &&
+            ultimoEstadoUi?.copy(progressPct = guidedState.progressPct) == guidedState
+        ultimoEstadoUi = guidedState
+        if (soProgresso) {
+            if (!scrollManual) manterDestaqueVisivel(guidedState.index, guidedState.progressPct)
+            viewModel.setProgressPct(guidedState.progressPct)
+            return
+        }
         if (guidedState.index == -1) {
             views.layoutGuidedPlayer.visibility = View.GONE
             callbacks.mostrarMiniPlayer()

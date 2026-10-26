@@ -315,6 +315,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 val resultado = withContext(Dispatchers.IO) {
+                    // O texto pode ter vindo do cache, sem o Python ter sido iniciado nesta sessão (ver limparComCache).
+                    val motor = com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase(getApplication<Application>())
+                    check(motor.inicializarMotorSeNecessario()) { "Motor Python indisponível para excluir ocorrências" }
                     Python.getInstance()
                         .getModule("smart_cleaner")
                         .callAttr("remove_global_occurrences", textoAtual.paragrafos.map { it.texto }, trecho)
@@ -339,8 +342,16 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
                         temEdicoes = true
                     )
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("ReaderViewModel", "Erro ao excluir ocorrencias: ${e.message}", e)
+                // Antes falhava em silêncio: o botão "excluir" parecia não fazer nada.
+                android.widget.Toast.makeText(
+                    getApplication<Application>(),
+                    com.jonjonesbr.audiobookgen.R.string.erro_excluir_ocorrencias,
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
             }
         }
     }

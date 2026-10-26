@@ -42,10 +42,6 @@ class AppPrefs(context: Context) {
         get() = p.getInt("pausa_ms", PAUSA_MS_PADRAO)
         set(v) = p.edit().putInt("pausa_ms", v).apply()
 
-    var bitrate: Int
-        get() = p.getInt("bitrate", BITRATE_PADRAO)
-        set(v) = p.edit().putInt("bitrate", v).apply()
-
     /** Dicionário de pronúncia do usuário (JSON: [{"word","spoken"}]). Ver PronunciationDictionary. */
     var pronunciasJson: String
         get() = p.getString("pronuncias_json", "[]") ?: "[]"
@@ -316,7 +312,7 @@ class AppPrefs(context: Context) {
             .remove("pausas_naturais")
             .remove("pausa_final_frase_ms")
             .remove("pausa_ms")
-            .remove("bitrate")
+            .remove("bitrate") // chave antiga: o controle de bitrate saiu (não tinha efeito)
             .remove("supertonic_steps")
             .remove("pocket_passos")
             .remove("pocket_expressividade")
@@ -418,8 +414,6 @@ class AppPrefs(context: Context) {
 
         /** Pausa entre blocos da conversão (ms). */
         private const val PAUSA_MS_PADRAO = 600
-        /** Bitrate padrão de saída (kbps). */
-        private const val BITRATE_PADRAO = 128
         const val POCKET_PASSOS_MIN = 1
         const val POCKET_PASSOS_MAX = 4
         const val DOWNLOADS_SIMULTANEOS_PADRAO = 2

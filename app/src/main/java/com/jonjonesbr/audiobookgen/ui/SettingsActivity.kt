@@ -71,16 +71,6 @@ class SettingsActivity : BasePlayerActivity() {
         btnPausa900 to PAUSA_900_MS, btnPausa1500 to PAUSA_1500_MS
     )
 
-    // Bitrate
-    private lateinit var btnBitrate64: Button
-    private lateinit var btnBitrate128: Button
-    private lateinit var btnBitrate192: Button
-    private lateinit var btnBitrate256: Button
-    private val botoesBitrate get() = listOf(
-        btnBitrate64 to BITRATE_64_KBPS, btnBitrate128 to BITRATE_128_KBPS,
-        btnBitrate192 to BITRATE_192_KBPS, btnBitrate256 to BITRATE_256_KBPS
-    )
-
     // Passos do Supertonic (qualidade x velocidade)
     private lateinit var seekSupertonicSteps: android.widget.SeekBar
     private lateinit var tvSupertonicStepsValor: TextView
@@ -205,11 +195,6 @@ class SettingsActivity : BasePlayerActivity() {
         btnPausa900  = findViewById(R.id.btnPausa900)
         btnPausa1500 = findViewById(R.id.btnPausa1500)
 
-        btnBitrate64  = findViewById(R.id.btnBitrate64)
-        btnBitrate128 = findViewById(R.id.btnBitrate128)
-        btnBitrate192 = findViewById(R.id.btnBitrate192)
-        btnBitrate256 = findViewById(R.id.btnBitrate256)
-
         seekSupertonicSteps    = findViewById(R.id.seekSupertonicSteps)
         tvSupertonicStepsValor = findViewById(R.id.tvSupertonicStepsValor)
         seekPocketPassos       = findViewById(R.id.seekPocketPassos)
@@ -325,12 +310,6 @@ class SettingsActivity : BasePlayerActivity() {
                 getString(R.string.settings_help_pause_message)
             )
         }
-        findViewById<ImageButton>(R.id.btnAjudaBitrate).setOnClickListener {
-            mostrarAjuda(
-                getString(R.string.settings_help_bitrate_title),
-                getString(R.string.settings_help_bitrate_message)
-            )
-        }
     }
 
     private fun carregarConfigAtual() {
@@ -358,9 +337,6 @@ class SettingsActivity : BasePlayerActivity() {
 
         // Pausas
         atualizarBotoesPausa(com.jonjonesbr.audiobookgen.data.AppPrefs(this).pausaMs)
-
-        // Bitrate
-        atualizarBotoesBitrate(appPrefs.bitrate)
 
         val steps = appPrefs.supertonicSteps.coerceIn(STEPS_MIN, STEPS_MAX)
         seekSupertonicSteps.progress = steps - STEPS_MIN
@@ -426,7 +402,7 @@ class SettingsActivity : BasePlayerActivity() {
             false
         }
 
-        configurarListenersPausaEBitrate()
+        configurarListenersPausa()
 
         configurarSupertonicSeekbar()
         configurarPocketPassosSeekbar()
@@ -540,7 +516,6 @@ class SettingsActivity : BasePlayerActivity() {
             .setPositiveButton(R.string.aj_restaurar) { _, _ ->
                 appPrefs.restaurarPadroesDeSom()
                 lifecycleScope.launch {
-                    pythonEngine.setBitrate(appPrefs.bitrate)
                     pythonEngine.sincronizarConfiguracoes(
                         appPrefs.motorTts, SecurePreferences.getGeminiKeys(this@SettingsActivity), appPrefs.pausaMs
                     )
@@ -779,27 +754,6 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
-    // ── Bitrate ──────────────────────────────────────────────────────────────
-
-    private fun salvarBitrate(kbps: Int) {
-        appPrefs.bitrate = kbps
-        atualizarBotoesBitrate(kbps)
-        lifecycleScope.launch {
-            pythonEngine.setBitrate(kbps)
-        }
-    }
-
-    private fun atualizarBotoesBitrate(selecionado: Int) {
-        for ((btn, kbps) in botoesBitrate) {
-            val sel = kbps == selecionado
-            val colorPrimary = ContextCompat.getColor(this, R.color.color_primary)
-            btn.setTextColor(if (sel) colorPrimary
-                else ContextCompat.getColor(this, R.color.color_on_surface_muted))
-            btn.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this,
-                if (sel) R.color.color_primary_surface else R.color.color_surface_variant))
-        }
-    }
-
     /** Extraído de [configurarListeners] pra manter dentro do limite de linhas do detekt. */
     private fun configurarListenerSalvarChave() {
         val chave = etGeminiKey.text.toString().trim()
@@ -1031,15 +985,10 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
-    private fun configurarListenersPausaEBitrate() {
+    private fun configurarListenersPausa() {
         // Pausas
         for ((btn, ms) in botoesPausa) {
             btn.setOnClickListener { salvarPausa(ms) }
-        }
-
-        // Bitrate
-        for ((btn, kbps) in botoesBitrate) {
-            btn.setOnClickListener { salvarBitrate(kbps) }
         }
     }
 
@@ -1243,9 +1192,5 @@ class SettingsActivity : BasePlayerActivity() {
         private const val PAUSA_600_MS = 600
         private const val PAUSA_900_MS = 900
         private const val PAUSA_1500_MS = 1500
-        private const val BITRATE_64_KBPS = 64
-        private const val BITRATE_128_KBPS = 128
-        private const val BITRATE_192_KBPS = 192
-        private const val BITRATE_256_KBPS = 256
     }
 }

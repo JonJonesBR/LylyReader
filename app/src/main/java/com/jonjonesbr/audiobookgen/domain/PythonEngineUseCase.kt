@@ -148,17 +148,6 @@ class PythonEngineUseCase(private val context: Context) {
         mod.callAttr("set_pronunciations", dicionarioEfetivo.toJson())
     }
 
-    /** Ajusta o bitrate de saída (kbps) do áudio gerado. */
-    suspend fun setBitrate(kbps: Int) = withContext(Dispatchers.IO) {
-        try {
-            if (!inicializarMotorSeNecessario()) return@withContext
-            Python.getInstance().getModule("audiobook_android")
-                .callAttr("set_config", "audio_bitrate_kbps", kbps)
-        } catch (e: Exception) {
-            Log.e(TAG, "Erro ao ajustar bitrate: ${e.message}")
-        }
-    }
-
     /** Consulta o tamanho atual do cache de áudio do lado Python (chunks de Edge/Gemini). */
     suspend fun obterInfoCache(): CacheInfo? = withContext(Dispatchers.IO) {
         try {

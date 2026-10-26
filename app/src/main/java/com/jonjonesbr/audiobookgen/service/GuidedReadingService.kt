@@ -21,6 +21,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** Comando que uma ação do Intent do [GuidedReadingService] pede. */
@@ -210,8 +212,11 @@ class GuidedReadingService : Service() {
         val token = manager.sessionToken
         tokenObservado = token
         observeJob = scope.launch {
-            manager.state.collect { st ->
-                if (st.index == -1) {
+            // O estado é publicado a cada ~50 ms (progresso do parágrafo); a notificação e a MediaSession só
+            // mostram parágrafo e play/pausa, então só se refazem quando um desses muda (a soneca tem coletor
+            // próprio). Antes eram ~20 notify() por segundo: bateria, main thread e notificações descartadas.
+            manager.state.map { it.index to it.isPlaying }.distinctUntilChanged().collect { (index, isPlaying) ->
+                if (index == -1) {
                     // Só encerra o serviço se este evento ainda vier da sessão vigente. Uma
                     // sessão antiga (já substituída por um novo GuidedPlayerManager, ex.:
                     // troca de livro) que emita index=-1 atrasada não deve derrubar o serviço
@@ -224,8 +229,8 @@ class GuidedReadingService : Service() {
                         pararServico()
                     }
                 } else {
-                    atualizarEstadoMediaSession(st.isPlaying)
-                    notificar(construirNotificacao(st.index, st.isPlaying))
+                    atualizarEstadoMediaSession(isPlaying)
+                    notificar(construirNotificacao(index, isPlaying))
                 }
             }
         }

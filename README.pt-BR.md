@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/f04b1f61-9b0e-4409-a057-1c1c3fb67679
 ## Destaques
 
 - **Audiolivro de qualquer livro:** importe um arquivo ou busque livros gratuitos de domínio público (Projeto Gutenberg, Wikisource, Internet Archive) sem sair do app.
-- **Vozes neurais, online e offline:** Edge, Gemini, ElevenLabs e OpenRouter online; Supertonic, Kokoro, Piper e Pocket offline, no próprio aparelho.
+- **Vozes neurais, online e offline:** Edge, Gemini e ElevenLabs online; Supertonic, Kokoro, Piper e Pocket offline, no próprio aparelho.
 - **Leitura guiada:** o texto acompanha a narração frase a frase, continua tocando em segundo plano e retoma de onde você parou.
 - **Fila de conversões:** converta vários livros seguidos; a fila continua mesmo com o app fechado.
 - **Voz por livro:** cada livro guarda a sua voz, velocidade e tom, e você pode dar vozes diferentes aos personagens.
@@ -82,7 +82,7 @@ https://github.com/user-attachments/assets/f04b1f61-9b0e-4409-a057-1c1c3fb67679
 | Italiano | Giuseppe |
 | Coreano | Hyunsu |
 
-As vozes online vêm do Microsoft Edge TTS. As vozes do Gemini, do ElevenLabs e do OpenRouter usam a sua própria chave de API.
+As vozes online vêm do Microsoft Edge TTS. As vozes do Gemini e do ElevenLabs usam a sua própria chave de API.
 
 **Pacotes offline para baixar:**
 
@@ -98,6 +98,7 @@ Cada pacote offline mantém a sua própria licença. Confira o [THIRD_PARTY_LICE
 ## Segurança e privacidade
 
 - Sem conta e sem análises de uso. Livros, progresso e estatísticas ficam no aparelho.
+- As vozes offline leem tudo no próprio aparelho. Com uma voz online (Edge, Gemini, ElevenLabs) ou um recurso de IA (Gemini, OpenRouter), o texto lido é enviado ao serviço que você escolheu, sob a política de privacidade dele.
 - A clonagem de voz não pede login no app: você entra na sua conta só pelo navegador, e a amostra da sua voz fica no aparelho.
 - As chaves de API (Gemini, ElevenLabs, OpenRouter) ficam no armazenamento criptografado do aparelho e nunca são enviadas a este projeto.
 - Chaves reais de API não são versionadas no repositório.
