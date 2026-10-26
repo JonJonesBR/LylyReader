@@ -362,7 +362,15 @@ class MeusLivrosActivity : BasePlayerActivity() {
     private fun tocarContinuar(livro: LivroBiblioteca) {
         val manager = GuidedPlaybackBridge.manager
         if (manager != null && guiadaAbertaDe(caminhoDe(livro))) {
-            if (manager.state.value.isPlaying) manager.pause() else manager.resume()
+            val estado = manager.state.value
+            if (estado.isPlaying) {
+                manager.pause()
+            } else {
+                manager.resume()
+                // Não retomou (sessão sem como continuar daqui): abre o leitor, que continua de onde parou.
+                val depois = manager.state.value
+                if (!depois.isPlaying && !depois.isLoading) abrirLivro(livro, continuarGuiada = true)
+            }
         } else {
             abrirLivro(livro, continuarGuiada = true)
         }

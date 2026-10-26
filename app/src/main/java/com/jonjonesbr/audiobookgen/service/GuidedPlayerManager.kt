@@ -541,8 +541,10 @@ class GuidedPlayerManager(
         // numa instância do manager — cada troca de livro cria um GuidedPlayerManager novo,
         // e um campo de instância aqui resetaria implicitamente a cada troca, disparando
         // start() de novo mesmo com o serviço já rodando. Ver GuidedReadingService.ativo.
-        if (!GuidedReadingService.ativo) {
-            GuidedReadingService.start(context)
+        // Serviço vivo mas preso a outra sessão (livro anterior): pede para acompanhar esta.
+        if (!GuidedReadingService.ativo || GuidedReadingService.tokenObservado != sessionToken) {
+            runCatching { GuidedReadingService.start(context) }
+                .onFailure { CrashLogWriter.log(it, "GuidedPlayerManager.iniciarServico") }
         }
 
         // Re-initialize engine in case of engine preferences change
@@ -1063,6 +1065,13 @@ class GuidedPlayerManager(
     }
 
     fun resume() {
+        // Índice perdido (ex.: o conteúdo foi recarregado) com a leitura ainda na tela: recomeça o
+        // parágrafo que o estado mostra, em vez de ignorar o toque em "tocar".
+        val doEstado = _state.value.index
+        if (currentIndex !in paragraphs.indices && doEstado in paragraphs.indices) {
+            play(doEstado)
+            return
+        }
         if (currentIndex >= 0 && currentIndex < paragraphs.size) {
             val estavaSemAudio = pausadoSemAudio
             pausadoPeloUsuario = false

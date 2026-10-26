@@ -81,6 +81,11 @@ class GuidedReadingService : Service() {
         var ativo: Boolean = false
             private set
 
+        /** Token da sessão que a notificação acompanha agora (null: nenhuma). */
+        @Volatile
+        var tokenObservado: Long? = null
+            private set
+
         fun start(context: Context) {
             val intent = Intent(context, GuidedReadingService::class.java).apply { action = ACTION_START }
             context.startForegroundService(intent)
@@ -193,6 +198,7 @@ class GuidedReadingService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         ativo = false
+        tokenObservado = null
         scope.cancel()
         mediaSession?.release()
         mediaSession = null
@@ -202,6 +208,7 @@ class GuidedReadingService : Service() {
         observeJob?.cancel()
         val manager = GuidedPlaybackBridge.manager ?: return
         val token = manager.sessionToken
+        tokenObservado = token
         observeJob = scope.launch {
             manager.state.collect { st ->
                 if (st.index == -1) {
@@ -209,7 +216,11 @@ class GuidedReadingService : Service() {
                     // sessão antiga (já substituída por um novo GuidedPlayerManager, ex.:
                     // troca de livro) que emita index=-1 atrasada não deve derrubar o serviço
                     // que já está a serviço da sessão nova.
-                    if (GuidedPlaybackBridge.currentToken == token) {
+                    // stop() desliga o bridge ANTES de publicar index=-1, então aqui o token vigente já é
+                    // null: antes o serviço não parava e ficava preso à sessão encerrada (notificação
+                    // congelada e play/pausa sem efeito na sessão seguinte).
+                    val vigente = GuidedPlaybackBridge.currentToken
+                    if (vigente == null || vigente == token) {
                         pararServico()
                     }
                 } else {
@@ -236,6 +247,7 @@ class GuidedReadingService : Service() {
     private fun pararServico() {
         observeJob?.cancel()
         observeJob = null
+        tokenObservado = null
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
