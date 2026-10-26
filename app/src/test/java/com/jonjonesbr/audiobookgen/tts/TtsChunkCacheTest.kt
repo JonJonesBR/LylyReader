@@ -168,14 +168,23 @@ class TtsChunkCacheTest {
     }
 
     @Test
-    fun passosDoPocketDiferentesDoPadraoMudamARevisaoSoDoPocket() {
+    fun passosMudamARevisaoDoPocketForaDoPadraoEDoSupertonicSempre() {
         val base = "rev"
         assertEquals("rev", TtsChunkCache.revisaoComPassos(base, "pocket-ptbr-rafael", 1))
         assertEquals("rev-passos3", TtsChunkCache.revisaoComPassos(base, "pocket-ptbr-rafael", 3))
-        assertEquals("rev", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 12))
+        assertEquals("rev-passos5", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 5))
+        assertEquals("rev-passos12", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 12))
         assertEquals("rev-passos4", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 4))
         assertEquals("rev", TtsChunkCache.revisaoComPassos(base, "kokoro-pf-dora", 3))
         assertEquals("rev", TtsChunkCache.revisaoComPassos(base, "piper-ptbr-cadu::main-pt", 4))
+    }
+
+    @Test
+    fun expressividadeForaDoPadraoMudaARevisaoSoDoPocket() {
+        val padrao = com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_EXPRESSIVIDADE_PADRAO
+        assertEquals("rev", TtsChunkCache.revisaoComExpressividade("rev", "pocket-ptbr-rafael", padrao))
+        assertEquals("rev-temp7", TtsChunkCache.revisaoComExpressividade("rev", "pocket-ptbr-rafael", 7))
+        assertEquals("rev", TtsChunkCache.revisaoComExpressividade("rev", "supertonic-f4-pt", 7))
     }
 
     @Test

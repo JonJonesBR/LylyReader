@@ -181,11 +181,18 @@ object GuidedVoiceOptionsDialog {
                 AppPrefs.SUPERTONIC_STEPS_MIN, AppPrefs.SUPERTONIC_STEPS_MAX, prefs.supertonicSteps,
                 { activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, it, it) }
             ) { prefs.supertonicSteps = it; aoMudar() }
-            "pocket" -> controleDeslizante(
-                activity, pai, R.string.settings_pocket_steps_title, R.string.settings_pocket_steps_desc,
-                AppPrefs.POCKET_PASSOS_MIN, AppPrefs.POCKET_PASSOS_MAX, prefs.pocketPassos,
-                { activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, it, it) }
-            ) { prefs.pocketPassos = it; aoMudar() }
+            "pocket" -> {
+                controleDeslizante(
+                    activity, pai, R.string.settings_pocket_steps_title, R.string.settings_pocket_steps_desc,
+                    AppPrefs.POCKET_PASSOS_MIN, AppPrefs.POCKET_PASSOS_MAX, prefs.pocketPassos,
+                    { activity.resources.getQuantityString(R.plurals.settings_steps_value_qtd, it, it) }
+                ) { prefs.pocketPassos = it; aoMudar() }
+                controleDeslizante(
+                    activity, pai, R.string.pocket_expr_titulo, R.string.pocket_expr_desc,
+                    AppPrefs.POCKET_EXPRESSIVIDADE_MIN, AppPrefs.POCKET_EXPRESSIVIDADE_MAX, prefs.pocketExpressividade,
+                    { NaturalidadeVozUi.rotuloExpressividade(activity, it) }
+                ) { prefs.pocketExpressividade = it; aoMudar() }
+            }
         }
         if (motor in MOTORES_COM_PAUSA_ENTRE_FRASES && !prefs.pausasNaturais) {
             controleDeslizante(

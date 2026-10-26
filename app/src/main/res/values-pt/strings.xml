@@ -1217,7 +1217,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="status_amostra_onnx_falha">⚠ Falha ao gerar a amostra ONNX. Verifique se o modelo foi baixado.</string>
     <string name="status_amostra_falha">⚠ Falha ao gerar a amostra.</string>
     <string name="settings_supertonic_passos_titulo">Passos do Supertonic</string>
-    <string name="settings_supertonic_passos_desc">Controla a qualidade x velocidade da síntese das vozes Supertonic. Menos passos = mais rápido; mais passos = melhor qualidade. Recomendado: 4.</string>
+    <string name="settings_supertonic_passos_desc">Controla a qualidade x velocidade da síntese das vozes Supertonic. Menos passos = mais rápido; mais passos = melhor qualidade. Padrão: 5. Vale para a leitura guiada e para a geração de audiobooks.</string>
     <!-- Assistente que libera a clonagem com o arquivo oficial da Kyutai (sem login no app) -->
     <string name="clone_prep_title_intro">Liberar a clonagem de voz</string>
     <string name="clone_prep_intro">Para clonar uma voz, o app precisa de um arquivo gratuito da Kyutai, a empresa que criou o Pocket TTS. Você vai fazer 4 passos simples, uma única vez:\n\n1. Entrar no site Hugging Face com uma conta gratuita\n2. Aceitar os termos de uso da Kyutai\n3. Baixar o arquivo (cerca de 220 MB, de preferência no Wi-Fi)\n4. Trazer o arquivo para o app\n\nVocê entra na conta só pelo navegador. O app nunca vê nem guarda a sua senha.</string>
@@ -1538,4 +1538,18 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="perm_toque_para_permitir">Toque para permitir</string>
     <string name="perm_permitir_tudo">Permitir</string>
     <string name="livros_acervo">Acervo</string>
+    <string name="aj_secao_naturalidade">Naturalidade da voz (experimental)</string>
+    <string name="aj_entonacao_continua">Entonação contínua</string>
+    <string name="aj_entonacao_continua_sub">Lê frases seguidas de uma vez, sem “fechar” a voz em cada ponto. Supertonic e Pocket, na leitura guiada.</string>
+    <string name="aj_acabamento_audio">Acabamento do áudio</string>
+    <string name="aj_acabamento_audio_sub">Iguala o volume das vozes baixadas. Na leitura guiada, também corta silêncios extras entre as frases.</string>
+    <string name="aj_dialogos_vivos">Diálogos com mais vida</string>
+    <string name="aj_dialogos_vivos_sub">As falas dos personagens ficam um pouco mais agudas e rápidas que a narração. Leitura guiada.</string>
+    <string name="pocket_expr_titulo">Expressividade do Pocket TTS</string>
+    <string name="pocket_expr_desc">Mais alta deixa a entonação mais viva e variada, com mais risco de pequenas falhas. Mais baixa soa mais contida e estável. Vale para a leitura guiada e para a geração de audiobooks.</string>
+    <string name="pocket_expr_valor">%1$s · %2$s</string>
+    <string name="pocket_expr_minima">Mínima</string>
+    <string name="pocket_expr_padrao">Padrão</string>
+    <string name="pocket_expr_expressiva">Expressiva</string>
+    <string name="pocket_expr_maxima">Máxima</string>
 </resources>

@@ -50,33 +50,44 @@ object TtsChunkCache {
         return bytes.joinToString("") { "%02x".format(it) }.take(TAMANHO_HASH_HEX)
     }
 
-    /** Revisão do modelo + opções que mudam o áudio (passos do Pocket diferentes do padrão). */
+    /** Revisão do modelo + opções que mudam o áudio (passos e, no Pocket, a expressividade). */
     internal fun revisaoModelo(context: Context, voice: String, texto: String): String {
-        val passos = runCatching {
-            when {
-                voice.startsWith("pocket-") -> com.jonjonesbr.audiobookgen.data.AppPrefs(context).pocketPassos
-                voice.startsWith("supertonic-") -> com.jonjonesbr.audiobookgen.data.AppPrefs(context).supertonicSteps
-                else -> 0
-            }
-        }.getOrDefault(0)
+        val prefs = runCatching { com.jonjonesbr.audiobookgen.data.AppPrefs(context) }.getOrNull()
+        val passos = when {
+            prefs == null -> 0
+            voice.startsWith("pocket-") -> prefs.pocketPassos
+            voice.startsWith("supertonic-") -> prefs.supertonicSteps
+            else -> 0
+        }
         val v1Pronto = voice.startsWith("supertonic-") &&
             runCatching { SupertonicAssetManager.isV1Ready(context) }.getOrDefault(false)
-        return revisaoComPassos(revisaoModelo(voice, texto, v1Pronto), voice, passos)
+        val comPassos = revisaoComPassos(revisaoModelo(voice, texto, v1Pronto), voice, passos)
+        val expressividade = prefs?.pocketExpressividade
+            ?: com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_EXPRESSIVIDADE_PADRAO
+        return revisaoComExpressividade(comPassos, voice, expressividade)
     }
 
     /**
-     * Pocket e Supertonic com passos diferentes do padrão do motor ganham sufixo (o cache padrão não
-     * muda); os passos alteram o áudio, então não podem reaproveitar o de outro valor.
+     * Os passos alteram o áudio, então um valor não reaproveita o cache de outro. Pocket com o padrão fica
+     * sem sufixo; o Supertonic leva sempre os passos na chave, porque o padrão mudou (12 → 5) e o cache sem
+     * sufixo foi gerado com 12.
      */
-    internal fun revisaoComPassos(base: String, voice: String, passos: Int): String {
-        val prefs = com.jonjonesbr.audiobookgen.data.AppPrefs
-        val padrao = when {
-            voice.startsWith("pocket-") -> prefs.POCKET_PASSOS_PADRAO
-            voice.startsWith("supertonic-") -> prefs.SUPERTONIC_STEPS_PADRAO
-            else -> return base
-        }
-        return if (passos == padrao) base else "$base-passos$passos"
+    internal fun revisaoComPassos(base: String, voice: String, passos: Int): String = when {
+        voice.startsWith("supertonic-") -> "$base-passos$passos"
+        voice.startsWith("pocket-") && passos != com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_PADRAO ->
+            "$base-passos$passos"
+        else -> base
     }
+
+    /** Expressividade do Pocket (temperatura em décimos) fora do padrão ganha sufixo; o padrão mantém o cache. */
+    internal fun revisaoComExpressividade(base: String, voice: String, decimos: Int): String =
+        if (voice.startsWith("pocket-") &&
+            decimos != com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_EXPRESSIVIDADE_PADRAO
+        ) {
+            "$base-temp$decimos"
+        } else {
+            base
+        }
 
     fun file(
         context: Context,
@@ -117,9 +128,11 @@ object TtsChunkCache {
         voice: String,
         speedPct: Int,
         text: String,
+        acabamento: AcabamentoAudio.Modo = AcabamentoAudio.Modo.NENHUM,
         synthesize: suspend (File) -> Boolean
     ): File? {
-        val target = file(context, voice, speedPct, text)
+        // O acabamento muda o arquivo guardado (bordas e volume): não reaproveita o áudio cru, nem o contrário.
+        val target = file(context, voice, speedPct, text, revisaoModelo(context, voice, text) + acabamento.sufixo)
         if (arquivoValido(target)) {
             target.setLastModified(System.currentTimeMillis())  // uso recente: entra por último na fila de limpeza
             return target
@@ -143,6 +156,7 @@ object TtsChunkCache {
             if (!parent.exists() && !parent.mkdirs()) return null
             temporary = File.createTempFile("tts_", ".tmp", parent)
             if (!synthesize(temporary) || !arquivoValido(temporary)) return null
+            AcabamentoAudio.aplicar(temporary, acabamento)
 
             Files.move(
                 temporary.toPath(),
@@ -174,7 +188,8 @@ object TtsChunkCache {
         output: File,
         synthesize: (File) -> Boolean
     ): Boolean = runBlocking {
-        val cached = getOrSynthesize(context, voice, speedPct, text) { temporary ->
+        val acabamento = AcabamentoAudio.modoNaConversao(context)
+        val cached = getOrSynthesize(context, voice, speedPct, text, acabamento) { temporary ->
             synthesize(temporary)
         } ?: return@runBlocking false
         cached.copyTo(output, overwrite = true)

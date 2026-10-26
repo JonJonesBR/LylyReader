@@ -125,6 +125,7 @@
     <ID>LongParameterList:SpeakerVoiceSuggesterTest.kt$SpeakerVoiceSuggesterTest$( id: String, masculina: Boolean, idioma: String = "pt-BR", generoConhecido: Boolean = true, generica: Boolean = false, baixarNoSistema: Boolean = false, motor: String = "kokoro" )</ID>
     <ID>LongParameterList:SupertonicTTS.kt$SupertonicTTS$(ptr: Long, text: String, lang: String, stylePath: String, speed: Float, bufferSeconds: Float, steps: Int, gain: Float)</ID>
     <ID>LongParameterList:SupertonicTTS.kt$SupertonicTTS$(text: String, lang: String, stylePath: String, speed: Float = 1.0f, bufferDuration: Float = 0.0f, steps: Int = 12, gain: Float = 1.0f, listener: ProgressListener? = null)</ID>
+    <ID>LongParameterList:TtsChunkCache.kt$TtsChunkCache$( context: Context, voice: String, speedPct: Int, text: String, acabamento: AcabamentoAudio.Modo = AcabamentoAudio.Modo.NENHUM, synthesize: suspend (File) -&gt; Boolean )</ID>
     <ID>LongParameterList:TtsChunkCache.kt$TtsChunkCache$( context: Context, voice: String, speedPct: Int, text: String, output: File, synthesize: (File) -&gt; Boolean )</ID>
     <ID>LongParameterList:VideoExportUseCase.kt$VideoExportUseCase$( audioFile: File, capa: Bitmap?, pastaSaida: File, opcoes: OpcoesVideo = OpcoesVideo(), fronteirasCapituloUs: List&lt;Long&gt; = emptyList(), onProgress: (Int) -&gt; Unit = {}, onParte: (Int) -&gt; Unit = {} )</ID>
     <ID>LongParameterList:VoiceBottomSheet.kt$VoiceBottomSheet$( voices: List&lt;VoiceOption&gt;, selectedVoiceId: String?, onVoiceSelected: (VoiceOption) -&gt; Unit, onVoicePreview: ((VoiceOption, onFinished: () -&gt; Unit) -&gt; Unit)? = null, onAndroidVoiceRequested: (() -&gt; Unit)? = null, onCloneVoiceRequested: (() -&gt; Unit)? = null, restorable: Boolean = true )</ID>
@@ -998,7 +999,7 @@
     <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$@Synchronized fun isInitialized(modelPath: String): Boolean</ID>
     <ID>ReturnCount:SupertonicTTS.kt$SupertonicTTS$private fun fallbackChunkText(text: String, lang: String): String</ID>
     <ID>ReturnCount:TtsChunkCache.kt$TtsChunkCache$internal fun arquivoValido(file: File): Boolean</ID>
-    <ID>ReturnCount:TtsChunkCache.kt$TtsChunkCache$suspend fun getOrSynthesize( context: Context, voice: String, speedPct: Int, text: String, synthesize: suspend (File) -&gt; Boolean ): File?</ID>
+    <ID>ReturnCount:TtsChunkCache.kt$TtsChunkCache$suspend fun getOrSynthesize( context: Context, voice: String, speedPct: Int, text: String, acabamento: AcabamentoAudio.Modo = AcabamentoAudio.Modo.NENHUM, synthesize: suspend (File) -&gt; Boolean ): File?</ID>
     <ID>ReturnCount:VersaoSupertonic.kt$fun idiomaNativoSupertonic(voiceId: String, texto: String, versao: String): String</ID>
     <ID>ReturnCount:VideoExportService.kt$VideoExportService$private suspend fun gerar(pedido: PedidoVideo, pasta: File): Result&lt;Int&gt;</ID>
     <ID>ReturnCount:VoiceBottomSheet.kt$VoiceBottomSheet.Companion$internal fun voiceFromBundle(bundle: Bundle?): VoiceOption?</ID>

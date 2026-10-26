@@ -86,6 +86,7 @@ class SettingsActivity : BasePlayerActivity() {
     private lateinit var tvSupertonicStepsValor: TextView
     // Passos do Pocket TTS (experimental)
     private lateinit var seekPocketPassos: android.widget.SeekBar
+    private val naturalidade by lazy { NaturalidadeVozUi(this) }
     private lateinit var tvPocketPassosValor: TextView
 
     // Pausa entre frases na leitura guiada com kokoro
@@ -172,6 +173,7 @@ class SettingsActivity : BasePlayerActivity() {
         configurarTabsSettings()
         carregarConfigAtual()
         configurarListeners()
+        naturalidade.vincular()
         tratarExtraFocoChave()
     }
 
@@ -544,6 +546,7 @@ class SettingsActivity : BasePlayerActivity() {
                     )
                 }
                 carregarConfigAtual()
+                naturalidade.carregar()
                 Toast.makeText(this, R.string.aj_restaurado, Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton(android.R.string.cancel, null)

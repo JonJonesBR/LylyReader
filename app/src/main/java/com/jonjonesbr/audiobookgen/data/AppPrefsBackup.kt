@@ -17,6 +17,10 @@ object AppPrefsBackup {
             put("bitrate", appPrefs.bitrate)
             put("supertonic_steps", appPrefs.supertonicSteps)
             put("pocket_passos", appPrefs.pocketPassos)
+            put("pocket_expressividade", appPrefs.pocketExpressividade)
+            put("entonacao_continua", appPrefs.entonacaoContinua)
+            put("acabamento_audio", appPrefs.acabamentoAudio)
+            put("dialogos_vivos", appPrefs.dialogosVivos)
             put("teto_cache_audio_mb", appPrefs.tetoCacheAudioMb)
             put("timbre_tom_meios_tons", appPrefs.tomVozMeiosTons)
             put("timbre_agudos_db", appPrefs.suavizarAgudosDb)
@@ -107,6 +111,17 @@ object AppPrefsBackup {
             appPrefs.blacklistWordsJson = json.optString("blacklist_words", appPrefs.blacklistWordsJson)
         }
         aplicarReaderPrefs(appPrefs, json)
+        aplicarNaturalidade(appPrefs, json)
+    }
+
+    /** Expressividade do Pocket e as opções de "Naturalidade da voz". */
+    private fun aplicarNaturalidade(appPrefs: AppPrefs, json: JSONObject) {
+        if (json.has("pocket_expressividade")) {
+            appPrefs.pocketExpressividade = json.optInt("pocket_expressividade", appPrefs.pocketExpressividade)
+        }
+        appPrefs.entonacaoContinua = json.optBoolean("entonacao_continua", appPrefs.entonacaoContinua)
+        appPrefs.acabamentoAudio = json.optBoolean("acabamento_audio", appPrefs.acabamentoAudio)
+        appPrefs.dialogosVivos = json.optBoolean("dialogos_vivos", appPrefs.dialogosVivos)
     }
 
     private fun aplicarReaderPrefs(appPrefs: AppPrefs, json: JSONObject) {

@@ -86,6 +86,11 @@ class GuidedPlayerManager(
         private const val ESPERA_PRERENDER_MS = 1_000L
         private const val ESPERA_PAUSA_MS = 100L
         private const val LIMITE_TOM_TOTAL_MEIOS_TONS = 12
+        /** "Diálogos com mais vida": fala um semitom acima (2 meios-tons) e 6% mais rápida que a narração. */
+        private const val TOM_EXTRA_DIALOGOS_VIVOS = 2
+        private const val FATOR_VELOCIDADE_DIALOGOS_VIVOS = 1.06f
+        /** "Entonação contínua": até quanto juntar frases (o mesmo limite por chamada do Supertonic). */
+        private const val TETO_ENTONACAO_CONTINUA = com.jonjonesbr.audiobookgen.tts.TrechosSupertonic.MAX_CHARS
         private const val MAX_FALHAS_PRERENDER = 5
         // Quantas orações ANTES da última o handoff pro próximo parágrafo é disparado (ver
         // uso em tocarParagrafoPorOracoes) — 2 dá ~2 orações de folga extra de parede pro
@@ -315,6 +320,21 @@ class GuidedPlayerManager(
         }
     }
 
+    /**
+     * Unidades de fala do parágrafo no modo oração. Com "Entonação contínua" (Supertonic e Pocket), frases
+     * seguidas vão juntas até [TETO_ENTONACAO_CONTINUA]: o motor dá a entonação do trecho todo, em vez de
+     * "fechar" a voz em cada ponto. Kokoro fica de fora (mais lento que a fala: unidades maiores atrasariam).
+     */
+    private fun oracoesDoParagrafo(texto: String, voz: String): List<OracaoGuia> {
+        val oracoes = DivisorDeOracoes.dividirEmOracoes(texto)
+        val continua = appPrefs.entonacaoContinua && (voz.startsWith("supertonic-") || voz.startsWith("pocket-"))
+        return if (continua) {
+            DivisorDeOracoes.agruparOracoesCurta(oracoes, TETO_ENTONACAO_CONTINUA, TETO_ENTONACAO_CONTINUA)
+        } else {
+            DivisorDeOracoes.agruparOracoesCurta(oracoes)
+        }
+    }
+
     private fun timbreAtual() = ajustesDeAudio().let {
         com.jonjonesbr.audiobookgen.player.TimbreVoz(it.tomMeiosTons, it.agudosDb)
     }
@@ -324,17 +344,27 @@ class GuidedPlayerManager(
     /**
      * Timbre da oração/parágrafo prestes a tocar: o do livro, mais o "tom nas falas" quando o trecho é fala
      * ou citação (o narrador "faz a voz" do personagem). [partes] vem da análise do parágrafo, null = sem fala.
+     * Com "Diálogos com mais vida", a fala sobe mais um pouco. Devolve o fator de velocidade do trecho:
+     * a fala, nesse modo, também fica um pouco mais rápida que a narração.
      */
-    private fun aplicarTimbreDoTrecho(partes: List<OfflineSpeakerAttributor.ParagraphPart>?, ini: Int, tamanho: Int, total: Int) {
-        val ajustes = ajustesDeAudio()
+    private fun aplicarTimbreDoTrecho(
+        partes: List<OfflineSpeakerAttributor.ParagraphPart>?,
+        ini: Int,
+        tamanho: Int,
+        total: Int
+    ): Float {
+        val vivos = appPrefs.dialogosVivos
+        val tomFalas = ajustesDeAudio().tomNasFalasMeiosTons + if (vivos) TOM_EXTRA_DIALOGOS_VIVOS else 0
         var timbre = timbreAtual()
-        if (ajustes.tomNasFalasMeiosTons != 0 && partes != null && FalaNoTrecho.ehFala(partes, ini, tamanho, total)) {
+        val ehFala = tomFalas != 0 && partes != null && FalaNoTrecho.ehFala(partes, ini, tamanho, total)
+        if (ehFala) {
             timbre = timbre.copy(
-                meiosTons = (timbre.meiosTons + ajustes.tomNasFalasMeiosTons)
+                meiosTons = (timbre.meiosTons + tomFalas)
                     .coerceIn(-LIMITE_TOM_TOTAL_MEIOS_TONS, LIMITE_TOM_TOTAL_MEIOS_TONS)
             )
         }
         if (timbre != timbreAplicado) fixarTimbre(timbre)
+        return if (ehFala && vivos) FATOR_VELOCIDADE_DIALOGOS_VIVOS else 1f
     }
 
     private fun fixarTimbre(timbre: com.jonjonesbr.audiobookgen.player.TimbreVoz) {
@@ -343,7 +373,11 @@ class GuidedPlayerManager(
     }
 
     private fun partesParaTomDasFalas(paragrafo: String): List<OfflineSpeakerAttributor.ParagraphPart>? =
-        if (ajustesDeAudio().tomNasFalasMeiosTons == 0) null else OfflineSpeakerAttributor.partsOf(paragrafo)
+        if (ajustesDeAudio().tomNasFalasMeiosTons == 0 && !appPrefs.dialogosVivos) {
+            null
+        } else {
+            OfflineSpeakerAttributor.partsOf(paragrafo)
+        }
 
     /** Aplica já o timbre salvo nas preferências ao áudio em reprodução (diálogo de timbre). */
     fun aplicarTimbre() {
@@ -566,9 +600,7 @@ class GuidedPlayerManager(
                 // na seguinte (rajada de unidades minúsculas deixava o pipeline sem áudio
                 // pronto — silêncio a cada ponto final).
                 val oracoes = if (usaPipelineDeOracoes(motorEfetivo)) {
-                    DivisorDeOracoes.agruparOracoesCurta(
-                        DivisorDeOracoes.dividirEmOracoes(paragraphText)
-                    )
+                    oracoesDoParagrafo(paragraphText, voz)
                 } else {
                     emptyList()
                 }
@@ -623,8 +655,10 @@ class GuidedPlayerManager(
                         Log.d(TAG, "Playing paragraph $index: $audioPath")
                         currentBaseSpeed = speedVal
                         aguardarRetomada()
-                        aplicarTimbreDoTrecho(partesParaTomDasFalas(paragraphText), 0, paragraphText.length, paragraphText.length)
-                        playerEngine?.play(audioFile, speedVal * speedMultiplier)
+                        val fatorFala = aplicarTimbreDoTrecho(
+                            partesParaTomDasFalas(paragraphText), 0, paragraphText.length, paragraphText.length
+                        )
+                        playerEngine?.play(audioFile, speedVal * speedMultiplier * fatorFala)
                         _state.update { GuidedState(index, isPlaying = true, isLoading = false) }
                         startProgressPolling()
                         
@@ -797,9 +831,7 @@ class GuidedPlayerManager(
         alvoProximoParagrafo = Triple(proximo, voz, ritmo)
         proximoParagrafoJob = coroutineScope.launch {
             val texto = paragraphs[proximo].texto
-            val unidades = DivisorDeOracoes.agruparOracoesCurta(
-                DivisorDeOracoes.dividirEmOracoes(texto)
-            )
+            val unidades = oracoesDoParagrafo(texto, voz)
             if (unidades.isEmpty()) return@launch
             if (unidades.size == 1) {
                 val ph = texto.hashCode()
@@ -930,8 +962,10 @@ class GuidedPlayerManager(
                 // bastante, o callback de conclusão veria oracaoCompletada ainda null.
                 aguardarRetomada()
                 oracaoCompletada = CompletableDeferred()
-                aplicarTimbreDoTrecho(partesDasFalas, oracao.charsAcumulados, oracao.texto.length, totalDasOracoes)
-                playerEngine?.play(audioFile, speedVal * speedMultiplier)
+                val fatorFala = aplicarTimbreDoTrecho(
+                    partesDasFalas, oracao.charsAcumulados, oracao.texto.length, totalDasOracoes
+                )
+                playerEngine?.play(audioFile, speedVal * speedMultiplier * fatorFala)
                 if (posicao == 0) {
                     currentBaseSpeed = speedVal
                     _state.update { GuidedState(currentIndex, isPlaying = true, isLoading = false) }

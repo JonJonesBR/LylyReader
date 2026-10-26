@@ -24,6 +24,7 @@ object PocketProcessClient {
     private const val TAG = "PocketProcessClient"
     private const val BIND_TIMEOUT_MS = 15_000L
     private const val LIMITE_LENTO_MS = 30_000L
+    private const val DECIMOS = 10f
     private val bindMutex = Mutex()
     private val synthSemaphore = Semaphore(1)
 
@@ -32,13 +33,15 @@ object PocketProcessClient {
 
     suspend fun synthesize(context: Context, text: String, voiceId: String, output: File): String? {
         val appContext = context.applicationContext
-        val passos = com.jonjonesbr.audiobookgen.data.AppPrefs(appContext).pocketPassos
+        val prefs = com.jonjonesbr.audiobookgen.data.AppPrefs(appContext)
+        val passos = prefs.pocketPassos
+        val temperatura = prefs.pocketExpressividade / DECIMOS
         val inicio = System.currentTimeMillis()
         val svc = ensureBound(appContext) ?: return "não foi possível conectar ao processo Pocket"
         return try {
             synthSemaphore.withPermit {
                 withContext(Dispatchers.IO) {
-                    svc.synthesize(text, voiceId, output.absolutePath, passos).ifBlank { null }
+                    svc.synthesize(text, voiceId, output.absolutePath, passos, temperatura).ifBlank { null }
                 }
             }.also {
                 // Registro para diagnosticar travas intermitentes: síntese normal leva poucos segundos.

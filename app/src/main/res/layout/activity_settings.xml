@@ -492,6 +492,111 @@
 
             <TextView
                 style="@style/AjusteSecao"
+                android:text="@string/aj_secao_naturalidade"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowEntonacaoContinua"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_entonacao_continua"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_entonacao_continua_sub"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/swEntonacaoContinua"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/aj_entonacao_continua"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowAcabamentoAudio"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_acabamento_audio"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_acabamento_audio_sub"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/swAcabamentoAudio"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/aj_acabamento_audio"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowDialogosVivos"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_dialogos_vivos"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_dialogos_vivos_sub"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/swDialogosVivos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/aj_dialogos_vivos"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/AjusteSecao"
                 android:text="@string/aj_secao_ouvir"/>
 
             <com.google.android.material.card.MaterialCardView
@@ -1697,6 +1802,104 @@
                             android:textSize="13sp"
                             android:textColor="?attr/colorPrimary"/>
 
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── EXPRESSIVIDADE DO POCKET TTS ───────────────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/pocket_expr_titulo"
+                android:textSize="12sp"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.15"
+                android:layout_marginBottom="6dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPocketExpressividade"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/color_surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pocket_expr_desc"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipsPocketExpressividade"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipExprMinima"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pocket_expr_minima"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipExprPadrao"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pocket_expr_padrao"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipExprExpressiva"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pocket_expr_expressiva"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipExprMaxima"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pocket_expr_maxima"/>
+                    </com.google.android.material.chip.ChipGroup>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <SeekBar
+                            android:id="@+id/seekPocketExpressividade"
+                            android:contentDescription="@string/pocket_expr_titulo"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:max="9"/>
+
+                        <TextView
+                            android:id="@+id/tvPocketExpressividadeValor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="64dp"
+                            android:gravity="end"
+                            tools:text="0,3 · Padrão"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorPrimary"/>
                     </LinearLayout>
 
                 </LinearLayout>

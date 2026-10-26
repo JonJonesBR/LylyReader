@@ -1220,7 +1220,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="status_amostra_onnx_falha">⚠ Failed to generate the ONNX sample. Check that the model was downloaded.</string>
     <string name="status_amostra_falha">⚠ Failed to generate the sample.</string>
     <string name="settings_supertonic_passos_titulo">Supertonic steps</string>
-    <string name="settings_supertonic_passos_desc">Balances quality and speed of Supertonic voice synthesis. Fewer steps = faster; more steps = better quality. Recommended: 4.</string>
+    <string name="settings_supertonic_passos_desc">Balances quality and speed of Supertonic voice synthesis. Fewer steps = faster; more steps = better quality. Default: 5. Applies to guided reading and audiobook creation.</string>
     <!-- Assistente que libera a clonagem com o arquivo oficial da Kyutai (sem login no app) -->
     <string name="clone_prep_title_intro">Unlock voice cloning</string>
     <string name="clone_prep_intro">To clone a voice, the app needs a free file from Kyutai, the company that created Pocket TTS. You will do 4 simple steps, only once:\n\n1. Sign in to the Hugging Face website with a free account\n2. Accept Kyutai\'s terms of use\n3. Download the file (about 220 MB, Wi-Fi is best)\n4. Bring the file into the app\n\nYou sign in only in your browser. The app never sees or stores your password.</string>
@@ -1540,4 +1540,18 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="perm_toque_para_permitir">Tap to allow</string>
     <string name="perm_permitir_tudo">Allow</string>
     <string name="livros_acervo">Collection</string>
+    <string name="aj_secao_naturalidade">Natural-sounding voice (experimental)</string>
+    <string name="aj_entonacao_continua">Flowing intonation</string>
+    <string name="aj_entonacao_continua_sub">Reads consecutive sentences in one go, without “closing” the voice at every period. Supertonic and Pocket, in guided reading.</string>
+    <string name="aj_acabamento_audio">Audio finishing</string>
+    <string name="aj_acabamento_audio_sub">Evens out the volume of downloaded voices. In guided reading, it also trims extra silence between sentences.</string>
+    <string name="aj_dialogos_vivos">Livelier dialogue</string>
+    <string name="aj_dialogos_vivos_sub">Character lines sound a bit higher and faster than the narration. Guided reading.</string>
+    <string name="pocket_expr_titulo">Pocket TTS expressiveness</string>
+    <string name="pocket_expr_desc">Higher makes the intonation livelier and more varied, with more risk of small glitches. Lower sounds calmer and steadier. Applies to guided reading and audiobook creation.</string>
+    <string name="pocket_expr_valor">%1$s · %2$s</string>
+    <string name="pocket_expr_minima">Minimum</string>
+    <string name="pocket_expr_padrao">Default</string>
+    <string name="pocket_expr_expressiva">Expressive</string>
+    <string name="pocket_expr_maxima">Maximum</string>
 </resources>

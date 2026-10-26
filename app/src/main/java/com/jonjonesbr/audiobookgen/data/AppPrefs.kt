@@ -146,6 +146,16 @@ class AppPrefs(context: Context) {
         get() = p.getInt("pocket_passos", POCKET_PASSOS_PADRAO).coerceIn(POCKET_PASSOS_MIN, POCKET_PASSOS_MAX)
         set(v) = p.edit().putInt("pocket_passos", v.coerceIn(POCKET_PASSOS_MIN, POCKET_PASSOS_MAX)).apply()
 
+    /**
+     * Expressividade do Pocket TTS: a temperatura da amostragem, em décimos (3 = 0,3). Mais alta deixa a
+     * entonação mais viva e variada, com mais risco de falhas; mais baixa, mais contida e estável.
+     */
+    var pocketExpressividade: Int
+        get() = p.getInt("pocket_expressividade", POCKET_EXPRESSIVIDADE_PADRAO)
+            .coerceIn(POCKET_EXPRESSIVIDADE_MIN, POCKET_EXPRESSIVIDADE_MAX)
+        set(v) = p.edit()
+            .putInt("pocket_expressividade", v.coerceIn(POCKET_EXPRESSIVIDADE_MIN, POCKET_EXPRESSIVIDADE_MAX)).apply()
+
     /** Pausa entre orações (frases) na leitura guiada com kokoro (ms). Ver
      *  [GuidedPlayerManager][com.jonjonesbr.audiobookgen.service.GuidedPlayerManager]. */
     var pausaFinalFraseMs: Int
@@ -160,6 +170,23 @@ class AppPrefs(context: Context) {
     var pausasNaturais: Boolean
         get() = p.getBoolean("pausas_naturais", true)
         set(v) = p.edit().putBoolean("pausas_naturais", v).apply()
+
+    // ── Naturalidade da voz (experimental): começam desligadas, para o usuário comparar ──
+
+    /** Leitura guiada no Supertonic e no Pocket: frases seguidas vão juntas ao motor, com entonação corrida. */
+    var entonacaoContinua: Boolean
+        get() = p.getBoolean("entonacao_continua", false)
+        set(v) = p.edit().putBoolean("entonacao_continua", v).apply()
+
+    /** Motores locais: volume igual entre trechos e, na leitura guiada, sem o silêncio extra das bordas. */
+    var acabamentoAudio: Boolean
+        get() = p.getBoolean("acabamento_audio", false)
+        set(v) = p.edit().putBoolean("acabamento_audio", v).apply()
+
+    /** Leitura guiada: falas de personagem um pouco mais agudas e rápidas que a narração. */
+    var dialogosVivos: Boolean
+        get() = p.getBoolean("dialogos_vivos", false)
+        set(v) = p.edit().putBoolean("dialogos_vivos", v).apply()
 
     /** True depois que o aviso "personagens encontrados" já foi mostrado para este livro. */
     fun avisoPersonagensVisto(caminhoLivro: String): Boolean =
@@ -292,6 +319,10 @@ class AppPrefs(context: Context) {
             .remove("bitrate")
             .remove("supertonic_steps")
             .remove("pocket_passos")
+            .remove("pocket_expressividade")
+            .remove("entonacao_continua")
+            .remove("acabamento_audio")
+            .remove("dialogos_vivos")
             .remove("auto_rewind_mode")
             .remove("timbre_tom_meios_tons")
             .remove("timbre_tom_falas")
@@ -396,12 +427,16 @@ class AppPrefs(context: Context) {
         const val TIMBRE_TOM_MAX = 6
         const val TIMBRE_AGUDOS_MAX = 8
         const val POCKET_PASSOS_PADRAO = 1
+        /** Temperatura do Pocket em décimos: 3 (0,3) é o valor estável no aparelho; 7 é o padrão da Kyutai. */
+        const val POCKET_EXPRESSIVIDADE_PADRAO = 3
+        const val POCKET_EXPRESSIVIDADE_MIN = 1
+        const val POCKET_EXPRESSIVIDADE_MAX = 10
         /** Tamanho de fonte padrão do leitor (sp). */
         const val READER_FONTE_PADRAO = 16f
         /** Espaçamento padrão entre linhas do leitor. */
         const val READER_ESPACAMENTO_PADRAO = 1.5f
         /** Passos padrão do modelo Supertonic. */
-        const val SUPERTONIC_STEPS_PADRAO = 12
+        const val SUPERTONIC_STEPS_PADRAO = 5
         const val SUPERTONIC_STEPS_MIN = 2
         const val SUPERTONIC_STEPS_MAX = 16
         /** Pausa padrão entre orações na leitura guiada com kokoro (ms). */

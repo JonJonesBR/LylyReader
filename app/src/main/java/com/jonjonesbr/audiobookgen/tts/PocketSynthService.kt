@@ -22,11 +22,18 @@ class PocketSynthService : Service() {
     private var activePackId: String? = null
     private var activeHasEncoder = false
     private var activeLsdSteps = DEFAULT_LSD_STEPS
+    private var activeTemperature = DEFAULT_TEMPERATURE
     private var engine: NativePocketTts? = null
     private var idleRelease: Runnable? = null
 
     private val binder = object : IPocketSynthService.Stub() {
-        override fun synthesize(text: String, voiceId: String, outPath: String, lsdSteps: Int): String {
+        override fun synthesize(
+            text: String,
+            voiceId: String,
+            outPath: String,
+            lsdSteps: Int,
+            temperature: Float
+        ): String {
             val shouldStartForeground = activeCalls.getAndIncrement() == 0
             try {
                 if (shouldStartForeground) startSynthesisForeground()
@@ -49,7 +56,7 @@ class PocketSynthService : Service() {
                     } else {
                         voice = File(File(pack, "voices"), spec.voiceFile)
                     }
-                    val native = getEngine(spec.id, pack, lsdSteps)
+                    val native = getEngine(spec.id, pack, lsdSteps, temperature)
                     val output = File(outPath)
                     output.parentFile?.mkdirs()
                     if (!native.synthesize(text, voice.absolutePath, output.absolutePath)) {
@@ -94,25 +101,28 @@ class PocketSynthService : Service() {
         super.onDestroy()
     }
 
-    private fun getEngine(packId: String, root: File, lsdSteps: Int): NativePocketTts {
+    private fun getEngine(packId: String, root: File, lsdSteps: Int, temperature: Float): NativePocketTts {
         idleRelease?.let(mainHandler::removeCallbacks)
         idleRelease = null
-        // Passos de decodificação só valem na criação do motor: mudar o valor recria o motor.
+        // Passos e temperatura só valem na criação do motor: mudar um deles recria o motor.
         val temCodificador = File(File(root, "models"), PocketEncoderManager.FILE_NAME).isFile
         engine?.takeIf {
-            activePackId == packId && activeLsdSteps == lsdSteps && activeHasEncoder == temCodificador
+            activePackId == packId && activeLsdSteps == lsdSteps && activeTemperature == temperature &&
+                activeHasEncoder == temCodificador
         }?.let { return it }
         engine?.close()
         engine = NativePocketTts(
             modelsDir = File(root, "models").absolutePath,
             voicesDir = File(root, "voices").absolutePath,
             precision = "int8",
+            temperature = temperature,
             lsdSteps = lsdSteps,
             threads = DEFAULT_THREADS,
             sentencePauseMs = SENTENCE_PAUSE_MS
         ).also {
             activePackId = packId
             activeLsdSteps = lsdSteps
+            activeTemperature = temperature
             activeHasEncoder = temCodificador
         }
         return engine!!
@@ -157,6 +167,7 @@ class PocketSynthService : Service() {
         const val MIN_AUDIO_BYTES = 500L
         const val DEFAULT_THREADS = 2
         const val DEFAULT_LSD_STEPS = 1
+        const val DEFAULT_TEMPERATURE = 0.3f
         // Pausa entre frases DENTRO de um mesmo trecho (a guiada agrupa frases curtas). Igual ao
         // padrão de "Pausa entre frases" dos Ajustes; este serviço roda em outro processo e não
         // acompanha o slider.

@@ -79,7 +79,8 @@ class KokoroTtsSynthesizer(private val context: Context) : TtsSynthesizer {
         } else {
             texto
         }
-        val cached = TtsChunkCache.getOrSynthesize(context, voz, ritmo, textoFinal) { temporary ->
+        val acabamento = AcabamentoAudio.modoNaLeitura(context)
+        val cached = TtsChunkCache.getOrSynthesize(context, voz, ritmo, textoFinal, acabamento) { temporary ->
             if (piper && textoFinal.none { it.isLetterOrDigit() }) {
                 temporary.writeBytes(SilentWav.bytes(SILENCIO_MS))
                 return@getOrSynthesize true
@@ -121,7 +122,8 @@ class PocketTtsSynthesizer(private val context: Context) : TtsSynthesizer {
                 normalizarViaPython(context, t, idioma, numerosSoltos = true, semTravessoes = true)
             }
         }
-        val cached = TtsChunkCache.getOrSynthesize(context, voz, ritmo, textoNormalizado) { temporary ->
+        val acabamento = AcabamentoAudio.modoNaLeitura(context)
+        val cached = TtsChunkCache.getOrSynthesize(context, voz, ritmo, textoNormalizado, acabamento) { temporary ->
             engine.synthesize(textoNormalizado, voz, temporary).fold(
                 onSuccess = { true },
                 onFailure = { error -> synthesisError = error.message; false }
@@ -194,7 +196,8 @@ class OnnxTtsSynthesizer(
             val limpo = normalizarViaPython(context, texto, idioma, numerosSoltos = true, semTravessoes = false)
             if (limpo.isBlank() && texto.any { it.isLetterOrDigit() }) texto else limpo
         }
-        val cached = TtsChunkCache.getOrSynthesize(context, voz, ritmo, textoFalado) { temporary ->
+        val acabamento = AcabamentoAudio.modoNaLeitura(context)
+        val cached = TtsChunkCache.getOrSynthesize(context, voz, ritmo, textoFalado, acabamento) { temporary ->
             engine().synthesize(textoFalado, voz, temporary).fold(
                 onSuccess = { true },
                 onFailure = { erro -> mensagemErro = erro.message; false }
@@ -270,7 +273,9 @@ class AndroidTtsSynthesizer(private val context: Context) : TtsSynthesizer {
     override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
         val speed = ritmo / RITMO_BASE
         var ultimaMensagem = "motivo desconhecido"
-        val arquivo = TtsChunkCache.getOrSynthesize(context, voz, ritmo, texto) { arquivoTemporario ->
+        val arquivo = TtsChunkCache.getOrSynthesize(
+            context, voz, ritmo, texto, AcabamentoAudio.modoNaLeitura(context)
+        ) { arquivoTemporario ->
             var sucesso = false
             var tentativa = 1
             var deveParar = false
