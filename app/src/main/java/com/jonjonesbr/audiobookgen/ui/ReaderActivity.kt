@@ -308,7 +308,7 @@ class ReaderActivity : BasePlayerActivity() {
         )
     }
 
-    private val retornoController by lazy {
+    private val retornoController: ReaderRetornoController by lazy {
         ReaderRetornoController(
             activity = this,
             viewModel = viewModel,
