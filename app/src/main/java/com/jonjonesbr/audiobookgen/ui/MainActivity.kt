@@ -44,10 +44,17 @@ class MainActivity : AppCompatActivity() {
 
     /** Devolve true quando ainda há algo em andamento (diálogo ou importação) e a activity deve esperar para se fechar. */
     private fun rotear(intent: Intent): Boolean {
-        intent.getStringExtra(EXTRA_ABRIR_AUDIOBOOK_CAMINHO)?.let { caminho ->
-            val nome = intent.getStringExtra(EXTRA_ABRIR_AUDIOBOOK_NOME) ?: File(caminho).nameWithoutExtension
+        intent.getStringExtra(EXTRA_ABRIR_AUDIOBOOK_CAMINHO)?.let { pedido ->
             intent.removeExtra(EXTRA_ABRIR_AUDIOBOOK_CAMINHO)
-            return abrirAudiobook(caminho, nome)
+            // Só áudio: a activity é exportada e o "Abrir com…" dá leitura do arquivo a outro app.
+            val arquivo = com.jonjonesbr.audiobookgen.util.audiobookCompartilhavel(pedido)
+            if (arquivo == null) {
+                Toast.makeText(this, R.string.erro_arquivo_audio_nao_encontrado, Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this, MeusLivrosActivity::class.java))
+                return false
+            }
+            val nome = intent.getStringExtra(EXTRA_ABRIR_AUDIOBOOK_NOME) ?: arquivo.nameWithoutExtension
+            return abrirAudiobook(arquivo.absolutePath, nome)
         }
         val uri: Uri? = when (intent.action) {
             Intent.ACTION_SEND -> @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_STREAM)

@@ -32,7 +32,7 @@ object ApagarVozFlow {
     }
 
     /** Pede confirmação explicando o que sai do aparelho; [aoConfirmar] apaga. */
-    fun confirmar(
+    suspend fun confirmar(
         context: Context,
         voz: VoiceOption,
         pacote: PacoteVozes,
@@ -40,7 +40,9 @@ object ApagarVozFlow {
         aoConfirmar: () -> Unit
     ) {
         val nome = voz.nomeExibido(context)
-        val tamanho = Formatter.formatShortFileSize(context, pacote.tamanhoOcupadoBytes(context))
+        // Percorre a pasta inteira do pacote: fora da thread principal.
+        val bytes = withContext(Dispatchers.IO) { pacote.tamanhoOcupadoBytes(context) }
+        val tamanho = Formatter.formatShortFileSize(context, bytes)
         val outras = pacote.vozes.count { it.id != voz.id }
         val mensagem = StringBuilder(
             when {

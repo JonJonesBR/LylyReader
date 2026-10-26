@@ -179,7 +179,7 @@ class QueueActivity : BasePlayerActivity() {
     }
 
     private fun salvarFila() {
-        QueueManager.persistir(lifecycleScope, applicationContext, prefs)
+        QueueManager.persistir(applicationContext, prefs)
     }
 
     // Leitura guiada direto de um item da fila, sem esperar a conversão terminar — o

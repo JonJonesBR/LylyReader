@@ -387,7 +387,8 @@ class ReaderActivity : BasePlayerActivity() {
                 reconectandoGuided = true
                 managerExistente
             } else {
-                managerExistente?.release()
+                // A leitura guiada de OUTRO livro continua tocando: só abrir este livro para ler não a interrompe.
+                // Ela é encerrada no primeiro play() deste livro (ver GuidedPlayerManager.play).
                 GuidedPlayerManager(applicationContext, pythonUseCase)
             }
             guidedPlayerManager = manager

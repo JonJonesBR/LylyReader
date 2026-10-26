@@ -360,7 +360,7 @@ class ConversoesActivity : AppCompatActivity() {
 
     private suspend fun carregarFila() = QueueManager.garantirCarregada(applicationContext, prefsLegado)
 
-    private fun salvarFila() = QueueManager.persistir(lifecycleScope, applicationContext, prefsLegado)
+    private fun salvarFila() = QueueManager.persistir(applicationContext, prefsLegado)
 
     /** Processa o próximo item pendente da fila; ao terminar (ver [aoConcluirNaFila]) segue para o seguinte. */
     private fun rodarFila() {

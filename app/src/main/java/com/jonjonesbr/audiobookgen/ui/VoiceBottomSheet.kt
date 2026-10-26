@@ -257,8 +257,13 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
      * saem da lista; as do catálogo ficam, agora como "baixar".
      */
     private fun apagarVoz(voz: VoiceOption, pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
-        ApagarVozFlow.confirmar(requireContext(), voz, pacote, selectedVoiceId) {
-            val app = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch { confirmarEApagar(voz, pacote) }
+    }
+
+    private suspend fun confirmarEApagar(voz: VoiceOption, pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
+        val ctx = requireContext()
+        ApagarVozFlow.confirmar(ctx, voz, pacote, selectedVoiceId) {
+            val app = ctx.applicationContext
             val idsDoPacote = pacote.vozes.map { it.id }.toSet()
             viewLifecycleOwner.lifecycleScope.launch {
                 val ok = ApagarVozFlow.apagar(app, pacote)

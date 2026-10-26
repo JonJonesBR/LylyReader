@@ -94,7 +94,7 @@ object AcoesDoLivro {
                 return@launch
             }
             com.jonjonesbr.audiobookgen.service.QueueManager.adicionar(arquivo.name, arquivo.absolutePath)
-            com.jonjonesbr.audiobookgen.service.QueueManager.persistir(activity.lifecycleScope, app, prefs)
+            com.jonjonesbr.audiobookgen.service.QueueManager.persistir(app, prefs)
             Toast.makeText(
                 activity,
                 activity.getString(R.string.gerar_fila_ok, com.jonjonesbr.audiobookgen.service.QueueManager.contarPendentes()),

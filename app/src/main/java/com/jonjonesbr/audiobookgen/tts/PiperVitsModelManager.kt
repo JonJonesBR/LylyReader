@@ -34,18 +34,20 @@ object PiperVitsModelManager {
         val datasetName: String? = null,
         val expectedArchiveBytes: Long? = null,
         val noticeResource: Int? = null,
+        /** SHA-256 do .tar.bz2 publicado (conferido em 2026-10-26); um arquivo diferente não chega ao motor nativo. */
+        val sha256: String? = null,
     ) {
         /** Tamanho decimal arredondado para cima; o progresso do download mostra os bytes reais. */
         val sizeMb: Int = expectedArchiveBytes?.let { ((it + 999_999L) / 1_000_000L).toInt() } ?: 90
     }
 
     val models = listOf(
-        Model("piper-ptbr-cadu", "Cadu", "média", "vits-piper-pt_BR-cadu-medium", "pt_BR-cadu-medium.onnx", "MIT / CC0", "Piper Voices Cadu; dataset CC0. https://huggingface.co/rhasspy/piper-voices"),
-        Model("piper-ptbr-dii", "Dii", "alta", "vits-piper-pt_BR-dii-high", "pt_BR-dii-high.onnx", "CC BY-NC-SA 4.0", "Dii PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-dii-high"),
-        Model("piper-ptbr-edresson", "Edresson", "baixa", "vits-piper-pt_BR-edresson-low", "pt_BR-edresson-low.onnx", "MIT / CC BY 4.0", "Piper Voices Edresson; corpus CC BY 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-edresson-low"),
-        Model("piper-ptbr-faber", "Faber", "média", "vits-piper-pt_BR-faber-medium", "pt_BR-faber-medium.onnx", "MIT / CC0", "Piper Voices Faber; dataset CC0. https://huggingface.co/rhasspy/piper-voices"),
-        Model("piper-ptbr-jeff", "Jeff", "média", "vits-piper-pt_BR-jeff-medium", "pt_BR-jeff-medium.onnx", "MIT / CC0", "Piper Voices Jeff; dataset CC0. https://huggingface.co/rhasspy/piper-voices"),
-        Model("piper-ptbr-miro", "Miro", "alta", "vits-piper-pt_BR-miro-high", "pt_BR-miro-high.onnx", "CC BY-NC-SA 4.0", "Miro PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/TarcisoAmorim/piper-pt_BR-miro-high"),
+        Model("piper-ptbr-cadu", "Cadu", "média", "vits-piper-pt_BR-cadu-medium", "pt_BR-cadu-medium.onnx", "MIT / CC0", "Piper Voices Cadu; dataset CC0. https://huggingface.co/rhasspy/piper-voices", sha256 = "aba78157d4b89acc17ddef15a70f4b2474f4c189d4de6035002ac7fec9d5d303"),
+        Model("piper-ptbr-dii", "Dii", "alta", "vits-piper-pt_BR-dii-high", "pt_BR-dii-high.onnx", "CC BY-NC-SA 4.0", "Dii PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-dii-high", sha256 = "76bdf009bb29e69b12336de833d0d219ffa558f4281330eb141e4a0569c108a2"),
+        Model("piper-ptbr-edresson", "Edresson", "baixa", "vits-piper-pt_BR-edresson-low", "pt_BR-edresson-low.onnx", "MIT / CC BY 4.0", "Piper Voices Edresson; corpus CC BY 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-edresson-low", sha256 = "670569e755cc48cda0a2f6a3ccba0698815566297069961edcd5f7daaf3d47a5"),
+        Model("piper-ptbr-faber", "Faber", "média", "vits-piper-pt_BR-faber-medium", "pt_BR-faber-medium.onnx", "MIT / CC0", "Piper Voices Faber; dataset CC0. https://huggingface.co/rhasspy/piper-voices", sha256 = "7add3f923ad6bc25ca8a192805fd1a64d1b3893e4611c4a9719545a825039a83"),
+        Model("piper-ptbr-jeff", "Jeff", "média", "vits-piper-pt_BR-jeff-medium", "pt_BR-jeff-medium.onnx", "MIT / CC0", "Piper Voices Jeff; dataset CC0. https://huggingface.co/rhasspy/piper-voices", sha256 = "da4c870fc7b20600c74261b3e1dd1c816da2ce063e18c46e1f2cd86dea88f3f0"),
+        Model("piper-ptbr-miro", "Miro", "alta", "vits-piper-pt_BR-miro-high", "pt_BR-miro-high.onnx", "CC BY-NC-SA 4.0", "Miro PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/TarcisoAmorim/piper-pt_BR-miro-high", sha256 = "7f30d1c3421362a60381807543aeafd7e1cd0acbcb92c349a29908526c6f4e6f"),
         Model(
             id = "piper-enus-ljspeech-medium",
             name = "LJSpeech",
@@ -58,6 +60,7 @@ object PiperVitsModelManager {
             datasetName = "LJSpeech",
             expectedArchiveBytes = 67_169_893L,
             noticeResource = com.jonjonesbr.audiobookgen.R.string.piper_license_notice_public_domain,
+            sha256 = "3dfb4b759d8be032a4903a9538d128b0fda2a06ab1de6cbc2d93a97e2dd83dba",
         ),
         Model(
             id = "piper-enus-norman-medium",
@@ -71,6 +74,7 @@ object PiperVitsModelManager {
             datasetName = "LibriVox",
             expectedArchiveBytes = 67_203_672L,
             noticeResource = com.jonjonesbr.audiobookgen.R.string.piper_license_notice_public_domain,
+            sha256 = "1f32065d480abe9abc7c7f91442125d0b34c1cc065d1e600466cac408eabf3b8",
         ),
         Model(
             id = "piper-esmx-claude-high",
@@ -84,6 +88,7 @@ object PiperVitsModelManager {
             datasetName = "Piper-TTS-Spanish",
             expectedArchiveBytes = 67_207_890L,
             noticeResource = com.jonjonesbr.audiobookgen.R.string.piper_license_notice_apache,
+            sha256 = "ec33fb689c248fe64810aab564cba97babf0f506672cfd404928d46e751a4721",
         ),
     )
 
@@ -169,6 +174,14 @@ object PiperVitsModelManager {
                     }
                 }
                 if (archive.length() != total) throw IOException("Download Piper incompleto.")
+                // O tamanho bate mas o conteúdo pode estar corrompido ou ter mudado no servidor: confere antes de extrair.
+                model.sha256?.let { esperado ->
+                    val real = sha256Hex(archive)
+                    if (!real.equals(esperado, ignoreCase = true)) {
+                        Log.e(TAG, "sha256 do pacote ${model.id} não confere: esperado=$esperado real=$real")
+                        throw IOException("O pacote ${model.name} chegou corrompido. Tente baixar de novo.")
+                    }
+                }
                 com.jonjonesbr.audiobookgen.util.PythonInicio.garantir(context)
                 val python = Python.getInstance().getModule("piper_archive")
                 python.callAttr("extract_piper_tar_bz2", archive.absolutePath, staging.absolutePath, model.onnx)

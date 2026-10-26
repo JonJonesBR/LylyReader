@@ -55,7 +55,11 @@ object ConversaoPausadaStore {
         }
     }
 
-    /** Conversão pausada salva, ou null se não houver ou se o arquivo estiver ilegível. */
+    /**
+     * Conversão pausada salva, ou null se não houver ou se o arquivo estiver ilegível. Um arquivo ilegível é apagado:
+     * a gravação é atômica (temporário + rename), então ele não "conserta" sozinho, e mantê-lo bloqueava novas
+     * conversões com um card vazio.
+     */
     fun carregar(context: Context): Pausada? = try {
         val arquivo = arquivo(context)
         if (!arquivo.isFile) {
@@ -85,6 +89,8 @@ object ConversaoPausadaStore {
             )
         }
     } catch (e: Exception) {
+        android.util.Log.w("ConversaoPausadaStore", "Conversão pausada ilegível, descartada: ${e.message}")
+        limpar(context)
         null
     }
 
@@ -96,8 +102,9 @@ object ConversaoPausadaStore {
         }
     }
 
+    /** True só se há uma conversão pausada que dá para retomar (um arquivo ilegível não conta e é apagado). */
     fun existe(context: Context): Boolean = try {
-        arquivo(context).isFile
+        arquivo(context).isFile && carregar(context) != null
     } catch (e: Exception) {
         false
     }

@@ -7,7 +7,10 @@ import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -124,13 +127,27 @@ object QueueManager {
      * Persiste a fila atual nas SharedPreferences (síncrono) e replica para o Room em background
      * (assíncrono). Estava duplicado (mesma lógica) em MainActivity e QueueActivity.
      */
-    fun persistir(scope: CoroutineScope, context: Context, prefs: SharedPreferences) {
+    fun persistir(context: Context, prefs: SharedPreferences) {
         salvar(prefs)
         val snapshot = items.toList()
-        scope.launch(Dispatchers.IO) {
-            QueueRepository.get(context).replaceAll(snapshot)
+        val app = context.applicationContext
+        val geracao = synchronized(this) { ++geracaoPedida }
+        // Escopo do app, não o da tela: fechar a tela logo depois de reordenar não cancela mais a gravação.
+        // Uma gravação por vez; se uma mais nova já foi gravada, a antiga é descartada (a última ordem vence).
+        escopoGravacao.launch {
+            gravacao.withLock {
+                if (geracao > geracaoGravada) {
+                    QueueRepository.get(app).replaceAll(snapshot)
+                    geracaoGravada = geracao
+                }
+            }
         }
     }
+
+    private val escopoGravacao = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val gravacao = Mutex()
+    private var geracaoPedida = 0L
+    private var geracaoGravada = 0L
 
     fun carregar(prefs: SharedPreferences) {
         val json = prefs.getString(PREF_KEY, null) ?: return

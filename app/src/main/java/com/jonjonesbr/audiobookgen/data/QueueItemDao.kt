@@ -8,7 +8,9 @@ import androidx.room.Transaction
 
 @Dao
 interface QueueItemDao {
-    @Query("SELECT * FROM queue_items ORDER BY criadoEmMillis ASC")
+    // rowid = ordem de inserção: replaceAll grava a lista inteira na ordem da fila (inclusive a ordem manual que o
+    // usuário escolheu). Antes ordenava por criadoEmMillis e a ordem manual se perdia ao reabrir o app.
+    @Query("SELECT * FROM queue_items ORDER BY rowid ASC")
     suspend fun getAll(): List<QueueItemEntity>
 
     @Query("SELECT COUNT(*) FROM queue_items")

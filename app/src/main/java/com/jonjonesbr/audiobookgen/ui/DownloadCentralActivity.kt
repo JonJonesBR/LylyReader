@@ -383,7 +383,9 @@ class DownloadCentralActivity : BasePlayerActivity() {
     }
 
     private fun iniciar(ids: List<String>) {
-        DownloadCentral.enfileirar(this, ids)
+        // enfileirar confere cada pacote no disco: fora da thread principal.
+        val app = applicationContext
+        lifecycleScope.launch(Dispatchers.IO) { DownloadCentral.enfileirar(app, ids) }
     }
 
     companion object {

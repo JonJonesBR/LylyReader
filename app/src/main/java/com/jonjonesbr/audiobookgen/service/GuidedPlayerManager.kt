@@ -549,6 +549,9 @@ class GuidedPlayerManager(
         oracaoCompletada = null
         _state.update { GuidedState(index, isPlaying = false, isLoading = true) }
 
+        // Outro livro ainda em leitura guiada (aberto antes deste e deixado tocando): só agora ele para, porque o
+        // usuário pediu para ouvir este. Um player por vez.
+        GuidedPlaybackBridge.manager?.takeIf { it !== this }?.release()
         // Mantém o processo vivo em 2º plano e exibe a notificação de mídia (#4).
         // activate() publica manager+token+trackName+caminho numa única escrita atômica.
         GuidedPlaybackBridge.activate(this, trackName, caminhoArquivo)
