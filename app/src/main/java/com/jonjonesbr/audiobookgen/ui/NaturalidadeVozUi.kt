@@ -74,6 +74,10 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
     }
 
     companion object {
+        /** 0,7: o padrão dos autores do Pocket TTS (Kyutai). */
+        private const val POCKET_EXPRESSIVA = 7
+        private const val DECIMOS = 10f
+
         /** Atalhos: chip → expressividade em décimos. */
         private val PRESETS = linkedMapOf(
             R.id.chipExprMinima to AppPrefs.POCKET_EXPRESSIVIDADE_MIN,
@@ -81,10 +85,6 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
             R.id.chipExprExpressiva to POCKET_EXPRESSIVA,
             R.id.chipExprMaxima to AppPrefs.POCKET_EXPRESSIVIDADE_MAX
         )
-
-        /** 0,7: o padrão dos autores do Pocket TTS (Kyutai). */
-        private const val POCKET_EXPRESSIVA = 7
-        private const val DECIMOS = 10f
 
         /** "0,3 · Padrão", "0,5", "0,7 · Expressiva"… (o nome só aparece nos atalhos). */
         fun rotuloExpressividade(context: Context, decimos: Int): String {
