@@ -237,16 +237,9 @@ class ReaderActivity : BasePlayerActivity() {
                     mostrarDialogoSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
                     atualizarFabs = { atualizarFabs() },
                     fecharPlayerService = { playerService?.fecharPlayer() },
-                    mostrarMiniPlayer = {
-                        playerService?.state?.value?.let { ps ->
-                            if (ps.isVisible) {
-                                findViewById<View>(R.id.miniPlayerRoot)?.visibility = View.VISIBLE
-                            }
-                        }
-                    },
-                    esconderMiniPlayer = {
-                        findViewById<View>(R.id.miniPlayerRoot)?.visibility = View.GONE
-                    },
+                    // A barra da leitura guiada e o mini player do audiobook não aparecem juntos (ver ocultarMiniPlayerAudio).
+                    mostrarMiniPlayer = { reavaliarMiniPlayer() },
+                    esconderMiniPlayer = { reavaliarMiniPlayer() },
                     obterCaminhoArquivo = { caminhoArquivo },
                     onLivroConcluido = { avancarSequenciaFila() },
                     prepararCapitulo = { prepararCapituloAtual() },
@@ -499,6 +492,9 @@ class ReaderActivity : BasePlayerActivity() {
     // O leitor tem sua própria barra de leitura guiada (layoutGuidedPlayer) — não exibe o
     // indicador in-app do BasePlayerActivity para evitar duplicidade.
     override fun mostrarIndicadorGuided(): Boolean = false
+
+    // Com a barra da leitura guiada na tela, o mini player do audiobook some (antes os dois apareciam juntos).
+    override fun ocultarMiniPlayerAudio(): Boolean = (guidedPlayerManager?.state?.value?.index ?: -1) >= 0
 
     // Simplificação deliberada: conta o tempo com a tela do leitor visível como "minutos
     // lidos", mesmo quando a leitura guiada (TTS) está tocando ao mesmo tempo — nesse caso o
@@ -1006,6 +1002,8 @@ class ReaderActivity : BasePlayerActivity() {
         val mp3 = com.jonjonesbr.audiobookgen.data.LinkedBookStore.mp3Vinculado(this, caminhoArquivo)
             ?: return
         if (!File(mp3).exists()) return
+        // Ouvir o audiobook encerra a leitura guiada: a barra dela sai e o mini player do audiobook aparece.
+        guidedPlayerManager?.stop()
         val nome = File(mp3).nameWithoutExtension
         playerService?.iniciar(mp3, nome) ?: run {
             val intent = Intent(this, com.jonjonesbr.audiobookgen.service.AudioPlayerService::class.java).apply {

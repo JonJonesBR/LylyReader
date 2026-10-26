@@ -92,6 +92,20 @@ class AudioPlayerService : MediaLibraryService() {
         const val ACTION_INICIAR    = "com.jonjonesbr.audiobookgen.INICIAR"
         const val EXTRA_CAMINHO     = "extra_caminho"
         const val EXTRA_NOME        = "extra_nome"
+
+        /** Instância viva (um player por processo), para a leitura guiada pausar o audiobook ao começar a tocar. */
+        @Volatile private var instancia: AudioPlayerService? = null
+
+        /**
+         * Pausa o audiobook se estiver tocando: leitura guiada e audiobook nunca tocam juntos. Pode ser chamado de
+         * qualquer thread; o ExoPlayer só é tocado na principal.
+         */
+        fun pausarSeTocando() {
+            val servico = instancia ?: return
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                if (servico.exoPlayer.isPlaying) servico.alternarPlayPause()
+            }
+        }
         private const val TAG       = "AudioPlayerService"
         private const val TICK_INTERVAL_MS = 500L
         private const val MS_POR_MINUTO = 60_000L
@@ -372,6 +386,13 @@ class AudioPlayerService : MediaLibraryService() {
             ) {
                 aplicarBookkeepingPlayPauseExterno(playWhenReady)
             }
+            // Audiobook começou a tocar (mini player, notificação, fone…): pausa a leitura guiada, um player por vez.
+            if (playWhenReady) {
+                GuidedPlaybackBridge.manager?.let { guiada ->
+                    val st = guiada.state.value
+                    if (st.isPlaying || st.isLoading) guiada.pause()
+                }
+            }
             reconciliarEstadoPlay()
         }
 
@@ -397,6 +418,7 @@ class AudioPlayerService : MediaLibraryService() {
     override fun onCreate() {
         super.onCreate()
         inicializarPlayer()
+        instancia = this
         setMediaNotificationProvider(notificationProvider)
 
         // Sleep timer: atualiza a contagem na notificação e pausa ao terminar.
@@ -478,6 +500,7 @@ class AudioPlayerService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        if (instancia === this) instancia = null
         serviceScope.cancel()
         salvarProgresso()
         if (exoPlayer.isPlaying) marcarPausa()

@@ -549,6 +549,8 @@ class GuidedPlayerManager(
         oracaoCompletada = null
         _state.update { GuidedState(index, isPlaying = false, isLoading = true) }
 
+        // Leitura guiada e audiobook nunca tocam juntos.
+        AudioPlayerService.pausarSeTocando()
         // Outro livro ainda em leitura guiada (aberto antes deste e deixado tocando): só agora ele para, porque o
         // usuário pediu para ouvir este. Um player por vez.
         GuidedPlaybackBridge.manager?.takeIf { it !== this }?.release()
@@ -1095,6 +1097,7 @@ class GuidedPlayerManager(
             pausadoPeloUsuario = false
             pausadoSemAudio = false
             if (!estavaSemAudio) playerEngine?.resume()
+            AudioPlayerService.pausarSeTocando()
             _state.update { it.copy(isPlaying = true, error = null) }
             startProgressPolling()
         }

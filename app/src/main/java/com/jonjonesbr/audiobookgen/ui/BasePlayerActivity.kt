@@ -134,10 +134,23 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         root.visibility = if (audioVisivel || guidedAtivo) View.VISIBLE else View.GONE
     }
 
+    /** Telas que mostram a própria barra da leitura guiada escondem o mini player do audiobook enquanto ela aparece. */
+    protected open fun ocultarMiniPlayerAudio(): Boolean = false
+
+    /** Reaplica a visibilidade do mini player (ex.: a barra da leitura guiada apareceu ou sumiu). */
+    protected fun reavaliarMiniPlayer() {
+        val estado = playerService?.state?.value
+        if (estado != null) {
+            atualizarMiniPlayer(estado)
+        } else if (ocultarMiniPlayerAudio()) {
+            findViewById<View>(R.id.miniPlayerRoot)?.visibility = View.GONE
+        }
+    }
+
     private fun atualizarMiniPlayer(state: PlayerState) {
         val root = findViewById<View>(R.id.miniPlayerRoot) ?: return
 
-        audioVisivel = state.isVisible
+        audioVisivel = state.isVisible && !ocultarMiniPlayerAudio()
         val acabouDeIniciar = audioVisivel && !audioVisivelAnterior
         audioVisivelAnterior = audioVisivel
         root.findViewById<View>(R.id.miniPlayerBar)?.visibility =
