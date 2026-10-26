@@ -37,10 +37,11 @@ from utils import (
     fracao_sintese, pct_sintese_global, pct_nao_regride,
 )
 from tts import (
-    converter_tts_auto, motor_da_voz, concatenar_grupo_com_pausa, aplicar_timbre,
+    converter_tts_auto, motor_da_voz, concatenar_grupo_com_pausa,
     adicionar_metadados_e_capitulos_mp3,
     agrupar_blocos_por_limite, obter_duracao_ffprobe, validar_voz_tts,
     JuncaoCancelada, _CONCAT_BATCH_SIZE, _concatenar_mp3_puro, _is_wav,
+    intercalar_silencios, apagar_silencios,
 )
 from cover_art import obter_capa
 from erros_tts import ErroDeChave
@@ -298,12 +299,13 @@ def _formato_homogeneo(arquivos: list) -> bool:
     return len({_is_wav(a) for a in arquivos}) <= 1
 
 def _juncao_incremental_ativa() -> bool:
-    """Lotes só são usados sem FFmpeg (Android). Com FFmpeg as pausas entre blocos vêm de silêncios
-    gerados por ele, que o lote não reproduz: a junção segue o caminho antigo, sem lotes."""
+    """Lotes só são usados sem FFmpeg (Android), onde a junção é binária e as pausas entre blocos são
+    silêncios gerados em Python (ver tts.intercalar_silencios)."""
     return shutil.which("ffmpeg") is None
 
-def _lote_valido(jh: str, g: int, arquivos: list) -> bool:
-    """O lote g existe e o manifesto bate com os blocos atuais (mesmos nomes, tamanhos e datas)."""
+def _lote_valido(jh: str, g: int, arquivos: list, pausas: Optional[list] = None) -> bool:
+    """O lote g existe e o manifesto bate com os blocos atuais (mesmos nomes, tamanhos e datas) e com as
+    pausas entre eles (`pausas[i]` = ms depois do bloco i; None = sem pausas)."""
     saida = _caminho_lote(jh, g)
     manifesto = _caminho_manifesto_lote(jh, g)
     try:
@@ -314,16 +316,24 @@ def _lote_valido(jh: str, g: int, arquivos: list) -> bool:
         return (
             dados.get("arquivos") == [os.path.basename(a) for a in arquivos]
             and dados.get("assinatura") == _assinatura_arquivos(arquivos)
+            and dados.get("pausas") == _pausas_internas(pausas, len(arquivos))
         )
     except Exception:
         return False
 
-def _gerar_lote_sync(jh: str, g: int, arquivos: list) -> bool:
-    """Junta os blocos de um grupo cheio num lote derivado (roda em thread). Reaproveita o lote se ele
-    já bater com os blocos. Ao regravar, apaga o manifesto antes: lote sem manifesto correspondente
-    nunca é usado."""
+def _pausas_internas(pausas: Optional[list], n: int) -> Optional[list]:
+    """Pausas entre os blocos de um lote (sem a do último, que fica para a junção final); None sem pausas."""
+    if not pausas:
+        return None
+    internas = [int(p or 0) for p in pausas[:max(0, n - 1)]]
+    return internas if any(internas) else None
+
+def _gerar_lote_sync(jh: str, g: int, arquivos: list, pausas: Optional[list] = None) -> bool:
+    """Junta os blocos de um grupo cheio num lote derivado (roda em thread), com o silêncio de `pausas`
+    entre eles. Reaproveita o lote se ele já bater com os blocos. Ao regravar, apaga o manifesto antes:
+    lote sem manifesto correspondente nunca é usado."""
     try:
-        if _lote_valido(jh, g, arquivos):
+        if _lote_valido(jh, g, arquivos, pausas):
             return True
         if not _formato_homogeneo(arquivos):
             return False
@@ -332,17 +342,29 @@ def _gerar_lote_sync(jh: str, g: int, arquivos: list) -> bool:
         tmp_saida = saida + ".tmp"
         tmp_manifesto = manifesto + ".tmp"
         assinatura = _assinatura_arquivos(arquivos)
+        internas = _pausas_internas(pausas, len(arquivos))
+        silencios: dict = {}
         try:
-            if not _concatenar_mp3_puro(arquivos, tmp_saida):
+            lista = arquivos
+            if internas:
+                lista = intercalar_silencios(arquivos, internas, _job_dir(jh), silencios)
+                if lista is None:
+                    return False
+            if not _concatenar_mp3_puro(lista, tmp_saida):
                 return False
             if os.path.exists(manifesto):
                 os.remove(manifesto)
             os.replace(tmp_saida, saida)
             with open(tmp_manifesto, "w", encoding="utf-8") as f:
-                json.dump({"arquivos": [os.path.basename(a) for a in arquivos], "assinatura": assinatura}, f)
+                json.dump({
+                    "arquivos": [os.path.basename(a) for a in arquivos],
+                    "assinatura": assinatura,
+                    "pausas": internas,
+                }, f)
             os.replace(tmp_manifesto, manifesto)
             return True
         finally:
+            apagar_silencios(silencios)
             for tmp in (tmp_saida, tmp_manifesto):
                 if os.path.exists(tmp):
                     try:
@@ -353,20 +375,32 @@ def _gerar_lote_sync(jh: str, g: int, arquivos: list) -> bool:
         logger.warning(f"Lote {g} de junção não foi gerado: {e}")
         return False
 
-def _lista_para_juncao(total: int, indices_validos: list, temp_files: list, jh: str) -> list:
-    """Lista da junção final: cada grupo cheio de blocos válidos entra como o lote pronto (se o manifesto
-    bater); os demais entram bloco a bloco. Concatenar essa lista dá os mesmos bytes que concatenar
-    todos os blocos em ordem."""
+def _lista_para_juncao(
+    total: int, indices_validos: list, temp_files: list, jh: str, pausas: Optional[list] = None,
+) -> tuple:
+    """Lista da junção final e a pausa depois de cada item: cada grupo cheio de blocos válidos entra como
+    o lote pronto (se o manifesto bater), com as pausas internas já dentro dele; os demais entram bloco a
+    bloco. `pausas[i]` é a pausa depois do bloco i. Juntar a lista com essas pausas dá os mesmos bytes
+    que juntar todos os blocos em ordem com as pausas de cada um."""
     validos = set(indices_validos)
     lista = []
+    pausas_lista = []
+
+    def pausa(i: int) -> int:
+        return int(pausas[i] or 0) if pausas and i < len(pausas) else 0
+
     for g in range(math.ceil(total / _CONCAT_BATCH_SIZE)):
         idxs = list(range(g * _CONCAT_BATCH_SIZE, min(total, (g + 1) * _CONCAT_BATCH_SIZE)))
         if len(idxs) == _CONCAT_BATCH_SIZE and all(i in validos for i in idxs):
-            if _lote_valido(jh, g, [temp_files[i] for i in idxs]):
+            if _lote_valido(jh, g, [temp_files[i] for i in idxs], [pausa(i) for i in idxs] if pausas else None):
                 lista.append(_caminho_lote(jh, g))
+                pausas_lista.append(pausa(idxs[-1]))
                 continue
-        lista.extend(temp_files[i] for i in idxs if i in validos)
-    return lista
+        for i in idxs:
+            if i in validos:
+                lista.append(temp_files[i])
+                pausas_lista.append(pausa(i))
+    return lista, pausas_lista
 
 def _limpar_lotes(jh: str) -> None:
     """Apaga os lotes derivados do job (batch_*). Blocos (part_*) e checkpoint ficam para a retomada."""
@@ -579,14 +613,14 @@ def _montar_capitulos_info(texto: str, chunk_limite: int):
 
 def _calcular_timestamps_capitulos(
     capitulos_info: list, temp_files: list, arquivos_validos: list, saida_mp3: str,
-    duracoes_ms: Optional[dict] = None,
+    duracoes_ms: Optional[dict] = None, pausas_apos: Optional[dict] = None,
 ) -> list:
     """
     Calcula os timestamps reais de cada capítulo.
 
     Usa a duração de cada chunk guardada na síntese (`duracoes_ms`, índice -> ms); sem ela, lê via
-    mutagen/cabeçalho. Deriva a pausa efetiva
-    (total_final − Σchunks) / (n−1) e mapeia chunk -> posição no áudio final.
+    mutagen/cabeçalho. Com `pausas_apos` (arquivo -> ms de silêncio depois dele), usa as pausas exatas;
+    sem ele, deriva a pausa efetiva (total_final − Σchunks) / (n−1). Mapeia chunk -> posição no áudio final.
     Retorna lista de {"titulo", "inicio_ms", "fim_ms"} pronta para
     adicionar_chapter_marks().
     """
@@ -637,7 +671,7 @@ def _calcular_timestamps_capitulos(
         chunk_start_times[f] = t
         t += dur
         if pos < len(concat_order) - 1:
-            t += pausa_real_ms
+            t += int(pausas_apos.get(f, 0)) if pausas_apos is not None else pausa_real_ms
 
     caps_com_ts = []
     for cap in capitulos_info:
@@ -825,9 +859,17 @@ async def _processar_nucleo(
     # ~50 WAV na memória. Serializar limita o pico de memória.
     sem_lotes = asyncio.Semaphore(1)
 
-    async def _gerar_lote_serial(g: int, arquivos: list):
+    # Pausa depois de cada bloco: a do mapa de personagens (troca de voz) ou a escolhida em Ajustes.
+    pausa_ms = int(CONFIG.get("edge_pausa_entre_blocos_ms", 600))
+    pausas_blocos = [
+        int(chunk_pauses[i]) if chunk_pauses and i < len(chunk_pauses) and chunk_pauses[i] is not None
+        else pausa_ms
+        for i in range(total)
+    ]
+
+    async def _gerar_lote_serial(g: int, arquivos: list, pausas: list):
         async with sem_lotes:
-            return await asyncio.to_thread(_gerar_lote_sync, jh, g, arquivos)
+            return await asyncio.to_thread(_gerar_lote_sync, jh, g, arquivos, pausas)
 
     # Progresso (P6): grava no máximo ~1 vez por segundo ou a cada 10 blocos. Gravação forçada no fim
     # da síntese, em cada rodada de retry e no cancelamento/pausa, para a retomada não perder blocos.
@@ -850,7 +892,8 @@ async def _processar_nucleo(
             return  # grupo incompleto (ou último, parcial): fica para a junção final, bloco a bloco
         lotes_disparados.add(g)
         arquivos_grupo = [temp_files[i] for i in idxs]
-        tarefas_lote.append(asyncio.create_task(_gerar_lote_serial(g, arquivos_grupo)))
+        pausas_grupo = [pausas_blocos[i] for i in idxs]
+        tarefas_lote.append(asyncio.create_task(_gerar_lote_serial(g, arquivos_grupo, pausas_grupo)))
 
     async def _aguardar_lotes() -> None:
         if tarefas_lote:
@@ -1087,12 +1130,9 @@ async def _processar_nucleo(
         if i in completed_valid and os.path.exists(temp_files[i]) and os.path.getsize(temp_files[i]) > 500
     ]
     arquivos_validos = [temp_files[i] for i in indices_validos]
-    pausas_validas = [chunk_pauses[i] for i in indices_validos] if chunk_pauses else None
 
     if not arquivos_validos:
         return {"ok": False, "erro": "Nenhum chunk de áudio foi gerado.", "job": jh}
-
-    pausa_ms = int(CONFIG.get("edge_pausa_entre_blocos_ms", 600))
 
     if not saida_mp3:
         saida_mp3 = os.path.join(_config.FILES_DIR, f"{titulo}.mp3")
@@ -1112,8 +1152,10 @@ async def _processar_nucleo(
     # Com lotes, a lista da junção são os lotes prontos + blocos avulsos (mesmos bytes; ver _lista_para_juncao).
     # Sem lotes, a junção segue a lista de blocos com as pausas, como antes.
     usa_lotes = juncao_incremental and _formato_homogeneo(arquivos_validos)
-    arquivos_juncao = _lista_para_juncao(total, indices_validos, temp_files, jh) if usa_lotes else arquivos_validos
-    pausas_juncao = None if usa_lotes else pausas_validas
+    if usa_lotes:
+        arquivos_juncao, pausas_juncao = _lista_para_juncao(total, indices_validos, temp_files, jh, pausas_blocos)
+    else:
+        arquivos_juncao, pausas_juncao = arquivos_validos, [pausas_blocos[i] for i in indices_validos]
 
     inicio_etapa = time.perf_counter()
     try:
@@ -1131,25 +1173,10 @@ async def _processar_nucleo(
     if not ok_concat or not os.path.exists(saida_mp3):
         return {"ok": False, "erro": "Falha na concatenação do áudio.", "job": jh}
 
-    # Timbre escolhido pelo usuário (tom e suavização de agudos). Mantém a duração; se falhar, segue sem.
-    tom_meios_tons = int(CONFIG.get("timbre_tom_meios_tons", 0) or 0)
-    agudos_db = int(CONFIG.get("timbre_agudos_db", 0) or 0)
+    # Tom e agudos não são gravados no arquivo (sem FFmpeg no aparelho): o app guarda o timbre da conversão e o
+    # player o aplica ao tocar (TimbreAudiobookStore).
     if _cancelar_flag:
         return _cancelado_pos_juncao()
-    if tom_meios_tons or agudos_db:
-        msg_timbre = f"Ajustando o timbre…{aviso_ignorados}"
-        _cb(PCT_FIM_JUNCAO, msg_timbre)
-        inicio_etapa = time.perf_counter()
-        try:
-            await _com_batimento(
-                aplicar_timbre(
-                    saida_mp3, tom_meios_tons, agudos_db, int(CONFIG.get("audio_bitrate_kbps", 64) or 64)
-                ),
-                _cb, PCT_FIM_JUNCAO, msg_timbre,
-            )
-        except Exception as e:
-            logger.warning(f"Ajuste de timbre falhou (não-crítico): {e}")
-        metricas.registrar_etapa("timbre", ms_desde(inicio_etapa))
 
     # Metadados ID3 e capítulos (faixa PCT_FIM_TIMBRE..PCT_FIM_METADADOS). Os capítulos são calculados
     # antes e gravados junto com os metadados, numa única passada de tags (P3.4).
@@ -1172,6 +1199,7 @@ async def _processar_nucleo(
                 asyncio.to_thread(
                     _calcular_timestamps_capitulos,
                     capitulos_info, temp_files, arquivos_validos, saida_mp3, duracoes_ms,
+                    {temp_files[i]: pausas_blocos[i] for i in indices_validos},
                 ),
                 _cb, PCT_FIM_TIMBRE, msg_metadados,
             )

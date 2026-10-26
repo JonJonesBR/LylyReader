@@ -113,6 +113,8 @@ class AudioPlayerService : MediaLibraryService() {
 
     private val binder = AudioBinder()
     private lateinit var exoPlayer: ExoPlayer
+    private var timbreAtual = com.jonjonesbr.audiobookgen.player.TimbreVoz.PADRAO
+    private val agudos = com.jonjonesbr.audiobookgen.player.AgudosNoEqualizador()
     private lateinit var mediaLibrarySession: MediaLibrarySession
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var tickJob: Job? = null
@@ -203,7 +205,7 @@ class AudioPlayerService : MediaLibraryService() {
                 if (estavaTocandoAntesDoFoco) {
                     if (!exoPlayer.isPlaying) {
                         emMudancaPlayInterna { exoPlayer.play() }
-                        exoPlayer.playbackParameters = PlaybackParameters(_state.value.speed)
+                        exoPlayer.playbackParameters = parametros(_state.value.speed)
                         aplicarAutoRewindNoResume()
                         _state.update { it.copy(isPlaying = true) }
                         PlayerStateHolder.update(_state.value)
@@ -482,9 +484,21 @@ class AudioPlayerService : MediaLibraryService() {
         tickJob?.cancel()
         fileObserver?.stopWatching()
         mediaLibrarySession.release()
+        agudos.liberar()
         exoPlayer.removeListener(playerListener)
         exoPlayer.release()
         super.onDestroy()
+    }
+
+    /** Velocidade escolhida e o tom do audiobook (o tom muda sem mudar a velocidade). */
+    private fun parametros(velocidade: Float) = PlaybackParameters(velocidade, timbreAtual.fatorDeTom)
+
+    /** Tom e agudos gravados na geração deste audiobook ([TimbreAudiobookStore]), aplicados ao tocar. */
+    private fun aplicarTimbreDoAudiobook(caminho: String) {
+        timbreAtual = TimbreAudiobookStore.carregar(applicationContext, caminho)
+        runCatching { exoPlayer.playbackParameters = parametros(_state.value.speed) }
+            .onFailure { Log.w(TAG, "Falha ao aplicar o tom do audiobook", it) }
+        agudos.aplicar(exoPlayer.audioSessionId, timbreAtual.agudosDb)
     }
 
     // ── API pública ───────────────────────────────────────────────────────────
@@ -520,7 +534,7 @@ class AudioPlayerService : MediaLibraryService() {
         playerNotificationManager.iniciarForeground()
         try {
             exoPlayer.setMediaItem(item)
-            exoPlayer.playbackParameters = PlaybackParameters(_state.value.speed)
+            exoPlayer.playbackParameters = parametros(_state.value.speed)
             exoPlayer.prepare()
             emMudancaPlayInterna { exoPlayer.play() }
         } catch (e: Exception) {
@@ -563,7 +577,7 @@ class AudioPlayerService : MediaLibraryService() {
                     prepararRetomadaAposErro()
                 }
                 emMudancaPlayInterna { exoPlayer.play() }
-                exoPlayer.playbackParameters = PlaybackParameters(_state.value.speed)
+                exoPlayer.playbackParameters = parametros(_state.value.speed)
                 aplicarAutoRewindNoResume()
                 _state.update { it.copy(isPlaying = true, erroMensagem = null) }
             }
@@ -622,7 +636,7 @@ class AudioPlayerService : MediaLibraryService() {
 
     fun aplicarVelocidade(velocidade: Float) {
         _state.update { it.copy(speed = velocidade) }
-        try { exoPlayer.playbackParameters = PlaybackParameters(velocidade) } catch (e: Exception) {
+        try { exoPlayer.playbackParameters = parametros(velocidade) } catch (e: Exception) {
             Log.w(TAG, "Falha ao aplicar velocidade", e)
         }
     }
@@ -771,6 +785,7 @@ class AudioPlayerService : MediaLibraryService() {
     private fun aoFicarPronto() {
         val caminho = _state.value.caminho
         capitulosAtual = ChapterMarksStore.carregar(applicationContext, caminho)
+        aplicarTimbreDoAudiobook(caminho)
         val savedProgress = PlaybackProgressStore.load(applicationContext, caminho)
         val duracaoMs = duracaoConhecida()
         val duracaoInt = if (duracaoMs > Int.MAX_VALUE) Int.MAX_VALUE else duracaoMs.toInt()

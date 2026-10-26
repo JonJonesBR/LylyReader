@@ -428,6 +428,7 @@ class LibraryActivity : BasePlayerActivity() {
                 val chave = item.uri.toString()
                 PlaybackProgressStore.clear(this, chave)
                 ChapterMarksStore.remover(this, chave)
+                com.jonjonesbr.audiobookgen.service.TimbreAudiobookStore.remover(this, chave)
                 GuidedBookPrefsStore.remover(this, chave)
                 LinkedBookStore.removerPorMp3(this, chave)
                 audiobooks.removeAll { it.uri == item.uri }

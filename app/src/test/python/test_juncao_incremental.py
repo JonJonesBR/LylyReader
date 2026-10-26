@@ -50,34 +50,41 @@ class JuncaoIncrementalTest(unittest.TestCase):
             for i in range(n)
         ]
 
-    def _direta(self, blocos: list) -> bytes:
+    def _direta(self, blocos: list, pausas: list) -> bytes:
         saida = os.path.join(self.pasta, "direta.mp3")
-        self.assertTrue(asyncio.run(tts.concatenar_grupo(blocos, saida)))
+        self.assertTrue(asyncio.run(tts.concatenar_grupo_com_pausa(blocos, saida, 600, pausas)))
         with open(saida, "rb") as f:
             return f.read()
 
-    def _incremental(self, blocos: list, total_grupos_cheios: int) -> tuple:
+    def _incremental(self, blocos: list, total_grupos_cheios: int, pausas: list) -> tuple:
         for g in range(total_grupos_cheios):
             idxs = range(g * 50, (g + 1) * 50)
-            self.assertTrue(core._gerar_lote_sync(JH, g, [blocos[i] for i in idxs]))
-        lista = core._lista_para_juncao(len(blocos), list(range(len(blocos))), blocos, JH)
+            self.assertTrue(core._gerar_lote_sync(JH, g, [blocos[i] for i in idxs], [pausas[i] for i in idxs]))
+        lista, pausas_lista = core._lista_para_juncao(len(blocos), list(range(len(blocos))), blocos, JH, pausas)
         saida = os.path.join(self.pasta, "incremental.mp3")
-        self.assertTrue(asyncio.run(tts.concatenar_grupo_com_pausa(lista, saida, 600, None)))
+        self.assertTrue(asyncio.run(tts.concatenar_grupo_com_pausa(lista, saida, 600, pausas_lista)))
         with open(saida, "rb") as f:
             return f.read(), lista
 
+    @staticmethod
+    def _pausas(n: int) -> list:
+        # Pausa padrão com trocas de voz curtas no meio, como no modo multi-personagem.
+        return [160 if i % 9 == 4 else 600 for i in range(n)]
+
     def test_lotes_mp3_geram_os_mesmos_bytes_da_juncao_direta(self):
         blocos = self._blocos_mp3(120)
-        direta = self._direta(blocos)
-        incremental, lista = self._incremental(blocos, total_grupos_cheios=2)
+        pausas = self._pausas(120)
+        direta = self._direta(blocos, pausas)
+        incremental, lista = self._incremental(blocos, total_grupos_cheios=2, pausas=pausas)
         self.assertEqual([core._caminho_lote(JH, 0), core._caminho_lote(JH, 1)], lista[:2])
         self.assertEqual(22, len(lista))
         self.assertEqual(direta, incremental)
 
     def test_lotes_wav_geram_os_mesmos_bytes_da_juncao_direta(self):
         blocos = self._blocos_wav(60)
-        direta = self._direta(blocos)
-        incremental, lista = self._incremental(blocos, total_grupos_cheios=1)
+        pausas = self._pausas(60)
+        direta = self._direta(blocos, pausas)
+        incremental, lista = self._incremental(blocos, total_grupos_cheios=1, pausas=pausas)
         self.assertEqual(11, len(lista))
         self.assertEqual(direta, incremental)
 
@@ -85,8 +92,17 @@ class JuncaoIncrementalTest(unittest.TestCase):
         blocos = self._blocos_mp3(100)
         for g in range(2):
             core._gerar_lote_sync(JH, g, blocos[g * 50:(g + 1) * 50])
-        lista = core._lista_para_juncao(100, list(range(100)), blocos, JH)
+        lista, _ = core._lista_para_juncao(100, list(range(100)), blocos, JH)
         self.assertEqual([core._caminho_lote(JH, 0), core._caminho_lote(JH, 1)], lista)
+
+    def test_lote_feito_com_outras_pausas_nao_e_usado(self):
+        blocos = self._blocos_mp3(50)
+        self.assertTrue(core._gerar_lote_sync(JH, 0, blocos, [600] * 50))
+        self.assertTrue(core._lote_valido(JH, 0, blocos, [600] * 50))
+        self.assertFalse(core._lote_valido(JH, 0, blocos, [300] * 50))
+        lista, pausas = core._lista_para_juncao(50, list(range(50)), blocos, JH, [300] * 50)
+        self.assertEqual(blocos, lista)
+        self.assertEqual([300] * 50, pausas)
 
     def test_formato_misto_nao_gera_lote(self):
         blocos = self._blocos_mp3(49) + self._blocos_wav(1)
@@ -100,7 +116,7 @@ class JuncaoIncrementalTest(unittest.TestCase):
         self.assertTrue(core._lote_valido(JH, 0, blocos))
         gravar(blocos[5], mp3_falso(900, semente=9))
         self.assertFalse(core._lote_valido(JH, 0, blocos))
-        lista = core._lista_para_juncao(50, list(range(50)), blocos, JH)
+        lista, _ = core._lista_para_juncao(50, list(range(50)), blocos, JH)
         self.assertNotIn(core._caminho_lote(JH, 0), lista)
         self.assertEqual(blocos, lista)
 
@@ -114,7 +130,7 @@ class JuncaoIncrementalTest(unittest.TestCase):
         blocos = self._blocos_mp3(50)
         core._gerar_lote_sync(JH, 0, blocos)
         validos = [i for i in range(50) if i != 3]
-        lista = core._lista_para_juncao(50, validos, blocos, JH)
+        lista, _ = core._lista_para_juncao(50, validos, blocos, JH)
         self.assertNotIn(core._caminho_lote(JH, 0), lista)
         self.assertEqual([blocos[i] for i in validos], lista)
 

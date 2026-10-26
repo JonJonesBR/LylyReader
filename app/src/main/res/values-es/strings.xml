@@ -243,7 +243,7 @@
     <string name="label_elevenlabs_key">Clave API de ElevenLabs</string>
     <string name="btn_salvar_chave">Guardar clave</string>
     <string name="label_pausa_blocos">PAUSA ENTRE BLOQUES</string>
-    <string name="desc_pausa_blocos">Silencio insertado entre párrafos narrados.</string>
+    <string name="desc_pausa_blocos">Silencio añadido en el audiolibro entre un bloque de frases y el siguiente.</string>
     <string name="label_qualidade_audio">CALIDAD DE AUDIO</string>
     <string name="desc_qualidade_audio">Bitrate del MP3 generado (aplicado via Gemini TTS + FFmpeg).</string>
     <string name="label_cache">CACHÉ</string>
@@ -704,7 +704,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• El progreso de la conversión ahora es real de 0 a 100%: ya no se queda en 99% y muestra cada etapa (unir audio, ajustar timbre, finalizar) y el tiempo transcurrido.\n• Los libros que no se abrían (algunos EPUB, DOCX con tablas, TXT en otras codificaciones) ahora se abren y se convierten.\n• Un PDF escaneado o protegido con contraseña indica claramente el motivo.\n• Con las voces del dispositivo (Supertonic, Piper, Kokoro, Pocket) el tiempo de la conversión ya no se congela y la duración del audiolibro se muestra bien.\n• Una clave de voz inválida (Gemini, ElevenLabs) ahora avisa en segundos, no en minutos.\n• Generación más rápida y estable con las voces Edge: los bloques problemáticos se reintentan al instante y las conexiones se adaptan a tu red.\n• La recta final (unir audio, metadatos y capítulos) es más rápida, y pausar o cancelar también funciona en esa etapa.\n• Antes de generar, la app muestra una estimación del tiempo de conversión que mejora con el uso.\n• Los audiolibros hechos con las voces del dispositivo ahora salen comprimidos (mucho más pequeños) y con la duración correcta.\n• Nuevo botón \"Escuchar lo ya generado\" en la pantalla de Conversiones: escucha el inicio mientras se genera el resto.\n• Piper puede generar en paralelo en dispositivos con 4 o más núcleos, y el fallo lento de Edge ahora se rinde antes.\n• La voz Santa en inglés ahora aparece como \"Santa (inglés)\".\n• Los archivos comprimidos ahora se exportan como .m4a y la vista previa siempre empieza desde el inicio.</string>
+    <string name="release_notes_corpo">• Pronunciaciones sugeridas por la IA: ahora puedes corregir cada una antes de añadirla.\n• Voces Pocket: las palabras que se perdían en medio o al final de las frases ahora se rehacen automáticamente.\n• Nueva opción “Expresividad de Pocket TTS” (Ajustes avanzados y Voz y motor): de más contenida a más viva.\n• Supertonic ahora usa 5 pasos por defecto (más rápido); puedes subirlo en los ajustes.\n• Nueva sección “Naturalidad de la voz (experimental)” en Ajustes › Sonido: entonación continua, acabado del audio y diálogos con más vida.\n• Audiolibros: la pausa entre bloques y las pausas entre voces de personajes ahora funcionan de verdad.\n• Audiolibros: el tono y los agudos elegidos ahora se aplican al escuchar en la app.</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Voz más grave o más aguda, y agudos más suaves. Se aplica al instante.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>

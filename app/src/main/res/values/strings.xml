@@ -243,7 +243,7 @@
 
     <string name="btn_salvar_chave">Save key</string>
     <string name="label_pausa_blocos">PAUSE BETWEEN BLOCKS</string>
-    <string name="desc_pausa_blocos">Silence inserted between narrated paragraphs.</string>
+    <string name="desc_pausa_blocos">Silence added to the audiobook between one block of sentences and the next.</string>
     <string name="label_qualidade_audio">AUDIO QUALITY</string>
     <string name="desc_qualidade_audio">MP3 bitrate (applied via Gemini TTS + FFmpeg).</string>
     <string name="label_cache">CACHE</string>
@@ -718,7 +718,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Conversion progress is now real from 0 to 100%: it no longer sits at 99%, and it shows each step (joining audio, adjusting tone, finishing) and the elapsed time.\n• Books that would not open (some EPUBs, DOCX with tables, TXT in other encodings) now open and convert.\n• Scanned or password-protected PDFs now say clearly why they can\'t be read.\n• With on-device voices (Supertonic, Piper, Kokoro, Pocket) the conversion timer no longer freezes and the audiobook duration shows correctly.\n• An invalid voice key (Gemini, ElevenLabs) now reports in seconds instead of minutes.\n• Faster, steadier generation with Edge voices: problem blocks are retried right away and the number of connections adapts to your network.\n• The final stretch (joining audio, metadata and chapters) is faster, and pause or cancel now works during it too.\n• Before generating, the app shows an estimated conversion time that improves as you use it.\n• Audiobooks made with on-device voices are now compressed (much smaller) and show the correct duration.\n• New \"Listen to what is already generated\" button on the Conversions screen: hear the beginning while the rest is generated.\n• Piper can generate in parallel on devices with 4 or more cores, and slow Edge failures now give up sooner.\n• The English Santa voice now appears as \"Santa (English)\".\n• Compressed files are now exported as .m4a, and the preview always starts from the beginning.</string>
+    <string name="release_notes_corpo">• AI-suggested pronunciations: you can now fix each one before adding it.\n• Pocket voices: words that went missing in the middle or at the end of sentences are now redone automatically.\n• New “Pocket TTS expressiveness” option (Advanced settings and Voice and engine): from calmer to livelier.\n• Supertonic now uses 5 steps by default (faster); you can raise it in settings.\n• New “Natural-sounding voice (experimental)” section in Settings › Sound: flowing intonation, audio finishing and livelier dialogue.\n• Audiobooks: the pause between blocks and the pauses between character voices now actually work.\n• Audiobooks: the chosen pitch and treble are now applied when listening in the app.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>

@@ -359,6 +359,7 @@ class ConversionWorker(
                 if (comprimido) engine.atualizarTamanhoHistorico(result.tamanhoMb, tamanhoMb)
                 val capitulosJson = ChapterMarksStore.paraJson(result.capitulos)
                 ChapterMarksStore.salvarJson(applicationContext, result.caminho, capitulosJson)
+                TimbreAudiobookStore.salvarDaConversao(applicationContext, result.caminho, tomDoLivro, agudosDoLivro)
                 livroOrigem?.let { com.jonjonesbr.audiobookgen.data.LinkedBookStore.vincular(applicationContext, it, result.caminho) }
                 val pastaDestino = com.jonjonesbr.audiobookgen.data.AppPrefs(applicationContext).pastaDestino
                     ?.let { android.net.Uri.parse(it) }

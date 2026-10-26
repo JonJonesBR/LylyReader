@@ -53,7 +53,7 @@ class JuncaoIncrementalSerialTest(unittest.TestCase):
         ativos = {"n": 0, "pico": 0, "lotes": 0}
         trava = threading.Lock()
 
-        def gerar_lote(jh, g, arquivos):
+        def gerar_lote(jh, g, arquivos, pausas=None):
             with trava:
                 ativos["lotes"] += 1
                 ativos["n"] += 1
@@ -71,7 +71,8 @@ class JuncaoIncrementalSerialTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, \
                 mock.patch.object(cpa, "_juncao_incremental_ativa", lambda: True), \
                 mock.patch.object(cpa, "_gerar_lote_sync", gerar_lote), \
-                mock.patch.object(cpa, "_lista_para_juncao", lambda total, idxs, temp, jh: [temp[i] for i in idxs]), \
+                mock.patch.object(cpa, "_lista_para_juncao",
+                                  lambda total, idxs, temp, jh, pausas=None: ([temp[i] for i in idxs], None)), \
                 mock.patch.object(cpa, "concatenar_grupo_com_pausa", concatenar), \
                 mock.patch.object(cpa, "converter_tts_auto", _converter_mp3):
             _rodar(tmp, _TEXTO_LONGO, "supertonic-m1", "onnx")

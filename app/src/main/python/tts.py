@@ -233,6 +233,129 @@ def _concatenar_mp3_puro(arquivos: list, saida: str) -> bool:
         return False
 
 
+# ── Silêncio sem FFmpeg (pausas entre blocos) ────────────────────────────────
+
+# Layer III: bitrates (kbps) por índice e taxas de amostragem por versão do MPEG.
+_MP3_BITRATES_V1 = (0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320)
+_MP3_BITRATES_V2 = (0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160)
+_MP3_TAXAS = {3: (44100, 48000, 32000), 2: (22050, 24000, 16000), 0: (11025, 12000, 8000)}
+
+
+def _formato_wav(caminho: str) -> Optional[tuple]:
+    """(taxa, canais, bits) do chunk fmt de um WAV; None se não for WAV legível."""
+    try:
+        with open(caminho, "rb") as f:
+            dados = f.read(4096)
+    except OSError:
+        return None
+    if dados[:4] != b"RIFF" or dados[8:12] != b"WAVE":
+        return None
+    i = 12
+    while i + 8 <= len(dados):
+        tamanho = struct.unpack("<I", dados[i + 4:i + 8])[0]
+        if dados[i:i + 4] == b"fmt " and tamanho >= 16 and i + 24 <= len(dados):
+            canais, taxa = struct.unpack("<HI", dados[i + 10:i + 16])
+            bits = struct.unpack("<H", dados[i + 22:i + 24])[0]
+            return (taxa, canais, bits) if taxa > 0 and canais > 0 and bits > 0 else None
+        i += 8 + tamanho + (tamanho % 2)
+    return None
+
+
+def _quadro_mp3_silencioso(caminho: str) -> Optional[tuple]:
+    """Quadro MP3 (Layer III) mudo no mesmo formato do primeiro quadro de `caminho`, e quantos ms ele dura.
+
+    Cabeçalho igual ao do arquivo (sem CRC e sem padding) seguido de zeros: com a informação lateral
+    zerada o quadro não tem dados de áudio, e o decodificador toca silêncio. Assim o silêncio entra
+    na junção binária dos MP3 sem reencodar nada."""
+    try:
+        with open(caminho, "rb") as f:
+            f.seek(_mp3_audio_offset(caminho))
+            cab = f.read(4)
+    except OSError:
+        return None
+    if len(cab) < 4 or cab[0] != 0xFF or (cab[1] & 0xE0) != 0xE0:
+        return None
+    versao = (cab[1] >> 3) & 0x03
+    camada = (cab[1] >> 1) & 0x03
+    indice_bitrate = cab[2] >> 4
+    indice_taxa = (cab[2] >> 2) & 0x03
+    if versao == 1 or camada != 1 or indice_taxa == 3 or indice_bitrate in (0, 15):
+        return None  # reservado, livre ou não é Layer III
+    mpeg1 = versao == 3
+    bitrate = (_MP3_BITRATES_V1 if mpeg1 else _MP3_BITRATES_V2)[indice_bitrate] * 1000
+    taxa = _MP3_TAXAS[versao][indice_taxa]
+    tamanho = (144 if mpeg1 else 72) * bitrate // taxa
+    amostras = 1152 if mpeg1 else 576
+    cabecalho = bytes([cab[0], cab[1] | 0x01, cab[2] & ~0x02 & 0xFF, cab[3]])
+    return cabecalho + bytes(tamanho - 4), amostras * 1000.0 / taxa
+
+
+def gerar_silencio_como(modelo: str, ms: int, saida: str) -> bool:
+    """Grava em `saida` `ms` de silêncio no mesmo formato de `modelo` (WAV PCM ou MP3 Layer III), sem FFmpeg.
+    Devolve False se o formato não for reconhecido."""
+    ms = max(0, int(ms))
+    try:
+        formato = _formato_wav(modelo) if _is_wav(modelo) else None
+        if formato:
+            taxa, canais, bits = formato
+            bloco = canais * bits // 8
+            pcm = bytes(int(round(taxa * ms / 1000.0)) * bloco)
+            cab = (
+                b"RIFF" + struct.pack("<I", 36 + len(pcm)) + b"WAVE"
+                + b"fmt " + struct.pack("<IHHIIHH", 16, 1, canais, taxa, taxa * bloco, bloco, bits)
+                + b"data" + struct.pack("<I", len(pcm))
+            )
+            with open(saida, "wb") as f:
+                f.write(cab + pcm)
+            return True
+        if _is_wav(modelo):
+            return False
+        quadro = _quadro_mp3_silencioso(modelo)
+        if quadro is None:
+            return False
+        dados, ms_por_quadro = quadro
+        with open(saida, "wb") as f:
+            f.write(dados * max(1, int(round(ms / ms_por_quadro))))
+        return True
+    except Exception as e:
+        logger.warning(f"Silêncio da junção não foi gerado: {e}")
+        return False
+
+
+def intercalar_silencios(arquivos: list, pausas_ms: list, pasta: str, silencios: dict) -> Optional[list]:
+    """Lista de junção com um arquivo de silêncio depois de cada arquivo (menos o último). `pausas_ms[i]` é a
+    pausa depois do arquivo i (0 = nenhuma). Os silêncios são criados em `pasta`, no formato do primeiro
+    arquivo, e guardados em `silencios` (ms → caminho) para reaproveitar. None se o silêncio não puder ser
+    gerado."""
+    if not arquivos:
+        return []
+    modelo = arquivos[0]
+    tipo = "wav" if _is_wav(modelo) else "mp3"
+    intercalados = []
+    for i, arq in enumerate(arquivos):
+        intercalados.append(arq)
+        ms = int(pausas_ms[i]) if i < len(pausas_ms) and pausas_ms[i] else 0
+        if i == len(arquivos) - 1 or ms <= 0:
+            continue
+        chave = (tipo, ms)
+        if chave not in silencios:
+            caminho = os.path.join(pasta, f"_silence_{ms}_{tipo}.mp3")
+            silencios[chave] = caminho if gerar_silencio_como(modelo, ms, caminho) else None
+        if silencios[chave] is None:
+            return None
+        intercalados.append(silencios[chave])
+    return intercalados
+
+
+def apagar_silencios(silencios: dict) -> None:
+    for caminho in silencios.values():
+        if caminho and os.path.exists(caminho):
+            try:
+                os.remove(caminho)
+            except OSError:
+                pass
+
+
 def timeout_para_texto(texto: str) -> float:
     """Timeout (s) de uma chamada Edge para um bloco: 30 s + 1 s a cada 20 caracteres, entre 30 e 90 s.
     Folga generosa para redes lentas; blocos curtos falham um pouco mais cedo e blocos longos mantêm o teto de 90 s."""
@@ -807,42 +930,20 @@ async def concatenar_grupo_com_pausa(
         return True
 
     pasta = str(Path(saida).parent)
-    silencios = {}  # duração (ms) -> arquivo de silêncio
-
-    async def _silencio(ms: int):
-        if ms not in silencios:
-            caminho = os.path.join(pasta, f"_silence_{ms}.mp3")
-            ok = await executar_ffmpeg(
-                "-y", "-f", "lavfi",
-                "-i", "anullsrc=channel_layout=mono:sample_rate=24000",
-                "-t", str(ms / 1000.0),
-                "-c:a", "libmp3lame", "-q:a", "9",
-                caminho,
-            )
-            silencios[ms] = caminho if ok else None
-        return silencios[ms]
-
+    pausas = [
+        pausas_ms[i] if pausas_ms and i < len(pausas_ms) and pausas_ms[i] is not None else pausa_ms
+        for i in range(len(arquivos))
+    ]
+    silencios: dict = {}
     try:
-        intercalados = []
-        for i, arq in enumerate(arquivos):
-            intercalados.append(arq)
-            if i < len(arquivos) - 1:
-                ms = pausa_ms
-                if pausas_ms and i < len(pausas_ms) and pausas_ms[i] is not None:
-                    ms = int(pausas_ms[i])
-                arquivo_silencio = await _silencio(ms)
-                if arquivo_silencio is None:
-                    # sem ffmpeg para gerar o silêncio: mantém o comportamento antigo (sem pausas)
-                    return await concatenar_grupo(arquivos, saida, on_progress, cancelado)
-                intercalados.append(arquivo_silencio)
+        # Silêncio gerado em Python puro, no formato dos blocos (o Android não tem FFmpeg).
+        intercalados = intercalar_silencios(arquivos, pausas, pasta, silencios)
+        if intercalados is None:
+            logger.warning("Formato de áudio sem silêncio conhecido: junção sem pausas entre blocos.")
+            return await concatenar_grupo(arquivos, saida, on_progress, cancelado)
         return await concatenar_grupo(intercalados, saida, on_progress, cancelado)
     finally:
-        for caminho in silencios.values():
-            if caminho and os.path.exists(caminho):
-                try:
-                    os.remove(caminho)
-                except OSError:
-                    pass
+        apagar_silencios(silencios)
 
 
 def montar_filtro_timbre(tom_meios_tons: int, agudos_db: int) -> str:
