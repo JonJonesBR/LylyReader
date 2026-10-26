@@ -36,6 +36,19 @@ class CapituloTocAdapter(
     fun filtrar(busca: String) {
         visiveis = NavegacaoCapitulos.filtrar(capitulos, busca)
         notifyDataSetChanged()
+        onSelecaoMudou() // o rótulo "Marcar todos" depende do que está à vista
+    }
+
+    /** Todos os capítulos mostrados (respeitando a busca) estão marcados para converter? */
+    fun todosVisiveisMarcados(): Boolean = selecionados != null && visiveis.isNotEmpty() &&
+        visiveis.all { it in selecionados }
+
+    /** "Marcar todos" / "Desmarcar todos": vale para os capítulos mostrados (respeitando a busca). */
+    fun marcarTodosVisiveis(marcar: Boolean) {
+        val alvo = selecionados ?: return
+        if (marcar) alvo.addAll(visiveis) else alvo.removeAll(visiveis.toSet())
+        notifyDataSetChanged()
+        onSelecaoMudou()
     }
 
     /** Posição do capítulo atual na lista mostrada (-1 se a busca o escondeu). */

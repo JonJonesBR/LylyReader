@@ -46,6 +46,8 @@ class ReaderRetornoController(
         val onAbrirAparencia: () -> Unit,
         val onAbrirSleepTimer: () -> Unit,
         val onClonarVoz: () -> Unit = {},
+        /** Gera o audiobook dos capítulos marcados em ⋮ › Capítulos. */
+        val onGerarCapitulosMarcados: () -> Unit = {},
     )
 
     fun retornarComSelecao() {
@@ -213,26 +215,34 @@ class ReaderRetornoController(
         dialog.show()
     }
 
-    /** "Gerar audiobook": o livro inteiro ou só o capítulo em leitura (antes eram 3 itens no menu). */
+    /**
+     * "Gerar audiobook": o livro inteiro, só o capítulo em leitura ou, se houver, os capítulos marcados em
+     * ⋮ › Capítulos (antes os marcados só tinham o botão sobre o texto, que some com a leitura guiada aberta).
+     */
     private fun mostrarDialogoGerarAudiobook() {
         val texto = viewModel.textoEfetivo() ?: return
         val capitulo = texto.capitulos.getOrNull(viewModel.uiState.value.capituloAtivo)
-        if (capitulo == null) {
+        val marcados = callbacks.obterCapitulosSelecionados().size
+        if (capitulo == null && marcados == 0) {
             callbacks.onBaixarLivro()
             return
         }
-        val opcoes = arrayOf(
-            activity.getString(R.string.gerar_audiobook_livro),
-            activity.getString(
-                R.string.gerar_audiobook_capitulo,
-                com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos.tituloLimpo(capitulo.titulo)
-            )
-        )
+        val opcoes = buildList<Pair<String, () -> Unit>> {
+            if (marcados > 0) {
+                add(
+                    activity.resources.getQuantityString(R.plurals.gerar_audiobook_marcados, marcados, marcados) to
+                        callbacks.onGerarCapitulosMarcados
+                )
+            }
+            add(activity.getString(R.string.gerar_audiobook_livro) to callbacks.onBaixarLivro)
+            if (capitulo != null) {
+                val titulo = com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos.tituloLimpo(capitulo.titulo)
+                add(activity.getString(R.string.gerar_audiobook_capitulo, titulo) to callbacks.onBaixarCapitulo)
+            }
+        }
         androidx.appcompat.app.AlertDialog.Builder(activity)
             .setTitle(R.string.gerar_audiobook_titulo)
-            .setItems(opcoes) { _, which ->
-                if (which == 0) callbacks.onBaixarLivro() else callbacks.onBaixarCapitulo()
-            }
+            .setItems(opcoes.map { it.first }.toTypedArray()) { _, which -> opcoes[which].second() }
             .setNegativeButton(android.R.string.cancel, null)
             .exibir()
     }

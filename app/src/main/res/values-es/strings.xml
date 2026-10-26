@@ -515,6 +515,13 @@
     <string name="cd_abrir_capitulos">%1$s. Abrir la lista de capítulos</string>
     <string name="busca_capitulos_hint">Buscar capítulo</string>
     <string name="capitulos_dica_converter">Marca capítulos para convertirlos en audiolibro.</string>
+    <string name="capitulos_marcar_todos">Marcar todos</string>
+    <string name="capitulos_desmarcar_todos">Desmarcar todos</string>
+    <plurals name="gerar_audiobook_marcados">
+        <item quantity="one">Capítulo marcado (%d)</item>
+        <item quantity="many">Capítulos marcados (%d)</item>
+        <item quantity="other">Capítulos marcados (%d)</item>
+    </plurals>
     <string name="cd_marcar_capitulo_converter">Convertir %1$s</string>
     <string name="cd_capitulo_toc_atual">%1$s, capítulo actual</string>
     <string name="cd_capitulo_toc_lido">%1$s, leído</string>

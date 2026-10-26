@@ -28,17 +28,43 @@
         android:textAllCaps="true"
         android:letterSpacing="0.05"/>
 
-    <TextView
-        android:id="@+id/tvCapitulosDicaConverter"
+    <!-- Marcar capítulos para converter: dica e "Marcar todos" / "Desmarcar todos" -->
+    <LinearLayout
+        android:id="@+id/linhaCapitulosConverter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/capitulos_dica_converter"
-        android:textSize="12sp"
-        android:textColor="@color/color_on_surface_dim"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:paddingStart="20dp"
-        android:paddingEnd="20dp"
+        android:paddingEnd="8dp"
         android:paddingBottom="8dp"
-        android:visibility="gone"/>
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvCapitulosDicaConverter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/capitulos_dica_converter"
+            android:textSize="12sp"
+            android:textColor="@color/color_on_surface_dim"/>
+
+        <TextView
+            android:id="@+id/tvCapitulosMarcarTodos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:gravity="center"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="@string/capitulos_marcar_todos"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"/>
+    </LinearLayout>
 
     <!-- Busca: só aparece em livros com muitos capítulos -->
     <EditText

@@ -328,6 +328,9 @@ class ReaderActivity : BasePlayerActivity() {
                 onCompartilharTrecho = { compartilharTrechoAtual() },
                 onBaixarCapitulo = { baixarCapitulo() },
                 onBaixarLivro = { gerarLivroInteiro() },
+                onGerarCapitulosMarcados = {
+                    verificarConectividadeAntesDeConverter { retornoController.retornarComSelecao() }
+                },
                 onOuvirAudiobook = { ouvirAudiobookDesteLivro() },
                 onConfigurarVozesPersonagens = { personagensController.abrirConfiguracaoVozesPersonagens() },
                 onAbrirMarcacoes = { marcacoesController.mostrarDialogListarMarcacoes() },
@@ -1539,7 +1542,14 @@ class ReaderActivity : BasePlayerActivity() {
         val atual = capituloNaBarra.takeIf { it in texto.capitulos.indices } ?: viewModel.uiState.value.capituloAtivo
         // Marcar capítulos para converter (o que os chips faziam); não existe no "Ler sem áudio".
         val selecionados = if (somenteLeitura) null else capitulosSelecionados
-        val adapter = CapituloTocAdapter(
+        val marcarTodos = view.findViewById<TextView>(R.id.tvCapitulosMarcarTodos)
+        lateinit var adapter: CapituloTocAdapter
+        fun atualizarMarcarTodos() {
+            marcarTodos.setText(
+                if (adapter.todosVisiveisMarcados()) R.string.capitulos_desmarcar_todos else R.string.capitulos_marcar_todos
+            )
+        }
+        adapter = CapituloTocAdapter(
             texto.capitulos, atual, selecionados,
             onCapituloTocado = { indice ->
                 dialog.dismiss()
@@ -1548,10 +1558,13 @@ class ReaderActivity : BasePlayerActivity() {
             onSelecaoMudou = {
                 if (capitulosSelecionados.isNotEmpty()) viewModel.limparSelecao()
                 atualizarUI(viewModel.uiState.value)
+                atualizarMarcarTodos()
             }
         )
-        view.findViewById<View>(R.id.tvCapitulosDicaConverter).visibility =
+        view.findViewById<View>(R.id.linhaCapitulosConverter).visibility =
             if (selecionados != null) View.VISIBLE else View.GONE
+        atualizarMarcarTodos()
+        marcarTodos.setOnClickListener { adapter.marcarTodosVisiveis(!adapter.todosVisiveisMarcados()) }
         val lista = view.findViewById<RecyclerView>(R.id.rvCapitulosToc).apply {
             layoutManager = LinearLayoutManager(this@ReaderActivity)
             this.adapter = adapter

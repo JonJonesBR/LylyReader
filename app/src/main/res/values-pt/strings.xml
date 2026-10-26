@@ -526,6 +526,13 @@
     <string name="busca_capitulos_hint">Buscar capítulo</string>
 
     <string name="capitulos_dica_converter">Marque capítulos para convertê-los em audiobook.</string>
+    <string name="capitulos_marcar_todos">Marcar todos</string>
+    <string name="capitulos_desmarcar_todos">Desmarcar todos</string>
+    <plurals name="gerar_audiobook_marcados">
+        <item quantity="one">Capítulo marcado (%d)</item>
+        <item quantity="many">Capítulos marcados (%d)</item>
+        <item quantity="other">Capítulos marcados (%d)</item>
+    </plurals>
 
     <string name="cd_marcar_capitulo_converter">Converter %1$s</string>
 

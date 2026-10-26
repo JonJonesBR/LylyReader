@@ -519,6 +519,13 @@
     <string name="busca_capitulos_hint">Search chapters</string>
 
     <string name="capitulos_dica_converter">Check chapters to convert them into an audiobook.</string>
+    <string name="capitulos_marcar_todos">Select all</string>
+    <string name="capitulos_desmarcar_todos">Deselect all</string>
+    <plurals name="gerar_audiobook_marcados">
+        <item quantity="one">Selected chapter (%d)</item>
+        <item quantity="many">Selected chapters (%d)</item>
+        <item quantity="other">Selected chapters (%d)</item>
+    </plurals>
 
     <string name="cd_marcar_capitulo_converter">Convert %1$s</string>
 
