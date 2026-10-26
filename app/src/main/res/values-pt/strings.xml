@@ -856,6 +856,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="pron_ai_progress">Consultando a IA… %1$d de %2$d</string>
     <string name="pron_ai_review_title">Revise as sugestões</string>
     <string name="pron_ai_apply">Adicionar marcadas</string>
+    <string name="pron_ai_review_hint">Desmarque o que não quiser. Para corrigir uma pronúncia, toque nela e escreva como deve soar.</string>
     <string name="pron_ai_result_none">A IA não trouxe sugestões.</string>
     <string name="pron_ai_added">%1$d pronúncias adicionadas.</string>
     <string name="pron_ai_failed">A IA falhou: %1$s</string>

@@ -1,10 +1,18 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.text.InputType
+import android.view.Gravity
+import android.view.WindowManager
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.EscopoPronuncia
@@ -177,21 +185,35 @@ object PronunciationAiFlow {
         }
     }
 
+    /** Uma sugestão na revisão: a caixa (com o nome original) e o campo da pronúncia, que pode ser corrigido. */
+    private class Sugestao(val palavra: String, val marcada: CheckBox, val falada: EditText)
+
     private fun review(activity: AppCompatActivity, found: Map<String, String>, caminhoDoLivro: String?) {
-        val entries = found.entries.toList()
-        val checked = BooleanArray(entries.size) { true }
+        val dp = activity.resources.displayMetrics.density
+        val pad = (20 * dp).toInt()
+        val lista = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
+        val sugestoes = found.map { (palavra, falada) -> linhaDeRevisao(activity, lista, palavra, falada) }
+        val conteudo = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, (4 * dp).toInt(), pad, 0)
+            addView(TextView(activity).apply {
+                text = activity.getString(R.string.pron_ai_review_hint)
+                textSize = 13f
+                setPadding(0, 0, 0, (8 * dp).toInt())
+            })
+            addView(ScrollView(activity).apply { addView(lista) })
+        }
         var escopo = if (caminhoDoLivro != null) EscopoPronuncia.LIVRO else EscopoPronuncia.TODOS
         val builder = AlertDialog.Builder(activity)
             .setTitle(R.string.pron_ai_review_title)
-            .setMultiChoiceItems(entries.map { "${it.key}  →  ${it.value}" }.toTypedArray(), checked) { _, which, isChecked ->
-                checked[which] = isChecked
-            }
+            .setView(conteudo)
             .setPositiveButton(R.string.pron_ai_apply) { _, _ ->
                 var dictionary = PronunciationDialog.dicionarioDoEscopo(activity, caminhoDoLivro, escopo)
                 var added = 0
-                entries.forEachIndexed { index, entry ->
-                    if (checked[index]) {
-                        dictionary = dictionary.with(PronunciationEntry(entry.key, entry.value))
+                sugestoes.forEach { s ->
+                    val falada = s.falada.text.toString().trim()
+                    if (s.marcada.isChecked && falada.isNotEmpty()) {
+                        dictionary = dictionary.with(PronunciationEntry(s.palavra, falada))
                         added++
                     }
                 }
@@ -207,6 +229,8 @@ object PronunciationAiFlow {
             )
         }
         val dialogo = activity.mostrarDialogo(builder)
+        // Com o teclado aberto, a lista encolhe em vez de ficar escondida atrás dele.
+        dialogo.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         if (caminhoDoLivro != null) {
             // Botão de escopo: troca entre "Este livro" e "Todos os livros" sem fechar a revisão.
             val botao = dialogo.getButton(AlertDialog.BUTTON_NEUTRAL)
@@ -219,5 +243,34 @@ object PronunciationAiFlow {
                 rotular()
             }
         }
+    }
+
+    /** Linha "☑ Nome  [pronúncia]": editar a pronúncia marca a caixa; apagar tudo equivale a desmarcar. */
+    private fun linhaDeRevisao(
+        activity: AppCompatActivity,
+        lista: LinearLayout,
+        palavra: String,
+        falada: String
+    ): Sugestao {
+        val caixa = CheckBox(activity).apply {
+            text = palavra
+            isChecked = true
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val campo = EditText(activity).apply {
+            setText(falada)
+            hint = activity.getString(R.string.pron_hint_spoken)
+            inputType = InputType.TYPE_CLASS_TEXT
+            setSingleLine()
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            doAfterTextChanged { if (!it.isNullOrBlank()) caixa.isChecked = true }
+        }
+        lista.addView(LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(caixa)
+            addView(campo)
+        })
+        return Sugestao(palavra, caixa, campo)
     }
 }

@@ -858,6 +858,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="pron_ai_progress">Asking the AI… %1$d of %2$d</string>
     <string name="pron_ai_review_title">Review the suggestions</string>
     <string name="pron_ai_apply">Add selected</string>
+    <string name="pron_ai_review_hint">Uncheck what you don\'t want. To fix a pronunciation, tap it and type how it should sound.</string>
     <string name="pron_ai_result_none">The AI had no suggestions.</string>
     <string name="pron_ai_added">%1$d pronunciations added.</string>
     <string name="pron_ai_failed">The AI failed: %1$s</string>

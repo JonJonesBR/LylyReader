@@ -844,6 +844,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="pron_ai_progress">Consultando a la IA… %1$d de %2$d</string>
     <string name="pron_ai_review_title">Revisa las sugerencias</string>
     <string name="pron_ai_apply">Añadir marcadas</string>
+    <string name="pron_ai_review_hint">Desmarca lo que no quieras. Para corregir una pronunciación, tócala y escribe cómo debe sonar.</string>
     <string name="pron_ai_result_none">La IA no trajo sugerencias.</string>
     <string name="pron_ai_added">%1$d pronunciaciones añadidas.</string>
     <string name="pron_ai_failed">La IA falló: %1$s</string>
