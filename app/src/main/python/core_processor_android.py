@@ -611,18 +611,21 @@ def _montar_capitulos_info(texto: str, chunk_limite: int):
     return capitulos_info_final, limites_chunks, max(acumulado, 1), total_caps
 
 
-def _calcular_timestamps_capitulos(
-    capitulos_info: list, temp_files: list, arquivos_validos: list, saida_mp3: str,
+# Caracteres do começo de cada trecho guardados para a sincronia texto-áudio (o bastante para achar o parágrafo).
+_SINCRONIA_TEXTO_MAX = 80
+
+
+def _inicios_dos_chunks(
+    temp_files: list, arquivos_validos: list, saida_mp3: str,
     duracoes_ms: Optional[dict] = None, pausas_apos: Optional[dict] = None,
-) -> list:
+):
     """
-    Calcula os timestamps reais de cada capítulo.
+    Posição de cada chunk no áudio final: devolve (inicio_por_arquivo, duracao_por_arquivo, total_ms), ou None
+    sem nenhum chunk válido.
 
     Usa a duração de cada chunk guardada na síntese (`duracoes_ms`, índice -> ms); sem ela, lê via
     mutagen/cabeçalho. Com `pausas_apos` (arquivo -> ms de silêncio depois dele), usa as pausas exatas;
-    sem ele, deriva a pausa efetiva (total_final − Σchunks) / (n−1). Mapeia chunk -> posição no áudio final.
-    Retorna lista de {"titulo", "inicio_ms", "fim_ms"} pronta para
-    adicionar_chapter_marks().
+    sem ele, deriva a pausa efetiva (total_final − Σchunks) / (n−1).
     """
     # Duração de cada chunk válido
     chunk_dur_map: dict = {}
@@ -652,7 +655,7 @@ def _calcular_timestamps_capitulos(
     # Ordem real de concatenação
     concat_order = [(f, chunk_dur_map.get(f, 0)) for f in arquivos_validos]
     if not concat_order:
-        return []
+        return None
 
     # Duração total do arquivo final (para derivar pausas reais)
     try:
@@ -672,6 +675,34 @@ def _calcular_timestamps_capitulos(
         t += dur
         if pos < len(concat_order) - 1:
             t += int(pausas_apos.get(f, 0)) if pausas_apos is not None else pausa_real_ms
+    return chunk_start_times, chunk_dur_map, total_ms
+
+
+def _trechos_para_sincronia(chunks: list, temp_files: list, chunk_start_times: dict) -> list:
+    """
+    Início (ms) de cada trecho no MP3 final, com o começo do texto dele: o leitor localiza o parágrafo pelo texto e
+    destaca o trecho exato que está tocando (sem isso, só dava para estimar pela proporção do tempo).
+    """
+    trechos = []
+    for i, f in enumerate(temp_files):
+        if i < len(chunks) and f in chunk_start_times:
+            trechos.append({"inicio_ms": int(chunk_start_times[f]), "texto": str(chunks[i])[:_SINCRONIA_TEXTO_MAX]})
+    return trechos
+
+
+def _calcular_timestamps_capitulos(
+    capitulos_info: list, temp_files: list, arquivos_validos: list, saida_mp3: str,
+    duracoes_ms: Optional[dict] = None, pausas_apos: Optional[dict] = None,
+) -> list:
+    """
+    Calcula os timestamps reais de cada capítulo (posição dos chunks: ver `_inicios_dos_chunks`).
+    Retorna lista de {"titulo", "inicio_ms", "fim_ms"} pronta para
+    adicionar_chapter_marks().
+    """
+    inicios = _inicios_dos_chunks(temp_files, arquivos_validos, saida_mp3, duracoes_ms, pausas_apos)
+    if inicios is None:
+        return []
+    chunk_start_times, chunk_dur_map, total_ms = inicios
 
     caps_com_ts = []
     for cap in capitulos_info:
@@ -1208,6 +1239,23 @@ async def _processar_nucleo(
             caps_com_ts = []
         metricas.registrar_etapa("capitulos", ms_desde(inicio_etapa))
 
+    # Início de cada trecho no MP3, para o leitor destacar o trecho exato que está tocando (não-crítico).
+    # Antes de _limpar_job: sem os blocos no disco, as durações lidas deles somem.
+    trechos: list = []
+    try:
+        inicios = await _com_batimento(
+            asyncio.to_thread(
+                _inicios_dos_chunks,
+                temp_files, arquivos_validos, saida_mp3, duracoes_ms,
+                {temp_files[i]: pausas_blocos[i] for i in indices_validos},
+            ),
+            _cb, PCT_FIM_TIMBRE, msg_metadados,
+        )
+        if inicios is not None:
+            trechos = _trechos_para_sincronia(chunks, temp_files, inicios[0])
+    except Exception as e:
+        logger.warning(f"Sincronia texto-áudio falhou (não-crítico): {e}")
+
     inicio_etapa = time.perf_counter()
     await _com_batimento(
         asyncio.to_thread(
@@ -1248,6 +1296,8 @@ async def _processar_nucleo(
     return {
         "ok": True, "caminho": saida_mp3, "duracao": duracao_str, "tamanho_mb": tam_mb,
         "capitulos": caps_com_ts,
+        # JSON numa string só: milhares de trechos atravessam a ponte Python→Kotlin de uma vez.
+        "trechos_json": json.dumps(trechos, ensure_ascii=False),
     }
 
 

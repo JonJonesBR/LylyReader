@@ -365,6 +365,8 @@ class ConversionWorker(
                 if (comprimido) engine.atualizarTamanhoHistorico(result.tamanhoMb, tamanhoMb)
                 val capitulosJson = ChapterMarksStore.paraJson(result.capitulos)
                 ChapterMarksStore.salvarJson(applicationContext, result.caminho, capitulosJson)
+                // Fica fora do outputData (limite de 10 KB do WorkManager): o leitor lê do arquivo.
+                com.jonjonesbr.audiobookgen.data.SincroniaAudioStore.salvarJson(applicationContext, result.caminho, result.trechosJson)
                 TimbreAudiobookStore.salvarDaConversao(applicationContext, result.caminho, tomDoLivro, agudosDoLivro)
                 livroOrigem?.let { com.jonjonesbr.audiobookgen.data.LinkedBookStore.vincular(applicationContext, it, result.caminho) }
                 val pastaDestino = com.jonjonesbr.audiobookgen.data.AppPrefs(applicationContext).pastaDestino

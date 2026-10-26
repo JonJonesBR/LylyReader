@@ -43,4 +43,51 @@ class SincroniaAudiobookTest {
         assertEquals(-1, paragrafoNoAudiobook(0, 0, emptyList(), texto()))
         assertEquals(-1, paragrafoNoAudiobook(0, 100, emptyList(), TextoExtraido(emptyList(), emptyList(), 0)))
     }
+
+    private fun livro(vararg paragrafos: String): TextoExtraido {
+        var offset = 0
+        val lista = paragrafos.map { t -> Paragrafo(t, offset, 0).also { offset += t.length + 2 } }
+        return TextoExtraido(listOf(Capitulo("Único", 0, lista.lastIndex)), lista, offset)
+    }
+
+    @Test
+    fun ancorasAchamCadaTrechoPeloComecoDoTextoSempreParaFrente() {
+        val t = livro(
+            "Capítulo um.",
+            "Era uma vez, numa terra distante, um rei. Ele tinha três filhos!",
+            "O mais novo — Pedro — partiu cedo.",
+        )
+        val trechos = listOf(
+            TrechoAudio(0, "Capítulo um."),
+            TrechoAudio(2_000, "Era uma vez, numa terra distante, um rei."),
+            TrechoAudio(5_000, "Ele tinha três filhos!"),
+            TrechoAudio(7_000, "O mais novo - Pedro - partiu cedo."),
+        )
+        val ancoras = ancorasDeSincronia(trechos, t)
+        assertEquals(listOf(0L to 0, 2_000L to 1, 5_000L to 1, 7_000L to 2), ancoras)
+        assertEquals(1, paragrafoNoAudiobook(6_000, 10_000, emptyList(), t, ancoras))
+        assertEquals(2, paragrafoNoAudiobook(9_999, 10_000, emptyList(), t, ancoras))
+    }
+
+    @Test
+    fun trechoQueNaoEstaNoTextoFicaSemAncoraESemVoltarAtras() {
+        val t = livro("Primeiro parágrafo aqui.", "Segundo parágrafo aqui.", "Primeiro parágrafo aqui de novo.")
+        val trechos = listOf(
+            TrechoAudio(0, "Segundo parágrafo aqui."),
+            TrechoAudio(1_000, "Texto que a conversão normalizou diferente."),
+            TrechoAudio(2_000, "Primeiro parágrafo aqui de novo."),
+        )
+        // O 3º trecho casa com o parágrafo 2 (para frente do cursor), não com o 0.
+        assertEquals(listOf(0L to 1, 2_000L to 2), ancorasDeSincronia(trechos, t))
+    }
+
+    @Test
+    fun trechosDeJsonIgnoraLixo() {
+        assertEquals(
+            listOf(TrechoAudio(10, "Olá mundo")),
+            trechosDeJson("""[{"inicio_ms":10,"texto":"Olá mundo"},{"inicio_ms":-1,"texto":"x"},{"texto":"sem início"}]"""),
+        )
+        assertEquals(emptyList<TrechoAudio>(), trechosDeJson("não é json"))
+        assertEquals(emptyList<TrechoAudio>(), trechosDeJson(null))
+    }
 }

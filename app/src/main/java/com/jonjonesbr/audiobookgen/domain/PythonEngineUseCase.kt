@@ -26,7 +26,9 @@ sealed class ProcessamentoResult {
         val caminho: String,
         val duracao: String,
         val tamanhoMb: String,
-        val capitulos: List<CapituloAudio> = emptyList()
+        val capitulos: List<CapituloAudio> = emptyList(),
+        /** Início de cada trecho no MP3 (JSON, ver [TrechoAudio]); null em conversões que não o devolvem. */
+        val trechosJson: String? = null,
     ) : ProcessamentoResult()
 
     /** [job] é o hash do job no Python (quando a conversão chegou a começar), para poder descartá-lo depois. */
@@ -261,7 +263,8 @@ class PythonEngineUseCase(private val context: Context) {
                     caminho = resultado.callAttr("get", "caminho")?.toString() ?: "",
                     duracao = resultado.callAttr("get", "duracao")?.toString() ?: "",
                     tamanhoMb = resultado.callAttr("get", "tamanho_mb")?.toString() ?: "?",
-                    capitulos = parseCapitulos(resultado)
+                    capitulos = parseCapitulos(resultado),
+                    trechosJson = resultado.callAttr("get", "trechos_json")?.toString()?.takeIf { it != "None" },
                 )
             } else {
                 val erroRaw = resultado.callAttr("get", "erro")?.toString() ?: ""
@@ -330,7 +333,8 @@ class PythonEngineUseCase(private val context: Context) {
                     caminho = resultado.callAttr("get", "caminho")?.toString() ?: "",
                     duracao = resultado.callAttr("get", "duracao")?.toString() ?: "",
                     tamanhoMb = resultado.callAttr("get", "tamanho_mb")?.toString() ?: "?",
-                    capitulos = parseCapitulos(resultado)
+                    capitulos = parseCapitulos(resultado),
+                    trechosJson = resultado.callAttr("get", "trechos_json")?.toString()?.takeIf { it != "None" },
                 )
             } else {
                 val erroRaw = resultado.callAttr("get", "erro")?.toString() ?: ""

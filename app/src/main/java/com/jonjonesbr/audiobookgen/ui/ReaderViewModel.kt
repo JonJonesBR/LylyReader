@@ -146,6 +146,22 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         _uiState.update { it.copy(progressPct = pct) }
     }
 
+    /** Âncoras de sincronia (trecho do MP3 → parágrafo) do audiobook deste livro, calculadas uma vez por MP3 e texto. */
+    private var ancorasCache: Triple<String, com.jonjonesbr.audiobookgen.domain.TextoExtraido, List<Pair<Long, Int>>>? = null
+
+    private suspend fun ancorasDoAudiobook(
+        mp3: String,
+        texto: com.jonjonesbr.audiobookgen.domain.TextoExtraido,
+    ): List<Pair<Long, Int>> {
+        ancorasCache?.let { (m, t, a) -> if (m == mp3 && t === texto) return a }
+        val ancoras = withContext(Dispatchers.Default) {
+            val trechos = com.jonjonesbr.audiobookgen.data.SincroniaAudioStore.carregar(getApplication(), mp3)
+            com.jonjonesbr.audiobookgen.domain.ancorasDeSincronia(trechos, texto)
+        }
+        ancorasCache = Triple(mp3, texto, ancoras)
+        return ancoras
+    }
+
     private fun iniciarSync() {
         syncJob?.cancel()
         syncJob = viewModelScope.launch {
@@ -167,8 +183,14 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
                     return@collect
                 }
 
+                val ancoras = if (mp3DoLivro != null && playerState.caminho == mp3DoLivro) {
+                    ancorasDoAudiobook(mp3DoLivro, texto)
+                } else {
+                    emptyList()
+                }
                 val paragrafoAtual = com.jonjonesbr.audiobookgen.domain.paragrafoNoAudiobook(
-                    playerState.currentPosition.toLong(), playerState.duration.toLong(), playerState.capitulos, texto
+                    playerState.currentPosition.toLong(), playerState.duration.toLong(),
+                    playerState.capitulos, texto, ancoras,
                 ).coerceAtLeast(0)
 
                 val current = _uiState.value

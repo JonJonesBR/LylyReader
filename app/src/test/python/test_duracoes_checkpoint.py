@@ -96,5 +96,35 @@ class TimestampsComDuracoesSalvasTest(unittest.TestCase):
         self.assertEqual(0, caps[0]["inicio_ms"])
 
 
+class TrechosParaSincroniaTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.pasta = self.tmp.name
+        self.blocos = [gravar(os.path.join(self.pasta, f"part_{i}.mp3"), mp3_falso(900, semente=i))
+                       for i in range(3)]
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_cada_trecho_ganha_o_inicio_no_mp3_e_o_comeco_do_texto(self):
+        duracoes = {0: 1000, 1: 2000, 2: 500}
+        pausas = {self.blocos[0]: 300, self.blocos[1]: 300}
+        inicios = core._inicios_dos_chunks(
+            self.blocos, self.blocos, os.path.join(self.pasta, "inexistente.mp3"), duracoes, pausas,
+        )
+        chunks = ["Primeiro trecho.", "Segundo " + "x" * 200, "Terceiro."]
+        trechos = core._trechos_para_sincronia(chunks, self.blocos, inicios[0])
+        self.assertEqual([0, 1300, 3600], [t["inicio_ms"] for t in trechos])
+        self.assertEqual("Primeiro trecho.", trechos[0]["texto"])
+        self.assertEqual(core._SINCRONIA_TEXTO_MAX, len(trechos[1]["texto"]))
+
+    def test_bloco_que_falhou_fica_fora(self):
+        duracoes = {0: 1000, 2: 500}
+        validos = [self.blocos[0], self.blocos[2]]
+        inicios = core._inicios_dos_chunks(self.blocos, validos, os.path.join(self.pasta, "x.mp3"), duracoes, {})
+        trechos = core._trechos_para_sincronia(["a", "b", "c"], self.blocos, inicios[0])
+        self.assertEqual(["a", "c"], [t["texto"] for t in trechos])
+
+
 if __name__ == "__main__":
     unittest.main()
