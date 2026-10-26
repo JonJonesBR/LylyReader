@@ -387,23 +387,39 @@ class GuidedPlayerManagerTest {
         assertNull(GuidedPlaybackBridge.activeState.value)
     }
 
-    // --- 3. setParagraphs() reseta currentIndex e cancela prefetchJob em andamento
+    // --- 3. setParagraphs() reencontra o parágrafo atual e cancela prefetchJob em andamento
     //         quando o conteúdo muda ---
 
     @Test
-    fun setParagraphsResetsCurrentIndexAndCancelsPrefetchJobOnContentChange() {
+    fun setParagraphsRemapsCurrentIndexAndCancelsPrefetchJobOnContentChange() {
         val manager = createManager()
         manager.setParagraphs(paragraphs(3))
         manager.setCurrentIndex(1)
         val inFlightPrefetch = Job()
         manager.setPrefetchJob(inFlightPrefetch)
 
-        manager.setParagraphs(paragraphs(5)) // tamanho diferente (3 -> 5) já basta para não ser "mesmo conteúdo"
+        // Texto recarregado com um parágrafo a mais no começo (ex.: bruto x limpo): "paragrafo-1" vai para o índice 2.
+        manager.setParagraphs(
+            listOf(Paragrafo(texto = "cabecalho", charOffset = 0, indiceCapitulo = 0)) + paragraphs(4)
+        )
 
         assertTrue(inFlightPrefetch.isCancelled)
         assertNull(manager.getPrefetchJob())
-        assertEquals(-1, manager.getCurrentIndex())
+        assertEquals(2, manager.getCurrentIndex())
         assertEquals(0, manager.prefetchedPathsSize())
+    }
+
+    @Test
+    fun remapearIndiceUsaOMesmoTextoMaisProximoOuAProporcao() {
+        val manager = createManager()
+        assertEquals(3, manager.remapearIndice(listOf("a", "b", "c"), listOf("x", "a", "y", "b", "c"), 1))
+        assertEquals(2, manager.remapearIndice(listOf("b", "z", "b"), listOf("b", "q", "b"), 2))
+        // Parágrafo alterado: mesma proporção do livro (5/10 → 10/20).
+        val antigos = (0 until 10).map { "p$it" }
+        val novos = (0 until 20).map { "n$it" }
+        assertEquals(10, manager.remapearIndice(antigos, novos, 5))
+        assertEquals(-1, manager.remapearIndice(antigos, novos, -1))
+        assertEquals(-1, manager.remapearIndice(antigos, emptyList(), 5))
     }
 
     @Test

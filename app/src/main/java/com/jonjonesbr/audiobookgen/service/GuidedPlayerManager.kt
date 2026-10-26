@@ -500,10 +500,14 @@ class GuidedPlayerManager(
             prefetchJob?.cancel()
             prefetchJob = null
             prefetchedPaths.clear()
-            // currentIndex apontava para um índice da lista antiga; não faz sentido preservá-lo
-            // sobre o conteúdo novo — os guards de bounds em resume()/next()/previous() cobrem
-            // o caso defensivo, mas o reset aqui evita depender só deles.
-            currentIndex = -1
+            // Reabrir o leitor (notificação, mini-player) recarrega o texto, primeiro bruto e depois
+            // limpo: os índices mudam. Antes o índice era zerado (-1) e, ao fim do parágrafo, next()
+            // recomeçava o livro do início. Agora reencontra o mesmo parágrafo na lista nova.
+            val anterior = currentIndex
+            currentIndex = remapearIndice(paragraphs.map { it.texto }, newParagraphs.map { it.texto }, anterior)
+            if (currentIndex >= 0 && _state.value.index == anterior) {
+                _state.update { it.copy(index = currentIndex) }
+            }
             // Sem isso, minutos acumulados do livro anterior eram creditados às estatísticas
             // do livro novo assim que o tick de escuta cruzasse o próximo minuto inteiro.
             msOuvidoAcumulado = 0L
@@ -512,6 +516,17 @@ class GuidedPlayerManager(
             )
         }
         this.paragraphs = newParagraphs
+    }
+
+    /**
+     * Onde fica, em [novos], o parágrafo [indice] de [antigos]: o de mesmo texto mais perto da posição antiga; sem
+     * nenhum igual (o parágrafo mudou na limpeza), a mesma proporção do livro. -1 quando [indice] já era inválido.
+     */
+    internal fun remapearIndice(antigos: List<String>, novos: List<String>, indice: Int): Int {
+        if (indice !in antigos.indices || novos.isEmpty()) return -1
+        val alvo = antigos[indice]
+        val igual = novos.indices.filter { novos[it] == alvo }.minByOrNull { kotlin.math.abs(it - indice) }
+        return igual ?: (indice.toLong() * novos.size / antigos.size).toInt().coerceIn(0, novos.lastIndex)
     }
 
     fun setSpeakerAttribution(result: SpeakerAttributionResult?) {
