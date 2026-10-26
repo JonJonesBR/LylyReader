@@ -64,19 +64,74 @@ object TrechosSupertonic {
         return partes
     }
 
+    /** Letras (e dígitos) do texto: a medida de quanto há para falar. */
+    fun letras(texto: String): Int = texto.count { it.isLetterOrDigit() }
+
+    /** Letras por segundo na velocidade 1.0; null quando o trecho é curto demais para medir. */
+    fun ritmo(texto: String, segundos: Float, velocidade: Float): Float? {
+        val letras = letras(texto)
+        if (segundos <= 0f || velocidade <= 0f || letras < MIN_LETRAS) return null
+        return letras / segundos / velocidade
+    }
+
     /**
      * Velocidade para refazer [texto] quando o áudio de [segundos] saiu rápido demais na [velocidade] pedida
      * (sinal de que o modelo pulou palavras); null quando o ritmo é plausível.
+     *
+     * Com [ritmoTipico] (o ritmo habitual desta voz, ver [RitmoDaVoz]), "rápido demais" é passar dele em
+     * [FOLGA_SOBRE_O_TIPICO]: uma voz que fala 13 letras/s e de repente sai a 16 perdeu umas palavras, mesmo
+     * abaixo do teto fixo. O refazer mira o ritmo típico (ou [LETRAS_POR_SEGUNDO_ALVO] sem ele).
      */
-    fun velocidadeParaRefazer(texto: String, segundos: Float, velocidade: Float): Float? {
-        val letras = texto.count { it.isLetterOrDigit() }
-        if (segundos <= 0f || velocidade <= 0f || letras < MIN_LETRAS) return null
-        val letrasPorSegundoNaVelocidade1 = letras / segundos / velocidade
-        return if (letrasPorSegundoNaVelocidade1 <= LETRAS_POR_SEGUNDO_MAX) {
+    fun velocidadeParaRefazer(
+        texto: String,
+        segundos: Float,
+        velocidade: Float,
+        ritmoTipico: Float? = null
+    ): Float? {
+        val ritmo = ritmo(texto, segundos, velocidade) ?: return null
+        val limite = ritmoTipico?.let { (it * FOLGA_SOBRE_O_TIPICO).coerceAtMost(LETRAS_POR_SEGUNDO_MAX) }
+            ?: LETRAS_POR_SEGUNDO_MAX
+        val alvo = ritmoTipico ?: LETRAS_POR_SEGUNDO_ALVO
+        return if (ritmo <= limite) {
             null
         } else {
-            (velocidade * LETRAS_POR_SEGUNDO_ALVO / letrasPorSegundoNaVelocidade1)
-                .coerceAtLeast(velocidade * VELOCIDADE_MIN_RELATIVA)
+            (velocidade * alvo / ritmo).coerceAtLeast(velocidade * VELOCIDADE_MIN_RELATIVA)
         }
+    }
+
+    /** O ritmo passa de 18% do habitual da voz: tido como palavras puladas. */
+    const val FOLGA_SOBRE_O_TIPICO = 1.18f
+}
+
+/**
+ * Ritmo habitual (letras/s na velocidade 1.0) de cada voz Supertonic nesta sessão: a mediana dos últimos
+ * trechos aceitos. Começa a valer depois de [MINIMO_DE_AMOSTRAS] trechos; antes, vale o teto fixo.
+ */
+object RitmoDaVoz {
+    private const val MINIMO_DE_AMOSTRAS = 5
+    private const val MAXIMO_DE_AMOSTRAS = 40
+    private val amostras = HashMap<String, ArrayDeque<Float>>()
+
+    @Synchronized
+    fun tipico(voz: String): Float? {
+        val lista = amostras[voz] ?: return null
+        return if (lista.size < MINIMO_DE_AMOSTRAS) null else mediana(lista)
+    }
+
+    /** Registra o ritmo de um trecho aceito (plausível). */
+    @Synchronized
+    fun registrar(voz: String, ritmo: Float) {
+        val lista = amostras.getOrPut(voz) { ArrayDeque() }
+        lista.addLast(ritmo)
+        while (lista.size > MAXIMO_DE_AMOSTRAS) lista.removeFirst()
+    }
+
+    @Synchronized
+    internal fun limpar() = amostras.clear()
+
+    private fun mediana(valores: Collection<Float>): Float {
+        val ordenados = valores.sorted()
+        val meio = ordenados.size / 2
+        return if (ordenados.size % 2 == 1) ordenados[meio] else (ordenados[meio - 1] + ordenados[meio]) / 2
     }
 }

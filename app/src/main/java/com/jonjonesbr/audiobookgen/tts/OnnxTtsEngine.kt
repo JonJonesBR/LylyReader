@@ -52,6 +52,8 @@ class OnnxTtsEngine(
         private const val TAMANHO_MIN_ARQUIVO_VALIDO = 500
         private const val MAX_CHARS_PER_CHUNK = 450
         private const val SUPERTONIC_SR       = 44100
+        /** Quantas vezes um trecho Supertonic com fala comprimida (palavras puladas) é refeito. */
+        private const val REFAZER_SUPERTONIC_MAX = 2
         // Todas as vozes Supertonic usam o pacote V2 (Supertone/supertonic-2) — multilíngue:
         // en/ko/es/pt/fr no mesmo modelo (~300 MB). Variantes do voice ID só mudam o `lang`
         // passado para o nativo, e o arquivo de estilo (M1.json/F1.json).
@@ -208,7 +210,8 @@ class OnnxTtsEngine(
 
     /**
      * Sintetiza um trecho Supertonic e, se o áudio saiu rápido demais para o texto (o modelo comprimiu a fala
-     * e pulou palavras), refaz uma vez com mais tempo. Ver [TrechosSupertonic].
+     * e pulou palavras), refaz com mais tempo, até [REFAZER_SUPERTONIC_MAX] vezes. "Rápido demais" é medido
+     * contra o ritmo habitual da voz ([RitmoDaVoz]) quando já há amostras. Ver [TrechosSupertonic].
      */
     private fun sintetizarSupertonicSemPularPalavras(
         texto: String,
@@ -216,14 +219,33 @@ class OnnxTtsEngine(
         speed: Float,
         version: String
     ): FloatArray? {
-        val primeira = synthesizeSupertonicNative(texto, voiceId, speed, version)
-        val segundos = (primeira?.size ?: 0).toFloat() / SUPERTONIC_SR
-        val novaVelocidade = TrechosSupertonic.velocidadeParaRefazer(texto, segundos, speed)
-        if (primeira == null || novaVelocidade == null) return primeira
-        Log.w(TAG, "Supertonic: áudio rápido demais (${texto.length} chars em ${"%.1f".format(segundos)}s); " +
-            "refazendo com velocidade $novaVelocidade em vez de $speed")
-        return synthesizeSupertonicNative(texto, voiceId, novaVelocidade, version)?.takeIf { it.isNotEmpty() }
-            ?: primeira
+        val tipico = RitmoDaVoz.tipico(voiceId)
+        var audio = synthesizeSupertonicNative(texto, voiceId, speed, version) ?: return null
+        var velocidade = speed
+        fun refazerCom(a: FloatArray, v: Float) =
+            TrechosSupertonic.velocidadeParaRefazer(texto, a.size.toFloat() / SUPERTONIC_SR, v, tipico)
+        var nova = refazerCom(audio, velocidade)
+        var tentativas = 0
+        while (nova != null && tentativas < REFAZER_SUPERTONIC_MAX) {
+            tentativas++
+            Log.w(TAG, "Supertonic: áudio rápido demais (${texto.length} chars em " +
+                "${"%.1f".format(audio.size.toFloat() / SUPERTONIC_SR)}s, típico ${tipico ?: "-"} letras/s); " +
+                "refazendo com velocidade $nova em vez de $velocidade")
+            val refeito = synthesizeSupertonicNative(texto, voiceId, nova, version)?.takeIf { it.isNotEmpty() }
+            if (refeito == null) {
+                tentativas = REFAZER_SUPERTONIC_MAX
+            } else {
+                audio = refeito
+                velocidade = nova
+                nova = refazerCom(audio, velocidade)
+            }
+        }
+        // Só o trecho com ritmo plausível entra na medida do ritmo habitual da voz.
+        if (nova == null) {
+            TrechosSupertonic.ritmo(texto, audio.size.toFloat() / SUPERTONIC_SR, velocidade)
+                ?.let { RitmoDaVoz.registrar(voiceId, it) }
+        }
+        return audio
     }
 
     /** Versão efetiva (v1 só se instalado; senão v2), com log quando o v1 foi pedido e não está pronto. */

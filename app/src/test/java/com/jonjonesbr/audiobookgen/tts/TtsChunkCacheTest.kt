@@ -172,9 +172,9 @@ class TtsChunkCacheTest {
         val base = "rev"
         assertEquals("rev", TtsChunkCache.revisaoComPassos(base, "pocket-ptbr-rafael", 1))
         assertEquals("rev-passos3", TtsChunkCache.revisaoComPassos(base, "pocket-ptbr-rafael", 3))
-        assertEquals("rev-passos5", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 5))
-        assertEquals("rev-passos12", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 12))
-        assertEquals("rev-passos4", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 4))
+        assertEquals("rev-passos5-ritmo1", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 5))
+        assertEquals("rev-passos12-ritmo1", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 12))
+        assertEquals("rev-passos4-ritmo1", TtsChunkCache.revisaoComPassos(base, "supertonic-f4-pt", 4))
         assertEquals("rev", TtsChunkCache.revisaoComPassos(base, "kokoro-pf-dora", 3))
         assertEquals("rev", TtsChunkCache.revisaoComPassos(base, "piper-ptbr-cadu::main-pt", 4))
     }

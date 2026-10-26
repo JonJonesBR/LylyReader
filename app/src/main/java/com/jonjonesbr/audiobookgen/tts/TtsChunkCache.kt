@@ -73,7 +73,8 @@ object TtsChunkCache {
      * sufixo foi gerado com 12.
      */
     internal fun revisaoComPassos(base: String, voice: String, passos: Int): String = when {
-        voice.startsWith("supertonic-") -> "$base-passos$passos"
+        // "-ritmo1": trechos refeitos quando a fala sai comprimida contra o ritmo habitual da voz (RitmoDaVoz).
+        voice.startsWith("supertonic-") -> "$base-passos$passos-ritmo1"
         voice.startsWith("pocket-") && passos != com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_PADRAO ->
             "$base-passos$passos"
         else -> base
