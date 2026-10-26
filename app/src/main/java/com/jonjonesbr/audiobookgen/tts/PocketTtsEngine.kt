@@ -12,8 +12,10 @@ class PocketTtsEngine(private val context: Context) {
 
     fun ultimoErro(): String? = lastError
 
-    suspend fun synthesize(text: String, voiceId: String, output: File): Result<File> =
+    suspend fun synthesize(texto: String, voiceId: String, output: File): Result<File> =
         withContext(Dispatchers.IO) {
+            // Reticências e pontuação repetida viram pontuação que o modelo lê (antes saía um som sem sentido).
+            val text = TextoPocket.normalizar(texto)
             // Sem nenhuma letra/dígito (ex.: "***") o Pocket leria os símbolos: entrega um silêncio curto.
             if (text.none { it.isLetterOrDigit() }) {
                 output.parentFile?.mkdirs()

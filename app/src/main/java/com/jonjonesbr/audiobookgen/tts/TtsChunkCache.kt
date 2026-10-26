@@ -28,8 +28,8 @@ object TtsChunkCache {
     internal fun revisaoModelo(voice: String): String = when {
         voice.startsWith("supertonic-") -> "supertonic-v2"
         voice.startsWith("kokoro-") -> "kokoro-multilang-v1_0-fp32"
-        voice == "pocket-ptbr-rafael" -> "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2-retry1"
-        voice.startsWith("pocket-") -> "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-pause500-nodash-v2-retry1"
+        voice == "pocket-ptbr-rafael" -> "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2-retry1-retic1"
+        voice.startsWith("pocket-") -> "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-pause500-nodash-v2-retry1-retic1"
         voice.startsWith("mms-por::") -> "mms-tts-por-v1"
         voice.startsWith("android::") -> "android-engine"
         voice.startsWith("elevenlabs-") -> "elevenlabs-eleven_multilingual_v2"
