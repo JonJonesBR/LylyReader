@@ -49,8 +49,10 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             when (val result = extractUseCase.invoke(caminho)) {
                 is ExtractionResult.Success -> {
+                    // limpandoTexto já junto com o texto: quem lê o estado nunca vê o texto bruto "pronto" antes de a
+                    // limpeza começar (o "Continuar" da leitura guiada espera o texto limpo, cujo índice foi o salvo).
                     _uiState.update {
-                        it.copy(carregando = false, texto = result.texto)
+                        it.copy(carregando = false, texto = result.texto, limpandoTexto = true)
                     }
                     executarLimpeza(java.io.File(caminho).extension.lowercase())
                     iniciarSync()

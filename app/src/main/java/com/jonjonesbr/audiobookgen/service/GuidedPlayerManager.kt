@@ -705,7 +705,9 @@ class GuidedPlayerManager(
                             partesParaTomDasFalas(paragraphText), 0, paragraphText.length, paragraphText.length
                         )
                         playerEngine?.play(audioFile, speedVal * speedMultiplier * fatorFala)
-                        _state.update { GuidedState(index, isPlaying = true, isLoading = false) }
+                        // currentIndex, não o argumento: se o texto foi trocado (bruto → limpo) durante a síntese,
+                        // o índice foi remapeado e o marcador tem de seguir o parágrafo que está tocando.
+                        _state.update { GuidedState(currentIndex, isPlaying = true, isLoading = false) }
                         startProgressPolling()
                         
                         // Unidade única local não passa pelo loop de orações: inicia aqui
@@ -713,7 +715,7 @@ class GuidedPlayerManager(
                         if (usaPipelineDeOracoes(motorEfetivo)) {
                             prefetchProximaOracaoDoParagrafoSeguinte(voz, ritmo, synthesizer)
                         } else {
-                            prefetch(index + 1)
+                            prefetch(currentIndex + 1)
                         }
                     } else {
                         _state.update {

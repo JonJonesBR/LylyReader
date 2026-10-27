@@ -67,6 +67,8 @@ class GuidedReadingBarController(
         val onLivroConcluido: () -> Unit = {},
         /** "Pré-carregar capítulo" das opções do player. */
         val prepararCapitulo: () -> Unit = {},
+        /** A leitura guiada foi encerrada; recebe o último parágrafo que ela leu (para retomar dali). */
+        val aoEncerrarGuiada: (Int) -> Unit = {},
     )
 
     private val lifecycleScope = activity.lifecycleScope
@@ -252,6 +254,7 @@ class GuidedReadingBarController(
             return
         }
         if (guidedState.index == -1) {
+            if (ultimoIndiceGuided >= 0) callbacks.aoEncerrarGuiada(ultimoIndiceGuided)
             views.layoutGuidedPlayer.visibility = View.GONE
             callbacks.mostrarMiniPlayer()
             viewModel.setParagrafoSyncAtual(-1)

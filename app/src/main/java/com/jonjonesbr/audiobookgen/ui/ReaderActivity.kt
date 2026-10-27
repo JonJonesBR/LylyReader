@@ -245,6 +245,7 @@ class ReaderActivity : BasePlayerActivity() {
                     obterCaminhoArquivo = { caminhoArquivo },
                     onLivroConcluido = { avancarSequenciaFila() },
                     prepararCapitulo = { prepararCapituloAtual() },
+                    aoEncerrarGuiada = { paragrafoGuiadoAoEncerrar = it },
                 ),
             )
         }
@@ -467,11 +468,12 @@ class ReaderActivity : BasePlayerActivity() {
         dialogAtivo?.dismiss()
         dialogAtivo = null
         viewModel.salvarPreferencias(appPrefs)
-        // Salva a posição de leitura (primeiro parágrafo visível) para retomar depois.
+        // Salva a posição de leitura para retomar depois: o parágrafo da leitura guiada, ativa ou recém-encerrada sem
+        // rolagem manual depois (o marcador fica abaixo do topo da tela); senão o primeiro parágrafo visível.
         if (::recyclerView.isInitialized && caminhoArquivo.isNotEmpty()) {
-            (recyclerView.layoutManager as? LinearLayoutManager)
-                ?.findFirstVisibleItemPosition()
-                ?.takeIf { it >= 0 }
+            val guiadaEncerrada = paragrafoGuiadoAoEncerrar
+                .takeIf { it >= 0 && viewModel.uiState.value.paragrafoSyncAtual < 0 }
+            (guiadaEncerrada ?: paragrafoAtualVisivel())
                 ?.let {
                     // Total de parágrafos: dá a porcentagem lida (progresso = scroll / total) na biblioteca.
                     appPrefs.salvarPosicaoLeitura(caminhoArquivo, it, if (::adapter.isInitialized) adapter.itemCount else 0)
@@ -726,6 +728,8 @@ class ReaderActivity : BasePlayerActivity() {
             override fun onScrollStateChanged(rv: RecyclerView, newState: Int) {
                 if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
                     guidedReadingBarController?.scrollManual = true
+                    // Rolou com o dedo: a posição a guardar volta a ser a da tela, não a da leitura guiada encerrada.
+                    paragrafoGuiadoAoEncerrar = -1
                     // Rolar com o dedo só suspende a rolagem automática do audiobook por um tempo; antes
                     // desligava o acompanhamento de vez (o destaque parava até reabrir o leitor).
                     rolagemAudiobookSuspensaAte = android.os.SystemClock.uptimeMillis() + PAUSA_ROLAGEM_MANUAL_MS
@@ -831,6 +835,9 @@ class ReaderActivity : BasePlayerActivity() {
         tvDialogProgressoStatus = null
         barDialogProgresso = null
     }
+
+    /** Último parágrafo lido pela leitura guiada encerrada nesta tela (-1: nenhum ou o usuário rolou depois). */
+    private var paragrafoGuiadoAoEncerrar = -1
 
     /** Última geração de audiobook pedida aqui (capítulo ou livro), para o "Tentar de novo" do aviso de erro. */
     private var refazerConversao: (() -> Unit)? = null
@@ -1126,6 +1133,10 @@ class ReaderActivity : BasePlayerActivity() {
         // "Ler sem áudio" nunca inicia a guiada (nem o diálogo de início nem a leitura direta).
         if (somenteLeitura) return
         val controlador = guidedReadingBarController ?: return
+        // Espera a limpeza: a posição salva e os capítulos valem para o texto limpo. Começar no bruto tocava o
+        // parágrafo anterior ao marcado (o bruto tem lixo a mais antes), e o marcador ficava um à frente do áudio.
+        val estado = viewModel.uiState.value
+        if (estado.textoLimpo == null && estado.limpandoTexto) return
         // Não reabrir o diálogo ao reconectar a uma leitura em andamento (ex.: rotação da tela):
         // a intent original ainda carrega EXTRA_AUTO_START_GUIDED e o flag da instância se perde.
         if (intent.getBooleanExtra(EXTRA_AUTO_START_GUIDED, false) &&
