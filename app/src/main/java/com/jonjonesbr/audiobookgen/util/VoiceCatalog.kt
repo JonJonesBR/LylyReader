@@ -459,8 +459,9 @@ object VoiceCatalog {
     fun reidratarEmSegundoPlano(bloco: () -> Unit) {
         val latch = java.util.concurrent.CountDownLatch(1)
         reidratacao = latch
-        kotlin.concurrent.thread(name = "voice-rehydrate") {
-            threadReidratadora = Thread.currentThread()
+        // A thread é criada parada e atribuída antes do start: assim quem lê o catálogo já sabe
+        // qual thread é a reidratadora desde a primeira instrução dela (sem corrida).
+        val reidratadora = kotlin.concurrent.thread(start = false, name = "voice-rehydrate") {
             try {
                 bloco()
             } catch (t: Throwable) {
@@ -469,6 +470,8 @@ object VoiceCatalog {
                 latch.countDown()
             }
         }
+        threadReidratadora = reidratadora
+        reidratadora.start()
     }
 
     /** Espera a reidratação terminar (no máximo 5 s). Não espera quem é a própria reidratadora. */
