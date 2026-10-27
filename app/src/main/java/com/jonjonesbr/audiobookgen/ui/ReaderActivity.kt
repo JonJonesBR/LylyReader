@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.net.Uri
 import com.jonjonesbr.audiobookgen.domain.DocumentExportUseCase
+import com.jonjonesbr.audiobookgen.domain.RegraDeReconexaoGuiada
 import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
@@ -373,10 +374,13 @@ class ReaderActivity : BasePlayerActivity() {
             // Reconecta ao manager em execução se já houver leitura guiada ativa para ESTE documento
             // (ex.: usuário voltou ao menu e reabriu pelo indicador/notificação). Senão, cria um novo.
             // Usa applicationContext para o manager poder sobreviver ao fim desta Activity.
-            val managerExistente = GuidedPlaybackBridge.manager
-            val manager: GuidedPlayerManager = if (managerExistente != null &&
-                GuidedPlaybackBridge.caminhoArquivo == caminhoArquivo &&
-                managerExistente.state.value.index >= 0) {
+            // A regra (mesmo documento e index >= 0) fica em RegraDeReconexaoGuiada, testada na JVM.
+            val managerExistente = RegraDeReconexaoGuiada.managerParaReconectar(
+                GuidedPlaybackBridge.manager,
+                { GuidedPlaybackBridge.caminhoArquivo },
+                caminhoArquivo
+            ) { it.state.value.index }
+            val manager: GuidedPlayerManager = if (managerExistente != null) {
                 reconectandoGuided = true
                 managerExistente
             } else {

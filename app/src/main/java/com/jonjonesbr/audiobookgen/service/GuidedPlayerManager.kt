@@ -65,7 +65,10 @@ private data class PrefetchedAudio(
 
 class GuidedPlayerManager(
     private val context: Context,
-    private val pythonUseCase: PythonEngineUseCase
+    private val pythonUseCase: PythonEngineUseCase,
+    // Escopo das coroutines do player. O padrão é o de produção (Main + SupervisorJob); testes podem
+    // passar um escopo com TestDispatcher para controlar o tempo sem mudar o comportamento do app.
+    private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 ) {
     companion object {
         // Motores TTS Android de terceiros costumam ser mais frágeis sob rajada de chamadas
@@ -216,8 +219,7 @@ class GuidedPlayerManager(
         GuidedBookAudioStore.save(context, caminhoArquivo, perfil)
         aplicarTimbre()
     }
-    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    
+
     private val _state = MutableStateFlow(GuidedState(-1, isPlaying = false, isLoading = false))
     val state: StateFlow<GuidedState> = _state.asStateFlow()
 
