@@ -275,6 +275,10 @@ abstract class BasePlayerActivity : AppCompatActivity() {
             val m = GuidedPlaybackBridge.manager
             if (m?.state?.value?.isPlaying == true) m.pause() else m?.resume()
         }
+        // Mesmo efeito do "Parar" da notificação: a barra e a notificação somem; o leitor guarda onde parou.
+        root.findViewById<ImageButton?>(R.id.guidedIndicatorFechar)?.setOnClickListener {
+            GuidedPlaybackBridge.manager?.stop()
+        }
         observarIndicadorGuided()
     }
 

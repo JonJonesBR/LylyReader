@@ -50,6 +50,18 @@
             android:contentDescription="@string/cd_play_pause"
             android:tooltipText="@string/cd_play_pause"/>
 
+        <!-- Encerra a leitura guiada de qualquer tela, sem precisar abrir o leitor. -->
+        <ImageButton
+            android:id="@+id/guidedIndicatorFechar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:padding="8dp"
+            android:src="@drawable/ic_player_fechar"
+            app:tint="@color/color_on_surface_muted"
+            android:contentDescription="@string/cd_fechar_leitura_guiada"
+            android:tooltipText="@string/cd_fechar_leitura_guiada"/>
+
     </LinearLayout>
 
     <LinearLayout

@@ -13,6 +13,7 @@
     <string name="cd_guided_speed">Velocidad de lectura: %1$s</string>
     <string name="cd_expandir_player">Expandir reproductor</string>
     <string name="cd_fechar_player">Cerrar reproductor</string>
+    <string name="cd_fechar_leitura_guiada">Cerrar lectura guiada</string>
     <string name="cd_guided_anterior">Párrafo anterior</string>
     <string name="cd_guided_proximo">Párrafo siguiente</string>
     <string name="cd_guided_fechar">Cerrar lectura guiada</string>
@@ -705,7 +706,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Corregido: la lectura guiada y el audiolibro ya no aparecen los dos juntos en el reproductor. Al empezar uno, el otro se cierra y guarda dónde quedó.\n• Si la generación de un audiolibro falla en el lector, el aviso ahora tiene el botón “Reintentar”.\n• Pequeñas correcciones de texto.</string>
+    <string name="release_notes_corpo">• Corregido: la lectura guiada y el audiolibro ya no aparecen los dos juntos en el reproductor. Al empezar uno, el otro se cierra y guarda dónde quedó.\n• La barra de la lectura guiada ahora tiene una X para cerrarla desde cualquier pantalla.\n• Si la generación de un audiolibro falla en el lector, el aviso ahora tiene el botón “Reintentar”.\n• Pequeñas correcciones de texto.</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Voz más grave o más aguda, y agudos más suaves. Se aplica al instante.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>

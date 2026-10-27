@@ -13,6 +13,7 @@
     <string name="cd_guided_speed">Reading speed %1$s</string>
     <string name="cd_expandir_player">Expand player</string>
     <string name="cd_fechar_player">Close player</string>
+    <string name="cd_fechar_leitura_guiada">Close guided reading</string>
     <string name="cd_guided_anterior">Previous paragraph</string>
     <string name="cd_guided_proximo">Next paragraph</string>
     <string name="cd_guided_fechar">Close guided reading</string>
@@ -719,7 +720,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Fixed: guided reading and the audiobook no longer both show up in the player. Starting one closes the other and keeps your place.\n• If generating an audiobook fails in the reader, the message now has a “Try again” button.\n• Small text fixes.</string>
+    <string name="release_notes_corpo">• Fixed: guided reading and the audiobook no longer both show up in the player. Starting one closes the other and keeps your place.\n• The guided reading bar now has an X to close it from any screen.\n• If generating an audiobook fails in the reader, the message now has a “Try again” button.\n• Small text fixes.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
