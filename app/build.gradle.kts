@@ -117,6 +117,19 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+        // APK publicado nas Releases do GitHub: build de produção (sem depuração, sem os atalhos exportados do
+        // src/debug, com R8), mas com o MESMO id (.debug) e a MESMA chave fixa das versões anteriores, para instalar
+        // por cima delas e manter os dados de quem já usa o app. O "release" acima fica para uma loja, com outro id.
+        create("publicada") {
+            initWith(buildTypes.getByName("release"))
+            applicationIdSuffix = ".debug"
+            signingConfig = if (hasDebugSigningProps) {
+                signingConfigs.getByName("debugFixa")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+            matchingFallbacks += listOf("release")
+        }
     }
 
     buildFeatures {

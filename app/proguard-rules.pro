@@ -103,6 +103,9 @@
 # ── Preserve line numbers for crash reports ──────────────────────────────────
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+# Sem ofuscar nomes: o R8 continua removendo o código sem uso, mas os logs de erro que o usuário compartilha
+# (Ajustes › Logs de erro) mostram as classes e métodos reais, sem precisar do mapping de cada versão.
+-dontobfuscate
 
 # ── Suppress harmless warnings ───────────────────────────────────────────────
 -dontwarn org.bouncycastle.**

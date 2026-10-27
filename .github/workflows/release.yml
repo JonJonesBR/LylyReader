@@ -1,10 +1,10 @@
 name: Release Build
 
 # Só roda quando disparado à mão (Actions › Release Build › Run workflow); commits e pushes não geram APK.
-# Testa, builda o APK de DEPURAÇÃO (debug, sem assinatura de release), cria a tag v<versão> no commit
-# disparado, publica a Release do GitHub com o APK (LylyReader-v<versão>-debug.apk) e mantém só as 3 Releases
-# mais recentes (as tags antigas ficam, como histórico). Antes do APK, também compila o build de produção (R8)
-# como verificação e roda os testes Python (por enquanto só informativos).
+# Testa, builda o APK de produção "publicada" (R8, sem depuração; mesmo id .debug e mesma chave fixa das versões
+# anteriores, para instalar por cima), cria a tag v<versão> no commit disparado, publica a Release do GitHub com o
+# APK (LylyReader-v<versão>.apk) e mantém só as 3 Releases mais recentes (as tags antigas ficam, como histórico).
+# Também roda os testes Python (por enquanto só informativos).
 on:
   workflow_dispatch:
     inputs:
@@ -131,11 +131,6 @@ jobs:
             "python-docx==1.2.0" "ebooklib==0.20" "beautifulsoup4==4.15.0" "httpx==0.28.1" numpy "olefile==0.47" "mobi==0.4.1"
           python -m pytest app/src/test/python -q
 
-      - name: Build release APK (R8, verificação)
-        # Problemas de R8/ProGuard (JNI, Chaquopy, reflexão) só aparecem no build de produção. O APK publicado
-        # continua sendo o debug; este passo só garante que o release compila.
-        run: ./gradlew :app:assembleRelease --stacktrace
-
       - name: Prepare fixed debug signing key
         # Chave fixa do APK debug, guardada só como segredo do repositório (nunca no Git): mantém a
         # mesma assinatura em toda versão, para instalar a nova por cima da antiga. Sem os segredos
@@ -159,17 +154,22 @@ jobs:
           } > "$RUNNER_TEMP/debug-signing.properties"
           echo "LYLY_DEBUG_SIGNING_PROPS=$RUNNER_TEMP/debug-signing.properties" >> "$GITHUB_ENV"
 
-      - name: Build debug APK
+      - name: Build APK publicado (produção, R8)
         run: >
-          ./gradlew :app:assembleDebug --stacktrace
+          ./gradlew :app:assemblePublicada --stacktrace
           -PversionNameOverride="${VERSION_NAME}"
           -PversionCodeOverride="${VERSION_CODE}"
+
+      - name: Remove signing key from runner
+        # A chave só existe para o passo de build acima: sai do disco do runner logo depois, mesmo se o build falhar.
+        if: always()
+        run: rm -f "$RUNNER_TEMP/lylyreader-debug.p12" "$RUNNER_TEMP/debug-signing.properties"
 
       - name: Prepare APK asset
         run: |
           set -e
-          APK="$(ls app/build/outputs/apk/debug/*.apk | head -1)"
-          OUT="LylyReader-v${VERSION_NAME}-debug.apk"
+          APK="$(ls app/build/outputs/apk/publicada/*.apk | head -1)"
+          OUT="LylyReader-v${VERSION_NAME}.apk"
           cp "$APK" "$OUT"
           echo "APK_ASSET=$OUT" >> "$GITHUB_ENV"
           echo "Asset: $OUT (origem: $APK)"

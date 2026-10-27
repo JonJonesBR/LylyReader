@@ -160,7 +160,7 @@ Para instalar el APK de depuración en un dispositivo conectado:
 
 ## Descarga
 
-El APK más reciente está en la [página de Releases](https://github.com/JonJonesBR/LylyReader/releases/latest). Es una **compilación de depuración sin la firma del autor**, y se instala como una app separada (`com.jonjonesbr.audiobookgen.debug`). Desde la 1.8.30, todos los APK se firman con la misma clave, así que una versión nueva se instala encima de la anterior y conserva tus datos. Pasar de la 1.8.29 o anterior a la 1.8.30 es la última vez que hay que desinstalar antes (haz una copia de seguridad antes, porque desinstalar borra los datos de la app).
+El APK más reciente está en la [página de Releases](https://github.com/JonJonesBR/LylyReader/releases/latest). Desde la 1.8.63 es una **compilación de producción** (optimizada, sin depuración) que mantiene el id `com.jonjonesbr.audiobookgen.debug` y la misma clave de las versiones anteriores, así que se instala encima de ellas; no está firmada con clave de tienda. Desde la 1.8.30, todos los APK se firman con la misma clave, así que una versión nueva se instala encima de la anterior y conserva tus datos. Pasar de la 1.8.29 o anterior a la 1.8.30 es la última vez que hay que desinstalar antes (haz una copia de seguridad antes, porque desinstalar borra los datos de la app).
 
 ## Hoja de ruta
 

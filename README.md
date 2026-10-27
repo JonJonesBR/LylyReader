@@ -164,7 +164,7 @@ Install the debug APK on a connected device:
 
 ## Download
 
-The latest APK is on the [Releases page](https://github.com/JonJonesBR/LylyReader/releases/latest). It is a **debug build without the author's signature**, and it installs as a separate app (`com.jonjonesbr.audiobookgen.debug`). From 1.8.30 on, every APK is signed with the same key, so a new version installs right over the previous one and keeps your data. Going from 1.8.29 or older to 1.8.30 is the last time you must uninstall first (make a backup before, since uninstalling erases the app data).
+The latest APK is on the [Releases page](https://github.com/JonJonesBR/LylyReader/releases/latest). From 1.8.63 on it is a **production build** (optimized, not debuggable) that keeps the id `com.jonjonesbr.audiobookgen.debug` and the same key as the previous versions, so it installs right over them; it is not signed with a store key. From 1.8.30 on, every APK is signed with the same key, so a new version installs right over the previous one and keeps your data. Going from 1.8.29 or older to 1.8.30 is the last time you must uninstall first (make a backup before, since uninstalling erases the app data).
 
 ## Roadmap
 
