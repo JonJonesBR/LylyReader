@@ -316,8 +316,7 @@ class LibraryActivity : BasePlayerActivity() {
                 }
             }
             if (importados > 0) {
-                val msg = if (importados == 1) getString(R.string.toast_audio_importado)
-                    else getString(R.string.toast_audios_importados, importados)
+                val msg = resources.getQuantityString(R.plurals.toast_audios_importados_qtd, importados, importados)
                 Toast.makeText(this@LibraryActivity, msg, Toast.LENGTH_SHORT).show()
                 carregarAudiobooks()
             }

@@ -213,12 +213,12 @@ abstract class BasePlayerActivity : AppCompatActivity() {
                 toggleExpandido(root)
             }
             root.findViewById<Button?>(R.id.miniPlayerRecuar)?.apply {
-                text = "-15s"
+                text = this@BasePlayerActivity.getString(R.string.mini_player_recuar)
                 setTextColor(ContextCompat.getColor(this@BasePlayerActivity, R.color.color_on_surface))
                 setOnClickListener { playerService?.seekRelativo(-REWIND_MS) }
             }
             root.findViewById<Button?>(R.id.miniPlayerAvancar)?.apply {
-                text = "+15s"
+                text = this@BasePlayerActivity.getString(R.string.mini_player_avancar)
                 setTextColor(ContextCompat.getColor(this@BasePlayerActivity, R.color.color_on_surface))
                 setOnClickListener { playerService?.seekRelativo(REWIND_MS) }
             }

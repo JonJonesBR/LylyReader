@@ -873,7 +873,7 @@ class SettingsActivity : BasePlayerActivity() {
                     val ktRemoved = com.jonjonesbr.audiobookgen.tts.TtsChunkCache.clear(applicationContext)
                     pyRemoved + ktRemoved
                 }
-                tvCacheInfo.text = getString(R.string.cache_empty_removed, removed)
+                tvCacheInfo.text = resources.getQuantityString(R.plurals.cache_empty_removed_qtd, removed, removed)
                 atualizarInfoCacheAudio()
                 btnLimparCache.isEnabled = true
                 Toast.makeText(this@SettingsActivity, R.string.toast_cache_cleared, Toast.LENGTH_SHORT).show()

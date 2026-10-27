@@ -358,7 +358,9 @@ class ReaderPersonagensController(
             if (novo != null) {
                 Toast.makeText(
                     activity,
-                    mensagem ?: getString(R.string.character_ai_done, novo.speakers.size),
+                    mensagem ?: activity.resources.getQuantityString(
+                        R.plurals.character_ai_done_qtd, novo.speakers.size, novo.speakers.size
+                    ),
                     Toast.LENGTH_LONG
                 ).show()
                 mostrarListaVozesPersonagens(novo)
