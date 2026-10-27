@@ -1147,6 +1147,20 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
+                        <TextView
+                            style="@style/AjusteSecao"
+                            android:text="@string/aj_motor_grupo_offline_rec"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:paddingBottom="4dp"
+                            android:text="@string/aj_motor_grupo_offline_rec_desc"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:textSize="12sp"/>
+
                         <RadioButton
                             android:id="@+id/radioOnnx"
                             android:layout_width="match_parent"
@@ -1170,6 +1184,20 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="32dp"
                             android:text="@string/desc_onnx_tts"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            style="@style/AjusteSecao"
+                            android:text="@string/aj_motor_grupo_extras"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:paddingBottom="4dp"
+                            android:text="@string/aj_motor_grupo_extras_desc"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 
@@ -1227,6 +1255,20 @@
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 
+                        <TextView
+                            style="@style/AjusteSecao"
+                            android:text="@string/aj_motor_grupo_aparelho"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:paddingBottom="4dp"
+                            android:text="@string/aj_motor_grupo_aparelho_desc"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:textSize="12sp"/>
+
                         <RadioButton
                             android:id="@+id/radioAndroidTts"
                             android:layout_width="match_parent"
@@ -1251,6 +1293,20 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="32dp"
                             android:text="@string/aj_desc_android"
+                            android:textColor="@color/color_on_surface_dim"
+                            android:textSize="12sp"/>
+
+                        <TextView
+                            style="@style/AjusteSecao"
+                            android:text="@string/aj_motor_grupo_online"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="4dp"
+                            android:paddingBottom="4dp"
+                            android:text="@string/aj_motor_grupo_online_desc"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 

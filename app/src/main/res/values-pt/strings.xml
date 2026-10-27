@@ -439,7 +439,7 @@
     <string name="help_queue_step3">Abra Conversões (menu ⋮ da Biblioteca, ou o cartão de geração) e toque em \"Iniciar a fila\"</string>
     <string name="help_queue_step4">O app processa um por um e notifica ao concluir</string>
     <string name="help_settings_title">Personalizando o app</string>
-    <string name="help_settings_step1">Vozes: na tela do livro, toque em Trocar para escolher vozes online (Edge, Gemini, ElevenLabs) ou offline (Supertonic, Kokoro, Piper, Pocket)</string>
+    <string name="help_settings_step1">Vozes: na tela do livro, toque em Trocar para escolher uma voz. Categorias: Offline recomendada (Supertonic), Do aparelho (vozes do Android), Online (Edge, Gemini, ElevenLabs) ou Extras offline (Kokoro, Pocket, Piper)</string>
     <string name="help_settings_step2">Voz e ritmo: ajuste na tela do livro, em Gerar audiobook</string>
     <string name="help_settings_step3">Pasta de saída: em Gerar audiobook › Opções avançadas, escolha onde os MP3 são salvos</string>
     <string name="help_settings_step4">Em Ajustes: Som tem pausas e tom da voz; Backup e espaço faz backup e libera espaço</string>
@@ -719,7 +719,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Quando um audiobook fica pronto, o aviso tem um botão “Abrir”, e alguns botões ficaram maiores e mais fáceis de tocar.\n• A fila de reprodução não some mais inteira por causa de um item com problema.\n• O widget da tela inicial gasta menos bateria, e a busca dentro do livro ficou mais leve.\n• Escolher a voz de um personagem não parece mais travar enquanto a lista carrega.\n• Textos revisados: frases mais claras e menos erros de português.</string>
+    <string name="release_notes_corpo">• As opções de voz agora estão agrupadas por tipo, o que facilita escolher uma.\n• Quando um audiobook fica pronto, o aviso tem um botão “Abrir”, e alguns botões ficaram maiores e mais fáceis de tocar.\n• A fila de reprodução não some mais inteira por causa de um item com problema.\n• O widget da tela inicial gasta menos bateria, e a busca dentro do livro ficou mais leve.\n• Escolher a voz de um personagem não parece mais travar enquanto a lista carrega.\n• Textos revisados: frases mais claras e menos erros de português.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Voz mais grave ou mais aguda, e agudos mais suaves. Vale na hora.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
@@ -1478,6 +1478,14 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_selo_online">Grátis · precisa de internet</string>
     <string name="aj_selo_conta">Precisa de uma chave da sua conta no site</string>
     <string name="aj_desc_android">Usa as vozes que já vêm instaladas no celular.</string>
+    <string name="aj_motor_grupo_offline_rec">Offline recomendada</string>
+    <string name="aj_motor_grupo_offline_rec_desc">Funciona sem internet e tem as vozes mais naturais. A melhor escolha para a maioria.</string>
+    <string name="aj_motor_grupo_aparelho">Do aparelho</string>
+    <string name="aj_motor_grupo_aparelho_desc">As vozes que já estão instaladas no celular. Grátis e sem internet.</string>
+    <string name="aj_motor_grupo_online">Online</string>
+    <string name="aj_motor_grupo_online_desc">Precisa de internet. O Edge é grátis; Gemini e ElevenLabs precisam de uma chave da sua conta no site.</string>
+    <string name="aj_motor_grupo_extras">Extras offline</string>
+    <string name="aj_motor_grupo_extras_desc">Outras vozes que funcionam sem internet. Algumas baixam um pacote na primeira vez (cerca de 132 a 350 MB).</string>
     <string name="aj_vozes">Vozes no aparelho</string>
     <string name="aj_vozes_sub">Baixar, criar ou apagar vozes</string>
     <string name="aj_pron">Pronúncia de palavras</string>

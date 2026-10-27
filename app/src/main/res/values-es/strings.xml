@@ -434,7 +434,7 @@
     <string name="help_queue_step3">Abre Conversiones (menú ⋮ de la Biblioteca, o la tarjeta de generación) y toca \"Iniciar la cola\"</string>
     <string name="help_queue_step4">La app procesa uno por uno y notifica al finalizar</string>
     <string name="help_settings_title">Personalizando la app</string>
-    <string name="help_settings_step1">Voces: en la pantalla del libro, toca Cambiar para elegir voces en línea (Edge, Gemini, ElevenLabs) o sin conexión (Supertonic, Kokoro, Piper, Pocket)</string>
+    <string name="help_settings_step1">Voces: en la pantalla del libro, toca Cambiar para elegir una voz. Categorías: Sin conexión recomendada (Supertonic), En el dispositivo (voces de Android), En línea (Edge, Gemini, ElevenLabs) o Extras sin conexión (Kokoro, Pocket, Piper)</string>
     <string name="help_settings_step2">Voz y velocidad: ajusta en la pantalla del libro, en Generar audiolibro</string>
     <string name="help_settings_step3">Carpeta de salida: en Generar audiolibro › Opciones avanzadas, elige dónde se guardan los MP3</string>
     <string name="help_settings_step4">En Ajustes: Sonido tiene pausas y tono de la voz; Copia y espacio hace copias y libera espacio</string>
@@ -705,7 +705,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Cuando un audiolibro está listo, el aviso tiene un botón “Abrir”, y algunos botones son más grandes y fáciles de tocar.\n• La cola de reproducción ya no desaparece entera por un elemento con problemas.\n• El widget de inicio gasta menos batería, y la búsqueda dentro del libro es más ligera.\n• Elegir la voz de un personaje ya no parece congelado mientras carga la lista.\n• Textos revisados: frases más claras y menos errores de ortografía.</string>
+    <string name="release_notes_corpo">• Las opciones de voz ahora están agrupadas por tipo, lo que facilita elegir una.\n• Cuando un audiolibro está listo, el aviso tiene un botón “Abrir”, y algunos botones son más grandes y fáciles de tocar.\n• La cola de reproducción ya no desaparece entera por un elemento con problemas.\n• El widget de inicio gasta menos batería, y la búsqueda dentro del libro es más ligera.\n• Elegir la voz de un personaje ya no parece congelado mientras carga la lista.\n• Textos revisados: frases más claras y menos errores de ortografía.</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Voz más grave o más aguda, y agudos más suaves. Se aplica al instante.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
@@ -1463,6 +1463,14 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="aj_selo_online">Gratis · necesita internet</string>
     <string name="aj_selo_conta">Necesita una clave de tu cuenta en el sitio</string>
     <string name="aj_desc_android">Usa las voces que ya vienen instaladas en el teléfono.</string>
+    <string name="aj_motor_grupo_offline_rec">Sin conexión recomendada</string>
+    <string name="aj_motor_grupo_offline_rec_desc">Funciona sin internet y tiene las voces más naturales. La mejor opción para la mayoría.</string>
+    <string name="aj_motor_grupo_aparelho">En el dispositivo</string>
+    <string name="aj_motor_grupo_aparelho_desc">Las voces ya instaladas en el teléfono. Gratis y sin internet.</string>
+    <string name="aj_motor_grupo_online">En línea</string>
+    <string name="aj_motor_grupo_online_desc">Necesita internet. Edge es gratis; Gemini y ElevenLabs necesitan una clave de tu cuenta en el sitio.</string>
+    <string name="aj_motor_grupo_extras">Extras sin conexión</string>
+    <string name="aj_motor_grupo_extras_desc">Otras voces que funcionan sin internet. Algunas descargan un paquete la primera vez (unos 132 a 350 MB).</string>
     <string name="aj_vozes">Voces en el dispositivo</string>
     <string name="aj_vozes_sub">Descargar, crear o borrar voces</string>
     <string name="aj_pron">Pronunciación de palabras</string>

@@ -433,7 +433,7 @@
     <string name="help_queue_step3">Open Conversions (Library ⋮ menu, or the Generating card) and tap \"Start the queue\"</string>
     <string name="help_queue_step4">The app processes one at a time and notifies when finished</string>
     <string name="help_settings_title">Customizing the app</string>
-    <string name="help_settings_step1">Voices: on the book screen, tap Change to pick online voices (Edge, Gemini, ElevenLabs) or offline ones (Supertonic, Kokoro, Piper, Pocket)</string>
+    <string name="help_settings_step1">Voices: on the book screen, tap Change to pick a voice. Groups: Recommended offline (Supertonic), On the device (Android voices), Online (Edge, Gemini, ElevenLabs) or Extra offline (Kokoro, Pocket, Piper)</string>
     <string name="help_settings_step2">Voice and speed: adjust on the book screen, in Generate audiobook</string>
     <string name="help_settings_step3">Output folder: in Generate audiobook › Advanced options, choose where the MP3 files are saved</string>
     <string name="help_settings_step4">In Settings: Sound has pauses and voice pitch; Backup &amp; storage makes backups and frees up space</string>
@@ -719,7 +719,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• When an audiobook is ready, the notice has an “Open” button, and some buttons are bigger and easier to tap.\n• The playback queue no longer disappears entirely because of one bad item.\n• The home-screen widget uses less battery, and searching inside a book is lighter.\n• Choosing a character’s voice no longer looks frozen while the list loads.\n• Texts reviewed: clearer wording and fewer typos.</string>
+    <string name="release_notes_corpo">• The voice options are now grouped by type, so it is easier to choose one.\n• When an audiobook is ready, the notice has an “Open” button, and some buttons are bigger and easier to tap.\n• The playback queue no longer disappears entirely because of one bad item.\n• The home-screen widget uses less battery, and searching inside a book is lighter.\n• Choosing a character’s voice no longer looks frozen while the list loads.\n• Texts reviewed: clearer wording and fewer typos.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1477,6 +1477,14 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_selo_online">Free · needs internet</string>
     <string name="aj_selo_conta">Needs a key from your account on the website</string>
     <string name="aj_desc_android">Uses the voices already installed on the phone.</string>
+    <string name="aj_motor_grupo_offline_rec">Recommended offline</string>
+    <string name="aj_motor_grupo_offline_rec_desc">Works without internet and sounds the most natural. The best choice for most people.</string>
+    <string name="aj_motor_grupo_aparelho">On the device</string>
+    <string name="aj_motor_grupo_aparelho_desc">The voices already installed on the phone. Free and offline.</string>
+    <string name="aj_motor_grupo_online">Online</string>
+    <string name="aj_motor_grupo_online_desc">Needs internet. Edge is free; Gemini and ElevenLabs need a key from your account on the website.</string>
+    <string name="aj_motor_grupo_extras">Extra offline</string>
+    <string name="aj_motor_grupo_extras_desc">Other voices that work offline. Some download a pack the first time (about 132 to 350 MB).</string>
     <string name="aj_vozes">Voices on this device</string>
     <string name="aj_vozes_sub">Download, create or delete voices</string>
     <string name="aj_pron">Word pronunciation</string>
