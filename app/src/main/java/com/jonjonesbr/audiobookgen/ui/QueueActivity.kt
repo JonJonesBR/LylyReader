@@ -32,7 +32,6 @@ class QueueActivity : BasePlayerActivity() {
     }
 
     private lateinit var recyclerFila: RecyclerView
-    private lateinit var tvFilaVazia: TextView
     private lateinit var btnIniciarFila: Button
     private lateinit var btnLimparFila: Button
     private lateinit var btnLerTudoFila: Button
@@ -47,7 +46,13 @@ class QueueActivity : BasePlayerActivity() {
         configurarMiniPlayerBotoes()
 
         recyclerFila = findViewById(R.id.recyclerFila)
-        tvFilaVazia = findViewById(R.id.tvFilaVazia)
+        findViewById<Button>(R.id.btnFilaIrBiblioteca).setOnClickListener {
+            startActivity(
+                Intent(this, MeusLivrosActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+            finish()
+        }
         btnIniciarFila = findViewById(R.id.btnIniciarFila)
         btnLimparFila = findViewById(R.id.btnLimparFila)
         btnLerTudoFila = findViewById(R.id.btnLerTudoFila)
@@ -151,7 +156,7 @@ class QueueActivity : BasePlayerActivity() {
         val temPendente = QueueManager.contarPendentes() > 0
         val resumo = QueueManager.resumo()
         recyclerFila.visibility = if (temItens) View.VISIBLE else View.GONE
-        tvFilaVazia.visibility = if (!temItens) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.layoutFilaVazia).visibility = if (!temItens) View.VISIBLE else View.GONE
         btnLimparFila.text = if (resumo.concluidos + resumo.erros > 0) {
             getString(R.string.btn_limpar_historico)
         } else {

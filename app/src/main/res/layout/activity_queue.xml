@@ -67,17 +67,34 @@
         android:background="@color/color_divider"/>
 
     <!-- Empty state -->
-    <TextView
-        android:id="@+id/tvFilaVazia"
+    <LinearLayout
+        android:id="@+id/layoutFilaVazia"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="@string/msg_fila_vazia"
-        android:textColor="@color/color_on_surface_dim"
-        android:textSize="14sp"
+        android:orientation="vertical"
         android:padding="32dp"
-        android:visibility="gone"/>
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvFilaVazia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/msg_fila_vazia"
+            android:textColor="@color/color_on_surface_dim"
+            android:textSize="14sp"/>
+
+        <Button
+            android:id="@+id/btnFilaIrBiblioteca"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/fila_ir_biblioteca"/>
+    </LinearLayout>
 
     <!-- List -->
     <androidx.recyclerview.widget.RecyclerView

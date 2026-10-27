@@ -110,8 +110,6 @@ class AudioPlayerService : MediaLibraryService() {
         private const val TICK_INTERVAL_MS = 500L
         private const val MS_POR_MINUTO = 60_000L
         private const val MEDIA_ROOT_ID = "root"
-        private const val MARGEM_RETOMADA_MS = 3_000
-        private const val MARGEM_FIM_RETOMADA_MS = 10_000
 
         private const val VOLUME_DUCK = 0.2f
         /** Sem marcas de capítulo, recuar/avançar pula 15s (T4.4). */
@@ -812,11 +810,10 @@ class AudioPlayerService : MediaLibraryService() {
         val savedProgress = PlaybackProgressStore.load(applicationContext, caminho)
         val duracaoMs = duracaoConhecida()
         val duracaoInt = if (duracaoMs > Int.MAX_VALUE) Int.MAX_VALUE else duracaoMs.toInt()
-        var posInicial = 0
-        savedProgress?.positionMs
-            ?.takeIf { it in MARGEM_RETOMADA_MS until (duracaoInt - MARGEM_FIM_RETOMADA_MS) }
-            ?.let { pos -> (pos - recuoAutoRewindPara(caminho)).coerceAtLeast(0) }
-            ?.let { posAjustada -> exoPlayer.seekTo(posAjustada.toLong()); posInicial = posAjustada }
+        val posInicial = com.jonjonesbr.audiobookgen.util.posicaoDeRetomada(
+            savedProgress?.positionMs, duracaoInt, recuoAutoRewindPara(caminho)
+        )
+        if (posInicial > 0) exoPlayer.seekTo(posInicial.toLong())
 
         _state.update {
             it.copy(

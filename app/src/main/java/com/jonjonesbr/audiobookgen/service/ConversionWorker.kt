@@ -28,6 +28,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.io.File
 import java.util.Locale
@@ -103,6 +104,8 @@ class ConversionWorker(
         private const val SEM_VALOR = Int.MIN_VALUE
         /** Percentual mostrado durante a compressão do WAV (não regride: a conversão já está em 99). */
         private const val PCT_COMPRIMINDO = 99
+        /** Intervalo da renovação da trava de energia (cada renovação vale 30 min). */
+        private const val RENOVAR_TRAVA_A_CADA_MS = 5 * 60 * 1000L
     }
 
     private fun tokenDaExecucao(): String? = inputData.getString(KEY_RUN_TOKEN_ENTRADA) ?: inputData.getString(KEY_RUN_TOKEN)
@@ -122,7 +125,21 @@ class ConversionWorker(
         val runToken = tokenDaExecucao()
         return try {
             FilaDeConversao.aoIniciarExecucao(applicationContext, filaItemId, runToken)
-            executarConversao(arquivo!!, voz!!, velocidade!!, estilo!!, saida!!)
+            kotlinx.coroutines.coroutineScope {
+                // Renova a trava de energia pelo relógio, não só quando o Python manda progresso: uma etapa longa sem
+                // callback (junção, compressão) não deixa a trava vencer no meio da conversão.
+                val renovador = launch {
+                    while (true) {
+                        kotlinx.coroutines.delay(RENOVAR_TRAVA_A_CADA_MS)
+                        ConversionWakeLock.renovar()
+                    }
+                }
+                try {
+                    executarConversao(arquivo!!, voz!!, velocidade!!, estilo!!, saida!!)
+                } finally {
+                    renovador.cancel()
+                }
+            }
         } catch (e: kotlinx.coroutines.CancellationException) {
             // Parada pelo app/usuário (cancelar) ou pelo sistema (cota, limite de runtime). Só o cancelamento do app fecha o
             // item; nos demais casos o item continua PROCESSANDO e o WorkManager reexecuta o trabalho.

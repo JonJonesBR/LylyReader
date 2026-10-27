@@ -15,7 +15,8 @@ fun proximoCapituloMs(capitulos: List<CapituloAudio>, posicaoMs: Long): Long? =
  * capítulo atual, "anterior" reinicia o capítulo corrente em vez de pular pro de antes.
  */
 fun capituloAnteriorMs(capitulos: List<CapituloAudio>, posicaoMs: Long): Long? {
-    val inicios = capitulos.map { it.inicioMs }.sorted()
+    // distinct: marcas com o mesmo início (capítulo com duração zero) prendiam o "anterior" na mesma posição.
+    val inicios = capitulos.map { it.inicioMs }.distinct().sorted()
     val indiceAtual = inicios.indexOfLast { it <= posicaoMs }
     if (indiceAtual < 0) return null
     val inicioAtual = inicios[indiceAtual]

@@ -50,4 +50,12 @@ class ChapterNavigationTest {
     @Test fun posicaoAntesDoPrimeiroCapituloRetornaNullParaAnterior() {
         assertNull(capituloAnteriorMs(capitulos, -1L))
     }
+
+    @Test fun anteriorNaoFicaPresoEmMarcasComOMesmoInicio() {
+        val repetidos = listOf(
+            CapituloAudio("A", 0L, 5_000L), CapituloAudio("B", 5_000L, 5_000L),
+            CapituloAudio("C", 5_000L, 9_000L), CapituloAudio("D", 9_000L, 12_000L),
+        )
+        assertEquals(0L, capituloAnteriorMs(repetidos, 5_000L))
+    }
 }

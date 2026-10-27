@@ -29,7 +29,7 @@ object AppPrefsBackup {
             put("ia_personalizada_url", appPrefs.iaPersonalizadaUrl)
             put("ia_personalizada_modelo", appPrefs.iaPersonalizadaModelo)
             put("pronuncias_json", appPrefs.pronunciasJson)
-            put("pasta_destino", appPrefs.pastaDestino ?: "")
+            // pasta_destino fica de fora: é uma permissão de pasta (SAF) que só vale neste aparelho e nesta instalação.
             put("player_engine", appPrefs.playerEngine)
             put("guided_speed_mult", appPrefs.guidedSpeedMult.toDouble())
             put("onboarding_done", appPrefs.onboardingDone)
@@ -59,11 +59,14 @@ object AppPrefsBackup {
         if (json.has("timbre_tom_meios_tons")) {
             appPrefs.tomVozMeiosTons = json.optInt("timbre_tom_meios_tons", appPrefs.tomVozMeiosTons)
         }
-        if (json.has("gemini_modelo_analise")) {
-            appPrefs.geminiModeloAnalise = json.optString("gemini_modelo_analise", "")
-            appPrefs.iaProvedor = json.optString("ia_provedor", "gemini")
-            appPrefs.iaPersonalizadaUrl = json.optString("ia_personalizada_url", "")
-            appPrefs.iaPersonalizadaModelo = json.optString("ia_personalizada_modelo", "")
+        // Cada ajuste de IA só é aplicado se o backup o tiver: um backup antigo, sem algum deles, não zera o atual.
+        if (json.has("gemini_modelo_analise")) appPrefs.geminiModeloAnalise = json.optString("gemini_modelo_analise", "")
+        if (json.has("ia_provedor")) appPrefs.iaProvedor = json.optString("ia_provedor", appPrefs.iaProvedor)
+        if (json.has("ia_personalizada_url")) {
+            appPrefs.iaPersonalizadaUrl = json.optString("ia_personalizada_url", appPrefs.iaPersonalizadaUrl)
+        }
+        if (json.has("ia_personalizada_modelo")) {
+            appPrefs.iaPersonalizadaModelo = json.optString("ia_personalizada_modelo", appPrefs.iaPersonalizadaModelo)
         }
         if (json.has("timbre_agudos_db")) {
             appPrefs.suavizarAgudosDb = json.optInt("timbre_agudos_db", appPrefs.suavizarAgudosDb)
@@ -76,10 +79,6 @@ object AppPrefsBackup {
         }
         if (json.has("pronuncias_json")) {
             appPrefs.pronunciasJson = json.optString("pronuncias_json", appPrefs.pronunciasJson)
-        }
-        if (json.has("pasta_destino")) {
-            val pasta = json.optString("pasta_destino", "")
-            appPrefs.pastaDestino = pasta.ifEmpty { null }
         }
         if (json.has("player_engine")) {
             appPrefs.playerEngine = json.optString("player_engine", appPrefs.playerEngine)
