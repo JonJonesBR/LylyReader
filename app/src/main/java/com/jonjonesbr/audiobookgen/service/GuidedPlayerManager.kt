@@ -125,6 +125,10 @@ class GuidedPlayerManager(
     @Volatile private var speakerAttribution: SpeakerAttributionResult? = null
     
     private var currentIndex = -1
+    // Texto do parágrafo que play() começou a ler, na lista daquele momento. Ao reabrir o leitor o texto chega duas
+    // vezes (bruto, depois limpo) e cada troca remapeia o índice: sem esta âncora o segundo remapeamento partia do
+    // primeiro, que podia ter caído no parágrafo vizinho, e o marcador ficava um à frente do áudio.
+    private var textoAncora: String? = null
     // Multiplicador de velocidade ao vivo (controlado na leitura guiada), persistido.
     private var speedMultiplier: Float = appPrefs.guidedSpeedMult
     private var currentBaseSpeed: Float = 1.0f
@@ -506,7 +510,9 @@ class GuidedPlayerManager(
             // limpo: os índices mudam. Antes o índice era zerado (-1) e, ao fim do parágrafo, next()
             // recomeçava o livro do início. Agora reencontra o mesmo parágrafo na lista nova.
             val anterior = currentIndex
-            currentIndex = remapearIndice(paragraphs.map { it.texto }, newParagraphs.map { it.texto }, anterior)
+            currentIndex = remapearIndice(
+                paragraphs.map { it.texto }, newParagraphs.map { it.texto }, anterior, textoAncora
+            )
             if (currentIndex >= 0 && _state.value.index == anterior) {
                 _state.update { it.copy(index = currentIndex) }
             }
@@ -521,15 +527,30 @@ class GuidedPlayerManager(
     }
 
     /**
-     * Onde fica, em [novos], o parágrafo [indice] de [antigos]: o de mesmo texto mais perto da posição antiga; sem
-     * nenhum igual (o parágrafo mudou na limpeza), a mesma proporção do livro. -1 quando [indice] já era inválido.
+     * Onde fica, em [novos], o parágrafo [indice] de [antigos]. Procura, nesta ordem, o texto [ancora] (o parágrafo
+     * que play() começou a ler) e o texto antigo; primeiro iguais, depois iguais ignorando espaços, pontuação e
+     * maiúsculas (a limpeza costuma mexer só nisso); entre vários, o mais perto da mesma proporção do livro. Sem
+     * nenhum, a própria proporção. -1 quando [indice] já era inválido.
      */
-    internal fun remapearIndice(antigos: List<String>, novos: List<String>, indice: Int): Int {
+    internal fun remapearIndice(antigos: List<String>, novos: List<String>, indice: Int, ancora: String? = null): Int {
         if (indice !in antigos.indices || novos.isEmpty()) return -1
-        val alvo = antigos[indice]
-        val igual = novos.indices.filter { novos[it] == alvo }.minByOrNull { kotlin.math.abs(it - indice) }
-        return igual ?: (indice.toLong() * novos.size / antigos.size).toInt().coerceIn(0, novos.lastIndex)
+        val estimado = (indice.toLong() * novos.size / antigos.size).toInt().coerceIn(0, novos.lastIndex)
+        val alvos = listOfNotNull(ancora, antigos[indice]).distinct()
+        fun maisPerto(candidatos: List<Int>) = candidatos.minByOrNull { kotlin.math.abs(it - estimado) }
+        for (alvo in alvos) {
+            maisPerto(novos.indices.filter { novos[it] == alvo })?.let { return it }
+        }
+        val novosNormalizados by lazy { novos.map(::normalizarParaComparar) }
+        for (alvo in alvos) {
+            val normalizado = normalizarParaComparar(alvo)
+            if (normalizado.isEmpty()) continue
+            maisPerto(novos.indices.filter { novosNormalizados[it] == normalizado })?.let { return it }
+        }
+        return estimado
     }
+
+    private fun normalizarParaComparar(texto: String): String =
+        texto.lowercase().filter { it.isLetterOrDigit() }
 
     fun setSpeakerAttribution(result: SpeakerAttributionResult?) {
         speakerAttribution = result
@@ -543,6 +564,7 @@ class GuidedPlayerManager(
         if (index < 0 || index >= paragraphs.size) return
         
         currentIndex = index
+        textoAncora = paragraphs[index].texto
         pausadoPeloUsuario = false
         pausadoSemAudio = false
         geracaoDeReproducao++

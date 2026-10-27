@@ -423,6 +423,17 @@ class GuidedPlayerManagerTest {
     }
 
     @Test
+    fun remapearIndiceReencontraOParagrafoQueALimpezaSoRetocou() {
+        val manager = createManager()
+        // Limpeza tirou um parágrafo-lixo e corrigiu espaços: acha pelo texto normalizado, não pela proporção.
+        val limpo = listOf("Podemos continuar?", "Ele apontou para a bagunça.", "Voltei à consciência.", "Espera.")
+        val bruto = listOf("12", "Podemos  continuar?", "Ele apontou para a  bagunça.", "Voltei à consciência.", "Espera.")
+        assertEquals(2, manager.remapearIndice(limpo, bruto, 1))
+        // Volta do bruto para o limpo: a âncora (texto que play() começou a ler) acerta mesmo se o bruto errou.
+        assertEquals(1, manager.remapearIndice(bruto, limpo, 3, ancora = "Ele apontou para a bagunça."))
+    }
+
+    @Test
     fun setParagraphsKeepsCurrentIndexAndPrefetchJobWhenContentIsUnchanged() {
         val manager = createManager()
         val original = paragraphs(3)
