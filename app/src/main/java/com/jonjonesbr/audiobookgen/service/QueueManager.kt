@@ -180,21 +180,27 @@ object QueueManager {
 
     fun itemsFromJson(json: String?): List<QueueItem> {
         if (json.isNullOrBlank()) return emptyList()
-        return try {
-            val arr = JSONArray(json)
-            val restored = mutableListOf<QueueItem>()
-            val existingIds = mutableSetOf<String>()
-            for (i in 0 until arr.length()) {
-                val obj = arr.getJSONObject(i)
-                val id  = obj.getString("id")
-                if (existingIds.add(id)) {
-                    restored.add(obj.toQueueItem(id))
-                }
-            }
-            restored
+        val arr = try {
+            JSONArray(json)
         } catch (_: Exception) {
-            emptyList()
+            return emptyList()
         }
+        val restored = mutableListOf<QueueItem>()
+        val existingIds = mutableSetOf<String>()
+        for (i in 0 until arr.length()) {
+            // Cada entrada é lida sozinha: uma entrada inválida (ex.: sem 'id') é descartada e as outras são mantidas.
+            try {
+                val obj = arr.getJSONObject(i)
+                val id = obj.getString("id")
+                val item = obj.toQueueItem(id)
+                if (existingIds.add(id)) {
+                    restored.add(item)
+                }
+            } catch (_: Exception) {
+                // Entrada inválida: fica de fora, sem derrubar as demais.
+            }
+        }
+        return restored
     }
 
     private fun QueueItem.toJson(): JSONObject = JSONObject().apply {

@@ -65,6 +65,27 @@ class QueueManagerPersistenciaTest {
     }
 
     @Test
+    fun entradaInvalidaNoMeioDescartaSoElaEMantemAsValidas() {
+        val json = """[
+            {"id":"a","nome":"um.epub","caminhoLocal":"/tmp/1.epub","status":"PENDENTE"},
+            {"nome":"sem-id.epub","caminhoLocal":"/tmp/2.epub","status":"PENDENTE"},
+            {"id":"c","nome":"tres.epub","caminhoLocal":"/tmp/3.epub","status":"CONCLUIDO"}
+        ]"""
+
+        val itens = QueueManager.itemsFromJson(json)
+
+        assertEquals(listOf("a", "c"), itens.map { it.id })
+        assertEquals("um.epub", itens[0].nome)
+        assertEquals("tres.epub", itens[1].nome)
+        assertEquals(QueueStatus.CONCLUIDO, itens[1].status)
+    }
+
+    @Test
+    fun jsonCorrompidoNoMeioDaListaDevolveListaVazia() {
+        assertTrue(QueueManager.itemsFromJson("""[{"id":"a","nome":"um.epub"""").isEmpty())
+    }
+
+    @Test
     fun idRepetidoMantemSoAPrimeiraOcorrencia() {
         val json = """[
             {"id":"x","nome":"primeiro.epub","caminhoLocal":"/tmp/1.epub","status":"PENDENTE"},

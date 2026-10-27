@@ -629,17 +629,32 @@ class ReaderPersonagensController(
         else -> VoiceCatalog.modeloProntoParaVoz(voz.id, activity)
     }
 
+    /** Impede dois seletores de voz de personagem abertos quando o usuário toca de novo enquanto a lista carrega. */
+    private var abrindoSeletorPersonagem = false
+
     private fun abrirSeletorVozPersonagem(result: SpeakerAttributionResult, speaker: DetectedSpeaker) {
         // Voz/motor do NARRADOR deste livro ("Voz e velocidade deste livro"), não os globais.
         val manager = guidedPlayerManager ?: return
         val (narratorVoice, motorSalvo) = manager.vozEMotorDoLivro()
         val engine = VoiceCatalog.effectiveEngine(narratorVoice, motorSalvo)
+        // Montar a lista pode esperar a reidratação do catálogo (até 5 s): roda fora da thread principal,
+        // com o aviso "Carregando vozes…" enquanto termina. Toque duplo não abre dois seletores.
+        if (abrindoSeletorPersonagem) return
+        abrindoSeletorPersonagem = true
         activity.lifecycleScope.launch {
-            val voices = withContext(Dispatchers.IO) { vozesParaPersonagens(narratorVoice, engine) }
+            val voices = try {
+                activity.comAguardeCarregamento(R.string.toast_carregando_vozes_android) {
+                    withContext(Dispatchers.IO) { vozesParaPersonagens(narratorVoice, engine) }
+                }
+            } finally {
+                abrindoSeletorPersonagem = false
+            }
             if (voices.isEmpty()) {
                 Toast.makeText(activity, R.string.character_voices_empty, Toast.LENGTH_LONG).show()
                 return@launch
             }
+            // Se a tela foi para segundo plano enquanto a lista carregava, não mostra o sheet com estado salvo.
+            if (activity.supportFragmentManager.isStateSaved) return@launch
             VoiceBottomSheet().apply {
                 configure(
                     voices = voices,
