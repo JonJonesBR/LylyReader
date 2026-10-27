@@ -66,8 +66,14 @@ object TtsChunkCache {
         val comPassos = revisaoComPassos(revisaoModelo(voice, texto, v1Pronto), voice, passos)
         val expressividade = prefs?.pocketExpressividade
             ?: com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_EXPRESSIVIDADE_PADRAO
-        return revisaoComExpressividade(comPassos, voice, expressividade)
+        return revisaoComFolga(
+            revisaoComExpressividade(comPassos, voice, expressividade), voice, texto, prefs?.folgaFrasesCurtas == true
+        )
     }
+
+    /** "Mais tempo para frases curtas" muda o áudio só das frases curtas do Supertonic: só elas ganham sufixo. */
+    internal fun revisaoComFolga(base: String, voice: String, texto: String, ligada: Boolean): String =
+        if (ligada && voice.startsWith("supertonic-") && FolgaFrasesCurtas.aplica(texto)) "$base-folga1" else base
 
     /**
      * Os passos alteram o áudio, então um valor não reaproveita o cache de outro. Pocket com 1 passo (o padrão

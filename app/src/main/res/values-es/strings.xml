@@ -706,7 +706,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Corregido: la lectura guiada y el audiolibro ya no aparecen los dos juntos en el reproductor. Al empezar uno, el otro se cierra y guarda dónde quedó.\n• La barra de la lectura guiada ahora tiene una X para cerrarla desde cualquier pantalla.\n• Corregido: al continuar la lectura guiada desde la biblioteca, empezaba un párrafo antes del marcado. Ahora retoma exactamente donde la dejaste.\n• Voz Pocket TTS: ya no salta la última palabra de algunas frases (como una palabra entre comillas al final), y el inicio de cada frase sale sin chasquido ni eco.\n• Voz Supertonic: los pasos predeterminados subieron de 5 a 8, para saltar menos palabras.\n• Si la generación de un audiolibro falla en el lector, el aviso ahora tiene el botón “Reintentar”.\n• Pequeñas correcciones de texto.</string>
+    <string name="release_notes_corpo">• Corregido: la lectura guiada y el audiolibro ya no aparecen los dos juntos en el reproductor. Al empezar uno, el otro se cierra y guarda dónde quedó.\n• La barra de la lectura guiada ahora tiene una X para cerrarla desde cualquier pantalla.\n• Corregido: al continuar la lectura guiada desde la biblioteca, empezaba un párrafo antes del marcado. Ahora retoma exactamente donde la dejaste.\n• Voz Pocket TTS: ya no salta la última palabra de algunas frases (como una palabra entre comillas al final), y el inicio de cada frase sale sin chasquido ni eco.\n• Voz Supertonic: los pasos predeterminados subieron de 5 a 8, para saltar menos palabras.\n• Nueva opción experimental en Ajustes › Naturalidad de la voz: “Más tiempo para frases cortas”, para que Supertonic no se coma palabras.\n• Si la generación de un audiolibro falla en el lector, el aviso ahora tiene el botón “Reintentar”.\n• Pequeñas correcciones de texto.</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Voz más grave o más aguda, y agudos más suaves. Se aplica al instante.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
@@ -1556,6 +1556,8 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="aj_acabamento_audio_sub">Iguala el volumen de las voces descargadas. En la lectura guiada, también recorta silencios extra entre frases.</string>
     <string name="aj_dialogos_vivos">Diálogos con más vida</string>
     <string name="aj_dialogos_vivos_sub">Las frases de los personajes suenan un poco más agudas y rápidas que la narración. Lectura guiada.</string>
+    <string name="aj_folga_frases_curtas">Más tiempo para frases cortas</string>
+    <string name="aj_folga_frases_curtas_sub">Supertonic: las frases cortas se preparan con más tiempo, para que la voz no se coma palabras, y suenan al ritmo normal.</string>
     <string name="pocket_expr_titulo">Expresividad de Pocket TTS</string>
     <string name="pocket_expr_desc">Más alta hace la entonación más viva y variada, con más riesgo de pequeños fallos. Más baja suena más contenida y estable. Vale para la lectura guiada y la creación de audiolibros.</string>
     <string name="pocket_expr_valor">%1$s · %2$s</string>

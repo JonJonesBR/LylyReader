@@ -11,7 +11,7 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import java.util.Locale
 
 /**
- * Ajustes › Som › "Naturalidade da voz (experimental)" (três interruptores) e, em Ajustes avançados, a
+ * Ajustes › Som › "Naturalidade da voz (experimental)" (quatro interruptores) e, em Ajustes avançados, a
  * expressividade do Pocket TTS: deslizante de mínimo a máximo, com atalhos (Padrão, Moderada, Expressiva, Máxima).
  */
 class NaturalidadeVozUi(private val activity: AppCompatActivity) {
@@ -20,6 +20,7 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
     private val swEntonacao: CompoundButton = activity.findViewById(R.id.swEntonacaoContinua)
     private val swAcabamento: CompoundButton = activity.findViewById(R.id.swAcabamentoAudio)
     private val swDialogos: CompoundButton = activity.findViewById(R.id.swDialogosVivos)
+    private val swFolga: CompoundButton = activity.findViewById(R.id.swFolgaFrasesCurtas)
     private val seekExpr: SeekBar = activity.findViewById(R.id.seekPocketExpressividade)
     private val tvExpr: TextView = activity.findViewById(R.id.tvPocketExpressividadeValor)
     private val chipsExpr: ChipGroup = activity.findViewById(R.id.chipsPocketExpressividade)
@@ -29,9 +30,11 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
         activity.findViewById<android.view.View>(R.id.rowEntonacaoContinua).setOnClickListener { swEntonacao.toggle() }
         activity.findViewById<android.view.View>(R.id.rowAcabamentoAudio).setOnClickListener { swAcabamento.toggle() }
         activity.findViewById<android.view.View>(R.id.rowDialogosVivos).setOnClickListener { swDialogos.toggle() }
+        activity.findViewById<android.view.View>(R.id.rowFolgaFrasesCurtas).setOnClickListener { swFolga.toggle() }
         swEntonacao.setOnCheckedChangeListener { _, v -> prefs.entonacaoContinua = v }
         swAcabamento.setOnCheckedChangeListener { _, v -> prefs.acabamentoAudio = v }
         swDialogos.setOnCheckedChangeListener { _, v -> prefs.dialogosVivos = v }
+        swFolga.setOnCheckedChangeListener { _, v -> prefs.folgaFrasesCurtas = v }
 
         seekExpr.max = AppPrefs.POCKET_EXPRESSIVIDADE_MAX - AppPrefs.POCKET_EXPRESSIVIDADE_MIN
         seekExpr.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -59,6 +62,7 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
         swEntonacao.isChecked = prefs.entonacaoContinua
         swAcabamento.isChecked = prefs.acabamentoAudio
         swDialogos.isChecked = prefs.dialogosVivos
+        swFolga.isChecked = prefs.folgaFrasesCurtas
         seekExpr.progress = prefs.pocketExpressividade - AppPrefs.POCKET_EXPRESSIVIDADE_MIN
         mostrarExpressividade(prefs.pocketExpressividade)
         carregando = false

@@ -20,6 +20,7 @@ object AppPrefsBackup {
             put("entonacao_continua", appPrefs.entonacaoContinua)
             put("acabamento_audio", appPrefs.acabamentoAudio)
             put("dialogos_vivos", appPrefs.dialogosVivos)
+            put("folga_frases_curtas", appPrefs.folgaFrasesCurtas)
             put("teto_cache_audio_mb", appPrefs.tetoCacheAudioMb)
             put("timbre_tom_meios_tons", appPrefs.tomVozMeiosTons)
             put("timbre_agudos_db", appPrefs.suavizarAgudosDb)
@@ -119,6 +120,7 @@ object AppPrefsBackup {
         appPrefs.entonacaoContinua = json.optBoolean("entonacao_continua", appPrefs.entonacaoContinua)
         appPrefs.acabamentoAudio = json.optBoolean("acabamento_audio", appPrefs.acabamentoAudio)
         appPrefs.dialogosVivos = json.optBoolean("dialogos_vivos", appPrefs.dialogosVivos)
+        appPrefs.folgaFrasesCurtas = json.optBoolean("folga_frases_curtas", appPrefs.folgaFrasesCurtas)
     }
 
     private fun aplicarReaderPrefs(appPrefs: AppPrefs, json: JSONObject) {

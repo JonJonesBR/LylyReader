@@ -592,6 +592,38 @@
                             android:contentDescription="@string/aj_dialogos_vivos"/>
                     </LinearLayout>
 
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowFolgaFrasesCurtas"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_folga_frases_curtas"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_folga_frases_curtas_sub"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/swFolgaFrasesCurtas"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/aj_folga_frases_curtas"/>
+                    </LinearLayout>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

@@ -24,7 +24,7 @@ import com.jonjonesbr.audiobookgen.util.AutoRewindMode
 class AppPrefs(context: Context) {
 
     private val p: SharedPreferences =
-        context.applicationContext.getSharedPreferences(NAME, Context.MODE_PRIVATE)
+        context.applicationContext.getSharedPreferences(NAME, modoDoProcesso)
 
     var ritmo: Int
         get() = p.getInt("ritmo", RITMO_DEFAULT)
@@ -197,6 +197,14 @@ class AppPrefs(context: Context) {
         get() = p.getBoolean("acabamento_audio", false)
         set(v) = p.edit().putBoolean("acabamento_audio", v).apply()
 
+    /**
+     * Supertonic: frases curtas sintetizadas com mais tempo (a voz engole menos palavras) e depois aceleradas de
+     * volta ao ritmo normal, sem mudar o tom.
+     */
+    var folgaFrasesCurtas: Boolean
+        get() = p.getBoolean("folga_frases_curtas", false)
+        set(v) = p.edit().putBoolean("folga_frases_curtas", v).apply()
+
     /** Leitura guiada: falas de personagem um pouco mais agudas e rápidas que a narração. */
     var dialogosVivos: Boolean
         get() = p.getBoolean("dialogos_vivos", false)
@@ -342,6 +350,7 @@ class AppPrefs(context: Context) {
             .remove("entonacao_continua")
             .remove("acabamento_audio")
             .remove("dialogos_vivos")
+            .remove("folga_frases_curtas")
             .remove("auto_rewind_mode")
             .remove("timbre_tom_meios_tons")
             .remove("timbre_tom_falas")
@@ -436,6 +445,25 @@ class AppPrefs(context: Context) {
     fun getPrefs(): SharedPreferences = p
 
     companion object {
+        /**
+         * Nos processos de síntese (":supertonic", ":pocket", ":sherpa") o Android guarda as preferências lidas na
+         * primeira vez e não vê o que a tela de ajustes grava depois: passos e ritmo trocados só valiam quando o
+         * processo reiniciava. Lá elas são relidas quando o arquivo muda; no processo do app, nada muda.
+         */
+        @Suppress("DEPRECATION")
+        private val modoDoProcesso: Int by lazy {
+            if (processoSecundario()) Context.MODE_PRIVATE or Context.MODE_MULTI_PROCESS else Context.MODE_PRIVATE
+        }
+
+        private fun processoSecundario(): Boolean = runCatching {
+            val nome = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                android.app.Application.getProcessName()
+            } else {
+                java.io.File("/proc/self/cmdline").readText().trimEnd('\u0000')
+            }
+            ':' in nome
+        }.getOrDefault(false)
+
         const val NAME = "audiobookgen_prefs"
         /** Velocidade de narração canônica (a UI mostra este valor; a síntese deve casar). */
         const val RITMO_DEFAULT = 100
