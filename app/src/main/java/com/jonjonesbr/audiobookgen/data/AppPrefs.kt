@@ -239,6 +239,11 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putBoolean("voice_download_onboarding_done", v).apply()
 
     /** O download offline silencioso do primeiro acesso (pacote recomendado) já foi enfileirado. Ver PoliticaDownloadSilencioso. */
+    /** Aviso de que o log de erro pode conter nomes de livros já foi mostrado (aparece só no primeiro compartilhamento). */
+    var avisoCompartilharLogVisto: Boolean
+        get() = p.getBoolean("aviso_compartilhar_log_visto", false)
+        set(v) = p.edit().putBoolean("aviso_compartilhar_log_visto", v).apply()
+
     var downloadOfflineSilenciosoIniciado: Boolean
         get() = p.getBoolean("download_offline_silencioso_iniciado", false)
         set(v) = p.edit().putBoolean("download_offline_silencioso_iniciado", v).apply()

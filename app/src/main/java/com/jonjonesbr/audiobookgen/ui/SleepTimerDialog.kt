@@ -57,7 +57,11 @@ object SleepTimerDialog {
             R.id.btnSoneca60, R.id.btnSoneca90, R.id.btnSoneca120
         )
         idsPresets.zip(PRESETS_SONECA_MIN.toList()) { id, min ->
-            view.findViewById<Button>(id).setOnClickListener { aplicar(min) }
+            view.findViewById<Button>(id).apply {
+                setOnClickListener { aplicar(min) }
+                // O botão mostra só o número; o TalkBack lê "5 minutos" em vez de "5".
+                contentDescription = activity.resources.getQuantityString(R.plurals.tempo_minutos, min, min)
+            }
         }
         view.findViewById<Button>(R.id.btnSonecaOff).setOnClickListener { aplicar(0) }
 

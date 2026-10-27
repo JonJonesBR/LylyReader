@@ -105,7 +105,7 @@ object CrashLogWriter {
             sb.appendLine("═══════════════════════════════════════════")
 
             val fileName = "${FILE_PREFIX}${timestamp}.txt"
-            writeToInternalLogs(ctx, fileName, sb.toString())
+            writeToInternalLogs(ctx, fileName, ocultarSegredos(sb.toString()))
             rotateOldFiles(ctx)
         } catch (e: Exception) {
             Log.e(TAG, "Falha ao salvar log de erro", e)

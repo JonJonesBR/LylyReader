@@ -232,6 +232,16 @@ class MeusLivrosActivity : BasePlayerActivity() {
     override fun onResume() {
         super.onResume()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.BIBLIOTECA) // volta de outra tela: realça de novo a aba certa
+        if (com.jonjonesbr.audiobookgen.data.SecurePreferences.consumirAvisoCofreRecriado(this)) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.cofre_recriado_titulo)
+                .setMessage(R.string.cofre_recriado_msg)
+                .setPositiveButton(R.string.cofre_recriado_abrir_ajustes) { _, _ ->
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                }
+                .setNegativeButton(R.string.dialog_ok, null)
+                .show()
+        }
         // Vindo da central "Aprender o app" (lição "Adicionar um livro").
         if (intent.getBooleanExtra(EXTRA_ABRIR_ADICIONAR, false)) {
             intent.removeExtra(EXTRA_ABRIR_ADICIONAR)

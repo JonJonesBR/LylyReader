@@ -20,6 +20,8 @@ object SecurePreferences {
     private const val ELEVENLABS_KEY = "elevenlabs_key"
     private const val IA_PERSONALIZADA_KEY = "ia_personalizada_key"
     private const val HF_TOKEN_CLONAGEM = "hf_token_clonagem"
+    /** Nas prefs comuns: o cofre teve de ser recriado e as chaves se perderam; a Biblioteca avisa uma vez. */
+    private const val COFRE_RECRIADO = "cofre_chaves_recriado"
 
     private fun createSecurePrefs(context: Context): SharedPreferences {
         val masterKey = MasterKey.Builder(context)
@@ -41,11 +43,29 @@ object SecurePreferences {
                 // Restored encrypted files can no longer be opened when their Keystore key
                 // was not restored with them. Recreate the file once before falling back.
                 Log.w(TAG, "Secure preferences unavailable; recreating encrypted storage.", it)
-                context.deleteSharedPreferences(SECURE_PREFS)
+                recriarCofre(context)
                 createSecurePrefs(context)
             }
             .onFailure { Log.w(TAG, "Secure preferences remain unavailable.", it) }
             .getOrNull()
+    }
+
+    /** Apaga o cofre que não abre mais; se ele existia (havia chaves), marca o aviso para o usuário digitá-las de novo. */
+    private fun recriarCofre(context: Context) {
+        val arquivo = java.io.File(java.io.File(context.applicationInfo.dataDir, "shared_prefs"), "$SECURE_PREFS.xml")
+        if (arquivo.exists()) localPrefs(context).edit().putBoolean(COFRE_RECRIADO, true).apply()
+        context.deleteSharedPreferences(SECURE_PREFS)
+    }
+
+    /**
+     * True uma única vez depois que o cofre de chaves foi recriado (falha do Android ao descriptografar): as chaves de API
+     * salvas se perderam e precisam ser digitadas de novo. Antes isso acontecia em silêncio.
+     */
+    fun consumirAvisoCofreRecriado(context: Context): Boolean {
+        val prefs = localPrefs(context)
+        if (!prefs.getBoolean(COFRE_RECRIADO, false)) return false
+        prefs.edit().remove(COFRE_RECRIADO).apply()
+        return true
     }
 
     private fun localPrefs(context: Context): SharedPreferences =
@@ -76,7 +96,7 @@ object SecurePreferences {
         val secureRead = runCatching { secure?.getString(prefKey, null) }
         val secureValue = secureRead.getOrElse {
             Log.w(TAG, "Could not decrypt $prefKey; recreating encrypted storage.", it)
-            context.deleteSharedPreferences(SECURE_PREFS)
+            recriarCofre(context)
             runCatching { securePrefs(context)?.getString(prefKey, null) }
                 .onFailure { error -> Log.w(TAG, "Could not read recreated secure preferences.", error) }
                 .getOrNull()

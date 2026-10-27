@@ -114,8 +114,32 @@ class ErrorLogsActivity : AppCompatActivity() {
         return cleaned
     }
 
+    /** Na primeira vez, avisa o que o log pode conter antes de mandá-lo para outro app. */
     private fun shareLogFile(file: File) {
+        val prefs = com.jonjonesbr.audiobookgen.data.AppPrefs(this)
+        if (prefs.avisoCompartilharLogVisto) {
+            compartilharLog(file)
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.logs_aviso_privacidade_titulo)
+            .setMessage(R.string.logs_aviso_privacidade_msg)
+            .setPositiveButton(R.string.logs_btn_compartilhar) { _, _ ->
+                prefs.avisoCompartilharLogVisto = true
+                compartilharLog(file)
+            }
+            .setNegativeButton(R.string.btn_cancelar, null)
+            .exibir()
+    }
+
+    private fun compartilharLog(file: File) {
         try {
+            // Logs gravados antes do filtro de chaves (CrashLogWriter) também saem sem elas.
+            runCatching {
+                val texto = file.readText(Charsets.UTF_8)
+                val limpo = com.jonjonesbr.audiobookgen.util.ocultarSegredos(texto)
+                if (limpo != texto) file.writeText(limpo, Charsets.UTF_8)
+            }
             val authority = "$packageName.fileprovider"
             val uri = FileProvider.getUriForFile(this, authority, file)
             val intent = Intent(Intent.ACTION_SEND).apply {
