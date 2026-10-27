@@ -98,6 +98,30 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
         activity.registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(::converterArquivo) }
 
     private fun toast(res: Int) = Toast.makeText(activity, res, Toast.LENGTH_LONG).show()
+
+    /**
+     * Roda [trabalho] fora da tela principal mostrando "Aguarde…" com [mensagem]: converter o arquivo ou salvar a
+     * gravação leva alguns segundos, e sem aviso parecia que o app tinha travado entre uma tela e outra.
+     */
+    private suspend fun <T> comAguarde(mensagem: Int, trabalho: suspend () -> T): T {
+        val conteudo = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(dp(24), dp(20), dp(24), dp(12))
+            addView(ProgressBar(activity).apply { isIndeterminate = true })
+            addView(TextView(activity).apply {
+                setText(mensagem)
+                textSize = 15f
+                setPadding(dp(16), 0, 0, 0)
+            })
+        }
+        val dialogo = AlertDialog.Builder(activity).setView(conteudo).setCancelable(false).exibir()
+        return try {
+            withContext(Dispatchers.IO) { trabalho() }
+        } finally {
+            dialogo.dismiss()
+        }
+    }
     private fun dp(v: Int) = (v * activity.resources.displayMetrics.density).toInt()
     private fun rascunho() = File(activity.cacheDir, "clone_referencia.wav")
 
@@ -242,15 +266,17 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 toast(R.string.clone_audio_failed)
                 return
             }
-            val avaliacao = avaliar(amostras, taxa)
-            if (avaliacao.segundos < PocketCustomVoices.MIN_RECORD_SECONDS) {
-                avisarCurto(PocketCustomVoices.MIN_RECORD_SECONDS)
-                return
-            }
-            if (avaliacao.boa) {
-                finalizarGravacao(amostras, taxa)
-            } else {
-                mostrarAvisos(avaliacao, usar = { finalizarGravacao(amostras, taxa) }, regravar = { mostrarGravacao() })
+            activity.lifecycleScope.launch {
+                val avaliacao = comAguarde(R.string.clone_aguarde_analisando) { avaliar(amostras, taxa) }
+                if (avaliacao.segundos < PocketCustomVoices.MIN_RECORD_SECONDS) {
+                    avisarCurto(PocketCustomVoices.MIN_RECORD_SECONDS)
+                    return@launch
+                }
+                if (avaliacao.boa) {
+                    finalizarGravacao(amostras, taxa)
+                } else {
+                    mostrarAvisos(avaliacao, usar = { finalizarGravacao(amostras, taxa) }, regravar = { mostrarGravacao() })
+                }
             }
         }
 
@@ -304,8 +330,12 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
     }
 
     private fun finalizarGravacao(amostras: ShortArray, taxa: Int) {
-        val segundos = runCatching { VoiceReferenceAudio.salvar(amostras, taxa, rascunho()).seconds }.getOrNull()
-        depoisDaCaptura(segundos, PocketCustomVoices.MIN_RECORD_SECONDS, idiomaGravacao)
+        activity.lifecycleScope.launch {
+            val segundos = comAguarde(R.string.clone_aguarde_carregando) {
+                runCatching { VoiceReferenceAudio.salvar(amostras, taxa, rascunho()).seconds }.getOrNull()
+            }
+            depoisDaCaptura(segundos, PocketCustomVoices.MIN_RECORD_SECONDS, idiomaGravacao)
+        }
     }
 
     /** Lista os avisos de qualidade. "Usar assim mesmo" salva; "Regravar" abre a gravação de novo. */
@@ -321,7 +351,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
 
     private fun converterArquivo(uri: Uri) {
         activity.lifecycleScope.launch {
-            val segundos = withContext(Dispatchers.IO) {
+            val segundos = comAguarde(R.string.clone_aguarde_carregando) {
                 runCatching { VoiceReferenceAudio.converterArquivo(activity, uri, rascunho()).seconds }.getOrNull()
             }
             depoisDaCaptura(segundos, PocketCustomVoices.MIN_SECONDS, null)
@@ -387,7 +417,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
 
     private fun criar(nome: String, idioma: String) {
         activity.lifecycleScope.launch {
-            val voz = withContext(Dispatchers.IO) {
+            val voz = comAguarde(R.string.clone_aguarde_criando) {
                 runCatching { PocketCustomVoices.add(activity, nome, idioma, rascunho()) }.getOrNull()
             }
             rascunho().delete()
