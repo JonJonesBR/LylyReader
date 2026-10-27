@@ -71,6 +71,8 @@ class ReaderActivity : BasePlayerActivity() {
         private const val ALFA_SETA_DESABILITADA = 0.3f
         private const val CAPITULOS_ACIMA_DO_ATUAL = 2
         private const val MIN_CAPITULOS_PARA_BUSCA = 12
+        /** O resultado da busca fica a 1/[FRACAO_MARGEM_BUSCA] da altura, contando do topo da lista. */
+        private const val FRACAO_MARGEM_BUSCA = 4
         const val EXTRA_TRECHO_NOME = "extra_trecho_nome"
         const val EXTRA_ACAO_RETORNO = "extra_acao_retorno"
         const val EXTRA_AUTO_START_GUIDED = "extra_auto_start_guided"
@@ -158,6 +160,7 @@ class ReaderActivity : BasePlayerActivity() {
     private lateinit var btnBuscaAnterior: android.widget.ImageButton
     private lateinit var btnBuscaProximo: android.widget.ImageButton
     private lateinit var btnBuscaFechar: android.widget.ImageButton
+    private var ultimaBuscaRolada: List<Int> = emptyList()
 
     private lateinit var adapter: ParagrafoAdapter
     private var caminhoArquivo: String = ""
@@ -677,7 +680,9 @@ class ReaderActivity : BasePlayerActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: android.text.Editable?) {
-                viewModel.buscarTexto(s?.toString() ?: "")
+                val naTela = (recyclerView.layoutManager as? LinearLayoutManager)
+                    ?.findFirstVisibleItemPosition()?.coerceAtLeast(0) ?: 0
+                viewModel.buscarTexto(s?.toString() ?: "", naTela)
             }
         })
 
@@ -718,8 +723,13 @@ class ReaderActivity : BasePlayerActivity() {
 
     private fun scrollParaBuscaAtual() {
         val posicao = posicaoResultadoBusca(adapter.buscaResultados, adapter.buscaIndiceAtual)
-        if (posicao != null) {
-            recyclerView.smoothScrollToPosition(posicao)
+        val lm = recyclerView.layoutManager as? LinearLayoutManager
+        if (posicao != null && lm != null) {
+            // Salto direto (o smoothScroll era lento em livros longos e deixava o parágrafo achado
+            // colado na borda, às vezes atrás da barra de busca). Fica a ~1/4 da altura da tela.
+            val vertical = lm.orientation == LinearLayoutManager.VERTICAL
+            val margem = if (vertical) recyclerView.height / FRACAO_MARGEM_BUSCA else 0
+            lm.scrollToPositionWithOffset(posicao, margem)
         }
     }
 
@@ -1386,6 +1396,12 @@ class ReaderActivity : BasePlayerActivity() {
     private fun atualizarContadorBusca(state: ReaderUiState) {
         // ── Busca ──────────────────────────────────────────────────────────────
         val totalResultados = state.buscaResultados.size
+        // Chegou um resultado novo da busca: leva o leitor direto ao primeiro achado (antes ficava
+        // parado, e o "Próximo" pulava o primeiro resultado).
+        if (state.buscaResultados !== ultimaBuscaRolada) {
+            ultimaBuscaRolada = state.buscaResultados
+            if (totalResultados > 0) recyclerView.post { scrollParaBuscaAtual() }
+        }
         layoutBuscaReader.visibility = if (state.buscaVisivel) View.VISIBLE else View.GONE
         if (totalResultados > 0) {
             tvBuscaContador.visibility = View.VISIBLE

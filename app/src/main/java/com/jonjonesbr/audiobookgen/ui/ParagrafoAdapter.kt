@@ -114,6 +114,8 @@ class ParagrafoAdapter(
     // T4.1 — Busca
     var buscaResultados: List<Int> = emptyList()
     var buscaIndiceAtual: Int = -1
+    // Trechos achados por parágrafo (posições de caractere), para pintar a palavra em si
+    var buscaTrechos: Map<Int, List<IntRange>> = emptyMap()
 
     // T3.5 — Destaques: índice do parágrafo -> trechos destacados (char offsets locais ao texto)
     var destaques: Map<Int, List<IntRange>> = emptyMap()
@@ -275,14 +277,17 @@ class ParagrafoAdapter(
             else           -> Color.TRANSPARENT
         } ?: Color.TRANSPARENT
         val destaquesDoParagrafo = destaques[position].orEmpty()
+        val trechosBusca = buscaTrechos[position].orEmpty()
+        val corTrechoBusca = if (estaBuscaAtual) COR_TRECHO_BUSCA_ATUAL else COR_TRECHO_BUSCA
 
         if (selecaoAtiva) {
             tv.setBackgroundColor(corFundo)   // preserva a seleção do usuário
         } else if (estaNoSync && progressPct > 0f) {
             tv.aplicarTextoComSyncEDestaques(par.texto, corFundo, tema, progressPct, destaquesDoParagrafo)
-        } else if (destaquesDoParagrafo.isNotEmpty()) {
+        } else if (destaquesDoParagrafo.isNotEmpty() || trechosBusca.isNotEmpty()) {
             val spannable = android.text.SpannableString(par.texto)
             spannable.aplicarDestaques(destaquesDoParagrafo, par.texto.length)
+            spannable.aplicarDestaques(trechosBusca, par.texto.length, corTrechoBusca)
             tv.text = spannable
             tv.setBackgroundColor(corFundo)
         } else {
@@ -484,17 +489,26 @@ private fun AppCompatActivity.definirPalavra(texto: String) {
 /** Cor do destaque persistente (T3.5) — amarelo translúcido, legível sobre os 4 temas. */
 private val COR_DESTAQUE = Color.parseColor("#55FFC107")
 
+// Palavra achada pela busca: laranja forte no resultado atual, amarelo nos demais. Cores opacas
+// com texto escuro por cima não funcionariam nos temas escuros; a transparência mantém o texto legível.
+private val COR_TRECHO_BUSCA_ATUAL = Color.parseColor("#CCFF9800")
+private val COR_TRECHO_BUSCA = Color.parseColor("#88FFEB3B")
+
 /**
  * Aplica um BackgroundColorSpan por trecho destacado salvo. Função de topo (não membro da
  * classe) pelo mesmo motivo de [aplicarTipografiaLeitor] — não estourar TooManyFunctions.
  */
-private fun android.text.SpannableString.aplicarDestaques(destaques: List<IntRange>, maxLen: Int) {
+private fun android.text.SpannableString.aplicarDestaques(
+    destaques: List<IntRange>,
+    maxLen: Int,
+    cor: Int = COR_DESTAQUE
+) {
     destaques.forEach { range ->
         val start = range.first.coerceIn(0, maxLen)
         val end = (range.last + 1).coerceIn(start, maxLen)
         if (end > start) {
             setSpan(
-                android.text.style.BackgroundColorSpan(COR_DESTAQUE),
+                android.text.style.BackgroundColorSpan(cor),
                 start, end,
                 android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             )

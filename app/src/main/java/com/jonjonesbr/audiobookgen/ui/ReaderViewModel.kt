@@ -10,7 +10,12 @@ import com.jonjonesbr.audiobookgen.util.EditableTextPolicy
 import com.jonjonesbr.audiobookgen.domain.ExtractTextUseCase
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.util.PlayerStateHolder
+import com.jonjonesbr.audiobookgen.util.TextoBuscavel
+import com.jonjonesbr.audiobookgen.util.indiceInicialBusca
+import com.jonjonesbr.audiobookgen.util.normalizarConsulta
+import com.jonjonesbr.audiobookgen.util.ocorrenciasBusca
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
+import com.jonjonesbr.audiobookgen.util.prepararParaBusca
 import android.app.Application
 import android.content.Context
 import android.util.Log
@@ -441,34 +446,63 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
             )
         }
         if (!visivel) adapter?.let { a ->
-            a.buscaResultados = emptyList(); a.buscaIndiceAtual = -1; a.notifyDataSetChanged()
+            a.buscaResultados = emptyList(); a.buscaIndiceAtual = -1; a.buscaTrechos = emptyMap()
+            a.notifyDataSetChanged()
         }
     }
 
-    /** Busca com debounce: a consulta espera [DEBOUNCE_BUSCA_MS] sem digitação antes de filtrar. */
-    fun buscarTexto(query: String) {
+    /**
+     * Busca com debounce: a consulta espera [DEBOUNCE_BUSCA_MS] sem digitação antes de filtrar.
+     * Ignora maiúsculas, acentos, tipo de aspas e espaços repetidos; o primeiro resultado mostrado
+     * é o primeiro a partir de [paragrafoNaTela] (onde o leitor está), não o do começo do livro.
+     */
+    fun buscarTexto(query: String, paragrafoNaTela: Int = 0) {
         val texto = textoEfetivo() ?: return
         _uiState.update { it.copy(buscaQuery = query) }
         buscaJob?.cancel()
-        if (query.isBlank()) {
+        val consulta = normalizarConsulta(query)
+        if (consulta.isEmpty()) {
             _uiState.update { it.copy(buscaResultados = emptyList(), buscaIndiceAtual = -1) }
-            adapter?.let { it.buscaResultados = emptyList(); it.buscaIndiceAtual = -1; it.notifyDataSetChanged() }
+            adapter?.let {
+                it.buscaResultados = emptyList(); it.buscaIndiceAtual = -1; it.buscaTrechos = emptyMap()
+                it.notifyDataSetChanged()
+            }
             return
         }
         buscaJob = viewModelScope.launch {
             delay(DEBOUNCE_BUSCA_MS)
-            val resultados = withContext(Dispatchers.Default) {
-                // ignoreCase evita criar uma cópia em minúsculas de cada parágrafo a cada busca
-                texto.paragrafos.indices.filter { i ->
-                    texto.paragrafos[i].texto.contains(query, ignoreCase = true)
+            val trechos = withContext(Dispatchers.Default) {
+                val preparados = textoPreparadoParaBusca(texto.paragrafos)
+                buildMap {
+                    preparados.forEachIndexed { i, p ->
+                        val achados = ocorrenciasBusca(p, consulta)
+                        if (achados.isNotEmpty()) put(i, achados)
+                    }
                 }
             }
-            val indiceAtual = if (resultados.isNotEmpty()) 0 else -1
+            val resultados = trechos.keys.sorted()
+            val indiceAtual = indiceInicialBusca(resultados, paragrafoNaTela)
             _uiState.update {
                 it.copy(buscaResultados = resultados, buscaIndiceAtual = indiceAtual)
             }
-            adapter?.let { it.buscaResultados = resultados; it.buscaIndiceAtual = indiceAtual; it.notifyDataSetChanged() }
+            adapter?.let {
+                it.buscaResultados = resultados; it.buscaIndiceAtual = indiceAtual; it.buscaTrechos = trechos
+                it.notifyDataSetChanged()
+            }
         }
+    }
+
+    // Parágrafos já preparados para a busca, guardados para não refazer o trabalho a cada tecla.
+    private var buscaPreparadaDe: List<Paragrafo>? = null
+    private var buscaPreparada: List<TextoBuscavel> = emptyList()
+
+    @Synchronized
+    private fun textoPreparadoParaBusca(paragrafos: List<Paragrafo>): List<TextoBuscavel> {
+        if (buscaPreparadaDe !== paragrafos) {
+            buscaPreparada = paragrafos.map { prepararParaBusca(it.texto) }
+            buscaPreparadaDe = paragrafos
+        }
+        return buscaPreparada
     }
 
     fun navegarBusca(direcao: Int) {
