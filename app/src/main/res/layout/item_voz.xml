@@ -45,7 +45,7 @@
     <!-- Apagar a voz baixada (pacote offline ou voz clonada/importada); só aparece quando há o que apagar -->
     <ImageButton
         android:id="@+id/btnVoiceApagar"
-        android:layout_width="44dp"
+        android:layout_width="48dp"
         android:layout_height="48dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_apagar_voz"

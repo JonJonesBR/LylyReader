@@ -843,11 +843,14 @@ class ReaderActivity : BasePlayerActivity() {
                         audiobookViewModel.consumirEventoConversao()
                         when (evento) {
                             is ConversionDoneEvent.Sucesso -> {
-                                Toast.makeText(
-                                    this@ReaderActivity,
+                                // Aviso com ação "Abrir": toca o audiobook pronto, como o "Ouvir" das conversões.
+                                com.google.android.material.snackbar.Snackbar.make(
+                                    findViewById(android.R.id.content),
                                     R.string.toast_download_completed,
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+                                ).setAction(R.string.dl_abrir_livro) {
+                                    abrirAudiobookGerado(evento.caminho)
+                                }.show()
                             }
                             is ConversionDoneEvent.Cancelada -> {
                                 Toast.makeText(
@@ -1005,6 +1008,14 @@ class ReaderActivity : BasePlayerActivity() {
         ).setAction(R.string.conv_ver) {
             startActivity(Intent(this, ConversoesActivity::class.java))
         }.show()
+    }
+
+    /** Toca o audiobook recém-gerado e leva à biblioteca (mesmo fluxo do "Ouvir" em [ConversoesActivity]). */
+    private fun abrirAudiobookGerado(caminhoMp3: String) {
+        // Ouvir o audiobook encerra a leitura guiada, como em [ouvirAudiobookDesteLivro].
+        guidedPlayerManager?.stop()
+        audiobookViewModel.iniciarPlayer(caminhoMp3, File(caminhoMp3).nameWithoutExtension)
+        startActivity(Intent(this, LibraryActivity::class.java))
     }
 
     /**

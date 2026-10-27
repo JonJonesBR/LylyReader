@@ -59,7 +59,7 @@
             android:id="@+id/tvFonteValor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="16.0sp"
+            android:text="16"
             android:textSize="13sp"
             android:textColor="?attr/colorPrimary"
             android:textStyle="bold"

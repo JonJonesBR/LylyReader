@@ -98,8 +98,11 @@ class ReaderAparenciaController(
 
     private fun configurarSeekFonte(seekFonte: SeekBar, tvFonteValor: TextView, tamanhoFonteInicial: Float) {
         fun atualizarLabelsFonte(sp: Float) {
-            tvFonteValor.text = String.format(java.util.Locale.US, "%.1fsp", sp)
-            ViewCompat.setStateDescription(seekFonte, tvFonteValor.text)
+            // Visível só o número ("16", "16.5"); o leitor de tela ouve o texto completo com a unidade.
+            val numero = String.format(java.util.Locale.US, "%.1f", sp).removeSuffix(".0")
+            tvFonteValor.text = numero
+            tvFonteValor.contentDescription = activity.getString(R.string.cd_tamanho_fonte_valor, numero)
+            ViewCompat.setStateDescription(seekFonte, tvFonteValor.contentDescription)
         }
 
         // Fonte: min=12sp, max=24sp -> progress 0..24 representa (12+progress/2)sp
