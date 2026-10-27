@@ -4,7 +4,7 @@ import java.net.URI
 import java.net.URLDecoder
 
 /** Por que um link não pôde virar livro. */
-enum class MotivoLink { VAZIO, INVALIDO, PAGINA_WEB, FORMATO, GRANDE, REDE }
+enum class MotivoLink { VAZIO, INVALIDO, INSEGURO, PAGINA_WEB, FORMATO, GRANDE, REDE }
 
 class LinkException(val motivo: MotivoLink, mensagem: String? = null) : Exception(mensagem ?: motivo.name)
 
@@ -16,7 +16,10 @@ class LinkException(val motivo: MotivoLink, mensagem: String? = null) : Exceptio
 object LinkDeLivro {
     const val MAX_BYTES = 200L * 1024L * 1024L
 
-    /** Valida o endereço e converte links de compartilhamento do Google Drive e do Dropbox em links de download direto. */
+    /**
+     * Valida o endereço e converte links de compartilhamento do Google Drive e do Dropbox em links de download direto.
+     * Só aceita https: um link digitado com http:// é recusado (INSEGURO), sem trocar o esquema por conta própria.
+     */
     fun normalizar(entrada: String): Result<String> {
         val bruto = entrada.trim()
         if (bruto.isEmpty()) return Result.failure(LinkException(MotivoLink.VAZIO))
@@ -24,7 +27,8 @@ object LinkDeLivro {
         val uri = runCatching { URI(comEsquema) }.getOrNull() ?: return Result.failure(LinkException(MotivoLink.INVALIDO))
         val esquema = uri.scheme?.lowercase()
         val host = uri.host?.lowercase()
-        if ((esquema != "https" && esquema != "http") || host.isNullOrBlank() || !host.contains('.')) {
+        if (esquema == "http") return Result.failure(LinkException(MotivoLink.INSEGURO))
+        if (esquema != "https" || host.isNullOrBlank() || !host.contains('.')) {
             return Result.failure(LinkException(MotivoLink.INVALIDO))
         }
         return Result.success(converterCompartilhamento(uri, host))

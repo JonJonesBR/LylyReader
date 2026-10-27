@@ -13,7 +13,13 @@ class LinkDeLivroTest {
     @Test
     fun `endereco simples vira https`() {
         assertEquals("https://exemplo.com/livro.epub", ok("  exemplo.com/livro.epub "))
-        assertEquals("http://exemplo.com/a.pdf", ok("http://exemplo.com/a.pdf"))
+        assertEquals("https://exemplo.com/a.pdf", ok("https://exemplo.com/a.pdf"))
+    }
+
+    @Test
+    fun `link com http e recusado como inseguro`() {
+        assertEquals(MotivoLink.INSEGURO, motivo("http://exemplo.com/a.pdf"))
+        assertEquals(MotivoLink.INSEGURO, motivo("HTTP://exemplo.com/a.pdf"))
     }
 
     @Test

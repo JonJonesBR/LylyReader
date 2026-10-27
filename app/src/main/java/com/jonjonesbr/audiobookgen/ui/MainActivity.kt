@@ -139,7 +139,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun abrirComAppExterno(caminho: String) {
-        val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", File(caminho))
+        // Fora dos caminhos liberados ao FileProvider ele lança exceção: sem o try, o app fechava.
+        val uri = try {
+            FileProvider.getUriForFile(this, "$packageName.fileprovider", File(caminho))
+        } catch (_: IllegalArgumentException) {
+            Toast.makeText(this, R.string.toast_erro_abrir_externo, Toast.LENGTH_SHORT).show()
+            return
+        }
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(
                 uri,

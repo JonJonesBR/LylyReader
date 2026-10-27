@@ -28,6 +28,7 @@ object LinkDownloader {
     suspend fun baixar(ctx: Context, url: String, aoProgredir: (bytes: Long, total: Long) -> Unit): Baixado =
         withContext(Dispatchers.IO) {
             var atual = URL(url)
+            if (atual.protocol != "https") throw LinkException(MotivoLink.INSEGURO, "Só baixamos por https")
             var conn: HttpURLConnection? = null
             try {
                 var tentativas = 0
@@ -44,10 +45,8 @@ object LinkDownloader {
                         if (++tentativas > MAX_REDIRECIONAMENTOS) throw LinkException(MotivoLink.REDE, "Redirecionamentos demais")
                         val destino = conn.getHeaderField("Location") ?: throw LinkException(MotivoLink.REDE, "Redirecionamento sem destino")
                         val proximo = URL(atual, destino)
-                        if (atual.protocol == "https" && proximo.protocol != "https") {
-                            throw LinkException(MotivoLink.INVALIDO, "O link tentou sair de https para http")
-                        }
-                        if (proximo.protocol != "https" && proximo.protocol != "http") throw LinkException(MotivoLink.INVALIDO)
+                        // Só https: um redirecionamento para http deixaria o livro ser adulterado no caminho.
+                        if (proximo.protocol != "https") throw LinkException(MotivoLink.INSEGURO, "O link tentou sair de https")
                         atual = proximo
                         continue
                     }

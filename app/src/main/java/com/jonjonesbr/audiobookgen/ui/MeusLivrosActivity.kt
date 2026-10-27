@@ -667,6 +667,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
         val motivo = (erro as? com.jonjonesbr.audiobookgen.domain.LinkException)?.motivo
         val mensagem = when (motivo) {
             com.jonjonesbr.audiobookgen.domain.MotivoLink.VAZIO, com.jonjonesbr.audiobookgen.domain.MotivoLink.INVALIDO -> getString(R.string.link_erro_invalido)
+            com.jonjonesbr.audiobookgen.domain.MotivoLink.INSEGURO -> getString(R.string.link_erro_http)
             com.jonjonesbr.audiobookgen.domain.MotivoLink.PAGINA_WEB -> getString(R.string.link_erro_pagina)
             com.jonjonesbr.audiobookgen.domain.MotivoLink.FORMATO -> getString(R.string.link_erro_formato)
             com.jonjonesbr.audiobookgen.domain.MotivoLink.GRANDE -> getString(R.string.link_erro_grande)

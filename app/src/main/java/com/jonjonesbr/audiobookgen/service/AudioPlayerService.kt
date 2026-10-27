@@ -558,7 +558,8 @@ class AudioPlayerService : MediaLibraryService() {
             emMudancaPlayInterna { exoPlayer.play() }
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao iniciar: ${e.message}", e)
-            CrashLogWriter.log(e, "AudioPlayerService.iniciar", "caminho=$caminho, nome=$nome")
+            // Só o nome do arquivo no log: o caminho completo revela pastas do aparelho.
+            CrashLogWriter.log(e, "AudioPlayerService.iniciar", "arquivo=${File(caminho).name}, nome=$nome")
         }
     }
 
