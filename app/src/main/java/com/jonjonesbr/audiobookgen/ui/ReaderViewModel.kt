@@ -473,7 +473,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
             delay(DEBOUNCE_BUSCA_MS)
             val trechos = withContext(Dispatchers.Default) {
                 val preparados = textoPreparadoParaBusca(texto.paragrafos)
-                buildMap {
+                buildMap<Int, List<IntRange>> {
                     preparados.forEachIndexed { i, p ->
                         val achados = ocorrenciasBusca(p, consulta)
                         if (achados.isNotEmpty()) put(i, achados)
