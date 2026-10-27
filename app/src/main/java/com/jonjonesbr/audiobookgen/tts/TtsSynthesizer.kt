@@ -54,8 +54,6 @@ interface TtsSynthesizer {
     }
 }
 
-/** Síntese ONNX on-device (Supertonic), com cache de conteúdo compartilhado. */
-
 /** Síntese Kokoro on-device (Sherpa-ONNX, processo isolado :sherpa), com cache compartilhado. */
 class KokoroTtsSynthesizer(private val context: Context) : TtsSynthesizer {
     // Engine próprio (padrão ElevenLabsTtsSynthesizer): com allowIsolatedProcessDelegation=true

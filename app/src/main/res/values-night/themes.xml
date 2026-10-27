@@ -39,17 +39,10 @@
         <item name="lylyTextoSecundario">#CAC4D0</item>
         <item name="lylyTextoTerciario">#A8A2B0</item>
         <item name="lylyTextoFraco">#938F99</item>
-        <item name="lylyContorno">#49454F</item>
         <item name="lylyDivisor">#322F37</item>
         <item name="lylyDivisorFraco">#2A272F</item>
         <item name="lylyTonal">#4A4458</item>
-        <item name="lylyNaTonal">#E8DEF8</item>
-        <item name="lylySucessoSuperficie">#1A3A2A</item>
-        <item name="lylyDestaqueLeitura">#4F378B</item>
-        <item name="lylyFundoLeitura">#141218</item>
-        <item name="lylyTextoLeitura">#E6E0E9</item>
         <item name="lylyBarraNavegacao">#1D1B20</item>
-        <item name="lylyProgresso">#D0BCFF</item>
 
         <!-- Transição entre telas: fade curto em vez do slide padrão (mesmo que values/) -->
         <item name="android:windowAnimationStyle">@style/LylyTransicao</item>

@@ -364,10 +364,9 @@ class ReaderActivity : BasePlayerActivity() {
             ?: File(caminhoArquivo).nameWithoutExtension
 
         // Precisa rodar ANTES de vincularViews()/guidedReadingBarController abaixo: o
-        // lazy de guidedReadingBarController lê guidedPlayerManager (lateinit) no
-        // primeiro acesso (configurarGuidedPlayerBotoes()); se guidedPlayerManager
-        // ainda não tiver sido atribuído aqui, crasha com
-        // UninitializedPropertyAccessException (bug real, já reproduzido no aparelho).
+        // lazy de guidedReadingBarController lê guidedPlayerManager (nullable) no
+        // primeiro acesso (configurarGuidedPlayerBotoes()). Se ainda for nulo nesse
+        // momento, o lazy fixa null e a barra guiada nunca se conecta ao manager deste livro.
         val pythonUseCase = PythonEngineUseCase(applicationContext)
         // Modo "Ler sem áudio": nenhum manager é criado nem conectado (nem o bridge é tocado).
         if (!somenteLeitura) {

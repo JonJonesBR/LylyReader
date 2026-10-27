@@ -39,17 +39,10 @@
         <item name="lylyTextoSecundario">#5F5D66</item>
         <item name="lylyTextoTerciario">#6A6770</item>
         <item name="lylyTextoFraco">#6B6770</item>
-        <item name="lylyContorno">#CAC4D0</item>
         <item name="lylyDivisor">#EAE6EE</item>
         <item name="lylyDivisorFraco">#F1EDF5</item>
         <item name="lylyTonal">#E8DEF8</item>
-        <item name="lylyNaTonal">#1D192B</item>
-        <item name="lylySucessoSuperficie">#E6F4EA</item>
-        <item name="lylyDestaqueLeitura">#EADDFF</item>
-        <item name="lylyFundoLeitura">#FDFBFF</item>
-        <item name="lylyTextoLeitura">#2B2930</item>
         <item name="lylyBarraNavegacao">#F3EDF7</item>
-        <item name="lylyProgresso">#7C3AED</item>
 
         <!-- Transição entre telas: fade curto em vez do slide padrão -->
         <item name="android:windowAnimationStyle">@style/LylyTransicao</item>
@@ -101,16 +94,9 @@
         <item name="lylyTextoSecundario">#5E5040</item>
         <item name="lylyTextoTerciario">#6C5E48</item>
         <item name="lylyTextoFraco">#6B5F4C</item>
-        <item name="lylyContorno">#C9B996</item>
         <item name="lylyDivisor">#E1D4B8</item>
         <item name="lylyDivisorFraco">#E9DEC6</item>
         <item name="lylyTonal">#E8D9B8</item>
-        <item name="lylyNaTonal">#3B2F20</item>
-        <item name="lylySucessoSuperficie">#DDE5C8</item>
-        <item name="lylyDestaqueLeitura">#EAD49A</item>
-        <item name="lylyFundoLeitura">#F4ECD8</item>
-        <item name="lylyTextoLeitura">#3B2F20</item>
         <item name="lylyBarraNavegacao">#EDE3CC</item>
-        <item name="lylyProgresso">#8A5A33</item>
     </style>
 </resources>

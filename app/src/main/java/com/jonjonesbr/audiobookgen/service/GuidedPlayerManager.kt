@@ -314,7 +314,7 @@ class GuidedPlayerManager(
         coroutineScope.launch {
             SleepTimerManager.volumeFactor.collect { fator ->
                 if (GuidedPlaybackBridge.manager === this@GuidedPlayerManager) {
-                    try { playerEngine?.setVolume(fator) } catch (_: Exception) {}
+                    try { playerEngine?.setVolume(fator) } catch (e: Exception) { Log.w(TAG, "Falha ao aplicar o fade da soneca", e) }
                 }
             }
         }

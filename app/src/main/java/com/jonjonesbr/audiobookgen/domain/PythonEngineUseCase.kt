@@ -50,8 +50,6 @@ sealed class SinteseResult {
 class PythonEngineUseCase(private val context: Context) {
 
     companion object {
-        private val PYTHON_LOCK = Any()
-
         /** Tamanho do trecho de texto incluído no log de diagnóstico da síntese. */
         private const val LOG_TEXTO_PREVIEW_CHARS = 80
 
