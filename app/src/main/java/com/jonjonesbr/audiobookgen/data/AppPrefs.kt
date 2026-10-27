@@ -288,6 +288,11 @@ class AppPrefs(context: Context) {
         get() = p.getBoolean("dica_bateria_vista", false)
         set(v) = p.edit().putBoolean("dica_bateria_vista", v).apply()
 
+    /** Audiobooks concluídos desde a última visita à aba Audiobooks (selo da barra). Ver ConclusoesDeAudiobook. */
+    var audiobooksConcluidosNaoVistos: Int
+        get() = p.getInt("audiobooks_concluidos_nao_vistos", 0)
+        set(v) = p.edit().putInt("audiobooks_concluidos_nao_vistos", v.coerceAtLeast(0)).apply()
+
     var blacklistWordsJson: String
         get() = p.getString("blacklist_words", "[]") ?: "[]"
         set(v) = p.edit().putString("blacklist_words", v).apply()

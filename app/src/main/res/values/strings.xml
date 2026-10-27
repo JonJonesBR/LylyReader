@@ -1040,6 +1040,8 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="nav_audiobooks">Audiobooks</string>
     <string name="nav_downloads">Downloads</string>
     <string name="nav_ajustes">Settings</string>
+    <string name="audiobook_pronto_aviso">Audiobook ready: %1$s</string>
+    <string name="audiobook_pronto_acao">Listen</string>
 
     <!-- Tela do livro (Fase O) -->
     <string name="livro_continuar">Continue guided reading</string>

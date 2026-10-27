@@ -17,6 +17,7 @@ import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.mostrarErro
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.service.ChapterMarksStore
+import com.jonjonesbr.audiobookgen.service.ConclusoesDeAudiobook
 import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
 import com.jonjonesbr.audiobookgen.service.EstadoVideoExport
 import com.jonjonesbr.audiobookgen.service.PedidoVideo
@@ -216,6 +217,8 @@ class LibraryActivity : BasePlayerActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Abrir a aba Audiobooks zera o selo de concluídos não vistos (a barra some com ele nesta tela).
+        ConclusoesDeAudiobook.marcarVistos(this)
         NavegacaoPrincipal.configurar(this, AbaPrincipal.AUDIOBOOKS) // volta de outra tela: realça de novo a aba certa
         // Recarrega a cada vez que a tela volta a ficar visível (não só na criação): a pasta
         // padrão é pública (Downloads), então arquivos podem sumir por fora do app (ex.:

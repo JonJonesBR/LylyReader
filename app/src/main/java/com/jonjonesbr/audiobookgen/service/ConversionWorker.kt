@@ -394,6 +394,8 @@ class ConversionWorker(
                 FilaDeConversao.aoTerminarExecucao(
                     applicationContext, inputData.getString(KEY_FILA_ITEM_ID), runToken, result.caminho, null
                 )
+                // Selo da aba Audiobooks e aviso nas telas abertas (o worker roda no processo do app).
+                ConclusoesDeAudiobook.registrar(applicationContext, File(result.caminho).nameWithoutExtension)
                 Result.success(
                     workDataOf(
                         KEY_RESULT_CAMINHO to result.caminho,

@@ -1024,6 +1024,8 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="nav_audiobooks">Audiolibros</string>
     <string name="nav_downloads">Descargas</string>
     <string name="nav_ajustes">Ajustes</string>
+    <string name="audiobook_pronto_aviso">Audiolibro listo: %1$s</string>
+    <string name="audiobook_pronto_acao">Escuchar</string>
 
     <!-- Tela do livro (Fase O) -->
     <string name="livro_continuar">Continuar lectura guiada</string>

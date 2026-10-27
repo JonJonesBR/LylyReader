@@ -1039,6 +1039,8 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="nav_audiobooks">Audiobooks</string>
     <string name="nav_downloads">Downloads</string>
     <string name="nav_ajustes">Ajustes</string>
+    <string name="audiobook_pronto_aviso">Audiobook pronto: %1$s</string>
+    <string name="audiobook_pronto_acao">Ouvir</string>
 
     <!-- Tela do livro (Fase O) -->
     <string name="livro_continuar">Continuar leitura guiada</string>
