@@ -30,6 +30,10 @@ import android.os.BatteryManager
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.app.RecoverableSecurityException
+import android.provider.DocumentsContract
+import android.provider.MediaStore
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import android.os.Bundle
@@ -112,6 +116,19 @@ class LibraryActivity : BasePlayerActivity() {
     // essa versão, nunca passam pelo onboarding de novo.
     private val permissaoMidia = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
         Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
+
+    private var exclusaoPendente: AudiobookItem? = null
+
+    // Android 11+ (e 10 via RecoverableSecurityException): o sistema pergunta ao usuário e,
+    // se ele permitir, apaga o arquivo por nós; no Android 10 a permissão concedida exige
+    // repetir a exclusão.
+    private val confirmarExclusaoNoSistema =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { resultado ->
+            val item = exclusaoPendente ?: return@registerForActivityResult
+            exclusaoPendente = null
+            if (resultado.resultCode != RESULT_OK) return@registerForActivityResult
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) aoExcluir(item) else deletar(item)
+        }
 
     private val solicitarPermissaoMidia =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { carregarAudiobooks() }
@@ -419,29 +436,53 @@ class LibraryActivity : BasePlayerActivity() {
 
     private fun deletar(item: AudiobookItem) {
         try {
-            val deleted = if (item.caminho != null) {
-                File(item.caminho).delete()
-            } else {
-                contentResolver.delete(item.uri, null, null) > 0
+            val deleted = when {
+                item.caminho != null -> File(item.caminho).delete()
+                DocumentsContract.isDocumentUri(this, item.uri) ->
+                    DocumentsContract.deleteDocument(contentResolver, item.uri)
+                else -> contentResolver.delete(item.uri, null, null) > 0
             }
-            if (deleted) {
-                val chave = item.uri.toString()
-                PlaybackProgressStore.clear(this, chave)
-                ChapterMarksStore.remover(this, chave)
-                com.jonjonesbr.audiobookgen.data.SincroniaAudioStore.remover(this, item.caminho ?: chave)
-                com.jonjonesbr.audiobookgen.service.TimbreAudiobookStore.remover(this, chave)
-                GuidedBookPrefsStore.remover(this, chave)
-                LinkedBookStore.removerPorMp3(this, chave)
-                audiobooks.removeAll { it.uri == item.uri }
-                aplicarOrdenacao()
-                Toast.makeText(this, getString(R.string.toast_audiobook_deleted, item.nome), Toast.LENGTH_SHORT).show()
-            } else {
+            if (deleted) aoExcluir(item) else mostrarErro(R.string.toast_audiobook_delete_failed)
+        } catch (e: SecurityException) {
+            // Arquivo da pasta Downloads que o MediaStore não atribui a este app (gerado antes de
+            // uma reinstalação, ou por outro app): o Android só deixa apagar com a confirmação do
+            // usuário, num diálogo do próprio sistema.
+            if (!pedirExclusaoAoSistema(item, e)) {
+                Log.e(TAG, "Sem permissão para excluir: ${e.message}")
                 mostrarErro(R.string.toast_audiobook_delete_failed)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Erro ao deletar: ${e.message}")
+            Log.e(TAG, "Erro ao deletar: ${e.message}", e)
             mostrarErro(getString(R.string.toast_audiobook_delete_error, getString(mensagemDeErro(e))))
         }
+    }
+
+    /** Abre o diálogo do sistema para apagar um arquivo de outro dono; false se não houver como. */
+    private fun pedirExclusaoAoSistema(item: AudiobookItem, e: SecurityException): Boolean {
+        val pedido = when {
+            item.uri.authority != MediaStore.AUTHORITY -> null
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ->
+                MediaStore.createDeleteRequest(contentResolver, listOf(item.uri)).intentSender
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && e is RecoverableSecurityException ->
+                e.userAction.actionIntent.intentSender
+            else -> null
+        } ?: return false
+        exclusaoPendente = item
+        confirmarExclusaoNoSistema.launch(IntentSenderRequest.Builder(pedido).build())
+        return true
+    }
+
+    private fun aoExcluir(item: AudiobookItem) {
+        val chave = item.uri.toString()
+        PlaybackProgressStore.clear(this, chave)
+        ChapterMarksStore.remover(this, chave)
+        com.jonjonesbr.audiobookgen.data.SincroniaAudioStore.remover(this, item.caminho ?: chave)
+        com.jonjonesbr.audiobookgen.service.TimbreAudiobookStore.remover(this, chave)
+        GuidedBookPrefsStore.remover(this, chave)
+        LinkedBookStore.removerPorMp3(this, chave)
+        audiobooks.removeAll { it.uri == item.uri }
+        aplicarOrdenacao()
+        Toast.makeText(this, getString(R.string.toast_audiobook_deleted, item.nome), Toast.LENGTH_SHORT).show()
     }
 
     // ── Exportar como vídeo (MP4) — experimental, sem ffmpeg (MediaCodec/MediaMuxer) ─────
