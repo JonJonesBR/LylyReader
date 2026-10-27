@@ -3,7 +3,7 @@ name: Release Build
 # Só roda quando disparado à mão (Actions › Release Build › Run workflow); commits e pushes não geram APK.
 # Testa, builda o APK de produção "publicada" (R8, sem depuração; mesmo id .debug e mesma chave fixa das versões
 # anteriores, para instalar por cima), cria a tag v<versão> no commit disparado, publica a Release do GitHub com o
-# APK (LylyReader-v<versão>.apk) e mantém só as 3 Releases mais recentes (as tags antigas ficam, como histórico).
+# APK (LylyReader-v<versão>.apk) e mantém só as 3 Releases e as 3 tags mais recentes (as mais antigas são apagadas).
 # Também roda os testes Python (por enquanto só informativos).
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ concurrency:
   group: release
   cancel-in-progress: false
 
-# Só o necessário: criar a Release (e a tag) e apagar as Releases antigas. Nenhum passo precisa de mais que isso.
+# Só o necessário: criar a Release (e a tag) e apagar as Releases e tags antigas. Nenhum passo precisa de mais que isso.
 permissions:
   contents: write
 
@@ -215,10 +215,10 @@ jobs:
           # Versões com hífen (ex.: 1.6.1-beta.2) são pré-releases; 1.6.1 é release final.
           prerelease: ${{ contains(env.VERSION_NAME, '-') }}
 
-      - name: Delete older releases (mantém as 3 mais recentes)
+      - name: Delete older releases and tags (mantém as 3 mais recentes)
         # Roda só depois da nova release já estar publicada com sucesso (passo acima) — limpeza,
         # nunca crítico ao processo de release em si. As 3 mais recentes ficam como caminho de volta caso
-        # uma versão saia com defeito; das mais antigas só a Release (card + APK) é removida, a tag fica.
+        # uma versão saia com defeito; das mais antigas saem a Release (card + APK) e a tag.
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -231,7 +231,15 @@ jobs:
             if [ "$tag" = "$NOVA" ]; then continue; fi
             n=$((n + 1))
             if [ "$n" -ge "$MANTER" ]; then
-              echo "Apagando release antiga: $tag (tag mantida)"
-              gh release delete "$tag" --yes --cleanup-tag=false
+              echo "Apagando release antiga: $tag (e a tag)"
+              gh release delete "$tag" --yes --cleanup-tag
             fi
           done
+          # Tags v* que sobraram sem Release (ou de releases apagadas antes): ficam só as 3 de versão mais alta.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v" --jq '.[].ref' \
+            | sed 's#^refs/tags/##' | sort -V -r | tail -n +"$((MANTER + 1))" \
+            | while read -r tag; do
+                if [ "$tag" = "$NOVA" ]; then continue; fi
+                echo "Apagando tag antiga: $tag"
+                gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$tag"
+              done
