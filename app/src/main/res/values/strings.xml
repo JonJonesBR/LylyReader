@@ -720,7 +720,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Fixed: guided reading and the audiobook no longer both show up in the player. Starting one closes the other and keeps your place.\n• The guided reading bar now has an X to close it from any screen.\n• Fixed: continuing guided reading from the library started one paragraph before the highlighted one. It now resumes exactly where you stopped.\n• If generating an audiobook fails in the reader, the message now has a “Try again” button.\n• Small text fixes.</string>
+    <string name="release_notes_corpo">• Fixed: guided reading and the audiobook no longer both show up in the player. Starting one closes the other and keeps your place.\n• The guided reading bar now has an X to close it from any screen.\n• Fixed: continuing guided reading from the library started one paragraph before the highlighted one. It now resumes exactly where you stopped.\n• Pocket TTS voice: no longer skips the last word of some sentences (like a quoted word at the end), and each sentence starts without a click or echo.\n• If generating an audiobook fails in the reader, the message now has a “Try again” button.\n• Small text fixes.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>

@@ -49,8 +49,9 @@ class ExoPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
             }
 
             exoPlayer = player
-            player.play()
+            // Equalizador antes do som: preso à sessão com o áudio já tocando, dava um estalo no começo.
             aplicarAgudos(player.audioSessionId)
+            player.play()
         } catch (e: Exception) {
             val errorMsg = "Error starting ExoPlayer: ${e.message}"
             Log.e("ExoPlayerEngine", errorMsg, e)

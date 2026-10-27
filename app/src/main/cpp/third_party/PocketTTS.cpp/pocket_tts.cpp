@@ -1804,7 +1804,7 @@ private:
     
     class LatentGen {
         PocketTTS& tts;
-        int max_, idx_ = 0, extra_ = 0;
+        int max_, idx_ = 0;
         int eos_frame_ = -1;
         int min_eos_frame_ = 0;  // EOS predicted before this frame is ignored (see set_min_eos_frame)
         int eos_extra_;  // frames to generate after EOS
@@ -1935,13 +1935,6 @@ private:
                 eos_frame_ = idx_;
             }
             
-            if (eos_) {
-                if (++extra_ > eos_extra_) { 
-                    done_ = true; 
-                    return Tensor(); 
-                }
-            }
-            
             {
                 auto _ = g_prof.time("frame:rng");
                 if (temp_ > 0) {
@@ -1974,6 +1967,11 @@ private:
             
             std::copy(fx_.begin(), fx_.end(), cl_.begin());
             idx_++;
+            // LylyReader: stop right after the last frame after EOS (eos_frame .. eos_frame +
+            // eos_extra - 1, the same frames as before) instead of on the next call, which ran the
+            // main model once more for nothing and left that extra step in its KV cache. This
+            // keeps the generator resumable (see resume_after_false_eos).
+            if (eos_ && idx_ - eos_frame_ >= eos_extra_) done_ = true;
             return Tensor({fx_.begin(), fx_.end()}, {1, 1, 32});
         }
         
@@ -1983,6 +1981,15 @@ private:
         // An EOS before the shortest plausible duration of the text is ignored.
         void set_min_eos_frame(int frame) { min_eos_frame_ = std::max(0, frame); }
         int eos_frame() const { return eos_frame_; }
+        // LylyReader: the audio generated after an EOS shows speech, so that EOS came at a pause
+        // or in the middle of the last word. Forget it and go on from the current frame; a new
+        // EOS can be predicted from here on.
+        void resume_after_false_eos() {
+            eos_ = false;
+            done_ = false;
+            eos_frame_ = -1;
+            min_eos_frame_ = idx_;
+        }
     };
     
     friend class LatentGen;
@@ -2101,6 +2108,16 @@ static int count_letters(const std::string& text) {
     return count;
 }
 
+// LylyReader: linear fade-in over the first `n` samples and fade-out over the last `n`.
+static void fade_edges(std::vector<float>& samples, size_t n) {
+    n = std::min(n, samples.size() / 2);
+    for (size_t i = 0; i < n; ++i) {
+        const float gain = float(i) / float(n);
+        samples[i] *= gain;
+        samples[samples.size() - 1 - i] *= gain;
+    }
+}
+
 void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallback cb, int max_frames) {
     const auto chunks = make_text_chunks(text);
     const size_t pause_samples = static_cast<size_t>(
@@ -2114,15 +2131,51 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
         bool aborted = false;
     };
 
-    // Generates one chunk into memory. The generator and the Mimi decoder still run on two
-    // threads; `cb(nullptr, 0)` only asks the caller whether it wants to continue.
-    auto generate_chunk = [&](const TensorI64& text_tokens, int frame_limit, int eos_extra,
-                              int min_eos_frame) -> ChunkAudio {
-        ChunkAudio out;
-        auto gen = make_gen(voice, text_tokens, frame_limit, eos_extra);
-        gen.set_min_eos_frame(min_eos_frame);
-        dec_runner_->reset_state();  // zero existing buffers, no reallocation
+    // LylyReader: an EOS is only trusted when the audio right after it is quiet. The model
+    // sometimes predicts the end of speech at a pause before the last word (`declarar: "inocente".`)
+    // or while the last word is still being said, and the word was lost: losing one word changes
+    // the duration too little for the letters-per-second check below. EOS_LOOKAHEAD_FRAMES more
+    // frames are generated after the usual eos_extra ones and only looked at: speech there means
+    // the EOS was false and generation goes on (up to MAX_FALSE_EOS times); otherwise the audio is
+    // cut where it always was (eos_frame + eos_extra).
+    static constexpr int EOS_LOOKAHEAD_FRAMES = 4;      // 320 ms
+    static constexpr int MAX_FALSE_EOS = 2;
+    static constexpr double VOICED_FRACTION = 0.2;      // frame RMS vs loudest frame before EOS (-14 dB)
+    static constexpr int MIN_VOICED_FRAMES = 2;         // one loud frame (a click, a breath) is not speech
 
+    struct DecodedAudio {
+        std::vector<float> samples;
+        std::vector<size_t> frame_ends;  // samples.size() after each decoded frame
+    };
+
+    auto frame_rms = [](const DecodedAudio& audio, size_t frame) {
+        const size_t begin = frame == 0 ? 0 : audio.frame_ends[frame - 1];
+        const size_t end = audio.frame_ends[frame];
+        if (end <= begin) return 0.0;
+        double sum = 0.0;
+        for (size_t i = begin; i < end; ++i) sum += double(audio.samples[i]) * audio.samples[i];
+        return std::sqrt(sum / double(end - begin));
+    };
+
+    // Speech in the frames from `first_tail` on, compared with the speech before `eos`.
+    auto speech_after = [&](const DecodedAudio& audio, int eos, int first_tail) {
+        const size_t frames = audio.frame_ends.size();
+        double reference = 0.0;
+        for (size_t f = 0; f < std::min(frames, static_cast<size_t>(std::max(0, eos))); ++f) {
+            reference = std::max(reference, frame_rms(audio, f));
+        }
+        if (reference <= 0.0) return false;
+        int voiced = 0;
+        for (size_t f = static_cast<size_t>(std::max(0, first_tail)); f < frames; ++f) {
+            if (frame_rms(audio, f) > VOICED_FRACTION * reference) voiced++;
+        }
+        return voiced >= MIN_VOICED_FRAMES;
+    };
+
+    // Runs `gen` until it stops, appending the decoded audio. The generator and the Mimi decoder
+    // still run on two threads; `cb(nullptr, 0)` only asks the caller whether it wants to continue.
+    // Returns false when cancelled.
+    auto run_frames = [&](LatentGen& gen, DecodedAudio& audio) -> bool {
         std::mutex mtx;
         std::condition_variable cv;
         std::deque<Tensor> queue;
@@ -2184,7 +2237,11 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
                 size_t n = 1;
                 for (auto d : shape) n *= d;
                 const float* data = outputs[0].GetTensorData<float>();
-                out.samples.insert(out.samples.end(), data, data + n);
+                const size_t before = audio.samples.size();
+                audio.samples.insert(audio.samples.end(), data, data + n);
+                for (size_t i = 1; i <= batch.size(); ++i) {
+                    audio.frame_ends.push_back(before + n * i / batch.size());
+                }
 
                 if (!cb(nullptr, 0)) {
                     std::lock_guard<std::mutex> lock(mtx);
@@ -2198,7 +2255,40 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
         if (gen_thread.joinable()) {
             gen_thread.join();
         }
-        out.aborted = aborted;
+        return !aborted;
+    };
+
+    // Generates one chunk into memory.
+    auto generate_chunk = [&](const TensorI64& text_tokens, int frame_limit, int eos_extra,
+                              int min_eos_frame) -> ChunkAudio {
+        ChunkAudio out;
+        auto gen = make_gen(voice, text_tokens, frame_limit, eos_extra + EOS_LOOKAHEAD_FRAMES);
+        gen.set_min_eos_frame(min_eos_frame);
+        dec_runner_->reset_state();  // zero existing buffers, no reallocation
+
+        DecodedAudio audio;
+        for (int false_eos = 0; ; ++false_eos) {
+            if (!run_frames(gen, audio)) {
+                out.aborted = true;
+                break;
+            }
+            const int eos = gen.eos_frame();
+            if (eos < 0) break;  // frame limit
+            const int kept_frames = eos + eos_extra;
+            if (false_eos < MAX_FALSE_EOS && speech_after(audio, eos, kept_frames)) {
+                if (cfg_.verbose) {
+                    std::cerr << "[pocket-tts] speech after EOS at frame " << eos << ", continuing\n";
+                }
+                gen.resume_after_false_eos();
+                if (gen.has_next()) continue;
+                break;  // no frames left: keep everything
+            }
+            if (kept_frames > 0 && static_cast<size_t>(kept_frames) < audio.frame_ends.size()) {
+                audio.samples.resize(audio.frame_ends[kept_frames - 1]);
+            }
+            break;
+        }
+        out.samples = std::move(audio.samples);
         out.speech_frames = gen.eos_frame() >= 0 ? gen.eos_frame() : gen.frame_idx();
         out.hit_limit = gen.eos_frame() < 0 && gen.frame_idx() >= frame_limit;
         return out;
@@ -2215,6 +2305,10 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
     static constexpr int MIN_LETTERS_TO_CHECK = 20;
     static constexpr int MAX_ATTEMPTS = 3;
     static constexpr double FRAME_RATE = 12.5;
+    static constexpr size_t EDGE_FADE_SAMPLES = SR * 5 / 1000;    // 5 ms
+    static constexpr size_t LEAD_IN_SAMPLES = SR * 60 / 1000;     // 60 ms
+    const std::vector<float> lead_in(LEAD_IN_SAMPLES, 0.0f);
+    bool emitted_any = false;
 
     for (size_t si = 0; si < chunks.size(); ++si) {
         if (cfg_.verbose) {
@@ -2268,7 +2362,17 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
             if (ok) break;
         }
 
-        if (!best.samples.empty() && !cb(best.samples.data(), best.samples.size())) return;
+        if (!best.samples.empty()) {
+            // LylyReader: the first decoded frame starts from a zeroed Mimi state and the chunk
+            // is cut at a frame boundary; a short fade at both edges removes the click there.
+            fade_edges(best.samples, EDGE_FADE_SAMPLES);
+            // Speech used to start on the very first sample of the file, so the player's own
+            // start-up (volume ramp, time-stretch warm-up for speed/pitch) fell on the first
+            // syllable. A short silence first keeps it on silence.
+            if (!emitted_any && !cb(lead_in.data(), lead_in.size())) return;
+            emitted_any = true;
+            if (!cb(best.samples.data(), best.samples.size())) return;
+        }
         if (chunks[si].sentence_end && !silence.empty() && !cb(silence.data(), silence.size())) return;
     }
 }

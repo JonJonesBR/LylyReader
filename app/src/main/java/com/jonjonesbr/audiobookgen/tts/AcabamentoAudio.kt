@@ -24,7 +24,7 @@ object AcabamentoAudio {
     enum class Modo(val sufixo: String) {
         NENHUM(""),
         VOLUME("-vol1"),
-        COMPLETO("-acab1")
+        COMPLETO("-acab2")
     }
 
     /** Volume médio alvo: cerca de -20 dBFS. */
@@ -36,9 +36,14 @@ object AcabamentoAudio {
     /** Abaixo disto (em amplitude) é silêncio; ou 1/40 do pico, o que for maior. */
     private const val LIMIAR_SILENCIO_MIN = 120
     private const val FRACAO_DO_PICO = 40
-    /** Folga mantida antes da primeira e depois da última fala (respiração, fim de sílaba). */
-    private const val MARGEM_INICIO_MS = 30
+    /**
+     * Folga mantida antes da primeira e depois da última fala (respiração, fim de sílaba). No início ela também
+     * absorve a partida do player (rampa de volume, ajuste de velocidade/tom), que com 30 ms caía na 1ª sílaba.
+     */
+    private const val MARGEM_INICIO_MS = 60
     private const val MARGEM_FIM_MS = 80
+    /** Rampa nas bordas do corte: cortar no meio de um som deixava um estalo. */
+    private const val RAMPA_MS = 5
     private const val MS_POR_SEGUNDO = 1_000
     private const val BYTES_POR_AMOSTRA = 2
     private const val TAMANHO_CABECALHO = 44
@@ -79,7 +84,25 @@ object AcabamentoAudio {
         // Corta em fronteira de quadro (todas as amostras de um instante juntas).
         val inicio = (primeira - margemInicio).coerceAtLeast(0).let { it - it % canais }
         val fim = (ultima + 1 + margemFim).coerceAtMost(amostras.size).let { it - it % canais }
-        return if (fim > inicio) amostras.copyOfRange(inicio, fim) else amostras
+        if (fim <= inicio) return amostras
+        val aparado = amostras.copyOfRange(inicio, fim)
+        aplicarRampas(aparado, canais, taxa * RAMPA_MS / MS_POR_SEGUNDO)
+        return aparado
+    }
+
+    /** Sobe de 0 nos primeiros [quadros] quadros e desce a 0 nos últimos. */
+    private fun aplicarRampas(amostras: ShortArray, canais: Int, quadros: Int) {
+        val total = amostras.size / canais
+        val n = minOf(quadros, total / 2)
+        for (q in 0 until n) {
+            val ganho = q.toDouble() / n
+            for (c in 0 until canais) {
+                val ini = q * canais + c
+                val fim = (total - 1 - q) * canais + c
+                amostras[ini] = (amostras[ini] * ganho).toInt().toShort()
+                amostras[fim] = (amostras[fim] * ganho).toInt().toShort()
+            }
+        }
     }
 
     /** Leva o volume médio ao alvo, sem passar do pico máximo e sem ganhos extremos. */

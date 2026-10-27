@@ -19,10 +19,23 @@ class AcabamentoAudioTest {
     @Test fun `apara o silencio das bordas mantendo a folga`() {
         val audio = silencio(500) + fala(200, 5_000) + silencio(700)
         val aparado = AcabamentoAudio.aparar(audio, canais = 1, taxa = taxa)
-        // 30 ms antes da fala + 200 ms de fala + 80 ms depois.
-        assertEquals(310, aparado.size)
+        // 60 ms antes da fala + 200 ms de fala + 80 ms depois.
+        assertEquals(340, aparado.size)
         assertEquals(0, aparado.first().toInt())
         assertEquals(0, aparado.last().toInt())
+    }
+
+    @Test fun `corte no meio do som ganha rampa nas bordas`() {
+        // Ruído baixo (abaixo do limiar) nas bordas: o corte cai nele e não pode começar nem acabar de repente.
+        val audio = fala(500, 100) + fala(200, 5_000) + fala(500, 100)
+        val aparado = AcabamentoAudio.aparar(audio, canais = 1, taxa = taxa)
+        assertEquals(340, aparado.size)
+        assertEquals(0, aparado.first().toInt())
+        assertEquals(0, aparado.last().toInt())
+        // A rampa de 5 ms sobe aos poucos e depois o áudio segue intacto.
+        assertTrue(abs(aparado[2].toInt()) < 100)
+        assertEquals(100, abs(aparado[10].toInt()))
+        assertEquals(5_000, abs(aparado[60].toInt()))
     }
 
     @Test fun `audio so de silencio fica como esta`() {

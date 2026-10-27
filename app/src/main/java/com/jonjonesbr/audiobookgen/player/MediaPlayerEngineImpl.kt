@@ -37,9 +37,11 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
             }
 
             mediaPlayer = player
-            setPlaybackSpeed(currentSpeed)
+            // Equalizador antes do som: preso à sessão com o áudio já tocando, dava um estalo no começo.
             aplicarAgudos(player.audioSessionId)
-            player.start()
+            // Depois do prepare(), PlaybackParams com velocidade > 0 já inicia a reprodução (= start()).
+            aplicarParametros(player)
+            if (!player.isPlaying) player.start()
         } catch (e: Exception) {
             val errorMsg = "Error starting playback: ${e.message}"
             Log.e("MediaPlayerEngine", errorMsg, e)
@@ -59,9 +61,11 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
 
     override fun resume() {
         try {
-            mediaPlayer?.start()
-            // Re-aplicar velocidade caso o MediaPlayer reinicie o tom
-            setPlaybackSpeed(currentSpeed)
+            mediaPlayer?.let { player ->
+                // Velocidade e tom guardados durante a pausa entram junto com o retorno.
+                aplicarParametros(player)
+                if (!player.isPlaying) player.start()
+            }
         } catch (e: Exception) {
             Log.e("MediaPlayerEngine", "Error resuming", e)
         }
@@ -69,9 +73,9 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
 
     override fun setTimbre(timbre: TimbreVoz) {
         this.timbre = timbre
-        if (mediaPlayer != null) {
-            setPlaybackSpeed(currentSpeed)
-            mediaPlayer?.let { aplicarAgudos(it.audioSessionId) }
+        mediaPlayer?.let { player ->
+            if (tocando(player)) aplicarParametros(player)
+            aplicarAgudos(player.audioSessionId)
         }
     }
 
@@ -125,15 +129,25 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
         }
     }
 
+    /**
+     * Só aplica no player que está tocando. Num player pausado ou que já terminou, PlaybackParams com
+     * velocidade > 0 equivale a start(): o trecho anterior voltava a tocar do começo por um instante antes
+     * do próximo (eco no início da frase ao trocar o tom de uma fala) e a pausa era desfeita. Parado, o
+     * valor fica guardado e entra no próximo play()/resume().
+     */
     override fun setPlaybackSpeed(speed: Float) {
         currentSpeed = speed
+        mediaPlayer?.let { player -> if (tocando(player)) aplicarParametros(player) }
+    }
+
+    private fun tocando(player: MediaPlayer): Boolean =
+        try { player.isPlaying } catch (e: IllegalStateException) { false }
+
+    private fun aplicarParametros(player: MediaPlayer) {
         try {
-            mediaPlayer?.let { player ->
-                val params = PlaybackParams().apply {
-                    this.speed = speed
-                    this.pitch = timbre.fatorDeTom
-                }
-                player.playbackParams = params
+            player.playbackParams = PlaybackParams().apply {
+                this.speed = currentSpeed
+                this.pitch = timbre.fatorDeTom
             }
         } catch (e: Exception) {
             Log.e("MediaPlayerEngine", "Error setting playback speed", e)
