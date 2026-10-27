@@ -123,11 +123,8 @@ android {
         create("publicada") {
             initWith(buildTypes.getByName("release"))
             applicationIdSuffix = ".debug"
-            signingConfig = if (hasDebugSigningProps) {
-                signingConfigs.getByName("debugFixa")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            // Nunca com a chave debug padrão: sem a chave fixa a variante fica sem assinatura e a tarefa para (ver abaixo).
+            signingConfig = if (hasDebugSigningProps) signingConfigs.getByName("debugFixa") else null
             matchingFallbacks += listOf("release")
         }
     }
@@ -163,6 +160,17 @@ android {
         }
     }
 
+}
+
+// A variante publicada só sai assinada com a chave fixa. Sem ela, a tarefa para com mensagem clara, em vez de
+// gerar um APK sem assinatura ou com outra chave (quem já tem o app não conseguiria atualizar).
+gradle.taskGraph.whenReady {
+    val pediuPublicada = allTasks.any { tarefa ->
+        tarefa.project.name == "app" && Regex("(assemble|bundle|install|package)Publicada.*").matches(tarefa.name)
+    }
+    if (pediuPublicada && !hasDebugSigningProps) {
+        throw GradleException("A variante publicada exige a chave fixa (LYLY_DEBUG_SIGNING_PROPS). Sem ela, nada é gerado.")
+    }
 }
 
 kapt {

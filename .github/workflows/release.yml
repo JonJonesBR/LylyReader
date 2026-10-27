@@ -17,6 +17,7 @@ concurrency:
   group: release
   cancel-in-progress: false
 
+# Só o necessário: criar a Release (e a tag) e apagar as Releases antigas. Nenhum passo precisa de mais que isso.
 permissions:
   contents: write
 
@@ -36,6 +37,9 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0  # necessário para git rev-list --count (versionCode)
+          # Não há git push neste workflow (a tag sai pela API do action-gh-release e o gh usa GH_TOKEN explícito),
+          # então as credenciais não ficam gravadas no disco do runner.
+          persist-credentials: false
 
       - name: Set up JDK
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -143,15 +147,16 @@ jobs:
       - name: Prepare fixed debug signing key
         # Chave fixa do APK debug, guardada só como segredo do repositório (nunca no Git): mantém a
         # mesma assinatura em toda versão, para instalar a nova por cima da antiga. Sem os segredos
-        # (ex.: fork), o build segue com a chave debug padrão.
+        # a release para aqui: uma APK com outra chave não atualizaria quem já tem o app.
+        # (Proteger os segredos com um GitHub Environment com aprovação é configuração manual no site do GitHub.)
         env:
           DEBUG_KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_B64 }}
           DEBUG_KEYSTORE_PASSWORD: ${{ secrets.DEBUG_KEYSTORE_PASSWORD }}
         run: |
           set -e
           if [ -z "$DEBUG_KEYSTORE_B64" ] || [ -z "$DEBUG_KEYSTORE_PASSWORD" ]; then
-            echo "Segredos da chave debug ausentes; usando a chave debug padrão."
-            exit 0
+            echo "::error::Segredos DEBUG_KEYSTORE_B64 e DEBUG_KEYSTORE_PASSWORD ausentes. Release cancelada: sem a chave fixa o APK sairia com outra assinatura."
+            exit 1
           fi
           KS="$RUNNER_TEMP/lylyreader-debug.p12"
           echo "$DEBUG_KEYSTORE_B64" | base64 -d > "$KS"

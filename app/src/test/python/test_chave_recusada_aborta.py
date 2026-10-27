@@ -47,9 +47,11 @@ class _SessFalsa:
     def __init__(self, responder):
         self._responder = responder
         self.chamadas = 0
+        self.ultimo_headers = {}
 
-    def post(self, url, **_kwargs):
+    def post(self, url, headers=None, **_kwargs):
         self.chamadas += 1
+        self.ultimo_headers = dict(headers or {})
         return self._responder(url)
 
 
@@ -119,10 +121,15 @@ class GeminiChaveRecusadaTest(unittest.TestCase):
         self.assertEqual(1, client._sess.chamadas)
 
     def test_duas_chaves_com_uma_recusada_rotaciona_e_segue(self):
-        def responder(url):
-            return _RespFalsa(403, "forbidden") if "key=AAA" in url else _audio_gemini_ok()
+        client = self._cliente(["AAA", "BBB"], None)
 
-        client = self._cliente(["AAA", "BBB"], responder)
+        def responder(url):
+            # A chave segue no cabeçalho, nunca na URL.
+            self.assertNotIn("key=", url)
+            chave = client._sess.ultimo_headers.get("x-goog-api-key")
+            return _RespFalsa(403, "forbidden") if chave == "AAA" else _audio_gemini_ok()
+
+        client._sess._responder = responder
         with tempfile.TemporaryDirectory() as tmp, \
                 mock.patch.object(gemini_tts.asyncio, "sleep", new=_sem_espera):
             saida = str(Path(tmp) / "c.wav")

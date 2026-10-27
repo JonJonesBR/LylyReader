@@ -164,7 +164,9 @@ class GeminiTTSClient:
             if not key:
                 return False
 
-            url = f"{self.API}/{model}:generateContent?key={key}"
+            # A chave vai no cabeçalho (não na URL): endereço com chave pode acabar em registros de erro.
+            url = f"{self.API}/{model}:generateContent"
+            cabecalhos = {"x-goog-api-key": key}
             body = {
                 "contents": [{"parts": [{"text": text_input}]}],
                 "generationConfig": {
@@ -177,7 +179,7 @@ class GeminiTTSClient:
                 },
             }
             try:
-                async with self._sess.post(url, json=body) as resp:
+                async with self._sess.post(url, json=body, headers=cabecalhos) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         parts = (
