@@ -17,23 +17,31 @@ class BlacklistStore(context: Context) {
     fun count(): Int = load().size
 
     fun save(termos: List<String>) {
-        appPrefs.blacklistWordsJson = serialize(termos)
+        synchronized(trava) {
+            appPrefs.blacklistWordsJson = serialize(termos)
+        }
     }
 
     /** Adiciona o termo (após trim) se não vazio e ainda não presente. Retorna true se adicionou. */
-    fun add(termo: String): Boolean {
+    fun add(termo: String): Boolean = synchronized(trava) {
         val t = termo.trim()
         val atual = load()
-        if (t.isEmpty() || atual.contains(t)) return false
+        if (t.isEmpty() || atual.contains(t)) return@synchronized false
         save(atual + t)
-        return true
+        true
     }
 
     fun remove(termo: String) {
-        save(load().filterNot { it == termo })
+        synchronized(trava) {
+            save(load().filterNot { it == termo })
+        }
     }
 
     companion object {
+        // Um lock só para a classe inteira: ReaderViewModel e SettingsActivity criam instâncias diferentes,
+        // então um lock por instância não impediria que duas escritas se sobrescrevessem.
+        private val trava = Any()
+
         fun parse(json: String): List<String> = try {
             val arr = JSONArray(json)
             (0 until arr.length()).map { arr.getString(it) }

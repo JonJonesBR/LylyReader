@@ -396,16 +396,20 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 addView(grupo)
             }
         }
+        // Cancelar, voltar ou tocar fora apaga a gravação. "Criar" a usa logo depois, então não pode apagar nesse caso.
+        var criando = false
         AlertDialog.Builder(activity)
             .setTitle(R.string.clone_name_title)
             .setView(conteudo)
             .setPositiveButton(R.string.clone_create) { _, _ ->
+                criando = true
                 val tag = idiomaFixo
                     ?: grupo?.let { g -> g.findViewById<RadioButton>(g.checkedRadioButtonId)?.tag as? String }
                     ?: "pt-BR"
                 criar(nome.text.toString(), tag)
             }
-            .setNegativeButton(android.R.string.cancel) { _, _ -> rascunho().delete() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setOnDismissListener { if (!criando) rascunho().delete() }
             .exibir()
     }
 

@@ -1140,6 +1140,7 @@ class SettingsActivity : BasePlayerActivity() {
                     val msg = when (motivo) {
                         com.jonjonesbr.audiobookgen.domain.MotivoBackup.ARQUIVO_INVALIDO -> getString(R.string.backup_erro_arquivo_invalido)
                         com.jonjonesbr.audiobookgen.domain.MotivoBackup.VERSAO_MAIS_NOVA -> getString(R.string.backup_erro_versao_mais_nova)
+                        com.jonjonesbr.audiobookgen.domain.MotivoBackup.MUITO_GRANDE -> getString(R.string.backup_erro_muito_grande)
                         null -> getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e)))
                     }
                     mostrarErro(msg)

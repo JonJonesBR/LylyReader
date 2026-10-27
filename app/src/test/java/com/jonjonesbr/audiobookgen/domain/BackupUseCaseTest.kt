@@ -202,4 +202,65 @@ class BackupUseCaseTest {
 
         assertNull(motivoRejeicaoBackup(entradas))
     }
+
+    /** Motivo da exceção lançada por [bloco], ou null se ele não lançar [BackupException]. */
+    private fun motivoDe(bloco: () -> Unit): MotivoBackup? = try {
+        bloco()
+        null
+    } catch (e: BackupException) {
+        e.motivo
+    }
+
+    @Test
+    fun entradaDesconhecidaGrandeEIgnoradaSemEstourarOLimite() {
+        val zip = zipCom("config.json" to "{}", "lixo.bin" to "x".repeat(5_000))
+
+        val entradas = lerEntradasZip(ByteArrayInputStream(zip), limiteEntrada = 1_024, limiteTotal = 2_048)
+
+        assertEquals(setOf("config.json"), entradas.keys)
+    }
+
+    @Test
+    fun entradaConhecidaMaiorQueOLimiteEhRecusadaComoMuitoGrande() {
+        val zip = zipCom("config.json" to "x".repeat(2_000))
+
+        val motivo = motivoDe { lerEntradasZip(ByteArrayInputStream(zip), limiteEntrada = 1_024, limiteTotal = 8_192) }
+
+        assertEquals(MotivoBackup.MUITO_GRANDE, motivo)
+    }
+
+    @Test
+    fun somaDasEntradasAcimaDoTotalEhRecusadaComoMuitoGrande() {
+        val zip = zipCom(
+            "config.json" to "x".repeat(600),
+            "bookmarks.json" to "x".repeat(600),
+            "highlights.json" to "x".repeat(600)
+        )
+
+        val motivo = motivoDe { lerEntradasZip(ByteArrayInputStream(zip), limiteEntrada = 1_024, limiteTotal = 1_000) }
+
+        assertEquals(MotivoBackup.MUITO_GRANDE, motivo)
+    }
+
+    @Test
+    fun backupDeTamanhoRazoavelPassaNoLimitePadrao() {
+        val conteudo = "x".repeat(2_000_000)
+        val zip = zipCom("bookmarks.json" to conteudo)
+
+        val entradas = lerZip(zip)
+
+        assertEquals(conteudo, entradas["bookmarks.json"])
+    }
+
+    @Test
+    fun zipCortadoNoMeioEhRecusadoComoArquivoInvalido() {
+        val aleatorio = java.util.Random(7)
+        val texto = (1..200_000).map { 'a' + aleatorio.nextInt(26) }.joinToString("")
+        val zip = zipCom("bookmarks.json" to texto)
+        val cortado = zip.copyOf(zip.size / 2)
+
+        val motivo = motivoDe { lerZip(cortado) }
+
+        assertEquals(MotivoBackup.ARQUIVO_INVALIDO, motivo)
+    }
 }

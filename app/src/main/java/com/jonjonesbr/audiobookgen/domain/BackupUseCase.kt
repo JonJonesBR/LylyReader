@@ -15,8 +15,11 @@ import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
 import com.jonjonesbr.audiobookgen.service.PlaybackProgressStore
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
+import java.io.EOFException
 import java.io.InputStream
 import java.util.zip.ZipEntry
+import java.util.zip.ZipException
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
@@ -38,6 +41,16 @@ private val ENTRADAS_CONTEUDO = setOf(
     ENTRADA_CONFIG, ENTRADA_BOOKMARKS, ENTRADA_HIGHLIGHTS, ENTRADA_PROGRESSO,
     ENTRADA_ESTATISTICAS, ENTRADA_CAPITULOS, ENTRADA_VINCULOS, ENTRADA_PERFIS_VOZ
 )
+
+/** Só estas entradas são lidas do ZIP; as outras são puladas sem ocupar memória. */
+private val ENTRADAS_LIDAS = ENTRADAS_CONTEUDO + ENTRADA_VERSAO
+
+/**
+ * Tetos de leitura de um backup. São folgados: um backup grande de uso real fica bem abaixo deles.
+ * Existem só para um ZIP enorme ou adulterado não estourar a memória do app durante a restauração.
+ */
+internal const val LIMITE_ENTRADA_BYTES = 32L * 1024 * 1024
+internal const val LIMITE_TOTAL_BYTES = 64L * 1024 * 1024
 
 /**
  * Backup/restauração completa (Fase 5, item 1): um ZIP com configurações, progresso de
@@ -152,7 +165,7 @@ class BackupUseCase(private val context: Context) {
 }
 
 /** Por que um backup não pode ser importado. A tela traduz o motivo em texto amigável. */
-enum class MotivoBackup { ARQUIVO_INVALIDO, VERSAO_MAIS_NOVA }
+enum class MotivoBackup { ARQUIVO_INVALIDO, VERSAO_MAIS_NOVA, MUITO_GRANDE }
 
 class BackupException(val motivo: MotivoBackup) : Exception(motivo.name)
 
@@ -174,18 +187,51 @@ internal fun motivoRejeicaoBackup(entradas: Map<String, String>): MotivoBackup? 
     return if (temConteudo) null else MotivoBackup.ARQUIVO_INVALIDO
 }
 
-/** Lê as entradas de um ZIP de backup como texto UTF-8. ZIP inválido ou vazio → mapa vazio. */
-internal fun lerEntradasZip(stream: InputStream): Map<String, String> {
+/**
+ * Lê as entradas conhecidas de um ZIP de backup como texto UTF-8. ZIP inválido ou vazio → mapa vazio.
+ * ZIP cortado ou corrompido → [BackupException] com `ARQUIVO_INVALIDO`. Entrada grande demais (por
+ * arquivo ou no total) → [BackupException] com `MUITO_GRANDE`.
+ */
+internal fun lerEntradasZip(
+    stream: InputStream,
+    limiteEntrada: Long = LIMITE_ENTRADA_BYTES,
+    limiteTotal: Long = LIMITE_TOTAL_BYTES,
+): Map<String, String> {
     val resultado = mutableMapOf<String, String>()
-    ZipInputStream(stream).use { zip ->
-        var entry = zip.nextEntry
-        while (entry != null) {
-            resultado[entry.name] = zip.readBytes().toString(Charsets.UTF_8)
-            zip.closeEntry()
-            entry = zip.nextEntry
+    var lidoTotal = 0L
+    try {
+        ZipInputStream(stream).use { zip ->
+            var entry = zip.nextEntry
+            while (entry != null) {
+                if (entry.name in ENTRADAS_LIDAS) {
+                    val bytes = lerAteLimite(zip, limiteEntrada)
+                    lidoTotal += bytes.size
+                    if (lidoTotal > limiteTotal) throw BackupException(MotivoBackup.MUITO_GRANDE)
+                    resultado[entry.name] = bytes.toString(Charsets.UTF_8)
+                }
+                zip.closeEntry()
+                entry = zip.nextEntry
+            }
         }
+    } catch (e: ZipException) {
+        throw BackupException(MotivoBackup.ARQUIVO_INVALIDO).also { it.initCause(e) }
+    } catch (e: EOFException) {
+        throw BackupException(MotivoBackup.ARQUIVO_INVALIDO).also { it.initCause(e) }
     }
     return resultado
+}
+
+/** Lê a entrada atual do ZIP até o fim, parando assim que passar do [limite] (sem carregar o resto). */
+private fun lerAteLimite(zip: ZipInputStream, limite: Long): ByteArray {
+    val saida = ByteArrayOutputStream()
+    val buffer = ByteArray(8192)
+    while (true) {
+        val n = zip.read(buffer)
+        if (n < 0) break
+        if (saida.size() + n > limite) throw BackupException(MotivoBackup.MUITO_GRANDE)
+        saida.write(buffer, 0, n)
+    }
+    return saida.toByteArray()
 }
 
 /** Decodifica progresso.json. Entradas inválidas (caminho vazio, posição < 0, duração <= 0) são descartadas. JSON corrompido → null. */

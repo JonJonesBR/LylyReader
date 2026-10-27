@@ -9,8 +9,10 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaRecorder
 import android.net.Uri
+import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.IOException
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -24,6 +26,7 @@ object VoiceReferenceAudio {
     private const val TARGET_RATE = PocketCustomVoices.SAMPLE_RATE
     private const val MAX_SAMPLES = PocketCustomVoices.MAX_SECONDS * TARGET_RATE
     private const val FRAME_MS = 50
+    private const val TAG = "VoiceReferenceAudio"
 
     data class Result(val seconds: Float)
 
@@ -154,12 +157,15 @@ object VoiceReferenceAudio {
 
     /** Reduz um WAV de referência longo (24 kHz mono PCM16) ao melhor trecho, reescrevendo o arquivo. */
     fun aparar(arquivo: File) {
-        runCatching {
+        try {
             if (arquivo.length() <= 44L + MAX_SAMPLES * 2L + TARGET_RATE) return
             val bytes = arquivo.readBytes()
             val curtas = ByteBuffer.wrap(bytes, 44, bytes.size - 44).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
             val amostras = ShortArray(curtas.remaining()).also { curtas.get(it) }
             escreverWav(arquivo, melhorTrecho(amostras), TARGET_RATE)
+        } catch (e: Exception) {
+            // Sem aparar, a referência continua longa mas utilizável; o erro fica no log para diagnóstico.
+            Log.w(TAG, "Não foi possível aparar a referência de voz: ${arquivo.name}", e)
         }
     }
 
@@ -176,20 +182,31 @@ object VoiceReferenceAudio {
         return Result(dados.size.toFloat() / TARGET_RATE)
     }
 
+    /**
+     * Grava o WAV num `.tmp` ao lado e só depois troca o arquivo final. Se o app fechar no meio da escrita,
+     * a referência anterior continua intacta, em vez de ficar com um WAV cortado.
+     */
     fun escreverWav(arquivo: File, amostras: ShortArray, taxa: Int) {
         arquivo.parentFile?.mkdirs()
-        RandomAccessFile(arquivo, "rw").use { f ->
-            f.setLength(0)
-            val dadosBytes = amostras.size * 2
-            val cab = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
-            cab.put("RIFF".toByteArray()).putInt(36 + dadosBytes).put("WAVE".toByteArray())
-            cab.put("fmt ".toByteArray()).putInt(16).putShort(1).putShort(1)
-                .putInt(taxa).putInt(taxa * 2).putShort(2).putShort(16)
-            cab.put("data".toByteArray()).putInt(dadosBytes)
-            f.write(cab.array())
-            val corpo = ByteBuffer.allocate(dadosBytes).order(ByteOrder.LITTLE_ENDIAN)
-            amostras.forEach { corpo.putShort(it) }
-            f.write(corpo.array())
+        val temporario = File(arquivo.path + ".tmp")
+        try {
+            RandomAccessFile(temporario, "rw").use { f ->
+                f.setLength(0)
+                val dadosBytes = amostras.size * 2
+                val cab = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
+                cab.put("RIFF".toByteArray()).putInt(36 + dadosBytes).put("WAVE".toByteArray())
+                cab.put("fmt ".toByteArray()).putInt(16).putShort(1).putShort(1)
+                    .putInt(taxa).putInt(taxa * 2).putShort(2).putShort(16)
+                cab.put("data".toByteArray()).putInt(dadosBytes)
+                f.write(cab.array())
+                val corpo = ByteBuffer.allocate(dadosBytes).order(ByteOrder.LITTLE_ENDIAN)
+                amostras.forEach { corpo.putShort(it) }
+                f.write(corpo.array())
+            }
+            if (!temporario.renameTo(arquivo)) throw IOException("Não foi possível trocar ${arquivo.name} pelo WAV novo")
+        } finally {
+            // Depois do rename o .tmp não existe mais; se algo falhou no meio, ele é descartado.
+            if (temporario.exists()) temporario.delete()
         }
     }
 

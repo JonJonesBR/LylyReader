@@ -124,8 +124,8 @@ object QueueManager {
     }
 
     /**
-     * Persiste a fila atual nas SharedPreferences (síncrono) e replica para o Room em background
-     * (assíncrono). Estava duplicado (mesma lógica) em MainActivity e QueueActivity.
+     * Persiste a fila atual nas SharedPreferences (com apply(), que grava em segundo plano sem bloquear) e
+     * replica para o Room em background (assíncrono). Estava duplicado (mesma lógica) em MainActivity e QueueActivity.
      */
     fun persistir(context: Context, prefs: SharedPreferences) {
         salvar(prefs)
