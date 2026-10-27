@@ -172,8 +172,8 @@
     <string name="dialog_delete_audiobook_message">Deseja apagar \"%1$s\"?\nEsta ação não pode ser desfeita.</string>
     <string name="dialog_delete_audiobook_confirm">Apagar</string>
     <string name="toast_audiobook_deleted">\"%1$s\" apagado</string>
-    <string name="toast_audiobook_delete_failed">Não foi possível excluir o arquivo. Verifique as permissões de armazenamento.</string>
-    <string name="toast_audiobook_delete_error">Erro ao excluir: %1$s</string>
+    <string name="toast_audiobook_delete_failed">Não foi possível apagar o arquivo. Verifique as permissões de armazenamento.</string>
+    <string name="toast_audiobook_delete_error">Erro ao apagar: %1$s</string>
     <string name="folder_custom">Pasta personalizada</string>
     <string name="folder_downloads">Downloads</string>
     <string name="cd_exportar_video">Exportar como vídeo</string>
@@ -719,7 +719,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Agora você pode exportar seus marcadores e destaques como texto, para mandar para notas ou e-mail.\n• As opções de voz agora estão agrupadas por tipo, o que facilita escolher uma.\n• Quando um audiobook fica pronto, o aviso tem um botão “Abrir”, e alguns botões ficaram maiores e mais fáceis de tocar.\n• A fila de reprodução não some mais inteira por causa de um item com problema.\n• O widget da tela inicial gasta menos bateria, e a busca dentro do livro ficou mais leve.\n• Escolher a voz de um personagem não parece mais travar enquanto a lista carrega.\n• Textos revisados: frases mais claras e menos erros de português.</string>
+    <string name="release_notes_corpo">• Corrigido: a leitura guiada e o audiobook não aparecem mais os dois juntos no player. Ao começar um, o outro fecha e guarda onde parou.\n• Se a geração de um audiobook falhar no leitor, o aviso agora tem o botão “Tentar de novo”.\n• Pequenas correções de texto.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Voz mais grave ou mais aguda, e agudos mais suaves. Vale na hora.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
@@ -916,6 +916,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dl_central_continuar">Continuar</string>
     <string name="dl_central_tirar_fila">Tirar da fila</string>
     <string name="dl_central_tentar_novamente">Tentar de novo</string>
+    <string name="acao_tentar_de_novo">Tentar de novo</string>
     <string name="dl_central_cancelar">Cancelar</string>
     <string name="dl_central_descartar">Descartar download</string>
     <string name="dl_central_apagar">Apagar</string>
@@ -1576,7 +1577,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="pocket_expr_padrao">Padrão</string>
     <string name="pocket_expr_expressiva">Expressiva</string>
     <string name="pocket_expr_maxima">Máxima</string>
-    <string name="erro_excluir_ocorrencias">Não foi possível excluir as ocorrências. Tente novamente.</string>
+    <string name="erro_excluir_ocorrencias">Não foi possível apagar as ocorrências. Tente novamente.</string>
     <string name="erro_conversao_memoria">O livro é grande demais para a memória do aparelho. Feche outros apps e tente de novo, ou converta um capítulo por vez.</string>
     <string name="livro_ouvir_audiobook">Ouvir o audiobook</string>
     <string name="livro_ouvir_outra_voz">Ouvir com outra voz (leitura guiada)</string>

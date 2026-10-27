@@ -832,6 +832,9 @@ class ReaderActivity : BasePlayerActivity() {
         barDialogProgresso = null
     }
 
+    /** Última geração de audiobook pedida aqui (capítulo ou livro), para o "Tentar de novo" do aviso de erro. */
+    private var refazerConversao: (() -> Unit)? = null
+
     private fun observarAudiobookViewModel() {
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -864,7 +867,8 @@ class ReaderActivity : BasePlayerActivity() {
                             }
                             is ConversionDoneEvent.Erro -> {
                                 val msg = getString(R.string.toast_download_failed, evento.mensagem)
-                                mostrarErro(msg)
+                                // "Tentar de novo" refaz a mesma geração (capítulo ou livro) a partir do texto atual.
+                                mostrarErro(msg, refazerConversao?.let { getString(R.string.acao_tentar_de_novo) to it })
                             }
                             is ConversionDoneEvent.Pausada -> {
                                 Toast.makeText(
@@ -882,6 +886,7 @@ class ReaderActivity : BasePlayerActivity() {
 
     private fun baixarCapitulo() {
         val texto = viewModel.textoEfetivo() ?: return
+        refazerConversao = ::baixarCapitulo
         val capAtivo = viewModel.uiState.value.capituloAtivo
         val cap = texto.capitulos.getOrNull(capAtivo) ?: return
         
@@ -933,6 +938,7 @@ class ReaderActivity : BasePlayerActivity() {
 
     private fun baixarLivroCompleto() {
         val texto = viewModel.textoEfetivo() ?: return
+        refazerConversao = ::baixarLivroCompleto
         val nomeSemExt = File(caminhoArquivo).nameWithoutExtension
         lifecycleScope.launch {
             personagensController.aguardarAnaliseDeFalantes()

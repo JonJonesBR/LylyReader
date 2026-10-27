@@ -705,7 +705,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Ahora puedes exportar tus marcadores y destacados como texto, para enviarlos a notas o al correo.\n• Las opciones de voz ahora están agrupadas por tipo, lo que facilita elegir una.\n• Cuando un audiolibro está listo, el aviso tiene un botón “Abrir”, y algunos botones son más grandes y fáciles de tocar.\n• La cola de reproducción ya no desaparece entera por un elemento con problemas.\n• El widget de inicio gasta menos batería, y la búsqueda dentro del libro es más ligera.\n• Elegir la voz de un personaje ya no parece congelado mientras carga la lista.\n• Textos revisados: frases más claras y menos errores de ortografía.</string>
+    <string name="release_notes_corpo">• Corregido: la lectura guiada y el audiolibro ya no aparecen los dos juntos en el reproductor. Al empezar uno, el otro se cierra y guarda dónde quedó.\n• Si la generación de un audiolibro falla en el lector, el aviso ahora tiene el botón “Reintentar”.\n• Pequeñas correcciones de texto.</string>
     <string name="timbre_title">Timbre de la voz</string>
     <string name="timbre_desc">Voz más grave o más aguda, y agudos más suaves. Se aplica al instante.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
@@ -901,6 +901,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dl_central_continuar">Continuar</string>
     <string name="dl_central_tirar_fila">Quitar de la cola</string>
     <string name="dl_central_tentar_novamente">Reintentar</string>
+    <string name="acao_tentar_de_novo">Reintentar</string>
     <string name="dl_central_cancelar">Cancelar</string>
     <string name="dl_central_descartar">Descartar descarga</string>
     <string name="dl_central_apagar">Borrar</string>

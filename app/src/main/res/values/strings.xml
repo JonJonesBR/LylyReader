@@ -719,7 +719,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• You can now export your bookmarks and highlights as text, to share in notes or email.\n• The voice options are now grouped by type, so it is easier to choose one.\n• When an audiobook is ready, the notice has an “Open” button, and some buttons are bigger and easier to tap.\n• The playback queue no longer disappears entirely because of one bad item.\n• The home-screen widget uses less battery, and searching inside a book is lighter.\n• Choosing a character’s voice no longer looks frozen while the list loads.\n• Texts reviewed: clearer wording and fewer typos.</string>
+    <string name="release_notes_corpo">• Fixed: guided reading and the audiobook no longer both show up in the player. Starting one closes the other and keeps your place.\n• If generating an audiobook fails in the reader, the message now has a “Try again” button.\n• Small text fixes.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -915,6 +915,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_central_continuar">Resume</string>
     <string name="dl_central_tirar_fila">Remove from queue</string>
     <string name="dl_central_tentar_novamente">Try again</string>
+    <string name="acao_tentar_de_novo">Try again</string>
     <string name="dl_central_cancelar">Cancel</string>
     <string name="dl_central_descartar">Discard download</string>
     <string name="dl_central_apagar">Delete</string>

@@ -93,17 +93,18 @@ class AudioPlayerService : MediaLibraryService() {
         const val EXTRA_CAMINHO     = "extra_caminho"
         const val EXTRA_NOME        = "extra_nome"
 
-        /** Instância viva (um player por processo), para a leitura guiada pausar o audiobook ao começar a tocar. */
+        /** Instância viva (um player por processo), para a leitura guiada fechar o audiobook ao começar a tocar. */
         @Volatile private var instancia: AudioPlayerService? = null
 
         /**
-         * Pausa o audiobook se estiver tocando: leitura guiada e audiobook nunca tocam juntos. Pode ser chamado de
-         * qualquer thread; o ExoPlayer só é tocado na principal.
+         * Fecha o player do audiobook (salvando onde parou) se houver um aberto: leitura guiada e audiobook nunca
+         * ficam abertos juntos, senão o mini player mostrava os dois. Pode ser chamado de qualquer thread; o
+         * ExoPlayer só é tocado na principal.
          */
-        fun pausarSeTocando() {
+        fun fecharSeAberto() {
             val servico = instancia ?: return
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                if (servico.exoPlayer.isPlaying) servico.alternarPlayPause()
+                if (servico._state.value.caminho.isNotBlank()) servico.fecharPlayer()
             }
         }
         private const val TAG       = "AudioPlayerService"
@@ -386,13 +387,11 @@ class AudioPlayerService : MediaLibraryService() {
             ) {
                 aplicarBookkeepingPlayPauseExterno(playWhenReady)
             }
-            // Audiobook começou a tocar (mini player, notificação, fone…): pausa a leitura guiada, um player por vez.
-            if (playWhenReady) {
-                GuidedPlaybackBridge.manager?.let { guiada ->
-                    val st = guiada.state.value
-                    if (st.isPlaying || st.isLoading) guiada.pause()
-                }
-            }
+            // Audiobook começou a tocar (mini player, notificação, fone…): encerra a leitura guiada, um player
+            // por vez. Só pausar deixava a barra dela aberta junto com o mini player do audiobook.
+            // Só com mídia carregada: um "play" de botão de mídia/fone com a playlist vazia (audiobook já fechado
+            // pela leitura guiada) não pode matar a leitura guiada que está tocando.
+            if (playWhenReady && exoPlayer.mediaItemCount > 0) encerrarLeituraGuiada()
             reconciliarEstadoPlay()
         }
 
@@ -527,6 +526,7 @@ class AudioPlayerService : MediaLibraryService() {
 
     /** Toca [caminho] no player já existente — chamado pela UI do app (mini-player, leitor, etc.). */
     fun iniciar(caminho: String, nome: String) {
+        encerrarLeituraGuiada()
         // Garante ciclo de vida "started" para sobreviver ao unbind quando o app é minimizado.
         // Sem isso, o Android mata o serviço ao fazer unbindService() no onStop() da Activity.
         startService(Intent(this, AudioPlayerService::class.java))
@@ -662,7 +662,13 @@ class AudioPlayerService : MediaLibraryService() {
         }
     }
 
+    /** Encerra a leitura guiada aberta (a barra e a notificação dela somem); o leitor guarda onde ela parou. */
+    private fun encerrarLeituraGuiada() {
+        GuidedPlaybackBridge.manager?.stop()
+    }
+
     fun fecharPlayer() {
+        estavaTocandoAntesDoFoco = false
         pararInterno()
         _state.value = PlayerState()
         PlayerStateHolder.update(PlayerState())

@@ -1135,7 +1135,6 @@
     <ID>UnusedPrivateMember:GuidedReadingBarController.kt$GuidedReadingBarController$private fun mostrarDialogoPassos()</ID>
     <ID>UnusedPrivateMember:MeusLivrosActivity.kt$MeusLivrosActivity$private fun caminhoDe(livro: LivroBiblioteca)</ID>
     <ID>UnusedPrivateProperty:ConversoesActivity.kt$ConversoesActivity.Companion$private const val TAG = "ConversoesActivity"</ID>
-    <ID>UnusedPrivateProperty:PythonEngineUseCase.kt$PythonEngineUseCase.Companion$private val PYTHON_LOCK = Any()</ID>
     <ID>UseCheckOrError:ReaderActivity.kt$ReaderActivity$throw IllegalStateException("Output stream unavailable")</ID>
     <ID>UseRequire:CacheDeListaTest.kt$CacheDeListaTest$throw IllegalArgumentException("JSON inválido")</ID>
     <ID>VariableNaming:DocumentRepository.kt$DocumentRepository$private val TAG = "DocumentRepository"</ID>
