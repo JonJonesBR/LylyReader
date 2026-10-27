@@ -217,11 +217,18 @@ def _romano_para_int(r: str) -> int:
 #  Sanitização (ruído de extração, unicode)
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Caracteres invisíveis que os EPUBs trazem dentro das palavras: hífen de quebra opcional (&shy;,
+# "es\u00adtá"), larguras zero, marcas de direção e BOM. Na tela não aparecem, mas chegavam ao motor
+# (nem a extração do EPUB nem o pré-processamento nativo do Supertonic os tiram): fora do vocabulário,
+# o Supertonic os troca pelo token 0 NO MEIO da palavra (rust/src/helper.rs, UnicodeProcessor::call).
+_INVISIVEIS = re.compile(r"[\u00ad\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]")
+
+
 def _sanitizar(texto: str) -> str:
     """Remove ruído de extração de documentos."""
     t = texto.replace("\u00a0", " ").replace("\u202f", " ")
     t = t.replace("\uf0fe", "").replace("\ufffe", "")
-    t = re.sub(r"[\u200b-\u200d\u2060\ufeff]", "", t)
+    t = _INVISIVEIS.sub("", t)
     t = re.sub(r"[\u2122\u00a9\u00ae]", "", t)  # marca/copyright: o motor leria o símbolo
     t = re.sub(r"(?<=\d)\s?\u00b0(?![CcFf])", " graus", t)  # 360° → 360 graus
     t = t.replace("\u201c", '"').replace("\u201d", '"')
@@ -1067,7 +1074,8 @@ def comparar_textos(antes: str, depois: str) -> List[dict]:
 
     A pontuação das bordas não entra no par exibido ('coso,' e 'coso.' viram 'coso'), e uma troca
     que só mudou pontuação é descartada."""
-    palavras_antes = antes.split()
+    # Invisíveis tirados pela normalização não são troca de leitura ("es\u00adtá" → "está").
+    palavras_antes = _INVISIVEIS.sub("", antes).split()
     palavras_depois = depois.split()
     casador = difflib.SequenceMatcher(None, palavras_antes, palavras_depois, autojunk=False)
     trocas: List[dict] = []
