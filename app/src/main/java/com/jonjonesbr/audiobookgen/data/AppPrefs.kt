@@ -131,7 +131,17 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putString("ia_personalizada_modelo", v.trim()).apply()
 
     var supertonicSteps: Int
-        get() = p.getInt("supertonic_steps", SUPERTONIC_STEPS_PADRAO)
+        get() {
+            // Uma vez: quem estava no padrão antigo (5 gravado) passa para o novo padrão (8, engole menos palavras).
+            if (!p.getBoolean("supertonic_steps_padrao8", false)) {
+                val e = p.edit().putBoolean("supertonic_steps_padrao8", true)
+                if (p.getInt("supertonic_steps", SUPERTONIC_STEPS_PADRAO) == SUPERTONIC_STEPS_PADRAO_ANTIGO) {
+                    e.remove("supertonic_steps")
+                }
+                e.apply()
+            }
+            return p.getInt("supertonic_steps", SUPERTONIC_STEPS_PADRAO)
+        }
         set(v) = p.edit().putInt("supertonic_steps", v).apply()
 
     /**
@@ -448,8 +458,9 @@ class AppPrefs(context: Context) {
         const val READER_FONTE_PADRAO = 16f
         /** Espaçamento padrão entre linhas do leitor. */
         const val READER_ESPACAMENTO_PADRAO = 1.5f
-        /** Passos padrão do modelo Supertonic. */
-        const val SUPERTONIC_STEPS_PADRAO = 5
+        /** Passos padrão do modelo Supertonic (era 5: com poucos passos o modelo engolia mais palavras). */
+        const val SUPERTONIC_STEPS_PADRAO = 8
+        private const val SUPERTONIC_STEPS_PADRAO_ANTIGO = 5
         const val SUPERTONIC_STEPS_MIN = 2
         const val SUPERTONIC_STEPS_MAX = 20
         /** Pausa padrão entre orações na leitura guiada com kokoro (ms). */

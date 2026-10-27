@@ -720,7 +720,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Fixed: guided reading and the audiobook no longer both show up in the player. Starting one closes the other and keeps your place.\n• The guided reading bar now has an X to close it from any screen.\n• Fixed: continuing guided reading from the library started one paragraph before the highlighted one. It now resumes exactly where you stopped.\n• Pocket TTS voice: no longer skips the last word of some sentences (like a quoted word at the end), and each sentence starts without a click or echo.\n• If generating an audiobook fails in the reader, the message now has a “Try again” button.\n• Small text fixes.</string>
+    <string name="release_notes_corpo">• Fixed: guided reading and the audiobook no longer both show up in the player. Starting one closes the other and keeps your place.\n• The guided reading bar now has an X to close it from any screen.\n• Fixed: continuing guided reading from the library started one paragraph before the highlighted one. It now resumes exactly where you stopped.\n• Pocket TTS voice: no longer skips the last word of some sentences (like a quoted word at the end), and each sentence starts without a click or echo.\n• Supertonic voice: default steps raised from 5 to 8, so it skips fewer words.\n• If generating an audiobook fails in the reader, the message now has a “Try again” button.\n• Small text fixes.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1232,7 +1232,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="status_amostra_onnx_falha">⚠ Failed to generate the ONNX sample. Check that the model was downloaded.</string>
     <string name="status_amostra_falha">⚠ Failed to generate the sample.</string>
     <string name="settings_supertonic_passos_titulo">Supertonic steps</string>
-    <string name="settings_supertonic_passos_desc">Balances quality and speed of Supertonic voice synthesis. Fewer steps = faster; more steps = better quality. Default: 5. Applies to guided reading and audiobook creation. Above 10, synthesis gets much slower and may cause pauses in guided reading.</string>
+    <string name="settings_supertonic_passos_desc">Balances quality and speed of Supertonic voice synthesis. Fewer steps = faster; more steps = better quality. Default: 8. Applies to guided reading and audiobook creation. Above 10, synthesis gets much slower and may cause pauses in guided reading.</string>
     <!-- Assistente que libera a clonagem com o arquivo oficial da Kyutai (sem login no app) -->
     <string name="clone_prep_title_intro">Unlock voice cloning</string>
     <string name="clone_prep_intro">To clone a voice, the app needs a free file from Kyutai, the company that created Pocket TTS. You will do 4 simple steps, only once:\n\n1. Sign in to the Hugging Face website with a free account\n2. Accept Kyutai\'s terms of use\n3. Download the file (about 220 MB, Wi-Fi is best)\n4. Bring the file into the app\n\nYou sign in only in your browser. The app never sees or stores your password.</string>
