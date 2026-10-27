@@ -819,7 +819,10 @@ class AudioPlayerService : MediaLibraryService() {
             it.copy(
                 duration = duracaoInt,
                 currentPosition = posInicial,
-                isPlaying = exoPlayer.isPlaying,
+                // playWhenReady, não isPlaying: o seekTo da retomada (logo acima) põe o player em
+                // BUFFERING e isPlaying fica false por um instante. Gravar isso deixava o ícone em
+                // "play" com o áudio tocando, na primeira vez que se abria um audiobook já começado.
+                isPlaying = exoPlayer.playWhenReady && exoPlayer.playbackState != Player.STATE_ENDED,
                 temCapitulos = capitulosAtual.isNotEmpty(),
                 capitulos = capitulosAtual
             )
