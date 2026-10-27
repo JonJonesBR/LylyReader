@@ -142,6 +142,10 @@ class AudioPlayerService : MediaLibraryService() {
     private var ultimoSalvarProgressoMs = 0L
     private var msOuvidoAcumulado = 0L
     private var capitulosAtual: List<CapituloAudio> = emptyList()
+    // Último estado enviado ao widget pelo tick: só redesenha quando tocando ou o nome mudam
+    // (antes era a cada 500ms, mesmo sem mudança, gastando bateria).
+    private var ultimoWidgetTocando: Boolean? = null
+    private var ultimoWidgetNome: String? = null
 
     /** Biblioteca já listada, com os mediaIds para validação rápida. Snapshot imutável. */
     private class BibliotecaCacheada(
@@ -663,6 +667,8 @@ class AudioPlayerService : MediaLibraryService() {
         pararInterno()
         _state.value = PlayerState()
         PlayerStateHolder.update(PlayerState())
+        // Envio fora do tick: zera o cache para o próximo tick não achar que o widget já está certo.
+        ultimoWidgetNome = null
         PlayerWidget.atualizarWidget(applicationContext)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -839,6 +845,8 @@ class AudioPlayerService : MediaLibraryService() {
         StatsStore.registrarLivroConcluido(applicationContext, caminho)
         _state.update { it.copy(isPlaying = false, currentPosition = 0) }
         PlayerStateHolder.update(_state.value)
+        // Envio fora do tick: zera o cache para o próximo tick não achar que o widget já está certo.
+        ultimoWidgetNome = null
         PlayerWidget.atualizarWidget(applicationContext)
         playerNotificationManager.atualizarNotificacao()
         tickJob?.cancel()
@@ -914,7 +922,11 @@ class AudioPlayerService : MediaLibraryService() {
                     PlayerStateHolder.update(updated)
                     MainActivity.widgetIsPlaying = updated.isPlaying
                     MainActivity.widgetTrackName = updated.trackName
-                    PlayerWidget.atualizarWidget(applicationContext)
+                    if (updated.isPlaying != ultimoWidgetTocando || updated.trackName != ultimoWidgetNome) {
+                        ultimoWidgetTocando = updated.isPlaying
+                        ultimoWidgetNome = updated.trackName
+                        PlayerWidget.atualizarWidget(applicationContext)
+                    }
                     val agora = System.currentTimeMillis()
                     if (agora - ultimoSalvarProgressoMs >= INTERVALO_SALVAR_PROGRESSO_MS) {
                         salvarProgresso()

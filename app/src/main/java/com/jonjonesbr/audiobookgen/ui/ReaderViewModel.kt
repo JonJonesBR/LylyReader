@@ -10,6 +10,7 @@ import com.jonjonesbr.audiobookgen.util.EditableTextPolicy
 import com.jonjonesbr.audiobookgen.domain.ExtractTextUseCase
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.util.PlayerStateHolder
+import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
 import android.app.Application
 import android.content.Context
 import android.util.Log
@@ -452,12 +453,12 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
             adapter?.let { it.buscaResultados = emptyList(); it.buscaIndiceAtual = -1; it.notifyDataSetChanged() }
             return
         }
-        val q = query.lowercase()
         buscaJob = viewModelScope.launch {
             delay(DEBOUNCE_BUSCA_MS)
             val resultados = withContext(Dispatchers.Default) {
+                // ignoreCase evita criar uma cópia em minúsculas de cada parágrafo a cada busca
                 texto.paragrafos.indices.filter { i ->
-                    texto.paragrafos[i].texto.lowercase().contains(q)
+                    texto.paragrafos[i].texto.contains(query, ignoreCase = true)
                 }
             }
             val indiceAtual = if (resultados.isNotEmpty()) 0 else -1
@@ -478,7 +479,15 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
             else -> atual
         }
         _uiState.update { it.copy(buscaIndiceAtual = novo) }
-        adapter?.let { it.buscaResultados = resultados; it.buscaIndiceAtual = novo; it.notifyDataSetChanged() }
+        adapter?.let { a ->
+            // Só o parágrafo que deixou de ser o "atual" e o novo mudam de cor: repinta esses dois
+            // em vez da lista inteira (notifyDataSetChanged) a cada Anterior/Próximo.
+            val posAnterior = posicaoResultadoBusca(resultados, atual)
+            val posNova = posicaoResultadoBusca(resultados, novo)
+            a.buscaResultados = resultados
+            a.buscaIndiceAtual = novo
+            listOfNotNull(posAnterior, posNova).distinct().forEach { a.notifyItemChanged(it) }
+        }
     }
 
     private var adapter: ParagrafoAdapter? = null
