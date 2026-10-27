@@ -88,6 +88,9 @@ class MeusLivrosActivity : BasePlayerActivity() {
     private var cargaJob: Job? = null
     /** Livro do cartão "Continuar" (null quando o cartão não aparece). */
     private var caminhoContinuar: String? = null
+
+    /** Audiobook pronto do livro do cartão "Continuar" (calculado em [aplicar], não a cada tique do player). */
+    private var mp3Continuar: String? = null
     private var aba = AbaBiblioteca.TODOS
     private var consulta = ""
     private var ordem = OrdemBiblioteca.RECENTES
@@ -204,6 +207,24 @@ class MeusLivrosActivity : BasePlayerActivity() {
                     .collect { if (cargaJob?.isCompleted == true) aplicar() }
             }
         }
+        // A porcentagem do cartão acompanha o que está tocando: o parágrafo da leitura guiada...
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                GuidedPlaybackBridge.activeState
+                    .map { it?.index }
+                    .distinctUntilChanged()
+                    .collect { if (cargaJob?.isCompleted == true) atualizarProgressoContinuar() }
+            }
+        }
+        // ...ou a posição no audiobook pronto.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state
+                    .map { st -> if (st.duration > 0) st.currentPosition.toLong() * POR_MIL / st.duration else -1L }
+                    .distinctUntilChanged()
+                    .collect { if (cargaJob?.isCompleted == true) atualizarProgressoContinuar() }
+            }
+        }
         // ...e conforme o audiobook pronto do livro, quando é ele que está tocando.
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -295,12 +316,14 @@ class MeusLivrosActivity : BasePlayerActivity() {
         val itens = mutableListOf<ItemBiblioteca>()
         var idContinuar: String? = null
         caminhoContinuar = null
+        mp3Continuar = null
         if (aba == AbaBiblioteca.TODOS && consulta.isBlank()) {
             continuar(todos) { prog[it.id] }?.let {
                 val caminho = caminhoDe(it)
+                mp3Continuar = AcoesDoLivro.audiobookPronto(this, it)
                 val tocando = (guiadaAbertaDe(caminho) && GuidedPlaybackBridge.activeState.value?.isPlaying == true) ||
-                    audiobookTocandoDe(it)
-                itens += ItemBiblioteca.Continuar(it, prog[it.id] ?: 0f, tocando)
+                    audiobookTocandoDe(mp3Continuar)
+                itens += ItemBiblioteca.Continuar(it, progressoAoVivo(caminho) ?: prog[it.id] ?: 0f, tocando)
                 idContinuar = it.id
                 caminhoContinuar = caminho
                 // Tocar em "Continuar" abre o leitor direto: adianta a extração do texto.
@@ -372,10 +395,39 @@ class MeusLivrosActivity : BasePlayerActivity() {
 
     override fun livroJaNaTela(caminho: String) = caminho.isNotEmpty() && caminho == caminhoContinuar
 
-    /** O audiobook pronto deste livro é o que está tocando no player. */
-    private fun audiobookTocandoDe(livro: LivroBiblioteca): Boolean {
+    /** O audiobook pronto [mp3] (de um livro) é o que está tocando no player. */
+    private fun audiobookTocandoDe(mp3: String?): Boolean {
         val player = com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state.value
-        return player.isPlaying && player.caminho.isNotEmpty() && player.caminho == AcoesDoLivro.audiobookPronto(this, livro)
+        return player.isPlaying && player.caminho.isNotEmpty() && player.caminho == mp3
+    }
+
+    /**
+     * Progresso do livro [caminho] enquanto ele toca: parágrafo atual da leitura guiada, ou posição no
+     * audiobook pronto. Null quando nada dele está tocando (vale o progresso salvo).
+     */
+    private fun progressoAoVivo(caminho: String): Float? {
+        val guiada = GuidedPlaybackBridge.activeState.value
+        if (guiada != null && guiada.index >= 0 && guiadaAbertaDe(caminho)) {
+            val total = appPrefs.totalParagrafosLeitura(caminho)
+            if (total > 0) return (guiada.index.toFloat() / total).coerceIn(0f, 1f)
+        }
+        val player = com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state.value
+        if (mp3Continuar != null && player.caminho == mp3Continuar && player.duration > 0) {
+            return (player.currentPosition.toFloat() / player.duration).coerceIn(0f, 1f)
+        }
+        return null
+    }
+
+    /** Só a porcentagem do cartão "Continuar" muda: troca o item, sem refazer a lista inteira. */
+    private fun atualizarProgressoContinuar() {
+        val caminho = caminhoContinuar ?: return
+        val novo = progressoAoVivo(caminho) ?: return
+        val lista = adapter.currentList
+        val i = lista.indexOfFirst { it is ItemBiblioteca.Continuar }
+        val cartao = lista.getOrNull(i) as? ItemBiblioteca.Continuar ?: return
+        if (cartao.progresso == novo) return
+        progressos = progressos + (cartao.livro.id to novo)
+        adapter.submitList(lista.toMutableList().also { it[i] = cartao.copy(progresso = novo) })
     }
 
     private fun guiadaAbertaDe(caminho: String) =
@@ -686,6 +738,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
     }
 
     private companion object {
+        const val POR_MIL = 1000L
         const val ACAO_LER = 1
         const val ACAO_AUDIOBOOK = 2
         const val ACAO_FILA = 5

@@ -40,12 +40,13 @@
 
         <ImageButton
             android:id="@+id/guidedIndicatorPlayPause"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@android:color/transparent"
-            android:padding="4dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/bg_botao_tocar"
+            android:padding="12dp"
             android:src="@drawable/ic_player_pause"
-            app:tint="@color/color_primary"
+            app:tint="?attr/colorOnPrimary"
             android:contentDescription="@string/cd_play_pause"
             android:tooltipText="@string/cd_play_pause"/>
 
@@ -73,12 +74,13 @@
 
         <ImageButton
             android:id="@+id/miniPlayerPlayPause"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@android:color/transparent"
-            android:padding="4dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/bg_botao_tocar"
+            android:padding="12dp"
             android:src="@drawable/ic_player_play"
-            app:tint="@color/color_primary"
+            app:tint="?attr/colorOnPrimary"
             android:contentDescription="@string/cd_play_pause"
             android:tooltipText="@string/cd_play_pause"/>
 
@@ -135,6 +137,8 @@
             android:layout_height="wrap_content"
             android:progressTint="@color/color_primary"/>
 
+        <!-- Linhas de largura fixa (pesos iguais): nada sai da tela em celular estreito nem
+             com a contagem da soneca no botão. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -144,134 +148,163 @@
 
             <Button
                 android:id="@+id/miniPlayerRecuar"
-                android:layout_width="wrap_content"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-android:text="@string/mini_player_recuar"
-                    android:textColor="@color/color_on_surface"
-                    android:textSize="12sp"
-                    style="@style/Widget.Material3.Button.TextButton"/>
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:text="@string/mini_player_recuar"
+                android:textColor="@color/color_on_surface"
+                android:textSize="15sp"/>
 
             <ImageButton
                 android:id="@+id/miniPlayerPlayPauseGrande"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:background="@drawable/bg_play_button"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:padding="14dp"
+                android:background="@drawable/bg_botao_tocar"
                 android:src="@drawable/ic_player_play"
-                app:tint="@color/color_on_surface"
+                app:tint="?attr/colorOnPrimary"
                 android:contentDescription="@string/cd_play_pause"
-                android:tooltipText="@string/cd_play_pause"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"/>
+                android:tooltipText="@string/cd_play_pause"/>
 
             <Button
                 android:id="@+id/miniPlayerAvancar"
-                android:layout_width="wrap_content"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-android:text="@string/mini_player_avancar"
-                    android:textColor="@color/color_on_surface"
-                    android:textSize="12sp"
-                    style="@style/Widget.Material3.Button.TextButton"/>
-
-            <Button
-                android:id="@+id/miniPlayerSleepTimer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="😴"
-                android:textSize="16sp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:text="@string/mini_player_avancar"
                 android:textColor="@color/color_on_surface"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/cd_sleep_timer"
-                android:layout_marginStart="8dp"/>
+                android:textSize="15sp"/>
 
         </LinearLayout>
 
-        <HorizontalScrollView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:layout_marginTop="4dp">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
             android:orientation="horizontal"
-            android:gravity="center">
+            android:layout_marginTop="4dp">
 
             <Button
                 android:id="@+id/miniPlayerVel075"
-                android:layout_width="wrap_content"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-android:text="@string/mini_player_vel_075"
-                    android:textColor="@color/color_on_surface"
-                android:textSize="12sp"
-                style="@style/Widget.Material3.Button.TextButton"/>
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:maxLines="1"
+                android:text="@string/mini_player_vel_075"
+                android:textColor="@color/color_on_surface"
+                android:textSize="13sp"/>
 
             <Button
                 android:id="@+id/miniPlayerVel100"
-                android:layout_width="wrap_content"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-android:text="@string/mini_player_vel_100"
-                    android:textColor="@color/color_on_surface"
-                android:textSize="12sp"
-                style="@style/Widget.Material3.Button.TextButton"/>
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:maxLines="1"
+                android:text="@string/mini_player_vel_100"
+                android:textColor="@color/color_on_surface"
+                android:textSize="13sp"/>
 
             <Button
                 android:id="@+id/miniPlayerVel125"
-                android:layout_width="wrap_content"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-android:text="@string/mini_player_vel_125"
-                    android:textColor="@color/color_on_surface"
-                android:textSize="12sp"
-                style="@style/Widget.Material3.Button.TextButton"/>
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:maxLines="1"
+                android:text="@string/mini_player_vel_125"
+                android:textColor="@color/color_on_surface"
+                android:textSize="13sp"/>
 
             <Button
                 android:id="@+id/miniPlayerVel150"
-                android:layout_width="wrap_content"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-android:text="@string/mini_player_vel_150"
-                    android:textColor="@color/color_on_surface"
-                android:textSize="12sp"
-                style="@style/Widget.Material3.Button.TextButton"/>
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:maxLines="1"
+                android:text="@string/mini_player_vel_150"
+                android:textColor="@color/color_on_surface"
+                android:textSize="13sp"/>
 
             <Button
                 android:id="@+id/miniPlayerVel200"
-                android:layout_width="wrap_content"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-android:text="@string/mini_player_vel_200"
-                    android:textColor="@color/color_on_surface"
-                android:textSize="12sp"
-                style="@style/Widget.Material3.Button.TextButton"/>
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:maxLines="1"
+                android:text="@string/mini_player_vel_200"
+                android:textColor="@color/color_on_surface"
+                android:textSize="13sp"/>
 
         </LinearLayout>
 
-        </HorizontalScrollView>
-
-        <Button
-            android:id="@+id/miniPlayerLerLivro"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="4dp"
-            android:text="@string/mini_player_ler_livro"
-            android:textColor="@color/color_on_surface"
-            android:textSize="12sp"
-            android:background="@android:color/transparent"
-            android:visibility="gone"
-            style="@style/Widget.Material3.Button.TextButton"/>
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
 
-        <Button
-            android:id="@+id/miniPlayerCapitulos"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="4dp"
-            android:text="@string/action_capitulos"
-            android:textColor="@color/color_on_surface"
-            android:textSize="12sp"
-            android:background="@android:color/transparent"
-            android:visibility="gone"
-            style="@style/Widget.Material3.Button.TextButton"/>
+            <Button
+                android:id="@+id/miniPlayerSleepTimer"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:maxLines="1"
+                android:text="😴"
+                android:textSize="14sp"
+                android:textColor="@color/color_on_surface"
+                android:contentDescription="@string/cd_sleep_timer"/>
+
+            <Button
+                android:id="@+id/miniPlayerLerLivro"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:maxLines="2"
+                android:layout_height="wrap_content"
+                android:text="@string/mini_player_ler_livro"
+                android:textColor="@color/color_on_surface"
+                android:textSize="14sp"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button.TextButton"/>
+
+            <Button
+                android:id="@+id/miniPlayerCapitulos"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:maxLines="2"
+                android:layout_height="wrap_content"
+                android:text="@string/action_capitulos"
+                android:textColor="@color/color_on_surface"
+                android:textSize="14sp"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button.TextButton"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 

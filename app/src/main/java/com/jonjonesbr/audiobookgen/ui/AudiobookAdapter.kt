@@ -48,9 +48,31 @@ class AudiobookAdapter(
         private const val ACAO_COMPARTILHAR = 1
         private const val ACAO_VIDEO = 2
         private const val ACAO_DELETAR = 3
+        private const val PAYLOAD_PLAYER = "player"
     }
 
     var onBindCover: ((AudiobookItem, ImageView) -> Unit)? = null
+
+    // O que está no player agora (uri do item, como o AudioPlayerService recebe): o botão desse
+    // cartão vira pausar e a porcentagem acompanha a posição em tempo real.
+    private var chaveNoPlayer: String? = null
+    private var tocandoAgora = false
+    private var pctAoVivo: Int? = null
+
+    fun atualizarPlayer(caminho: String?, tocando: Boolean, pct: Int?) {
+        val anterior = chaveNoPlayer
+        if (anterior == caminho && tocandoAgora == tocando && pctAoVivo == pct) return
+        chaveNoPlayer = caminho
+        tocandoAgora = tocando
+        pctAoVivo = pct
+        currentList.forEachIndexed { i, item ->
+            if (item.ehOArquivo(caminho) || item.ehOArquivo(anterior)) notifyItemChanged(i, PAYLOAD_PLAYER)
+        }
+    }
+
+    /** O player pode ter recebido a uri do item (aba Audiobooks) ou o caminho do arquivo (tela do livro). */
+    private fun AudiobookItem.ehOArquivo(chave: String?) =
+        chave != null && (uri.toString() == chave || caminho == chave)
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val ivCover: ImageView = view.findViewById(R.id.ivCover)
@@ -81,18 +103,7 @@ class AudiobookAdapter(
         holder.tvLocal.text = item.localizacao
         holder.tvLocal.visibility = if (item.localizacao.isBlank()) View.GONE else View.VISIBLE
 
-        val ctx = holder.itemView.context
-        if (item.progressoPct > 0) {
-            holder.layoutProgresso.visibility = View.VISIBLE
-            holder.progressBar.progress = item.progressoPct
-            holder.tvProgresso.text = if (item.progressoPct >= PROGRESSO_COMPLETO) {
-                ctx.getString(R.string.library_progress_done)
-            } else {
-                ctx.getString(R.string.library_progress_listened, item.progressoPct)
-            }
-        } else {
-            holder.layoutProgresso.visibility = View.GONE
-        }
+        mostrarPlayer(holder, item)
 
         // Toque no cartão ou no botão toca; as ações secundárias ficam no menu ⋮.
         holder.itemView.setOnClickListener { onOuvir(item) }
@@ -124,6 +135,38 @@ class AudiobookAdapter(
             }
         } else {
             holder.ivCover.setImageDrawable(null)
+        }
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isNotEmpty() && payloads.all { it == PAYLOAD_PLAYER }) {
+            mostrarPlayer(holder, getItem(position))
+        } else {
+            onBindViewHolder(holder, position)
+        }
+    }
+
+    /** Botão tocar/pausar e porcentagem ouvida (ao vivo para o item que está no player). */
+    private fun mostrarPlayer(holder: ViewHolder, item: AudiobookItem) {
+        val ctx = holder.itemView.context
+        val noPlayer = item.ehOArquivo(chaveNoPlayer)
+        val tocando = noPlayer && tocandoAgora
+        holder.btnOuvir.setImageResource(if (tocando) R.drawable.ic_player_pause else R.drawable.ic_tocar)
+        val rotulo = ctx.getString(if (tocando) R.string.cd_play_pause else R.string.btn_ouvir)
+        holder.btnOuvir.contentDescription = rotulo
+        holder.btnOuvir.tooltipText = rotulo
+
+        val pct = (if (noPlayer) pctAoVivo else null) ?: item.progressoPct
+        if (pct > 0) {
+            holder.layoutProgresso.visibility = View.VISIBLE
+            holder.progressBar.progress = pct
+            holder.tvProgresso.text = if (pct >= PROGRESSO_COMPLETO) {
+                ctx.getString(R.string.library_progress_done)
+            } else {
+                ctx.getString(R.string.library_progress_listened, pct)
+            }
+        } else {
+            holder.layoutProgresso.visibility = View.GONE
         }
     }
 

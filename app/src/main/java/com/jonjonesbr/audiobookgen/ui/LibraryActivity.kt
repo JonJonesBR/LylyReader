@@ -51,6 +51,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -74,6 +76,7 @@ class LibraryActivity : BasePlayerActivity() {
         const val EXTRA_NOME = "nome"
         private const val TAG = "LibraryActivity"
         private const val COMPLETED_THRESHOLD = 95
+        private const val PCT_TOTAL = 100
         private const val MS_PER_SECOND = 1000L
         private const val SECONDS_PER_MINUTE = 60L
         private const val DIALOG_PADDING_DP = 24
@@ -178,12 +181,30 @@ class LibraryActivity : BasePlayerActivity() {
         )
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
+        observarPlayer()
 
         configurarCapas()
 
         findViewById<EditText>(R.id.etBuscaLibrary).addTextChangedListener { texto ->
             filtroBusca = texto?.toString()?.trim().orEmpty()
             aplicarOrdenacao()
+        }
+    }
+
+    /** Botão do item que está tocando vira pausar, e a porcentagem ouvida acompanha o player. */
+    private fun observarPlayer() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state
+                    .map { st ->
+                        val pct = if (st.duration > 0) {
+                            (st.currentPosition.toLong() * PCT_TOTAL / st.duration).toInt().coerceIn(0, PCT_TOTAL)
+                        } else null
+                        Triple(st.caminho.ifEmpty { null }, st.isPlaying, pct)
+                    }
+                    .distinctUntilChanged()
+                    .collect { (caminho, tocando, pct) -> adapter.atualizarPlayer(caminho, tocando, pct) }
+            }
         }
     }
 
@@ -390,6 +411,15 @@ class LibraryActivity : BasePlayerActivity() {
     private fun abrirNoPlayer(item: AudiobookItem) {
         // Aberta como aba (ninguém espera resultado): toca aqui mesmo; o mini-player aparece na base.
         if (callingActivity == null) {
+            // Já é o que está no player: o botão pausa/retoma, em vez de recomeçar o arquivo.
+            val noPlayer = com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state.value.caminho
+            if (noPlayer.isNotEmpty() && (noPlayer == item.uri.toString() || noPlayer == item.caminho)) {
+                startService(
+                    Intent(this, com.jonjonesbr.audiobookgen.service.AudioPlayerService::class.java)
+                        .setAction(com.jonjonesbr.audiobookgen.service.PlayerNotificationManager.ACTION_PLAY_PAUSE)
+                )
+                return
+            }
             val intent = Intent(this, com.jonjonesbr.audiobookgen.service.AudioPlayerService::class.java).apply {
                 action = com.jonjonesbr.audiobookgen.service.AudioPlayerService.ACTION_INICIAR
                 putExtra(com.jonjonesbr.audiobookgen.service.AudioPlayerService.EXTRA_CAMINHO, item.uri.toString())
