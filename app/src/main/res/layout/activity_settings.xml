@@ -1619,7 +1619,7 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-                            android:max="14"/>
+                            android:max="18"/>
 
                         <TextView
                             android:id="@+id/tvSupertonicStepsValor"
@@ -1683,7 +1683,7 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-                            android:max="3"/>
+                            android:max="9"/>
 
                         <TextView
                             android:id="@+id/tvPocketPassosValor"

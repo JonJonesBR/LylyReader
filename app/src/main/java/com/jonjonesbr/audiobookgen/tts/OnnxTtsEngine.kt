@@ -315,7 +315,7 @@ class OnnxTtsEngine(
         // Passos do flow-matching (vector_estimator roda 'steps' vezes — é o custo dominante).
         // Configurável pelo usuário (Configurações): menos passos = mais rápido, menos qualidade.
         val supertonicSteps = com.jonjonesbr.audiobookgen.data.AppPrefs(context).supertonicSteps
-            .coerceIn(1, 16)
+            .coerceIn(1, com.jonjonesbr.audiobookgen.data.AppPrefs.SUPERTONIC_STEPS_MAX)
 
         // Init e generate no mesmo bloco de lock: com paralelismo, outra thread não pode trocar o
         // modelo (v1 ↔ v2) entre o init desta chamada e o generate.

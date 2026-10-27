@@ -135,11 +135,19 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putInt("supertonic_steps", v).apply()
 
     /**
-     * Passos de decodificação por quadro do Pocket TTS (experimental). 1 é o padrão e o mais
-     * rápido; mais passos custam tempo de síntese e podem melhorar a fidelidade.
+     * Passos de decodificação por quadro do Pocket TTS. 4 é o padrão (era 1): mais passos custam tempo de
+     * síntese e melhoram a fidelidade.
      */
     var pocketPassos: Int
-        get() = p.getInt("pocket_passos", POCKET_PASSOS_PADRAO).coerceIn(POCKET_PASSOS_MIN, POCKET_PASSOS_MAX)
+        get() {
+            // Uma vez: quem estava no padrão antigo (1 gravado) passa para o novo padrão.
+            if (!p.getBoolean("pocket_passos_padrao4", false)) {
+                val e = p.edit().putBoolean("pocket_passos_padrao4", true)
+                if (p.getInt("pocket_passos", POCKET_PASSOS_PADRAO) == 1) e.remove("pocket_passos")
+                e.apply()
+            }
+            return p.getInt("pocket_passos", POCKET_PASSOS_PADRAO).coerceIn(POCKET_PASSOS_MIN, POCKET_PASSOS_MAX)
+        }
         set(v) = p.edit().putInt("pocket_passos", v.coerceIn(POCKET_PASSOS_MIN, POCKET_PASSOS_MAX)).apply()
 
     /**
@@ -420,12 +428,12 @@ class AppPrefs(context: Context) {
         /** Pausa entre blocos da conversão (ms). */
         private const val PAUSA_MS_PADRAO = 600
         const val POCKET_PASSOS_MIN = 1
-        const val POCKET_PASSOS_MAX = 4
+        const val POCKET_PASSOS_MAX = 10
         const val DOWNLOADS_SIMULTANEOS_PADRAO = 2
         const val TIMBRE_TOM_MIN = -6
         const val TIMBRE_TOM_MAX = 6
         const val TIMBRE_AGUDOS_MAX = 8
-        const val POCKET_PASSOS_PADRAO = 1
+        const val POCKET_PASSOS_PADRAO = 4
         /** Temperatura do Pocket em décimos: 3 (0,3) é o valor estável no aparelho; 7 é o padrão da Kyutai. */
         /** 0,1: no uso, a expressividade baixa é a que menos suprime palavras. */
         const val POCKET_EXPRESSIVIDADE_PADRAO = 1
@@ -438,7 +446,7 @@ class AppPrefs(context: Context) {
         /** Passos padrão do modelo Supertonic. */
         const val SUPERTONIC_STEPS_PADRAO = 5
         const val SUPERTONIC_STEPS_MIN = 2
-        const val SUPERTONIC_STEPS_MAX = 16
+        const val SUPERTONIC_STEPS_MAX = 20
         /** Pausa padrão entre orações na leitura guiada com kokoro (ms). */
         private const val PAUSA_FINAL_FRASE_MS_PADRAO = 500
         /** Sentinela: usa o padrão interno de cada motor (nunca sobrescreve). */

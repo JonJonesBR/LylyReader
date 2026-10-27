@@ -18,6 +18,7 @@ object TtsChunkCache {
     private const val TAMANHO_MINIMO_AUDIO = 500L
     // Incrementar quando formato, parâmetros ou comportamento de síntese mudar.
     private const val VERSAO_SINTESE = 1
+    private const val POCKET_PASSOS_DO_CACHE_SEM_SUFIXO = 1
     private val sintetizacoesEmAndamento = ConcurrentHashMap<String, CompletableDeferred<File?>>()
     private val ultimaVerificacaoTeto = java.util.concurrent.atomic.AtomicLong(0L)
     private const val INTERVALO_VERIFICACAO_TETO_MS = 5 * 60 * 1000L
@@ -68,14 +69,14 @@ object TtsChunkCache {
     }
 
     /**
-     * Os passos alteram o áudio, então um valor não reaproveita o cache de outro. Pocket com o padrão fica
-     * sem sufixo; o Supertonic leva sempre os passos na chave, porque o padrão mudou (12 → 5) e o cache sem
-     * sufixo foi gerado com 12.
+     * Os passos alteram o áudio, então um valor não reaproveita o cache de outro. Pocket com 1 passo (o padrão
+     * antigo, com que o cache sem sufixo foi gerado) fica sem sufixo; o Supertonic leva sempre os passos na
+     * chave, porque o padrão mudou (12 → 5) e o cache sem sufixo foi gerado com 12.
      */
     internal fun revisaoComPassos(base: String, voice: String, passos: Int): String = when {
         // "-ritmo1": trechos refeitos quando a fala sai comprimida contra o ritmo habitual da voz (RitmoDaVoz).
         voice.startsWith("supertonic-") -> "$base-passos$passos-ritmo1"
-        voice.startsWith("pocket-") && passos != com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_PADRAO ->
+        voice.startsWith("pocket-") && passos != POCKET_PASSOS_DO_CACHE_SEM_SUFIXO ->
             "$base-passos$passos"
         else -> base
     }

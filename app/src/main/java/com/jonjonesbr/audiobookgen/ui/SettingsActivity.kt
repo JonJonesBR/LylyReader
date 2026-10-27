@@ -1178,10 +1178,8 @@ class SettingsActivity : BasePlayerActivity() {
         const val ABA_SOM = 1
         private const val JSON_INDENT = 4
         private const val STEPS_MIN = 2
-        // Alinhado ao teto de segurança do motor (OnnxTtsEngine: supertonicSteps.coerceIn(1, 16))
-        // — a UI travava em 12 por um limite à parte, impedindo o usuário de sequer tentar um
-        // valor que o motor já aceitava sem reclamar.
-        private const val STEPS_MAX = 16
+        // O mesmo teto do motor (OnnxTtsEngine limita a AppPrefs.SUPERTONIC_STEPS_MAX).
+        private const val STEPS_MAX = com.jonjonesbr.audiobookgen.data.AppPrefs.SUPERTONIC_STEPS_MAX
         // Teto do slider de pausa entre frases (kokoro) — 2s já é uma pausa dramática pra uma
         // frase só; casa com o android:max="2000" do SeekBar (progresso = ms direto, sem offset).
         private const val PAUSA_FINAL_FRASE_MS_MAX = 2000
