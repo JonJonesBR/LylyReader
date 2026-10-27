@@ -55,6 +55,7 @@ import java.io.File
 class ReaderActivity : BasePlayerActivity() {
 
     companion object {
+        private const val PAUSA_ROLAGEM_MANUAL_MS = 8_000L
         const val EXTRA_CAMINHO = "extra_caminho"
         /** True só quando o leitor foi aberto via [android.app.Activity.startActivityForResult]
          *  (MainActivity.abrirLeitor/abrirLeitorComCaminho/abrirLeituraGuiadaDirect) — nesses
@@ -711,7 +712,9 @@ class ReaderActivity : BasePlayerActivity() {
             override fun onScrollStateChanged(rv: RecyclerView, newState: Int) {
                 if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
                     guidedReadingBarController?.scrollManual = true
-                    viewModel.pausarSync()
+                    // Rolar com o dedo só suspende a rolagem automática do audiobook por um tempo; antes
+                    // desligava o acompanhamento de vez (o destaque parava até reabrir o leitor).
+                    rolagemAudiobookSuspensaAte = android.os.SystemClock.uptimeMillis() + PAUSA_ROLAGEM_MANUAL_MS
                 } else if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                     guidedReadingBarController?.aguardandoAutoScroll = false
                     atualizarProgressoLeitura()
@@ -1379,6 +1382,9 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
+    /** Até quando (uptime) a rolagem automática do audiobook fica suspensa depois de o usuário rolar com o dedo. */
+    private var rolagemAudiobookSuspensaAte = 0L
+
     /** Leitura guiada ativa e o usuário não rolou com o dedo: só o acompanhamento dela mexe na rolagem. */
     private fun leituraGuiadaConduzRolagem(): Boolean =
         (guidedPlayerManager?.state?.value?.index ?: -1) >= 0 && guidedReadingBarController?.scrollManual != true
@@ -1391,7 +1397,7 @@ class ReaderActivity : BasePlayerActivity() {
         if ((guidedPlayerManager?.state?.value?.index ?: -1) >= 0) return
         val paragrafoMudouDesdeUltimoSync =
             state.paragrafoSyncAtual != controlador.ultimoScrollSyncStandard
-        val podeRolarAutomaticamente = !controlador.scrollManual && state.syncAtivo &&
+        val podeRolarAutomaticamente = android.os.SystemClock.uptimeMillis() >= rolagemAudiobookSuspensaAte && state.syncAtivo &&
             state.paragrafoSyncAtual >= 0 && paragrafoMudouDesdeUltimoSync
         if (podeRolarAutomaticamente) {
             controlador.ultimoScrollSyncStandard = state.paragrafoSyncAtual

@@ -55,8 +55,9 @@ fun ancorasDeSincronia(trechos: List<TrechoAudio>, texto: TextoExtraido): List<P
 /**
  * Parágrafo do texto que corresponde à posição [posicaoMs] do audiobook gerado.
  *
- * Com [ancoras] (audiobooks que gravaram o início de cada trecho), o destaque é exato: o parágrafo do último trecho que
- * já começou. Sem elas, é aproximado:
+ * Com [ancoras] (audiobooks que gravaram o início de cada trecho), o início de cada trecho é exato, e entre um trecho e
+ * o seguinte o destaque avança pela proporção do tempo (um trecho pode ter vários parágrafos: sem isso o destaque
+ * ficava parado no primeiro deles até o próximo trecho). Sem âncoras, é aproximado:
  *
  * Com as marcas de capítulo do MP3 batendo com os capítulos do texto (mesma quantidade), localiza o capítulo pela
  * marca e só dentro dele usa a proporção do tempo; o erro fica restrito a um capítulo. Sem marcas compatíveis, usa a
@@ -71,7 +72,8 @@ fun paragrafoNoAudiobook(
 ): Int {
     val paragrafos = texto.paragrafos
     if (paragrafos.isEmpty() || duracaoMs <= 0L) return -1
-    ancoras.lastOrNull { it.first <= posicaoMs }?.let { return it.second.coerceIn(0, paragrafos.lastIndex) }
+    val i = ancoras.indexOfLast { it.first <= posicaoMs }
+    if (i >= 0) return entreAncoras(posicaoMs, ancoras[i], ancoras.getOrNull(i + 1), duracaoMs, texto)
     val capitulos = texto.capitulos
     if (capitulosAudio.size > 1 && capitulosAudio.size == capitulos.size) {
         val i = capitulosAudio.indexOfLast { it.inicioMs <= posicaoMs }.coerceAtLeast(0)
@@ -91,4 +93,25 @@ fun paragrafoNoAudiobook(
     }
     val alvo = (posicaoMs.toDouble() / duracaoMs).coerceIn(0.0, 1.0) * texto.totalChars
     return paragrafos.indexOfLast { it.charOffset <= alvo }.coerceAtLeast(0)
+}
+
+/** Parágrafo entre a âncora [de] e a seguinte [ate] (ou o fim do áudio e do texto), pela proporção do tempo. */
+private fun entreAncoras(
+    posicaoMs: Long,
+    de: Pair<Long, Int>,
+    ate: Pair<Long, Int>?,
+    duracaoMs: Long,
+    texto: TextoExtraido,
+): Int {
+    val paragrafos = texto.paragrafos
+    val inicio = de.second.coerceIn(0, paragrafos.lastIndex)
+    val fimMs = ate?.first ?: duracaoMs
+    val fim = (ate?.second ?: paragrafos.lastIndex).coerceIn(inicio, paragrafos.lastIndex)
+    if (fim == inicio || fimMs <= de.first) return inicio
+    val dentro = ((posicaoMs - de.first).toDouble() / (fimMs - de.first)).coerceIn(0.0, 1.0)
+    val charInicio = paragrafos[inicio].charOffset
+    // Até a próxima âncora, o texto vai até o começo do parágrafo dela; sem próxima, até o fim do livro.
+    val charFim = if (ate != null) paragrafos[fim].charOffset else texto.totalChars
+    val alvo = charInicio + dentro * (charFim - charInicio)
+    return (inicio..fim).lastOrNull { paragrafos[it].charOffset <= alvo } ?: inicio
 }

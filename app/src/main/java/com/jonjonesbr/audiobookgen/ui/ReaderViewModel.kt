@@ -121,11 +121,6 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
 
     // ── Scroll sync ───────────────────────────────────────────────────────────
 
-    fun pausarSync() {
-        syncJob?.cancel()
-        _uiState.update { it.copy(syncAtivo = false, paragrafoSyncAtual = -1) }
-    }
-
     /** Para o acompanhamento do audiobook (a leitura guiada assumiu) sem apagar o parágrafo em destaque. */
     fun pausarStandardSync() {
         syncJob?.cancel()

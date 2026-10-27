@@ -70,6 +70,21 @@ class SincroniaAudiobookTest {
     }
 
     @Test
+    fun trechoComVariosParagrafosAvancaPelaProporcaoAteOProximo() {
+        // Um trecho de áudio só (Edge e outros motores juntam vários parágrafos por trecho): antes o destaque
+        // ficava parado no primeiro parágrafo até o fim do trecho.
+        val t = livro("Um Apólogo Machado de Assis", "a".repeat(98), "b".repeat(98), "c".repeat(98))
+        val ancoras = listOf(0L to 0, 8_000L to 3)
+        assertEquals(0, paragrafoNoAudiobook(500, 10_000, emptyList(), t, ancoras))
+        assertEquals(1, paragrafoNoAudiobook(3_000, 10_000, emptyList(), t, ancoras))
+        assertEquals(2, paragrafoNoAudiobook(6_500, 10_000, emptyList(), t, ancoras))
+        assertEquals(3, paragrafoNoAudiobook(8_000, 10_000, emptyList(), t, ancoras))
+        // Depois da última âncora, segue até o fim do texto junto com o fim do áudio.
+        val soUma = listOf(0L to 0)
+        assertEquals(3, paragrafoNoAudiobook(9_900, 10_000, emptyList(), t, soUma))
+    }
+
+    @Test
     fun trechoQueNaoEstaNoTextoFicaSemAncoraESemVoltarAtras() {
         val t = livro("Primeiro parágrafo aqui.", "Segundo parágrafo aqui.", "Primeiro parágrafo aqui de novo.")
         val trechos = listOf(
