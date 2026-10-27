@@ -446,6 +446,17 @@ class ReaderActivity : BasePlayerActivity() {
         telaVisivelDesdeMs = System.currentTimeMillis()
     }
 
+    /** "Manter tela ligada": a flag vale só enquanto o leitor está visível (ver também a folha de Aparência). */
+    override fun onResume() {
+        super.onResume()
+        aplicarManterTelaLigada(window, appPrefs.readerManterTelaLigada)
+    }
+
+    override fun onPause() {
+        aplicarManterTelaLigada(window, false)
+        super.onPause()
+    }
+
     override fun onStop() {
         super.onStop()
         registrarMinutosLidos()

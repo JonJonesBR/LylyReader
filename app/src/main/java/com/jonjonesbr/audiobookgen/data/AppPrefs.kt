@@ -384,6 +384,11 @@ class AppPrefs(context: Context) {
         get() = p.getBoolean("reader_rolagem_horizontal", false)
         set(v) = p.edit().putBoolean("reader_rolagem_horizontal", v).apply()
 
+    /** Mantém a tela ligada enquanto o leitor está visível (desligado por padrão). */
+    var readerManterTelaLigada: Boolean
+        get() = p.getBoolean("reader_manter_tela_ligada", false)
+        set(v) = p.edit().putBoolean("reader_manter_tela_ligada", v).apply()
+
     /** Grava toda a aparência do leitor de uma vez (um único apply). */
     fun salvarAparenciaLeitor(
         fonte: Float,

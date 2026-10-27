@@ -1,6 +1,8 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import android.view.View
+import android.view.Window
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.SeekBar
@@ -9,6 +11,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto
@@ -31,6 +35,15 @@ private const val BRILHO_MAX_FLOAT = 1f
 private const val DIALOG_PADDING_H = 48
 private const val DIALOG_PADDING_V = 24
 
+/** Liga ou desliga FLAG_KEEP_SCREEN_ON na janela do leitor (preferência "Manter tela ligada"). */
+fun aplicarManterTelaLigada(janela: Window, ligada: Boolean) {
+    if (ligada) {
+        janela.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    } else {
+        janela.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+}
+
 /**
  * Bottom sheet de aparência do leitor (tema, fonte, espaçamento, margem, brilho e orientação
  * de rolagem) — extraído de [ReaderActivity] pra reduzir o tamanho do arquivo (T2.2).
@@ -42,6 +55,7 @@ class ReaderAparenciaController(
     private val onOrientacaoRolagem: (Boolean) -> Unit,
 ) {
     private val dialogos = DialogosAbertos(activity)
+    private val appPrefs by lazy { AppPrefs(activity) }
     private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
 
     fun mostrarBottomSheet() {
@@ -68,8 +82,18 @@ class ReaderAparenciaController(
             view.findViewById(R.id.seekBarBrilho),
             view.findViewById(R.id.tvBrilhoValor)
         )
+        configurarManterTelaLigada(view.findViewById(R.id.swManterTelaLigada))
 
         dialog.show()
+    }
+
+    /** Liga a tela ao leitor: grava a preferência e aplica (ou tira) a flag na hora. */
+    private fun configurarManterTelaLigada(chave: MaterialSwitch) {
+        chave.isChecked = appPrefs.readerManterTelaLigada
+        chave.setOnCheckedChangeListener { _, marcado ->
+            appPrefs.readerManterTelaLigada = marcado
+            aplicarManterTelaLigada(activity.window, marcado)
+        }
     }
 
     private fun configurarSeekFonte(seekFonte: SeekBar, tvFonteValor: TextView, tamanhoFonteInicial: Float) {

@@ -433,6 +433,17 @@
             android:importantForAccessibility="no"/>
     </LinearLayout>
 
+    <!-- Tela -->
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/swManterTelaLigada"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:minHeight="48dp"
+        android:text="@string/reader_manter_tela_ligada"
+        android:textSize="14sp"
+        android:textColor="@color/color_on_surface"/>
+
 </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

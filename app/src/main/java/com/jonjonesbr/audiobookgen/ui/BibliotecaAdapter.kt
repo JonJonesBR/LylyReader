@@ -4,6 +4,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -61,6 +62,7 @@ class BibliotecaAdapter(
         val capa: CapaView = view.findViewById(R.id.ivBibCapa)
         val titulo: TextView = view.findViewById(R.id.tvBibTitulo)
         val estado: TextView = view.findViewById(R.id.tvBibEstado)
+        val mais: ImageButton = view.findViewById(R.id.btnBibMais)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -106,6 +108,9 @@ class BibliotecaAdapter(
                 mostrarCapa(h.capa, livro)
                 h.itemView.setOnClickListener { onAbrir(livro, false) }
                 h.itemView.setOnLongClickListener { onMenu(h.itemView, livro); true }
+                // Botão visível: o mesmo menu do long-press (o long-press no botão também abre, senão o toque longo não chegaria ao cartão)
+                h.mais.setOnClickListener { onMenu(h.mais, livro) }
+                h.mais.setOnLongClickListener { onMenu(h.mais, livro); true }
             }
         }
     }
