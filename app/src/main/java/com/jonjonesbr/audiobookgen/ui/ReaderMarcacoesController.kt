@@ -1,10 +1,19 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.BookmarkStore
 import com.jonjonesbr.audiobookgen.data.HighlightStore
+import com.jonjonesbr.audiobookgen.domain.MarcacaoExportavel
+import com.jonjonesbr.audiobookgen.domain.MarkdownMarcacoes
+import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
+import com.jonjonesbr.audiobookgen.domain.TextoExtraido
+import java.io.File
+import java.util.Date
+import java.util.Locale
 
 // Constante movida do companion de ReaderActivity (T2.2) — usada só no bloco de marcadores.
 private const val BOOKMARK_NOME_MAX = 40
@@ -147,7 +156,78 @@ class ReaderMarcacoesController(
                     mostrarDialogListarMarcacoes()
                 }
             }
+            .setNegativeButton(R.string.marcacoes_exportar) { _, _ -> exportarMarcacoes() }
             .setNeutralButton(android.R.string.cancel, null)
             .exibir()
+    }
+
+    /**
+     * Exporta marcadores e destaques do livro como Markdown (título, depois cada marcação com
+     * capítulo, trecho, nota e data) e compartilha pelo sistema. Na ordem do livro, como a lista.
+     */
+    fun exportarMarcacoes() {
+        val caminho = callbacks.obterCaminhoArquivo()
+        val texto = viewModel.textoEfetivo()
+        val itens = BookmarkStore.listarPara(activity, caminho).map { bm ->
+            bm.indiceParagrafo to MarcacaoExportavel(
+                capitulo = capituloDoParagrafo(texto, bm.indiceParagrafo),
+                trecho = bm.nome,
+                nota = "",
+                data = formatarDataMarcacao(bm.ts),
+            )
+        } + HighlightStore.listarPara(activity, caminho).map { d ->
+            d.indiceParagrafo to MarcacaoExportavel(
+                capitulo = capituloDoParagrafo(texto, d.indiceParagrafo),
+                trecho = trechoDoDestaque(texto, d.indiceParagrafo, d.inicio, d.fim),
+                nota = d.nota,
+                data = formatarDataMarcacao(d.ts),
+            )
+        }
+        if (itens.isEmpty()) {
+            Toast.makeText(activity, R.string.marcacoes_sem_itens, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val titulo = BibliotecaStore.tituloPorCaminho(activity, caminho)
+            ?: File(caminho).nameWithoutExtension
+        val markdown = MarkdownMarcacoes.montar(
+            titulo,
+            itens.sortedBy { it.first }.map { it.second },
+            activity.getString(R.string.marcacoes_exportar_rotulo_nota),
+        )
+        val envio = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, titulo)
+            putExtra(Intent.EXTRA_TEXT, markdown)
+        }
+        activity.startActivity(
+            Intent.createChooser(envio, activity.getString(R.string.marcacoes_exportar_chooser))
+        )
+    }
+
+    /** Capítulo (título legível) do parágrafo; vazio se o texto ou o capítulo não for conhecido. */
+    private fun capituloDoParagrafo(texto: TextoExtraido?, indice: Int): String {
+        if (texto == null) return ""
+        val paragrafo = texto.paragrafos.getOrNull(indice) ?: return ""
+        return texto.capitulos.getOrNull(paragrafo.indiceCapitulo)
+            ?.let { NavegacaoCapitulos.tituloLimpo(it.titulo) }
+            .orEmpty()
+    }
+
+    /** Trecho marcado como destaque; "…" se o parágrafo não estiver mais disponível. */
+    private fun trechoDoDestaque(texto: TextoExtraido?, indice: Int, inicio: Int, fim: Int): String {
+        if (texto == null) return "…"
+        val paragrafo = texto.paragrafos.getOrNull(indice)?.texto ?: return "…"
+        val ini = inicio.coerceIn(0, paragrafo.length)
+        val fimLimpo = fim.coerceIn(ini, paragrafo.length)
+        return paragrafo.substring(ini, fimLimpo).trim().ifBlank { "…" }
+    }
+
+    /** Data e hora no formato do locale do aparelho; vazio se a marcação não tem data gravada. */
+    private fun formatarDataMarcacao(ts: Long): String {
+        if (ts <= 0L) return ""
+        return java.text.DateFormat
+            .getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT, Locale.getDefault())
+            .format(Date(ts))
     }
 }

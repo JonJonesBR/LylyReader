@@ -719,7 +719,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• As opções de voz agora estão agrupadas por tipo, o que facilita escolher uma.\n• Quando um audiobook fica pronto, o aviso tem um botão “Abrir”, e alguns botões ficaram maiores e mais fáceis de tocar.\n• A fila de reprodução não some mais inteira por causa de um item com problema.\n• O widget da tela inicial gasta menos bateria, e a busca dentro do livro ficou mais leve.\n• Escolher a voz de um personagem não parece mais travar enquanto a lista carrega.\n• Textos revisados: frases mais claras e menos erros de português.</string>
+    <string name="release_notes_corpo">• Agora você pode exportar seus marcadores e destaques como texto, para mandar para notas ou e-mail.\n• As opções de voz agora estão agrupadas por tipo, o que facilita escolher uma.\n• Quando um audiobook fica pronto, o aviso tem um botão “Abrir”, e alguns botões ficaram maiores e mais fáceis de tocar.\n• A fila de reprodução não some mais inteira por causa de um item com problema.\n• O widget da tela inicial gasta menos bateria, e a busca dentro do livro ficou mais leve.\n• Escolher a voz de um personagem não parece mais travar enquanto a lista carrega.\n• Textos revisados: frases mais claras e menos erros de português.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Voz mais grave ou mais aguda, e agudos mais suaves. Vale na hora.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
@@ -1366,6 +1366,9 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="acoes_mais_opcoes">Mais opções</string>
     <string name="marcacoes_titulo">Marcadores e destaques</string>
     <string name="marcacoes_sem_itens">Nenhum marcador ou destaque neste livro ainda</string>
+    <string name="marcacoes_exportar">Exportar</string>
+    <string name="marcacoes_exportar_chooser">Compartilhar marcadores e destaques</string>
+    <string name="marcacoes_exportar_rotulo_nota">Nota</string>
     <string name="acao_dicionario_pronuncia">Dicionário de pronúncias</string>
     <string name="acao_gerar_audiobook">Gerar audiobook (MP3)</string>
     <string name="gerar_audiobook_titulo">Gerar audiobook</string>

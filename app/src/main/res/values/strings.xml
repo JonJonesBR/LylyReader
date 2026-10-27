@@ -719,7 +719,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• The voice options are now grouped by type, so it is easier to choose one.\n• When an audiobook is ready, the notice has an “Open” button, and some buttons are bigger and easier to tap.\n• The playback queue no longer disappears entirely because of one bad item.\n• The home-screen widget uses less battery, and searching inside a book is lighter.\n• Choosing a character’s voice no longer looks frozen while the list loads.\n• Texts reviewed: clearer wording and fewer typos.</string>
+    <string name="release_notes_corpo">• You can now export your bookmarks and highlights as text, to share in notes or email.\n• The voice options are now grouped by type, so it is easier to choose one.\n• When an audiobook is ready, the notice has an “Open” button, and some buttons are bigger and easier to tap.\n• The playback queue no longer disappears entirely because of one bad item.\n• The home-screen widget uses less battery, and searching inside a book is lighter.\n• Choosing a character’s voice no longer looks frozen while the list loads.\n• Texts reviewed: clearer wording and fewer typos.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
@@ -1366,6 +1366,9 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="acoes_mais_opcoes">More options</string>
     <string name="marcacoes_titulo">Bookmarks &amp; highlights</string>
     <string name="marcacoes_sem_itens">No bookmarks or highlights in this book yet</string>
+    <string name="marcacoes_exportar">Export</string>
+    <string name="marcacoes_exportar_chooser">Share bookmarks and highlights</string>
+    <string name="marcacoes_exportar_rotulo_nota">Note</string>
     <string name="acao_dicionario_pronuncia">Pronunciation dictionary</string>
     <string name="acao_gerar_audiobook">Generate audiobook (MP3)</string>
     <string name="gerar_audiobook_titulo">Generate audiobook</string>
