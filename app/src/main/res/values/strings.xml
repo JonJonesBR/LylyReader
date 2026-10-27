@@ -719,7 +719,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• When an audiobook is ready, the notice has an “Open” button, and some buttons are bigger and easier to tap.\n• The conversion queue no longer loses everything because of one bad item.\n• The home-screen widget and guided reading use less battery.\n• Choosing a character’s voice no longer looks frozen while the list loads.\n• Texts reviewed: clearer wording and fewer typos.</string>
+    <string name="release_notes_corpo">• When an audiobook is ready, the notice has an “Open” button, and some buttons are bigger and easier to tap.\n• The playback queue no longer disappears entirely because of one bad item.\n• The home-screen widget uses less battery, and searching inside a book is lighter.\n• Choosing a character’s voice no longer looks frozen while the list loads.\n• Texts reviewed: clearer wording and fewer typos.</string>
     <string name="timbre_title">Voice tone</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>

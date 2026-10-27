@@ -719,7 +719,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Quando um audiobook fica pronto, o aviso tem um botão “Abrir”, e alguns botões ficaram maiores e mais fáceis de tocar.\n• A fila de conversões não perde mais tudo por causa de um item com problema.\n• O widget da tela inicial e a leitura guiada gastam menos bateria.\n• Escolher a voz de um personagem não parece mais travar enquanto a lista carrega.\n• Textos revisados: frases mais claras e menos erros de português.</string>
+    <string name="release_notes_corpo">• Quando um audiobook fica pronto, o aviso tem um botão “Abrir”, e alguns botões ficaram maiores e mais fáceis de tocar.\n• A fila de reprodução não some mais inteira por causa de um item com problema.\n• O widget da tela inicial gasta menos bateria, e a busca dentro do livro ficou mais leve.\n• Escolher a voz de um personagem não parece mais travar enquanto a lista carrega.\n• Textos revisados: frases mais claras e menos erros de português.</string>
     <string name="timbre_title">Timbre da voz</string>
     <string name="timbre_desc">Voz mais grave ou mais aguda, e agudos mais suaves. Vale na hora.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
