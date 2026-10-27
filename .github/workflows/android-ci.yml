@@ -1,7 +1,7 @@
 name: Android CI
 
 on:
-  # Sem build automático a cada push ou PR (decisão de 2026-10-08). Para gerar o APK de depuração, rode manualmente.
+  # Sem APK automático (decisão de 2026-10-08): a conferência a cada push é o checks.yml (testes, sem APK). Para gerar o APK de depuração, rode manualmente.
   workflow_dispatch:
 
 permissions:
