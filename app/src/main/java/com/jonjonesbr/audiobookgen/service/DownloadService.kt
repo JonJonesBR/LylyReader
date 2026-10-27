@@ -30,7 +30,10 @@ class DownloadService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "lylyreader_downloads"
+        // IDs únicos no app (ver ConversionNotificationManager): repetidos, a notificação de um serviço apagava ou
+        // sobrescrevia a de outro (ex.: o "concluído" do download por cima do progresso da conversão).
         private const val NOTIF_ID = 1004
+        private const val NOTIF_ID_FIM = 1010
         private const val ACTION_PAUSAR_TUDO = "com.jonjonesbr.audiobookgen.DOWNLOADS_PAUSAR_TUDO"
 
         fun start(context: Context) {
@@ -125,8 +128,9 @@ class DownloadService : Service() {
     private fun notificarFim(mapa: Map<String, AndamentoDownload>) {
         val terminados = vistosBaixando.mapNotNull { mapa[it]?.estado }
         vistosBaixando.clear()
+        val falha = terminados.any { it == EstadoDownload.ERRO }
         val texto = when {
-            terminados.any { it == EstadoDownload.ERRO } -> getString(R.string.dl_notif_falha)
+            falha -> getString(R.string.dl_notif_falha)
             terminados.any { it == EstadoDownload.PRONTO } -> getString(R.string.dl_notif_fim)
             else -> return // só pausou/cancelou: sem aviso
         }
@@ -135,13 +139,13 @@ class DownloadService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val n = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setSmallIcon(if (falha) android.R.drawable.stat_notify_error else R.drawable.ic_check)
             .setContentTitle(getString(R.string.dl_notif_titulo))
             .setContentText(texto)
             .setContentIntent(abrir)
             .setAutoCancel(true)
             .build()
-        getSystemService(NotificationManager::class.java).notify(NOTIF_ID + 1, n)
+        getSystemService(NotificationManager::class.java).notify(NOTIF_ID_FIM, n)
     }
 
     private fun criarCanal() {

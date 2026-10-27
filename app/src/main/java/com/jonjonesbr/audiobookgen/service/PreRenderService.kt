@@ -27,7 +27,10 @@ class PreRenderService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "lylyreader_prerender"
+        // IDs únicos no app (ver ConversionNotificationManager): repetidos, a notificação de um serviço apagava ou
+        // sobrescrevia a de outro (ex.: o "concluído" do download por cima do progresso da conversão).
         private const val NOTIF_ID = 1003
+        private const val NOTIF_ID_FIM = 1011
         private const val ACTION_CANCEL = "com.jonjonesbr.audiobookgen.PRERENDER_CANCEL"
 
         fun start(context: Context) {
@@ -118,12 +121,12 @@ class PreRenderService : Service() {
             else -> getString(R.string.prerender_notif_failed, estado.erro.orEmpty())
         }
         val n = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setSmallIcon(if (estado.concluido) R.drawable.ic_check else android.R.drawable.stat_notify_error)
             .setContentTitle(getString(R.string.prerender_notif_title, estado.titulo))
             .setContentText(texto)
             .setAutoCancel(true)
             .build()
-        getSystemService(NotificationManager::class.java).notify(NOTIF_ID + 1, n)
+        getSystemService(NotificationManager::class.java).notify(NOTIF_ID_FIM, n)
     }
 
     private fun criarCanal() {

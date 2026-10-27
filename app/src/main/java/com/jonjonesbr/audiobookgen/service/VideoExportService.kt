@@ -39,7 +39,10 @@ class VideoExportService : Service() {
     companion object {
         private const val TAG = "VideoExportService"
         private const val CHANNEL_ID = "lylyreader_video_export"
-        private const val NOTIF_ID = 1004
+        // IDs únicos no app (ver ConversionNotificationManager): repetidos, a notificação de um serviço apagava ou
+        // sobrescrevia a de outro (ex.: o "concluído" do download por cima do progresso da conversão).
+        private const val NOTIF_ID = 1008
+        private const val NOTIF_ID_FIM = 1012
         private const val ACTION_CANCEL = "com.jonjonesbr.audiobookgen.VIDEO_EXPORT_CANCEL"
         private const val MS_POR_SEGUNDO = 1000L
         private const val BYTES_POR_SEGUNDO_AAC = 8_000L // AAC a 64 kbps
@@ -229,12 +232,12 @@ class VideoExportService : Service() {
             else -> getString(R.string.toast_erro_exportar_video, estado.erro.orEmpty())
         }
         val n = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setSmallIcon(if (partes != null) R.drawable.ic_check else android.R.drawable.stat_notify_error)
             .setContentTitle(getString(R.string.video_notif_title, estado.titulo))
             .setContentText(texto)
             .setAutoCancel(true)
             .build()
-        getSystemService(NotificationManager::class.java).notify(NOTIF_ID + 1, n)
+        getSystemService(NotificationManager::class.java).notify(NOTIF_ID_FIM, n)
     }
 
     private fun criarCanal() {
