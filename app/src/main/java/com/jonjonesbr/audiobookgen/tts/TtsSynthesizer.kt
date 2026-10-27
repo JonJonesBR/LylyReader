@@ -37,12 +37,12 @@ interface TtsSynthesizer {
             caminhoDoLivro: String? = null,
             onnxEngine: () -> OnnxTtsEngine
         ): TtsSynthesizer = PronunciationSynthesizer(
-            when (motorEfetivo) {
-                "onnx" -> OnnxTtsSynthesizer(context, onnxEngine)
-                "kokoro" -> KokoroTtsSynthesizer(context)
-                "pocket" -> PocketTtsSynthesizer(context)
-                "android" -> AndroidTtsSynthesizer(context)
-                "elevenlabs" -> ElevenLabsTtsSynthesizer(context)
+            when (MotorTts.deId(motorEfetivo)) {
+                MotorTts.ONNX -> OnnxTtsSynthesizer(context, onnxEngine)
+                MotorTts.KOKORO -> KokoroTtsSynthesizer(context)
+                MotorTts.POCKET -> PocketTtsSynthesizer(context)
+                MotorTts.ANDROID -> AndroidTtsSynthesizer(context)
+                MotorTts.ELEVENLABS -> ElevenLabsTtsSynthesizer(context)
                 else -> PythonTtsSynthesizer(pythonUseCase, motorEfetivo, SecurePreferences.getGeminiKeys(context))
             }
         ) {

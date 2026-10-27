@@ -1,7 +1,8 @@
 # Built application files
 *.apk
 *.aar
-!/app/libs/*.aar
+# AAR do sherpa-onnx: baixado pelos workflows (SHA-256 fixado), não versionado
+/app/libs/sherpa-onnx-*.aar
 *.ap_
 *.aab
 

@@ -19,7 +19,6 @@ import com.jonjonesbr.audiobookgen.util.caminhoPermitido
 import com.jonjonesbr.audiobookgen.util.podeNavegar
 import com.jonjonesbr.audiobookgen.util.proximoCapituloMs
 import com.jonjonesbr.audiobookgen.util.proximoPresetSonecaMin
-import com.jonjonesbr.audiobookgen.ui.MainActivity
 import android.content.Intent
 import android.net.Uri
 import android.os.Binder
@@ -920,8 +919,6 @@ class AudioPlayerService : MediaLibraryService() {
                     val updated = _state.value.copy(currentPosition = exoPlayer.currentPosition.toInt())
                     _state.value = updated
                     PlayerStateHolder.update(updated)
-                    MainActivity.widgetIsPlaying = updated.isPlaying
-                    MainActivity.widgetTrackName = updated.trackName
                     if (updated.isPlaying != ultimoWidgetTocando || updated.trackName != ultimoWidgetNome) {
                         ultimoWidgetTocando = updated.isPlaying
                         ultimoWidgetNome = updated.trackName

@@ -28,6 +28,9 @@ env:
   ORT_SUPERTONIC_VERSION: "1.26.0"
   # SHA-256 do onnxruntime-android-1.26.0.aar do Maven Central (o .sha1 publicado lá confere). Trocar junto com a versão.
   ORT_SUPERTONIC_SHA256: "09c0780ae8d734ef2774bdf498b624729a855e6f9a8e488a0e7398a4e7396032"
+  # Versão e SHA-256 do AAR do sherpa-onnx (release oficial k2-fsa). Trocar junto com app/build.gradle.kts.
+  SHERPA_ONNX_VERSION: "1.13.7"
+  SHERPA_ONNX_SHA256: "220d7cb25ac6e57ec34082bc2551ebd7ec7d4d96cbfea520839e208f92347837"
 
 jobs:
   build:
@@ -110,6 +113,16 @@ jobs:
             cp ".ortdl/x/jni/$abi/libonnxruntime.so" "app/src/main/jniLibs/$abi/libonnxruntime_supertonic.so"
           done
           echo "libonnxruntime_supertonic.so copiada (arm64-v8a, x86_64)."
+
+      - name: Fetch sherpa-onnx AAR (motor Kokoro no aparelho)
+        # O AAR não fica mais no Git: baixa da release oficial e só segue se o SHA-256 bater.
+        run: |
+          set -e
+          mkdir -p app/libs
+          curl -fsSL -o "app/libs/sherpa-onnx-static-link-onnxruntime-${SHERPA_ONNX_VERSION}.aar" \
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_ONNX_VERSION}/sherpa-onnx-static-link-onnxruntime-${SHERPA_ONNX_VERSION}.aar"
+          echo "${SHERPA_ONNX_SHA256}  app/libs/sherpa-onnx-static-link-onnxruntime-${SHERPA_ONNX_VERSION}.aar" | sha256sum -c - \
+            || { echo "::error::sherpa-onnx baixado não confere com o SHA-256 esperado."; exit 1; }
 
       - name: Cache Gradle
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4

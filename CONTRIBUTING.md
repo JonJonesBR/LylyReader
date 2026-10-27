@@ -9,6 +9,7 @@ Obrigado pelo interesse! Este projeto é mantido pela comunidade; correções, m
 
 ## Preparando o ambiente
 Requisitos: Android Studio (ou apenas JDK 17), Android SDK 36 e Python 3.11 (usado pelo Chaquopy no build).
+O AAR do sherpa-onnx não fica no repositório: baixe `sherpa-onnx-static-link-onnxruntime-1.13.7.aar` da [release v1.13.7](https://github.com/k2-fsa/sherpa-onnx/releases/tag/v1.13.7) e coloque em `app/libs/` (os workflows do CI fazem isso sozinhos, conferindo o SHA-256).
 
 ```bash
 git clone https://github.com/JonJonesBR/LylyReader.git

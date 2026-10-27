@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.util
 import android.content.Context
 import android.util.Log
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.tts.MotorTts
 import java.util.Locale
 
 /** Id da Santa inglesa do Kokoro (`am_santa`), que tem o mesmo nome da Santa pt-BR. */
@@ -525,10 +526,10 @@ object VoiceCatalog {
     //  API pública
     // ──────────────────────────────────────────────────────────────────────────
 
-    fun forEngine(engine: String): List<VoiceOption> = when (engine) {
-        "edge" -> edgeVoices
-        "gemini" -> geminiVoices
-        "elevenlabs" -> elevenLabsVoices
+    fun forEngine(engine: String): List<VoiceOption> = when (MotorTts.deId(engine)) {
+        MotorTts.EDGE -> edgeVoices
+        MotorTts.GEMINI -> geminiVoices
+        MotorTts.ELEVENLABS -> elevenLabsVoices
         else -> vozesDosPacotes(engine).ifEmpty { edgeVoices }
     }
 

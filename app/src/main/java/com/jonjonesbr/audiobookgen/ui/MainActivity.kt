@@ -164,10 +164,6 @@ class MainActivity : AppCompatActivity() {
         /** Pedido para iniciar a fila de conversão (o processamento roda na tela Conversões). */
         const val EXTRA_INICIAR_FILA = "extra_iniciar_fila"
 
-        // O widget lê estes campos para mostrar o estado do player.
-        @Volatile var widgetIsPlaying: Boolean = false
-        @Volatile var widgetTrackName: String = ""
-
         const val EXTRA_ABRIR_AUDIOBOOK_CAMINHO = "extra_abrir_audiobook_caminho"
         const val EXTRA_ABRIR_AUDIOBOOK_NOME = "extra_abrir_audiobook_nome"
     }

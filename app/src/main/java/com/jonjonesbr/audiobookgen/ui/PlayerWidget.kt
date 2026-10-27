@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.RemoteViews
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.service.PlayerNotificationManager
+import com.jonjonesbr.audiobookgen.util.PlayerStateHolder
 
 class PlayerWidget : AppWidgetProvider() {
 
@@ -50,8 +51,9 @@ class PlayerWidget : AppWidgetProvider() {
 
     private fun construirViews(context: Context): RemoteViews {
         val views   = RemoteViews(context.packageName, R.layout.widget_player)
-        val nome    = MainActivity.widgetTrackName
-        val tocando = MainActivity.widgetIsPlaying
+        val estadoPlayer = PlayerStateHolder.state.value
+        val nome    = estadoPlayer.trackName
+        val tocando = estadoPlayer.isPlaying
 
         // Track name and state label
         views.setTextViewText(R.id.widgetTvNome, nome.ifBlank { context.getString(R.string.app_name) })
