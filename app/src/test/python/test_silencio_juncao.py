@@ -5,6 +5,7 @@ import struct
 import sys
 import tempfile
 import unittest
+import wave
 from pathlib import Path
 
 PYTHON_SRC = Path(__file__).parents[2] / "main" / "python"
@@ -79,6 +80,51 @@ class SilencioJuncaoTest(unittest.TestCase):
     def test_pausa_zero_nao_intercala(self):
         blocos = [gravar(self._caminho(f"b{i}.mp3"), wav_falso(100, semente=i)) for i in range(3)]
         self.assertEqual(blocos, tts.intercalar_silencios(blocos, [0, 0, 0], self.pasta, {}))
+
+    def test_duracao_real_mp3_fica_em_quadros_inteiros(self):
+        modelo = gravar(self._caminho("bloco.mp3"), _QUADRO_EDGE * 3)
+        self.assertEqual(288.0, tts.duracao_real_silencio_ms(modelo, 300))  # 12 quadros de 24 ms
+        self.assertEqual(1488.0, tts.duracao_real_silencio_ms(modelo, 1500))  # 62 quadros
+        self.assertEqual(600.0, tts.duracao_real_silencio_ms(modelo, 600))  # 25 quadros
+        self.assertEqual(24.0, tts.duracao_real_silencio_ms(modelo, 1))  # no mínimo 1 quadro
+
+    def test_duracao_real_bate_com_o_silencio_gravado(self):
+        modelo_mp3 = gravar(self._caminho("bloco.mp3"), _QUADRO_EDGE * 3)
+        modelo_wav = self._wav_com_taxa("bloco_44k.wav", 44100)
+        for ms in (1, 50, 300, 600, 777, 1500):
+            saida = self._caminho(f"sil_{ms}.mp3")
+            self.assertTrue(tts.gerar_silencio_como(modelo_mp3, ms, saida))
+            # MP3 Edge: 144 bytes e 24 ms por quadro
+            self.assertAlmostEqual(
+                tts.duracao_real_silencio_ms(modelo_mp3, ms), os.path.getsize(saida) / 144 * 24, places=6,
+            )
+            saida_wav = self._caminho(f"sil_{ms}_44k.wav")
+            self.assertTrue(tts.gerar_silencio_como(modelo_wav, ms, saida_wav))
+            self.assertAlmostEqual(
+                tts.duracao_real_silencio_ms(modelo_wav, ms), tts._duracao_wav(saida_wav) * 1000, places=6,
+            )
+
+    def test_duracao_real_wav_arredonda_para_amostra_inteira(self):
+        modelo = self._wav_com_taxa("bloco_44k.wav", 44100)
+        self.assertAlmostEqual(44 * 1000 / 44100, tts.duracao_real_silencio_ms(modelo, 1), places=9)
+        modelo_24k = gravar(self._caminho("bloco_24k.mp3"), wav_falso(1000))
+        self.assertEqual(1.0, tts.duracao_real_silencio_ms(modelo_24k, 1))  # 24 amostras, exato
+
+    def test_duracao_real_sem_silencio_ou_formato_desconhecido(self):
+        modelo = gravar(self._caminho("bloco.mp3"), _QUADRO_EDGE * 3)
+        self.assertEqual(0.0, tts.duracao_real_silencio_ms(modelo, 0))
+        ogg = gravar(self._caminho("ogg.mp3"), b"OggS" + bytes(100))
+        # Sem silêncio possível a junção sai sem pausas: a linha do tempo não pode contar nenhuma.
+        self.assertEqual(0.0, tts.duracao_real_silencio_ms(ogg, 300))
+
+    def _wav_com_taxa(self, nome: str, taxa: int) -> str:
+        caminho = self._caminho(nome)
+        with wave.open(caminho, "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(taxa)
+            w.writeframes(b"\x00\x00" * taxa)
+        return caminho
 
 
 if __name__ == "__main__":

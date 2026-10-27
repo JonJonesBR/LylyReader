@@ -50,6 +50,10 @@ class SincroniaAudiobookTest {
         return TextoExtraido(listOf(Capitulo("Único", 0, lista.lastIndex)), lista, offset)
     }
 
+    /** Caractere global onde [trecho] começa no parágrafo [indice] (o começo dele, se [trecho] for vazio). */
+    private fun caractereEm(texto: TextoExtraido, indice: Int, trecho: String = ""): Int =
+        texto.paragrafos[indice].charOffset + texto.paragrafos[indice].texto.indexOf(trecho)
+
     @Test
     fun ancorasAchamCadaTrechoPeloComecoDoTextoSempreParaFrente() {
         val t = livro(
@@ -58,13 +62,22 @@ class SincroniaAudiobookTest {
             "O mais novo — Pedro — partiu cedo.",
         )
         val trechos = listOf(
+            // Trecho curto (título de duas palavras) também é ancorado.
             TrechoAudio(0, "Capítulo um."),
             TrechoAudio(2_000, "Era uma vez, numa terra distante, um rei."),
             TrechoAudio(5_000, "Ele tinha três filhos!"),
             TrechoAudio(7_000, "O mais novo - Pedro - partiu cedo."),
         )
         val ancoras = ancorasDeSincronia(trechos, t)
-        assertEquals(listOf(0L to 0, 2_000L to 1, 5_000L to 1, 7_000L to 2), ancoras)
+        assertEquals(
+            listOf(
+                0L to caractereEm(t, 0),
+                2_000L to caractereEm(t, 1),
+                5_000L to caractereEm(t, 1, "Ele"),
+                7_000L to caractereEm(t, 2),
+            ),
+            ancoras,
+        )
         assertEquals(1, paragrafoNoAudiobook(6_000, 10_000, emptyList(), t, ancoras))
         assertEquals(2, paragrafoNoAudiobook(9_999, 10_000, emptyList(), t, ancoras))
     }
@@ -74,13 +87,13 @@ class SincroniaAudiobookTest {
         // Um trecho de áudio só (Edge e outros motores juntam vários parágrafos por trecho): antes o destaque
         // ficava parado no primeiro parágrafo até o fim do trecho.
         val t = livro("Um Apólogo Machado de Assis", "a".repeat(98), "b".repeat(98), "c".repeat(98))
-        val ancoras = listOf(0L to 0, 8_000L to 3)
+        val ancoras = listOf(0L to caractereEm(t, 0), 8_000L to caractereEm(t, 3))
         assertEquals(0, paragrafoNoAudiobook(500, 10_000, emptyList(), t, ancoras))
         assertEquals(1, paragrafoNoAudiobook(3_000, 10_000, emptyList(), t, ancoras))
         assertEquals(2, paragrafoNoAudiobook(6_500, 10_000, emptyList(), t, ancoras))
         assertEquals(3, paragrafoNoAudiobook(8_000, 10_000, emptyList(), t, ancoras))
         // Depois da última âncora, segue até o fim do texto junto com o fim do áudio.
-        val soUma = listOf(0L to 0)
+        val soUma = listOf(0L to caractereEm(t, 0))
         assertEquals(3, paragrafoNoAudiobook(9_900, 10_000, emptyList(), t, soUma))
     }
 
@@ -88,12 +101,95 @@ class SincroniaAudiobookTest {
     fun trechoQueNaoEstaNoTextoFicaSemAncoraESemVoltarAtras() {
         val t = livro("Primeiro parágrafo aqui.", "Segundo parágrafo aqui.", "Primeiro parágrafo aqui de novo.")
         val trechos = listOf(
-            TrechoAudio(0, "Segundo parágrafo aqui."),
+            TrechoAudio(0, "Segundo parágrafo aqui fica."),
             TrechoAudio(1_000, "Texto que a conversão normalizou diferente."),
             TrechoAudio(2_000, "Primeiro parágrafo aqui de novo."),
         )
         // O 3º trecho casa com o parágrafo 2 (para frente do cursor), não com o 0.
-        assertEquals(listOf(0L to 1, 2_000L to 2), ancorasDeSincronia(trechos, t))
+        assertEquals(
+            listOf(0L to caractereEm(t, 1), 2_000L to caractereEm(t, 2)),
+            ancorasDeSincronia(trechos, t),
+        )
+    }
+
+    @Test
+    fun trechoQueComecaNoMeioDoParagrafoAvancaNoParagrafoAntesDoProximoTrecho() {
+        // O 2º trecho começa no meio do 2º parágrafo. Com âncoras só no começo de parágrafo, o destaque ficava no
+        // 1º parágrafo até 5 s e pulava para o 2º de uma vez; agora ele já está no 2º antes do trecho seguinte.
+        val t = livro(
+            "Era uma vez um rei.",
+            "O reino inteiro esperava havia muitos anos pelo herdeiro que nunca chegava ao castelo real.",
+            "Certa manhã um mensageiro chegou trazendo notícias do mar distante.",
+        )
+        val trechos = listOf(
+            TrechoAudio(0, "Era uma vez um rei. O reino inteiro esperava havia muitos anos"),
+            TrechoAudio(5_000, "pelo herdeiro que nunca chegava ao castelo real."),
+            TrechoAudio(10_000, "Certa manhã um mensageiro chegou trazendo notícias"),
+        )
+        val ancoras = ancorasDeSincronia(trechos, t)
+        assertEquals(
+            listOf(0L to caractereEm(t, 0), 5_000L to caractereEm(t, 1, "pelo"), 10_000L to caractereEm(t, 2)),
+            ancoras,
+        )
+        assertEquals(1, paragrafoNoAudiobook(2_500, 15_000, emptyList(), t, ancoras))
+        assertEquals(1, paragrafoNoAudiobook(4_999, 15_000, emptyList(), t, ancoras))
+        assertEquals(1, paragrafoNoAudiobook(7_000, 15_000, emptyList(), t, ancoras))
+        assertEquals(2, paragrafoNoAudiobook(10_000, 15_000, emptyList(), t, ancoras))
+        assertEquals(2, paragrafoNoAudiobook(14_000, 15_000, emptyList(), t, ancoras))
+    }
+
+    @Test
+    fun chaveQueAtravessaParagrafoContinuaAncorada() {
+        // Trecho começa com um título de 2 palavras (parágrafo próprio) seguido do texto: a chave cruza a fronteira.
+        val t = livro("Capítulo Dois", "Naquele dia a chuva não parou de cair sobre a cidade.")
+        assertEquals(
+            listOf(0L to 0),
+            ancorasDeSincronia(listOf(TrechoAudio(0, "Capítulo Dois Naquele dia a chuva não parou")), t),
+        )
+        assertEquals(
+            listOf(0L to 0),
+            ancorasDeSincronia(listOf(TrechoAudio(0, "Capítulo Dois Naquele dia")), t),
+        )
+    }
+
+    @Test
+    fun acentoECaixaNaoImpedemOCasamento() {
+        val t = livro("Era uma vez um Coração valente que nunca desistia.")
+        assertEquals(
+            listOf(0L to 0),
+            ancorasDeSincronia(listOf(TrechoAudio(0, "ERA UMA VEZ UM CORAÇÃO VALENTE QUE NUNCA")), t),
+        )
+        assertEquals(
+            listOf(0L to 0),
+            ancorasDeSincronia(listOf(TrechoAudio(0, "era uma vez um coracao valente que nunca")), t),
+        )
+    }
+
+    @Test
+    fun ultimaPalavraCortadaNaoEntraNaChave() {
+        // O texto gravado do trecho é cortado em 80 caracteres: a palavra cortada no fim não pode impedir o casamento.
+        val paragrafo = "Bia saiu cedo, Pedro ficou dormindo e o resto da casa só acordou bem tarde, " +
+            "já perto do almoço."
+        val t = livro(paragrafo)
+        val gravado = paragrafo.take(80)
+        assertEquals("p", gravado.substringAfterLast(' '))
+        // Trecho curto (Bia saiu): a chave usa as palavras que há, sem descartar nenhuma.
+        assertEquals(listOf(4_000L to 0), ancorasDeSincronia(listOf(TrechoAudio(4_000, gravado)), t))
+        assertEquals(listOf(1_000L to 0), ancorasDeSincronia(listOf(TrechoAudio(1_000, "Bia saiu")), t))
+    }
+
+    @Test
+    fun livroComAcentoSeparadoOuLigaduraTambemCasa() {
+        // Alguns EPUB/PDF guardam "ç" como "c" + cedilha (NFD) ou "fi" como uma letra só ("ﬁ").
+        val nfd = java.text.Normalizer.normalize("O coração da ação não para.", java.text.Normalizer.Form.NFD)
+        val t = livro(nfd, "Um ﬁel amigo chegou ontem à noite.")
+        assertEquals(
+            listOf(0L to 0, 3_000L to caractereEm(t, 1)),
+            ancorasDeSincronia(
+                listOf(TrechoAudio(0, "O coração da ação não para."), TrechoAudio(3_000, "Um fiel amigo chegou ontem.")),
+                t,
+            ),
+        )
     }
 
     @Test

@@ -290,16 +290,48 @@ def _quadro_mp3_silencioso(caminho: str) -> Optional[tuple]:
     return cabecalho + bytes(tamanho - 4), amostras * 1000.0 / taxa
 
 
+def _quadros_silencio(ms: int, ms_por_quadro: float) -> int:
+    """Quadros MP3 mudos que cobrem `ms` (no mínimo 1). Mesma conta na escrita e em duracao_real_silencio_ms."""
+    return max(1, int(round(ms / ms_por_quadro)))
+
+
+def _amostras_silencio(ms: int, taxa: int) -> int:
+    """Amostras WAV de um silêncio de `ms` (arredondado para amostra inteira). Mesma conta na escrita e na duração real."""
+    return int(round(taxa * ms / 1000.0))
+
+
+def duracao_real_silencio_ms(modelo: str, ms: int) -> float:
+    """Duração (ms) do silêncio que `gerar_silencio_como(modelo, ms, ...)` grava de fato: MP3 em quadros inteiros,
+    WAV em amostras inteiras. `ms` <= 0 não grava silêncio (0.0). Formato desconhecido também dá 0.0: sem silêncio
+    possível, concatenar_grupo_com_pausa junta os blocos sem pausa nenhuma."""
+    ms = max(0, int(ms))
+    if ms == 0:
+        return 0.0
+    try:
+        formato = _formato_wav(modelo) if _is_wav(modelo) else None
+        if formato:
+            taxa = formato[0]
+            return _amostras_silencio(ms, taxa) * 1000.0 / taxa
+        if _is_wav(modelo):
+            return 0.0
+        quadro = _quadro_mp3_silencioso(modelo)
+        if quadro is None:
+            return 0.0
+        return _quadros_silencio(ms, quadro[1]) * quadro[1]
+    except Exception:
+        return 0.0
+
+
 def gerar_silencio_como(modelo: str, ms: int, saida: str) -> bool:
     """Grava em `saida` `ms` de silêncio no mesmo formato de `modelo` (WAV PCM ou MP3 Layer III), sem FFmpeg.
-    Devolve False se o formato não for reconhecido."""
+    Devolve False se o formato não for reconhecido. A duração gravada é a de duracao_real_silencio_ms."""
     ms = max(0, int(ms))
     try:
         formato = _formato_wav(modelo) if _is_wav(modelo) else None
         if formato:
             taxa, canais, bits = formato
             bloco = canais * bits // 8
-            pcm = bytes(int(round(taxa * ms / 1000.0)) * bloco)
+            pcm = bytes(_amostras_silencio(ms, taxa) * bloco)
             cab = (
                 b"RIFF" + struct.pack("<I", 36 + len(pcm)) + b"WAVE"
                 + b"fmt " + struct.pack("<IHHIIHH", 16, 1, canais, taxa, taxa * bloco, bloco, bits)
@@ -315,7 +347,7 @@ def gerar_silencio_como(modelo: str, ms: int, saida: str) -> bool:
             return False
         dados, ms_por_quadro = quadro
         with open(saida, "wb") as f:
-            f.write(dados * max(1, int(round(ms / ms_por_quadro))))
+            f.write(dados * _quadros_silencio(ms, ms_por_quadro))
         return True
     except Exception as e:
         logger.warning(f"Silêncio da junção não foi gerado: {e}")

@@ -41,7 +41,7 @@ from tts import (
     adicionar_metadados_e_capitulos_mp3,
     agrupar_blocos_por_limite, obter_duracao_ffprobe, validar_voz_tts,
     JuncaoCancelada, _CONCAT_BATCH_SIZE, _concatenar_mp3_puro, _is_wav,
-    intercalar_silencios, apagar_silencios,
+    intercalar_silencios, apagar_silencios, _duracao_wav, duracao_real_silencio_ms,
 )
 from cover_art import obter_capa
 from erros_tts import ErroDeChave
@@ -421,12 +421,8 @@ def _duracao_ms_bloco(caminho: str) -> Optional[int]:
     try:
         with open(caminho, 'rb') as fh:
             magic = fh.read(4)
-            byte_rate = 0
-            if magic == b'RIFF':
-                fh.seek(28)  # ByteRate
-                byte_rate = int.from_bytes(fh.read(4), 'little')
         if magic == b'RIFF':
-            return int(os.path.getsize(caminho) * 1000 / byte_rate) if byte_rate > 0 else 0
+            return int(_duracao_wav(caminho) * 1000)  # só o chunk 'data' (0 se o cabeçalho não for válido)
         return int(_MutagenMP3(caminho).info.length * 1000)
     except Exception:
         return None
@@ -624,8 +620,9 @@ def _inicios_dos_chunks(
     sem nenhum chunk válido.
 
     Usa a duração de cada chunk guardada na síntese (`duracoes_ms`, índice -> ms); sem ela, lê via
-    mutagen/cabeçalho. Com `pausas_apos` (arquivo -> ms de silêncio depois dele), usa as pausas exatas;
-    sem ele, deriva a pausa efetiva (total_final − Σchunks) / (n−1).
+    mutagen/cabeçalho. Com `pausas_apos` (arquivo -> ms de silêncio depois dele, já como gravado: ver
+    `_pausas_reais`), usa as pausas exatas; sem ele, deriva a pausa efetiva (total_final − Σchunks) / (n−1).
+    As posições saem em ms com fração (o silêncio pode não caber em ms inteiros); quem grava converte.
     """
     # Duração de cada chunk válido
     chunk_dur_map: dict = {}
@@ -639,14 +636,8 @@ def _inicios_dos_chunks(
                 with open(f, 'rb') as _fh:
                     magic = _fh.read(4)
                 if magic == b'RIFF':
-                    # Duração WAV: (tamanho_data) / (sample_rate * canais * bytes_por_sample)
-                    with open(f, 'rb') as _fh:
-                        _fh.seek(28)  # ByteRate field offset
-                        byte_rate = int.from_bytes(_fh.read(4), 'little')
-                    if byte_rate > 0:
-                        chunk_dur_map[f] = int(os.path.getsize(f) * 1000 / byte_rate)
-                    else:
-                        chunk_dur_map[f] = 0
+                    # Só o chunk 'data' conta; o cabeçalho não é áudio (0 se o cabeçalho não for válido)
+                    chunk_dur_map[f] = int(_duracao_wav(f) * 1000)
                 else:
                     chunk_dur_map[f] = int(_MutagenMP3(f).info.length * 1000)
             except Exception:
@@ -667,15 +658,25 @@ def _inicios_dos_chunks(
     n_gaps = max(len(concat_order) - 1, 1)
     pausa_real_ms = max(0, (total_ms - sum_dur) // n_gaps)
 
-    # Timestamp de início de cada chunk no arquivo final
+    # Timestamp de início de cada chunk no arquivo final (float: somar ms inteiros acumula desvio)
     chunk_start_times: dict = {}
-    t = 0
+    t = 0.0
     for pos, (f, dur) in enumerate(concat_order):
         chunk_start_times[f] = t
         t += dur
         if pos < len(concat_order) - 1:
-            t += int(pausas_apos.get(f, 0)) if pausas_apos is not None else pausa_real_ms
+            t += float(pausas_apos.get(f, 0)) if pausas_apos is not None else pausa_real_ms
     return chunk_start_times, chunk_dur_map, total_ms
+
+
+def _pausas_reais(temp_files: list, indices_validos: list, pausas_blocos: list) -> dict:
+    """Pausa depois de cada bloco válido (arquivo -> ms) como o silêncio é gravado na junção, não como foi pedida:
+    MP3 em quadros inteiros e WAV em amostras inteiras (ver tts.duracao_real_silencio_ms). O modelo é o primeiro
+    bloco válido, o mesmo que a junção usa para gerar os silêncios (ver tts.intercalar_silencios)."""
+    if not indices_validos:
+        return {}
+    modelo = temp_files[indices_validos[0]]
+    return {temp_files[i]: duracao_real_silencio_ms(modelo, pausas_blocos[i]) for i in indices_validos}
 
 
 def _trechos_para_sincronia(chunks: list, temp_files: list, chunk_start_times: dict) -> list:
@@ -713,9 +714,9 @@ def _calcular_timestamps_capitulos(
         ]
         if not cap_chunks:
             continue
-        inicio_ms = chunk_start_times[cap_chunks[0]]
+        inicio_ms = int(chunk_start_times[cap_chunks[0]])
         ultimo = cap_chunks[-1]
-        fim_ms = chunk_start_times[ultimo] + chunk_dur_map.get(ultimo, 0)
+        fim_ms = int(chunk_start_times[ultimo] + chunk_dur_map.get(ultimo, 0))
         caps_com_ts.append({
             "titulo": cap["titulo"],
             "inicio_ms": inicio_ms,
@@ -1230,7 +1231,7 @@ async def _processar_nucleo(
                 asyncio.to_thread(
                     _calcular_timestamps_capitulos,
                     capitulos_info, temp_files, arquivos_validos, saida_mp3, duracoes_ms,
-                    {temp_files[i]: pausas_blocos[i] for i in indices_validos},
+                    _pausas_reais(temp_files, indices_validos, pausas_blocos),
                 ),
                 _cb, PCT_FIM_TIMBRE, msg_metadados,
             )
@@ -1247,7 +1248,7 @@ async def _processar_nucleo(
             asyncio.to_thread(
                 _inicios_dos_chunks,
                 temp_files, arquivos_validos, saida_mp3, duracoes_ms,
-                {temp_files[i]: pausas_blocos[i] for i in indices_validos},
+                _pausas_reais(temp_files, indices_validos, pausas_blocos),
             ),
             _cb, PCT_FIM_TIMBRE, msg_metadados,
         )

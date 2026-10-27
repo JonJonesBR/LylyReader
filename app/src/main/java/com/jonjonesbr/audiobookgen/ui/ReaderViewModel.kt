@@ -149,7 +149,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         _uiState.update { it.copy(progressPct = pct) }
     }
 
-    /** Âncoras de sincronia (trecho do MP3 → parágrafo) do audiobook deste livro, calculadas uma vez por MP3 e texto. */
+    /** Âncoras de sincronia (trecho do MP3 → caractere do livro) do audiobook, calculadas uma vez por MP3 e texto. */
     private var ancorasCache: Triple<String, com.jonjonesbr.audiobookgen.domain.TextoExtraido, List<Pair<Long, Int>>>? = null
 
     private suspend fun ancorasDoAudiobook(

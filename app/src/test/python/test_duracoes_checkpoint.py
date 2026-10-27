@@ -55,6 +55,26 @@ class DuracoesNoCheckpointTest(unittest.TestCase):
         caminho = gravar(os.path.join(self.pasta, "bloco.mp3"), wav_falso(2400))
         self.assertEqual(int(os.path.getsize(caminho) * 1000 / 48000), core._duracao_ms_bloco(caminho))
 
+    def test_duracao_wav_nao_conta_o_cabecalho_de_44_bytes(self):
+        # 20 bytes de áudio + 44 de cabeçalho: só o áudio conta (0 ms; contando o cabeçalho daria 1 ms)
+        caminho = gravar(os.path.join(self.pasta, "curto.mp3"), wav_falso(10))
+        self.assertEqual(0, core._duracao_ms_bloco(caminho))
+
+    def test_timeline_de_wav_sem_duracao_salva_usa_so_o_audio(self):
+        # 486 bytes de áudio (10,125 ms) + 44 de cabeçalho: o início do 2º bloco é 10 ms, não 11
+        blocos = [gravar(os.path.join(self.pasta, f"w{i}.mp3"), wav_falso(243, semente=i)) for i in range(2)]
+        inicios = core._inicios_dos_chunks(blocos, blocos, os.path.join(self.pasta, "x.mp3"), None, None)
+        self.assertEqual(10, inicios[0][blocos[1]])
+
+    def test_pausa_real_do_mp3_entra_na_linha_do_tempo(self):
+        # Edge 24 kHz (quadro de 24 ms): pausa pedida de 300 ms vira 12 quadros = 288 ms gravados
+        quadro_edge = bytes([0xFF, 0xF3, 0x64, 0xC4]) + bytes(140)
+        blocos = [gravar(os.path.join(self.pasta, f"e{i}.mp3"), quadro_edge * 40) for i in range(2)]
+        pausas = core._pausas_reais(blocos, [0, 1], [300, 300])
+        self.assertEqual({blocos[0]: 288.0, blocos[1]: 288.0}, pausas)
+        inicios = core._inicios_dos_chunks(blocos, blocos, os.path.join(self.pasta, "x.mp3"), {0: 1000, 1: 500}, pausas)
+        self.assertEqual(1288.0, inicios[0][blocos[1]])
+
     def test_duracao_de_arquivo_ilegivel_e_none(self):
         lixo = gravar(os.path.join(self.pasta, "lixo.mp3"), b"xyz" * 10)
         self.assertIsNone(core._duracao_ms_bloco(lixo))
