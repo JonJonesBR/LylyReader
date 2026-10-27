@@ -4,7 +4,7 @@ import com.jonjonesbr.audiobookgen.service.QueueManager
 import android.content.Context
 import android.content.SharedPreferences
 
-class QueueRepository private constructor(
+class QueueRepository internal constructor(
     private val dao: QueueItemDao,
 ) {
     suspend fun loadItems(legacyPrefs: SharedPreferences): List<QueueItem> {
