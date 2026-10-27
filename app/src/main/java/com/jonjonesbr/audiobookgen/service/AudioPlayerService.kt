@@ -4,6 +4,7 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.StatsStore
 import com.jonjonesbr.audiobookgen.domain.AudiobookLibraryUseCase
 import com.jonjonesbr.audiobookgen.domain.CapituloAudio
+import com.jonjonesbr.audiobookgen.domain.EsperaPrimeiroReady
 import com.jonjonesbr.audiobookgen.domain.PlayerState
 import com.jonjonesbr.audiobookgen.domain.ehPlayPauseExterno
 import com.jonjonesbr.audiobookgen.domain.reconciliarIsPlaying
@@ -133,12 +134,11 @@ class AudioPlayerService : MediaLibraryService() {
     private var fileObserver: FileObserver? = null
     private var arrastandoSeek = false
     private var concluido = false
-    private var aguardandoReady = false
+    private val esperaReady = EsperaPrimeiroReady()
     // Caminho do item que de fato passou por prepararNovoItem() — distinto de
     // _state.value.caminho, que iniciar() escreve OTIMISTICAMENTE (feedback imediato de UI)
     // antes do ExoPlayer confirmar a troca via onMediaItemTransition. Ver comentário lá.
     private var caminhoPreparado: String? = null
-    private var falhaAntesDoPrimeiroReady = false
     private var ultimoSalvarProgressoMs = 0L
     private var msOuvidoAcumulado = 0L
     private var capitulosAtual: List<CapituloAudio> = emptyList()
@@ -352,7 +352,7 @@ class AudioPlayerService : MediaLibraryService() {
             // aqui SEMPRE dava match e pulava prepararNovoItem() pra QUALQUER item novo — iniciar()
             // já escreve state.caminho=caminho otimisticamente ANTES de setMediaItem() (feedback
             // imediato de UI), então por essa comparação "o item já era o mesmo" mesmo sendo a
-            // primeira vez. Resultado: aguardandoReady nunca virava true, aoFicarPronto() nunca
+            // primeira vez. Resultado: esperaReady.aguardando nunca virava true, aoFicarPronto() nunca
             // rodava — duração/posição/tick nunca inicializavam (mini-player preso em "0:00/0:00"
             // e barra parada, mesmo tocando de verdade — a notificação media3 não depende disso,
             // por isso só o mini-player era afetado). caminhoPreparado só é escrito por
@@ -364,8 +364,7 @@ class AudioPlayerService : MediaLibraryService() {
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             when (playbackState) {
-                Player.STATE_READY -> if (aguardandoReady) {
-                    aguardandoReady = false
+                Player.STATE_READY -> if (esperaReady.aoFicarReady()) {
                     aoFicarPronto()
                 }
                 Player.STATE_ENDED -> aoTerminar()
@@ -396,11 +395,10 @@ class AudioPlayerService : MediaLibraryService() {
 
         override fun onPlayerError(error: PlaybackException) {
             Log.e(TAG, "Erro no ExoPlayer: ${error.message}", error)
-            // Sem isso, um erro antes de STATE_READY deixava aguardandoReady travado em true:
+            // Sem isso, um erro antes de STATE_READY deixava esperaReady.aguardando travado em true:
             // aoFicarPronto() nunca rodaria pra este item (sem notificação, sem tick, sem
             // capítulos), mesmo que uma tentativa seguinte tivesse sucesso.
-            falhaAntesDoPrimeiroReady = aguardandoReady
-            aguardandoReady = false
+            esperaReady.aoErro()
             try { if (exoPlayer.isPlaying) emMudancaPlayInterna { exoPlayer.pause() } } catch (_: Exception) {}
             // Feedback visível (P1): sem isso o erro ia só pro Logcat — notificação e
             // mini-player mostravam "Pausado" normal, e o usuário ficava num loop de tap
@@ -568,9 +566,7 @@ class AudioPlayerService : MediaLibraryService() {
      *  uma nova tentativa, re-armando o sinal de primeiro ready se o erro veio antes dele
      *  (assim aoFicarPronto() roda no próximo ready: foreground, tick e capítulos voltam). */
     private fun prepararRetomadaAposErro() {
-        if (falhaAntesDoPrimeiroReady) {
-            aguardandoReady = true
-        }
+        esperaReady.aoRetomar()
         exoPlayer.prepare()
     }
 
@@ -587,7 +583,7 @@ class AudioPlayerService : MediaLibraryService() {
                 // foreground), em vez de deixar o play da notificação morto.
                 if (concluido) {
                     concluido = false
-                    aguardandoReady = true
+                    esperaReady.comecar()
                     exoPlayer.seekTo(0)
                 } else if (
                     exoPlayer.playbackState == Player.STATE_IDLE ||
@@ -756,7 +752,7 @@ class AudioPlayerService : MediaLibraryService() {
         fileObserver?.stopWatching()
         fileObserver = null
         concluido = false
-        aguardandoReady = true
+        esperaReady.comecar()
         caminhoPreparado = caminho
         // Sem resetar isso aqui, uma troca de audiobook sem fechar o player antes herdava
         // capítulos do livro ANTERIOR (skip de capítulo saltava pra marca errada) e continuava
@@ -780,7 +776,7 @@ class AudioPlayerService : MediaLibraryService() {
         PlayerStateHolder.update(_state.value)
         playerNotificationManager.atualizarNotificacao()
         // Antes do primeiro READY o tick ainda não deve rodar (aoFicarPronto o inicia).
-        if (novo && !aguardandoReady && tickJob?.isActive != true) iniciarTick()
+        if (novo && !esperaReady.aguardando && tickJob?.isActive != true) iniciarTick()
     }
 
     /** Executa [bloco] (pause/play do próprio app) marcando que a mudança de playWhenReady é interna. */
