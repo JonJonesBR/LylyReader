@@ -1383,8 +1383,8 @@ class GuidedPlayerManager(
     }
 
     /**
-     * Pausa depois de um trecho (frase, oração ou fala). Com as pausas naturais (padrão), varia com a
-     * pontuação, o tamanho da frase e o fim do parágrafo (ver [PausasNaturais]); sem elas, vale
+     * Pausa depois de um trecho (frase, oração ou fala). Com as pausas naturais (opcionais, desligadas por
+     * padrão), varia com a pontuação, o tamanho da frase e o fim do parágrafo (ver [PausasNaturais]); sem elas, vale
      * [pausaFixaMs] (a "Pausa entre frases" das vozes locais, ou nenhuma).
      */
     private fun pausaDepoisDe(

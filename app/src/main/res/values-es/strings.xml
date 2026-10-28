@@ -92,14 +92,14 @@
     <string name="cd_posicao_audio">Posición de reproducción</string>
     <string name="guided_steps_chip">⚙ %1$d</string>
     <string name="guided_steps_apply">Aplicar</string>
-    <string name="guided_steps_desc_supertonic">Calidad frente a velocidad de las voces Supertonic. Menos pasos = más rápido; más pasos = mejor calidad. Se aplica a los próximos fragmentos que se preparen. Por encima de 10, la síntesis es mucho más lenta y puede causar pausas en la lectura guiada.</string>
+    <string name="guided_steps_desc_supertonic">Calidad frente a velocidad de las voces Supertonic. Menos pasos = más rápido; más pasos = mejor calidad. Se aplica a los próximos fragmentos que se preparen. Más pasos hacen la síntesis más lenta; en teléfonos más lentos, valores altos pueden causar pausas en la lectura guiada.</string>
     <string name="cache_audio_info">Audio de las voces: %1$s · límite: %2$s</string>
     <string name="cache_teto_desc">Límite del audio que las voces guardan para reutilizarlo. Al superarlo, la app borra el audio usado hace más tiempo; lo borrado se vuelve a sintetizar si hace falta.</string>
     <string name="cache_teto_sem_limite">sin límite</string>
     <string name="cache_teto_mb">%1$d MB</string>
     <string name="cache_teto_gb">%1$d GB</string>
     <string name="settings_pocket_steps_title">Pasos de Pocket TTS (experimental)</string>
-    <string name="settings_pocket_steps_desc">Pasos de decodificación por fotograma de audio en las voces Pocket TTS. 4 es el valor predeterminado. Más pasos hacen la síntesis más lenta y pueden mejorar la fidelidad. Por encima de 4, la síntesis es mucho más lenta y puede causar pausas en la lectura guiada. Se aplica a nuevas síntesis; el audio ya preparado se regenera al cambiarlo.</string>
+    <string name="settings_pocket_steps_desc">Pasos de decodificación por fotograma de audio en las voces Pocket TTS. 10 es el valor predeterminado. Más pasos hacen la síntesis más lenta y pueden mejorar la fidelidad. Por encima de 10, la síntesis es mucho más lenta y puede causar pausas en la lectura guiada. Se aplica a nuevas síntesis; el audio ya preparado se regenera al cambiarlo.</string>
     <plurals name="settings_steps_value_qtd">
         <item quantity="one">%1$d paso</item>
         <item quantity="other">%1$d pasos</item>
@@ -110,7 +110,7 @@
     <string name="settings_pausa_frase_desc">Pausa entre oraciones en la lectura guiada con voces locales (Kokoro, Supertonic, Pocket), para dar más cadencia natural a la narración.</string>
     <string name="settings_pausa_frase_value">%1$d ms</string>
     <string name="settings_pausas_titulo">Pausas de la lectura guiada</string>
-    <string name="settings_pausas_naturais_title">Pausas naturales (recomendado)</string>
+    <string name="settings_pausas_naturais_title">Pausas naturales</string>
     <string name="settings_pausas_naturais_desc">Pausas que varían como las de un narrador: más largas en los puntos suspensivos y al final del párrafo, más cortas en las comas, con una respiración después de frases largas. Funciona con todas las voces. Desactívalo para usar una pausa fija entre frases.</string>
     <string name="settings_buffering_title">Buffering de la lectura guiada</string>
     <string name="settings_buffer_paragrafos_desc">Cuántas unidades de texto (párrafo u oración, según el motor de voz) la lectura guiada prepara por delante de la que está sonando ahora. Se aplica a cualquier motor de voz. Más adelante: menos silencio entre fragmentos, pero usa más memoria/batería y puede sintetizar texto que nunca llegues a escuchar si saltas de posición. Menos adelante: ahorra recursos, pero aumenta el riesgo de pausas si la síntesis no sigue el ritmo de la lectura.</string>
@@ -1219,7 +1219,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="status_amostra_onnx_falha">⚠ No se pudo generar la muestra ONNX. Verifica que el modelo esté descargado.</string>
     <string name="status_amostra_falha">⚠ No se pudo generar la muestra.</string>
     <string name="settings_supertonic_passos_titulo">Pasos de Supertonic</string>
-    <string name="settings_supertonic_passos_desc">Equilibra calidad y velocidad de la síntesis de las voces Supertonic. Menos pasos = más rápido; más pasos = mejor calidad. Predeterminado: 8. Vale para la lectura guiada y la creación de audiolibros. Por encima de 10, la síntesis es mucho más lenta y puede causar pausas en la lectura guiada.</string>
+    <string name="settings_supertonic_passos_desc">Equilibra calidad y velocidad de la síntesis de las voces Supertonic. Menos pasos = más rápido; más pasos = mejor calidad. Predeterminado: 18. Vale para la lectura guiada y la creación de audiolibros. Más pasos hacen la síntesis más lenta; en teléfonos más lentos, valores altos pueden causar pausas en la lectura guiada.</string>
     <!-- Asistente que habilita la clonación con el archivo oficial de Kyutai (sin inicio de sesión en la app) -->
     <string name="clone_prep_title_intro">Habilitar la clonación de voz</string>
     <string name="clone_prep_intro">Para clonar una voz, la app necesita un archivo gratuito de Kyutai, la empresa que creó Pocket TTS. Hará 4 pasos sencillos, una sola vez:\n\n1. Entrar en el sitio Hugging Face con una cuenta gratuita\n2. Aceptar los términos de uso de Kyutai\n3. Descargar el archivo (unos 220 MB, mejor con Wi-Fi)\n4. Traer el archivo a la app\n\nUsted inicia sesión solo en el navegador. La app nunca ve ni guarda su contraseña.</string>

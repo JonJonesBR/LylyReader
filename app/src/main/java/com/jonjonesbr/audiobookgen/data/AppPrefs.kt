@@ -132,10 +132,21 @@ class AppPrefs(context: Context) {
 
     var supertonicSteps: Int
         get() {
-            // Uma vez: quem estava no padrão antigo (5 gravado) passa para o novo padrão (8, engole menos palavras).
+            // Migrações de uma vez só. Quem nunca mexeu no valor (gravado com um dos padrões antigos) passa para o
+            // padrão novo; quem escolheu outro valor mantém. As duas são encadeadas: quem veio de 5 cai no 8 e
+            // depois no 18.
+            // Padrão 8: quem estava no padrão antigo (5 gravado) passa para o 8 (engole menos palavras).
             if (!p.getBoolean("supertonic_steps_padrao8", false)) {
                 val e = p.edit().putBoolean("supertonic_steps_padrao8", true)
-                if (p.getInt("supertonic_steps", SUPERTONIC_STEPS_PADRAO) == SUPERTONIC_STEPS_PADRAO_ANTIGO) {
+                if (p.getInt("supertonic_steps", SUPERTONIC_STEPS_PADRAO) == SUPERTONIC_STEPS_PADRAO_ANTIGO_5) {
+                    e.remove("supertonic_steps")
+                }
+                e.apply()
+            }
+            // Padrão 18: quem estava no 5 ou no 8 gravado passa para o 18.
+            if (!p.getBoolean("supertonic_steps_padrao18", false)) {
+                val e = p.edit().putBoolean("supertonic_steps_padrao18", true)
+                if (p.getInt("supertonic_steps", SUPERTONIC_STEPS_PADRAO) in SUPERTONIC_STEPS_PADROES_ANTIGOS) {
                     e.remove("supertonic_steps")
                 }
                 e.apply()
@@ -145,15 +156,26 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putInt("supertonic_steps", v).apply()
 
     /**
-     * Passos de decodificação por quadro do Pocket TTS. 4 é o padrão (era 1): mais passos custam tempo de
-     * síntese e melhoram a fidelidade.
+     * Passos de decodificação por quadro do Pocket TTS. 10 é o padrão (antes 4, e 1 antes disso): mais passos
+     * custam tempo de síntese e melhoram a fidelidade.
      */
     var pocketPassos: Int
         get() {
-            // Uma vez: quem estava no padrão antigo (1 gravado) passa para o novo padrão.
+            // Migrações de uma vez só, como em supertonicSteps: quem nunca mexeu passa para o padrão novo.
+            // Padrão 4: quem estava no padrão antigo (1 gravado) passa para o 4.
             if (!p.getBoolean("pocket_passos_padrao4", false)) {
                 val e = p.edit().putBoolean("pocket_passos_padrao4", true)
-                if (p.getInt("pocket_passos", POCKET_PASSOS_PADRAO) == 1) e.remove("pocket_passos")
+                if (p.getInt("pocket_passos", POCKET_PASSOS_PADRAO) == POCKET_PASSOS_PADRAO_ANTIGO_1) {
+                    e.remove("pocket_passos")
+                }
+                e.apply()
+            }
+            // Padrão 10: quem estava no 1 ou no 4 gravado passa para o 10.
+            if (!p.getBoolean("pocket_passos_padrao10", false)) {
+                val e = p.edit().putBoolean("pocket_passos_padrao10", true)
+                if (p.getInt("pocket_passos", POCKET_PASSOS_PADRAO) in POCKET_PASSOS_PADROES_ANTIGOS) {
+                    e.remove("pocket_passos")
+                }
                 e.apply()
             }
             return p.getInt("pocket_passos", POCKET_PASSOS_PADRAO).coerceIn(POCKET_PASSOS_MIN, POCKET_PASSOS_MAX)
@@ -177,12 +199,15 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putInt("pausa_final_frase_ms", v).apply()
 
     /**
-     * Pausas naturais na leitura guiada (padrão): duração conforme a pontuação, o fôlego e o fim do parágrafo,
-     * com variação aleatória (ver [com.jonjonesbr.audiobookgen.domain.PausasNaturais]). Desligado volta à pausa
-     * fixa de [pausaFinalFraseMs] entre frases das vozes locais e nenhuma pausa entre parágrafos.
+     * Pausas naturais na leitura guiada (desligadas por padrão): duração conforme a pontuação, o fôlego e o fim do
+     * parágrafo, com variação aleatória (ver [com.jonjonesbr.audiobookgen.domain.PausasNaturais]). Desligado volta
+     * à pausa fixa de [pausaFinalFraseMs] entre frases das vozes locais e nenhuma pausa entre parágrafos.
+     *
+     * Sem migração: a chave só é gravada quando o usuário marca ou desmarca o checkbox (Ajustes e diálogo de voz),
+     * então um valor gravado é escolha explícita e fica; sem chave, vale o padrão novo (false).
      */
     var pausasNaturais: Boolean
-        get() = p.getBoolean("pausas_naturais", true)
+        get() = p.getBoolean("pausas_naturais", false)
         set(v) = p.edit().putBoolean("pausas_naturais", v).apply()
 
     // ── Naturalidade da voz (experimental): começam desligadas, para o usuário comparar ──
@@ -476,12 +501,17 @@ class AppPrefs(context: Context) {
         /** Pausa entre blocos da conversão (ms). */
         private const val PAUSA_MS_PADRAO = 600
         const val POCKET_PASSOS_MIN = 1
-        const val POCKET_PASSOS_MAX = 10
+        const val POCKET_PASSOS_MAX = 20
         const val DOWNLOADS_SIMULTANEOS_PADRAO = 2
         const val TIMBRE_TOM_MIN = -6
         const val TIMBRE_TOM_MAX = 6
         const val TIMBRE_AGUDOS_MAX = 8
-        const val POCKET_PASSOS_PADRAO = 4
+        /** Passos padrão do Pocket TTS (antes 4): a síntese fica mais lenta, mas com mais fidelidade. */
+        const val POCKET_PASSOS_PADRAO = 10
+        /** Padrões antigos do Pocket: 1 (versão muito antiga) e 4. Quem ainda tem um deles gravado nunca escolheu.
+         */
+        private const val POCKET_PASSOS_PADRAO_ANTIGO_1 = 1
+        private val POCKET_PASSOS_PADROES_ANTIGOS = setOf(POCKET_PASSOS_PADRAO_ANTIGO_1, 4)
         /** Temperatura do Pocket em décimos: 3 (0,3) é o valor estável no aparelho; 7 é o padrão da Kyutai. */
         /** 0,1: no uso, a expressividade baixa é a que menos suprime palavras. */
         const val POCKET_EXPRESSIVIDADE_PADRAO = 1
@@ -491,9 +521,14 @@ class AppPrefs(context: Context) {
         const val READER_FONTE_PADRAO = 16f
         /** Espaçamento padrão entre linhas do leitor. */
         const val READER_ESPACAMENTO_PADRAO = 1.5f
-        /** Passos padrão do modelo Supertonic (era 5: com poucos passos o modelo engolia mais palavras). */
-        const val SUPERTONIC_STEPS_PADRAO = 8
-        private const val SUPERTONIC_STEPS_PADRAO_ANTIGO = 5
+        /** Passos padrão do modelo Supertonic (antes 8, e 5 antes disso: com poucos passos o modelo engolia
+         *  mais palavras). */
+        const val SUPERTONIC_STEPS_PADRAO = 18
+        /** Padrões antigos do Supertonic: 5 (versão anterior ao 8) e 8 (versão anterior ao 18). */
+        private const val SUPERTONIC_STEPS_PADRAO_ANTIGO_5 = 5
+        private const val SUPERTONIC_STEPS_PADRAO_ANTIGO_8 = 8
+        private val SUPERTONIC_STEPS_PADROES_ANTIGOS =
+            setOf(SUPERTONIC_STEPS_PADRAO_ANTIGO_5, SUPERTONIC_STEPS_PADRAO_ANTIGO_8)
         const val SUPERTONIC_STEPS_MIN = 2
         const val SUPERTONIC_STEPS_MAX = 20
         /** Pausa padrão entre orações na leitura guiada com kokoro (ms). */

@@ -1771,7 +1771,7 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-                            android:max="9"/>
+                            android:max="19"/>
 
                         <TextView
                             android:id="@+id/tvPocketPassosValor"
