@@ -46,6 +46,9 @@
 
         <!-- Transição entre telas: fade curto em vez do slide padrão -->
         <item name="android:windowAnimationStyle">@style/LylyTransicao</item>
+
+        <!-- Folhas de baixo: um arraste para baixo fecha direto, sem parar na altura intermediária -->
+        <item name="bottomSheetDialogTheme">@style/LylyFolhaDialogo</item>
     </style>
 
     <style name="LylyTransicao">

@@ -252,6 +252,9 @@ class DownloadCentralActivity : BasePlayerActivity() {
             com.jonjonesbr.audiobookgen.domain.IdiomaDownload.combina(filtro, item.idiomas)
     }
 
+    override fun abaPrincipal() = AbaPrincipal.DOWNLOADS
+    override fun abasInternas(): com.google.android.material.tabs.TabLayout? = findViewById(R.id.tabsDownloads)
+
     override fun onResume() {
         super.onResume()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.DOWNLOADS) // volta de outra tela: realça de novo a aba certa

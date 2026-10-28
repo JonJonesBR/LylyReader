@@ -78,7 +78,7 @@ object CoachMark {
         alvo: View,
         titulo: Int,
         texto: Int
-    ) : FrameLayout(activity) {
+    ) : FrameLayout(activity), BloqueiaArrasteDeTela {
 
         private val densidade = resources.displayMetrics.density
         private val pincel = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xB3000000.toInt() }

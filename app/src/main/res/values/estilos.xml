@@ -92,4 +92,14 @@
         <item name="android:textColor">@color/color_on_surface_dim</item>
         <item name="android:importantForAccessibility">no</item>
     </style>
+
+    <!-- Folhas de baixo (BottomSheetDialog): iguais às do Material 3, mas depois de abertas por inteiro
+         um arraste para baixo já as fecha (sem parar recolhidas no meio do caminho). -->
+    <style name="LylyFolhaDialogo" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/LylyFolha</item>
+    </style>
+
+    <style name="LylyFolha" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="behavior_skipCollapsed">true</item>
+    </style>
 </resources>

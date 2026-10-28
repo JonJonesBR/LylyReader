@@ -13,6 +13,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
@@ -27,6 +28,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.tabs.TabLayout
+import com.jonjonesbr.audiobookgen.util.DestinoLateral
+import com.jonjonesbr.audiobookgen.util.GestoArraste
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.formatarTempo
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
@@ -62,6 +66,83 @@ abstract class BasePlayerActivity : AppCompatActivity() {
     }
 
     protected open fun deveExpandirMiniPlayerAoIniciar(): Boolean = false
+
+    // ── Arraste ──────────────────────────────────────────────────────────────
+    // Lateral: troca as abas internas e, delas, segue para a tela principal vizinha (só nas telas de topo).
+    // Vertical sobre o mini player: abre/recolhe (em todas as telas).
+
+    /** Tela da barra inferior que esta Activity é; null = sem arraste lateral (ex.: leitor). */
+    protected open fun abaPrincipal(): AbaPrincipal? = null
+
+    /** Abas internas que o arraste lateral percorre antes de passar à tela vizinha. */
+    protected open fun abasInternas(): TabLayout? = null
+
+    /** Desliga o arraste lateral enquanto algo ocupa o lugar das abas (ex.: página aberta nos Ajustes). */
+    protected open fun arrasteLateralLigado(): Boolean = true
+
+    private val arraste by lazy {
+        ArrasteNaTela(
+            activity = this,
+            lateralLigado = { abaPrincipal() != null && arrasteLateralLigado() },
+            aoArrastarLateral = ::arrastarLateral,
+            sobreMiniPlayer = ::sobreMiniPlayerAudio,
+            aoArrastarMiniPlayer = { paraCima ->
+                val root = findViewById<View>(R.id.miniPlayerRoot)
+                if (root != null && paraCima != playerExpanded) toggleExpandido(root, forcarExpandido = paraCima)
+            }
+        )
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean = arraste.despachar(ev) { super.dispatchTouchEvent(it) }
+
+    private fun arrastarLateral(paraFrente: Boolean) {
+        val atual = abaPrincipal() ?: return
+        val abas = abasInternas()?.takeIf { it.isShown }
+        val destino = GestoArraste.destinoLateral(
+            paraFrente, abas?.selectedTabPosition ?: -1, abas?.tabCount ?: 0,
+            atual.ordinal, AbaPrincipal.values().size
+        )
+        when (destino) {
+            is DestinoLateral.AbaInterna -> abas?.getTabAt(destino.indice)?.select()
+            is DestinoLateral.TelaPrincipal -> NavegacaoPrincipal.abrirAba(
+                this, atual, AbaPrincipal.values()[destino.indice],
+                ultimaAbaInterna = destino.ultimaAbaInterna, deslizarParaFrente = paraFrente
+            )
+            DestinoLateral.Nenhum -> Unit
+        }
+    }
+
+    /** Barra ou parte aberta do player de áudio (não o indicador da leitura guiada, que fica no mesmo bloco). */
+    private fun sobreMiniPlayerAudio(x: Float, y: Float): Boolean {
+        if (!audioVisivel) return false
+        val root = findViewById<View>(R.id.miniPlayerRoot)?.takeIf { it.isShown } ?: return false
+        val guiado = root.findViewById<View>(R.id.guidedIndicatorBar)
+        return contemNaJanela(root, x, y) && !(guiado != null && guiado.isShown && contemNaJanela(guiado, x, y))
+    }
+
+    private fun contemNaJanela(view: View, x: Float, y: Float): Boolean {
+        val pos = IntArray(2)
+        view.getLocationInWindow(pos)
+        return x >= pos[0] && x < pos[0] + view.width && y >= pos[1] && y < pos[1] + view.height
+    }
+
+    override fun onPostCreate(savedInstanceState: Bundle?) {
+        super.onPostCreate(savedInstanceState)
+        if (savedInstanceState == null) abrirNaUltimaAbaSePedido(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        abrirNaUltimaAbaSePedido(intent)
+    }
+
+    /** Chegou pelo arraste lateral voltando: abre na última aba interna, como quem volta uma página. */
+    private fun abrirNaUltimaAbaSePedido(intent: Intent) {
+        if (!intent.getBooleanExtra(NavegacaoPrincipal.EXTRA_ULTIMA_ABA_INTERNA, false)) return
+        intent.removeExtra(NavegacaoPrincipal.EXTRA_ULTIMA_ABA_INTERNA)
+        val abas = abasInternas() ?: return
+        abas.getTabAt(abas.tabCount - 1)?.select()
+    }
 
     private var serviceObserverJob: kotlinx.coroutines.Job? = null
 

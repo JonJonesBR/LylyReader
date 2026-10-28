@@ -47,17 +47,35 @@ object NavegacaoPrincipal {
         }
     }
 
-    /** Abre a aba [alvo] a partir de [atual]; não faz nada se já estiver nela. */
+    /** Extra: a tela abre na última aba interna (chegou pelo arraste lateral voltando; ver BasePlayerActivity). */
+    const val EXTRA_ULTIMA_ABA_INTERNA = "nav_ultima_aba_interna"
+
+    /**
+     * Abre a aba [alvo] a partir de [atual]; não faz nada se já estiver nela.
+     * [deslizarParaFrente]: veio do arraste lateral; a tela nova entra deslizando pelo lado de onde o dedo veio
+     * (null = troca instantânea, como num toque na barra).
+     */
     @Suppress("DEPRECATION")
-    fun abrirAba(activity: AppCompatActivity, atual: AbaPrincipal, alvo: AbaPrincipal) {
+    fun abrirAba(
+        activity: AppCompatActivity,
+        atual: AbaPrincipal,
+        alvo: AbaPrincipal,
+        ultimaAbaInterna: Boolean = false,
+        deslizarParaFrente: Boolean? = null
+    ) {
         if (alvo == atual) return
         val intent = Intent(activity, alvo.destino)
         if (alvo == AbaPrincipal.BIBLIOTECA) {
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
+        if (ultimaAbaInterna) intent.putExtra(EXTRA_ULTIMA_ABA_INTERNA, true)
         activity.startActivity(intent)
         if (atual != AbaPrincipal.BIBLIOTECA && alvo != AbaPrincipal.BIBLIOTECA) activity.finish()
-        activity.overridePendingTransition(0, 0)
+        when (deslizarParaFrente) {
+            null -> activity.overridePendingTransition(0, 0)
+            true -> activity.overridePendingTransition(R.anim.deslizar_entra_direita, R.anim.deslizar_sai_esquerda)
+            false -> activity.overridePendingTransition(R.anim.deslizar_entra_esquerda, R.anim.deslizar_sai_direita)
+        }
     }
 
     /** Selo com o número de audiobooks não vistos. Some na própria aba Audiobooks e quando não há nenhum. */

@@ -168,6 +168,10 @@ class SettingsActivity : BasePlayerActivity() {
         tratarExtraFocoChave()
     }
 
+    override fun abaPrincipal() = AbaPrincipal.AJUSTES
+    override fun abasInternas(): com.google.android.material.tabs.TabLayout? = findViewById(R.id.tabsSettings)
+    override fun arrasteLateralLigado() = paginaAberta == null
+
     override fun onResume() {
         super.onResume()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.AJUSTES) // volta de outra tela: realça de novo a aba certa

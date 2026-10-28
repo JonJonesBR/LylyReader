@@ -250,6 +250,9 @@ class MeusLivrosActivity : BasePlayerActivity() {
         setIntent(intent)
     }
 
+    override fun abaPrincipal() = AbaPrincipal.BIBLIOTECA
+    override fun abasInternas(): com.google.android.material.tabs.TabLayout? = findViewById(R.id.tabsBib)
+
     override fun onResume() {
         super.onResume()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.BIBLIOTECA) // volta de outra tela: realça de novo a aba certa

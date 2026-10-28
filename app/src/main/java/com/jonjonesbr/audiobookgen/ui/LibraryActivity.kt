@@ -215,6 +215,8 @@ class LibraryActivity : BasePlayerActivity() {
         super.onDestroy()
     }
 
+    override fun abaPrincipal() = AbaPrincipal.AUDIOBOOKS
+
     override fun onResume() {
         super.onResume()
         // Abrir a aba Audiobooks zera o selo de concluídos não vistos (a barra some com ele nesta tela).
