@@ -16,6 +16,14 @@ object PocketSynthBridge {
         appContext = context.applicationContext
     }
 
+    /** Ajustes que mudam o áudio Pocket sem entrar no hash do job: gravados no progress.json para a retomada. */
+    @JvmStatic
+    fun assinaturaAjustes(): String {
+        val context = appContext ?: return ""
+        val prefs = com.jonjonesbr.audiobookgen.data.AppPrefs(context)
+        return "pk=${prefs.pocketPassos};t=${prefs.pocketExpressividade}"
+    }
+
     @JvmStatic
     fun synthesize(text: String, voiceId: String, outPath: String): Boolean {
         if (Looper.myLooper() == Looper.getMainLooper()) {

@@ -78,6 +78,7 @@ class SettingsActivity : BasePlayerActivity() {
     private lateinit var seekPocketPassos: android.widget.SeekBar
     private val naturalidade by lazy { NaturalidadeVozUi(this) }
     private lateinit var tvPocketPassosValor: TextView
+    private lateinit var swPocketMaisRapido: android.widget.CompoundButton
 
     // Pausa entre frases na leitura guiada com kokoro
     private lateinit var seekPausaFinalFrase: android.widget.SeekBar
@@ -199,6 +200,7 @@ class SettingsActivity : BasePlayerActivity() {
         tvSupertonicStepsValor = findViewById(R.id.tvSupertonicStepsValor)
         seekPocketPassos       = findViewById(R.id.seekPocketPassos)
         tvPocketPassosValor    = findViewById(R.id.tvPocketPassosValor)
+        swPocketMaisRapido    = findViewById(R.id.swPocketMaisRapido)
 
         seekPausaFinalFrase    = findViewById(R.id.seekPausaFinalFrase)
         tvPausaFinalFraseValor = findViewById(R.id.tvPausaFinalFraseValor)
@@ -347,6 +349,7 @@ class SettingsActivity : BasePlayerActivity() {
         seekPocketPassos.progress = passosPocket - com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_MIN
         tvPocketPassosValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, passosPocket, passosPocket)
         ViewCompat.setStateDescription(seekPocketPassos, tvPocketPassosValor.text)
+        swPocketMaisRapido.isChecked = appPrefs.pocketMaisRapido
 
         val pausaFrase = appPrefs.pausaFinalFraseMs.coerceIn(0, PAUSA_FINAL_FRASE_MS_MAX)
         seekPausaFinalFrase.progress = pausaFrase
@@ -406,6 +409,7 @@ class SettingsActivity : BasePlayerActivity() {
 
         configurarSupertonicSeekbar()
         configurarPocketPassosSeekbar()
+        configurarPocketMaisRapido()
         configurarPausaFinalFraseSeekbar()
         configurarBufferingLeituraGuiada()
 
@@ -424,6 +428,7 @@ class SettingsActivity : BasePlayerActivity() {
         linha(R.id.rowBlacklist) { blacklistDialog.mostrarDialogoBlacklist() }
         linha(R.id.rowEstatisticas) { abrirEstatisticas() }
         linha(R.id.rowPausasNaturais) { chkPausasNaturais.toggle() }
+        linha(R.id.rowPocketMaisRapido) { swPocketMaisRapido.toggle() }
         linha(R.id.rowTimbre) { TimbreDialog.show(this, appPrefs) }
         linha(R.id.rowAutoRewind) { escolherAutoRewind() }
         linha(R.id.rowPlayerConversao) { escolherPlayerConversao() }
@@ -593,6 +598,10 @@ class SettingsActivity : BasePlayerActivity() {
             override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
             override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
         })
+    }
+
+    private fun configurarPocketMaisRapido() {
+        swPocketMaisRapido.setOnCheckedChangeListener { _, marcado -> appPrefs.pocketMaisRapido = marcado }
     }
 
     private fun configurarSupertonicSeekbar() {

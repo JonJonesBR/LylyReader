@@ -99,6 +99,7 @@ class PreRenderService : Service() {
         )
         val texto = when {
             estado == null -> getString(R.string.prerender_notif_starting)
+            estado.esperandoConversao -> getString(R.string.prerender_notif_waiting_conversion)
             estado.esperandoLeitura -> getString(R.string.prerender_notif_waiting, estado.feitos, estado.total)
             else -> getString(R.string.prerender_notif_progress, estado.feitos, estado.total)
         }

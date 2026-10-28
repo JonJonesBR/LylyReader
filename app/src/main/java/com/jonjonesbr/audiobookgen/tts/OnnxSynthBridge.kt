@@ -8,6 +8,13 @@ object OnnxSynthBridge {
     @Volatile private var appContext: Context? = null
     @Volatile private var engine: OnnxTtsEngine? = null
     @JvmStatic fun init(context: Context) { appContext = context.applicationContext }
+
+    /** Ajustes que mudam o áudio Supertonic sem entrar no hash do job: gravados no progress.json para a retomada. */
+    @JvmStatic fun assinaturaAjustes(): String {
+        val ctx = appContext ?: return ""
+        val prefs = com.jonjonesbr.audiobookgen.data.AppPrefs(ctx)
+        return "st=${prefs.supertonicSteps};folga=${if (prefs.folgaFrasesCurtas) 1 else 0}"
+    }
     @Synchronized private fun engine(): OnnxTtsEngine? {
         val ctx = appContext ?: return null
         return engine ?: OnnxTtsEngine(ctx).also { engine = it }

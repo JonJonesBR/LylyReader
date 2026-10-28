@@ -1332,6 +1332,12 @@ class GuidedPlayerManager(
             try {
                 for ((_, unidade) in unidades) {
                     val (texto, vozUnidade) = unidade
+                    // Conversão de audiobook ativa: o pré-render não disputa o motor com ela.
+                    while (PythonEngineUseCase.conversaoAtiva()) {
+                        PreRenderBridge.state.update { it?.copy(esperandoConversao = true) }
+                        delay(ESPERA_PRERENDER_MS)
+                    }
+                    PreRenderBridge.state.update { it?.copy(esperandoConversao = false) }
                     // Voz ou ritmo mudaram no meio: o que já foi feito ficou com a chave antiga; para aqui.
                     if (vozEMotorAtuais().first != voz || appPrefs.ritmo != ritmo) {
                         PreRenderBridge.state.update { it?.copy(cancelado = true) }

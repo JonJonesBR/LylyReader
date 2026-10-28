@@ -232,6 +232,36 @@ def _job_hash(
     material = f"{conteudo}:{voz}:{estilo}:{velocidade}:{tom}:{mapping}:{pronuncias}"
     return hashlib.sha256(material.encode()).hexdigest()[:16]
 
+# Motores cujos ajustes (passos, folga, expressividade) mudam o áudio sem entrar no _job_hash.
+_MOTORES_COM_AJUSTES = ("onnx", "pocket")
+
+def _assinatura_ajustes(vozes) -> Optional[str]:
+    """Ajustes de síntese dos motores Supertonic (onnx) e Pocket presentes nas vozes do job. "" se nenhum
+    desses motores está em uso; None se a ponte Kotlin não responde (ex.: testes sem Java)."""
+    partes = []
+    try:
+        for motor in sorted({motor_da_voz(v) for v in vozes}):
+            if motor not in _MOTORES_COM_AJUSTES:
+                continue
+            if motor == "onnx":
+                from com.jonjonesbr.audiobookgen.tts import OnnxSynthBridge
+                parte = str(OnnxSynthBridge.assinaturaAjustes() or "")
+            else:
+                from com.jonjonesbr.audiobookgen.tts import PocketSynthBridge
+                parte = str(PocketSynthBridge.assinaturaAjustes() or "")
+            if not parte:
+                return None  # ponte sem contexto: ajustes desconhecidos, não bloqueia a retomada
+            partes.append(parte)
+    except Exception:
+        return None
+    return "|".join(partes)
+
+def _retomada_compativel(salva: Optional[str], atual: Optional[str]) -> bool:
+    """Retomada só se os ajustes batem. Checkpoint antigo (sem assinatura) ou ponte indisponível não bloqueia."""
+    if salva is None or atual is None:
+        return True
+    return salva == atual
+
 def _job_dir(job_hash: str) -> str:
     return os.path.join(TEMP_DIR, f"job_{job_hash}")
 
@@ -258,13 +288,27 @@ def _carregar_duracoes(jh: str) -> dict:
             pass
     return {}
 
-def _salvar_progresso(jh: str, completed: set, duracoes: Optional[dict] = None):
+def _carregar_ajustes(jh: str) -> Optional[str]:
+    """Assinatura dos ajustes de síntese gravada no checkpoint. Checkpoint antigo, sem o campo, devolve None."""
+    pf = os.path.join(_job_dir(jh), "progress.json")
+    if os.path.exists(pf):
+        try:
+            with open(pf) as f:
+                valor = json.load(f).get("ajustes")
+            return valor if isinstance(valor, str) else None
+        except Exception:
+            pass
+    return None
+
+def _salvar_progresso(jh: str, completed: set, duracoes: Optional[dict] = None, ajustes: Optional[str] = None):
     """Grava o progresso por escrita atômica (arquivo temporário + os.replace): uma queda no meio
-    não deixa progress.json cortado."""
+    não deixa progress.json cortado. `ajustes` (assinatura dos motores Supertonic/Pocket) só é gravado se houver."""
     pf = os.path.join(_job_dir(jh), "progress.json")
     dados = {"completed": sorted(completed)}
     if duracoes:
         dados["duracoes_ms"] = {str(k): int(v) for k, v in duracoes.items() if k in completed}
+    if ajustes is not None:
+        dados["ajustes"] = ajustes
     try:
         temporario = pf + ".tmp"
         with open(temporario, "w") as f:
@@ -508,10 +552,14 @@ def _limite_falhas_toleradas(total: int) -> int:
     return min(10, max(1, math.ceil(total * 0.05)))
 
 
+def _kokoro_oficial(voz: str) -> bool:
+    """Kokoro oficial (pacote da lista do app): id "kokoro-*" sem "::". Piper, MMS e BYOM ficam fora."""
+    return voz.startswith("kokoro-") and "::" not in voz
+
 def workers_para(vozes, padrao: int, cpu_count: Optional[int] = None) -> int:
-    """Workers de síntese para as vozes de um job. Só Piper (todas as vozes) com 4+ CPUs: 2.
-    Outros motores locais (Kokoro, Pocket, Supertonic, Android, MMS/BYOM): 1. Qualquer voz de
-    nuvem ou sem vozes: `padrao` (o valor de config de sempre)."""
+    """Workers de síntese para as vozes de um job. Com 4+ CPUs: 2 se só Piper, ou só Kokoro oficial.
+    Outros motores locais (Pocket, Supertonic, Android, MMS/BYOM) e conjuntos mistos: 1. Qualquer voz
+    de nuvem ou sem vozes: `padrao` (o valor de config de sempre)."""
     if cpu_count is None:
         cpu_count = os.cpu_count() or 1
     lista = list(vozes)
@@ -519,7 +567,10 @@ def workers_para(vozes, padrao: int, cpu_count: Optional[int] = None) -> int:
         return padrao
     if not all(motor_da_voz(v) in _MOTORES_LOCAIS for v in lista):
         return padrao
-    if all(velocidade_motores.motor_medido(v, motor_da_voz(v)) == "piper" for v in lista) and cpu_count >= 4:
+    if cpu_count >= 4 and (
+        all(velocidade_motores.motor_medido(v, motor_da_voz(v)) == "piper" for v in lista)
+        or all(_kokoro_oficial(v) for v in lista)
+    ):
         return 2
     return 1
 
@@ -870,6 +921,15 @@ async def _processar_nucleo(
     job_directory = _job_dir(jh)
     os.makedirs(job_directory, exist_ok=True)
 
+    # Ajustes de Supertonic/Pocket ficam fora do hash: retomada com ajustes diferentes descarta o job antes de ler.
+    ajustes_atual = _assinatura_ajustes(set(chunk_voices))
+    ajustes_salvos = _carregar_ajustes(jh)
+    if not _retomada_compativel(ajustes_salvos, ajustes_atual):
+        logger.warning(f"Job {jh}: ajustes de voz mudaram desde o checkpoint; a conversão recomeça do zero.")
+        _limpar_job(jh)
+        os.makedirs(job_directory, exist_ok=True)
+        ajustes_salvos = None
+
     completed_set   = _carregar_progresso(jh)
     temp_files      = [os.path.join(job_directory, f"part_{i}.mp3") for i in range(total)]
     completed_valid = {
@@ -914,7 +974,9 @@ async def _processar_nucleo(
             return
         ultimo_salvamento["t"] = agora
         ultimo_salvamento["n"] = 0
-        _salvar_progresso(jh, completed_valid, duracoes_ms)
+        # Nunca apaga a assinatura gravada: se a ponte não respondeu agora (None), mantém a salva.
+        _salvar_progresso(jh, completed_valid, duracoes_ms,
+                          ajustes=ajustes_atual if ajustes_atual is not None else ajustes_salvos)
 
     def _disparar_lote_se_pronto(g: int) -> None:
         if not juncao_incremental or g in lotes_disparados:
@@ -1003,6 +1065,10 @@ async def _processar_nucleo(
                     logger.error(f"Conversão interrompida: {e}")
                     metricas.registrar_bloco(idx, ms_desde(inicio_bloco), False, tentativas_por_bloco[idx])
                     return
+                except Exception:
+                    # Erro inesperado de um motor: conta como falha e segue o retry normal (não derruba o gather).
+                    logger.exception(f"Bloco {idx + 1}: erro inesperado na síntese; tratado como falha.")
+                    ok = False
                 metricas.registrar_bloco(idx, ms_desde(inicio_bloco), bool(ok), tentativas_por_bloco[idx])
                 if ok:
                     break

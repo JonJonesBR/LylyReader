@@ -23,6 +23,7 @@ class PocketSynthService : Service() {
     private var activeHasEncoder = false
     private var activeLsdSteps = DEFAULT_LSD_STEPS
     private var activeTemperature = DEFAULT_TEMPERATURE
+    private var activeThreads = PocketThreads.PADRAO
     private var engine: NativePocketTts? = null
     private var idleRelease: Runnable? = null
 
@@ -32,7 +33,8 @@ class PocketSynthService : Service() {
             voiceId: String,
             outPath: String,
             lsdSteps: Int,
-            temperature: Float
+            temperature: Float,
+            threads: Int
         ): String {
             val shouldStartForeground = activeCalls.getAndIncrement() == 0
             try {
@@ -56,7 +58,7 @@ class PocketSynthService : Service() {
                     } else {
                         voice = File(File(pack, "voices"), spec.voiceFile)
                     }
-                    val native = getEngine(spec.id, pack, lsdSteps, temperature)
+                    val native = getEngine(spec.id, pack, lsdSteps, temperature, threads)
                     val output = File(outPath)
                     output.parentFile?.mkdirs()
                     if (!native.synthesize(text, voice.absolutePath, output.absolutePath)) {
@@ -101,28 +103,36 @@ class PocketSynthService : Service() {
         super.onDestroy()
     }
 
-    private fun getEngine(packId: String, root: File, lsdSteps: Int, temperature: Float): NativePocketTts {
+    private fun getEngine(
+        packId: String,
+        root: File,
+        lsdSteps: Int,
+        temperature: Float,
+        threads: Int
+    ): NativePocketTts {
         idleRelease?.let(mainHandler::removeCallbacks)
         idleRelease = null
-        // Passos e temperatura só valem na criação do motor: mudar um deles recria o motor.
+        // Passos, temperatura e threads só valem na criação do motor: mudar um deles recria o motor.
         val temCodificador = File(File(root, "models"), PocketEncoderManager.FILE_NAME).isFile
         engine?.takeIf {
             activePackId == packId && activeLsdSteps == lsdSteps && activeTemperature == temperature &&
-                activeHasEncoder == temCodificador
+                activeThreads == threads && activeHasEncoder == temCodificador
         }?.let { return it }
         engine?.close()
+        Log.i(TAG, "Criando motor Pocket: threads=$threads, passos=$lsdSteps")
         engine = NativePocketTts(
             modelsDir = File(root, "models").absolutePath,
             voicesDir = File(root, "voices").absolutePath,
             precision = "int8",
             temperature = temperature,
             lsdSteps = lsdSteps,
-            threads = DEFAULT_THREADS,
+            threads = threads,
             sentencePauseMs = SENTENCE_PAUSE_MS
         ).also {
             activePackId = packId
             activeLsdSteps = lsdSteps
             activeTemperature = temperature
+            activeThreads = threads
             activeHasEncoder = temCodificador
         }
         return engine!!
@@ -165,7 +175,6 @@ class PocketSynthService : Service() {
         const val CHANNEL_ID = "lylyreader_pocket_synth"
         const val NOTIFICATION_ID = 2003
         const val MIN_AUDIO_BYTES = 500L
-        const val DEFAULT_THREADS = 2
         const val DEFAULT_LSD_STEPS = 1
         const val DEFAULT_TEMPERATURE = 0.1f
         // Pausa entre frases DENTRO de um mesmo trecho (a guiada agrupa frases curtas). Igual ao

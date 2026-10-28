@@ -36,12 +36,14 @@ object PocketProcessClient {
         val prefs = com.jonjonesbr.audiobookgen.data.AppPrefs(appContext)
         val passos = prefs.pocketPassos
         val temperatura = prefs.pocketExpressividade / DECIMOS
+        val threads = PocketThreads.para(Runtime.getRuntime().availableProcessors(), prefs.pocketMaisRapido)
         val inicio = System.currentTimeMillis()
         val svc = ensureBound(appContext) ?: return "não foi possível conectar ao processo Pocket"
         return try {
             synthSemaphore.withPermit {
                 withContext(Dispatchers.IO) {
-                    svc.synthesize(text, voiceId, output.absolutePath, passos, temperatura).ifBlank { null }
+                    svc.synthesize(text, voiceId, output.absolutePath, passos, temperatura, threads)
+                        .ifBlank { null }
                 }
             }.also {
                 // Registro para diagnosticar travas intermitentes: síntese normal leva poucos segundos.

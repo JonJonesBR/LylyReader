@@ -28,8 +28,24 @@ class WorkersParaTest(unittest.TestCase):
     def test_piper_misturado_com_outro_motor_local_usa_1(self):
         self.assertEqual(1, cpa.workers_para({PIPER, "kokoro-pf-dora"}, padrao=1, cpu_count=8))
 
+    def test_kokoro_oficial_com_4_ou_mais_cpus_usa_2_workers(self):
+        self.assertEqual(2, cpa.workers_para({"kokoro-pf-dora"}, padrao=1, cpu_count=8))
+        self.assertEqual(2, cpa.workers_para({"kokoro-pf-dora", "kokoro-pm-alex"}, padrao=1, cpu_count=4))
+
+    def test_kokoro_oficial_com_menos_de_4_cpus_usa_1_worker(self):
+        self.assertEqual(1, cpa.workers_para({"kokoro-pf-dora"}, padrao=1, cpu_count=3))
+
+    def test_kokoro_misturado_com_piper_usa_1(self):
+        self.assertEqual(1, cpa.workers_para({"kokoro-pf-dora", PIPER}, padrao=1, cpu_count=8))
+
+    def test_kokoro_misturado_com_pocket_usa_1(self):
+        self.assertEqual(1, cpa.workers_para({"kokoro-pf-dora", "pocket-ptbr-rafael"}, padrao=1, cpu_count=8))
+
+    def test_mms_usa_1_mesmo_com_muitas_cpus(self):
+        self.assertEqual(1, cpa.workers_para({"mms-por::main-pt"}, padrao=1, cpu_count=8))
+
     def test_outros_motores_locais_usam_1(self):
-        for voz in ("kokoro-pf-dora", "pocket-ptbr-rafael", "supertonic-m1",
+        for voz in ("pocket-ptbr-rafael", "supertonic-m1",
                     "android::pkg::voz", "mms-por::main-pt", "pacote::byom-voz"):
             with self.subTest(voz=voz):
                 self.assertEqual(1, cpa.workers_para({voz}, padrao=1, cpu_count=8))

@@ -148,9 +148,9 @@ class ProgressoAtomicoEAgrupadoTest(unittest.TestCase):
         chamadas = []
         original = cpa._salvar_progresso
 
-        def contar(jh, completed, duracoes=None):
+        def contar(jh, completed, duracoes=None, ajustes=None):
             chamadas.append(len(completed))
-            original(jh, completed, duracoes)
+            original(jh, completed, duracoes, ajustes=ajustes)
 
         with tempfile.TemporaryDirectory() as tmp, \
                 mock.patch.object(cpa, "_salvar_progresso", contar), \
@@ -161,6 +161,32 @@ class ProgressoAtomicoEAgrupadoTest(unittest.TestCase):
         # Antes eram ~1 gravação por bloco; agora são agrupadas (mais forçadas no fim da síntese).
         self.assertLess(len(chamadas), blocos)
         self.assertEqual(blocos, chamadas[-1])
+
+
+@unittest.skipIf(cpa is None, "módulos de conversão indisponíveis")
+class ErroInesperadoNoBlocoTest(unittest.TestCase):
+    def test_erro_inesperado_do_motor_vira_falha_e_o_retry_conclui(self):
+        chamadas = {"n": 0}
+
+        async def converter_falha_uma_vez(texto, voz, arquivo, *_a, **_k):
+            chamadas["n"] += 1
+            if chamadas["n"] == 1:
+                raise RuntimeError("falha simulada do motor")
+            return await _converter_mp3(texto, voz, arquivo)
+
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(cpa, "converter_tts_auto", converter_falha_uma_vez), \
+                mock.patch.object(cpa, "concatenar_grupo_com_pausa", _concatenar_falso), \
+                self.assertLogs(cpa.logger, level="ERROR"):
+            resultado = _rodar(tmp, "Frase curta de teste.", "supertonic-m1", "onnx")
+        self.assertTrue(resultado.get("ok"), resultado)
+        self.assertGreaterEqual(chamadas["n"], 2)
+
+
+async def _concatenar_falso(arquivos, saida, *_a, **_k):
+    with open(saida, "wb") as f:
+        f.write(mp3_falso(3000))
+    return True
 
 
 if __name__ == "__main__":

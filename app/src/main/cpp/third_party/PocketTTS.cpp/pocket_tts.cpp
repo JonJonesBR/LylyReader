@@ -78,6 +78,10 @@
 #include <unordered_map>
 #include <vector>
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
+
 namespace pocket_tts {
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -2353,6 +2357,15 @@ void PocketTTS::stream(const std::string& text, const Tensor& voice, StreamCallb
                           << ": " << letters << " letters in " << audio.speech_frames / FRAME_RATE
                           << " s" << (ok ? "" : " (too short, retrying)") << "\n";
             }
+#ifdef __ANDROID__
+            // LylyReader: stderr does not reach logcat; log retries there so slow chunks can be diagnosed.
+            if (!ok) {
+                __android_log_print(ANDROID_LOG_WARN, "PocketTTS",
+                                    "chunk %zu attempt %d: %d letters in %.2f s (too short, retrying)",
+                                    si + 1, attempt + 1, letters,
+                                    static_cast<double>(audio.speech_frames) / FRAME_RATE);
+            }
+#endif
             const bool better = !have_best ||
                 (!audio.hit_limit && (best.hit_limit || audio.speech_frames > best.speech_frames));
             if (ok || better) {

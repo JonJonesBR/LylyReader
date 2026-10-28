@@ -3,6 +3,6 @@ package com.jonjonesbr.audiobookgen.tts;
 
 interface IPocketSynthService {
     /** Returns an empty string on success and a readable error otherwise. */
-    String synthesize(String text, String voiceId, String outPath, int lsdSteps, float temperature);
+    String synthesize(String text, String voiceId, String outPath, int lsdSteps, float temperature, int threads);
 
 }

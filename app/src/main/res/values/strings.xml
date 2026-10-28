@@ -100,6 +100,8 @@
     <string name="cache_teto_gb">%1$d GB</string>
     <string name="settings_pocket_steps_title">Pocket TTS steps (experimental)</string>
     <string name="settings_pocket_steps_desc">Decoding steps per audio frame in Pocket TTS voices. 10 is the default. More steps make synthesis slower and might improve fidelity. Above 10, synthesis gets much slower and may cause pauses in guided reading. Applies to new syntheses; audio already prepared is regenerated when you change this.</string>
+    <string name="settings_pocket_mais_rapido">Faster Pocket (experimental)</string>
+    <string name="settings_pocket_mais_rapido_sub">Uses more processor cores. It may be faster or slower depending on the phone, and it may heat the device more.</string>
     <plurals name="settings_steps_value_qtd">
         <item quantity="one">%1$d step</item>
         <item quantity="other">%1$d steps</item>
@@ -809,6 +811,7 @@
     <string name="prerender_notif_starting">Starting…</string>
     <string name="prerender_notif_progress">%1$d of %2$d passages</string>
     <string name="prerender_notif_waiting">%1$d of %2$d passages (waiting for the reading to stop)</string>
+    <string name="prerender_notif_waiting_conversion">Waiting for the audiobook generation to finish</string>
     <string name="prerender_notif_done">Chapter ready. Guided reading will play without waiting.</string>
     <string name="prerender_notif_failed">Preparation stopped: %1$s</string>
     <string name="character_ai_action">✨ Improve with AI (Gemini)…</string>

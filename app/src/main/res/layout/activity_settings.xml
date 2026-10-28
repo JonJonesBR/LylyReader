@@ -1788,6 +1788,43 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowPocketMaisRapido"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/settings_pocket_mais_rapido"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/settings_pocket_mais_rapido_sub"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/swPocketMaisRapido"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/settings_pocket_mais_rapido"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- ── EXPRESSIVIDADE DO POCKET TTS ───────────────────────────────── -->
             <TextView
                 android:layout_width="match_parent"

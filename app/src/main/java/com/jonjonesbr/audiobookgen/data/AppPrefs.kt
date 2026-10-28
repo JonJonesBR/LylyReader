@@ -192,6 +192,14 @@ class AppPrefs(context: Context) {
         set(v) = p.edit()
             .putInt("pocket_expressividade", v.coerceIn(POCKET_EXPRESSIVIDADE_MIN, POCKET_EXPRESSIVIDADE_MAX)).apply()
 
+    /**
+     * "Pocket mais rápido (experimental)": a síntese Pocket usa mais núcleos do processador (ver
+     * [com.jonjonesbr.audiobookgen.tts.PocketThreads]). Desligado por padrão: continua com 2 threads.
+     */
+    var pocketMaisRapido: Boolean
+        get() = p.getBoolean("pocket_mais_rapido", false)
+        set(v) = p.edit().putBoolean("pocket_mais_rapido", v).apply()
+
     /** Pausa entre orações (frases) na leitura guiada com kokoro (ms). Ver
      *  [GuidedPlayerManager][com.jonjonesbr.audiobookgen.service.GuidedPlayerManager]. */
     var pausaFinalFraseMs: Int
@@ -377,6 +385,7 @@ class AppPrefs(context: Context) {
             .remove("supertonic_steps")
             .remove("pocket_passos")
             .remove("pocket_expressividade")
+            .remove("pocket_mais_rapido")
             .remove("entonacao_continua")
             .remove("acabamento_audio")
             .remove("dialogos_vivos")

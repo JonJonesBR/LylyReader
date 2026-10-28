@@ -127,59 +127,91 @@ def _duracao_wav(caminho: str) -> float:
     return tamanho_data / byte_rate
 
 
-def _concatenar_wav_puro(arquivos: list, saida: str) -> bool:
+_WAV_BLOCO_BYTES = 1024 * 1024  # leitura por bloco ao copiar o PCM na junção WAV (S6)
+
+
+def _varrer_wav_puro(arquivos: list) -> tuple:
     """
-    Concatena arquivos WAV (PCM 24000Hz, mono, 16-bit) sem FFmpeg.
-    Lê apenas o chunk 'data' de cada WAV e gera um único WAV válido.
+    Passo 1 da junção WAV: localiza o chunk 'data' de cada arquivo sem carregar o áudio.
+    Devolve (itens, fmt): itens = [(arquivo, offset, bytes)] e fmt = (sr, ch, bps) ou None.
     """
-    pcm_chunks = []
+    itens = []
     # Formato lido do primeiro WAV válido (24000 p/ Edge, 44100 p/ Supertonic etc.).
     fmt = None  # (sr, ch, bps)
     for arq in arquivos:
         if not os.path.exists(arq):
             continue
         try:
+            tam = os.path.getsize(arq)
             with open(arq, 'rb') as f:
-                data = f.read()
-            if data[:4] != b'RIFF':
-                continue
-            i = 12  # Pula RIFF header (4 bytes ID + 4 bytes size + 4 bytes "WAVE")
-            while i + 8 <= len(data):
-                chunk_id = data[i:i+4]
-                chunk_size = struct.unpack('<I', data[i+4:i+8])[0]
-                if chunk_id == b'fmt ' and fmt is None and chunk_size >= 16:
-                    # fmt: audioFormat(H) channels(H) sampleRate(I) byteRate(I) blockAlign(H) bits(H)
-                    ch_f = struct.unpack('<H', data[i+10:i+12])[0]
-                    sr_f = struct.unpack('<I', data[i+12:i+16])[0]
-                    bps_f = struct.unpack('<H', data[i+22:i+24])[0]
-                    if sr_f > 0 and ch_f > 0 and bps_f > 0:
-                        fmt = (sr_f, ch_f, bps_f)
-                if chunk_id == b'data':
-                    pcm_chunks.append(data[i+8:i+8+chunk_size])
-                    break
-                i += 8 + chunk_size + (chunk_size % 2)  # chunks RIFF são word-aligned
+                if f.read(4) != b'RIFF':
+                    continue
+                i = 12  # Pula RIFF header (4 bytes ID + 4 bytes size + 4 bytes "WAVE")
+                while i + 8 <= tam:
+                    f.seek(i)
+                    cabecalho = f.read(8)
+                    chunk_id = cabecalho[:4]
+                    chunk_size = struct.unpack('<I', cabecalho[4:8])[0]
+                    if chunk_id == b'fmt ' and fmt is None and chunk_size >= 16:
+                        f.seek(i + 8)
+                        corpo = f.read(16)
+                        if len(corpo) < 16:
+                            raise ValueError("chunk fmt truncado")
+                        # fmt: audioFormat(H) channels(H) sampleRate(I) byteRate(I) blockAlign(H) bits(H)
+                        ch_f = struct.unpack('<H', corpo[2:4])[0]
+                        sr_f = struct.unpack('<I', corpo[4:8])[0]
+                        bps_f = struct.unpack('<H', corpo[14:16])[0]
+                        if sr_f > 0 and ch_f > 0 and bps_f > 0:
+                            fmt = (sr_f, ch_f, bps_f)
+                    if chunk_id == b'data':
+                        n = max(0, min(chunk_size, tam - (i + 8)))
+                        itens.append((arq, i + 8, n))
+                        break
+                    i += 8 + chunk_size + (chunk_size % 2)  # chunks RIFF são word-aligned
         except Exception as e:
             logger.warning(f"Erro ao ler WAV {arq}: {e}")
+    return itens, fmt
 
-    if not pcm_chunks:
-        return False
 
-    pcm_total = b''.join(pcm_chunks)
+def _escrever_wav_puro(itens: list, fmt, saida: str) -> bool:
+    """Passo 2 da junção WAV: cabeçalho RIFF e cópia do PCM em blocos, sem segurar tudo na memória."""
+    total = sum(n for _, _, n in itens)
     sr, ch, bps = fmt if fmt is not None else (24000, 1, 16)
-    size = len(pcm_total)
     hdr = bytearray()
-    hdr += b"RIFF" + struct.pack("<I", 36 + size) + b"WAVE"
+    hdr += b"RIFF" + struct.pack("<I", 36 + total) + b"WAVE"
     hdr += b"fmt " + struct.pack("<IHHIIHH", 16, 1, ch, sr,
                                   sr * ch * bps // 8, ch * bps // 8, bps)
-    hdr += b"data" + struct.pack("<I", size)
+    hdr += b"data" + struct.pack("<I", total)
     try:
-        with open(saida, 'wb') as f:
-            f.write(bytes(hdr))
-            f.write(pcm_total)
+        with open(saida, 'wb') as out:
+            out.write(bytes(hdr))
+            for arq, offset, n in itens:
+                with open(arq, 'rb') as f:
+                    f.seek(offset)
+                    restante = n
+                    while restante > 0:
+                        bloco = f.read(min(restante, _WAV_BLOCO_BYTES))
+                        if not bloco:
+                            break
+                        out.write(bloco)
+                        restante -= len(bloco)
         return os.path.exists(saida) and os.path.getsize(saida) > 500
     except Exception as e:
         logger.error(f"Erro ao escrever WAV concatenado: {e}")
         return False
+
+
+def _concatenar_wav_puro(arquivos: list, saida: str) -> bool:
+    """
+    Concatena arquivos WAV (PCM 24000Hz, mono, 16-bit) sem FFmpeg.
+    Lê apenas o chunk 'data' de cada WAV e gera um único WAV válido, em duas passagens:
+    primeiro localiza os trechos de PCM, depois copia em blocos para o arquivo de saída.
+    `saida` não pode estar entre os `arquivos`: a cópia lê das entradas enquanto escreve a saída.
+    """
+    itens, fmt = _varrer_wav_puro(arquivos)
+    if not itens:
+        return False
+    return _escrever_wav_puro(itens, fmt, saida)
 
 
 def _concatenar_mp3_puro(arquivos: list, saida: str) -> bool:
@@ -876,7 +908,7 @@ async def _concatenar_lista(arquivos: list, saida: str) -> bool:
     # Fallback final: concatenação MP3 em Python puro (funciona no Android)
     if ffmpeg_tentado:
         logger.info("Usando concatenação MP3 Python puro (FFmpeg indisponível).")
-    return _concatenar_mp3_puro(arquivos, saida)
+    return await asyncio.to_thread(_concatenar_mp3_puro, arquivos, saida)
 
 
 async def concatenar_grupo(

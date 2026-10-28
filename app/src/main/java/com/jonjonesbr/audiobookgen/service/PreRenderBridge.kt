@@ -14,7 +14,9 @@ data class PreRenderState(
     val cancelado: Boolean = false,
     val erro: String? = null,
     /** Motor mais lento que a fala: o preparo espera enquanto a leitura ao vivo está tocando. */
-    val esperandoLeitura: Boolean = false
+    val esperandoLeitura: Boolean = false,
+    /** Uma conversão de audiobook está rodando: o preparo espera ela terminar. */
+    val esperandoConversao: Boolean = false
 ) {
     val fracao: Float get() = if (total <= 0) 0f else (feitos.toFloat() / total).coerceIn(0f, 1f)
     val terminou: Boolean get() = concluido || cancelado || erro != null
