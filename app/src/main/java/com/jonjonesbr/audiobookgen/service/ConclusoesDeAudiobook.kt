@@ -2,7 +2,7 @@ package com.jonjonesbr.audiobookgen.service
 
 import android.content.Context
 import com.jonjonesbr.audiobookgen.data.AppPrefs
-import kotlinx.coroutines.flow.BufferOverflow
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 
