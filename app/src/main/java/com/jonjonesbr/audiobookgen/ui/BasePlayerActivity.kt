@@ -88,15 +88,25 @@ abstract class BasePlayerActivity : AppCompatActivity() {
             sobreMiniPlayer = ::sobreMiniPlayerAudio,
             aoArrastarMiniPlayer = { paraCima ->
                 val root = findViewById<View>(R.id.miniPlayerRoot)
-                if (root != null && paraCima != playerExpanded) toggleExpandido(root, forcarExpandido = paraCima)
+                // O áudio pode ter fechado durante o arraste: aí não há o que abrir.
+                if (root != null && audioVisivel && paraCima != playerExpanded) toggleExpandido(root, forcarExpandido = paraCima)
             }
         )
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean = arraste.despachar(ev) { super.dispatchTouchEvent(it) }
 
+    // Uma troca de tela por vez: dois arrastes rápidos antes da animação terminar abririam a mesma tela duas vezes.
+    private var trocandoDeTela = false
+
+    override fun onResume() {
+        super.onResume()
+        trocandoDeTela = false
+    }
+
     private fun arrastarLateral(paraFrente: Boolean) {
         val atual = abaPrincipal() ?: return
+        if (trocandoDeTela) return
         val abas = abasInternas()?.takeIf { it.isShown }
         val destino = GestoArraste.destinoLateral(
             paraFrente, abas?.selectedTabPosition ?: -1, abas?.tabCount ?: 0,
@@ -104,10 +114,13 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         )
         when (destino) {
             is DestinoLateral.AbaInterna -> abas?.getTabAt(destino.indice)?.select()
-            is DestinoLateral.TelaPrincipal -> NavegacaoPrincipal.abrirAba(
-                this, atual, AbaPrincipal.values()[destino.indice],
-                ultimaAbaInterna = destino.ultimaAbaInterna, deslizarParaFrente = paraFrente
-            )
+            is DestinoLateral.TelaPrincipal -> {
+                trocandoDeTela = true
+                NavegacaoPrincipal.abrirAba(
+                    this, atual, AbaPrincipal.values()[destino.indice],
+                    ultimaAbaInterna = destino.ultimaAbaInterna, deslizarParaFrente = paraFrente
+                )
+            }
             DestinoLateral.Nenhum -> Unit
         }
     }

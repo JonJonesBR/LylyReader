@@ -9,12 +9,14 @@ import android.view.ViewGroup
 import android.webkit.WebView
 import android.widget.AbsSeekBar
 import android.widget.EditText
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.slider.RangeSlider
 import com.google.android.material.slider.Slider
 import com.jonjonesbr.audiobookgen.util.EixoArraste
 import com.jonjonesbr.audiobookgen.util.GestoArraste
+import kotlin.math.abs
 import kotlin.math.max
 
 /** Views que, visíveis sob o dedo, desligam os gestos da tela (ex.: a dica sobreposta do CoachMark). */
@@ -26,7 +28,7 @@ interface BloqueiaArrasteDeTela
  * - vertical sobre o mini player: [aoArrastarMiniPlayer] (para cima abre, para baixo recolhe).
  * Reconhecido o gesto, os filhos recebem ACTION_CANCEL (o item sob o dedo não leva um clique acidental)
  * e o resto do gesto não chega a eles. Não começa sobre controles que já se arrastam de lado
- * (barras de progresso, sliders, campos de texto, listas e faixas que rolam na horizontal),
+ * (barras de progresso, sliders, chaves, campos de texto, listas e faixas que rolam na horizontal),
  * nem nas bordas, que são o "voltar" do sistema.
  */
 class ArrasteNaTela(
@@ -90,9 +92,13 @@ class ArrasteNaTela(
         x0 = ev.x
         y0 = ev.y
         val raiz = activity.window?.decorView
-        val livre = raiz != null && !sobreBloqueio(raiz, ev.x, ev.y)
-        miniPossivel = livre && sobreMiniPlayer(ev.x, ev.y)
-        lateralPossivel = livre && !miniPossivel && raiz != null && lateralLigado() && foraDasBordas(raiz, ev.x)
+        // Primeiro o que é barato; a varredura das views sob o dedo só quando algum gesto é possível.
+        miniPossivel = raiz != null && sobreMiniPlayer(ev.x, ev.y)
+        lateralPossivel = raiz != null && !miniPossivel && lateralLigado() && foraDasBordas(raiz, ev.x)
+        if ((lateralPossivel || miniPossivel) && sobreBloqueio(raiz!!, ev.x, ev.y)) {
+            lateralPossivel = false
+            miniPossivel = false
+        }
         if (!lateralPossivel && !miniPossivel) {
             estado = Estado.DESCARTADO
             return
@@ -102,7 +108,11 @@ class ArrasteNaTela(
     }
 
     private fun observar(ev: MotionEvent, despachar: (MotionEvent) -> Boolean) {
-        val eixo = GestoArraste.eixo(ev.x - x0, ev.y - y0, slop) ?: return
+        val dx = ev.x - x0
+        val dy = ev.y - y0
+        val eixo = GestoArraste.eixo(dx, dy, slop) ?: return
+        // Começo torto (arco do polegar): continua observando até o eixo se definir, por um trecho curto.
+        if (eixo == EixoArraste.DIAGONAL && max(abs(dx), abs(dy)) < slop * FOLGA_DIAGONAL) return
         estado = when {
             eixo == EixoArraste.HORIZONTAL && lateralPossivel -> Estado.LATERAL
             eixo == EixoArraste.VERTICAL && miniPossivel -> Estado.MINI_PLAYER
@@ -165,6 +175,8 @@ class ArrasteNaTela(
 
     private fun controleDeArrasteLateral(view: View): Boolean =
         view is AbsSeekBar || view is Slider || view is RangeSlider || view is EditText ||
+            // Chaves liga/desliga: o polegar delas também se arrasta de lado.
+            view is SwitchCompat || view is android.widget.Switch ||
             // Só contêineres: um TextView de uma linha com texto longo "rola" na horizontal e travaria o gesto à toa.
             ((view is ViewGroup || view is WebView) &&
                 (view.canScrollHorizontally(1) || view.canScrollHorizontally(-1)))
@@ -178,6 +190,7 @@ class ArrasteNaTela(
 
     companion object {
         private const val BORDA_DP = 24f
+        private const val FOLGA_DIAGONAL = 3f
         private const val DISTANCIA_LATERAL_DP = 80f
         private const val DISTANCIA_MINI_DP = 40f
         private const val VELOCIDADE_MIN_DP = 500f
