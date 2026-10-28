@@ -222,7 +222,10 @@ object BibliotecaStore {
         val caminho = arquivoDo(ctx, livro).absolutePath
         val total = prefs.totalParagrafosLeitura(caminho)
         if (total <= 0) return null
-        return (prefs.posicaoLeitura(caminho, 0).toFloat() / total).coerceIn(0f, 1f)
+        val posicao = prefs.posicaoLeitura(caminho, 0)
+        // No último parágrafo o livro está lido: (total - 1) ÷ total nunca chegava a 100%.
+        if (total > 1 && posicao >= total - 1) return 1f
+        return (posicao.toFloat() / total).coerceIn(0f, 1f)
     }
 
     /** O livro já tem audiobook gerado (e o arquivo ainda existe)? */

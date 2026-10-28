@@ -73,6 +73,8 @@ class ReaderActivity : BasePlayerActivity() {
         private const val MIN_CAPITULOS_PARA_BUSCA = 12
         /** O resultado da busca fica a 1/[FRACAO_MARGEM_BUSCA] da altura, contando do topo da lista. */
         private const val FRACAO_MARGEM_BUSCA = 4
+        /** Marca de "fim do livro na tela" para não refazer o texto do progresso a cada rolagem parada. */
+        private const val PROGRESSO_CHAVE_FIM = -2
         const val EXTRA_TRECHO_NOME = "extra_trecho_nome"
         const val EXTRA_ACAO_RETORNO = "extra_acao_retorno"
         const val EXTRA_AUTO_START_GUIDED = "extra_auto_start_guided"
@@ -476,7 +478,13 @@ class ReaderActivity : BasePlayerActivity() {
         if (::recyclerView.isInitialized && caminhoArquivo.isNotEmpty()) {
             val guiadaEncerrada = paragrafoGuiadoAoEncerrar
                 .takeIf { it >= 0 && viewModel.uiState.value.paragrafoSyncAtual < 0 }
-            (guiadaEncerrada ?: paragrafoAtualVisivel())
+            // Fim do livro na tela: grava o último parágrafo, para a biblioteca mostrar o livro como lido (100%).
+            val fim = if (viewModel.uiState.value.paragrafoSyncAtual < 0 && fimDoLivroNaTela()) {
+                adapter.itemCount - 1 // fimDoLivroNaTela() já garante o adapter inicializado e com itens
+            } else {
+                null
+            }
+            (guiadaEncerrada ?: fim ?: paragrafoAtualVisivel())
                 ?.let {
                     // Total de parágrafos: dá a porcentagem lida (progresso = scroll / total) na biblioteca.
                     appPrefs.salvarPosicaoLeitura(caminhoArquivo, it, if (::adapter.isInitialized) adapter.itemCount else 0)
@@ -1509,6 +1517,20 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
+    /** A lista chegou ao fim (não rola mais para baixo, ou para a frente na rolagem horizontal) e há texto. */
+    private fun fimDoLivroNaTela(): Boolean {
+        val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return false
+        // Antes do primeiro layout a lista "não rola" por não ter nada medido: isso não é o fim do livro.
+        val medida = ::adapter.isInitialized && adapter.itemCount > 0 && recyclerView.isLaidOut &&
+            recyclerView.childCount > 0
+        if (!medida) return false
+        return if (lm.orientation == LinearLayoutManager.HORIZONTAL) {
+            !recyclerView.canScrollHorizontally(1)
+        } else {
+            !recyclerView.canScrollVertically(1)
+        }
+    }
+
     private fun atualizarProgressoLeitura() {
         val state = viewModel.uiState.value
         val texto = state.texto
@@ -1518,15 +1540,19 @@ class ReaderActivity : BasePlayerActivity() {
             marcacoesController.atualizarIconeBookmark(null)
             return
         }
-        if (indiceRef == progressoIndiceAplicado) return
-        progressoIndiceAplicado = indiceRef
+        // Fim do livro na tela (sem leitura em andamento): o parágrafo de cima ainda não é o último, mas não falta
+        // nada a ler. Antes ficava "89% · ~1 min restantes" com o texto todo já lido.
+        val noFim = state.paragrafoSyncAtual < 0 && fimDoLivroNaTela()
+        val chave = if (noFim) PROGRESSO_CHAVE_FIM else indiceRef
+        if (chave == progressoIndiceAplicado) return
+        progressoIndiceAplicado = chave
         marcacoesController.atualizarIconeBookmark(indiceRef)
 
         val textoAtivo = state.textoLimpo ?: texto
-        val pct = com.jonjonesbr.audiobookgen.util.progressoLivroPct(
+        val pct = if (noFim) 1f else com.jonjonesbr.audiobookgen.util.progressoLivroPct(
             textoAtivo.paragrafos, indiceRef, textoAtivo.totalChars
         )
-        val minutos = com.jonjonesbr.audiobookgen.util.minutosRestantesCapitulo(
+        val minutos = if (noFim) 0 else com.jonjonesbr.audiobookgen.util.minutosRestantesCapitulo(
             textoAtivo.paragrafos, indiceRef, textoAtivo.capitulos
         )
         tvProgressoLeitura.text = if (minutos > 0) {
