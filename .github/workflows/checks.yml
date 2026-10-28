@@ -69,6 +69,14 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Run Python tests
+        # Os mesmos testes que o release.yml roda antes de gerar o APK (e as mesmas versões dos pacotes): sem eles aqui,
+        # uma regressão na conversão (Python) só aparecia na hora de publicar uma versão.
+        run: |
+          python -m pip install --quiet pytest "edge-tts==7.3.1" aiohttp "mutagen==1.48.1" Pillow "pypdf==6.21.2" \
+            "python-docx==1.2.0" "ebooklib==0.20" "beautifulsoup4==4.15.0" "httpx==0.28.1" numpy "olefile==0.47" "mobi==0.4.1"
+          python -m pytest app/src/test/python -q
+
       - name: Validate Gradle Wrapper
         uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
 
