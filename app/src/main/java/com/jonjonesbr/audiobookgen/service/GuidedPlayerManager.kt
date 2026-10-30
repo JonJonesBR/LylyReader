@@ -562,6 +562,9 @@ class GuidedPlayerManager(
     // causa do log de diagnóstico de falha silenciosa, não vale fragmentar agora.
     @Suppress("LongMethod")
     fun play(index: Int) {
+        // Já liberado (ex.: leitor antigo ainda na pilha depois de outro livro tocar): o escopo cancelado
+        // nunca rodaria o playJob e a barra ficaria presa em "carregando".
+        if (!coroutineScope.isActive) return
         if (paragraphs.isEmpty()) return
         if (index < 0 || index >= paragraphs.size) return
         
@@ -1168,6 +1171,8 @@ class GuidedPlayerManager(
     }
 
     fun next() {
+        // Sem leitura em curso (-1): "próximo" não tem de onde avançar; antes tocava o 1º parágrafo.
+        if (currentIndex < 0) return
         if (currentIndex < paragraphs.size - 1) {
             play(currentIndex + 1)
         } else {
@@ -1286,7 +1291,8 @@ class GuidedPlayerManager(
             return plano.map { it.text to it.voiceId }
         }
         if (usaPipelineDeOracoes(motorEfetivo)) {
-            val oracoes = DivisorDeOracoes.agruparOracoesCurta(DivisorDeOracoes.dividirEmOracoes(texto))
+            // Mesma divisão de play() (com a entonação contínua), senão o preparo gera trechos que a leitura não usa.
+            val oracoes = oracoesDoParagrafo(texto, voz)
             if (oracoes.size > 1) return oracoes.map { it.texto to voz }
         }
         return listOf(texto to voz)

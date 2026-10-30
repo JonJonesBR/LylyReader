@@ -357,6 +357,33 @@ class GuidedPlayerManagerTest {
         assertFalse(manager.state.value.isPlaying)
     }
 
+    @Test
+    fun nextSemLeituraEmCursoNaoConcluiNemRecomecaOLivro() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(3))
+        // Sem play() prévio, currentIndex é -1: antes, next() tocava o 1º parágrafo.
+
+        manager.next()
+
+        assertEquals(-1, manager.getCurrentIndex())
+        assertEquals(-1, manager.state.value.index)
+        assertFalse(manager.state.value.isLoading)
+        assertFalse(manager.state.value.livroConcluido)
+    }
+
+    @Test
+    fun playDepoisDoReleaseNaoFicaPresoEmCarregando() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(3))
+        manager.release()
+
+        manager.play(0)
+
+        assertFalse(manager.state.value.isLoading)
+        assertEquals(-1, manager.state.value.index)
+        assertNull(GuidedPlaybackBridge.manager)
+    }
+
     // --- 2. sessionToken de uma instância antiga não afeta mais o comportamento
     //         após uma nova instância ser criada (eventos tardios não disparam ações) ---
 
