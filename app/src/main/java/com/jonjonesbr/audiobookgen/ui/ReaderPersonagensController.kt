@@ -652,7 +652,8 @@ class ReaderPersonagensController(
                 abrindoSeletorPersonagem = false
             }
             if (voices.isEmpty()) {
-                Toast.makeText(activity, R.string.character_voices_empty, Toast.LENGTH_LONG).show()
+                // Aqui as falas existem: lista vazia é o catálogo de vozes que não carregou a tempo.
+                Toast.makeText(activity, R.string.character_voices_no_voices, Toast.LENGTH_LONG).show()
                 return@launch
             }
             // Se a tela foi para segundo plano enquanto a lista carregava, não mostra o sheet com estado salvo.

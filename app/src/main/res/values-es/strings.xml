@@ -525,6 +525,7 @@
     <string name="action_character_voices">Voces de los personajes</string>
     <string name="character_voices_title">Voces de los personajes</string>
     <string name="character_voices_empty">No se encontraron diálogos con un personaje identificado con seguridad en este libro.</string>
+    <string name="character_voices_no_voices">No se pudo cargar la lista de voces para los personajes. Inténtalo de nuevo en un momento.</string>
     <string name="character_voice_assignment_item">%1$s (%4$s) · %2$d diálogos · %3$s</string>
     <string name="character_gender_male">probablemente masculino</string>
     <string name="character_gender_female">probablemente femenino</string>

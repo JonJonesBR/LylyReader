@@ -540,6 +540,7 @@
     <string name="action_character_voices">Vozes dos personagens</string>
     <string name="character_voices_title">Vozes dos personagens</string>
     <string name="character_voices_empty">Não encontrei falas com um personagem identificado com segurança neste livro.</string>
+    <string name="character_voices_no_voices">Não foi possível carregar a lista de vozes para os personagens. Tente de novo em instantes.</string>
     <string name="character_voice_assignment_item">%1$s (%4$s) · %2$d falas · %3$s</string>
     <string name="character_gender_male">provavelmente masculino</string>
     <string name="character_gender_female">provavelmente feminino</string>

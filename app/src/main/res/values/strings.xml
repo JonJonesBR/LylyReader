@@ -533,6 +533,7 @@
     <string name="action_character_voices">Character voices</string>
     <string name="character_voices_title">Character voices</string>
     <string name="character_voices_empty">No dialogue with a confidently identified speaker was found in this book.</string>
+    <string name="character_voices_no_voices">Couldn\'t load the list of voices for the characters. Try again in a moment.</string>
     <string name="character_voice_assignment_item">%1$s (%4$s) · %2$d lines · %3$s</string>
     <string name="character_gender_male">likely male</string>
     <string name="character_gender_female">likely female</string>
