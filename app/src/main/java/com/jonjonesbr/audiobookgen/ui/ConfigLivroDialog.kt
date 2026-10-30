@@ -27,7 +27,13 @@ private const val EPSILON_VELOCIDADE = 0.01f
  */
 object ConfigLivroDialog {
 
-    fun mostrar(activity: AppCompatActivity, caminhoArquivo: String, onClonarVoz: () -> Unit = {}) {
+    /** [aoMudarPerfil]: chamado depois de cada gravação, para a leitura guiada aberta aplicar a escolha já. */
+    fun mostrar(
+        activity: AppCompatActivity,
+        caminhoArquivo: String,
+        onClonarVoz: () -> Unit = {},
+        aoMudarPerfil: () -> Unit = {}
+    ) {
         val appPrefs = AppPrefs(activity)
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_config_livro, null)
         val dialog = BottomSheetDialog(activity)
@@ -69,32 +75,39 @@ object ConfigLivroDialog {
         fun salvarVelocidade(valor: Float) {
             val atual = resolverEfetivo(activity, caminhoArquivo, appPrefs)
             GuidedBookPrefsStore.save(activity, caminhoArquivo, atual.voz, atual.motor, valor)
+            aoMudarPerfil()
             atualizarUi()
         }
 
         view.findViewById<View>(R.id.itemConfigVoz).marcarComoBotao()
         view.findViewById<View>(R.id.itemConfigVoz).setOnClickListener {
-            abrirSeletorDeVoz(activity, caminhoArquivo, appPrefs, ::atualizarUi, onClonarVoz)
+            abrirSeletorDeVoz(activity, caminhoArquivo, appPrefs, { aoMudarPerfil(); atualizarUi() }, onClonarVoz)
         }
         botoesVelocidade.forEach { (btn, valor) -> btn.setOnClickListener { salvarVelocidade(valor) } }
+        var arrastando = false
         sliderVelocidade.addOnChangeListener { _, value, fromUser ->
-            if (fromUser) tvVelPersonalizada.text = formatarVelocidade(value)
+            if (!fromUser) return@addOnChangeListener
+            tvVelPersonalizada.text = formatarVelocidade(value)
+            // TalkBack e teclado mudam o valor sem arraste: grava já (o arraste grava ao soltar).
+            if (!arrastando) salvarVelocidade(aplicarSnapVelocidade(value))
         }
         sliderVelocidade.addOnSliderTouchListener(
-            criarTouchListenerVelocidade { salvarVelocidade(aplicarSnapVelocidade(it)) }
+            criarTouchListenerVelocidade({ arrastando = true }) {
+                arrastando = false
+                salvarVelocidade(aplicarSnapVelocidade(it))
+            }
         )
 
         atualizarUi()
         dialog.show()
     }
 
-    /** Só onStopTrackingTouch (soltar o dedo) importa aqui — extraído pra manter [mostrar]
-     * dentro do limite de linhas do detekt. */
-    private fun criarTouchListenerVelocidade(aoSoltar: (Float) -> Unit) = object : Slider.OnSliderTouchListener {
-        @Suppress("EmptyFunctionBlock")
-        override fun onStartTrackingTouch(slider: Slider) { }
-        override fun onStopTrackingTouch(slider: Slider) { aoSoltar(slider.value) }
-    }
+    /** Início e fim do arraste — extraído pra manter [mostrar] dentro do limite de linhas do detekt. */
+    private fun criarTouchListenerVelocidade(aoTocar: () -> Unit, aoSoltar: (Float) -> Unit) =
+        object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) { aoTocar() }
+            override fun onStopTrackingTouch(slider: Slider) { aoSoltar(slider.value) }
+        }
 
     private fun abrirSeletorDeVoz(
         activity: AppCompatActivity,

@@ -160,6 +160,27 @@ class GuidedPlayerManager(
         salvarPrefsDoLivro()
     }
 
+    /**
+     * Relê o perfil do livro depois que "Voz e velocidade deste livro" (menu ⋮) o gravou direto no store:
+     * aplica já a velocidade e, com voz nova, a próxima unidade sai nela. Sem isso, a escolha só valia ao
+     * reabrir o livro e era desfeita pelo próximo [salvarPrefsDoLivro] com os valores da memória.
+     */
+    fun recarregarPerfilDoLivro() {
+        if (caminhoArquivo.isBlank()) return
+        val prefsLivro = GuidedBookPrefsStore.load(context, caminhoArquivo) ?: return
+        if (prefsLivro.voz != vozOverride || prefsLivro.motor != motorOverride) {
+            cancelarPreparo()
+            vozOverride = prefsLivro.voz
+            motorOverride = prefsLivro.motor
+        }
+        if (prefsLivro.speedMult != speedMultiplier) {
+            speedMultiplier = prefsLivro.speedMult
+            try { playerEngine?.setPlaybackSpeed(currentBaseSpeed * speedMultiplier) } catch (e: Exception) {
+                Log.w(TAG, "Falha ao aplicar velocidade guiada", e)
+            }
+        }
+    }
+
     // Salva sempre a voz/motor EFETIVOS (override do livro, se houver, senão o global vigente
     // no momento) — assim um ajuste só de velocidade (sem nunca trocar de voz) ainda grava um
     // perfil completo e coerente para o livro, em vez de exigir as duas escolhas antes de salvar.

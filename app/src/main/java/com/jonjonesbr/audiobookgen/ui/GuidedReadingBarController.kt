@@ -235,6 +235,12 @@ class GuidedReadingBarController(
         }
     }
 
+    /** Voz ou velocidade do livro mudaram fora da barra (menu ⋮ › Voz e velocidade deste livro). */
+    fun atualizarRotulosDoPerfil() {
+        atualizarRotuloVelocidadeGuided()
+        atualizarRotuloPassos()
+    }
+
     private fun atualizarRotuloVelocidadeGuided() {
         val mult = guidedPlayerManager.playbackSpeedMultiplier
         val rotuloVelocidade = if (mult == mult.toInt().toFloat()) "${mult.toInt()}.0×" else "${mult}×"

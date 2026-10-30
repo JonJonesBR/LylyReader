@@ -46,6 +46,7 @@ class ReaderRetornoController(
         val onAbrirAparencia: () -> Unit,
         val onAbrirSleepTimer: () -> Unit,
         val onClonarVoz: () -> Unit = {},
+        val onPerfilDoLivroMudou: () -> Unit = {},
         /** Gera o audiobook dos capítulos marcados em ⋮ › Capítulos. */
         val onGerarCapitulosMarcados: () -> Unit = {},
     )
@@ -143,7 +144,9 @@ class ReaderRetornoController(
         view.item(R.id.itemAcaoSleepTimer, dialog) { callbacks.onAbrirSleepTimer() }
         view.item(R.id.itemAcaoAparencia, dialog) { callbacks.onAbrirAparencia() }
         view.item(R.id.itemAcaoConfigLivro, dialog) {
-            ConfigLivroDialog.mostrar(activity, callbacks.obterCaminhoArquivo(), callbacks.onClonarVoz)
+            ConfigLivroDialog.mostrar(
+                activity, callbacks.obterCaminhoArquivo(), callbacks.onClonarVoz, callbacks.onPerfilDoLivroMudou
+            )
         }
         view.item(R.id.itemAcaoVozesPersonagens, dialog) { callbacks.onConfigurarVozesPersonagens() }
         view.item(R.id.itemAcaoPronuncia, dialog) { callbacks.onAbrirPronuncia() }

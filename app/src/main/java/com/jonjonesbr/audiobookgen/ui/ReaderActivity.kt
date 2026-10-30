@@ -339,6 +339,10 @@ class ReaderActivity : BasePlayerActivity() {
                 onAbrirAparencia = { aparenciaController.mostrarBottomSheet() },
                 onAbrirSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
                 onClonarVoz = { cloneVoiceFlow.iniciar() },
+                onPerfilDoLivroMudou = {
+                    guidedPlayerManager?.recarregarPerfilDoLivro()
+                    guidedReadingBarController?.atualizarRotulosDoPerfil()
+                },
             ),
         )
     }
