@@ -9,7 +9,7 @@ package com.jonjonesbr.audiobookgen.util
 data class OracaoGuia(
     /** Texto da oração (sem espaços das bordas) — o que vai para o sintetizador. */
     val texto: String,
-    /** Chars (das orações anteriores) acumulados no parágrafo — base do progresso. */
+    /** Posição (em chars) onde a oração começa no parágrafo, com os espaços entre as frases — base do progresso. */
     val charsAcumulados: Int
 )
 
@@ -20,9 +20,10 @@ data class OracaoGuia(
  * ([.!?…]) seguida opcionalmente por aspas/parênteses de fechamento, quando o
  * próximo caractere é espaço/fim. Trechos sem pontuação viram uma oração única
  * (fallback). O texto devolvido em [OracaoGuia.texto] é limpo nas bordas (sem
- * espaços), e [OracaoGuia.charsAcumulados] soma os tamanhos das orações
- * anteriores (base para mapear o progresso de áudio em progresso de texto no
- * parágrafo). Função pura — sem estado, sem dependência de Android.
+ * espaços), e [OracaoGuia.charsAcumulados] é a posição real do início da
+ * oração no parágrafo (base para mapear o progresso de áudio em progresso de
+ * texto; somar só os tamanhos deixava o destaque um char atrás por frase).
+ * Função pura — sem estado, sem dependência de Android.
  */
 object DivisorDeOracoes {
 
@@ -32,7 +33,6 @@ object DivisorDeOracoes {
         val oracoes = mutableListOf<OracaoGuia>()
         var inicio = 0
         var i = 0
-        var acumulado = 0
         val n = texto.length
 
         while (i < n) {
@@ -43,7 +43,8 @@ object DivisorDeOracoes {
                 while (fim < n && (
                         texto[fim] == '\u2026' || texto[fim] == '.' || texto[fim] == '!' ||
                             texto[fim] == '?' || texto[fim] == '"' || texto[fim] == '\u201D' ||
-                            texto[fim] == '\'' || texto[fim] == '\u2019' || texto[fim] == ')'
+                            texto[fim] == '\'' || texto[fim] == '\u2019' || texto[fim] == ')' ||
+                            texto[fim] == '\u00BB' || texto[fim] == '\u203A'
                         )
                 ) {
                     fim++
@@ -51,10 +52,7 @@ object DivisorDeOracoes {
                 val proximo = texto.getOrNull(fim)
                 if ((proximo == null || proximo.isWhitespace()) && !terminaEmAbreviacao(texto, i, fim)) {
                     val trecho = texto.substring(inicio, fim).trim()
-                    if (trecho.isNotEmpty()) {
-                        oracoes.add(OracaoGuia(trecho, acumulado))
-                        acumulado += trecho.length
-                    }
+                    if (trecho.isNotEmpty()) oracoes.add(OracaoGuia(trecho, inicioReal(texto, inicio)))
                     inicio = fim
                     while (inicio < n && texto[inicio].isWhitespace()) inicio++
                     i = inicio
@@ -66,11 +64,16 @@ object DivisorDeOracoes {
 
         if (inicio < n) {
             val trecho = texto.substring(inicio).trim()
-            if (trecho.isNotEmpty()) {
-                oracoes.add(OracaoGuia(trecho, acumulado))
-            }
+            if (trecho.isNotEmpty()) oracoes.add(OracaoGuia(trecho, inicioReal(texto, inicio)))
         }
         return oracoes
+    }
+
+    /** Primeira posição a partir de [desde] que não é espaço (onde o trecho aparado começa). */
+    private fun inicioReal(texto: String, desde: Int): Int {
+        var p = desde
+        while (p < texto.length && texto[p].isWhitespace()) p++
+        return p
     }
 
     // Abreviações de tratamento/título que antecedem um nome: "Dr. Silva" não é fim de frase.
@@ -109,7 +112,6 @@ object DivisorDeOracoes {
     fun agruparOracoesCurta(oracoes: List<OracaoGuia>, minimoChars: Int = 45, tetoChars: Int = 110): List<OracaoGuia> {
         if (oracoes.size <= 1) return oracoes
         val agrupadas = mutableListOf<OracaoGuia>()
-        var acumulado = 0
         var i = 0
         while (i < oracoes.size) {
             var texto = oracoes[i].texto
@@ -120,8 +122,8 @@ object DivisorDeOracoes {
                 texto += " " + oracoes[j].texto
                 j++
             }
-            agrupadas.add(OracaoGuia(texto, acumulado))
-            acumulado += texto.length
+            // O grupo começa onde começa a sua primeira oração.
+            agrupadas.add(OracaoGuia(texto, oracoes[i].charsAcumulados))
             i = j
         }
         return agrupadas

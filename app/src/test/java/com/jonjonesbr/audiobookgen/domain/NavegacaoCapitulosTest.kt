@@ -22,6 +22,12 @@ class NavegacaoCapitulosTest {
         assertEquals(-1, NavegacaoCapitulos.indiceDoCapitulo(emptyList(), 3))
     }
 
+    @Test fun `busca ignora espacos repetidos no titulo`() {
+        val lista = listOf(Capitulo("CAPÍTULO  3", 0, 1), Capitulo("Capítulo 4", 2, 3))
+        assertEquals(listOf(0), NavegacaoCapitulos.filtrar(lista, "capitulo 3"))
+        assertEquals(listOf(0), NavegacaoCapitulos.filtrar(lista, "capitulo   3"))
+    }
+
     @Test fun `titulo em caixa alta vira frase`() {
         assertEquals("Capa página", NavegacaoCapitulos.tituloLimpo("CAPA  PÁGINA "))
         assertEquals("Capítulo IV", NavegacaoCapitulos.tituloLimpo("CAPÍTULO IV"))

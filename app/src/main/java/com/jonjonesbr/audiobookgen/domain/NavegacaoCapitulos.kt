@@ -53,5 +53,6 @@ object NavegacaoCapitulos {
     }
 
     private fun chave(texto: String): String =
-        Normalizer.normalize(texto, Normalizer.Form.NFD).replace(MARCAS, "").lowercase()
+        // Espaços repetidos viram um só: "CAPÍTULO  3" (dois espaços, comum em EPUB) é achado por "capitulo 3".
+        Normalizer.normalize(texto, Normalizer.Form.NFD).replace(MARCAS, "").replace(ESPACOS, " ").lowercase()
 }

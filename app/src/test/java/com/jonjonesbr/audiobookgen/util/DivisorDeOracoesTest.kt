@@ -18,13 +18,30 @@ class DivisorDeOracoesTest {
     }
 
     @Test
-    fun `acumula chars das oracoes anteriores para o progresso`() {
+    fun `posicao de cada oracao e a real no paragrafo, com os espacos`() {
         val oracoes = DivisorDeOracoes.dividirEmOracoes(
             "Aaa. Bbbb! Cccccc."
         )
         assertEquals(0, oracoes[0].charsAcumulados)
-        assertEquals("Aaa.".length, oracoes[1].charsAcumulados)
-        assertEquals("Aaa.".length + "Bbbb!".length, oracoes[2].charsAcumulados)
+        assertEquals("Aaa. ".length, oracoes[1].charsAcumulados)
+        assertEquals("Aaa. Bbbb! ".length, oracoes[2].charsAcumulados)
+    }
+
+    @Test
+    fun `posicao bate com o texto mesmo com espacos repetidos e quebras de linha`() {
+        // Antes a posição somava só os tamanhos: o destaque ficava atrás da voz a cada frase.
+        val texto = "  Primeira frase.  Segunda frase!\nTerceira?   Quarta."
+        val oracoes = DivisorDeOracoes.dividirEmOracoes(texto)
+        assertEquals(4, oracoes.size)
+        for (o in oracoes) assertTrue(o.texto, texto.startsWith(o.texto, o.charsAcumulados))
+    }
+
+    @Test
+    fun `aspas angulares fecham a frase`() {
+        val oracoes = DivisorDeOracoes.dividirEmOracoes("Ele disse: «Vamos já.» Y se fue.")
+        assertEquals(2, oracoes.size)
+        assertEquals("Ele disse: «Vamos já.»", oracoes[0].texto)
+        assertEquals("Y se fue.", oracoes[1].texto)
     }
 
     @Test
@@ -94,9 +111,8 @@ class DivisorDeOracoesTest {
         assertEquals(5, oracoes.size)
         assertEquals("NOITE OUTRA VEZ.", oracoes[0].texto)
         assertEquals("Os dois bebiam sem pressa.", oracoes.last().texto)
-        // A última oração acumula os chars de todas as anteriores.
-        val somaChars = oracoes.sumOf { it.texto.length }
-        assertTrue(oracoes.last().charsAcumulados + oracoes.last().texto.length <= somaChars)
+        // A última oração termina no fim do parágrafo.
+        assertEquals(texto.length, oracoes.last().charsAcumulados + oracoes.last().texto.length)
     }
 
     @Test
@@ -127,15 +143,10 @@ class DivisorDeOracoesTest {
 
     @Test
     fun `agrupamento mantem charsAcumulados coerentes`() {
-        val oracoes = DivisorDeOracoes.dividirEmOracoes(
-            "Primeira frase com tamanho suficiente. Segunda. Terceira também longa o bastante aqui."
-        )
-        val agrupadas = DivisorDeOracoes.agruparOracoesCurta(oracoes)
-        var esperado = 0
-        for (o in agrupadas) {
-            assertEquals(esperado, o.charsAcumulados)
-            esperado += o.texto.length
-        }
+        val texto = "Primeira frase com tamanho suficiente. Segunda. Terceira também longa o bastante aqui."
+        val agrupadas = DivisorDeOracoes.agruparOracoesCurta(DivisorDeOracoes.dividirEmOracoes(texto))
+        // Cada grupo começa onde começa a sua primeira oração.
+        for (o in agrupadas) assertTrue(o.texto, texto.startsWith(o.texto, o.charsAcumulados))
     }
 
     @Test

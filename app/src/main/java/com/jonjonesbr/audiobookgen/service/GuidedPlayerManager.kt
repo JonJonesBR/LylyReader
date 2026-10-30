@@ -960,7 +960,8 @@ class GuidedPlayerManager(
         modoOracoes = true
         paragrafoChars = paragraphText.length.coerceAtLeast(1)
         val partesDasFalas = partesParaTomDasFalas(paragraphText)
-        val totalDasOracoes = oracoes.sumOf { it.texto.length }.coerceAtLeast(1)
+        // Posições das orações são reais no parágrafo (com os espaços): o total é onde a última termina.
+        val totalDasOracoes = oracoes.lastOrNull()?.let { it.charsAcumulados + it.texto.length }?.coerceAtLeast(1) ?: 1
         try {
             for ((posicao, oracao) in oracoes.withIndex()) {
                 currentCoroutineContext().ensureActive()
