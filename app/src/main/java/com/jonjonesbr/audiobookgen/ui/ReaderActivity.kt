@@ -79,6 +79,7 @@ class ReaderActivity : BasePlayerActivity() {
         const val EXTRA_ACAO_RETORNO = "extra_acao_retorno"
         const val EXTRA_AUTO_START_GUIDED = "extra_auto_start_guided"
         private const val STATE_AUTO_START_RESOLVIDO = "state_auto_start_resolvido"
+        private const val STATE_CONTINUAR_GUIADA_RESOLVIDO = "state_continuar_guiada_resolvido"
         // Continua a leitura guiada direto na posição salva (sem diálogo de ponto de início).
         const val EXTRA_CONTINUAR_GUIADA = "extra_continuar_guiada"
         /** Painel a abrir assim que o texto carregar (vindo da tela do livro): uma das `ACAO_INICIAL_*`. */
@@ -357,11 +358,14 @@ class ReaderActivity : BasePlayerActivity() {
         // Só marca como resolvido se o diálogo já teve escolha; aberto na hora da rotação, reaparece.
         outState.putBoolean(STATE_AUTO_START_RESOLVIDO,
             autoStartGuidedTriggered && guidedReadingBarController?.dialogoInicioPendente != true)
+        // "Continuar" já iniciou a guiada: ao girar a tela, não recomeça uma leitura que o usuário já fechou.
+        outState.putBoolean(STATE_CONTINUAR_GUIADA_RESOLVIDO, continuarGuiadaTriggered)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         autoStartGuidedTriggered = savedInstanceState?.getBoolean(STATE_AUTO_START_RESOLVIDO) ?: false
+        continuarGuiadaTriggered = savedInstanceState?.getBoolean(STATE_CONTINUAR_GUIADA_RESOLVIDO) ?: false
         setContentView(R.layout.activity_reader)
         configurarMiniPlayerBotoes()
 
@@ -1755,7 +1759,10 @@ class ReaderActivity : BasePlayerActivity() {
 
     private fun compartilharTrechoAtual() {
         val state = viewModel.uiState.value
-        val index = state.paragrafoSyncAtual
+        // Parágrafo da narração (guiada ou audiobook) ou, sem áudio, o primeiro visível na tela.
+        val index = guidedPlayerManager?.state?.value?.index?.takeIf { it >= 0 }
+            ?: paragrafoAtualVisivel()
+            ?: -1
         val texto = viewModel.textoEfetivo()
         val paragrafos = state.textoLimpo?.paragrafos ?: texto?.paragrafos
 
