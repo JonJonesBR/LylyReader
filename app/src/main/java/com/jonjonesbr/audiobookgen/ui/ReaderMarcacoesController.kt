@@ -127,10 +127,8 @@ class ReaderMarcacoesController(
             }
         }
         val destaques = HighlightStore.listarPara(activity, caminho).map { d ->
-            val trecho = texto?.paragrafos?.getOrNull(d.indiceParagrafo)?.texto
-                ?.substring(d.inicio.coerceAtMost(d.fim), d.fim)
-                ?.take(BOOKMARK_NOME_MAX)
-                ?: "…"
+            // Limites presos ao tamanho atual do parágrafo: uma edição pode tê-lo encurtado depois do destaque.
+            val trecho = trechoDoDestaque(texto, d.indiceParagrafo, d.inicio, d.fim).take(BOOKMARK_NOME_MAX)
             val rotulo = if (d.nota.isNotBlank()) "${d.nota} — “$trecho”" else "“$trecho”"
             Marcacao(d.indiceParagrafo, "🖍 $rotulo") {
                 HighlightStore.remover(activity, d.id)
