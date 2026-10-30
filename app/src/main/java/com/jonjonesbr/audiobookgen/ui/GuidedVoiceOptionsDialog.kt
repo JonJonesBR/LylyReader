@@ -234,7 +234,10 @@ object GuidedVoiceOptionsDialog {
         else -> motor.replaceFirstChar { it.uppercase() }
     }
 
-    /** Linha com título, texto de ajuda, valor atual e deslizante; [aoSoltar] recebe o valor ao soltar o dedo. */
+    /**
+     * Linha com título, texto de ajuda, valor atual e deslizante; [aoSoltar] recebe o valor ao soltar o dedo,
+     * ou a cada passo quando o valor muda sem arraste (TalkBack, teclado).
+     */
     private fun controleDeslizante(
         activity: AppCompatActivity,
         pai: LinearLayout,
@@ -254,10 +257,18 @@ object GuidedVoiceOptionsDialog {
         }
         fun mostrar() { valor.text = rotulo(barra.progress + minimo) }
         mostrar()
+        var arrastando = false
         barra.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) = mostrar()
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) = aoSoltar(barra.progress + minimo)
+            override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
+                mostrar()
+                // TalkBack e teclado mudam o valor sem arraste: grava já, senão a mudança se perdia.
+                if (fromUser && !arrastando) aoSoltar(progress + minimo)
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) { arrastando = true }
+            override fun onStopTrackingTouch(sb: SeekBar?) {
+                arrastando = false
+                aoSoltar(barra.progress + minimo)
+            }
         })
         pai.addView(TextView(activity).apply {
             setText(titulo)

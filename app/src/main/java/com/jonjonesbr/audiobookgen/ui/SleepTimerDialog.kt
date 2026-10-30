@@ -39,17 +39,20 @@ object SleepTimerDialog {
             activity.getString(R.string.sleep_timer_label)
         }
 
-        fun aplicar(min: Int) {
+        // fechar = false: ajuste passo a passo (TalkBack, teclado), que vale já mas mantém o diálogo aberto.
+        fun aplicar(min: Int, fechar: Boolean = true) {
             if (min <= 0) {
                 stm.cancel()
-                Toast.makeText(activity, R.string.toast_sleep_timer_off, Toast.LENGTH_SHORT).show()
+                if (fechar) Toast.makeText(activity, R.string.toast_sleep_timer_off, Toast.LENGTH_SHORT).show()
             } else {
                 stm.start(min * MS_POR_MINUTO, sessionToken)
-                Toast.makeText(
-                    activity, activity.getString(R.string.toast_sleep_timer_set, min), Toast.LENGTH_SHORT
-                ).show()
+                if (fechar) {
+                    Toast.makeText(
+                        activity, activity.getString(R.string.toast_sleep_timer_set, min), Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
-            dialog.dismiss()
+            if (fechar) dialog.dismiss()
         }
 
         val idsPresets = listOf(
@@ -68,6 +71,7 @@ object SleepTimerDialog {
         val tvPersonalizada = view.findViewById<TextView>(R.id.tvSonecaPersonalizada)
         tvPersonalizada.text = activity.getString(R.string.sleep_timer_custom_off_label)
         val slider = view.findViewById<Slider>(R.id.sliderSoneca)
+        var arrastando = false
         slider.addOnChangeListener { _, value, fromUser ->
             if (!fromUser) return@addOnChangeListener
             val min = value.toInt()
@@ -76,13 +80,15 @@ object SleepTimerDialog {
             } else {
                 activity.getString(R.string.sleep_timer_custom_label, min)
             }
+            // TalkBack e teclado mudam o valor sem arraste: liga a soneca já, sem fechar o diálogo.
+            if (!arrastando) aplicar(min, fechar = false)
         }
         slider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
-            @Suppress("EmptyFunctionBlock")
-            override fun onStartTrackingTouch(slider: Slider) {
-                // Nada a fazer — só o valor final (onStopTrackingTouch) importa aqui.
+            override fun onStartTrackingTouch(slider: Slider) { arrastando = true }
+            override fun onStopTrackingTouch(slider: Slider) {
+                arrastando = false
+                aplicar(slider.value.toInt())
             }
-            override fun onStopTrackingTouch(slider: Slider) { aplicar(slider.value.toInt()) }
         })
 
         dialog.show()
