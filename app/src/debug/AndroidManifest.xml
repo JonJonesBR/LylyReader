@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- SÓ build debug (não entra no release): atalhos exportados para abrir cada tela por adb
-         (am start -n com.jonjonesbr.audiobookgen/.DebugSettings) e validar visualmente sem tocar na tela. -->
+         (am start -n com.jonjonesbr.audiobookgen.dev/com.jonjonesbr.audiobookgen.DebugSettings) e validar visualmente sem tocar na tela. -->
     <application>
         <activity
             android:name=".DebugVideoExportActivity"

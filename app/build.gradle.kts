@@ -102,9 +102,9 @@ android {
 
     buildTypes {
         debug {
-            // O build de teste convive com a release instalada (outro id, outros dados): testar no aparelho
-            // sem desinstalar a versão assinada de uso diário.
-            applicationIdSuffix = ".debug"
+            // O build de teste convive com o app publicado (que usa .debug, ver "publicada"): outro id, outros dados
+            // e o nome "Lyly Teste" (src/debug/res), para testar no aparelho sem tocar na versão de uso diário.
+            applicationIdSuffix = ".dev"
             if (hasDebugSigningProps) {
                 signingConfig = signingConfigs.getByName("debugFixa")
             }

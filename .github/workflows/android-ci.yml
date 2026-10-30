@@ -2,6 +2,8 @@ name: Android CI
 
 on:
   # Sem APK automático (decisão de 2026-10-08): a conferência a cada push é o checks.yml (testes, sem APK). Para gerar o APK de depuração, rode manualmente.
+  # O APK de teste tem id próprio (.dev, ver app/build.gradle.kts): instala ao lado do app publicado, com dados separados,
+  # e sai com a chave fixa, para cada teste novo instalar por cima do anterior.
   workflow_dispatch:
 
 permissions:
@@ -24,6 +26,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0  # tags e número de commits, para a versão do APK de teste
+          persist-credentials: false
 
       - name: Set up JDK
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -97,8 +102,42 @@ jobs:
           restore-keys: |
             pip-${{ runner.os }}-
 
+      - name: Prepare fixed debug signing key
+        # Mesma chave fixa do release.yml (segredos do repositório, nunca no Git). Sem ela (ex.: num fork) o APK sai
+        # com a chave debug padrão: compila do mesmo jeito, só não instala por cima do teste anterior.
+        env:
+          DEBUG_KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_B64 }}
+          DEBUG_KEYSTORE_PASSWORD: ${{ secrets.DEBUG_KEYSTORE_PASSWORD }}
+        run: |
+          set -e
+          if [ -z "$DEBUG_KEYSTORE_B64" ] || [ -z "$DEBUG_KEYSTORE_PASSWORD" ]; then
+            echo "::warning::Segredos da chave fixa ausentes: APK de teste com a chave debug padrão."
+            exit 0
+          fi
+          KS="$RUNNER_TEMP/lylyreader-debug.p12"
+          echo "$DEBUG_KEYSTORE_B64" | base64 -d > "$KS"
+          {
+            echo "storeFile=$KS"
+            echo "storePassword=$DEBUG_KEYSTORE_PASSWORD"
+            echo "keyAlias=lylyreader-debug"
+            echo "keyPassword=$DEBUG_KEYSTORE_PASSWORD"
+          } > "$RUNNER_TEMP/debug-signing.properties"
+          echo "LYLY_DEBUG_SIGNING_PROPS=$RUNNER_TEMP/debug-signing.properties" >> "$GITHUB_ENV"
+
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+        # versionCode = número de commits (o mesmo critério do release.yml), para cada teste novo atualizar o anterior;
+        # versionName = última tag + "-teste." + commit, para saber nos Ajustes qual teste está instalado.
+        run: |
+          set -e
+          ULTIMA="$(git tag -l 'v*' --sort=-v:refname | head -1)"
+          VN="${ULTIMA#v}"
+          ./gradlew :app:assembleDebug --stacktrace \
+            -PversionCodeOverride="$(git rev-list --count HEAD)" \
+            -PversionNameOverride="${VN:-0.0.0}-teste.$(git rev-parse --short HEAD)"
+
+      - name: Remove signing key from runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/lylyreader-debug.p12" "$RUNNER_TEMP/debug-signing.properties"
 
       - name: Upload debug APK
         # continue-on-error: a cota de armazenamento de Artifacts (500MB) já estourou antes e
@@ -111,7 +150,8 @@ jobs:
         with:
           name: lylyreader-debug-apk
           path: app/build/outputs/apk/debug/*.apk
-          retention-days: 3
+          # 1 dia: o APK de teste é baixado logo depois do build, e a cota de Artifacts fica livre.
+          retention-days: 1
 
       - name: Run unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
