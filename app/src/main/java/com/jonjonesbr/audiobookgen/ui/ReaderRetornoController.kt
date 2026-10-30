@@ -181,10 +181,7 @@ class ReaderRetornoController(
 
         view.item(R.id.itemAcaoEditar, dialog) { viewModel.ativarModoEdicao() }
         view.item(R.id.itemAcaoExcluirPalavras, dialog) { mostrarDialogoExcluirOcorrencias() }
-        view.item(R.id.itemAcaoRefazerLimpeza, dialog) {
-            aplicarEdicoesPendentes()
-            viewModel.executarLimpeza(File(callbacks.obterCaminhoArquivo()).extension.lowercase())
-        }
+        view.item(R.id.itemAcaoRefazerLimpeza, dialog) { refazerLimpeza() }
         view.item(R.id.itemAcaoExportar, dialog) { mostrarDialogoExportarTexto() }
         view.item(R.id.itemAcaoCompartilharTrecho, dialog) { callbacks.onCompartilharTrecho() }
     }
@@ -222,6 +219,26 @@ class ReaderRetornoController(
      * "Gerar audiobook": o livro inteiro, só o capítulo em leitura ou, se houver, os capítulos marcados em
      * ⋮ › Capítulos (antes os marcados só tinham o botão sobre o texto, que some com a leitura guiada aberta).
      */
+    /**
+     * A limpeza recomeça do texto original: com edições manuais (ou palavras excluídas) feitas depois da
+     * primeira limpeza, elas se perdem. Nesse caso pergunta antes, em vez de descartar sem avisar.
+     */
+    private fun refazerLimpeza() {
+        aplicarEdicoesPendentes()
+        val formato = File(callbacks.obterCaminhoArquivo()).extension.lowercase()
+        val state = viewModel.uiState.value
+        if (!state.temEdicoes || state.textoOriginalBruto == null) {
+            viewModel.executarLimpeza(formato)
+            return
+        }
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setTitle(R.string.refazer_limpeza_confirma_titulo)
+            .setMessage(R.string.refazer_limpeza_confirma_msg)
+            .setPositiveButton(R.string.refazer_limpeza_confirma_ok) { _, _ -> viewModel.executarLimpeza(formato) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
+    }
+
     private fun mostrarDialogoGerarAudiobook() {
         val texto = viewModel.textoEfetivo() ?: return
         val capitulo = texto.capitulos.getOrNull(viewModel.uiState.value.capituloAtivo)

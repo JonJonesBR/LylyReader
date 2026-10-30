@@ -258,6 +258,8 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
             ?: _uiState.value.texto
             ?: return
         val textoAtual = textoOriginal
+        // Partindo do original guardado, edições manuais e exclusões feitas depois ficam para trás.
+        val descartaEdicoes = _uiState.value.textoOriginalBruto != null
 
         _uiState.update {
             it.copy(
@@ -279,6 +281,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
                         textoLimpo = textoLimpo,
                         spansRemovidos = emptyList(),
                         relatorioLinhasRemovidas = totalLinhasRemovidas,
+                        temEdicoes = if (descartaEdicoes) false else it.temEdicoes,
                         limpandoTexto = false
                     )
                 }
