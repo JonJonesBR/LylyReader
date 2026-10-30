@@ -12,6 +12,8 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
     private var onCompletionListener: (() -> Unit)? = null
     private var onErrorListener: ((String) -> Unit)? = null
     private var currentSpeed: Float = 1.0f
+    // Último volume pedido (fade da soneca): cada trecho cria um MediaPlayer novo, que nasceria em 1.0.
+    private var volumeAtual: Float = 1.0f
     private var timbre: TimbreVoz = TimbreVoz.PADRAO
     private var equalizador: android.media.audiofx.Equalizer? = null
 
@@ -34,6 +36,7 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
                     true
                 }
                 prepare()
+                setVolume(volumeAtual, volumeAtual)
             }
 
             mediaPlayer = player
@@ -155,6 +158,7 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
     }
 
     override fun setVolume(volume: Float) {
+        volumeAtual = volume
         try {
             mediaPlayer?.setVolume(volume, volume)
         } catch (e: IllegalStateException) {

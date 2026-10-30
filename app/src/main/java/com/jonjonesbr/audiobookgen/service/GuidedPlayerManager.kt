@@ -400,6 +400,8 @@ class GuidedPlayerManager(
             MediaPlayerEngineImpl(context)
         }
         fixarTimbre(timbreAtual())
+        // Motor novo a cada parágrafo: herda o volume do fade da soneca em curso (o motor novo começaria em 1.0).
+        if (GuidedPlaybackBridge.manager === this) playerEngine?.setVolume(SleepTimerManager.volumeFactor.value)
         playerEngine?.setCompletionListener {
             // Modo oração: o fim do áudio da oração acorda o loop para tocar a próxima
             // (em vez de avançar o parágrafo, que só acontece com a sequência completa).

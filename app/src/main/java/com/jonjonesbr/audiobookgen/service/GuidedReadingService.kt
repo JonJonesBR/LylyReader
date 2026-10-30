@@ -150,7 +150,9 @@ class GuidedReadingService : Service() {
                 val tokenArmado = SleepTimerManager.armedToken
                 val m = GuidedPlaybackBridge.manager
                 if (m != null && tokenArmado != null && tokenArmado == m.sessionToken) {
-                    if (m.state.value.isPlaying) m.pause()
+                    // Pausa também no meio da síntese do próximo trecho (isPlaying ainda false): pause() segura o
+                    // laço em aguardarRetomada() e o trecho não chega a tocar. Só não há o que pausar sem leitura (-1).
+                    if (m.state.value.index >= 0) m.pause()
                 } else if (tokenArmado != null) {
                     SleepTimerManager.cancel()
                 }

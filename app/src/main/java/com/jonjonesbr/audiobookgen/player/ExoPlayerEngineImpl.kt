@@ -18,6 +18,8 @@ class ExoPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
     private var onCompletionListener: (() -> Unit)? = null
     private var onErrorListener: ((String) -> Unit)? = null
     private var currentSpeed: Float = 1.0f
+    // Último volume pedido (fade da soneca): cada trecho cria um ExoPlayer novo, que nasceria em 1.0.
+    private var volumeAtual: Float = 1.0f
     private var timbre: TimbreVoz = TimbreVoz.PADRAO
     private var equalizador: android.media.audiofx.Equalizer? = null
 
@@ -45,6 +47,7 @@ class ExoPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
                 val mediaItem = MediaItem.fromUri(Uri.fromFile(audioFile))
                 setMediaItem(mediaItem)
                 playbackParameters = PlaybackParameters(currentSpeed, timbre.fatorDeTom)
+                volume = volumeAtual
                 prepare()
             }
 
@@ -144,6 +147,7 @@ class ExoPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
     }
 
     override fun setVolume(volume: Float) {
+        volumeAtual = volume
         try {
             exoPlayer?.volume = volume
         } catch (e: IllegalStateException) {
