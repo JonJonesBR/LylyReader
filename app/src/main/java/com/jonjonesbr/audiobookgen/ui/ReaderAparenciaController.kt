@@ -98,8 +98,8 @@ class ReaderAparenciaController(
 
     private fun configurarSeekFonte(seekFonte: SeekBar, tvFonteValor: TextView, tamanhoFonteInicial: Float) {
         fun atualizarLabelsFonte(sp: Float) {
-            // Visível só o número ("16", "16.5"); o leitor de tela ouve o texto completo com a unidade.
-            val numero = String.format(java.util.Locale.US, "%.1f", sp).removeSuffix(".0")
+            // Visível só o número ("16", "16,5"); o leitor de tela ouve o texto completo com a unidade.
+            val numero = formatarNumero(sp, maxCasas = 1)
             tvFonteValor.text = numero
             tvFonteValor.contentDescription = activity.getString(R.string.cd_tamanho_fonte_valor, numero)
             ViewCompat.setStateDescription(seekFonte, tvFonteValor.contentDescription)
@@ -122,7 +122,7 @@ class ReaderAparenciaController(
             val current = viewModel.uiState.value.tamanhoFonte
             mostrarDialogoInputNumerico(
                 title = activity.getString(R.string.label_tamanho_fonte),
-                value = "%.1f".format(java.util.Locale.US, current),
+                value = formatarNumero(current, maxCasas = 1),
                 min = FONTE_MIN, max = FONTE_MAX,
                 onConfirm = { valor ->
                     val clamped = valor.coerceIn(FONTE_MIN, FONTE_MAX)
@@ -140,7 +140,7 @@ class ReaderAparenciaController(
         espacamentoInicial: Float
     ) {
         fun atualizarLabelsEspacamento(mult: Float) {
-            tvEspacamentoValor.text = String.format(java.util.Locale.US, "%.2f", mult)
+            tvEspacamentoValor.text = formatarNumero(mult, minCasas = 2, maxCasas = 2)
             ViewCompat.setStateDescription(seekEspacamento, tvEspacamentoValor.text)
         }
 
@@ -161,7 +161,7 @@ class ReaderAparenciaController(
             val current = viewModel.uiState.value.espacamento
             mostrarDialogoInputNumerico(
                 title = activity.getString(R.string.label_espacamento_linhas),
-                value = "%.2f".format(java.util.Locale.US, current),
+                value = formatarNumero(current, maxCasas = 2),
                 min = ESPACAMENTO_MIN, max = ESPACAMENTO_MAX,
                 onConfirm = { valor ->
                     val clamped = valor.coerceIn(ESPACAMENTO_MIN, ESPACAMENTO_MAX)
@@ -261,6 +261,14 @@ class ReaderAparenciaController(
         }
     }
 
+    /** Número no formato do idioma do app ("16,5" em pt/es, "16.5" em en), sem ",0" sobrando. */
+    private fun formatarNumero(valor: Float, minCasas: Int = 0, maxCasas: Int = 2): String =
+        java.text.NumberFormat.getNumberInstance(activity.resources.configuration.locales[0]).apply {
+            minimumFractionDigits = minCasas
+            maximumFractionDigits = maxCasas
+            isGroupingUsed = false
+        }.format(valor)
+
     private fun mostrarDialogoInputNumerico(
         title: String,
         value: String,
@@ -276,17 +284,17 @@ class ReaderAparenciaController(
         }
         androidx.appcompat.app.AlertDialog.Builder(activity)
             .setTitle(title)
-            .setMessage(activity.getString(R.string.reader_valor_entre, min.toString(), max.toString()))
+            .setMessage(activity.getString(R.string.reader_valor_entre, formatarNumero(min), formatarNumero(max)))
             .setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                val texto = input.text.toString().trim()
-                val valor = texto.toFloatOrNull()
+                // Aceita vírgula ou ponto: em português e espanhol o teclado e o hábito usam vírgula.
+                val valor = input.text.toString().trim().replace(',', '.').toFloatOrNull()
                 if (valor != null && valor in min..max) {
                     onConfirm(valor)
                 } else {
                     Toast.makeText(
                         activity,
-                        activity.getString(R.string.reader_valor_invalido, min.toString(), max.toString()),
+                        activity.getString(R.string.reader_valor_invalido, formatarNumero(min), formatarNumero(max)),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
