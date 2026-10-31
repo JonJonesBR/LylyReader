@@ -16,6 +16,7 @@ import com.jonjonesbr.audiobookgen.player.MediaPlayerEngineImpl
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedState
+import com.jonjonesbr.audiobookgen.service.SleepTimerManager
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -118,6 +119,8 @@ class GuidedPlayerManagerTest {
         createdManagers.clear()
         GuidedPlaybackBridge.manager?.let { GuidedPlaybackBridge.deactivate(it) }
         GuidedPlaybackBridge.activeState.value = null
+        // A soneca é global ao processo: a de um teste não pode vazar para o seguinte.
+        SleepTimerManager.cancel()
         unmockkAll()
         Dispatchers.resetMain()
     }
@@ -221,6 +224,84 @@ class GuidedPlayerManagerTest {
             assertEquals(0, manager.state.value.index)
             testDispatcher.scheduler.advanceTimeBy(1_000)
             aguardar { manager.state.value.index == 1 }
+        } finally {
+            manager.stop()
+            testDispatcher.scheduler.runCurrent()
+            arquivo.delete()
+        }
+    }
+
+    /**
+     * Leitura de dois parágrafos (um capítulo cada) pelo motor "edge", sem pausas naturais: o fim é o do
+     * parágrafo.
+     */
+    private fun prepararLeituraSemPausasNaturais(arquivo: java.io.File) {
+        val synthesizer = mockk<com.jonjonesbr.audiobookgen.tts.TtsSynthesizer>()
+        io.mockk.coEvery { synthesizer.synthesize(any(), any(), 100) } returns arquivo.absolutePath
+        mockkObject(com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.Companion)
+        every {
+            com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para("edge", any(), any(), any(), any())
+        } returns synthesizer
+        mockkObject(com.jonjonesbr.audiobookgen.service.GuidedReadingService.Companion)
+        every { com.jonjonesbr.audiobookgen.service.GuidedReadingService.ativo } returns true
+        every { anyConstructed<AppPrefs>().motorTts } returns "edge"
+        every { anyConstructed<AppPrefs>().vozSelecionada } returns "pt-BR-ThalitaMultilingualNeural"
+        every { anyConstructed<AppPrefs>().ritmo } returns 100
+        every { anyConstructed<AppPrefs>().pausasNaturais } returns false
+        every { anyConstructed<MediaPlayerEngineImpl>().play(any(), any()) } just Runs
+        mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
+        every { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) } returns false
+    }
+
+    @Test
+    fun sonecaDeCapituloPausaNoFimDoCapituloEAvancaAoRetomar() {
+        val arquivo = java.io.File.createTempFile("guiada-soneca-", ".wav")
+        prepararLeituraSemPausasNaturais(arquivo)
+
+        val manager = createManager()
+        try {
+            manager.setParagraphs(paragraphs(2))
+            manager.play(0)
+            aguardar { manager.state.value.isPlaying }
+
+            SleepTimerManager.armarFimDoCapitulo(manager.sessionToken)
+            lastCompletionListener()
+            testDispatcher.scheduler.runCurrent()
+
+            // Terminou o último parágrafo do capítulo: pausa na fronteira, sem avançar, e a soneca foi consumida.
+            assertEquals(0, manager.state.value.index)
+            assertTrue(manager.estaPausado)
+            assertFalse(SleepTimerManager.fimDoCapitulo.value)
+
+            // Ao retomar, a leitura passa ao capítulo seguinte.
+            manager.resume()
+            testDispatcher.scheduler.advanceTimeBy(200)
+            aguardar { manager.state.value.index == 1 }
+        } finally {
+            manager.stop()
+            testDispatcher.scheduler.runCurrent()
+            arquivo.delete()
+        }
+    }
+
+    @Test
+    fun sonecaDeCapituloDeOutraSessaoNaoSeguraOAvanco() {
+        val arquivo = java.io.File.createTempFile("guiada-soneca-outra-", ".wav")
+        prepararLeituraSemPausasNaturais(arquivo)
+
+        val manager = createManager()
+        try {
+            manager.setParagraphs(paragraphs(2))
+            manager.play(0)
+            aguardar { manager.state.value.isPlaying }
+
+            SleepTimerManager.armarFimDoCapitulo(manager.sessionToken + 1_000)
+            lastCompletionListener()
+            testDispatcher.scheduler.runCurrent()
+
+            aguardar { manager.state.value.index == 1 }
+            assertFalse(manager.estaPausado)
+            assertTrue(SleepTimerManager.fimDoCapitulo.value)
         } finally {
             manager.stop()
             testDispatcher.scheduler.runCurrent()

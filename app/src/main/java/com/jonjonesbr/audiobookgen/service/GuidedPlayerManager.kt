@@ -1667,7 +1667,33 @@ class GuidedPlayerManager(
 
     private fun onPlaybackCompleted() {
         Log.d(TAG, "Playback completed for paragraph $currentIndex")
+        if (segurarPelaSonecaDeCapitulo()) return
         next()
+    }
+
+    /**
+     * Soneca "fim do capítulo": o parágrafo que acabou de tocar é o último do capítulo (ou do livro). Pausa aqui,
+     * na fronteira, e só ao retomar passa ao parágrafo seguinte. Assim o áudio para com o último parágrafo inteiro
+     * e a pausa final já feita. Pausar depois de avançar (pelo serviço, de forma assíncrona) deixaria o início do
+     * capítulo seguinte tocando, principalmente com o áudio já em cache. Sem fade: não há corte a suavizar, e um
+     * fade dentro do último trecho abafaria as últimas palavras. Devolve true se segurou a leitura.
+     */
+    private fun segurarPelaSonecaDeCapitulo(): Boolean {
+        val atual = paragraphs.getOrNull(currentIndex)?.indiceCapitulo
+        val seguinte = paragraphs.getOrNull(currentIndex + 1)?.indiceCapitulo
+        val dispara = sonecaDeCapituloDispara(
+            SleepTimerManager.fimDoCapitulo.value, SleepTimerManager.armedToken, sessionToken, atual, seguinte
+        ) && SleepTimerManager.dispararFimDoCapitulo(sessionToken)
+        if (!dispara) return false
+        pause()
+        // Guarda pela geração, não pelo índice: setParagraphs pode remapear currentIndex enquanto a leitura está
+        // segurada (texto bruto → limpo), e um índice guardado deixaria o avanço preso para sempre.
+        val geracao = geracaoDeReproducao
+        playJob = coroutineScope.launch {
+            aguardarRetomada()
+            if (geracaoDeReproducao == geracao) next()
+        }
+        return true
     }
 
     fun release() {

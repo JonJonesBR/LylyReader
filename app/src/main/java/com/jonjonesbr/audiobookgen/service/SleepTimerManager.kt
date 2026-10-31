@@ -20,6 +20,9 @@ import kotlinx.coroutines.launch
  * pode bloquear a tela / sair do app). Os serviços de player ([AudioPlayerService],
  * [GuidedReadingService]) observam [remainingMs] para mostrar a contagem na notificação e
  * [finished] para pausar a reprodução; a UI observa para exibir o tempo restante.
+ *
+ * Há também a soneca "fim do capítulo" ([armarFimDoCapitulo]): sem contagem, ela dispara quando o
+ * último parágrafo do capítulo acaba (ver GuidedPlayerManager). Só existe na leitura guiada.
  */
 object SleepTimerManager {
     /** Duração (ms) do fade-out de volume nos últimos instantes da contagem. */
@@ -50,21 +53,27 @@ object SleepTimerManager {
     private val _finished = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val finished: SharedFlow<Unit> = _finished
 
-    val isActive: Boolean get() = _remainingMs.value != null
+    // Soneca "fim do capítulo" armada (sem contagem). Vira false ao disparar, ao começar uma contagem e ao cancelar.
+    private val _fimDoCapitulo = MutableStateFlow(false)
+    val fimDoCapitulo: StateFlow<Boolean> = _fimDoCapitulo.asStateFlow()
+
+    val isActive: Boolean get() = _remainingMs.value != null || _fimDoCapitulo.value
 
     // Token da sessão de leitura guiada (GuidedPlayerManager.sessionToken) vigente no momento
     // em que a soneca foi ligada — null quando a soneca não está atrelada a uma sessão de
-    // leitura guiada (ex.: ligada a partir do player de áudio convertido). Mantido até o
-    // próximo start()/cancel() (não é limpo ao expirar) para que o coletor de [finished]
+    // leitura guiada (ex.: ligada a partir do player de áudio convertido). Vale tanto para a
+    // contagem quanto para a soneca "fim do capítulo". Mantido até o próximo start()/cancel()
+    // (não é limpo ao expirar nem ao disparar "fim do capítulo") para que o coletor de [finished]
     // ainda consiga comparar contra a sessão vigente naquele instante.
     @Volatile var armedToken: Long? = null
         private set
 
     /** Inicia (ou reinicia) a contagem. [durationMs] <= 0 apenas cancela.
      *  [sessionToken], quando informado, trava a soneca à sessão de leitura guiada vigente
-     *  no momento do start() — ver [armedToken]. */
+     *  no momento do start() — ver [armedToken]. Uma contagem substitui a soneca "fim do capítulo". */
     fun start(durationMs: Long, sessionToken: Long? = null) {
         job?.cancel()
+        _fimDoCapitulo.value = false
         armedToken = sessionToken
         if (durationMs <= 0) {
             _remainingMs.value = null
@@ -90,12 +99,39 @@ object SleepTimerManager {
         }
     }
 
+    /**
+     * Arma a soneca "fim do capítulo" para a sessão [sessionToken]: sem contagem, sem fade (o volume fica cheio).
+     * Substitui uma contagem em curso.
+     */
+    fun armarFimDoCapitulo(sessionToken: Long) {
+        job?.cancel()
+        job = null
+        armedToken = sessionToken
+        _remainingMs.value = null
+        _armedMinutes.value = null
+        _volumeFactor.value = 1f
+        _fimDoCapitulo.value = true
+    }
+
+    /**
+     * Dispara a soneca "fim do capítulo" para a sessão [sessionToken]: emite [finished] e desarma o modo. Mantém
+     * [armedToken], como na expiração por tempo, para os coletores de [finished] comparem com ele. Devolve false
+     * (sem emitir nada) se a soneca não estiver armada para essa sessão.
+     */
+    fun dispararFimDoCapitulo(sessionToken: Long): Boolean {
+        if (!_fimDoCapitulo.value || armedToken != sessionToken) return false
+        _fimDoCapitulo.value = false
+        _finished.tryEmit(Unit)
+        return true
+    }
+
     fun cancel() {
         job?.cancel()
         job = null
         _remainingMs.value = null
         _armedMinutes.value = null
         _volumeFactor.value = 1f
+        _fimDoCapitulo.value = false
         armedToken = null
     }
 
@@ -123,3 +159,32 @@ fun calcularFatorVolumeFade(
     if (janela <= 0) return 1f
     return (remainingMs.toFloat() / janela).coerceIn(0f, 1f)
 }
+
+/** Modo da soneca em vigor: contagem regressiva, fim do capítulo, ou desligada. */
+enum class ModoSoneca { DESLIGADA, CONTAGEM, FIM_DO_CAPITULO }
+
+/**
+ * Modo da soneca dado o tempo restante da contagem ([restanteMs], null = sem contagem) e se a soneca
+ * "fim do capítulo" está armada. Os dois nunca valem juntos; o fim do capítulo tem precedência.
+ */
+fun modoDaSoneca(restanteMs: Long?, fimDoCapitulo: Boolean): ModoSoneca = when {
+    fimDoCapitulo -> ModoSoneca.FIM_DO_CAPITULO
+    restanteMs != null -> ModoSoneca.CONTAGEM
+    else -> ModoSoneca.DESLIGADA
+}
+
+/**
+ * A soneca "fim do capítulo" deve pausar agora? Vale quando ela está armada para a sessão [tokenDaSessao] e o
+ * parágrafo que acabou de tocar é o último do capítulo ([capituloAtual] diferente de [capituloSeguinte]), ou o
+ * último do livro ([capituloSeguinte] null). Sem capítulo atual, não dispara.
+ */
+fun sonecaDeCapituloDispara(
+    armadaNoFimDoCapitulo: Boolean,
+    tokenArmado: Long?,
+    tokenDaSessao: Long,
+    capituloAtual: Int?,
+    capituloSeguinte: Int?
+): Boolean = armadaNoFimDoCapitulo &&
+    tokenArmado == tokenDaSessao &&
+    capituloAtual != null &&
+    (capituloSeguinte == null || capituloSeguinte != capituloAtual)

@@ -5,6 +5,7 @@ import com.jonjonesbr.audiobookgen.service.SleepTimerManager
 import com.jonjonesbr.audiobookgen.util.PRESETS_SONECA_MIN
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import android.app.Activity
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -16,6 +17,9 @@ import com.google.android.material.slider.Slider
  * e a leitura guiada ([ReaderActivity]). Presets de 1 toque (5/10/20/30/60/90/120 min) + slider
  * de 5 em 5 minutos pra qualquer valor entre eles — pedido do usuário, que achava os presets
  * antigos (15/30/45/60) pouco flexíveis.
+ *
+ * O botão "Fim do capítulo" só aparece com [sessionToken] (ou seja, na leitura guiada): a soneca de capítulo
+ * depende do gatilho de fim de parágrafo do GuidedPlayerManager, que o audiobook não tem.
  */
 object SleepTimerDialog {
 
@@ -33,10 +37,20 @@ object SleepTimerDialog {
         dialog.expandirEmPaisagem()
 
         val ativo = stm.remainingMs.value
-        view.findViewById<TextView>(R.id.tvSonecaTitulo).text = if (ativo != null) {
-            activity.getString(R.string.sleep_timer_title_active, stm.formatRemaining(ativo))
-        } else {
-            activity.getString(R.string.sleep_timer_label)
+        view.findViewById<TextView>(R.id.tvSonecaTitulo).text = when {
+            stm.fimDoCapitulo.value -> activity.getString(R.string.sleep_timer_title_fim_capitulo)
+            ativo != null -> activity.getString(R.string.sleep_timer_title_active, stm.formatRemaining(ativo))
+            else -> activity.getString(R.string.sleep_timer_label)
+        }
+
+        val btnFimDoCapitulo = view.findViewById<Button>(R.id.btnSonecaFimCapitulo)
+        if (sessionToken != null) {
+            btnFimDoCapitulo.visibility = View.VISIBLE
+            btnFimDoCapitulo.setOnClickListener {
+                stm.armarFimDoCapitulo(sessionToken)
+                Toast.makeText(activity, R.string.toast_sleep_timer_fim_capitulo, Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
         }
 
         // fechar = false: ajuste passo a passo (TalkBack, teclado), que vale já mas mantém o diálogo aberto.

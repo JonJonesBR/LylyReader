@@ -16,7 +16,6 @@ import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
-import com.jonjonesbr.audiobookgen.service.SleepTimerManager
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
@@ -315,15 +314,10 @@ class ReaderActivity : BasePlayerActivity() {
                         playerService?.alternarPlayPause()
                     }
                 },
-                onAtualizarSoneca = { ms ->
-                    tvGuidedSoneca.text =
-                        if (ms != null) "😴 ${SleepTimerManager.formatRemaining(ms)}" else "😴"
+                onAtualizarSoneca = { rotulo, descricao ->
+                    tvGuidedSoneca.text = rotulo
                     // A contagem vai só para a descrição: sem anúncio a cada segundo (a11y-5).
-                    tvGuidedSoneca.contentDescription = if (ms != null) {
-                        getString(R.string.sleep_timer_title_active, SleepTimerManager.formatRemaining(ms))
-                    } else {
-                        getString(R.string.cd_sleep_timer)
-                    }
+                    tvGuidedSoneca.contentDescription = descricao
                     tvGuidedSoneca.visibility = View.VISIBLE
                 },
             ),

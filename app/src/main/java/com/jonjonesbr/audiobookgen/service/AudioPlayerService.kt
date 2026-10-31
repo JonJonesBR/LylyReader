@@ -667,6 +667,9 @@ class AudioPlayerService : MediaLibraryService() {
     /** Encerra a leitura guiada aberta (a barra e a notificação dela somem); o leitor guarda onde ela parou. */
     private fun encerrarLeituraGuiada() {
         GuidedPlaybackBridge.manager?.stop()
+        // A soneca "fim do capítulo" depende do gatilho da leitura guiada; o audiobook não o tem. Deixada armada,
+        // nunca dispararia. As sonecas por tempo continuam valendo no audiobook, como antes.
+        if (SleepTimerManager.fimDoCapitulo.value) SleepTimerManager.cancel()
     }
 
     fun fecharPlayer() {

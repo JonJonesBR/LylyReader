@@ -133,6 +133,20 @@
 
     </GridLayout>
 
+    <!-- Soneca "fim do capítulo": só na leitura guiada (o diálogo mostra o botão quando há sessão). -->
+    <Button
+        android:id="@+id/btnSonecaFimCapitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="4dp"
+        android:text="@string/sleep_timer_fim_capitulo_option"
+        android:textSize="13sp"
+        android:textColor="@color/color_on_surface"
+        android:visibility="gone"
+        style="@style/Widget.Material3.Button.TextButton"/>
+
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"

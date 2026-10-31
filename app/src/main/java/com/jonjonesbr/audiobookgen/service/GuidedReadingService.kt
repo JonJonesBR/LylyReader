@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.service
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import com.jonjonesbr.audiobookgen.util.proximoPresetSonecaMin
+import com.jonjonesbr.audiobookgen.util.textosDaSoneca
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -204,6 +205,10 @@ class GuidedReadingService : Service() {
         scope.launch {
             SleepTimerManager.remainingMs.collect { refreshNotificacao() }
         }
+        // Soneca "fim do capítulo" armada ou disparada: o texto e o botão da notificação mudam sem contagem.
+        scope.launch {
+            SleepTimerManager.fimDoCapitulo.collect { refreshNotificacao() }
+        }
         scope.launch {
             SleepTimerManager.finished.collect {
                 // A soneca só pausa a sessão para a qual foi ligada (token salvo em
@@ -247,7 +252,8 @@ class GuidedReadingService : Service() {
             ComandoLeituraGuiada.PROXIMO -> GuidedPlaybackBridge.manager?.next()
             ComandoLeituraGuiada.SONECA -> {
                 // Cicla pelos presets (5→10→20→30→60→90→120→desligado→5…), travada no token
-                // da sessão vigente (ver SleepTimerManager.armedToken).
+                // da sessão vigente (ver SleepTimerManager.armedToken). Do modo "fim do capítulo" (sem
+                // minutos), armedMinutes é null: o próximo preset é 5 min, e start() desliga o modo capítulo.
                 val proximo = proximoPresetSonecaMin(SleepTimerManager.armedMinutes.value)
                 if (proximo <= 0) {
                     SleepTimerManager.cancel()
@@ -471,8 +477,9 @@ class GuidedReadingService : Service() {
             )
         }
         val sonecaMs = SleepTimerManager.remainingMs.value
-        val contentText = if (sonecaMs != null)
-            "${getString(R.string.notif_paragrafo, index + 1)} · 😴 ${SleepTimerManager.formatRemaining(sonecaMs)}"
+        val sonecaCapitulo = SleepTimerManager.fimDoCapitulo.value
+        val contentText = if (SleepTimerManager.isActive)
+            "${getString(R.string.notif_paragrafo, index + 1)} · ${textosDaSoneca(sonecaMs, sonecaCapitulo).rotulo}"
         else getString(R.string.notif_paragrafo, index + 1)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
@@ -488,8 +495,11 @@ class GuidedReadingService : Service() {
             .addAction(android.R.drawable.ic_media_next, getString(R.string.onboarding_btn_proximo), pending(ACTION_NEXT, PENDING_REQ_NEXT))
             .addAction(
                 android.R.drawable.ic_lock_idle_alarm,
-                SleepTimerManager.armedMinutes.value?.let { getString(R.string.notif_soneca_minutos, it) }
-                    ?: getString(R.string.cd_sleep_timer),
+                when {
+                    sonecaCapitulo -> getString(R.string.notif_soneca_fim_capitulo)
+                    else -> SleepTimerManager.armedMinutes.value?.let { getString(R.string.notif_soneca_minutos, it) }
+                        ?: getString(R.string.cd_sleep_timer)
+                },
                 pending(ACTION_SLEEP, PENDING_REQ_SLEEP)
             )
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, getString(R.string.conv_fechar), pending(ACTION_STOP, PENDING_REQ_STOP))

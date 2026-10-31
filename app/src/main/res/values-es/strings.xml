@@ -26,6 +26,10 @@
     <string name="toast_sleep_timer_set">Temporizador configurado para %1$d minutos</string>
     <string name="sleep_timer_custom_label">Personalizado: %1$d min</string>
     <string name="sleep_timer_custom_off_label">Personalizado: arrastra para definir (0 = apagado)</string>
+    <string name="sleep_timer_fim_capitulo_option">Fin del capítulo</string>
+    <string name="sleep_timer_fim_capitulo_curto">fin del cap.</string>
+    <string name="sleep_timer_title_fim_capitulo">Temporizador — al final del capítulo</string>
+    <string name="toast_sleep_timer_fim_capitulo">La lectura se pausará al final de este capítulo</string>
     <string name="dialog_escolher_player_title">¿Abrir con qué reproductor?</string>
     <string name="dialog_escolher_player_msg">Puedes cambiar esto después en Ajustes.</string>
     <string name="dialog_escolher_player_app">Reproductor de LylyReader</string>
@@ -1292,6 +1296,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="notif_avancar">Avanzar</string>
     <string name="notif_paragrafo">Párrafo %1$d</string>
     <string name="notif_soneca_minutos">Dormir %1$dmin</string>
+    <string name="notif_soneca_fim_capitulo">Dormir: fin cap.</string>
     <string name="notif_player_canal_nome">Reproductor de audio</string>
     <string name="notif_player_canal_descricao">Controles de reproducción</string>
     <string name="notif_guiada_canal_descricao">Controles de la lectura guiada</string>

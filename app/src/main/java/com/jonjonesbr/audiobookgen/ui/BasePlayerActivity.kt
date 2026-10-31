@@ -34,6 +34,8 @@ import com.jonjonesbr.audiobookgen.util.GestoArraste
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.formatarTempo
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.textosDaSoneca
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -188,21 +190,17 @@ abstract class BasePlayerActivity : AppCompatActivity() {
     private fun observarSonecaMiniPlayer() {
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                SleepTimerManager.remainingMs.collect { restanteMs ->
+                // O mini-player não oferece a soneca "fim do capítulo" (sem token), mas o texto segue o modo
+                // para não mostrar a contagem errada se ela estiver armada pela leitura guiada.
+                combine(SleepTimerManager.remainingMs, SleepTimerManager.fimDoCapitulo) { restanteMs, cap ->
+                    textosDaSoneca(restanteMs, cap)
+                }.collect { textos ->
                     val btn = findViewById<View>(R.id.miniPlayerRoot)
                         ?.findViewById<android.widget.Button?>(R.id.miniPlayerSleepTimer)
                         ?: return@collect
-                    btn.text = if (restanteMs != null) {
-                        "😴 ${SleepTimerManager.formatRemaining(restanteMs)}"
-                    } else {
-                        "😴"
-                    }
+                    btn.text = textos.rotulo
                     // Como o chip da guiada: a contagem vai só para a descrição, sem anúncio (a11y-5).
-                    btn.contentDescription = if (restanteMs != null) {
-                        getString(R.string.sleep_timer_title_active, SleepTimerManager.formatRemaining(restanteMs))
-                    } else {
-                        getString(R.string.cd_sleep_timer)
-                    }
+                    btn.contentDescription = textos.descricao
                 }
             }
         }

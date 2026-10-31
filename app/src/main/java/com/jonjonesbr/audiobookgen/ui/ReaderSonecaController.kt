@@ -7,6 +7,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.service.SleepTimerManager
+import com.jonjonesbr.audiobookgen.util.textosDaSoneca
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -22,7 +24,7 @@ class ReaderSonecaController(
         val obterTokenSessaoGuided: () -> Long?,
         val pausarGuided: () -> Unit,
         val pausarPlayerSeTocando: () -> Unit,
-        val onAtualizarSoneca: (ms: Long?) -> Unit,
+        val onAtualizarSoneca: (rotulo: String, descricao: String) -> Unit,
     )
 
     fun mostrarDialogoSleepTimer() {
@@ -54,13 +56,14 @@ class ReaderSonecaController(
                 }
             }
         }
-        // Mostra o tempo restante da soneca na tela (chip no player guiado).
+        // Mostra o tempo restante da soneca na tela (chip no player guiado), ou "fim do cap." no modo capítulo.
         activity.lifecycleScope.launch {
             activity.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                stm.remainingMs.collect { ms ->
-                    // Chip sempre visível: 😴 quando inativo (toque para definir), contagem quando ativo.
-                    callbacks.onAtualizarSoneca(ms)
-                }
+                combine(stm.remainingMs, stm.fimDoCapitulo) { ms, cap -> activity.textosDaSoneca(ms, cap) }
+                    .collect { textos ->
+                        // Chip sempre visível: 😴 sem soneca (toque para definir); contagem ou fim do cap. se ativa.
+                        callbacks.onAtualizarSoneca(textos.rotulo, textos.descricao)
+                    }
             }
         }
     }

@@ -26,6 +26,10 @@
     <string name="toast_sleep_timer_set">Sleep timer set for %1$d minutes</string>
     <string name="sleep_timer_custom_label">Custom: %1$d min</string>
     <string name="sleep_timer_custom_off_label">Custom: drag to set (0 = off)</string>
+    <string name="sleep_timer_fim_capitulo_option">End of chapter</string>
+    <string name="sleep_timer_fim_capitulo_curto">end of ch.</string>
+    <string name="sleep_timer_title_fim_capitulo">Sleep timer — at the end of the chapter</string>
+    <string name="toast_sleep_timer_fim_capitulo">Reading will pause at the end of this chapter</string>
     <string name="dialog_escolher_player_title">Open with which player?</string>
     <string name="dialog_escolher_player_msg">You can change this later in Settings.</string>
     <string name="dialog_escolher_player_app">LylyReader player</string>
@@ -1307,6 +1311,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="notif_avancar">Forward</string>
     <string name="notif_paragrafo">Paragraph %1$d</string>
     <string name="notif_soneca_minutos">Sleep %1$dmin</string>
+    <string name="notif_soneca_fim_capitulo">Sleep: ch. end</string>
     <string name="notif_player_canal_nome">Audio player</string>
     <string name="notif_player_canal_descricao">Playback controls</string>
     <string name="notif_guiada_canal_descricao">Guided reading controls</string>

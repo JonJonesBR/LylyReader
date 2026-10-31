@@ -26,6 +26,10 @@
     <string name="toast_sleep_timer_set">Soneca definida para %1$d minutos</string>
     <string name="sleep_timer_custom_label">Personalizado: %1$d min</string>
     <string name="sleep_timer_custom_off_label">Personalizado: arraste pra definir (0 = desligado)</string>
+    <string name="sleep_timer_fim_capitulo_option">Fim do capítulo</string>
+    <string name="sleep_timer_fim_capitulo_curto">fim do cap.</string>
+    <string name="sleep_timer_title_fim_capitulo">Soneca — no fim do capítulo</string>
+    <string name="toast_sleep_timer_fim_capitulo">A leitura pausa no fim deste capítulo</string>
     <string name="dialog_escolher_player_title">Abrir com qual player?</string>
     <string name="dialog_escolher_player_msg">Você pode mudar isso depois em Ajustes.</string>
     <string name="dialog_escolher_player_app">Player do LylyReader</string>
@@ -1307,6 +1311,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="notif_avancar">Avançar</string>
     <string name="notif_paragrafo">Parágrafo %1$d</string>
     <string name="notif_soneca_minutos">Soneca %1$dmin</string>
+    <string name="notif_soneca_fim_capitulo">Soneca: fim do cap.</string>
     <string name="notif_player_canal_nome">Player de áudio</string>
     <string name="notif_player_canal_descricao">Controles de reprodução</string>
     <string name="notif_guiada_canal_descricao">Controles da leitura guiada</string>
