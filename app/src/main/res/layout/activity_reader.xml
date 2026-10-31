@@ -467,7 +467,7 @@
                 android:paddingEnd="6dp"
                 android:layout_marginEnd="4dp"
                 android:visibility="gone"
-                android:contentDescription="@string/cd_guided_steps"/>
+                android:contentDescription="@string/cd_guided_voz_motor"/>
 
             <TextView
                 android:id="@+id/btnGuidedVelocidade"

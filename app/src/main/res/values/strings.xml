@@ -85,7 +85,8 @@
     <string name="settings_pron_title">Pronunciation dictionary</string>
     <string name="settings_pron_desc">Teach the app how to say names and difficult words. It works with any voice, in guided reading and in audiobooks.</string>
     <string name="btn_pron_manage">Manage pronunciations</string>
-    <string name="cd_guided_steps">Synthesis steps</string>
+    <string name="cd_guided_voz_motor">Voice and engine</string>
+    <string name="cd_guided_voz_motor_passos">Voice and engine, steps: %1$d</string>
     <string name="cd_seek_supertonic_passos">Supertonic synthesis steps</string>
     <string name="cd_seek_pocket_passos">Pocket TTS decoding steps</string>
     <string name="cd_seek_pausa_frase">Pause between sentences</string>
@@ -507,6 +508,7 @@
     <!-- Phase 1 - Guided Reading & Downloads -->
     <string name="guided_reading_status">Guided Reading: %1$d of %2$d</string>
     <string name="guided_reading_status_capitulo">%1$s — Paragraph %2$d of %3$d</string>
+    <string name="guided_preparando_narracao">Preparing the narration…</string>
     <string name="guided_reading_indicator_paragrafo">📖 %1$s · Paragraph %2$d</string>
 
     <string name="action_capitulos">Chapters</string>

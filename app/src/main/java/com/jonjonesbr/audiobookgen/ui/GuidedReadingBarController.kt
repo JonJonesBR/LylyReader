@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
 import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedState
@@ -170,7 +171,7 @@ class GuidedReadingBarController(
         }
 
         for (cap in capitulos) {
-            opcoes.add(cap.titulo)
+            opcoes.add(NavegacaoCapitulos.tituloLimpo(cap.titulo))
             indices.add(cap.indiceParagrafoInicio.coerceAtLeast(0))
         }
 
@@ -181,7 +182,11 @@ class GuidedReadingBarController(
                 dialogoInicioPendente = false
                 playGuidedFrom(indices[which])
             }
-            .setCancelable(false)
+            // Cancelar (botão, voltar ou toque fora) deixa a leitura parada. Não usa onDismiss: ele também
+            // dispara depois de escolher um item.
+            .setNegativeButton(android.R.string.cancel) { _, _ -> dialogoInicioPendente = false }
+            .setOnCancelListener { dialogoInicioPendente = false }
+            .setCancelable(true)
             .exibir()
     }
 
@@ -210,6 +215,9 @@ class GuidedReadingBarController(
         }
         views.btnGuidedPlayPause.setOnClickListener {
             val state = guidedPlayerManager.state.value
+            // Preparando a narração (antes do primeiro som): não há o que pausar nem retomar. Quem pausou durante o
+            // carregamento segue podendo retomar (estaPausado).
+            if (state.isLoading && !state.isPlaying && !guidedPlayerManager.estaPausado) return@setOnClickListener
             if (state.isPlaying) {
                 guidedPlayerManager.pause()
             } else {
@@ -262,8 +270,16 @@ class GuidedReadingBarController(
         }
         // Sempre visível: abre "Voz e motor" (timbre, passos, pausa, preparo à frente) para qualquer motor.
         views.tvGuidedPassos.visibility = View.VISIBLE
-        views.tvGuidedPassos.text =
-            if (passos != null) activity.getString(R.string.guided_steps_chip, passos) else activity.getString(R.string.guided_options_chip)
+        // O chip abre "Voz e motor" em qualquer motor: a descrição (leitor de tela) e a dica seguem o rótulo.
+        val (rotulo, descricao) = if (passos != null) {
+            activity.getString(R.string.guided_steps_chip, passos) to
+                activity.getString(R.string.cd_guided_voz_motor_passos, passos)
+        } else {
+            activity.getString(R.string.guided_options_chip) to activity.getString(R.string.cd_guided_voz_motor)
+        }
+        views.tvGuidedPassos.text = rotulo
+        views.tvGuidedPassos.contentDescription = descricao
+        views.tvGuidedPassos.tooltipText = descricao
     }
 
     private fun mostrarDialogoPassos() {
@@ -365,12 +381,16 @@ class GuidedReadingBarController(
         // parágrafo já carrega seu índice de capítulo (Paragrafo.indiceCapitulo).
         val capituloTitulo = texto?.paragrafos?.getOrNull(guidedState.index)?.indiceCapitulo
             ?.let { texto.capitulos.getOrNull(it)?.titulo }
-        views.tvGuidedStatus.text = if (capituloTitulo != null) {
-            activity.getString(
+            ?.let { NavegacaoCapitulos.tituloLimpo(it) }
+        // Antes do primeiro som o status do parágrafo não diz nada útil: avisa que a narração está sendo preparada.
+        // Quem pausou durante o carregamento (estaPausado) continua vendo o parágrafo.
+        val preparandoNarracao = guidedState.isLoading && !guidedState.isPlaying && !guidedPlayerManager.estaPausado
+        views.tvGuidedStatus.text = when {
+            preparandoNarracao -> activity.getString(R.string.guided_preparando_narracao)
+            capituloTitulo != null -> activity.getString(
                 R.string.guided_reading_status_capitulo, capituloTitulo, guidedState.index + 1, total
             )
-        } else {
-            activity.getString(R.string.guided_reading_status, guidedState.index + 1, total)
+            else -> activity.getString(R.string.guided_reading_status, guidedState.index + 1, total)
         }
 
         val playIcon = R.drawable.ic_player_play
