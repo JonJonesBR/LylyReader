@@ -30,6 +30,11 @@
     <string name="sleep_timer_fim_capitulo_curto">fim do cap.</string>
     <string name="sleep_timer_title_fim_capitulo">Soneca — no fim do capítulo</string>
     <string name="toast_sleep_timer_fim_capitulo">A leitura pausa no fim deste capítulo</string>
+    <string name="sleep_timer_troca_titulo">Soneca ativa</string>
+    <string name="sleep_timer_troca_restante">Restam %1$s. Manter para este livro?</string>
+    <string name="sleep_timer_troca_fim_capitulo">Marcada para o fim do capítulo. Manter para este livro?</string>
+    <string name="sleep_timer_manter">Manter</string>
+    <string name="sleep_timer_cancelar_soneca">Cancelar soneca</string>
     <string name="dialog_escolher_player_title">Abrir com qual player?</string>
     <string name="dialog_escolher_player_msg">Você pode mudar isso depois em Ajustes.</string>
     <string name="dialog_escolher_player_app">Player do LylyReader</string>

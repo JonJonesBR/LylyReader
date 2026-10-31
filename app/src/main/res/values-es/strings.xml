@@ -30,6 +30,11 @@
     <string name="sleep_timer_fim_capitulo_curto">fin del cap.</string>
     <string name="sleep_timer_title_fim_capitulo">Temporizador — al final del capítulo</string>
     <string name="toast_sleep_timer_fim_capitulo">La lectura se pausará al final de este capítulo</string>
+    <string name="sleep_timer_troca_titulo">Temporizador activo</string>
+    <string name="sleep_timer_troca_restante">Quedan %1$s. ¿Mantenerlo para este libro?</string>
+    <string name="sleep_timer_troca_fim_capitulo">Programado para el final del capítulo. ¿Mantenerlo para este libro?</string>
+    <string name="sleep_timer_manter">Mantener</string>
+    <string name="sleep_timer_cancelar_soneca">Cancelar temporizador</string>
     <string name="dialog_escolher_player_title">¿Abrir con qué reproductor?</string>
     <string name="dialog_escolher_player_msg">Puedes cambiar esto después en Ajustes.</string>
     <string name="dialog_escolher_player_app">Reproductor de LylyReader</string>

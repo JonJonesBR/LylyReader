@@ -30,6 +30,11 @@
     <string name="sleep_timer_fim_capitulo_curto">end of ch.</string>
     <string name="sleep_timer_title_fim_capitulo">Sleep timer — at the end of the chapter</string>
     <string name="toast_sleep_timer_fim_capitulo">Reading will pause at the end of this chapter</string>
+    <string name="sleep_timer_troca_titulo">Sleep timer on</string>
+    <string name="sleep_timer_troca_restante">%1$s left. Keep it for this book?</string>
+    <string name="sleep_timer_troca_fim_capitulo">Set for the end of the chapter. Keep it for this book?</string>
+    <string name="sleep_timer_manter">Keep</string>
+    <string name="sleep_timer_cancelar_soneca">Cancel sleep timer</string>
     <string name="dialog_escolher_player_title">Open with which player?</string>
     <string name="dialog_escolher_player_msg">You can change this later in Settings.</string>
     <string name="dialog_escolher_player_app">LylyReader player</string>

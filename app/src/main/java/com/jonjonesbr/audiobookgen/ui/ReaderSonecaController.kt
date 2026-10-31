@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -20,6 +21,11 @@ class ReaderSonecaController(
     private val activity: AppCompatActivity,
     private val callbacks: Callbacks,
 ) {
+    private val dialogos = DialogosAbertos(activity)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
+    // Pergunta "Manter a soneca para este livro?" aberta, se houver (ver atualizarPerguntaDeTroca).
+    private var dialogoTroca: AlertDialog? = null
+
     data class Callbacks(
         val obterTokenSessaoGuided: () -> Long?,
         val pausarGuided: () -> Unit,
@@ -66,5 +72,46 @@ class ReaderSonecaController(
                     }
             }
         }
+        // Sessão nova que começou a tocar com a soneca ativa (outro livro): pergunta se mantém.
+        activity.lifecycleScope.launch {
+            activity.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                stm.confirmacaoTrocaPendente.collect { atualizarPerguntaDeTroca(it) }
+            }
+        }
+    }
+
+    /**
+     * Mostra (ou fecha) a pergunta de manter a soneca para a sessão [tokenPendente]. Fechar sem escolher (voltar,
+     * toque fora) mantém a soneca, como o botão Manter. A contagem já está re-atrelada à sessão quando a pergunta
+     * sai, então não há janela em que ela "não funciona". É foto do momento: ao girar a tela, a pendência
+     * continua e a nova Activity refaz a pergunta.
+     */
+    private fun atualizarPerguntaDeTroca(tokenPendente: Long?) {
+        val stm = SleepTimerManager
+        if (tokenPendente == null || tokenPendente != callbacks.obterTokenSessaoGuided() || !stm.isActive) {
+            dialogoTroca?.dismiss()
+            dialogoTroca = null
+            return
+        }
+        // Já aberta (ex.: voltou do segundo plano sem recriar a tela): não empilha outra.
+        if (dialogoTroca?.isShowing == true) return
+        val restante = stm.remainingMs.value
+        val mensagem = if (restante != null && !stm.fimDoCapitulo.value) {
+            activity.getString(R.string.sleep_timer_troca_restante, stm.formatRemaining(restante))
+        } else {
+            activity.getString(R.string.sleep_timer_troca_fim_capitulo)
+        }
+        dialogoTroca = AlertDialog.Builder(activity)
+            .setTitle(R.string.sleep_timer_troca_titulo)
+            .setMessage(mensagem)
+            .setPositiveButton(R.string.sleep_timer_manter) { _, _ -> stm.confirmarSessaoNova() }
+            .setNegativeButton(R.string.sleep_timer_cancelar_soneca) { _, _ ->
+                stm.cancel()
+                Toast.makeText(activity, R.string.toast_sleep_timer_off, Toast.LENGTH_SHORT).show()
+            }
+            // Voltar ou toque fora conta como Manter. Não é setOnDismissListener: ele também roda ao fechar pelos
+            // botões e no onDestroy da rotação, e aí confirmaria por engano.
+            .setOnCancelListener { stm.confirmarSessaoNova() }
+            .exibir()
     }
 }

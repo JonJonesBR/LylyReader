@@ -302,6 +302,69 @@ class GuidedPlayerManagerTest {
             aguardar { manager.state.value.index == 1 }
             assertFalse(manager.estaPausado)
             assertTrue(SleepTimerManager.fimDoCapitulo.value)
+            // O avanço do próprio manager não re-atrela a soneca à sessão vigente nem deixa pergunta pendente.
+            assertEquals(manager.sessionToken + 1_000, SleepTimerManager.armedToken)
+            assertNull(SleepTimerManager.confirmacaoTrocaPendente.value)
+        } finally {
+            manager.stop()
+            testDispatcher.scheduler.runCurrent()
+            arquivo.delete()
+        }
+    }
+
+    /**
+     * Soneca ligada no leitor de outro livro enquanto este toca no fundo: o avanço de parágrafo deste livro não
+     * pode roubá-la nem perguntar nada, porque a sessão vigente não mudou. Depois, ao tocar o outro livro, a
+     * soneca vale para ele sem pergunta (já está atrelada a ele).
+     */
+    @Test
+    fun avancoDeLivroNoFundoNaoRoubaASonecaDeOutroLivro() {
+        val arquivo = java.io.File.createTempFile("guiada-soneca-fundo-", ".wav")
+        prepararLeituraSemPausasNaturais(arquivo)
+
+        val tocando = createManager()
+        val outro = createManager()
+        try {
+            tocando.setParagraphs(paragraphs(2))
+            tocando.play(0)
+            aguardar { tocando.state.value.isPlaying }
+
+            outro.setParagraphs(paragraphs(2))
+            SleepTimerManager.armarFimDoCapitulo(outro.sessionToken)
+
+            lastCompletionListener()
+            testDispatcher.scheduler.runCurrent()
+
+            aguardar { tocando.state.value.index == 1 }
+            assertEquals(outro.sessionToken, SleepTimerManager.armedToken)
+            assertNull(SleepTimerManager.confirmacaoTrocaPendente.value)
+
+            outro.play(0)
+            assertEquals(outro.sessionToken, SleepTimerManager.armedToken)
+            assertNull(SleepTimerManager.confirmacaoTrocaPendente.value)
+        } finally {
+            tocando.stop()
+            outro.stop()
+            testDispatcher.scheduler.runCurrent()
+            arquivo.delete()
+        }
+    }
+
+    @Test
+    fun playComSonecaDeOutraSessaoReatrelaEPergunta() {
+        val arquivo = java.io.File.createTempFile("guiada-troca-soneca-", ".wav")
+        prepararLeituraSemPausasNaturais(arquivo)
+
+        val manager = createManager()
+        try {
+            manager.setParagraphs(paragraphs(2))
+            SleepTimerManager.armarFimDoCapitulo(manager.sessionToken + 1_000)
+
+            manager.play(0)
+
+            assertEquals(manager.sessionToken, SleepTimerManager.armedToken)
+            assertEquals(manager.sessionToken, SleepTimerManager.confirmacaoTrocaPendente.value)
+            aguardar { manager.state.value.isPlaying }
         } finally {
             manager.stop()
             testDispatcher.scheduler.runCurrent()

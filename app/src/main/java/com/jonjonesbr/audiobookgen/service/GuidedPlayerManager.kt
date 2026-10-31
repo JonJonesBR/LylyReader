@@ -639,6 +639,16 @@ class GuidedPlayerManager(
         oracaoCompletada = null
         _state.update { GuidedState(index, isPlaying = false, isLoading = true) }
 
+        // Soneca ativa de outra sessão (outro livro, ou ligada pelo audiobook): re-atrela à sessão nova na
+        // hora e deixa pendente a pergunta de manter (a tela mostra). Só vale quando esta sessão passa a ser
+        // a vigente (o bridge ainda aponta para outra, ou para nenhuma): o avanço automático do próprio manager
+        // também chama play(), e aí não pode roubar a soneca que foi ligada para outro livro (ex.: no leitor
+        // B, com A tocando no fundo). A fila "Ler tudo" troca de livro no mesmo manager, então também não entra.
+        val sessaoNova = GuidedPlaybackBridge.manager !== this
+        val sonecaDeOutraSessao = sonecaPedeConfirmacaoNaTroca(
+            SleepTimerManager.isActive, SleepTimerManager.armedToken, sessionToken
+        )
+        if (sessaoNova && sonecaDeOutraSessao) SleepTimerManager.assumirSessaoNova(sessionToken)
         // Leitura guiada e audiobook nunca ficam abertos juntos.
         AudioPlayerService.fecharSeAberto()
         // Outro livro ainda em leitura guiada (aberto antes deste e deixado tocando): só agora ele para, porque o

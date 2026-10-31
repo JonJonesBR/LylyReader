@@ -57,6 +57,10 @@ object SleepTimerManager {
     private val _fimDoCapitulo = MutableStateFlow(false)
     val fimDoCapitulo: StateFlow<Boolean> = _fimDoCapitulo.asStateFlow()
 
+    // Sessão nova que deve perguntar se mantém a soneca (ver assumirSessaoNova). null = nada a perguntar.
+    private val _confirmacaoTrocaPendente = MutableStateFlow<Long?>(null)
+    val confirmacaoTrocaPendente: StateFlow<Long?> = _confirmacaoTrocaPendente.asStateFlow()
+
     val isActive: Boolean get() = _remainingMs.value != null || _fimDoCapitulo.value
 
     // Token da sessão de leitura guiada (GuidedPlayerManager.sessionToken) vigente no momento
@@ -73,6 +77,7 @@ object SleepTimerManager {
      *  no momento do start() — ver [armedToken]. Uma contagem substitui a soneca "fim do capítulo". */
     fun start(durationMs: Long, sessionToken: Long? = null) {
         job?.cancel()
+        _confirmacaoTrocaPendente.value = null
         _fimDoCapitulo.value = false
         armedToken = sessionToken
         if (durationMs <= 0) {
@@ -95,6 +100,7 @@ object SleepTimerManager {
             _armedMinutes.value = null
             // Restaura o volume cheio para a próxima sessão de playback.
             _volumeFactor.value = 1f
+            _confirmacaoTrocaPendente.value = null
             _finished.emit(Unit)
         }
     }
@@ -106,6 +112,7 @@ object SleepTimerManager {
     fun armarFimDoCapitulo(sessionToken: Long) {
         job?.cancel()
         job = null
+        _confirmacaoTrocaPendente.value = null
         armedToken = sessionToken
         _remainingMs.value = null
         _armedMinutes.value = null
@@ -121,8 +128,25 @@ object SleepTimerManager {
     fun dispararFimDoCapitulo(sessionToken: Long): Boolean {
         if (!_fimDoCapitulo.value || armedToken != sessionToken) return false
         _fimDoCapitulo.value = false
+        _confirmacaoTrocaPendente.value = null
         _finished.tryEmit(Unit)
         return true
+    }
+
+    /**
+     * Uma sessão nova da leitura guiada começou a tocar com a soneca ativa (ver [sonecaPedeConfirmacaoNaTroca]). A
+     * soneca é re-atrelada a ela na hora, sem reiniciar a contagem nem mudar o modo, e fica pendente a pergunta de
+     * manter. Sem soneca ativa, não faz nada.
+     */
+    fun assumirSessaoNova(sessionToken: Long) {
+        if (!isActive) return
+        armedToken = sessionToken
+        _confirmacaoTrocaPendente.value = sessionToken
+    }
+
+    /** A pergunta de manter a soneca foi respondida (ou fechada): não há mais nada pendente. */
+    fun confirmarSessaoNova() {
+        _confirmacaoTrocaPendente.value = null
     }
 
     fun cancel() {
@@ -132,6 +156,7 @@ object SleepTimerManager {
         _armedMinutes.value = null
         _volumeFactor.value = 1f
         _fimDoCapitulo.value = false
+        _confirmacaoTrocaPendente.value = null
         armedToken = null
     }
 
@@ -188,3 +213,10 @@ fun sonecaDeCapituloDispara(
     tokenArmado == tokenDaSessao &&
     capituloAtual != null &&
     (capituloSeguinte == null || capituloSeguinte != capituloAtual)
+
+/**
+ * Ao começar a tocar a sessão [tokenNovo], deve-se perguntar se a soneca ativa é mantida? Sim, quando ela está
+ * ativa e armada para outra sessão, ou sem sessão (ligada pelo audiobook: [tokenArmado] null).
+ */
+fun sonecaPedeConfirmacaoNaTroca(sonecaAtiva: Boolean, tokenArmado: Long?, tokenNovo: Long): Boolean =
+    sonecaAtiva && tokenArmado != tokenNovo
