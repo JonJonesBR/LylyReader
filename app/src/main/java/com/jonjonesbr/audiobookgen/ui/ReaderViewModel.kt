@@ -4,8 +4,9 @@ import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.ExtractionResult
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
-import com.jonjonesbr.audiobookgen.domain.Capitulo
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
+import com.jonjonesbr.audiobookgen.domain.TextoNarravelDoLivro
+import com.jonjonesbr.audiobookgen.domain.reconstruirCapitulos
 import com.jonjonesbr.audiobookgen.util.EditableTextPolicy
 import com.jonjonesbr.audiobookgen.domain.ExtractTextUseCase
 import com.jonjonesbr.audiobookgen.data.AppPrefs
@@ -17,7 +18,6 @@ import com.jonjonesbr.audiobookgen.util.ocorrenciasBusca
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
 import com.jonjonesbr.audiobookgen.util.prepararParaBusca
 import android.app.Application
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,7 +31,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Locale
 
 class ReaderViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -292,47 +291,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /**
-     * Limpeza para a narração do texto bruto [textoAtual]. O resultado fica guardado
-     * ([com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro]): abrir o livro de novo não chama o Python.
-     * Parágrafos vão e voltam em JSON, uma string só pela ponte Java↔Python.
-     */
-    private suspend fun limparComCache(textoAtual: TextoExtraido, formato: String): Pair<TextoExtraido, Int> {
-        val app = getApplication<Application>()
-        val idioma = Locale.getDefault().language
-        val blacklist = obterBlacklist()
-        val chave = com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.chaveBruto(app, caminhoArquivoAtual)
-            ?.let { com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.chaveLimpo(it, formato, idioma, blacklist) }
-        com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.lerComRemovidas(app, chave)?.let { return it }
-        // O texto bruto pode ter vindo do cache, sem o Python ter sido iniciado nesta sessão.
-        check(com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase(app).inicializarMotorSeNecessario()) {
-            "Motor Python indisponível para a limpeza"
-        }
-
-        val entrada = org.json.JSONArray(textoAtual.paragrafos.map { it.texto }).toString()
-        val saida = org.json.JSONObject(
-            Python.getInstance().getModule("smart_cleaner").callAttr(
-                "smart_clean_paragraphs_json", entrada, formato, idioma, org.json.JSONArray(blacklist).toString()
-            ).toString()
-        )
-        val limpos = saida.getJSONArray("paragrafos")
-        var offset = 0
-        val paragrafosLimpos = (0 until limpos.length()).mapNotNull { indice ->
-            val texto = limpos.getString(indice).trim()
-            if (texto.isBlank()) return@mapNotNull null
-            textoAtual.paragrafos[indice].copy(texto = texto, charOffset = offset).also {
-                offset += texto.length + 2
-            }
-        }
-        val textoLimpo = TextoExtraido(
-            capitulos = reconstruirCapitulos(textoAtual.capitulos, paragrafosLimpos),
-            paragrafos = paragrafosLimpos,
-            totalChars = offset
-        )
-        val removidas = saida.optInt("removidas")
-        com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro.gravar(app, chave, textoLimpo, removidas)
-        return textoLimpo to removidas
-    }
+    /** Limpeza do texto bruto [textoAtual] (regras e cache em [TextoNarravelDoLivro], compartilhados com a fila). */
+    private suspend fun limparComCache(textoAtual: TextoExtraido, formato: String): Pair<TextoExtraido, Int> =
+        TextoNarravelDoLivro(getApplication()).limpar(caminhoArquivoAtual, textoAtual, formato)
 
     fun ativarModoEdicao() {
         _uiState.update { it.copy(modoEdicao = true, mostrandoAlteracoes = false) }
@@ -386,27 +347,11 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun obterBlacklist(): List<String> =
-        com.jonjonesbr.audiobookgen.data.BlacklistStore(getApplication()).load()
-
     private fun salvarNaBlacklist(trecho: String) {
         // NonCancellable: sair do leitor logo em seguida limpa o ViewModel e não pode perder a gravação.
         viewModelScope.launch(Dispatchers.IO + kotlinx.coroutines.NonCancellable) {
             com.jonjonesbr.audiobookgen.data.BlacklistStore(getApplication()).add(trecho)
         }
-    }
-
-    private fun reconstruirCapitulos(
-        capitulos: List<Capitulo>,
-        paragrafos: List<Paragrafo>
-    ): List<Capitulo> = capitulos.mapIndexedNotNull { indice, capitulo ->
-        val indices = paragrafos.mapIndexedNotNull { novoIndice, paragrafo ->
-            novoIndice.takeIf { paragrafo.indiceCapitulo == indice }
-        }
-        if (indices.isEmpty()) null else capitulo.copy(
-            indiceParagrafoInicio = indices.first(),
-            indiceParagrafoFim = indices.last()
-        )
     }
 
     fun desativarModoEdicao() {
