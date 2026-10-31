@@ -27,13 +27,6 @@ import androidx.recyclerview.widget.RecyclerView
 
 enum class AdapterModo { LEITURA, EDICAO, ALTERACOES }
 
-/**
- * Adapter do RecyclerView de parágrafos da leitura (modos leitura/edição/comparação de
- * alterações). Extraído de ReaderActivity (Fase 1) — segue o mesmo padrão de arquivo dedicado já
- * usado por AudiobookAdapter/QueueAdapter. Era uma `inner class`; os poucos pontos que dependiam
- * da Activity (getString, Toast, viewModel, o RecyclerView para o Snackbar) viraram parâmetros
- * de construtor.
- */
 private val COR_SELECAO = mapOf(
     TemaLeitura.CLARO  to Color.parseColor("#D0C0FF"),
     TemaLeitura.ESCURO to Color.parseColor("#4A3070"),
@@ -78,6 +71,13 @@ private const val MENU_ITEM_DESTACAR = 1003
 private const val MENU_ITEM_DEFINIR = 1004
 private const val MENU_ITEM_PRONUNCIA = 1005
 
+/**
+ * Adapter do RecyclerView de parágrafos da leitura (modos leitura/edição/comparação de
+ * alterações). Extraído de ReaderActivity (Fase 1) — segue o mesmo padrão de arquivo dedicado já
+ * usado por AudiobookAdapter/QueueAdapter. Era uma `inner class`; os poucos pontos que dependiam
+ * da Activity (getString, Toast, viewModel, o RecyclerView para o Snackbar) viraram parâmetros
+ * de construtor.
+ */
 class ParagrafoAdapter(
     private val activity: AppCompatActivity,
     private val recyclerView: RecyclerView,
@@ -124,6 +124,10 @@ class ParagrafoAdapter(
     // Para o modo ALTERACOES: parágrafos originais pré-computados
     private var paragrafosOriginais: List<Paragrafo> = emptyList()
 
+    // Textos dos parágrafos limpos (modo ALTERACOES): calculado no primeiro bind depois de cada troca de lista,
+    // e não a cada item exibido (dev-9).
+    private var textosLimpos: Set<String>? = null
+
     // Para o modo EDICAO: rastrear edições feitas pelo usuário
     private val edicoesAtuais = mutableMapOf<Int, String>()
 
@@ -169,6 +173,7 @@ class ParagrafoAdapter(
             this.fonteSerifada != fonteSerifada ||
             this.alinhamento != alinhamento
         val syncAntigo = this.syncAtual
+        if (mudouLista) textosLimpos = null
         this.paragrafos = paragrafos
         this.selecaoInicio = selecaoInicio
         this.selecaoFim = selecaoFim
@@ -433,10 +438,11 @@ class ParagrafoAdapter(
 
         // Em modo ALTERACOES, `paragrafos` = parágrafos limpos, `paragrafosOriginais` = originais
         // Exibe todos os parágrafos originais: removidos = tachado vermelho, mantidos = cor normal
-        val textosLimpos = paragrafos.map { it.texto }.toSet()
+        val conjuntoLimpos = textosLimpos
+            ?: paragrafos.mapTo(HashSet<String>()) { it.texto }.also { textosLimpos = it }
         val parOriginal = paragrafosOriginais.getOrNull(position)
 
-        if (parOriginal != null && parOriginal.texto !in textosLimpos) {
+        if (parOriginal != null && parOriginal.texto !in conjuntoLimpos) {
             // Parágrafo removido - tachado em vermelho escuro
             val spannable = SpannableString(parOriginal.texto)
             spannable.setSpan(
