@@ -124,7 +124,7 @@ class GuidedReadingService : Service() {
                 temFocoDeAudio = true
                 if (retomarAoGanharFoco) {
                     retomarAoGanharFoco = false
-                    GuidedPlaybackBridge.manager?.resume()
+                    GuidedPlaybackBridge.manager?.takeIf { it.estaPausado }?.resume()
                 }
             },
             onDuck = {},
@@ -132,11 +132,23 @@ class GuidedReadingService : Service() {
         )
     }
 
+    // Chamada tocando ou em andamento pelo modo de áudio do sistema (Android 12+). Cobre apps de chamada pela
+    // internet, como o WhatsApp, que tocam sem pedir o foco de áudio: a narração seguia por cima do toque.
+    // Pausa ao começar e retoma quando o modo volta ao normal, se foi esta pausa que a parou.
+    private var pausadoPorChamada = false
+    private val ouvinteModoDeAudio: Any? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AudioManager.OnModeChangedListener { modo -> aoMudarModoDeAudio(modo) }
+        } else {
+            null
+        }
+
     // Fone desconectado (cabo ou Bluetooth): pausa, em vez de a voz passar a sair pelo alto-falante.
     private val receptorFoneDesconectado = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action != AudioManager.ACTION_AUDIO_BECOMING_NOISY) return
             retomarAoGanharFoco = false
+            pausadoPorChamada = false
             val m = GuidedPlaybackBridge.manager ?: return
             if (m.state.value.index >= 0) m.pause()
         }
@@ -179,6 +191,13 @@ class GuidedReadingService : Service() {
             this, receptorFoneDesconectado, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            runCatching {
+                getSystemService(AudioManager::class.java).addOnModeChangedListener(
+                    mainExecutor, ouvinteModoDeAudio as AudioManager.OnModeChangedListener
+                )
+            }.onFailure { CrashLogWriter.log(it, "GuidedReadingService.modoDeAudio") }
+        }
         // Sleep timer: atualiza a contagem na notificação e pausa a leitura guiada ao terminar.
         scope.launch {
             SleepTimerManager.remainingMs.collect { refreshNotificacao() }
@@ -196,6 +215,7 @@ class GuidedReadingService : Service() {
                     // laço em aguardarRetomada() e o trecho não chega a tocar. Só não há o que pausar sem leitura (-1).
                     // A soneca também cancela a volta automática depois de uma ligação.
                     retomarAoGanharFoco = false
+                    pausadoPorChamada = false
                     if (m.state.value.index >= 0) m.pause()
                 } else if (tokenArmado != null) {
                     SleepTimerManager.cancel()
@@ -249,6 +269,12 @@ class GuidedReadingService : Service() {
         tokenObservado = null
         scope.cancel()
         runCatching { unregisterReceiver(receptorFoneDesconectado) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            runCatching {
+                getSystemService(AudioManager::class.java)
+                    .removeOnModeChangedListener(ouvinteModoDeAudio as AudioManager.OnModeChangedListener)
+            }
+        }
         abandonarFocoDeAudio()
         mediaSession?.release()
         mediaSession = null
@@ -280,10 +306,29 @@ class GuidedReadingService : Service() {
         retomarAoGanharFoco = retomarDepois && tocando
     }
 
+    private fun aoMudarModoDeAudio(modo: Int) {
+        val m = GuidedPlaybackBridge.manager ?: return
+        if (modo == AudioManager.MODE_NORMAL) {
+            if (pausadoPorChamada) {
+                pausadoPorChamada = false
+                if (m.estaPausado && m.state.value.index >= 0) m.resume()
+            }
+            return
+        }
+        // Qualquer outro modo (toque, ligação, chamada pela internet, triagem): há uma chamada no aparelho.
+        val st = m.state.value
+        val tocando = st.index >= 0 && !m.estaPausado && (st.isPlaying || st.isLoading)
+        if (tocando) {
+            m.pause()
+            pausadoPorChamada = true
+        }
+    }
+
     private fun abandonarFocoDeAudio() {
         if (temFocoDeAudio || retomarAoGanharFoco) focoDeAudio.abandonar()
         temFocoDeAudio = false
         retomarAoGanharFoco = false
+        pausadoPorChamada = false
     }
 
     private fun observarEstado() {
