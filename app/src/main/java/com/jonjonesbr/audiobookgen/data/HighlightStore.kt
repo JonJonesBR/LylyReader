@@ -52,7 +52,25 @@ object HighlightStore {
             ts = System.currentTimeMillis()
         )
         val atuais = loadAll(ctx)
-        save(ctx, atuais + highlight)
+        val mesclados = mesclarDestaque(atuais, highlight)
+        if (mesclados != atuais) save(ctx, mesclados)
+    }
+
+    /**
+     * Destaque igual a um existente (mesmo livro, parágrafo e intervalo) não vira outro. Com [novo] sem nota a lista
+     * fica como está; com nota, a nota e a data do existente são trocadas e o id dele é mantido. Intervalos diferentes,
+     * ainda que sobrepostos, continuam sendo destaques separados.
+     */
+    internal fun mesclarDestaque(atuais: List<Highlight>, novo: Highlight): List<Highlight> {
+        val indice = atuais.indexOfFirst {
+            it.caminhoLivro == novo.caminhoLivro && it.indiceParagrafo == novo.indiceParagrafo &&
+                it.inicio == novo.inicio && it.fim == novo.fim
+        }
+        return when {
+            indice < 0 -> atuais + novo
+            novo.nota.isBlank() -> atuais
+            else -> atuais.toMutableList().also { it[indice] = atuais[indice].copy(nota = novo.nota, ts = novo.ts) }
+        }
     }
 
     fun remover(ctx: Context, id: String) {
