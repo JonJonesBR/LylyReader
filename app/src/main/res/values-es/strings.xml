@@ -1296,6 +1296,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="notif_player_canal_descricao">Controles de reproducción</string>
     <string name="notif_guiada_canal_descricao">Controles de la lectura guiada</string>
     <string name="erro_arquivo_audio_nao_encontrado">No se encontró el archivo de audio.</string>
+    <string name="erro_guiada_trecho_nao_tocou">No se pudo reproducir este fragmento. Toca reproducir para intentarlo de nuevo.</string>
     <string name="amostra_pronta">Muestra lista</string>
     <string name="amostra_falha_dispositivo">No se pudo generar la muestra con la voz del dispositivo.</string>
     <string name="erro_desconhecido">Error desconocido</string>

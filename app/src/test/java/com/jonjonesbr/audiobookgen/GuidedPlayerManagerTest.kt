@@ -62,6 +62,7 @@ class GuidedPlayerManagerTest {
 
     private lateinit var lastErrorListener: (String) -> Unit
     private lateinit var lastCompletionListener: () -> Unit
+    private val textoTrechoNaoTocou = "Não foi possível tocar este trecho."
 
     @Before
     fun setUp() {
@@ -123,6 +124,8 @@ class GuidedPlayerManagerTest {
 
     private fun createManager(): GuidedPlayerManager {
         val context = mockk<Context>(relaxed = true)
+        // Falha do player: o estado leva a mensagem traduzida (o relaxed devolveria ""), não o texto cru do motor.
+        every { context.getString(R.string.erro_guiada_trecho_nao_tocou) } returns textoTrechoNaoTocou
         val pythonUseCase = mockk<PythonEngineUseCase>(relaxed = true)
         return GuidedPlayerManager(context, pythonUseCase).also { createdManagers.add(it) }
     }
@@ -471,7 +474,7 @@ class GuidedPlayerManagerTest {
     fun pauseClearsErrorFromState() {
         val manager = createManager()
         lastErrorListener("Falha simulada de reprodução")
-        assertEquals("Falha simulada de reprodução", manager.state.value.error)
+        assertEquals(textoTrechoNaoTocou, manager.state.value.error)
 
         manager.pause()
 
@@ -514,7 +517,7 @@ class GuidedPlayerManagerTest {
         manager.setParagraphs(paragraphs(2))
         manager.setCurrentIndex(1)
         lastErrorListener("Falha simulada de reprodução")
-        assertEquals("Falha simulada de reprodução", manager.state.value.error)
+        assertEquals(textoTrechoNaoTocou, manager.state.value.error)
 
         // Retomar um player que falhou não tocava nada (a tela mostrava "pausa" sem som): recomeça o parágrafo.
         manager.resume()
@@ -534,7 +537,7 @@ class GuidedPlayerManagerTest {
         manager.resume()
 
         // resume() não passa no guard de bounds — não deve alterar isPlaying nem limpar o error.
-        assertEquals("Falha simulada de reprodução", manager.state.value.error)
+        assertEquals(textoTrechoNaoTocou, manager.state.value.error)
         assertFalse(manager.state.value.isPlaying)
     }
 

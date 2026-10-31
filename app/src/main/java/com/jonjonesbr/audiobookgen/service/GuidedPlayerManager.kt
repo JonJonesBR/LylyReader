@@ -460,12 +460,18 @@ class GuidedPlayerManager(
                 aoTerminarParagrafoInteiro()
             }
         }
-        playerEngine?.setErrorListener { error ->
-            Log.e(TAG, "Player error: $error")
-            CrashLogWriter.log(null, "GuidedPlayerManager.playerError", message = error)
+        playerEngine?.setErrorListener { erroCru ->
+            Log.e(TAG, "Player error: $erroCru")
+            CrashLogWriter.log(null, "GuidedPlayerManager.playerError", message = erroCru)
             trechoFalhou = true
             stopProgressPolling()
-            _state.update { it.copy(isPlaying = false, isLoading = false, progressPct = 0f, error = error) }
+            // O texto cru do player fica só no log; a barra mostra uma mensagem traduzida.
+            _state.update {
+                it.copy(
+                    isPlaying = false, isLoading = false, progressPct = 0f,
+                    error = context.getString(R.string.erro_guiada_trecho_nao_tocou)
+                )
+            }
             // Libera a espera da oração (o laço confere trechoFalhou e para); sem isso ficava parado para sempre.
             oracaoCompletada?.complete(Unit)
         }
@@ -811,7 +817,12 @@ class GuidedPlayerManager(
             } catch (e: Exception) {
                 Log.e(TAG, "Error in play workflow", e)
                 CrashLogWriter.log(e, "play", "index=$index, voz=$voz, motor=$motorEfetivo")
-                _state.update { GuidedState(index, isPlaying = false, isLoading = false, error = e.message) }
+                _state.update {
+                    GuidedState(
+                        index, isPlaying = false, isLoading = false,
+                        error = context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: ""))
+                    )
+                }
             }
         }
     }
@@ -1480,6 +1491,17 @@ class GuidedPlayerManager(
     // tempo parado (tela apagada, carregando): espera a leitura ao vivo terminar de tocar antes de seguir.
     private var preRenderJob: Job? = null
 
+    /**
+     * Cancelamento que a notificação do preparo pede ([PreRenderBridge.cancelar]). Fica numa propriedade para
+     * limpar só a própria referência: senão o bridge segurava este gerenciador depois do release().
+     */
+    private val cancelarPeloBridge: () -> Unit = { cancelarPreparo() }
+
+    /** Tira o cancelamento do bridge só se ainda for o deste gerenciador (outro pode tê-lo assumido depois). */
+    private fun soltarCancelamentoDoBridge() {
+        if (PreRenderBridge.cancelar === cancelarPeloBridge) PreRenderBridge.cancelar = null
+    }
+
     /** A tela que iniciou o preparo já foi fechada: libera este gerenciador quando o preparo terminar. */
     @Volatile var liberarAoFimDoPreparo = false
 
@@ -1531,10 +1553,12 @@ class GuidedPlayerManager(
         val lento = motorEfetivo == "kokoro"
 
         PreRenderBridge.state.value = PreRenderState(0, unidades.size, titulo)
-        PreRenderBridge.cancelar = { cancelarPreparo() }
+        PreRenderBridge.cancelar = cancelarPeloBridge
         PreRenderService.start(context)
 
         preRenderJob = coroutineScope.launch {
+            // Identidade deste preparo: o finally só solta o cancelamento se nenhum preparo novo o tiver assumido.
+            val esteJob = currentCoroutineContext()[Job]
             var feitos = 0
             var falhasSeguidas = 0
             val sintetizadores = mutableMapOf<String, com.jonjonesbr.audiobookgen.tts.TtsSynthesizer>()
@@ -1587,8 +1611,12 @@ class GuidedPlayerManager(
             } catch (e: Exception) {
                 Log.e(TAG, "Preparo do capítulo falhou", e)
                 CrashLogWriter.log(e, "prerender", "voz=$voz")
-                PreRenderBridge.state.update { it?.copy(erro = e.message ?: "erro") }
+                PreRenderBridge.state.update {
+                    it?.copy(erro = context.getString(TtsErrorMapper.toUserMessageRes(e.message ?: "")))
+                }
             } finally {
+                // Com um preparo novo deste gerenciador já em curso (preRenderJob outro), o cancelamento é dele.
+                if (preRenderJob == null || preRenderJob === esteJob) soltarCancelamentoDoBridge()
                 if (liberarAoFimDoPreparo && _state.value.index < 0) {
                     preRenderJob = null
                     release()
@@ -1644,6 +1672,7 @@ class GuidedPlayerManager(
 
     fun release() {
         cancelarPreparo()
+        soltarCancelamentoDoBridge()
         stop()
         // releaseAll() é trivial hoje; se ganhar trabalho real, precisa de ordem garantida (Mutex de processo).
         try { onnxEngine?.releaseAll() } catch (e: Exception) {

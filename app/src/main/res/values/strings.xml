@@ -1311,6 +1311,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="notif_player_canal_descricao">Playback controls</string>
     <string name="notif_guiada_canal_descricao">Guided reading controls</string>
     <string name="erro_arquivo_audio_nao_encontrado">Audio file not found.</string>
+    <string name="erro_guiada_trecho_nao_tocou">Could not play this passage. Tap play to try again.</string>
     <string name="amostra_pronta">Sample ready</string>
     <string name="amostra_falha_dispositivo">Could not create a sample with the device voice.</string>
     <string name="erro_desconhecido">Unknown error</string>

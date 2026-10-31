@@ -1311,6 +1311,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="notif_player_canal_descricao">Controles de reprodução</string>
     <string name="notif_guiada_canal_descricao">Controles da leitura guiada</string>
     <string name="erro_arquivo_audio_nao_encontrado">Arquivo de áudio não encontrado.</string>
+    <string name="erro_guiada_trecho_nao_tocou">Não foi possível tocar este trecho. Toque em tocar para tentar de novo.</string>
     <string name="amostra_pronta">Amostra pronta</string>
     <string name="amostra_falha_dispositivo">Falha ao gerar amostra com voz do dispositivo.</string>
     <string name="erro_desconhecido">Erro desconhecido</string>
