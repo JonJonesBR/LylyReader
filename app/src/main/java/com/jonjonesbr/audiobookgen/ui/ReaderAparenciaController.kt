@@ -11,11 +11,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto
+import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.google.android.material.chip.ChipGroup
 
@@ -75,7 +77,7 @@ class ReaderAparenciaController(
             view.findViewById(R.id.tvEspacamentoValor),
             state.espacamento
         )
-        configurarBotoesAparencia(view)
+        configurarBotoesAparencia(view, state)
         configurarAlinhamento(
             view.findViewById(R.id.chipsAlinhamento), view.findViewById(R.id.tvAlinhamentoDica), state.alinhamento
         )
@@ -176,37 +178,46 @@ class ReaderAparenciaController(
         }
     }
 
-    private fun configurarBotoesAparencia(view: View) {
+    /**
+     * Cada grupo mostra a opção atual, marcada antes de registrar o listener: abrir a Aparência não dispara
+     * nada. Depois, só a opção que fica marcada é aplicada.
+     */
+    private fun configurarBotoesAparencia(view: View, estado: ReaderUiState) {
         view.findViewById<Button>(R.id.btnTemaDoApp).setOnClickListener { SeletorTemaSheet.mostrar(activity) }
-        val btnClaro  = view.findViewById<Button>(R.id.btnTemaClaro)
-        val btnEscuro = view.findViewById<Button>(R.id.btnTemaEscuro)
-        val btnSepia  = view.findViewById<Button>(R.id.btnTemaSepia)
-        val btnOled   = view.findViewById<Button>(R.id.btnTemaOled)
-        val btnFontePadrao    = view.findViewById<Button>(R.id.btnFontePadrao)
-        val btnFonteSerifada  = view.findViewById<Button>(R.id.btnFonteSerifada)
-        val btnMargemEstreita = view.findViewById<Button>(R.id.btnMargemEstreita)
-        val btnMargemMedia    = view.findViewById<Button>(R.id.btnMargemMedia)
-        val btnMargemLarga    = view.findViewById<Button>(R.id.btnMargemLarga)
 
-        btnClaro.setOnClickListener  { viewModel.setTema(TemaLeitura.CLARO) }
-        btnEscuro.setOnClickListener { viewModel.setTema(TemaLeitura.ESCURO) }
-        btnSepia.setOnClickListener  { viewModel.setTema(TemaLeitura.SEPIA) }
-        btnOled.setOnClickListener   { viewModel.setTema(TemaLeitura.OLED) }
-
-        btnFontePadrao.setOnClickListener   { viewModel.setFonteSerifada(false) }
-        btnFonteSerifada.setOnClickListener { viewModel.setFonteSerifada(true) }
-
-        btnMargemEstreita.setOnClickListener { viewModel.setMargemNivel(0) }
-        btnMargemMedia.setOnClickListener    { viewModel.setMargemNivel(1) }
-        btnMargemLarga.setOnClickListener    { viewModel.setMargemNivel(2) }
-
-        view.findViewById<Button>(R.id.btnRolagemVertical).setOnClickListener {
-            viewModel.setRolagemHorizontal(false)
-            onOrientacaoRolagem(false)
+        val grupoTema = view.findViewById<MaterialButtonToggleGroup>(R.id.grupoTemaLeitura)
+        val temas = mapOf(
+            R.id.btnTemaClaro to TemaLeitura.CLARO,
+            R.id.btnTemaEscuro to TemaLeitura.ESCURO,
+            R.id.btnTemaSepia to TemaLeitura.SEPIA,
+            R.id.btnTemaOled to TemaLeitura.OLED
+        )
+        temas.entries.firstOrNull { it.value == estado.tema }?.let { grupoTema.check(it.key) }
+        grupoTema.addOnButtonCheckedListener { _, id, marcado ->
+            if (marcado) temas[id]?.let { viewModel.setTema(it) }
         }
-        view.findViewById<Button>(R.id.btnRolagemHorizontal).setOnClickListener {
-            viewModel.setRolagemHorizontal(true)
-            onOrientacaoRolagem(true)
+
+        val grupoFonte = view.findViewById<MaterialButtonToggleGroup>(R.id.grupoFonte)
+        grupoFonte.check(if (estado.fonteSerifada) R.id.btnFonteSerifada else R.id.btnFontePadrao)
+        grupoFonte.addOnButtonCheckedListener { _, id, marcado ->
+            if (marcado) viewModel.setFonteSerifada(id == R.id.btnFonteSerifada)
+        }
+
+        // A posição na lista é o nível da margem: 0 estreita, 1 média, 2 larga.
+        val margens = listOf(R.id.btnMargemEstreita, R.id.btnMargemMedia, R.id.btnMargemLarga)
+        val grupoMargem = view.findViewById<MaterialButtonToggleGroup>(R.id.grupoMargem)
+        grupoMargem.check(margens[estado.margemNivel.coerceIn(0, margens.lastIndex)])
+        grupoMargem.addOnButtonCheckedListener { _, id, marcado ->
+            if (marcado) viewModel.setMargemNivel(margens.indexOf(id))
+        }
+
+        val grupoRolagem = view.findViewById<MaterialButtonToggleGroup>(R.id.grupoRolagem)
+        grupoRolagem.check(if (estado.rolagemHorizontal) R.id.btnRolagemHorizontal else R.id.btnRolagemVertical)
+        grupoRolagem.addOnButtonCheckedListener { _, id, marcado ->
+            if (!marcado) return@addOnButtonCheckedListener
+            val horizontal = id == R.id.btnRolagemHorizontal
+            viewModel.setRolagemHorizontal(horizontal)
+            onOrientacaoRolagem(horizontal)
         }
     }
 

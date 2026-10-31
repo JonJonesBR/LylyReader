@@ -59,6 +59,9 @@
             android:id="@+id/tvFonteValor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:gravity="center"
             android:text="16"
             android:textSize="13sp"
             android:textColor="?attr/colorPrimary"
@@ -116,6 +119,9 @@
             android:id="@+id/tvEspacamentoValor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:gravity="center"
             android:text="1.50"
             android:textSize="13sp"
             android:textColor="?attr/colorPrimary"
@@ -155,55 +161,55 @@
         android:textAllCaps="false"
         android:textSize="13sp"/>
 
-    <LinearLayout
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/grupoTemaLeitura"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        app:singleSelection="true"
+        app:selectionRequired="true"
         android:layout_marginBottom="8dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTemaClaro"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
             android:text="@string/btn_tema_claro"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTemaEscuro"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
             android:text="@string/btn_tema_escuro"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTemaSepia"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
             android:text="@string/btn_tema_sepia"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTemaOled"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_tema_oled"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
-    </LinearLayout>
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Tipografia (fonte) -->
     <TextView
@@ -215,33 +221,35 @@
         android:layout_marginTop="12dp"
         android:layout_marginBottom="8dp"/>
 
-    <LinearLayout
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/grupoFonte"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        app:singleSelection="true"
+        app:selectionRequired="true"
         android:layout_marginBottom="8dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFontePadrao"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
             android:text="@string/btn_fonte_padrao"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFonteSerifada"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_fonte_serifada"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
-    </LinearLayout>
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Margem horizontal -->
     <TextView
@@ -253,44 +261,45 @@
         android:layout_marginTop="4dp"
         android:layout_marginBottom="8dp"/>
 
-    <LinearLayout
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/grupoMargem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        app:singleSelection="true"
+        app:selectionRequired="true"
         android:layout_marginBottom="8dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMargemEstreita"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
             android:text="@string/btn_margem_estreita"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMargemMedia"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
             android:text="@string/btn_margem_media"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMargemLarga"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_margem_larga"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
-    </LinearLayout>
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Alinhamento do texto (justificado é o padrão) -->
     <TextView
@@ -358,33 +367,35 @@
         android:layout_marginTop="4dp"
         android:layout_marginBottom="8dp"/>
 
-    <LinearLayout
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/grupoRolagem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        app:singleSelection="true"
+        app:selectionRequired="true"
         android:layout_marginBottom="8dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRolagemVertical"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_rolagem_vertical"
             android:textSize="12sp"
-            android:layout_marginEnd="4dp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRolagemHorizontal"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_rolagem_horizontal"
             android:textSize="12sp"
             style="@style/Widget.Material3.Button.OutlinedButton"/>
-    </LinearLayout>
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Brilho -->
     <TextView
@@ -424,6 +435,9 @@
             android:id="@+id/tvBrilhoValor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:gravity="center"
             android:text="100%"
             android:textSize="13sp"
             android:textColor="?attr/colorPrimary"
