@@ -308,6 +308,12 @@ class ReaderActivity : BasePlayerActivity() {
                 onAtualizarSoneca = { ms ->
                     tvGuidedSoneca.text =
                         if (ms != null) "😴 ${SleepTimerManager.formatRemaining(ms)}" else "😴"
+                    // A contagem vai só para a descrição: sem anúncio a cada segundo (a11y-5).
+                    tvGuidedSoneca.contentDescription = if (ms != null) {
+                        getString(R.string.sleep_timer_title_active, SleepTimerManager.formatRemaining(ms))
+                    } else {
+                        getString(R.string.cd_sleep_timer)
+                    }
                     tvGuidedSoneca.visibility = View.VISIBLE
                 },
             ),
@@ -619,6 +625,11 @@ class ReaderActivity : BasePlayerActivity() {
         findViewById<View>(R.id.layoutGuidedPlayer).addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             posicionarFabVoltarNarracao()
         }
+        // ux-5: o mini player fica por cima do FAB. O OnLayoutChangeListener não dispara quando ele vira GONE,
+        // por isso o listener é global.
+        findViewById<View?>(R.id.miniPlayerRoot)?.let { miniPlayer ->
+            miniPlayer.viewTreeObserver.addOnGlobalLayoutListener { posicionarFabAcimaDoMiniPlayer(miniPlayer) }
+        }
         EspacoSobControles.manter(
             recyclerView, listOf(findViewById(R.id.layoutGuidedPlayer), findViewById(R.id.miniPlayerRoot))
         )
@@ -923,6 +934,21 @@ class ReaderActivity : BasePlayerActivity() {
             params.bottomMargin = alvo
             fabVoltarNarracao.post { fabVoltarNarracao.requestLayout() }
         }
+    }
+
+    /**
+     * Com o mini player visível, o FAB de conversão sobe pela altura útil dele (ux-5). A altura inclui a barra de
+     * gestos pelo padding, e a margem do FAB também a inclui, então o padding é descontado. Usa translationY: a
+     * margem é reescrita pelo listener de insets.
+     */
+    private fun posicionarFabAcimaDoMiniPlayer(miniPlayer: View) {
+        val alvo = if (miniPlayer.visibility == View.VISIBLE && miniPlayer.height > 0) {
+            -(miniPlayer.height - miniPlayer.paddingBottom).toFloat()
+        } else {
+            0f
+        }
+        // Só atribui quando muda: o listener roda a cada layout da janela.
+        if (fabConverterPrincipal.translationY != alvo) fabConverterPrincipal.translationY = alvo
     }
 
     // ── Observar ViewModel ────────────────────────────────────────────────────
@@ -1360,7 +1386,12 @@ class ReaderActivity : BasePlayerActivity() {
         findViewById<View>(R.id.ivAbrirCapitulos).visibility = tvCapituloAtual.visibility
         btnCapituloAnterior.visibility = if (temCapitulos) View.VISIBLE else View.INVISIBLE
         btnCapituloProximo.visibility = btnCapituloAnterior.visibility
-        if (!temCapitulos) return
+        if (!temCapitulos) {
+            // Sem capítulos não há rótulo: a descrição do livro anterior não pode ficar na área.
+            textoDaBarra = null
+            atualizarDescricaoAreaCapitulo()
+            return
+        }
 
         val atual = NavegacaoCapitulos.indiceDoCapitulo(capitulos, paragrafoAtualVisivel() ?: 0).coerceAtLeast(0)
         val rotulo = getString(
@@ -1370,8 +1401,7 @@ class ReaderActivity : BasePlayerActivity() {
         if (rotulo != textoDaBarra) {
             textoDaBarra = rotulo
             tvCapituloAtual.text = rotulo
-            findViewById<View>(R.id.areaCapituloAtual).contentDescription =
-                getString(R.string.cd_abrir_capitulos, rotulo)
+            atualizarDescricaoAreaCapitulo()
         }
         if (atual != capituloNaBarra) {
             capituloNaBarra = atual
@@ -1382,6 +1412,22 @@ class ReaderActivity : BasePlayerActivity() {
             // "Converter este capítulo" e a lista de capítulos usam o capítulo da posição de leitura.
             if (viewModel.uiState.value.capituloAtivo != atual) viewModel.navegarParaCapitulo(atual)
         }
+    }
+
+    /**
+     * Descrição da área clicável do capítulo (a11y-7). O pai esconde o texto dos filhos, então o progresso
+     * ("42% · ~8 min restantes") entra aqui quando está visível. Só atribui quando muda: roda a cada rolagem.
+     */
+    private fun atualizarDescricaoAreaCapitulo() {
+        val rotulo = textoDaBarra
+        val descricao = when {
+            rotulo == null -> null
+            tvProgressoLeitura.visibility == View.VISIBLE ->
+                getString(R.string.cd_abrir_capitulos_progresso, rotulo, tvProgressoLeitura.text)
+            else -> getString(R.string.cd_abrir_capitulos, rotulo)
+        }
+        val area = findViewById<View>(R.id.areaCapituloAtual)
+        if (area.contentDescription?.toString() != descricao) area.contentDescription = descricao
     }
 
     /** Vai ao capítulo [indice]: na leitura guiada passa a ler dali; fora dela, rola o texto até ele. */
@@ -1683,6 +1729,7 @@ class ReaderActivity : BasePlayerActivity() {
         val indiceRef = paragrafoAtualVisivel()
         if (texto == null || indiceRef == null) {
             tvProgressoLeitura.visibility = View.GONE
+            atualizarDescricaoAreaCapitulo()
             marcacoesController.atualizarIconeBookmark(null)
             return
         }
@@ -1707,6 +1754,7 @@ class ReaderActivity : BasePlayerActivity() {
             getString(R.string.progresso_leitura_sem_tempo, (pct * 100).toInt())
         }
         tvProgressoLeitura.visibility = View.VISIBLE
+        atualizarDescricaoAreaCapitulo()
         // Rolar com o dedo não muda o estado da tela: a barra do capítulo acompanha por aqui.
         viewModel.textoEfetivo()?.let(::atualizarBarraCapitulo)
     }

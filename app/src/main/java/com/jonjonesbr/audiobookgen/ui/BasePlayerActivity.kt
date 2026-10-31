@@ -197,6 +197,12 @@ abstract class BasePlayerActivity : AppCompatActivity() {
                     } else {
                         "😴"
                     }
+                    // Como o chip da guiada: a contagem vai só para a descrição, sem anúncio (a11y-5).
+                    btn.contentDescription = if (restanteMs != null) {
+                        getString(R.string.sleep_timer_title_active, SleepTimerManager.formatRemaining(restanteMs))
+                    } else {
+                        getString(R.string.cd_sleep_timer)
+                    }
                 }
             }
         }
@@ -252,6 +258,8 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         if (!audioVisivel) {
             root.findViewById<View>(R.id.miniPlayerExpanded)?.visibility = View.GONE
             playerExpanded = false
+            // Sem isto, ao voltar recolhido, o botão mantinha o ícone e a descrição de "recolher".
+            atualizarBotaoExpandir(root)
         } else if (acabouDeIniciar && deveExpandirMiniPlayerAoIniciar()) {
             toggleExpandido(root, forcarExpandido = true)
         }
@@ -467,13 +475,27 @@ abstract class BasePlayerActivity : AppCompatActivity() {
 
     private fun toggleExpandido(root: View, forcarExpandido: Boolean? = null) {
         val expanded = root.findViewById<View>(R.id.miniPlayerExpanded)
-        val btnExpandir = root.findViewById<ImageButton>(R.id.miniPlayerExpandir)
         playerExpanded = forcarExpandido ?: !playerExpanded
         expanded.visibility = if (playerExpanded) View.VISIBLE else View.GONE
+        atualizarBotaoExpandir(root)
+    }
+
+    /**
+     * Ícone, descrição e dica do botão de expandir seguem o estado (a11y-8): o TalkBack diz o que o toque faz.
+     * Na criação o layout já está recolhido, igual a playerExpanded = false.
+     */
+    private fun atualizarBotaoExpandir(root: View) {
+        val btnExpandir = root.findViewById<ImageButton?>(R.id.miniPlayerExpandir) ?: return
         btnExpandir.setImageResource(
             if (playerExpanded) android.R.drawable.arrow_down_float
             else android.R.drawable.arrow_up_float
         )
+        val descricao = getString(if (playerExpanded) R.string.cd_recolher_player else R.string.cd_expandir_player)
+        // Só atribui quando muda: esta função roda a cada emissão do estado do serviço.
+        if (btnExpandir.contentDescription?.toString() != descricao) {
+            btnExpandir.contentDescription = descricao
+            btnExpandir.tooltipText = descricao
+        }
     }
 
     companion object {

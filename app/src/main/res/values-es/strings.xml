@@ -12,6 +12,7 @@
     <string name="cd_guided_pause">Pausar lectura guiada</string>
     <string name="cd_guided_speed">Velocidad de lectura: %1$s</string>
     <string name="cd_expandir_player">Expandir reproductor</string>
+    <string name="cd_recolher_player">Contraer reproductor</string>
     <string name="cd_fechar_player">Cerrar reproductor</string>
     <string name="cd_fechar_leitura_guiada">Cerrar lectura guiada</string>
     <string name="cd_guided_anterior">Párrafo anterior</string>
@@ -515,6 +516,7 @@
     <string name="cd_capitulo_anterior">Capítulo anterior</string>
     <string name="cd_capitulo_proximo">Capítulo siguiente</string>
     <string name="cd_abrir_capitulos">%1$s. Abrir la lista de capítulos</string>
+    <string name="cd_abrir_capitulos_progresso">%1$s. %2$s. Abrir la lista de capítulos</string>
     <string name="busca_capitulos_hint">Buscar capítulo</string>
     <string name="capitulos_dica_converter">Marca capítulos para convertirlos en audiolibro.</string>
     <string name="capitulos_marcar_todos">Marcar todos</string>

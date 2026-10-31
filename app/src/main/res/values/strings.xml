@@ -12,6 +12,7 @@
     <string name="cd_guided_pause">Pause guided reading</string>
     <string name="cd_guided_speed">Reading speed %1$s</string>
     <string name="cd_expandir_player">Expand player</string>
+    <string name="cd_recolher_player">Collapse player</string>
     <string name="cd_fechar_player">Close player</string>
     <string name="cd_fechar_leitura_guiada">Close guided reading</string>
     <string name="cd_guided_anterior">Previous paragraph</string>
@@ -517,6 +518,7 @@
     <string name="cd_capitulo_proximo">Next chapter</string>
 
     <string name="cd_abrir_capitulos">%1$s. Open the chapter list</string>
+    <string name="cd_abrir_capitulos_progresso">%1$s. %2$s. Open the chapter list</string>
 
     <string name="busca_capitulos_hint">Search chapters</string>
 

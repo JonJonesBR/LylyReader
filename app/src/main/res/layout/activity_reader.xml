@@ -399,6 +399,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:accessibilityTraversalBefore="@id/recyclerViewParagrafos"
         android:orientation="vertical"
         android:background="@color/color_surface"
         android:elevation="8dp"
