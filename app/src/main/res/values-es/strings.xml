@@ -17,6 +17,7 @@
     <string name="cd_guided_anterior">Párrafo anterior</string>
     <string name="cd_guided_proximo">Párrafo siguiente</string>
     <string name="cd_guided_fechar">Cerrar lectura guiada</string>
+    <string name="cd_guided_voltar_narracao">Volver a la narración: la lectura guiada vuelve a seguir el texto</string>
     <string name="cd_sleep_timer">Temporizador</string>
     <string name="sleep_timer_title_active">Temporizador — quedan %1$s</string>
     <string name="sleep_timer_off_option">Desactivar</string>
@@ -879,6 +880,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="guided_options_title">Voz y motor: %1$s</string>
     <string name="guided_options_more">Más ajustes</string>
     <string name="guided_options_chip">⚙ Voz</string>
+    <string name="guided_voltar_narracao">Volver a la narración</string>
     <string name="guided_options_engine_android">Voz de Android</string>
     <string name="guided_options_only_book">Solo para este libro</string>
     <string name="guided_options_only_book_desc">Guarda el tono, las pausas y la preparación solo para este libro.</string>

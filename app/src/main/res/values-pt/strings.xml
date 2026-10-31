@@ -17,6 +17,7 @@
     <string name="cd_guided_anterior">Parágrafo anterior</string>
     <string name="cd_guided_proximo">Próximo parágrafo</string>
     <string name="cd_guided_fechar">Fechar leitura guiada</string>
+    <string name="cd_guided_voltar_narracao">Voltar à narração: a leitura guiada volta a acompanhar o texto</string>
     <string name="cd_sleep_timer">Soneca</string>
     <string name="sleep_timer_title_active">Soneca — restam %1$s</string>
     <string name="sleep_timer_off_option">Desativar</string>
@@ -894,6 +895,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="guided_options_title">Voz e motor: %1$s</string>
     <string name="guided_options_more">Mais ajustes</string>
     <string name="guided_options_chip">⚙ Voz</string>
+    <string name="guided_voltar_narracao">Voltar à narração</string>
     <string name="guided_options_engine_android">Voz do Android</string>
     <string name="guided_options_only_book">Só neste livro</string>
     <string name="guided_options_only_book_desc">Guarda tom, pausas e preparo só para este livro.</string>

@@ -17,6 +17,7 @@
     <string name="cd_guided_anterior">Previous paragraph</string>
     <string name="cd_guided_proximo">Next paragraph</string>
     <string name="cd_guided_fechar">Close guided reading</string>
+    <string name="cd_guided_voltar_narracao">Back to narration: guided reading follows the text again</string>
     <string name="cd_sleep_timer">Sleep timer</string>
     <string name="sleep_timer_title_active">Sleep timer — %1$s left</string>
     <string name="sleep_timer_off_option">Turn off</string>
@@ -893,6 +894,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="guided_options_title">Voice and engine: %1$s</string>
     <string name="guided_options_more">More settings</string>
     <string name="guided_options_chip">⚙ Voice</string>
+    <string name="guided_voltar_narracao">Back to narration</string>
     <string name="guided_options_engine_android">Android voice</string>
     <string name="guided_options_only_book">Only for this book</string>
     <string name="guided_options_only_book_desc">Keeps pitch, pauses and look-ahead for this book only.</string>

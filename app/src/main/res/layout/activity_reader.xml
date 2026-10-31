@@ -352,7 +352,7 @@
         </LinearLayout>
 
         <!-- ── Paragraph list ────────────────────────────────────────── -->
-        <androidx.recyclerview.widget.RecyclerView
+        <com.jonjonesbr.audiobookgen.ui.RecyclerViewParagrafos
             android:id="@+id/recyclerViewParagrafos"
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -377,6 +377,20 @@
         android:text="@string/fab_converter_principal"
         android:textSize="14sp"
         app:icon="@android:drawable/ic_btn_speak_now"
+        android:visibility="gone"/>
+
+    <!-- ── "Voltar à narração" (modo manual da leitura guiada): mesma ancoragem do FAB de conversão, mas acima da
+         barra guiada. A margem inferior é ajustada em código (posicionarFabVoltarNarracao), pois depende da altura da barra. ── -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabVoltarNarracao"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="@string/cd_guided_voltar_narracao"
+        android:text="@string/guided_voltar_narracao"
+        android:textSize="14sp"
+        app:icon="@android:drawable/ic_media_play"
         android:visibility="gone"/>
 
     <!-- ── Guided player bar ─────────────────────────────────────────────── -->

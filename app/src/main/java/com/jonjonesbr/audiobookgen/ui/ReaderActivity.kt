@@ -31,8 +31,12 @@ import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -58,6 +62,8 @@ class ReaderActivity : BasePlayerActivity() {
 
     companion object {
         private const val PAUSA_ROLAGEM_MANUAL_MS = 8_000L
+        /** Respiro entre o botão "Voltar à narração" e a barra da leitura guiada (que fica na base da tela). */
+        private const val MARGEM_FAB_VOLTAR_DP = 16
         const val EXTRA_CAMINHO = "extra_caminho"
         /** True só quando o leitor foi aberto via [android.app.Activity.startActivityForResult]
          *  (MainActivity.abrirLeitor/abrirLeitorComCaminho/abrirLeituraGuiadaDirect) — nesses
@@ -141,12 +147,14 @@ class ReaderActivity : BasePlayerActivity() {
     private lateinit var layoutErro: LinearLayout
     private lateinit var tvErro: TextView
     private lateinit var btnConverterAssim: Button
-    private lateinit var recyclerView: RecyclerView
+    private lateinit var recyclerView: RecyclerViewParagrafos
     private var scrollListener: RecyclerView.OnScrollListener? = null
     // FAB único de conversão: texto/ícone mudam conforme há seleção ativa ou não
     // (antes eram dois FABs separados, fabConverterPrincipal e fabConverterSelecao,
     // sempre mutuamente exclusivos — unificados num só, ver atualizarFabs()).
     private lateinit var fabConverterPrincipal: ExtendedFloatingActionButton
+    // "Voltar à narração": no lugar do FAB de conversão, só no modo manual da guiada (ver atualizarFabs()).
+    private lateinit var fabVoltarNarracao: ExtendedFloatingActionButton
 
     // Status pill (banner de limpeza)
     private lateinit var bannerOtimizado: android.view.ViewGroup
@@ -605,7 +613,12 @@ class ReaderActivity : BasePlayerActivity() {
         // T6.1 (edge-to-edge): FAB e barra de leitura guiada são ancorados na base da tela —
         // sem isso, ficam atrás da barra de gestos em telas sem botões de navegação físicos.
         fabConverterPrincipal.aplicarMargemInferiorComNavigationBar()
+        fabVoltarNarracao = findViewById(R.id.fabVoltarNarracao)
         findViewById<View>(R.id.layoutGuidedPlayer).aplicarPaddingInferiorComNavigationBar()
+        // A barra guiada muda de altura (chips, modo manual): o "Voltar à narração" acompanha a borda de cima dela.
+        findViewById<View>(R.id.layoutGuidedPlayer).addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            posicionarFabVoltarNarracao()
+        }
         EspacoSobControles.manter(
             recyclerView, listOf(findViewById(R.id.layoutGuidedPlayer), findViewById(R.id.miniPlayerRoot))
         )
@@ -705,6 +718,7 @@ class ReaderActivity : BasePlayerActivity() {
         fabConverterPrincipal.setOnClickListener {
             verificarConectividadeAntesDeConverter { retornoController.retornarComSelecao() }
         }
+        fabVoltarNarracao.setOnClickListener { guidedReadingBarController?.voltarAoAcompanhamento() }
 
         // Barra de modo: botão Concluir (mesma saída do modo que o botão voltar)
         btnConcluirModo.setOnClickListener { retornoController.concluirModoEspecial() }
@@ -779,13 +793,9 @@ class ReaderActivity : BasePlayerActivity() {
     private fun configurarScrollListener() {
         scrollListener = object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(rv: RecyclerView, newState: Int) {
+                // Só o arraste com o dedo chega em DRAGGING: a rolagem automática do código não entra nesse estado.
                 if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                    guidedReadingBarController?.scrollManual = true
-                    // Rolou com o dedo: a posição a guardar volta a ser a da tela, não a da leitura guiada encerrada.
-                    paragrafoGuiadoAoEncerrar = -1
-                    // Rolar com o dedo só suspende a rolagem automática do audiobook por um tempo; antes
-                    // desligava o acompanhamento de vez (o destaque parava até reabrir o leitor).
-                    rolagemAudiobookSuspensaAte = android.os.SystemClock.uptimeMillis() + PAUSA_ROLAGEM_MANUAL_MS
+                    rolagemPeloLeitor()
                 } else if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                     guidedReadingBarController?.aguardandoAutoScroll = false
                     atualizarProgressoLeitura()
@@ -793,7 +803,73 @@ class ReaderActivity : BasePlayerActivity() {
             }
         }
         recyclerView.addOnScrollListener(scrollListener!!)
+        // As outras entradas de quem lê: TalkBack (ações de rolagem da lista), roda do mouse/touchpad e teclado.
+        recyclerView.aoRolagemDeAcessibilidade = { rolagemPeloLeitor() }
+        recyclerView.setOnGenericMotionListener { _, evento ->
+            if (evento.action == MotionEvent.ACTION_SCROLL) rolagemPeloLeitor()
+            false // o RecyclerView continua tratando a roda normalmente
+        }
     }
+
+    /**
+     * Rolagem iniciada por quem lê, qualquer que seja a entrada (dedo, TalkBack, teclado ou roda). Liga o modo manual
+     * da leitura guiada, que só se desliga com um pedido explícito (ver GuidedReadingBarController).
+     */
+    private fun rolagemPeloLeitor() {
+        guidedReadingBarController?.ligarRolagemManual()
+        // Rolou por conta própria: a posição a guardar volta a ser a da tela, não a da leitura guiada encerrada.
+        paragrafoGuiadoAoEncerrar = -1
+        // Rolar suspende a rolagem automática do audiobook por um tempo; antes desligava o acompanhamento de vez
+        // (o destaque parava até reabrir o leitor).
+        rolagemAudiobookSuspensaAte = android.os.SystemClock.uptimeMillis() + PAUSA_ROLAGEM_MANUAL_MS
+    }
+
+    /**
+     * Teclado: as teclas que rolam o texto contam como rolagem de quem lê, mas só quando a lista de fato rola (no fim
+     * do livro, PAGE_DOWN não muda nada e não liga o modo manual). A busca, que tem o foco, fica de fora.
+     */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action != KeyEvent.ACTION_DOWN || currentFocus is EditText) return super.dispatchKeyEvent(event)
+        when (event.keyCode) {
+            // O RecyclerView não trata as teclas de página: a rolagem é feita aqui, uma tela por vez.
+            KeyEvent.KEYCODE_PAGE_UP -> if (rolarPagina(-1)) return true
+            KeyEvent.KEYCODE_PAGE_DOWN -> if (rolarPagina(1)) return true
+            // Setas: a lista só rola se o foco for para um filho fora da tela. Conta só se o deslocamento mudou.
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                val antes = deslocamentoAtual()
+                val tratada = super.dispatchKeyEvent(event)
+                if (deslocamentoAtual() != antes) rolagemPeloLeitor()
+                return tratada
+            }
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    /** Rola uma tela para trás (-1) ou para frente (1), no eixo da lista. Falso se a lista já está no limite. */
+    private fun rolarPagina(sentido: Int): Boolean {
+        val vertical = recyclerView.layoutManager?.canScrollVertically() == true
+        val podeRolar = if (vertical) {
+            recyclerView.canScrollVertically(sentido)
+        } else {
+            recyclerView.canScrollHorizontally(sentido)
+        }
+        if (!podeRolar) return false
+        if (vertical) {
+            recyclerView.smoothScrollBy(0, sentido * recyclerView.height)
+        } else {
+            recyclerView.smoothScrollBy(sentido * recyclerView.width, 0)
+        }
+        rolagemPeloLeitor()
+        return true
+    }
+
+    /** Deslocamento da lista no eixo atual, para saber se uma tecla mexeu nela. */
+    private fun deslocamentoAtual(): Int =
+        if (recyclerView.layoutManager?.canScrollVertically() == true) {
+            recyclerView.computeVerticalScrollOffset()
+        } else {
+            recyclerView.computeHorizontalScrollOffset()
+        }
 
     /**
      * Visibilidade e conteúdo do FAB de conversão (único — ver [fabConverterPrincipal]).
@@ -811,6 +887,13 @@ class ReaderActivity : BasePlayerActivity() {
         val temSelecaoAtiva = state.selecaoInicio != null || temCapitulos
         val guiadaAtiva = manager.state.value.index >= 0
 
+        // Modo manual da guiada (quem lê rolou): o "Voltar à narração" ocupa o lugar do FAB, sem sobrepor a barra.
+        fabVoltarNarracao.visibility = if (guiadaAtiva && guidedReadingBarController?.scrollManual == true) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+
         // Só com trecho ou capítulos marcados: o livro inteiro e o capítulo atual ficam em ⋮ › Gerar audiobook
         // (antes o botão ficava sempre sobre o texto, com outro nome, "Converter para áudio").
         fabConverterPrincipal.visibility = if (temSelecaoAtiva && !guiadaAtiva) View.VISIBLE else View.GONE
@@ -823,6 +906,22 @@ class ReaderActivity : BasePlayerActivity() {
             )
         } else {
             getString(R.string.fab_converter_selecao)
+        }
+    }
+
+    /**
+     * Mantém o "Voltar à narração" logo acima da barra da leitura guiada. O chip só aparece com a barra visível,
+     * então a folga vale sempre; a altura da barra já inclui a barra de gestos.
+     */
+    private fun posicionarFabVoltarNarracao() {
+        val barra = findViewById<View>(R.id.layoutGuidedPlayer)
+        val alvo = (if (barra.visibility == View.VISIBLE) barra.height else 0) + dpToPx(MARGEM_FAB_VOLTAR_DP)
+        val params = fabVoltarNarracao.layoutParams as ViewGroup.MarginLayoutParams
+        // Só mexe quando muda. Este método roda dentro do layout da barra: o requestLayout vai para o próximo
+        // ciclo, senão o ViewRootImpl adia a margem para outro frame (e pode avisar "requestLayout during layout").
+        if (params.bottomMargin != alvo) {
+            params.bottomMargin = alvo
+            fabVoltarNarracao.post { fabVoltarNarracao.requestLayout() }
         }
     }
 
@@ -1749,9 +1848,9 @@ class ReaderActivity : BasePlayerActivity() {
                 startActivity(intent)
             }
 
+            // Troca de voz refaz o trecho atual sem sair do modo manual: não é um pedido de ponto da narração.
             val guidedIndex = guidedPlayerManager?.state?.value?.index ?: -1
             if (guidedIndex >= 0) {
-                guidedReadingBarController?.scrollManual = false
                 guidedPlayerManager?.play(guidedIndex)
             }
         },

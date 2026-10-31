@@ -74,7 +74,12 @@ class GuidedReadingBarController(
 
     private val lifecycleScope = activity.lifecycleScope
 
+    /**
+     * Modo manual: quem lê rolou o texto (dedo, TalkBack, teclado ou roda), então o acompanhamento não puxa a
+     * rolagem de volta a cada parágrafo. Só muda por [ligarRolagemManual] e [desligarRolagemManual].
+     */
     var scrollManual = false
+        private set
     var aguardandoAutoScroll = false
     var ultimoIndiceGuided = -1
     private var ultimoEstadoUi: GuidedState? = null
@@ -94,9 +99,45 @@ class GuidedReadingBarController(
         }
     }
 
+    /** Quem lê rolou (dedo, TalkBack, teclado ou roda do mouse): a barra para de puxar a rolagem até ele pedir. */
+    fun ligarRolagemManual() {
+        if (scrollManual) return
+        scrollManual = true
+        callbacks.atualizarFabs()
+    }
+
+    /** Volta a acompanhar a narração: pedido explícito (chip, anterior/próximo, tocar num parágrafo) ou fim. */
+    fun desligarRolagemManual() {
+        if (!scrollManual) return
+        scrollManual = false
+        callbacks.atualizarFabs()
+    }
+
+    /** Chip "Voltar à narração": sai do modo manual e salta para o parágrafo que está sendo narrado. */
+    fun voltarAoAcompanhamento() {
+        desligarRolagemManual()
+        val indice = guidedPlayerManager.state.value.index
+        val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
+        if (indice < 0) return
+        // O chip some logo depois deste toque: sem o anúncio, o foco do TalkBack se perderia sem aviso.
+        recyclerView.announceForAccessibility(activity.getString(R.string.cd_guided_voltar_narracao))
+        // Salto direto, como a navegação por capítulos. Na vertical, o parágrafo fica na altura da linha de
+        // destaque; o acompanhamento fino retoma com o próximo progresso.
+        val margem = if (lm.orientation == LinearLayoutManager.VERTICAL) {
+            (recyclerView.height * HIGHLIGHT_TARGET_RATIO).toInt()
+        } else {
+            0
+        }
+        // O salto só vale no próximo layout. Até lá, um progresso não pode achar o alvo sem view e trocar o
+        // offset por 0 (manterDestaqueVisivel). A flag fica ligada até o próximo parágrafo, o fim de uma rolagem
+        // ou, na vertical, o primeiro destaque com a view pronta.
+        aguardandoAutoScroll = true
+        lm.scrollToPositionWithOffset(indice, margem)
+    }
+
     fun playGuidedFrom(indice: Int) {
         callbacks.fecharPlayerService()
-        scrollManual = false
+        desligarRolagemManual()
         guidedPlayerManager.play(indice)
     }
 
@@ -164,7 +205,7 @@ class GuidedReadingBarController(
             }
         }
         views.btnGuidedPrev.setOnClickListener {
-            scrollManual = false
+            desligarRolagemManual()
             guidedPlayerManager.previous()
         }
         views.btnGuidedPlayPause.setOnClickListener {
@@ -176,7 +217,7 @@ class GuidedReadingBarController(
             }
         }
         views.btnGuidedNext.setOnClickListener {
-            scrollManual = false
+            desligarRolagemManual()
             guidedPlayerManager.next()
         }
         views.btnGuidedClose.setOnClickListener {
@@ -276,13 +317,15 @@ class GuidedReadingBarController(
             viewModel.retomarSync()
             ultimoIndiceGuided = -1
             ultimoScrollSyncStandard = -1
+            // Guiada encerrada: a próxima começa acompanhando de novo.
+            desligarRolagemManual()
             callbacks.atualizarFabs()
             return
         }
 
         val mudouIndice = guidedState.index != ultimoIndiceGuided
+        // Não desliga o modo manual aqui: quem rolou para adiante não é puxado de volta a cada parágrafo.
         if (mudouIndice) {
-            scrollManual = false
             aguardandoAutoScroll = false
             ultimoIndiceGuided = guidedState.index
         }
