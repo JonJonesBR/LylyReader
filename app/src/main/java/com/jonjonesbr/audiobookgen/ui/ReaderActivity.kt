@@ -54,8 +54,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class ReaderActivity : BasePlayerActivity() {
@@ -190,16 +193,23 @@ class ReaderActivity : BasePlayerActivity() {
         ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
         if (uri == null) return@registerForActivityResult
-        try {
-            val texto = viewModel.textoEfetivo()?.paragrafos
-                ?.joinToString("\n\n") { it.texto } ?: return@registerForActivityResult
-            val output = contentResolver.openOutputStream(uri)
-                ?: throw IllegalStateException("Output stream unavailable")
-            output.bufferedWriter().use { it.write(texto) }
-            Toast.makeText(this, R.string.toast_clean_text_exported, Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Log.w("ReaderActivity", "Erro ao exportar texto limpo", e)
-            mostrarErro(R.string.toast_clean_text_export_error)
+        val texto = viewModel.textoEfetivo()?.paragrafos
+            ?.joinToString("\n\n") { it.texto } ?: return@registerForActivityResult
+        // A escrita vai para IO: em nuvem ou cartão SD ela pode travar a tela.
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val output = contentResolver.openOutputStream(uri)
+                        ?: throw IllegalStateException("Output stream unavailable")
+                    output.bufferedWriter().use { it.write(texto) }
+                }
+                Toast.makeText(this@ReaderActivity, R.string.toast_clean_text_exported, Toast.LENGTH_SHORT).show()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("ReaderActivity", "Erro ao exportar texto limpo", e)
+                mostrarErro(R.string.toast_clean_text_export_error)
+            }
         }
     }
 
