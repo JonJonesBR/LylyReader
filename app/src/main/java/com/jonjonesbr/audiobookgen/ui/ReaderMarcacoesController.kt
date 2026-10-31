@@ -144,18 +144,28 @@ class ReaderMarcacoesController(
 
         androidx.appcompat.app.AlertDialog.Builder(activity)
             .setTitle(R.string.marcacoes_titulo)
-            .setSingleChoiceItems(marcacoes.map { it.rotulo }.toTypedArray(), -1) { _, which ->
+            // Tocar num item salta para o trecho e fecha a lista (setItems fecha ao tocar).
+            .setItems(marcacoes.map { it.rotulo }.toTypedArray()) { _, which ->
                 callbacks.rolarParaParagrafo(marcacoes[which].indiceParagrafo)
             }
-            .setPositiveButton(R.string.btn_remover_marcador) { dialog, _ ->
-                val marcada = (dialog as? androidx.appcompat.app.AlertDialog)?.listView?.checkedItemPosition ?: -1
-                marcacoes.getOrNull(marcada)?.let {
-                    it.remover()
-                    mostrarDialogListarMarcacoes()
-                }
-            }
+            .setPositiveButton(R.string.btn_remover_marcador) { _, _ -> escolherMarcacaoParaRemover(marcacoes) }
             .setNegativeButton(R.string.marcacoes_exportar) { _, _ -> exportarMarcacoes() }
             .setNeutralButton(android.R.string.cancel, null)
+            .exibir()
+    }
+
+    /**
+     * Segundo diálogo do "Remover": pergunta qual marcação apagar. Depois de apagar, a lista volta
+     * (sem nada para mostrar, [mostrarDialogListarMarcacoes] avisa e não abre). "Cancelar" também volta.
+     */
+    private fun escolherMarcacaoParaRemover(marcacoes: List<Marcacao>) {
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setTitle(R.string.marcacoes_remover_qual)
+            .setItems(marcacoes.map { it.rotulo }.toTypedArray()) { _, which ->
+                marcacoes[which].remover()
+                mostrarDialogListarMarcacoes()
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> mostrarDialogListarMarcacoes() }
             .exibir()
     }
 
