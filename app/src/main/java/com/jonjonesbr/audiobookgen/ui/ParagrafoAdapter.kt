@@ -217,6 +217,13 @@ class ParagrafoAdapter(
         }
     }
 
+    /** Devolve o justificado a um parágrafo que o perdeu para uma seleção, se o leitor ainda estiver justificado. */
+    private fun restaurarJustificado(tv: TextView) {
+        if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
+            tv.trocarJustificacao(android.text.Layout.JUSTIFICATION_MODE_INTER_WORD)
+        }
+    }
+
     override fun getItemCount() = when (modo) {
         AdapterModo.ALTERACOES -> maxOf(paragrafosOriginais.size, paragrafos.size)
         else -> paragrafos.size
@@ -261,10 +268,22 @@ class ParagrafoAdapter(
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
         tv.setTextColor(corTexto)
-        // Com uma seleção aberta o parágrafo fica sem justificar (ver onCreateActionMode abaixo).
+        // Com uma seleção aberta o parágrafo fica sem justificar (ver o toque longo abaixo).
         val alinhamentoAgora =
             if (selecaoAtiva && alinhamento == AlinhamentoTexto.JUSTIFICADO) AlinhamentoTexto.ESQUERDA else alinhamento
         tv.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamentoAgora)
+        // Texto justificado: o Android posiciona as alças e o toque sem contar o espaço esticado entre as palavras,
+        // e a seleção não ficava onde o dedo soltava. O toque longo chega aqui antes de o Android escolher a palavra:
+        // o parágrafo perde só o justificado (as quebras de linha não mudam) e a seleção já nasce no layout certo.
+        // Trocar com a seleção aberta não serve: o layout fica nulo por um instante e o Android encerra a seleção.
+        tv.setOnLongClickListener {
+            if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
+                tv.trocarJustificacao(android.text.Layout.JUSTIFICATION_MODE_NONE)
+                // Toque longo que não abriu seleção (ex.: fora do texto): volta ao justificado.
+                tv.post { if (!tv.hasSelection()) restaurarJustificado(tv) }
+            }
+            false // segue para o Android abrir a seleção
+        }
 
         // Highlight
         val inicio = selecaoInicio
@@ -303,15 +322,6 @@ class ParagrafoAdapter(
 
         tv.customSelectionActionModeCallback = object : android.view.ActionMode.Callback {
             override fun onCreateActionMode(mode: android.view.ActionMode, menu: android.view.Menu): Boolean {
-                // Texto justificado: o Android posiciona as alças e o toque sem contar o espaço esticado entre
-                // as palavras, e a seleção não ficava onde o dedo soltava. Enquanto ela estiver aberta, o
-                // parágrafo perde só o justificado (as quebras de linha não mudam). A troca vai num post: trocar
-                // aqui dentro descarta o layout no meio do trabalho do Editor, que o usa logo em seguida.
-                if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
-                    tv.post {
-                        if (tv.hasSelection()) tv.trocarJustificacao(android.text.Layout.JUSTIFICATION_MODE_NONE)
-                    }
-                }
                 val item1 = menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
                 item1.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
 
@@ -386,15 +396,9 @@ class ParagrafoAdapter(
             }
 
             override fun onDestroyActionMode(mode: android.view.ActionMode) {
-                // Também num post: aqui o Editor ainda está desfazendo a seleção com o layout atual (trocar o
-                // justificado na hora derrubava o app ao tocar fora do texto selecionado).
-                if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
-                    tv.post {
-                        if (!tv.hasSelection() && alinhamento == AlinhamentoTexto.JUSTIFICADO) {
-                            tv.trocarJustificacao(android.text.Layout.JUSTIFICATION_MODE_INTER_WORD)
-                        }
-                    }
-                }
+                // Volta ao justificado num post: aqui o Editor ainda está desfazendo a seleção com o layout atual
+                // (trocar na hora derrubava o app ao tocar fora do texto selecionado).
+                tv.post { if (!tv.hasSelection()) restaurarJustificado(tv) }
             }
         }
 
@@ -475,8 +479,8 @@ class ParagrafoAdapter(
  */
 /**
  * Troca o justificado e já refaz o layout. Só trocar deixa o TextView sem layout até o próximo quadro; um toque
- * ou arraste da seleção nesse meio-tempo calcula a posição -1 e derruba o app (Selection.setSelection). As
- * quebras de linha não mudam com o justificado, então a altura é a mesma e a medida exata vale.
+ * nesse meio-tempo calcula a posição -1 e derruba o app (Selection.setSelection), e o Editor desliga a seleção
+ * enquanto não há layout. As quebras de linha não mudam com o justificado, então a altura é a mesma.
  */
 private fun TextView.trocarJustificacao(modo: Int) {
     if (justificationMode == modo) return
