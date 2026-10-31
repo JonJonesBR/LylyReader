@@ -94,7 +94,7 @@ class ParagrafoAdapter(
     private var espacamento: Float = ESPACAMENTO_PADRAO
     private var tema: TemaLeitura = TemaLeitura.CLARO
     private var fonteSerifada: Boolean = false
-    private var alinhamento: AlinhamentoTexto = AlinhamentoTexto.JUSTIFICADO
+    private var alinhamento: AlinhamentoTexto = AlinhamentoTexto.ESQUERDA
     var modo: AdapterModo = AdapterModo.LEITURA
         private set
 
@@ -458,7 +458,7 @@ private fun TextView.aplicarTipografiaLeitor(
 ) {
     typeface = if (serifada) tipografiaSerifada else android.graphics.Typeface.DEFAULT
     // Justificado distribui o espaço entre as palavras; a última linha do parágrafo fica à esquerda.
-    justificationMode = if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
+    val modo = if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
         android.text.Layout.JUSTIFICATION_MODE_INTER_WORD
     } else {
         android.text.Layout.JUSTIFICATION_MODE_NONE

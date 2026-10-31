@@ -338,6 +338,16 @@
             android:text="@string/alinhamento_direita"/>
     </com.google.android.material.chip.ChipGroup>
 
+    <TextView
+        android:id="@+id/tvAlinhamentoDica"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/alinhamento_justificado_dica"
+        android:textColor="@color/color_on_surface_medium"
+        android:textSize="12sp"
+        android:visibility="gone"/>
+
     <!-- Rolagem -->
     <TextView
         android:layout_width="wrap_content"

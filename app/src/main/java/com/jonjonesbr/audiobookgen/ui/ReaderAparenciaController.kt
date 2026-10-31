@@ -76,7 +76,9 @@ class ReaderAparenciaController(
             state.espacamento
         )
         configurarBotoesAparencia(view)
-        configurarAlinhamento(view.findViewById(R.id.chipsAlinhamento), state.alinhamento)
+        configurarAlinhamento(
+            view.findViewById(R.id.chipsAlinhamento), view.findViewById(R.id.tvAlinhamentoDica), state.alinhamento
+        )
 
         configurarBrilhoSlider(
             view.findViewById(R.id.seekBarBrilho),
@@ -208,8 +210,14 @@ class ReaderAparenciaController(
         }
     }
 
-    /** Justificado (padrão), à esquerda, centralizado ou à direita; o chip marcado mostra o atual. */
-    private fun configurarAlinhamento(grupo: ChipGroup, atual: AlinhamentoTexto) {
+    /**
+     * À esquerda (padrão), justificado, centralizado ou à direita; o chip marcado mostra o atual. Com o justificado
+     * aparece o aviso de que a seleção de texto fica imprecisa (limitação do Android).
+     */
+    private fun configurarAlinhamento(grupo: ChipGroup, dica: TextView, atual: AlinhamentoTexto) {
+        fun mostrarDica(alinhamento: AlinhamentoTexto) {
+            dica.visibility = if (alinhamento == AlinhamentoTexto.JUSTIFICADO) View.VISIBLE else View.GONE
+        }
         val chips = mapOf(
             AlinhamentoTexto.JUSTIFICADO to R.id.chipAlinhJustificado,
             AlinhamentoTexto.ESQUERDA to R.id.chipAlinhEsquerda,
@@ -217,8 +225,12 @@ class ReaderAparenciaController(
             AlinhamentoTexto.DIREITA to R.id.chipAlinhDireita
         )
         chips[atual]?.let { grupo.check(it) }
+        mostrarDica(atual)
         grupo.setOnCheckedStateChangeListener { _, ids ->
-            chips.entries.firstOrNull { it.value == ids.firstOrNull() }?.let { viewModel.setAlinhamento(it.key) }
+            chips.entries.firstOrNull { it.value == ids.firstOrNull() }?.let {
+                viewModel.setAlinhamento(it.key)
+                mostrarDica(it.key)
+            }
         }
     }
 

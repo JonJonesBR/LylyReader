@@ -434,7 +434,8 @@ class AppPrefs(context: Context) {
 
     /** Alinhamento do texto do leitor: nome de [com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto]. */
     var readerAlinhamento: String
-        get() = p.getString("reader_alinhamento", null) ?: "JUSTIFICADO"
+        // Padrão à esquerda (ver AlinhamentoTexto); quem escolheu outro alinhamento continua com ele.
+        get() = p.getString("reader_alinhamento", null) ?: "ESQUERDA"
         set(v) = p.edit().putString("reader_alinhamento", v).apply()
 
     /** Rolagem horizontal (paginada) no lugar do scroll vertical contínuo no leitor. */

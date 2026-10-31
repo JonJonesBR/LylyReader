@@ -1446,6 +1446,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <!-- Leitor › Aparência › Alinhamento -->
     <string name="label_alinhamento">Alineación del texto</string>
     <string name="alinhamento_justificado">Justificado</string>
+    <string name="alinhamento_justificado_dica">Con el texto justificado, la selección de texto es imprecisa (limitación de Android). Para seleccionar fragmentos, usa Izquierda.</string>
     <string name="alinhamento_esquerda">Izquierda</string>
     <string name="alinhamento_centro">Centro</string>
     <string name="alinhamento_direita">Derecha</string>

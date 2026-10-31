@@ -1460,6 +1460,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <!-- Leitor › Aparência › Alinhamento -->
     <string name="label_alinhamento">Text alignment</string>
     <string name="alinhamento_justificado">Justified</string>
+    <string name="alinhamento_justificado_dica">Justified text makes text selection imprecise (an Android limitation). To select passages, use Left.</string>
     <string name="alinhamento_esquerda">Left</string>
     <string name="alinhamento_centro">Center</string>
     <string name="alinhamento_direita">Right</string>

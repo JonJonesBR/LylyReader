@@ -6,9 +6,9 @@ import org.junit.Test
 class AlinhamentoTextoTest {
 
     @Test
-    fun `sem valor gravado o padrao e justificado`() {
-        assertEquals(AlinhamentoTexto.JUSTIFICADO, AlinhamentoTexto.porNome(null))
-        assertEquals(AlinhamentoTexto.JUSTIFICADO, AlinhamentoTexto.porNome("qualquer"))
+    fun `sem valor gravado o padrao e a esquerda`() {
+        assertEquals(AlinhamentoTexto.ESQUERDA, AlinhamentoTexto.porNome(null))
+        assertEquals(AlinhamentoTexto.ESQUERDA, AlinhamentoTexto.porNome("qualquer"))
     }
 
     @Test
