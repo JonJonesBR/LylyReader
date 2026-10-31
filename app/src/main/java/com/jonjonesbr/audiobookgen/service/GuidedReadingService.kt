@@ -9,13 +9,19 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioAttributes
+import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
+import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -104,6 +110,38 @@ class GuidedReadingService : Service() {
     private var observeJob: Job? = null
     private var mediaSession: MediaSessionCompat? = null
 
+    // Foco de áudio da narração. Sem ele, ligações, GPS e outros apps tocavam por cima da voz, em volume cheio.
+    // Perda temporária (ligação) pausa e retoma sozinha ao voltar; perda definitiva (outro app de mídia) só pausa.
+    // Avisos curtos e GPS: a partir do Android 8 o próprio sistema abaixa o volume, sem passar por aqui.
+    private var temFocoDeAudio = false
+    private var retomarAoGanharFoco = false
+    private val focoDeAudio by lazy {
+        AudioFocusController(
+            context = applicationContext,
+            onFocusLost = { perderFocoDeAudio(retomarDepois = false) },
+            onFocusLostTransient = { perderFocoDeAudio(retomarDepois = true) },
+            onFocusGained = {
+                temFocoDeAudio = true
+                if (retomarAoGanharFoco) {
+                    retomarAoGanharFoco = false
+                    GuidedPlaybackBridge.manager?.resume()
+                }
+            },
+            onDuck = {},
+            tipoDeConteudo = AudioAttributes.CONTENT_TYPE_SPEECH,
+        )
+    }
+
+    // Fone desconectado (cabo ou Bluetooth): pausa, em vez de a voz passar a sair pelo alto-falante.
+    private val receptorFoneDesconectado = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != AudioManager.ACTION_AUDIO_BECOMING_NOISY) return
+            retomarAoGanharFoco = false
+            val m = GuidedPlaybackBridge.manager ?: return
+            if (m.state.value.index >= 0) m.pause()
+        }
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -137,6 +175,10 @@ class GuidedReadingService : Service() {
             })
             isActive = true
         }
+        ContextCompat.registerReceiver(
+            this, receptorFoneDesconectado, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
         // Sleep timer: atualiza a contagem na notificação e pausa a leitura guiada ao terminar.
         scope.launch {
             SleepTimerManager.remainingMs.collect { refreshNotificacao() }
@@ -152,6 +194,8 @@ class GuidedReadingService : Service() {
                 if (m != null && tokenArmado != null && tokenArmado == m.sessionToken) {
                     // Pausa também no meio da síntese do próximo trecho (isPlaying ainda false): pause() segura o
                     // laço em aguardarRetomada() e o trecho não chega a tocar. Só não há o que pausar sem leitura (-1).
+                    // A soneca também cancela a volta automática depois de uma ligação.
+                    retomarAoGanharFoco = false
                     if (m.state.value.index >= 0) m.pause()
                 } else if (tokenArmado != null) {
                     SleepTimerManager.cancel()
@@ -204,8 +248,42 @@ class GuidedReadingService : Service() {
         ativo = false
         tokenObservado = null
         scope.cancel()
+        runCatching { unregisterReceiver(receptorFoneDesconectado) }
+        abandonarFocoDeAudio()
         mediaSession?.release()
         mediaSession = null
+    }
+
+    /** Pede o foco ao começar a tocar. Negado (ex.: durante uma ligação) pausa; adiado retoma quando vier. */
+    private fun garantirFocoDeAudio(manager: GuidedPlayerManager) {
+        if (temFocoDeAudio) return
+        when (focoDeAudio.solicitar()) {
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+                temFocoDeAudio = true
+                retomarAoGanharFoco = false
+            }
+            AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+                manager.pause()
+                retomarAoGanharFoco = true
+            }
+            else -> manager.pause()
+        }
+    }
+
+    private fun perderFocoDeAudio(retomarDepois: Boolean) {
+        temFocoDeAudio = false
+        val m = GuidedPlaybackBridge.manager ?: return
+        val st = m.state.value
+        // Tocando ou preparando o próximo trecho, sem pausa do usuário: só então pausa e (se temporária) retoma depois.
+        val tocando = st.index >= 0 && !m.estaPausado && (st.isPlaying || st.isLoading)
+        if (tocando) m.pause()
+        retomarAoGanharFoco = retomarDepois && tocando
+    }
+
+    private fun abandonarFocoDeAudio() {
+        if (temFocoDeAudio || retomarAoGanharFoco) focoDeAudio.abandonar()
+        temFocoDeAudio = false
+        retomarAoGanharFoco = false
     }
 
     private fun observarEstado() {
@@ -213,6 +291,13 @@ class GuidedReadingService : Service() {
         val manager = GuidedPlaybackBridge.manager ?: return
         val token = manager.sessionToken
         tokenObservado = token
+        // Título do livro na tela de bloqueio, no relógio e no carro (Bluetooth); antes ficava sem nome.
+        mediaSession?.setMetadata(
+            MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, manager.trackName)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, getString(R.string.app_name))
+                .build()
+        )
         observeJob = scope.launch {
             // O estado é publicado a cada ~50 ms (progresso do parágrafo); a notificação e a MediaSession só
             // mostram parágrafo e play/pausa, então só se refazem quando um desses muda (a soneca tem coletor
@@ -228,9 +313,11 @@ class GuidedReadingService : Service() {
                     // congelada e play/pausa sem efeito na sessão seguinte).
                     val vigente = GuidedPlaybackBridge.currentToken
                     if (vigente == null || vigente == token) {
+                        abandonarFocoDeAudio()
                         pararServico()
                     }
                 } else {
+                    if (isPlaying) garantirFocoDeAudio(manager)
                     atualizarEstadoMediaSession(isPlaying)
                     notificar(construirNotificacao(index, isPlaying))
                 }

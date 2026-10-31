@@ -10,9 +10,12 @@ import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 /**
  * Encapsula toda a lógica de foco de áudio do Android.
  *
- * Os callbacks permitem que o dono (AudioPlayerService) reaja aos eventos de
- * foco — pausar/retomar o MediaPlayer, atualizar notificação, etc. — sem
+ * Os callbacks permitem que o dono (AudioPlayerService, GuidedReadingService) reaja aos eventos de
+ * foco — pausar/retomar o player, atualizar notificação, etc. — sem
  * que esta classe precise conhecê-los directamente.
+ *
+ * [tipoDeConteudo]: CONTENT_TYPE_SPEECH para a narração da leitura guiada (o sistema trata fala de outro jeito
+ * ao misturar com outros sons); o audiobook segue como música, como antes.
  */
 class AudioFocusController(
     context: Context,
@@ -20,6 +23,7 @@ class AudioFocusController(
     private val onFocusLostTransient: () -> Unit,
     private val onFocusGained: () -> Unit,
     private val onDuck: () -> Unit,
+    private val tipoDeConteudo: Int = AudioAttributes.CONTENT_TYPE_MUSIC,
 ) {
 
     companion object {
@@ -52,13 +56,14 @@ class AudioFocusController(
         }
     }
 
-    fun solicitar() {
-        try {
+    /** Pede o foco e devolve o resultado (GRANTED, DELAYED ou FAILED; FAILED também se o pedido lançar erro). */
+    fun solicitar(): Int {
+        return try {
             val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .setContentType(tipoDeConteudo)
                         .build()
                 )
                 .setAcceptsDelayedFocusGain(true)
@@ -69,9 +74,11 @@ class AudioFocusController(
         } catch (e: SecurityException) {
             Log.e(TAG, "Erro ao solicitar foco de áudio", e)
             CrashLogWriter.log(e, "AudioFocusController.solicitar")
+            AudioManager.AUDIOFOCUS_REQUEST_FAILED
         } catch (e: IllegalStateException) {
             Log.e(TAG, "Erro ao solicitar foco de áudio", e)
             CrashLogWriter.log(e, "AudioFocusController.solicitar")
+            AudioManager.AUDIOFOCUS_REQUEST_FAILED
         }
     }
 

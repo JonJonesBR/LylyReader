@@ -446,6 +446,8 @@ class AudioPlayerService : MediaLibraryService() {
             .build()
         exoPlayer = ExoPlayer.Builder(applicationContext).build().apply {
             setAudioAttributes(audioAttrs, false)
+            // Fone desconectado (cabo ou Bluetooth) pausa o audiobook, em vez de o som passar ao alto-falante.
+            setHandleAudioBecomingNoisy(true)
             setWakeMode(C.WAKE_MODE_LOCAL)
             addListener(playerListener)
         }
