@@ -179,6 +179,9 @@ class ParagrafoAdapter(
                 linkedSetOf(syncAntigo, syncAtual).filter { it in paragrafos.indices }
                     .forEach { notifyItemChanged(it) }
             }
+            // Edição: sem mudança de lista nem de aparência não há o que repintar. Repintar refazia o
+            // setText do campo em que o usuário digitava (cursor no início, palavra em composição cortada).
+            modo == AdapterModo.EDICAO -> Unit
             else -> notifyItemRangeChanged(0, paragrafos.size)
         }
     }
@@ -382,11 +385,18 @@ class ParagrafoAdapter(
         // Remove listener anterior para evitar disparo durante setText
         (et.tag as? TextWatcher)?.let { et.removeTextChangedListener(it) }
         et.tag = null
-        et.setText(edicoesAtuais[position] ?: par.texto)
+        // Só troca o texto se o campo mostra outra coisa (item reaproveitado): com o mesmo conteúdo, setText
+        // jogava o cursor para o início e cortava a palavra que o teclado estava compondo.
+        val texto = edicoesAtuais[position] ?: par.texto
+        if (et.text.toString() != texto) et.setText(texto)
         et.textSize = tamanhoFonte
         et.setLineSpacing(0f, espacamento)
         et.setTextColor(corTexto)
-        et.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamento)
+        // Edição sempre alinhada à esquerda: com o texto justificado, o Android posiciona o cursor e o toque
+        // sem contar o espaço esticado entre as palavras, e o cursor parava antes da palavra editada.
+        val alinhamentoEdicao =
+            if (alinhamento == AlinhamentoTexto.JUSTIFICADO) AlinhamentoTexto.ESQUERDA else alinhamento
+        et.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamentoEdicao)
         val watcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
             override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
