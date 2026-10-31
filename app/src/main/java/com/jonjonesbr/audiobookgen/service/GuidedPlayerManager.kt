@@ -291,6 +291,9 @@ class GuidedPlayerManager(
     // A pausa aconteceu sem áudio tocando (esperando síntese): retomar não deve chamar o player,
     // que reiniciaria a unidade anterior já terminada.
     @Volatile private var pausadoSemAudio = false
+    // O player avisou erro no trecho atual (arquivo inválido, falha do decodificador): o laço não espera um fim
+    // que não vem, a tela não volta a mostrar "tocando" e "tocar" recomeça o parágrafo em vez de retomar.
+    @Volatile private var trechoFalhou = false
     // Identifica a reprodução corrente. play() incrementa; a limpeza no `finally` de uma
     // reprodução CANCELADA (que só roda quando a síntese em andamento devolve o controle, às vezes
     // segundos depois) não pode apagar o estado da reprodução nova — era o que fazia o destaque
@@ -436,8 +439,11 @@ class GuidedPlayerManager(
         playerEngine?.setErrorListener { error ->
             Log.e(TAG, "Player error: $error")
             CrashLogWriter.log(null, "GuidedPlayerManager.playerError", message = error)
+            trechoFalhou = true
             stopProgressPolling()
             _state.update { it.copy(isPlaying = false, isLoading = false, progressPct = 0f, error = error) }
+            // Libera a espera da oração (o laço confere trechoFalhou e para); sem isso ficava parado para sempre.
+            oracaoCompletada?.complete(Unit)
         }
     }
 
@@ -593,6 +599,7 @@ class GuidedPlayerManager(
         textoAncora = paragraphs[index].texto
         pausadoPeloUsuario = false
         pausadoSemAudio = false
+        trechoFalhou = false
         geracaoDeReproducao++
         // Zera já o estado da sequência anterior: a nova assume o controle agora.
         modoOracoes = false
@@ -730,7 +737,10 @@ class GuidedPlayerManager(
                         val fatorFala = aplicarTimbreDoTrecho(
                             partesParaTomDasFalas(paragraphText), 0, paragraphText.length, paragraphText.length
                         )
+                        trechoFalhou = false
                         playerEngine?.play(audioFile, speedVal * speedMultiplier * fatorFala)
+                        // Erro ao começar o trecho: o estado já mostra o erro; não sobrescreve com "tocando".
+                        if (trechoFalhou) return@launch
                         // currentIndex, não o argumento: se o texto foi trocado (bruto → limpo) durante a síntese,
                         // o índice foi remapeado e o marcador tem de seguir o parágrafo que está tocando.
                         _state.update { GuidedState(currentIndex, isPlaying = true, isLoading = false) }
@@ -861,13 +871,16 @@ class GuidedPlayerManager(
                 aguardarRetomada()
                 oracaoCompletada = CompletableDeferred()
                 aplicarTimbreDoTrecho(null, 0, 0, 1) // vozes de personagem: só o timbre do livro
+                trechoFalhou = false
                 playerEngine?.play(audioFile, speedVal * speedMultiplier)
+                if (trechoFalhou) return
                 if (position == 0) {
                     currentBaseSpeed = speedVal
                     _state.update { GuidedState(currentIndex, isPlaying = true, isLoading = false) }
                     startProgressPolling()
                 }
                 oracaoCompletada?.await()
+                if (trechoFalhou) return
                 val pausaMs = pausaDepoisDe(
                     segment.text, paragraphText, position == segments.lastIndex, speedVal, pausaFixaMs = 0
                 )
@@ -1040,13 +1053,16 @@ class GuidedPlayerManager(
                 val fatorFala = aplicarTimbreDoTrecho(
                     partesDasFalas, oracao.charsAcumulados, oracao.texto.length, totalDasOracoes
                 )
+                trechoFalhou = false
                 playerEngine?.play(audioFile, speedVal * speedMultiplier * fatorFala)
+                if (trechoFalhou) return
                 if (posicao == 0) {
                     currentBaseSpeed = speedVal
                     _state.update { GuidedState(currentIndex, isPlaying = true, isLoading = false) }
                     startProgressPolling()
                 }
                 oracaoCompletada?.await()
+                if (trechoFalhou) return
                 // Pausa a cada ponto final — sem ela, orações consecutivas tocavam coladas (o "gap"
                 // do KokoroTtsEngine só existe DENTRO de uma síntese que precisou dividir por
                 // tamanho; cada oração aqui é um arquivo separado, tocado em sequência pelo player).
@@ -1143,6 +1159,11 @@ class GuidedPlayerManager(
         val doEstado = _state.value.index
         if (currentIndex !in paragraphs.indices && doEstado in paragraphs.indices) {
             play(doEstado)
+            return
+        }
+        // O player do trecho falhou: retomar não tem o que tocar. Recomeça o parágrafo (nova síntese).
+        if (trechoFalhou && currentIndex in paragraphs.indices) {
+            play(currentIndex)
             return
         }
         if (currentIndex >= 0 && currentIndex < paragraphs.size) {

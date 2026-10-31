@@ -331,17 +331,33 @@ class GuidedPlayerManagerTest {
     }
 
     @Test
-    fun resumeClearsErrorFromStateWhenCurrentIndexIsValid() {
+    fun resumeDepoisDaPausaVoltaATocarSemErro() {
         val manager = createManager()
         manager.setParagraphs(paragraphs(2))
         manager.setCurrentIndex(0)
-        lastErrorListener("Falha simulada de reprodução")
-        assertEquals("Falha simulada de reprodução", manager.state.value.error)
+        manager.pause()
 
         manager.resume()
 
         assertNull(manager.state.value.error)
         assertTrue(manager.state.value.isPlaying)
+    }
+
+    @Test
+    fun resumeDepoisDeErroDoPlayerRecomecaOParagrafo() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(1)
+        lastErrorListener("Falha simulada de reprodução")
+        assertEquals("Falha simulada de reprodução", manager.state.value.error)
+
+        // Retomar um player que falhou não tocava nada (a tela mostrava "pausa" sem som): recomeça o parágrafo.
+        manager.resume()
+
+        assertNull(manager.state.value.error)
+        assertEquals(1, manager.state.value.index)
+        assertTrue(manager.state.value.isLoading)
+        assertFalse(manager.state.value.isPlaying)
     }
 
     @Test
