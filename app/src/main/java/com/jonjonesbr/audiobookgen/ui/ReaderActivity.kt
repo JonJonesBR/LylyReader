@@ -263,7 +263,11 @@ class ReaderActivity : BasePlayerActivity() {
             callbacks = ReaderMarcacoesController.Callbacks(
                 obterCaminhoArquivo = { caminhoArquivo },
                 obterParagrafoAtual = { paragrafoAtualVisivel() },
-                rolarParaParagrafo = { pos -> recyclerView.smoothScrollToPosition(pos) },
+                // Salto exato ao topo (como a navegação por capítulos): smoothScrollToPosition parava onde o item
+                // "aparecia", e um segundo toque na mesma marcação levava a outro ponto do texto.
+                rolarParaParagrafo = { pos ->
+                    (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(pos, 0)
+                },
                 atualizarIconeBookmarkView = { temBookmark, descricao ->
                     btnBookmark.setImageResource(
                         if (temBookmark) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark_border
