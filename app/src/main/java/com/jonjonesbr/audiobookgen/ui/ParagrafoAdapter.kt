@@ -261,7 +261,10 @@ class ParagrafoAdapter(
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
         tv.setTextColor(corTexto)
-        tv.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamento)
+        // Com uma seleção aberta o parágrafo fica sem justificar (ver onCreateActionMode abaixo).
+        val alinhamentoAgora =
+            if (selecaoAtiva && alinhamento == AlinhamentoTexto.JUSTIFICADO) AlinhamentoTexto.ESQUERDA else alinhamento
+        tv.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamentoAgora)
 
         // Highlight
         val inicio = selecaoInicio
@@ -300,6 +303,12 @@ class ParagrafoAdapter(
 
         tv.customSelectionActionModeCallback = object : android.view.ActionMode.Callback {
             override fun onCreateActionMode(mode: android.view.ActionMode, menu: android.view.Menu): Boolean {
+                // Texto justificado: o Android posiciona as alças e o toque sem contar o espaço esticado entre
+                // as palavras, e a seleção não ficava onde o dedo soltava. Enquanto ela estiver aberta, o
+                // parágrafo perde só o justificado (as quebras de linha não mudam).
+                if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
+                    tv.justificationMode = android.text.Layout.JUSTIFICATION_MODE_NONE
+                }
                 val item1 = menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
                 item1.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
 
@@ -373,7 +382,11 @@ class ParagrafoAdapter(
                 return tratado
             }
 
-            override fun onDestroyActionMode(mode: android.view.ActionMode) {}
+            override fun onDestroyActionMode(mode: android.view.ActionMode) {
+                if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
+                    tv.justificationMode = android.text.Layout.JUSTIFICATION_MODE_INTER_WORD
+                }
+            }
         }
 
         tv.setOnClickListener    { onToque(position) }
