@@ -309,7 +309,7 @@ class ParagrafoAdapter(
                 // aqui dentro descarta o layout no meio do trabalho do Editor, que o usa logo em seguida.
                 if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
                     tv.post {
-                        if (tv.hasSelection()) tv.justificationMode = android.text.Layout.JUSTIFICATION_MODE_NONE
+                        if (tv.hasSelection()) tv.trocarJustificacao(android.text.Layout.JUSTIFICATION_MODE_NONE)
                     }
                 }
                 val item1 = menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
@@ -391,7 +391,7 @@ class ParagrafoAdapter(
                 if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
                     tv.post {
                         if (!tv.hasSelection() && alinhamento == AlinhamentoTexto.JUSTIFICADO) {
-                            tv.justificationMode = android.text.Layout.JUSTIFICATION_MODE_INTER_WORD
+                            tv.trocarJustificacao(android.text.Layout.JUSTIFICATION_MODE_INTER_WORD)
                         }
                     }
                 }
@@ -473,6 +473,23 @@ class ParagrafoAdapter(
  * Função de topo (não membro da classe) para não empurrar ParagrafoAdapter acima do
  * limite de funções do detekt.
  */
+/**
+ * Troca o justificado e já refaz o layout. Só trocar deixa o TextView sem layout até o próximo quadro; um toque
+ * ou arraste da seleção nesse meio-tempo calcula a posição -1 e derruba o app (Selection.setSelection). As
+ * quebras de linha não mudam com o justificado, então a altura é a mesma e a medida exata vale.
+ */
+private fun TextView.trocarJustificacao(modo: Int) {
+    if (justificationMode == modo) return
+    justificationMode = modo
+    if (width > 0 && height > 0) {
+        measure(
+            View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+        )
+        layout(left, top, right, bottom)
+    }
+}
+
 private fun TextView.aplicarTipografiaLeitor(
     serifada: Boolean,
     tipografiaSerifada: android.graphics.Typeface?,
@@ -480,11 +497,14 @@ private fun TextView.aplicarTipografiaLeitor(
 ) {
     typeface = if (serifada) tipografiaSerifada else android.graphics.Typeface.DEFAULT
     // Justificado distribui o espaço entre as palavras; a última linha do parágrafo fica à esquerda.
-    justificationMode = if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
+    val modo = if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
         android.text.Layout.JUSTIFICATION_MODE_INTER_WORD
     } else {
         android.text.Layout.JUSTIFICATION_MODE_NONE
     }
+    // Só quando muda: o setter descarta o layout mesmo com o mesmo valor, e esta função roda a cada repintura
+    // (com uma seleção aberta, um toque nesse meio-tempo calculava a posição -1 e derrubava o app).
+    if (justificationMode != modo) justificationMode = modo
     textAlignment = when (alinhamento) {
         AlinhamentoTexto.CENTRO -> View.TEXT_ALIGNMENT_CENTER
         AlinhamentoTexto.DIREITA -> View.TEXT_ALIGNMENT_VIEW_END
