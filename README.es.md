@@ -187,6 +187,7 @@ LylyReader se apoya en el trabajo de muchos proyectos y comunidades de código a
 - **Chaquopy** – Python en Android (MIT): https://chaquo.com/chaquopy/
 - **Voces en línea de Microsoft Edge** (mediante el cliente no oficial `edge-tts`, LGPL-3.0): https://github.com/rany2/edge-tts
 - **Tipografía Literata** de The Literata Project (SIL OFL 1.1): https://github.com/googlefonts/literata
+- **Tipografía OpenDyslexic** de Abbie Gonzalez (SIL OFL 1.1): https://github.com/antijingoist/opendyslexic
 - **Proyecto Gutenberg**, **Wikisource** e **Internet Archive**, las fuentes de dominio público de la búsqueda de libros.
 - Paquetes de Python: `aiohttp`, `mutagen`, `Pillow`, `pypdf`, `python-docx`, `ebooklib`, `beautifulsoup4`, `numpy`, `olefile`, `mobi`, `httpx`.
 - Bibliotecas de Android de Google y AndroidX (Apache-2.0), y el lenguaje Kotlin de JetBrains (Apache-2.0).

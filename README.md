@@ -97,7 +97,7 @@ Each offline package keeps its own license. Check [THIRD_PARTY_LICENSES.md](THIR
 
 ## Credits
 
-LylyReader stands on the work of many open-source projects and communities. The full list is in the README (credits section) and in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). In short: Supertonic (Supertone), Pocket TTS (Kyutai Labs), Kokoro and sherpa-onnx (k2-fsa), ONNX Runtime (Microsoft), Piper and its voices, Chaquopy, edge-tts, the Literata font, and the public-domain sources Project Gutenberg, Wikisource and Internet Archive.
+LylyReader stands on the work of many open-source projects and communities. The full list is in the README (credits section) and in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). In short: Supertonic (Supertone), Pocket TTS (Kyutai Labs), Kokoro and sherpa-onnx (k2-fsa), ONNX Runtime (Microsoft), Piper and its voices, Chaquopy, edge-tts, the Literata font, the OpenDyslexic font, and the public-domain sources Project Gutenberg, Wikisource and Internet Archive.
 
 ## Security And Privacy
 

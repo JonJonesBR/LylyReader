@@ -13,6 +13,18 @@ licença: https://scripts.sil.org/OFL
 Uso neste app: fonte serifada opcional para a tela de leitura (Configurações de
 Aparência → Tipografia), como alternativa à fonte sans-serif padrão do sistema.
 
+## Fonte OpenDyslexic (`app/src/main/res/font/opendyslexic_regular.otf`)
+
+Copyright (c) 2019-07-29, Abbie Gonzalez (https://abbiecod.es), with Reserved Font Name OpenDyslexic. Copyright (c) 12/2012 - 2019
+
+Licenciada sob a SIL Open Font License, Versão 1.1 (OFL-1.1). Texto completo da
+licença: https://scripts.sil.org/OFL (cópia em `app/src/main/assets/licencas/OpenDyslexic-OFL.txt`).
+Fonte do projeto: https://github.com/antijingoist/opendyslexic
+
+Uso neste app: fonte opcional para leitores com dislexia, na tela de leitura
+(Aparência → Tipografia). O arquivo é usado sem alterações, como a OFL exige para o
+nome reservado.
+
 ## Pocket TTS 3.3 e runtime ONNX
 
 Os pesos públicos do Pocket TTS sem clonagem, os tokenizers específicos por idioma
