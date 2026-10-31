@@ -305,9 +305,12 @@ class ParagrafoAdapter(
             override fun onCreateActionMode(mode: android.view.ActionMode, menu: android.view.Menu): Boolean {
                 // Texto justificado: o Android posiciona as alças e o toque sem contar o espaço esticado entre
                 // as palavras, e a seleção não ficava onde o dedo soltava. Enquanto ela estiver aberta, o
-                // parágrafo perde só o justificado (as quebras de linha não mudam).
+                // parágrafo perde só o justificado (as quebras de linha não mudam). A troca vai num post: trocar
+                // aqui dentro descarta o layout no meio do trabalho do Editor, que o usa logo em seguida.
                 if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
-                    tv.justificationMode = android.text.Layout.JUSTIFICATION_MODE_NONE
+                    tv.post {
+                        if (tv.hasSelection()) tv.justificationMode = android.text.Layout.JUSTIFICATION_MODE_NONE
+                    }
                 }
                 val item1 = menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
                 item1.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -383,8 +386,14 @@ class ParagrafoAdapter(
             }
 
             override fun onDestroyActionMode(mode: android.view.ActionMode) {
+                // Também num post: aqui o Editor ainda está desfazendo a seleção com o layout atual (trocar o
+                // justificado na hora derrubava o app ao tocar fora do texto selecionado).
                 if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
-                    tv.justificationMode = android.text.Layout.JUSTIFICATION_MODE_INTER_WORD
+                    tv.post {
+                        if (!tv.hasSelection() && alinhamento == AlinhamentoTexto.JUSTIFICADO) {
+                            tv.justificationMode = android.text.Layout.JUSTIFICATION_MODE_INTER_WORD
+                        }
+                    }
                 }
             }
         }
