@@ -1145,7 +1145,13 @@ class GuidedPlayerManager(
         pendingOracaoJobs.remove(alvo)
     }
 
+    /** Pausado pelo usuário, pela soneca, pelo fone ou pelo foco de áudio (o laço está segurado). */
+    val estaPausado: Boolean get() = pausadoPeloUsuario
+
     fun pause() {
+        // Já pausado: uma segunda pausa (soneca, fone, foco de áudio) leria o player parado, marcaria
+        // "pausado sem áudio", e o próximo "tocar" não retomaria o som.
+        if (pausadoPeloUsuario) return
         stopProgressPolling()
         pausadoSemAudio = playerEngine?.isPlaying() != true
         pausadoPeloUsuario = true

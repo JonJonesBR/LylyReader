@@ -344,6 +344,22 @@ class GuidedPlayerManagerTest {
     }
 
     @Test
+    fun segundaPausaNaoImpedeRetomarOSom() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(0)
+        every { anyConstructed<MediaPlayerEngineImpl>().isPlaying() } returns true
+        manager.pause() // o usuário pausa com o som tocando
+        every { anyConstructed<MediaPlayerEngineImpl>().isPlaying() } returns false
+        manager.pause() // soneca, fone ou foco de áudio pausam de novo
+
+        manager.resume()
+
+        // Antes a 2ª pausa marcava "pausado sem áudio" e o resume não retomava o player.
+        verify(exactly = 1) { anyConstructed<MediaPlayerEngineImpl>().resume() }
+    }
+
+    @Test
     fun resumeDepoisDeErroDoPlayerRecomecaOParagrafo() {
         val manager = createManager()
         manager.setParagraphs(paragraphs(2))
