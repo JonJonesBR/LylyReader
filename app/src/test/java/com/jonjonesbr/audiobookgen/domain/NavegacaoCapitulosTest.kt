@@ -48,6 +48,15 @@ class NavegacaoCapitulosTest {
         assertFalse(NavegacaoCapitulos.ehParteTecnica("A escapada"))
     }
 
+    @Test fun `termo tecnico so conta no comeco do titulo`() {
+        assertFalse(NavegacaoCapitulos.ehParteTecnica("Direitos humanos na cidade"))
+        assertFalse(NavegacaoCapitulos.ehParteTecnica("The Cover Story"))
+        assertFalse(NavegacaoCapitulos.ehParteTecnica("Capacete de ferro"))
+        assertTrue(NavegacaoCapitulos.ehParteTecnica("Todos os direitos reservados"))
+        assertTrue(NavegacaoCapitulos.ehParteTecnica("Copyright © 2020 Editora X"))
+        assertTrue(NavegacaoCapitulos.ehParteTecnica("1. Sumário"))
+    }
+
     @Test fun `busca ignora acentos e maiusculas`() {
         assertEquals(listOf(3), NavegacaoCapitulos.filtrar(capitulos, "viagem"))
         assertEquals(listOf(2, 3), NavegacaoCapitulos.filtrar(capitulos, "CAPITULO"))

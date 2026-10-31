@@ -11,13 +11,16 @@ object NavegacaoCapitulos {
 
     private val ESPACOS = Regex("\\s+")
     private val MARCAS = Regex("\\p{M}+")
+    private val INICIO_NAO_LETRA = Regex("^[^\\p{L}]+")
     private val ROMANO = Regex("(?=[IVXLCDM])M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})")
     private const val FIM_DE_FRASE = ".:!?—–-"
+    // Os termos só contam no começo do título e como palavra inteira ("Capa" sim, "Capacete" não).
     private val PARTES_TECNICAS = listOf(
-        "capa", "cover", "folha de rosto", "pagina de rosto", "title page", "frontispicio", "direitos",
-        "copyright", "creditos", "credits", "ficha catalografica", "isbn", "colofao", "colophon", "sumario",
-        "indice", "contents", "table of contents", "sobre a editora", "about the publisher"
-    ).map { Regex("\\b${Regex.escape(it)}\\b") }
+        "capa", "cover", "folha de rosto", "pagina de rosto", "title page", "frontispicio", "direitos autorais",
+        "direitos reservados", "todos os direitos", "copyright", "creditos", "credits", "ficha catalografica",
+        "isbn", "colofao", "colophon", "sumario", "indice", "contents", "table of contents", "sobre a editora",
+        "about the publisher"
+    ).map { Regex("^${Regex.escape(it)}(?!\\p{L})") }
 
     /** Capítulo que contém o parágrafo [indiceParagrafo] (o último que começa até ele); -1 se nenhum. */
     fun indiceDoCapitulo(capitulos: List<Capitulo>, indiceParagrafo: Int): Int =
@@ -40,9 +43,13 @@ object NavegacaoCapitulos {
         }.joinToString(" ")
     }
 
-    /** Capa, folha de rosto, direitos autorais, sumário etc.: partes do livro que não são capítulos. */
+    /**
+     * Capa, folha de rosto, direitos autorais, sumário etc.: partes do livro que não são capítulos.
+     * Só o começo do título conta, depois de tirar números, pontuação e espaços do início ("1. Sumário" é técnico;
+     * "Direitos humanos na cidade" e "The Cover Story" não são).
+     */
     fun ehParteTecnica(titulo: String): Boolean {
-        val chave = chave(titulo)
+        val chave = chave(titulo).replace(INICIO_NAO_LETRA, "")
         return PARTES_TECNICAS.any { it.containsMatchIn(chave) }
     }
 
