@@ -25,6 +25,7 @@ import com.chaquo.python.Python
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -423,6 +424,8 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
                 val preparados = textoPreparadoParaBusca(texto.paragrafos)
                 buildMap<Int, List<IntRange>> {
                     preparados.forEachIndexed { i, p ->
+                        // Cada tecla cancela a busca anterior; o laço precisa conferir isso, senão roda até o fim.
+                        if (i % BUSCA_CONFERE_CANCELAMENTO_A_CADA == 0) ensureActive()
                         val achados = ocorrenciasBusca(p, consulta)
                         if (achados.isNotEmpty()) put(i, achados)
                     }
@@ -491,5 +494,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
     companion object {
         /** Espera após a última tecla antes de filtrar os parágrafos (ms). */
         private const val DEBOUNCE_BUSCA_MS = 250L
+        /** Parágrafos entre duas conferências de cancelamento na busca (cada tecla cancela a anterior). */
+        private const val BUSCA_CONFERE_CANCELAMENTO_A_CADA = 200
     }
 }
