@@ -342,6 +342,15 @@
                 android:gravity="center"
                 android:layout_marginBottom="20dp"/>
 
+            <!-- Refaz a abertura do livro (ex.: falha de leitura passageira); some sozinho quando o texto carrega. -->
+            <Button
+                android:id="@+id/btnTentarDeNovo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/acao_tentar_de_novo"
+                android:textSize="13sp"/>
+
             <Button
                 android:id="@+id/btnConverterAssim"
                 android:layout_width="wrap_content"

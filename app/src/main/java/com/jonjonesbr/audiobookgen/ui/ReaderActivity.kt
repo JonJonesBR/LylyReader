@@ -150,6 +150,7 @@ class ReaderActivity : BasePlayerActivity() {
     private lateinit var layoutErro: LinearLayout
     private lateinit var tvErro: TextView
     private lateinit var btnConverterAssim: Button
+    private lateinit var btnTentarDeNovo: Button
     private lateinit var recyclerView: RecyclerViewParagrafos
     private var scrollListener: RecyclerView.OnScrollListener? = null
     // FAB único de conversão: texto/ícone mudam conforme há seleção ativa ou não
@@ -618,6 +619,7 @@ class ReaderActivity : BasePlayerActivity() {
         layoutErro           = findViewById(R.id.layoutReaderErro)
         tvErro               = findViewById(R.id.tvReaderErro)
         btnConverterAssim    = findViewById(R.id.btnConverterAssim)
+        btnTentarDeNovo      = findViewById(R.id.btnTentarDeNovo)
         recyclerView         = findViewById(R.id.recyclerViewParagrafos)
         recyclerView.limitarLarguraEmTelaAmpla(LARGURA_MAXIMA_LEITURA_DP)
         fabConverterPrincipal = findViewById(R.id.fabConverterPrincipal)
@@ -739,7 +741,11 @@ class ReaderActivity : BasePlayerActivity() {
         // Barra de modo: botão Concluir (mesma saída do modo que o botão voltar)
         btnConcluirModo.setOnClickListener { retornoController.concluirModoEspecial() }
 
-        // Estado de erro (extração falhou): "Converter assim mesmo" devolve o arquivo ORIGINAL
+        // Estado de erro (extração falhou): "Tentar de novo" refaz a extração do mesmo arquivo (limpa o erro e mostra o
+        // carregando, ver ReaderViewModel.carregarArquivo).
+        btnTentarDeNovo.setOnClickListener { viewModel.carregarArquivo(caminhoArquivo) }
+
+        // "Converter assim mesmo" devolve o arquivo ORIGINAL
         // pra MainActivity converter pelo pipeline tolerante — o leitor não tem texto estruturado
         // pra devolver, então só fecha depois de checar conectividade (como os demais caminhos).
         btnConverterAssim.setOnClickListener {
