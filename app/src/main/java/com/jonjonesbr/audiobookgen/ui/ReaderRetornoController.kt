@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import java.io.File
 
 /**
@@ -28,6 +29,9 @@ class ReaderRetornoController(
 ) {
     private val dialogos = DialogosAbertos(activity)
     private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
+
+    /** Liga enquanto o texto editado está sendo importado como novo livro: um segundo "voltar" não pergunta de novo nem salva em duplicata. */
+    private var salvandoEdicoes = false
 
     data class Callbacks(
         val obterCaminhoArquivo: () -> String,
@@ -105,22 +109,64 @@ class ReaderRetornoController(
         finalizarComResultado(caminho, File(caminho).name, ReaderActivity.ACAO_CONVERTER_SEM_ESTRUTURA)
     }
 
-    fun retornarMantendoEdicoes() {
-        aplicarEdicoesPendentes()
+    /**
+     * Botão voltar (gesto e seta ←). Com modo edição ou tela de diferenças ativo, só sai desse modo, igual ao
+     * "Concluir" da barra. Fora deles, com edições, pergunta antes de fechar; sem edições, fecha direto.
+     */
+    fun voltar() {
+        if (salvandoEdicoes) return
         val state = viewModel.uiState.value
-        val texto = viewModel.textoEfetivo()
-        if (!state.temEdicoes || texto == null) {
-            activity.setResult(android.app.Activity.RESULT_CANCELED)
-            activity.finish()
+        if (state.modoEdicao || state.mostrandoAlteracoes) {
+            concluirModoEspecial()
             return
         }
+        aplicarEdicoesPendentes()
+        val texto = viewModel.textoEfetivo()
+        if (!viewModel.uiState.value.temEdicoes || texto == null) {
+            fecharSemSalvar()
+            return
+        }
+        perguntarAntesDeSair(texto)
+    }
 
+    /** "Concluir" da barra de modo: sai da edição (aplicando as alterações pendentes) ou da tela de diferenças. */
+    fun concluirModoEspecial() {
+        if (viewModel.uiState.value.modoEdicao) {
+            aplicarEdicoesPendentes()
+            viewModel.desativarModoEdicao()
+        } else {
+            viewModel.toggleMostrarAlteracoes()
+        }
+    }
+
+    /** Saída com edições fora dos modos: salvar como novo livro, descartar ou continuar lendo (só fecha o diálogo). */
+    private fun perguntarAntesDeSair(texto: TextoExtraido) {
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setTitle(R.string.sair_edicoes_titulo)
+            .setMessage(R.string.sair_edicoes_msg)
+            .setPositiveButton(R.string.sair_edicoes_salvar_novo) { _, _ -> salvarEdicoesComoNovoLivro(texto) }
+            .setNegativeButton(R.string.sair_edicoes_descartar) { _, _ -> fecharSemSalvar() }
+            .setNeutralButton(R.string.sair_edicoes_continuar, null)
+            .exibir()
+    }
+
+    /** Devolve o texto editado como `<nome>_editado` (ACAO_MANTER_EDICOES), que vira um novo livro da biblioteca. */
+    private fun salvarEdicoesComoNovoLivro(texto: TextoExtraido) {
         val nomeBase = File(callbacks.obterCaminhoArquivo()).nameWithoutExtension.removeSuffix("_editado")
-        salvarTextoTemporario(
+        salvandoEdicoes = true
+        val salvou = salvarTextoTemporario(
             texto.paragrafos.joinToString("\n\n") { it.texto },
             ReaderActivity.ACAO_MANTER_EDICOES,
             "${nomeBase}_editado.txt"
         )
+        // Se a gravação falhou, o leitor continua aberto: libera o "voltar" de novo.
+        if (!salvou) salvandoEdicoes = false
+    }
+
+    /** Fecha o leitor sem devolver nada (RESULT_CANCELED). */
+    private fun fecharSemSalvar() {
+        activity.setResult(android.app.Activity.RESULT_CANCELED)
+        activity.finish()
     }
 
     /** Liga um item do menu: fecha o menu e executa [acao]. */
@@ -307,19 +353,22 @@ class ReaderRetornoController(
             .exibir()
     }
 
+    /** Grava [texto] em cache e devolve o resultado. Retorna `false` se a gravação falhou (aviso já mostrado). */
     private fun salvarTextoTemporario(
         texto: String,
         acaoRetorno: String,
         nomeExibicao: String = "reader_selection.txt"
-    ) {
-        try {
+    ): Boolean {
+        return try {
             val arquivo = File(activity.cacheDir, "reader_selection_${System.currentTimeMillis()}.txt")
             arquivo.writeText(texto, Charsets.UTF_8)
             callbacks.onRegistrarTrechoTemp(arquivo)
             finalizarComResultado(arquivo.absolutePath, nomeExibicao, acaoRetorno)
+            true
         } catch (e: Exception) {
             Log.w("ReaderActivity", "Erro ao salvar seleção", e)
             Toast.makeText(activity, R.string.toast_save_selection_error, Toast.LENGTH_SHORT).show()
+            false
         }
     }
 

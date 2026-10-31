@@ -368,6 +368,11 @@
     <string name="refazer_limpeza_confirma_titulo">¿Limpiar de nuevo?</string>
     <string name="refazer_limpeza_confirma_msg">La limpieza vuelve a empezar desde el texto original, así que se descartarán las ediciones que hiciste a mano en este libro.</string>
     <string name="refazer_limpeza_confirma_ok">Descartar y limpiar</string>
+    <string name="sair_edicoes_titulo">¿Guardar las ediciones?</string>
+    <string name="sair_edicoes_msg">Las ediciones hechas aquí no están en el libro original. Guárdalas como un libro nuevo, descártalas o sigue leyendo.</string>
+    <string name="sair_edicoes_salvar_novo">Guardar como libro nuevo</string>
+    <string name="sair_edicoes_descartar">Descartar</string>
+    <string name="sair_edicoes_continuar">Seguir leyendo</string>
     <string name="toast_sem_capitulos_para_exportar">Este libro no tiene capítulos detectados para exportar.</string>
     <plurals name="toast_capitulos_exportados_qtd">
         <item quantity="one">%d archivo de capítulo guardado.</item>

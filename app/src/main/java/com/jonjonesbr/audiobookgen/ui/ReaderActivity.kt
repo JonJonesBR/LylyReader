@@ -451,7 +451,7 @@ class ReaderActivity : BasePlayerActivity() {
         configurarBotoes()
         guidedReadingBarController?.configurarGuidedPlayerBotoes()
         configurarScrollListener()
-        onBackPressedDispatcher.addCallback(this) { retornoController.retornarMantendoEdicoes() }
+        onBackPressedDispatcher.addCallback(this) { retornoController.voltar() }
 
         tvTitulo.text = tituloCompleto
         tvTitulo.setOnLongClickListener {
@@ -687,7 +687,7 @@ class ReaderActivity : BasePlayerActivity() {
     // ── Botões ────────────────────────────────────────────────────────────────
 
     private fun configurarBotoes() {
-        btnVoltar.setOnClickListener { retornoController.retornarMantendoEdicoes() }
+        btnVoltar.setOnClickListener { retornoController.voltar() }
 
         findViewById<android.widget.ImageButton>(R.id.btnBuscarReader)
             .setOnClickListener { alternarBusca() }
@@ -706,15 +706,8 @@ class ReaderActivity : BasePlayerActivity() {
             verificarConectividadeAntesDeConverter { retornoController.retornarComSelecao() }
         }
 
-        // Barra de modo: botão Concluir
-        btnConcluirModo.setOnClickListener {
-            if (viewModel.uiState.value.modoEdicao) {
-                retornoController.aplicarEdicoesPendentes()
-                viewModel.desativarModoEdicao()
-            } else {
-                viewModel.toggleMostrarAlteracoes()
-            }
-        }
+        // Barra de modo: botão Concluir (mesma saída do modo que o botão voltar)
+        btnConcluirModo.setOnClickListener { retornoController.concluirModoEspecial() }
 
         // Estado de erro (extração falhou): "Converter assim mesmo" devolve o arquivo ORIGINAL
         // pra MainActivity converter pelo pipeline tolerante — o leitor não tem texto estruturado

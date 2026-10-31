@@ -367,6 +367,11 @@
     <string name="refazer_limpeza_confirma_titulo">Run cleaning again?</string>
     <string name="refazer_limpeza_confirma_msg">Cleaning starts over from the original text, so the edits you made by hand in this book will be discarded.</string>
     <string name="refazer_limpeza_confirma_ok">Discard and clean</string>
+    <string name="sair_edicoes_titulo">Save your edits?</string>
+    <string name="sair_edicoes_msg">The edits made here are not in the original book. Save them as a new book, discard them, or keep reading.</string>
+    <string name="sair_edicoes_salvar_novo">Save as new book</string>
+    <string name="sair_edicoes_descartar">Discard</string>
+    <string name="sair_edicoes_continuar">Keep reading</string>
     <string name="toast_sem_capitulos_para_exportar">This book has no detected chapters to export.</string>
     <plurals name="toast_capitulos_exportados_qtd">
         <item quantity="one">%d chapter file saved.</item>

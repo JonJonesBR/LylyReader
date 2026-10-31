@@ -371,6 +371,11 @@
     <string name="refazer_limpeza_confirma_titulo">Refazer limpeza?</string>
     <string name="refazer_limpeza_confirma_msg">A limpeza recomeça do texto original, então as edições feitas à mão neste livro serão descartadas.</string>
     <string name="refazer_limpeza_confirma_ok">Descartar e limpar</string>
+    <string name="sair_edicoes_titulo">Salvar as edições?</string>
+    <string name="sair_edicoes_msg">As edições feitas aqui não estão no livro original. Salve como um novo livro, descarte ou continue lendo.</string>
+    <string name="sair_edicoes_salvar_novo">Salvar como novo livro</string>
+    <string name="sair_edicoes_descartar">Descartar</string>
+    <string name="sair_edicoes_continuar">Continuar lendo</string>
     <string name="toast_sem_capitulos_para_exportar">Este livro não tem capítulos detectados para exportar.</string>
     <plurals name="toast_capitulos_exportados_qtd">
         <item quantity="one">%d arquivo de capítulo salvo.</item>
