@@ -29,9 +29,9 @@ internal fun paletaDoLeitor(tema: TemaLeitura): PaletaLeitor = when (tema) {
 private fun cor(hex: String) = Color.parseColor(hex)
 
 /**
- * Pinta o topo do leitor (título e botões), a barra do capítulo, a busca e os avisos com as cores do tema de
- * leitura. Antes só o fundo mudava: no tema Claro ou Sépia, a barra do capítulo e o topo continuavam com as
- * cores do tema escuro do app e o texto sumia no fundo branco.
+ * Pinta o topo do leitor (título e botões), a barra do capítulo, a busca, a barra da leitura guiada e os avisos
+ * com as cores do tema de leitura. Antes só o fundo mudava: no tema Claro ou Sépia, a barra do capítulo e o topo
+ * continuavam com as cores do tema escuro do app e o texto sumia no fundo branco.
  */
 internal fun Activity.aplicarPaletaNasBarrasDoLeitor(p: PaletaLeitor) {
     findViewById<android.view.View>(R.id.toolbarReader)?.setBackgroundColor(p.fundo)
@@ -53,6 +53,15 @@ internal fun Activity.aplicarPaletaNasBarrasDoLeitor(p: PaletaLeitor) {
         setTextColor(p.texto)
         setHintTextColor(p.suave)
     }
+    // Barra da leitura guiada (activity_reader.xml): tudo junto; no Sépia e no OLED ela ficava com a cor do app.
+    // O botão de play/pause fica com o destaque próprio (fundo arredondado), por isso não entra aqui.
+    findViewById<android.view.View>(R.id.layoutGuidedPlayer)?.setBackgroundColor(p.superficie)
+    findViewById<android.view.View>(R.id.divisorGuidedPlayer)?.setBackgroundColor(p.suave)
+    listOf(R.id.tvGuidedStatus, R.id.tvGuidedSoneca, R.id.tvGuidedPassos, R.id.btnGuidedVelocidade)
+        .forEach { findViewById<TextView>(it)?.setTextColor(p.texto) }
+    listOf(R.id.btnGuidedVoz, R.id.btnGuidedPrev, R.id.btnGuidedNext)
+        .forEach { findViewById<ImageView>(it)?.imageTintList = principal }
+    findViewById<ImageView>(R.id.btnGuidedClose)?.imageTintList = secundaria
     // Ícones da barra de status escuros no fundo claro (e claros no escuro).
     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = p.clara
 }

@@ -407,6 +407,7 @@
         android:visibility="gone">
 
         <View
+            android:id="@+id/divisorGuidedPlayer"
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="@color/color_divider"

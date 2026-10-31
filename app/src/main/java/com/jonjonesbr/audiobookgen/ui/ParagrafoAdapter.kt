@@ -6,11 +6,16 @@ import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.LayerDrawable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextWatcher
 import android.text.style.ForegroundColorSpan
 import android.text.style.StrikethroughSpan
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -47,12 +52,23 @@ private val COR_BUSCA_MATCH = mapOf(
     TemaLeitura.SEPIA  to Color.parseColor("#E8D0A0"),
     TemaLeitura.OLED   to Color.parseColor("#3A3020"),
 )
+// Claro e Sépia escurecidos (a11y-4): o destaque do parágrafo narrado tinha 1,12:1 e 1,20:1 contra o fundo.
 private val COR_SYNC = mapOf(
-    TemaLeitura.CLARO  to Color.parseColor("#EDE9FF"),
+    TemaLeitura.CLARO  to Color.parseColor("#DAD2F5"),
     TemaLeitura.ESCURO to Color.parseColor("#2A2040"),
-    TemaLeitura.SEPIA  to Color.parseColor("#E8D8B0"),
+    TemaLeitura.SEPIA  to Color.parseColor("#DFC99C"),
     TemaLeitura.OLED   to Color.parseColor("#2A2040"),
 )
+
+// Barra vertical na borda inicial do parágrafo narrado (a11y-4): sinal além da cor, com contraste >= 3:1
+// contra o fundo do tema e contra o destaque de sincronia (WCAG 1.4.11).
+private val COR_BARRA_SYNC = mapOf(
+    TemaLeitura.CLARO  to Color.parseColor("#6A4CA0"),
+    TemaLeitura.ESCURO to Color.parseColor("#B39DDB"),
+    TemaLeitura.SEPIA  to Color.parseColor("#6B4423"),
+    TemaLeitura.OLED   to Color.parseColor("#B39DDB"),
+)
+private const val LARGURA_BARRA_SYNC_DP = 4f
 
 // IDs dos itens de menu no ActionMode de seleção de texto — nomeados (1001/1002 eram débito
 // aceito no baseline do detekt; 1003/1004 são os itens novos).
@@ -284,7 +300,7 @@ class ParagrafoAdapter(
         val corTrechoBusca = if (estaBuscaAtual) COR_TRECHO_BUSCA_ATUAL else COR_TRECHO_BUSCA
 
         if (selecaoAtiva) {
-            tv.setBackgroundColor(corFundo)   // preserva a seleção do usuário
+            tv.pintarFundoParagrafo(corFundo, estaNoSync, tema)   // preserva a seleção do usuário
         } else if (estaNoSync && progressPct > 0f) {
             tv.aplicarTextoComSyncEDestaques(par.texto, corFundo, tema, progressPct, destaquesDoParagrafo)
         } else if (destaquesDoParagrafo.isNotEmpty() || trechosBusca.isNotEmpty()) {
@@ -292,10 +308,10 @@ class ParagrafoAdapter(
             spannable.aplicarDestaques(destaquesDoParagrafo, par.texto.length)
             spannable.aplicarDestaques(trechosBusca, par.texto.length, corTrechoBusca)
             tv.text = spannable
-            tv.setBackgroundColor(corFundo)
+            tv.pintarFundoParagrafo(corFundo, estaNoSync, tema)
         } else {
             tv.text = par.texto
-            tv.setBackgroundColor(corFundo)
+            tv.pintarFundoParagrafo(corFundo, estaNoSync, tema)
         }
 
         tv.customSelectionActionModeCallback = object : android.view.ActionMode.Callback {
@@ -567,5 +583,41 @@ private fun TextView.aplicarTextoComSyncEDestaques(
     }
     spannable.aplicarDestaques(destaquesDoParagrafo, texto.length)
     text = spannable
-    setBackgroundColor(Color.TRANSPARENT)
+    // O destaque de sincronia está nos spans do texto; o fundo da view fica transparente, com a barra do narrado.
+    pintarFundoParagrafo(Color.TRANSPARENT, narrado = true, tema = tema)
+}
+
+/**
+ * Fundo do parágrafo: a cor de destaque e, se ele é o narrado, uma barra de [LARGURA_BARRA_SYNC_DP] na borda inicial
+ * (espelhada em RTL). A barra é uma camada do próprio fundo, então não muda padding nem margem e o texto não pula.
+ * Sem [narrado], o fundo volta a ser só a cor, o que tira a barra de um item reaproveitado. Função de topo pelo
+ * mesmo motivo das outras — não empurrar ParagrafoAdapter acima do limite de funções do detekt.
+ */
+private fun TextView.pintarFundoParagrafo(corFundo: Int, narrado: Boolean, tema: TemaLeitura) {
+    if (!narrado) {
+        setBackgroundColor(corFundo)
+        return
+    }
+    val corBarra = COR_BARRA_SYNC[tema] ?: Color.TRANSPARENT
+    // A leitura guiada repinta o narrado cerca de 20 vezes por segundo: reaproveita a camada já criada por esta
+    // função em vez de montar um LayerDrawable novo a cada bind.
+    val camadasAtuais = background as? LayerDrawable
+    val fundoAtual = camadasAtuais?.getDrawable(0) as? ColorDrawable
+    val barraAtual = camadasAtuais?.getDrawable(1) as? ColorDrawable
+    if (fundoAtual != null && barraAtual != null) {
+        fundoAtual.setColor(corFundo)
+        barraAtual.setColor(corBarra)
+        return
+    }
+    val camadaFundo = ColorDrawable(corFundo)
+    val camadaBarra = ColorDrawable(corBarra)
+    val camadas = LayerDrawable(arrayOf<Drawable>(camadaFundo, camadaBarra))
+    camadas.setLayerGravity(1, Gravity.START or Gravity.FILL_VERTICAL)
+    camadas.setLayerWidth(
+        1,
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, LARGURA_BARRA_SYNC_DP, resources.displayMetrics).toInt()
+    )
+    // Reforço: a View já propaga a direção ao background, mas a camada nova recebe a direção já agora.
+    camadas.setLayoutDirection(layoutDirection)
+    background = camadas
 }
