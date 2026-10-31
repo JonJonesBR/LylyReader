@@ -197,6 +197,38 @@ private fun paragrafoNaAncora(
     return ultimoAntes(paragrafos.size) { paragrafos[it].charOffset <= caractere }.coerceAtLeast(0)
 }
 
+/**
+ * Posição (ms no audiobook) em que começa o parágrafo [indiceParagrafo]: a inversa de [paragrafoNoAudiobook] com
+ * âncoras. Entre duas âncoras o tempo é interpolado pela proporção de caracteres. Antes da primeira âncora devolve 0
+ * (o áudio começa ali); depois da última, o tempo dela. Sem âncoras ou com parágrafo inexistente, devolve null.
+ */
+fun posicaoNoAudiobook(indiceParagrafo: Int, texto: TextoExtraido, ancoras: List<Pair<Long, Int>>): Long? {
+    val paragrafo = texto.paragrafos.getOrNull(indiceParagrafo)
+    if (paragrafo == null || ancoras.isEmpty()) return null
+    val alvo = paragrafo.charOffset
+    val i = ultimoAntes(ancoras.size) { ancoras[it].second <= alvo }
+    return when {
+        i < 0 -> 0L
+        alvo == ancoras[i].second -> ancoras[i].first
+        i + 1 >= ancoras.size -> ancoras[i].first
+        else -> entreDuasAncoras(alvo, ancoras[i], ancoras[i + 1])
+    }
+}
+
+/**
+ * Tempo em que o caractere [alvo] cai entre a âncora [inicio] e a [fim], pela proporção de caracteres. Divisão para
+ * cima, em inteiros: o tempo não fica antes do caractere. Mais 1 ms cobre o arredondamento do ponto flutuante de
+ * paragrafoNaAncora, que senão cairia no parágrafo anterior quando a conta dá exata.
+ */
+private fun entreDuasAncoras(alvo: Int, inicio: Pair<Long, Int>, fim: Pair<Long, Int>): Long {
+    val (inicioMs, inicioChar) = inicio
+    val (fimMs, fimChar) = fim
+    if (fimChar <= inicioChar || fimMs <= inicioMs) return inicioMs
+    val numerador = (alvo - inicioChar).toLong() * (fimMs - inicioMs)
+    val denominador = (fimChar - inicioChar).toLong()
+    return inicioMs + (numerador + denominador - 1) / denominador + 1L
+}
+
 /** Maior índice (de 0 a [tamanho] - 1) em que [antes] vale, numa lista em que vale até certo ponto; -1 se nenhum. */
 private fun ultimoAntes(tamanho: Int, antes: (Int) -> Boolean): Int {
     var inicio = 0

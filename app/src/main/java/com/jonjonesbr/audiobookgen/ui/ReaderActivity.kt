@@ -14,6 +14,7 @@ import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
+import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
@@ -1219,22 +1220,44 @@ class ReaderActivity : BasePlayerActivity() {
     /**
      * Abre o audiobook já convertido deste livro (vínculo criado em [baixarLivroCompleto],
      * via [com.jonjonesbr.audiobookgen.data.LinkedBookStore]) — ponte de UI entre leitura e
-     * escuta (Fase 5, item 2), sem sincronizar posição automaticamente.
+     * escuta (Fase 5, item 2). Começa do parágrafo da guiada (se ela tocava este livro) ou do
+     * visível, pelas âncoras de sincronia; sem âncoras, retoma da posição salva.
      */
     private fun ouvirAudiobookDesteLivro() {
         val mp3 = com.jonjonesbr.audiobookgen.data.LinkedBookStore.mp3Vinculado(this, caminhoArquivo)
             ?: return
         if (!File(mp3).exists()) return
-        // Ouvir o audiobook encerra a leitura guiada: a barra dela sai e o mini player do audiobook aparece.
-        guidedPlayerManager?.stop()
+        // Parágrafo de partida: o da leitura guiada, se ela estava tocando este livro; senão o da tela.
+        val guiada = guidedPlayerManager
+        val guiadaTocandoEsteLivro = guiada != null && guiada.state.value.index >= 0 &&
+            guiada.caminhoArquivo == caminhoArquivo
+        val paragrafoPartida = if (guiada != null && guiadaTocandoEsteLivro) {
+            guiada.state.value.index
+        } else {
+            paragrafoAtualVisivel()
+        }
         val nome = File(mp3).nameWithoutExtension
-        playerService?.iniciar(mp3, nome) ?: run {
-            val intent = Intent(this, com.jonjonesbr.audiobookgen.service.AudioPlayerService::class.java).apply {
-                action = com.jonjonesbr.audiobookgen.service.AudioPlayerService.ACTION_INICIAR
-                putExtra(com.jonjonesbr.audiobookgen.service.AudioPlayerService.EXTRA_CAMINHO, mp3)
-                putExtra(com.jonjonesbr.audiobookgen.service.AudioPlayerService.EXTRA_NOME, nome)
+        // O cálculo (âncoras do MP3, lidas do disco) sai da main. A guiada só para depois dele: se a Activity
+        // for destruída no meio, a corrotina é cancelada e nenhuma das duas coisas acontece.
+        lifecycleScope.launch {
+            val posicao = paragrafoPartida?.let { viewModel.posicaoDoParagrafoNoAudiobook(mp3, it) }
+            // Se a pessoa saiu do app durante o cálculo, não se inicia o serviço em segundo plano (Android 12+
+            // lança exceção); a guiada segue como estava.
+            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return@launch
+            // Ouvir o audiobook encerra a leitura guiada: a barra dela sai e o mini player do audiobook aparece.
+            guiada?.stop()
+            val service = playerService
+            if (service != null) {
+                service.iniciar(mp3, nome, posicao)
+            } else {
+                val intent = Intent(this@ReaderActivity, AudioPlayerService::class.java).apply {
+                    action = AudioPlayerService.ACTION_INICIAR
+                    putExtra(AudioPlayerService.EXTRA_CAMINHO, mp3)
+                    putExtra(AudioPlayerService.EXTRA_NOME, nome)
+                    posicao?.let { putExtra(AudioPlayerService.EXTRA_POSICAO_MS, it) }
+                }
+                startForegroundService(intent)
             }
-            startForegroundService(intent)
         }
     }
 

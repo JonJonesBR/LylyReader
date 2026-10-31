@@ -192,6 +192,53 @@ class SincroniaAudiobookTest {
         )
     }
 
+    /** Parágrafos de 98, 198, 98, 98 e 98 caracteres: começos em 0, 100, 300, 400 e 500 (total 600). */
+    private fun livroComInicios(): TextoExtraido = livro(
+        "a".repeat(98), "b".repeat(198), "c".repeat(98), "d".repeat(98), "e".repeat(98),
+    )
+
+    @Test
+    fun posicaoNoAudiobookComAncoraExataNoInicioDoParagrafoUsaOTempoDaAncora() {
+        val t = livroComInicios()
+        val ancoras = listOf(0L to 0, 3_000L to 100, 9_000L to 400)
+        assertEquals(0L, posicaoNoAudiobook(0, t, ancoras))
+        assertEquals(3_000L, posicaoNoAudiobook(1, t, ancoras))
+        assertEquals(9_000L, posicaoNoAudiobook(3, t, ancoras))
+    }
+
+    @Test
+    fun posicaoNoAudiobookEntreDuasAncorasInterpolaPelaProporcaoDeCaracteres() {
+        // Parágrafo 2 começa no caractere 300, entre a âncora 3 s (char 100) e a de 9 s (char 400):
+        // 3 s + 200/300 de 6 s = 7 s, mais 1 ms de margem.
+        val t = livroComInicios()
+        assertEquals(7_001L, posicaoNoAudiobook(2, t, listOf(0L to 0, 3_000L to 100, 9_000L to 400)))
+    }
+
+    @Test
+    fun posicaoNoAudiobookAntesDaPrimeiraAncoraComecaEmZeroEDepoisDaUltimaUsaOTempoDela() {
+        val t = livroComInicios()
+        assertEquals(0L, posicaoNoAudiobook(0, t, listOf(5_000L to 100)))
+        assertEquals(4_000L, posicaoNoAudiobook(2, t, listOf(0L to 0, 4_000L to 100)))
+    }
+
+    @Test
+    fun posicaoNoAudiobookSemAncorasOuSemParagrafoDevolveNull() {
+        val t = livroComInicios()
+        assertEquals(null, posicaoNoAudiobook(1, t, emptyList()))
+        assertEquals(null, posicaoNoAudiobook(9, t, listOf(0L to 0)))
+    }
+
+    @Test
+    fun posicaoNoAudiobookIdaEVoltaCaiNoMesmoParagrafo() {
+        // Para os parágrafos até a última âncora (o 4º, sem âncora, depois dela cai no parágrafo da âncora).
+        val t = livroComInicios()
+        val ancoras = listOf(0L to 0, 3_000L to 100, 9_000L to 400)
+        for (i in 0..3) {
+            val posicao = posicaoNoAudiobook(i, t, ancoras)!!
+            assertEquals("parágrafo $i", i, paragrafoNoAudiobook(posicao, 20_000L, emptyList(), t, ancoras))
+        }
+    }
+
     @Test
     fun trechosDeJsonIgnoraLixo() {
         assertEquals(

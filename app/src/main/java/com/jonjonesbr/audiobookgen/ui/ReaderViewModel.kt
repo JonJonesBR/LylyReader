@@ -165,6 +165,16 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         return ancoras
     }
 
+    /**
+     * Posição (ms) em que o audiobook [mp3] começa o parágrafo [indiceParagrafo] do texto na tela, pelas âncoras
+     * gravadas na conversão. Null sem texto ou sem âncoras (o áudio então volta à posição salva).
+     */
+    suspend fun posicaoDoParagrafoNoAudiobook(mp3: String, indiceParagrafo: Int): Long? {
+        val texto = textoEfetivo() ?: return null
+        val ancoras = ancorasDoAudiobook(mp3, texto)
+        return com.jonjonesbr.audiobookgen.domain.posicaoNoAudiobook(indiceParagrafo, texto, ancoras)
+    }
+
     private fun iniciarSync() {
         syncJob?.cancel()
         syncJob = viewModelScope.launch {

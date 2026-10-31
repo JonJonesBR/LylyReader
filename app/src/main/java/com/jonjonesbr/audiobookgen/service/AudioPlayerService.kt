@@ -92,6 +92,8 @@ class AudioPlayerService : MediaLibraryService() {
         const val ACTION_INICIAR    = "com.jonjonesbr.audiobookgen.INICIAR"
         const val EXTRA_CAMINHO     = "extra_caminho"
         const val EXTRA_NOME        = "extra_nome"
+        /** Posição (ms) em que o ACTION_INICIAR começa; sem ela, volta à posição salva do livro. */
+        const val EXTRA_POSICAO_MS  = "extra_posicao_ms"
 
         /** Instância viva (um player por processo), para a leitura guiada fechar o audiobook ao começar a tocar. */
         @Volatile private var instancia: AudioPlayerService? = null
@@ -139,6 +141,9 @@ class AudioPlayerService : MediaLibraryService() {
     // _state.value.caminho, que iniciar() escreve OTIMISTICAMENTE (feedback imediato de UI)
     // antes do ExoPlayer confirmar a troca via onMediaItemTransition. Ver comentário lá.
     private var caminhoPreparado: String? = null
+    // Posição pedida por iniciar(…, posicaoInicialMs) e o caminho dela: aoFicarPronto() a usa no lugar da posição salva
+    // (só para esse caminho, e uma vez).
+    private var posicaoPedida: Pair<String, Long>? = null
     private var ultimoSalvarProgressoMs = 0L
     private var msOuvidoAcumulado = 0L
     private var capitulosAtual: List<CapituloAudio> = emptyList()
@@ -488,7 +493,8 @@ class AudioPlayerService : MediaLibraryService() {
                     return START_NOT_STICKY
                 }
                 val nome    = intent.getStringExtra(EXTRA_NOME) ?: File(caminho).nameWithoutExtension
-                iniciar(caminho, nome)
+                val posicaoInicial = intent.getLongExtra(EXTRA_POSICAO_MS, -1L).takeIf { it >= 0L }
+                iniciar(caminho, nome, posicaoInicial)
             }
             PlayerNotificationManager.ACTION_PLAY_PAUSE -> alternarPlayPause()
             PlayerNotificationManager.ACTION_RECUAR     -> capituloAnterior()
@@ -526,9 +532,15 @@ class AudioPlayerService : MediaLibraryService() {
 
     // ── API pública ───────────────────────────────────────────────────────────
 
-    /** Toca [caminho] no player já existente — chamado pela UI do app (mini-player, leitor, etc.). */
-    fun iniciar(caminho: String, nome: String) {
+    /**
+     * Toca [caminho] no player já existente — chamado pela UI do app (mini-player, leitor, etc.).
+     * Com [posicaoInicialMs], começa dali em vez da posição salva (ex.: "Ouvir" a partir do parágrafo lido).
+     */
+    fun iniciar(caminho: String, nome: String, posicaoInicialMs: Long? = null) {
         encerrarLeituraGuiada()
+        // Antes de qualquer troca: o mesmo arquivo já preparado e não concluído não passa por prepararNovoItem().
+        val mesmoArquivoPreparado = caminhoPreparado == caminho && !concluido
+        posicaoPedida = posicaoInicialMs?.let { caminho to it }
         // Garante ciclo de vida "started" para sobreviver ao unbind quando o app é minimizado.
         // Sem isso, o Android mata o serviço ao fazer unbindService() no onStop() da Activity.
         startService(Intent(this, AudioPlayerService::class.java))
@@ -560,6 +572,12 @@ class AudioPlayerService : MediaLibraryService() {
             exoPlayer.setMediaItem(item)
             exoPlayer.playbackParameters = parametros(_state.value.speed)
             exoPlayer.prepare()
+            // Mesmo arquivo já pronto: o setMediaItem não troca de item, então aoFicarPronto() não roda e o seek sai
+            // daqui. Se o primeiro READY ainda não chegou, posicaoPedida fica para aoFicarPronto() aplicar nele.
+            if (posicaoInicialMs != null && mesmoArquivoPreparado && !esperaReady.aguardando) {
+                posicaoPedida = null
+                exoPlayer.seekTo(posicaoInicialMs.coerceAtLeast(0L))
+            }
             emMudancaPlayInterna { exoPlayer.play() }
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao iniciar: ${e.message}", e)
@@ -823,9 +841,16 @@ class AudioPlayerService : MediaLibraryService() {
         val savedProgress = PlaybackProgressStore.load(applicationContext, caminho)
         val duracaoMs = duracaoConhecida()
         val duracaoInt = if (duracaoMs > Int.MAX_VALUE) Int.MAX_VALUE else duracaoMs.toInt()
-        val posInicial = com.jonjonesbr.audiobookgen.util.posicaoDeRetomada(
-            savedProgress?.positionMs, duracaoInt, recuoAutoRewindPara(caminho)
-        )
+        // Posição pedida pela UI vale só para o caminho pedido e uma vez; sem ela, a retomada salva de sempre.
+        val pedida = posicaoPedida?.takeIf { it.first == caminho }?.second
+        posicaoPedida = null
+        val posInicial = if (pedida != null) {
+            pedida.coerceIn(0L, duracaoInt.coerceAtLeast(0).toLong()).toInt()
+        } else {
+            com.jonjonesbr.audiobookgen.util.posicaoDeRetomada(
+                savedProgress?.positionMs, duracaoInt, recuoAutoRewindPara(caminho)
+            )
+        }
         if (posInicial > 0) exoPlayer.seekTo(posInicial.toLong())
 
         _state.update {
