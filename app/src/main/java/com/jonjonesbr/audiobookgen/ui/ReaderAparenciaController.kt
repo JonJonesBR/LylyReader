@@ -279,6 +279,10 @@ class ReaderAparenciaController(
         val input = EditText(activity).apply {
             setText(value)
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            // O filtro padrão do teclado numérico só aceita ponto: a vírgula do teclado em português era recusada.
+            keyListener = object : android.text.method.DigitsKeyListener(java.util.Locale.US, false, true) {
+                override fun getAcceptedChars(): CharArray = "0123456789.,".toCharArray()
+            }
             selectAll()
             setPadding(DIALOG_PADDING_H, DIALOG_PADDING_V, DIALOG_PADDING_H, DIALOG_PADDING_V)
         }
