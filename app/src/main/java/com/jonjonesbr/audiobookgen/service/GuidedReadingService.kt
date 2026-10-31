@@ -109,6 +109,8 @@ class GuidedReadingService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var observeJob: Job? = null
     private var mediaSession: MediaSessionCompat? = null
+    // Título que a MediaSession já mostra: a fila troca de livro sem trocar de sessão, e o título precisa acompanhar.
+    private var tituloNaSessao: String? = null
 
     // Foco de áudio da narração. Sem ele, ligações, GPS e outros apps tocavam por cima da voz, em volume cheio.
     // Perda temporária (ligação) pausa e retoma sozinha ao voltar; perda definitiva (outro app de mídia) só pausa.
@@ -336,13 +338,7 @@ class GuidedReadingService : Service() {
         val manager = GuidedPlaybackBridge.manager ?: return
         val token = manager.sessionToken
         tokenObservado = token
-        // Título do livro na tela de bloqueio, no relógio e no carro (Bluetooth); antes ficava sem nome.
-        mediaSession?.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, manager.trackName)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, getString(R.string.app_name))
-                .build()
-        )
+        atualizarMetadados(manager.trackName)
         observeJob = scope.launch {
             // O estado é publicado a cada ~50 ms (progresso do parágrafo); a notificação e a MediaSession só
             // mostram parágrafo e play/pausa, então só se refazem quando um desses muda (a soneca tem coletor
@@ -362,12 +358,26 @@ class GuidedReadingService : Service() {
                         pararServico()
                     }
                 } else {
+                    // A fila "Ler tudo" trocou de livro na mesma sessão: a tela de bloqueio e o Bluetooth seguem o título novo.
+                    val titulo = GuidedPlaybackBridge.trackName(manager.trackName)
+                    if (titulo != tituloNaSessao) atualizarMetadados(titulo)
                     if (isPlaying) garantirFocoDeAudio(manager)
                     atualizarEstadoMediaSession(isPlaying)
                     notificar(construirNotificacao(index, isPlaying))
                 }
             }
         }
+    }
+
+    /** Título do livro na tela de bloqueio, no relógio e no carro (Bluetooth); antes ficava sem nome. */
+    private fun atualizarMetadados(titulo: String) {
+        tituloNaSessao = titulo
+        mediaSession?.setMetadata(
+            MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, titulo)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, getString(R.string.app_name))
+                .build()
+        )
     }
 
     private fun startForegroundCompat() {
@@ -387,6 +397,7 @@ class GuidedReadingService : Service() {
         observeJob?.cancel()
         observeJob = null
         tokenObservado = null
+        tituloNaSessao = null
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }

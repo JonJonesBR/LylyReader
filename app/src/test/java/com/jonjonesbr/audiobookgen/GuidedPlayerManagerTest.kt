@@ -3,9 +3,15 @@ package com.jonjonesbr.audiobookgen
 import android.content.Context
 import android.util.Log
 import com.jonjonesbr.audiobookgen.data.AppPrefs
+import com.jonjonesbr.audiobookgen.data.StatsStore
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
+import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.domain.OfflineSpeakerAttributor
+import com.jonjonesbr.audiobookgen.service.GuidedBookAudioStore
+import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
+import com.jonjonesbr.audiobookgen.util.CrashLogWriter
+import com.jonjonesbr.audiobookgen.util.SynthesisWakeLock
 import com.jonjonesbr.audiobookgen.player.MediaPlayerEngineImpl
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
@@ -20,9 +26,13 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -85,6 +95,20 @@ class GuidedPlayerManagerTest {
         every { anyConstructed<MediaPlayerEngineImpl>().getCurrentPosition() } returns 0
         every { anyConstructed<MediaPlayerEngineImpl>().getDuration() } returns 0
         every { anyConstructed<MediaPlayerEngineImpl>().setVolume(any()) } just Runs
+
+        // Fila "Ler tudo": estado do fim do livro (posição final e concluído), perfil do livro e wake lock.
+        mockkObject(StatsStore, CrashLogWriter, SynthesisWakeLock, GuidedBookPrefsStore, GuidedBookAudioStore)
+        every { StatsStore.registrarLivroConcluido(any(), any()) } just Runs
+        every { StatsStore.registrarMinutosOuvidos(any(), any()) } just Runs
+        every { CrashLogWriter.log(any(), any(), any(), any()) } just Runs
+        every { SynthesisWakeLock.acquire(any()) } just Runs
+        every { SynthesisWakeLock.release() } just Runs
+        every { GuidedBookPrefsStore.load(any(), any()) } returns null
+        every { GuidedBookPrefsStore.save(any(), any(), any(), any(), any()) } just Runs
+        every { GuidedBookAudioStore.load(any(), any()) } returns null
+        every { GuidedBookAudioStore.save(any(), any(), any()) } just Runs
+        every { anyConstructed<AppPrefs>().posicaoLeitura(any(), any()) } returns -1
+        every { anyConstructed<AppPrefs>().salvarPosicaoLeitura(any(), any(), any()) } just Runs
     }
 
     @After
@@ -199,6 +223,131 @@ class GuidedPlayerManagerTest {
             testDispatcher.scheduler.runCurrent()
             arquivo.delete()
         }
+    }
+
+    // --- Fila "Ler tudo": a troca de livro acontece na mesma sessão (sem stop() nem índice -1 entre os livros) ---
+
+    private fun paragrafosDo(caminho: String, quantidade: Int = 2) =
+        (0 until quantidade).map { Paragrafo(texto = "${caminho.trimStart('/')}-$it", charOffset = 0, indiceCapitulo = 0) }
+
+    private fun livroDaFila(caminho: String, quantidade: Int = 2) = GuidedPlayerManager.LivroDaFila(
+        caminho, "Título $caminho", TextoExtraido(emptyList(), paragrafosDo(caminho, quantidade), 0)
+    )
+
+    /** Manager lendo [caminho] no último parágrafo, com [fila] como os próximos livros. */
+    private fun managerNoFimDoLivro(caminho: String, fila: List<String>): GuidedPlayerManager {
+        // Os mesmos ajustes que os outros testes com play() fixam: o livro novo chega a tocar (ou a falhar) por eles.
+        every { anyConstructed<AppPrefs>().motorTts } returns "edge"
+        every { anyConstructed<AppPrefs>().vozSelecionada } returns "pt-BR-ThalitaMultilingualNeural"
+        every { anyConstructed<AppPrefs>().ritmo } returns 100
+        every { anyConstructed<AppPrefs>().pausasNaturais } returns false
+        every { anyConstructed<AppPrefs>().pausaMs } returns 600
+        mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
+        every { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) } returns false
+        // Chaves do Gemini: a troca as lê ao sincronizar o motor (o cofre criptografado não existe no teste).
+        mockkObject(com.jonjonesbr.audiobookgen.data.SecurePreferences)
+        every { com.jonjonesbr.audiobookgen.data.SecurePreferences.getGeminiKeys(any()) } returns ""
+        // O play() do livro novo não sintetiza de verdade: o motor devolve nada e a sessão só fica em erro, sem efeito.
+        mockkObject(com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.Companion)
+        every {
+            com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(any(), any(), any(), any(), any())
+        } returns mockk<com.jonjonesbr.audiobookgen.tts.TtsSynthesizer>(relaxed = true)
+        mockkObject(com.jonjonesbr.audiobookgen.service.GuidedReadingService.Companion)
+        every { com.jonjonesbr.audiobookgen.service.GuidedReadingService.ativo } returns true
+        val manager = createManager()
+        manager.caminhoArquivo = caminho
+        manager.setParagraphs(paragrafosDo(caminho))
+        manager.filaSequencia = fila
+        manager.setCurrentIndex(1)
+        return manager
+    }
+
+    @Test
+    fun fimDoLivroComFilaAbreOProximoSemPararASessao() {
+        val manager = managerNoFimDoLivro("/a", listOf("/b"))
+        manager.prepararLivroDaFila = { caminho -> livroDaFila(caminho) }
+        val estados = mutableListOf<GuidedState>()
+
+        manager.next()
+        val coletor = CoroutineScope(testDispatcher).launch { manager.state.toList(estados) }
+        testDispatcher.scheduler.runCurrent()
+        coletor.cancel()
+
+        assertEquals("/b", manager.caminhoArquivo)
+        assertTrue(manager.filaSequencia.isEmpty())
+        assertEquals(setOf("/a"), manager.livrosDeixadosNaFila)
+        assertEquals(0, manager.state.value.index)
+        assertFalse(manager.state.value.livroConcluido)
+        assertTrue("A sessão não pode passar por índice -1 entre os livros", estados.none { it.index == -1 })
+        // Posição final e conclusão do livro que acabou, gravadas pelo próprio manager.
+        io.mockk.verify(exactly = 1) { anyConstructed<AppPrefs>().salvarPosicaoLeitura("/a", 1, 2) }
+        io.mockk.verify(exactly = 1) { StatsStore.registrarLivroConcluido(any(), "/a") }
+    }
+
+    @Test
+    fun livroQueNaoAbreEPuladoEOProximoToca() {
+        val manager = managerNoFimDoLivro("/a", listOf("/b", "/c"))
+        manager.prepararLivroDaFila = { caminho -> if (caminho == "/b") null else livroDaFila(caminho) }
+
+        manager.next()
+        testDispatcher.scheduler.runCurrent()
+
+        assertEquals("/c", manager.caminhoArquivo)
+        assertTrue(manager.filaSequencia.isEmpty())
+        assertEquals(setOf("/a"), manager.livrosDeixadosNaFila)
+        assertEquals(0, manager.state.value.index)
+    }
+
+    @Test
+    fun seNenhumLivroDaFilaAbrirAGuiadaTerminaComoLivroConcluido() {
+        val manager = managerNoFimDoLivro("/a", listOf("/b"))
+        manager.prepararLivroDaFila = { null }
+
+        manager.next()
+        testDispatcher.scheduler.runCurrent()
+
+        assertEquals(-1, manager.state.value.index)
+        assertTrue(manager.state.value.livroConcluido)
+        assertEquals("/a", manager.caminhoArquivo)
+    }
+
+    @Test
+    fun stopDuranteATrocaCancelaOLivroQueSoPrepara() {
+        val manager = managerNoFimDoLivro("/a", listOf("/b"))
+        val liberar = CompletableDeferred<GuidedPlayerManager.LivroDaFila?>()
+        manager.prepararLivroDaFila = { liberar.await() }
+
+        manager.next()
+        testDispatcher.scheduler.runCurrent()
+        manager.stop()
+        testDispatcher.scheduler.runCurrent()
+
+        assertEquals("/a", manager.caminhoArquivo)
+        assertEquals(listOf("/b"), manager.filaSequencia)
+        assertFalse(manager.state.value.livroConcluido)
+        assertEquals(-1, manager.state.value.index)
+    }
+
+    @Test
+    fun pausaDuranteATrocaSeguraOLivroAteRetomar() {
+        val manager = managerNoFimDoLivro("/a", listOf("/b"))
+        val liberar = CompletableDeferred<GuidedPlayerManager.LivroDaFila?>()
+        manager.prepararLivroDaFila = { liberar.await() }
+
+        manager.next()
+        testDispatcher.scheduler.runCurrent()
+        manager.pause()
+        liberar.complete(livroDaFila("/b"))
+        testDispatcher.scheduler.runCurrent()
+        testDispatcher.scheduler.advanceTimeBy(1_000)
+        testDispatcher.scheduler.runCurrent()
+        assertEquals("/a", manager.caminhoArquivo)
+        assertTrue(manager.trocandoDeLivro)
+
+        manager.resume()
+        testDispatcher.scheduler.advanceTimeBy(1_000)
+        testDispatcher.scheduler.runCurrent()
+        assertEquals("/b", manager.caminhoArquivo)
     }
 
     private fun aguardar(condicao: () -> Boolean) {

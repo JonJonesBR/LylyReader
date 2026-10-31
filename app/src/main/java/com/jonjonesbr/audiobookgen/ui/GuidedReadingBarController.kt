@@ -64,7 +64,8 @@ class GuidedReadingBarController(
         val mostrarMiniPlayer: () -> Unit,
         val esconderMiniPlayer: () -> Unit,
         val obterCaminhoArquivo: () -> String,
-        val onLivroConcluido: () -> Unit = {},
+        /** A fila "Ler tudo" passou a narrar outro livro: esta tela segue para ele (ver ReaderActivity.abrirLeitorDoLivroDaFila). */
+        val aoMudarDeLivroNaFila: () -> Unit = {},
         /** "Pré-carregar capítulo" das opções do player. */
         val prepararCapitulo: () -> Unit = {},
         /** A leitura guiada foi encerrada; recebe o último parágrafo que ela leu (para retomar dali). */
@@ -189,6 +190,14 @@ class GuidedReadingBarController(
                 // Ao voltar para a tela, refaz a barra inteira na primeira emissão.
                 ultimoEstadoUi = null
                 guidedPlayerManager.state.collect { guidedState ->
+                    // A fila já passou a narrar outro livro (com a tela apagada, isto só roda ao voltar): esta tela
+                    // segue para ele. Vem antes do bloco de fim (-1), que também cobre "a fila acabou fora da tela".
+                    if (guidedPlayerManager.caminhoArquivo.isNotEmpty() &&
+                        guidedPlayerManager.caminhoArquivo != callbacks.obterCaminhoArquivo()
+                    ) {
+                        callbacks.aoMudarDeLivroNaFila()
+                        return@collect
+                    }
                     atualizarGuidedPlayerUI(guidedState)
                 }
             }
@@ -268,7 +277,6 @@ class GuidedReadingBarController(
             ultimoIndiceGuided = -1
             ultimoScrollSyncStandard = -1
             callbacks.atualizarFabs()
-            if (guidedState.livroConcluido) callbacks.onLivroConcluido()
             return
         }
 

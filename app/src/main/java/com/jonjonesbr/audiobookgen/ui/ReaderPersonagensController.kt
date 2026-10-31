@@ -120,7 +120,8 @@ class ReaderPersonagensController(
             if (caminhoArquivo == identidadeLivro && textoAtual == textos) {
                 speakerAttribution = resultado
                 speakerGenders = generos
-                guidedPlayerManager?.setSpeakerAttribution(resultado)
+                // Só para o livro desta tela: a fila pode já estar narrando outro (ver GuidedPlayerManager.trocarDeLivro).
+                guidedPlayerManager?.takeIf { it.caminhoArquivo == identidadeLivro }?.setSpeakerAttribution(resultado)
                 avisarPersonagensEncontradosSeNecessario(resultado)
             }
         }
@@ -385,7 +386,7 @@ class ReaderPersonagensController(
         activity.runOnUiThread {
             speakerAttribution = novo
             speakerGenders = generos
-            guidedPlayerManager?.setSpeakerAttribution(novo)
+            guidedPlayerManager?.takeIf { it.caminhoArquivo == caminhoArquivo }?.setSpeakerAttribution(novo)
         }
         return novo
     }
@@ -704,7 +705,7 @@ class ReaderPersonagensController(
             Log.w("ReaderActivity", "Não foi possível persistir o mapeamento de voz dos personagens")
         }
         speakerAttribution = updated
-        guidedPlayerManager?.setSpeakerAttribution(updated)
+        guidedPlayerManager?.takeIf { it.caminhoArquivo == caminhoArquivo }?.setSpeakerAttribution(updated)
         Toast.makeText(activity, R.string.character_voice_saved, Toast.LENGTH_SHORT).show()
         mostrarListaVozesPersonagens(updated)
     }

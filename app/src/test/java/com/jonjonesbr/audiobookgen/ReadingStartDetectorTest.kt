@@ -37,4 +37,43 @@ class ReadingStartDetectorTest {
     @Test fun indiceNegativoEhClampadoParaZero() {
         assertEquals(0, ReadingStartDetector.indiceInicio(listOf(cap("Prefácio", -3))))
     }
+
+    @Test fun continuarUsaAPosicaoSalvaQuandoEllaExisteNoTexto() {
+        val caps = listOf(cap("Prefácio", 4))
+        assertEquals(7, ReadingStartDetector.indiceParaContinuar(7, 10, caps))
+        assertEquals(0, ReadingStartDetector.indiceParaContinuar(0, 10, caps))
+    }
+
+    @Test fun continuarSemPosicaoSalvaVaiAoInicioDetectado() {
+        val caps = listOf(cap("Capa", 0), cap("Capítulo 1", 8))
+        assertEquals(8, ReadingStartDetector.indiceParaContinuar(-1, 20, caps))
+    }
+
+    @Test fun continuarComPosicaoForaDoTextoVaiAoInicioDetectado() {
+        val caps = listOf(cap("Capítulo 1", 8))
+        assertEquals(8, ReadingStartDetector.indiceParaContinuar(20, 20, caps))
+        assertEquals(8, ReadingStartDetector.indiceParaContinuar(25, 20, caps))
+    }
+
+    @Test fun continuarSemTextoVaiAoInicioDetectadoOuZero() {
+        assertEquals(0, ReadingStartDetector.indiceParaContinuar(3, 0, emptyList()))
+        assertEquals(8, ReadingStartDetector.indiceParaContinuar(3, 0, listOf(cap("Capítulo 1", 8))))
+    }
+
+    @Test fun filaRetomaAPosicaoSalvaNoMeioDoLivro() {
+        val caps = listOf(cap("Capítulo 1", 2))
+        assertEquals(5, ReadingStartDetector.indiceParaFilaSequencia(5, 10, caps))
+    }
+
+    @Test fun filaRecomecaLivroJaLidoAteOFim() {
+        // Posição final gravada ao concluir (último parágrafo): a fila não toca só ele.
+        val caps = listOf(cap("Capítulo 1", 2))
+        assertEquals(2, ReadingStartDetector.indiceParaFilaSequencia(9, 10, caps))
+        assertEquals(0, ReadingStartDetector.indiceParaFilaSequencia(0, 1, emptyList()))
+    }
+
+    @Test fun filaSemPosicaoSalvaVaiAoInicioDetectado() {
+        val caps = listOf(cap("Capítulo 1", 2))
+        assertEquals(2, ReadingStartDetector.indiceParaFilaSequencia(-1, 10, caps))
+    }
 }

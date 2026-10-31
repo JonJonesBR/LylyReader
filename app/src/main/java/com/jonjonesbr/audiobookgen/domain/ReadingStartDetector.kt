@@ -8,6 +8,20 @@ package com.jonjonesbr.audiobookgen.domain
  */
 object ReadingStartDetector {
 
+    /**
+     * Parágrafo onde continuar a leitura guiada: o salvo, se ainda existe no texto; senão o início detectado.
+     * É a regra do "Continuar lendo" (EXTRA_CONTINUAR_GUIADA) e da fila "Ler tudo" ao abrir o próximo livro.
+     */
+    fun indiceParaContinuar(salvo: Int, total: Int, capitulos: List<Capitulo>): Int =
+        if (salvo in 0 until total) salvo else indiceInicio(capitulos)
+
+    /**
+     * Como [indiceParaContinuar], para os livros da fila "Ler tudo". Um livro que já foi até o último parágrafo
+     * (a posição final gravada ao concluir) recomeça do início, em vez de tocar só o último parágrafo e passar adiante.
+     */
+    fun indiceParaFilaSequencia(salvo: Int, total: Int, capitulos: List<Capitulo>): Int =
+        indiceParaContinuar(salvo.takeIf { it < total - 1 } ?: -1, total, capitulos)
+
     fun indiceInicio(capitulos: List<Capitulo>): Int {
         if (capitulos.isEmpty()) return 0
 

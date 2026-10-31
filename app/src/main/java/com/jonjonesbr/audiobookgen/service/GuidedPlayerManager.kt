@@ -6,11 +6,18 @@ import com.jonjonesbr.audiobookgen.domain.OfflineSpeakerAttributor
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.PausasNaturais
 import com.jonjonesbr.audiobookgen.domain.PerfilAudioLivro
+import com.jonjonesbr.audiobookgen.domain.ExtractionResult
+import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
 import com.jonjonesbr.audiobookgen.domain.SpeakerAttributionResult
+import com.jonjonesbr.audiobookgen.domain.TextoExtraido
+import com.jonjonesbr.audiobookgen.domain.TextoNarravelDoLivro
 import com.jonjonesbr.audiobookgen.util.DivisorDeOracoes
 import com.jonjonesbr.audiobookgen.util.OracaoGuia
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
+import com.jonjonesbr.audiobookgen.util.SynthesisWakeLock
 import com.jonjonesbr.audiobookgen.data.AppPrefs
+import com.jonjonesbr.audiobookgen.data.BibliotecaStore
+import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.data.StatsStore
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.domain.VoiceAssignedSegment
@@ -27,6 +34,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
@@ -48,11 +56,9 @@ data class GuidedState(
     val isLoading: Boolean,
     val progressPct: Float = 0f,
     val error: String? = null,
-    // True só quando index == -1 pelo LIVRO TER ACABADO (último parágrafo concluído em
-    // next()) — distingue do usuário fechar a guiada manualmente (botão fechar, sair da
-    // tela), que também zera pra -1 mas com livroConcluido = false. Consumido pela leitura
-    // sequencial da fila (ver ReaderActivity.EXTRA_FILA_SEQUENCIA) pra saber quando avançar
-    // pro próximo arquivo sem confundir com uma parada manual do usuário.
+    // True só quando index == -1 pelo LIVRO TER ACABADO: fim do último livro da fila, ou de um livro avulso
+    // (último parágrafo concluído em next()). Distingue do usuário fechar a guiada manualmente (botão fechar,
+    // sair da tela), que também zera pra -1 mas com livroConcluido = false.
     val livroConcluido: Boolean = false
 )
 
@@ -247,6 +253,24 @@ class GuidedPlayerManager(
 
     private val _state = MutableStateFlow(GuidedState(-1, isPlaying = false, isLoading = false))
     val state: StateFlow<GuidedState> = _state.asStateFlow()
+
+    // ── Fila "Ler tudo" ─────────────────────────────────────────────────────────
+    // A fila mora no manager (e não na ReaderActivity): ele sobrevive à tela, narra livro após livro com o mesmo
+    // token (o serviço e a soneca não reiniciam) e continua com a tela apagada. Só usado na main thread.
+    /** Próximos livros da fila, sem o atual. Vazia = leitura avulsa. */
+    var filaSequencia: List<String> = emptyList()
+    // Livros que a fila já deixou para trás nesta sessão: a tela velha usa para não voltar a eles.
+    private val _livrosDeixadosNaFila = mutableSetOf<String>()
+    val livrosDeixadosNaFila: Set<String> get() = _livrosDeixadosNaFila
+    private var trocaDeLivroJob: Job? = null
+    /** Preparando o próximo livro da fila (a sessão segue viva, só carregando). */
+    val trocandoDeLivro: Boolean get() = trocaDeLivroJob?.isActive == true
+
+    /** Livro pronto para narrar: caminho, título para a notificação e texto limpo (o mesmo da tela). */
+    internal data class LivroDaFila(val caminho: String, val titulo: String, val texto: TextoExtraido)
+
+    /** Injetável nos testes. */
+    internal var prepararLivroDaFila: suspend (String) -> LivroDaFila? = { prepararLivroDaFilaPadrao(it) }
 
     private var progressJob: Job? = null
 
@@ -595,6 +619,9 @@ class GuidedPlayerManager(
         if (paragraphs.isEmpty()) return
         if (index < 0 || index >= paragraphs.size) return
         
+        // Toque em parágrafo ou "anterior" durante a troca de livro: vale a escolha da pessoa.
+        trocaDeLivroJob?.cancel()
+        trocaDeLivroJob = null
         currentIndex = index
         textoAncora = paragraphs[index].texto
         pausadoPeloUsuario = false
@@ -1160,6 +1187,14 @@ class GuidedPlayerManager(
     }
 
     fun resume() {
+        // Troca de livro em andamento: a pessoa tocou em "tocar" enquanto o próximo livro carrega. Não há o que
+        // tocar ainda; a troca segue sozinha quando o livro abrir.
+        if (trocandoDeLivro) {
+            pausadoPeloUsuario = false
+            pausadoSemAudio = false
+            _state.update { it.copy(isPlaying = false, isLoading = true, error = null) }
+            return
+        }
         // Índice perdido (ex.: o conteúdo foi recarregado) com a leitura ainda na tela: recomeça o
         // parágrafo que o estado mostra, em vez de ignorar o toque em "tocar".
         val doEstado = _state.value.index
@@ -1191,7 +1226,8 @@ class GuidedPlayerManager(
         }
     }
 
-    fun stop(livroConcluido: Boolean = false) {
+    /** Para o áudio e os laços de síntese, sem mexer na sessão (bridge, estado, serviço). */
+    private fun interromperAudio() {
         pausadoPeloUsuario = false
         pausadoSemAudio = false
         stopProgressPolling()
@@ -1207,6 +1243,16 @@ class GuidedPlayerManager(
         modoOracoes = false
         oracaoCompletada = null
         playerEngine?.stop()
+    }
+
+    /**
+     * Encerra a sessão (index -1). Com [livroConcluido], avisa que o livro acabou: o serviço e a notificação se
+     * encerram como sempre. Cancela também a troca para o próximo livro da fila, se houver uma em andamento.
+     */
+    fun stop(livroConcluido: Boolean = false) {
+        trocaDeLivroJob?.cancel()
+        trocaDeLivroJob = null
+        interromperAudio()
         currentIndex = -1
         if (GuidedPlaybackBridge.manager === this) {
             GuidedPlaybackBridge.deactivate(this)
@@ -1222,12 +1268,118 @@ class GuidedPlayerManager(
     fun next() {
         // Sem leitura em curso (-1): "próximo" não tem de onde avançar; antes tocava o 1º parágrafo.
         if (currentIndex < 0) return
+        // Livro seguinte da fila ainda carregando: o "próximo" da notificação não faz nada.
+        if (trocandoDeLivro) return
         if (currentIndex < paragraphs.size - 1) {
             play(currentIndex + 1)
         } else {
-            if (caminhoArquivo.isNotBlank()) StatsStore.registrarLivroConcluido(context, caminhoArquivo)
+            registrarFimDoLivro()
+            if (filaSequencia.isNotEmpty()) iniciarTrocaDeLivro() else stop(livroConcluido = true)
+        }
+    }
+
+    /** Fim de todo livro, com fila ou não: conta como concluído e grava o último parágrafo como posição final. */
+    private fun registrarFimDoLivro() {
+        if (caminhoArquivo.isBlank() || paragraphs.isEmpty()) return
+        StatsStore.registrarLivroConcluido(context, caminhoArquivo)
+        appPrefs.salvarPosicaoLeitura(caminhoArquivo, paragraphs.lastIndex, paragraphs.size)
+    }
+
+    /**
+     * Fim do último parágrafo com fila: prepara o próximo livro sem parar a sessão. O serviço, a soneca e o bridge
+     * seguem com o mesmo token, e a barra fica carregando no último parágrafo. Quando o livro abre, [trocarDeLivro]
+     * troca o texto e toca. Se nenhum abrir, encerra como livro concluído.
+     */
+    private fun iniciarTrocaDeLivro() {
+        interromperAudio()
+        cancelarPreparo()
+        _state.update { GuidedState(currentIndex, isPlaying = false, isLoading = true) }
+        // Job novo no escopo: next() costuma vir de dentro do playJob, que interromperAudio() acabou de cancelar.
+        trocaDeLivroJob = coroutineScope.launch {
+            while (filaSequencia.isNotEmpty()) {
+                val caminho = filaSequencia.first()
+                // A CPU não pode dormir durante a extração e a limpeza do texto. A trava só cobre essa
+                // preparação: a espera (pausa, soneca, ligação) pode durar o livro inteiro e não a segura.
+                SynthesisWakeLock.acquire(context)
+                val livro = try {
+                    prepararLivroDaFila(caminho)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    CrashLogWriter.log(e, "leituraGuiada.filaLerTudo", "caminho=$caminho")
+                    null
+                } finally {
+                    SynthesisWakeLock.release()
+                }
+                if (livro == null || livro.texto.paragrafos.isEmpty()) {
+                    // Erro ao abrir ou livro sem texto: pula para o seguinte, sem parar a fila.
+                    CrashLogWriter.log(null, "leituraGuiada.filaLerTudo", "Livro pulado: $caminho")
+                    filaSequencia = filaSequencia.drop(1)
+                    continue
+                }
+                try {
+                    // Pronúncia do livro novo vai ao motor só agora. Se a troca for cancelada depois disso
+                    // (toque em parágrafo, "anterior", fechar), o livro atual volta a valer: senão ele leria
+                    // com o dicionário dos outros.
+                    pythonUseCase.sincronizarConfiguracoes(
+                        appPrefs.motorTts, SecurePreferences.getGeminiKeys(context), appPrefs.pausaMs,
+                        caminhoDoLivro = livro.caminho
+                    )
+                    // Pausa, soneca ou ligação durante a preparação seguram o próximo livro.
+                    aguardarRetomada()
+                } catch (e: CancellationException) {
+                    withContext(NonCancellable) { pythonUseCase.sincronizarDicionario(caminhoArquivo) }
+                    throw e
+                }
+                // Só sai da fila agora: se a troca for cancelada antes (fechar a guiada, tocar em outro
+                // parágrafo), o livro continua na fila. Nada suspende daqui até trocarDeLivro().
+                filaSequencia = filaSequencia.drop(1)
+                trocaDeLivroJob = null
+                try {
+                    trocarDeLivro(livro)
+                } catch (e: Exception) {
+                    CrashLogWriter.log(e, "leituraGuiada.filaLerTudo", "troca para caminho=$caminho")
+                    stop(livroConcluido = true)
+                }
+                return@launch
+            }
+            trocaDeLivroJob = null
             stop(livroConcluido = true)
         }
+    }
+
+    /** Põe o livro preparado para narrar, na mesma sessão. Não suspende: roda inteira na main thread. */
+    private fun trocarDeLivro(livro: LivroDaFila) {
+        if (caminhoArquivo.isNotEmpty()) _livrosDeixadosNaFila.add(caminhoArquivo)
+        // A análise de falantes do livro anterior não vale para os índices deste.
+        speakerAttribution = null
+        // Sem índice nem âncora do livro anterior: setParagraphs não remapeia a partir dele.
+        currentIndex = -1
+        textoAncora = null
+        trackName = livro.titulo
+        // O setter carrega voz, velocidade e perfil de áudio deste livro.
+        caminhoArquivo = livro.caminho
+        setParagraphs(livro.texto.paragrafos)
+        play(
+            ReadingStartDetector.indiceParaFilaSequencia(
+                appPrefs.posicaoLeitura(livro.caminho, -1), livro.texto.paragrafos.size, livro.texto.capitulos
+            )
+        )
+    }
+
+    /** Carrega o próximo livro da fila com o mesmo texto que a tela mostra (cache e regras de [TextoNarravelDoLivro]). */
+    private suspend fun prepararLivroDaFilaPadrao(caminho: String): LivroDaFila? {
+        val texto = when (val resultado = TextoNarravelDoLivro(context).carregar(caminho)) {
+            is ExtractionResult.Success -> resultado.texto
+            is ExtractionResult.Error -> {
+                CrashLogWriter.log(null, "leituraGuiada.filaLerTudo", "Erro ao abrir $caminho: ${resultado.mensagem}")
+                return null
+            }
+        }
+        // Título da biblioteca (com acentos), como faz a ReaderActivity ao abrir o livro.
+        val titulo = withContext(Dispatchers.IO) { BibliotecaStore.tituloPorCaminho(context, caminho) }
+            ?: File(caminho).nameWithoutExtension
+        return LivroDaFila(caminho, titulo, texto)
     }
 
     fun previous() {

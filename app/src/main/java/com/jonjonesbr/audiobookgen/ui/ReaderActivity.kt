@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.net.Uri
 import com.jonjonesbr.audiobookgen.domain.DocumentExportUseCase
+import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
 import com.jonjonesbr.audiobookgen.domain.RegraDeReconexaoGuiada
 import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
@@ -80,6 +81,7 @@ class ReaderActivity : BasePlayerActivity() {
         const val EXTRA_AUTO_START_GUIDED = "extra_auto_start_guided"
         private const val STATE_AUTO_START_RESOLVIDO = "state_auto_start_resolvido"
         private const val STATE_CONTINUAR_GUIADA_RESOLVIDO = "state_continuar_guiada_resolvido"
+        private const val STATE_TOKEN_SESSAO_GUIADA = "state_token_sessao_guiada"
         // Continua a leitura guiada direto na posição salva (sem diálogo de ponto de início).
         const val EXTRA_CONTINUAR_GUIADA = "extra_continuar_guiada"
         /** Painel a abrir assim que o texto carregar (vindo da tela do livro): uma das `ACAO_INICIAL_*`. */
@@ -95,9 +97,9 @@ class ReaderActivity : BasePlayerActivity() {
         const val EXTRA_SOMENTE_LEITURA = "extra_somente_leitura"
         /** Caminhos (ArrayList<String>) dos PRÓXIMOS arquivos a ler em sequência, em ordem,
          *  NÃO incluindo o arquivo atual — usado pelo botão "Ler tudo" da fila de conversão
-         *  (QueueActivity). Quando a leitura guiada do arquivo atual termina naturalmente
-         *  (ver GuidedState.livroConcluido), esta Activity abre o próximo caminho da lista
-         *  com o restante como nova sequência e se fecha (ver avancarSequenciaFila()). */
+         *  (QueueActivity). Quem avança é o GuidedPlayerManager: ele guarda a fila e troca de
+         *  livro sozinho, inclusive com a tela apagada. Esta Activity só segue o livro que está
+         *  sendo narrado (ver abrirLeitorDoLivroDaFila). */
         const val EXTRA_FILA_SEQUENCIA = "extra_fila_sequencia"
         const val ACAO_CONVERTER = "converter"
         const val ACAO_MANTER_EDICOES = "manter_edicoes"
@@ -208,6 +210,8 @@ class ReaderActivity : BasePlayerActivity() {
     private var temaBarrasAplicado: TemaLeitura? = null
     private var progressoIndiceAplicado = -1
     private var continuarGuiadaTriggered = false
+    // A fila "Ler tudo" já abriu o livro seguinte nesta tela: ela está fechando e não grava mais nada.
+    private var livroTrocadoPelaFila = false
     private val appPrefs by lazy { com.jonjonesbr.audiobookgen.data.AppPrefs(this) }
     /** Capítulo da posição de leitura mostrado na barra (-1 = ainda não calculado). */
     private var capituloNaBarra = -1
@@ -249,7 +253,7 @@ class ReaderActivity : BasePlayerActivity() {
                     mostrarMiniPlayer = { reavaliarMiniPlayer() },
                     esconderMiniPlayer = { reavaliarMiniPlayer() },
                     obterCaminhoArquivo = { caminhoArquivo },
-                    onLivroConcluido = { avancarSequenciaFila() },
+                    aoMudarDeLivroNaFila = { guidedPlayerManager?.let(::abrirLeitorDoLivroDaFila) },
                     prepararCapitulo = { prepararCapituloAtual() },
                     aoEncerrarGuiada = { paragrafoGuiadoAoEncerrar = it },
                 ),
@@ -364,6 +368,11 @@ class ReaderActivity : BasePlayerActivity() {
             autoStartGuidedTriggered && guidedReadingBarController?.dialogoInicioPendente != true)
         // "Continuar" já iniciou a guiada: ao girar a tela, não recomeça uma leitura que o usuário já fechou.
         outState.putBoolean(STATE_CONTINUAR_GUIADA_RESOLVIDO, continuarGuiadaTriggered)
+        // Sessão da leitura guiada a que esta tela estava ligada (-1 se nenhuma). Só ela volta para o livro da fila.
+        outState.putLong(
+            STATE_TOKEN_SESSAO_GUIADA,
+            guidedPlayerManager?.takeIf { GuidedPlaybackBridge.manager === it }?.sessionToken ?: -1L
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -374,6 +383,20 @@ class ReaderActivity : BasePlayerActivity() {
         configurarMiniPlayerBotoes()
 
         caminhoArquivo = intent.getStringExtra(EXTRA_CAMINHO) ?: run { finish(); return }
+        // Tela recriada (giro, tema) de um livro que a fila já deixou para trás: vai para o livro que está sendo narrado,
+        // antes de criar um manager para o livro velho. Sem isto, o manager da sessão ganharia os parágrafos do livro velho.
+        // Só a tela que estava ligada à sessão volta para ela: um livro aberto de propósito pela biblioteca fica.
+        if (savedInstanceState != null && !somenteLeitura) {
+            val sessao = GuidedPlaybackBridge.manager
+            if (sessao != null && savedInstanceState.getLong(STATE_TOKEN_SESSAO_GUIADA, -1L) == sessao.sessionToken &&
+                RegraDeReconexaoGuiada.leitorFicouParaTras(
+                    caminhoArquivo, sessao.caminhoArquivo, sessao.state.value.index, sessao.livrosDeixadosNaFila
+                )
+            ) {
+                abrirLeitorDoLivroDaFila(sessao)
+                return
+            }
+        }
         // Livro da biblioteca: registra a abertura (ordena "recentes" e alimenta o cartão Continuar).
         lifecycleScope.launch {
             com.jonjonesbr.audiobookgen.data.BibliotecaStore.marcarAberto(applicationContext, caminhoArquivo)
@@ -414,6 +437,12 @@ class ReaderActivity : BasePlayerActivity() {
             // para não deixar trackName/caminho desalinhados com o token/manager já publicados.
             if (GuidedPlaybackBridge.manager === manager) {
                 GuidedPlaybackBridge.activate(manager, tituloCompleto, caminhoArquivo)
+            }
+            // Fila "Ler tudo": a intent traz os próximos livros. Girando com a guiada tocando, vale a fila que o manager
+            // já andou (a da intent original está desatualizada); abrindo de novo pela fila, vale a da intent.
+            val filaDaIntent = intent.getStringArrayListExtra(EXTRA_FILA_SEQUENCIA)
+            if (filaDaIntent != null && (savedInstanceState == null || !reconectandoGuided)) {
+                manager.filaSequencia = filaDaIntent.toList()
             }
         }
 
@@ -487,7 +516,8 @@ class ReaderActivity : BasePlayerActivity() {
         viewModel.salvarPreferencias(appPrefs)
         // Salva a posição de leitura para retomar depois: o parágrafo da leitura guiada, ativa ou recém-encerrada sem
         // rolagem manual depois (o marcador fica abaixo do topo da tela); senão o primeiro parágrafo visível.
-        if (::recyclerView.isInitialized && caminhoArquivo.isNotEmpty()) {
+        // Livro já trocado pela fila: o manager gravou a posição final do livro concluído; esta tela não grava por cima.
+        if (!livroTrocadoPelaFila && ::recyclerView.isInitialized && caminhoArquivo.isNotEmpty()) {
             val guiadaEncerrada = paragrafoGuiadoAoEncerrar
                 .takeIf { it >= 0 && viewModel.uiState.value.paragrafoSyncAtual < 0 }
             // Fim do livro na tela: grava o último parágrafo, para a biblioteca mostrar o livro como lido (100%).
@@ -1087,6 +1117,12 @@ class ReaderActivity : BasePlayerActivity() {
     }
 
     private fun atualizarUI(state: ReaderUiState) {
+        // A fila já narra outro livro: esta tela não pode entregar o texto dela ao manager (setParagraphs).
+        if (guiadaEmOutroLivro()) {
+            guidedPlayerManager?.let(::abrirLeitorDoLivroDaFila)
+            return
+        }
+
         // Loading
         mostrarCarregando(state.carregando, R.string.leitor_abrindo_livro)
 
@@ -1180,35 +1216,41 @@ class ReaderActivity : BasePlayerActivity() {
         if (intent.getBooleanExtra(EXTRA_CONTINUAR_GUIADA, false) &&
             !continuarGuiadaTriggered && !reconectandoGuided) {
             continuarGuiadaTriggered = true
-            val total = texto.paragrafos.size
             val salvo = appPrefs.posicaoLeitura(caminhoArquivo, -1)
-            val inicio = if (salvo in 0 until total) salvo else controlador.obterIndiceInicioLeitura()
+            // Primeiro livro da fila "Ler tudo": a mesma regra dos seguintes (um livro já lido até o fim recomeça).
+            val inicio = if (intent.hasExtra(EXTRA_FILA_SEQUENCIA)) {
+                ReadingStartDetector.indiceParaFilaSequencia(salvo, texto.paragrafos.size, texto.capitulos)
+            } else {
+                ReadingStartDetector.indiceParaContinuar(salvo, texto.paragrafos.size, texto.capitulos)
+            }
             recyclerView.post { controlador.playGuidedFrom(inicio) }
         }
     }
 
-    /** Ler tudo da fila (QueueActivity): quando o livro atual termina naturalmente e a
-     *  intent trouxe uma sequência de caminhos pendentes, abre o próximo e encerra esta
-     *  Activity — repetindo até a sequência esvaziar. Sem sequência (leitura avulsa
-     *  normal), não faz nada. Usa EXTRA_CONTINUAR_GUIADA (não EXTRA_AUTO_START_GUIDED) pra
-     *  começar direto, sem o diálogo de "de onde começar" interromper a sequência a cada
-     *  arquivo novo. */
-    private fun avancarSequenciaFila() {
-        val restante = intent.getStringArrayListExtra(EXTRA_FILA_SEQUENCIA)
-        if (restante.isNullOrEmpty()) return
-        val proximo = restante.removeAt(0)
+    /** A guiada (fila "Ler tudo") narra outro livro: a tela deste livro cede o lugar ao livro que está sendo narrado. */
+    private fun guiadaEmOutroLivro(): Boolean {
+        val caminhoDaGuiada = guidedPlayerManager?.caminhoArquivo ?: return false
+        return caminhoDaGuiada.isNotEmpty() && caminhoDaGuiada != caminhoArquivo
+    }
+
+    /**
+     * Fecha esta tela e abre o livro que o manager está narrando, com o restante da fila. A nova tela reconecta ao
+     * manager vivo (mesmo documento e index >= 0), então não recomeça a leitura: só mostra o livro atual.
+     * Chamado só com a tela visível ou ao voltar a ela, nunca em segundo plano (o Android bloqueia abrir tela de lá).
+     */
+    private fun abrirLeitorDoLivroDaFila(manager: GuidedPlayerManager) {
+        if (livroTrocadoPelaFila || isFinishing) return
+        livroTrocadoPelaFila = true
         val proximaIntent = Intent(this, ReaderActivity::class.java)
-            .putExtra(EXTRA_CAMINHO, proximo)
-            .putExtra(EXTRA_CONTINUAR_GUIADA, true)
-            .putStringArrayListExtra(EXTRA_FILA_SEQUENCIA, restante)
+            .putExtra(EXTRA_CAMINHO, manager.caminhoArquivo)
+            .putStringArrayListExtra(EXTRA_FILA_SEQUENCIA, ArrayList(manager.filaSequencia))
         // BUG REAL (relatado pelo usuário): ReaderActivity é `launchMode="singleTop"` — como
         // esta Activity É a instância no topo da pilha, startActivity() ANTES de finish()
         // fazia o Android tratar como "reentrega de intent" (onNewIntent, não implementado
-        // aqui) em vez de abrir o próximo livro; a sequência simplesmente parava no 1º
-        // arquivo. finish() PRIMEIRO marca esta instância como finalizando antes do
-        // startActivity() seguinte resolver — o sistema já não a considera "topo da pilha"
-        // e cria uma instância nova de verdade (com onCreate rodando do zero pro novo
-        // caminho), como esperado.
+        // aqui) em vez de abrir o próximo livro. finish() PRIMEIRO marca esta instância como
+        // finalizando antes do startActivity() seguinte resolver — o sistema já não a considera
+        // "topo da pilha" e cria uma instância nova de verdade (com onCreate rodando do zero
+        // pro novo caminho), como esperado.
         finish()
         startActivity(proximaIntent)
     }

@@ -205,9 +205,10 @@ class QueueActivity : BasePlayerActivity() {
 
     // Leitura guiada sequencial de TODA a fila, na ordem exibida (independente do status —
     // o arquivo de origem de cada item continua disponível mesmo já convertido/com erro).
-    // Abre o 1º arquivo com o restante da lista em EXTRA_FILA_SEQUENCIA; ao terminar cada
-    // livro, o ReaderActivity mesmo se encarrega de abrir o próximo e se fechar (ver
-    // ReaderActivity.avancarSequenciaFila) — esta Activity não fica observando o progresso.
+    // Abre o 1º arquivo com o restante da lista em EXTRA_FILA_SEQUENCIA. Quem avança de livro
+    // é o GuidedPlayerManager (com a tela apagada também), que guarda a fila; a tela só segue
+    // o livro que está sendo narrado (ver ReaderActivity.abrirLeitorDoLivroDaFila). Esta
+    // Activity não fica observando o progresso.
     private fun lerTodaFila() {
         val caminhos = QueueManager.items.map { it.caminhoLocal }
         if (caminhos.isEmpty()) return
