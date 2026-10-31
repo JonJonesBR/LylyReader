@@ -518,6 +518,7 @@
     <string name="guided_reading_status">Guided Reading: %1$d of %2$d</string>
     <string name="guided_reading_status_capitulo">%1$s — Paragraph %2$d of %3$d</string>
     <string name="guided_preparando_narracao">Preparing the narration…</string>
+    <string name="guided_livro_concluido">Book finished</string>
     <string name="guided_reading_indicator_paragrafo">📖 %1$s · Paragraph %2$d</string>
 
     <string name="action_capitulos">Chapters</string>

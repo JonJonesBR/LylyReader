@@ -526,6 +526,7 @@
     <string name="guided_reading_status">Leitura Guiada: %1$d de %2$d</string>
     <string name="guided_reading_status_capitulo">%1$s — Parágrafo %2$d de %3$d</string>
     <string name="guided_preparando_narracao">Preparando a narração…</string>
+    <string name="guided_livro_concluido">Livro concluído</string>
     <string name="guided_reading_indicator_paragrafo">📖 %1$s · Parágrafo %2$d</string>
 
     <string name="action_capitulos">Capítulos</string>

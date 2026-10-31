@@ -521,6 +521,7 @@
     <string name="guided_reading_status">Lectura Guiada: %1$d de %2$d</string>
     <string name="guided_reading_status_capitulo">%1$s — Párrafo %2$d de %3$d</string>
     <string name="guided_preparando_narracao">Preparando la narración…</string>
+    <string name="guided_livro_concluido">Libro terminado</string>
     <string name="guided_reading_indicator_paragrafo">📖 %1$s · Párrafo %2$d</string>
     <string name="action_capitulos">Capítulos</string>
     <string name="capitulo_barra">%1$d/%2$d · %3$s</string>

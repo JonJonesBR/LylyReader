@@ -30,6 +30,15 @@ private const val SCROLL_STEP_RATIO = 0.18f
 // distante), parecendo o leitor "procurando" o texto por um bom tempo.
 private const val SALTO_DISTANTE_LIMIAR = 3
 
+/**
+ * Vale anunciar "Livro concluído" ao TalkBack? Só na transição: a emissão anterior ainda estava lendo
+ * (índice >= 0) e agora a sessão acabou pelo livro ter terminado. [anterior] null é a primeira emissão depois de
+ * a tela voltar, que repete o estado e não deve anunciar de novo. Fechar a guiada à mão também zera o índice,
+ * mas sem [GuidedState.livroConcluido].
+ */
+internal fun anunciaLivroConcluido(anterior: GuidedState?, atual: GuidedState): Boolean =
+    anterior != null && anterior.index >= 0 && atual.index == -1 && atual.livroConcluido
+
 class GuidedReadingBarController(
     private val activity: AppCompatActivity,
     val guidedPlayerManager: GuidedPlayerManager,
@@ -315,6 +324,7 @@ class GuidedReadingBarController(
     }
 
     private fun atualizarGuidedPlayerUI(guidedState: GuidedState) {
+        val estadoAnterior = ultimoEstadoUi
         // O progresso do parágrafo chega a cada ~50 ms: nesses ticks só move o destaque e a rolagem. Rótulos,
         // botões e preferências só se refazem quando parágrafo, play/pausa, carregamento ou erro mudam.
         val soProgresso = guidedState.index >= 0 && guidedState.error == null &&
@@ -326,6 +336,11 @@ class GuidedReadingBarController(
             return
         }
         if (guidedState.index == -1) {
+            // Anuncia pelo recyclerView, que continua na tela (o layoutGuidedPlayer some logo abaixo). A soneca
+            // disparada não ganha anúncio próprio: o Toast de ReaderSonecaController já é lido pelo TalkBack.
+            if (anunciaLivroConcluido(estadoAnterior, guidedState)) {
+                recyclerView.announceForAccessibility(activity.getString(R.string.guided_livro_concluido))
+            }
             if (ultimoIndiceGuided >= 0) callbacks.aoEncerrarGuiada(ultimoIndiceGuided)
             views.layoutGuidedPlayer.visibility = View.GONE
             callbacks.mostrarMiniPlayer()
