@@ -2,8 +2,13 @@ package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto
+import com.jonjonesbr.audiobookgen.domain.FonteLeitura
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
+import com.jonjonesbr.audiobookgen.domain.TipografiaLeitor
+import com.jonjonesbr.audiobookgen.domain.espacoLetrasEm
+import com.jonjonesbr.audiobookgen.domain.espacoParagrafosDp
+import com.jonjonesbr.audiobookgen.domain.espacoParagrafosEdicaoDp
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -109,15 +114,20 @@ class ParagrafoAdapter(
     private var tamanhoFonte: Float = FONTE_PADRAO_SP
     private var espacamento: Float = ESPACAMENTO_PADRAO
     private var tema: TemaLeitura = TemaLeitura.CLARO
-    private var fonteSerifada: Boolean = false
+    private var tipografia: TipografiaLeitor = TipografiaLeitor()
     private var alinhamento: AlinhamentoTexto = AlinhamentoTexto.ESQUERDA
     var modo: AdapterModo = AdapterModo.LEITURA
         private set
 
-    // Carregado uma única vez (não a cada bind) — fonte serifada opcional da leitura.
+    // Carregados uma única vez (não a cada bind) — fontes opcionais da leitura.
     private val typefaceSerifado: android.graphics.Typeface? by lazy {
         runCatching {
             androidx.core.content.res.ResourcesCompat.getFont(activity, R.font.literata_regular)
+        }.getOrNull()
+    }
+    private val typefaceDislexia: android.graphics.Typeface? by lazy {
+        runCatching {
+            androidx.core.content.res.ResourcesCompat.getFont(activity, R.font.opendyslexic_regular)
         }.getOrNull()
     }
 
@@ -143,10 +153,8 @@ class ParagrafoAdapter(
     fun consumirEdicoes(): Map<Int, String> =
         edicoesAtuais.toMap().also { edicoesAtuais.clear() }
 
-    // Lista de parâmetros já era longa antes (10, baselined) — o param novo (fonteSerifada,
-    // T3.2) muda a assinatura exata e o detekt para de reconhecer o achado como conhecido.
-    // Agrupar em uma classe de aparência exigiria reescrever o call site só por causa da
-    // contagem do lint, sem reduzir complexidade real: mantém-se via named args.
+    // Lista de parâmetros já era longa antes (10, baselined). A fonte e os espaços entram agrupados em
+    // TipografiaLeitor, então a contagem não cresce; o @Suppress segue valendo para o detekt.
     @Suppress("LongParameterList")
     fun atualizarEstado(
         paragrafos: List<Paragrafo>,
@@ -159,7 +167,7 @@ class ParagrafoAdapter(
         tema: TemaLeitura,
         modo: AdapterModo = this.modo,
         paragrafosOriginais: List<Paragrafo> = this.paragrafosOriginais,
-        fonteSerifada: Boolean = this.fonteSerifada,
+        tipografia: TipografiaLeitor = this.tipografia,
         alinhamento: AlinhamentoTexto = this.alinhamento
     ) {
         val mudouModo = this.modo != modo
@@ -170,7 +178,7 @@ class ParagrafoAdapter(
             this.selecaoInicio != selecaoInicio ||
             this.selecaoFim != selecaoFim ||
             this.paragrafosOriginais !== paragrafosOriginais ||
-            this.fonteSerifada != fonteSerifada ||
+            this.tipografia != tipografia ||
             this.alinhamento != alinhamento
         val syncAntigo = this.syncAtual
         if (mudouLista) textosLimpos = null
@@ -184,7 +192,7 @@ class ParagrafoAdapter(
         this.tema = tema
         this.modo = modo
         this.paragrafosOriginais = paragrafosOriginais
-        this.fonteSerifada = fonteSerifada
+        this.tipografia = tipografia
         this.alinhamento = alinhamento
         when {
             mudouLista -> notifyDataSetChanged()
@@ -282,7 +290,7 @@ class ParagrafoAdapter(
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
         tv.setTextColor(corTexto)
-        tv.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamento)
+        tv.aplicarTipografiaLeitor(tipografia, typefaceSerifado, typefaceDislexia, alinhamento)
 
         // Highlight
         val inicio = selecaoInicio
@@ -417,7 +425,7 @@ class ParagrafoAdapter(
         // sem contar o espaço esticado entre as palavras, e o cursor parava antes da palavra editada.
         val alinhamentoEdicao =
             if (alinhamento == AlinhamentoTexto.JUSTIFICADO) AlinhamentoTexto.ESQUERDA else alinhamento
-        et.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamentoEdicao)
+        et.aplicarTipografiaLeitor(tipografia, typefaceSerifado, typefaceDislexia, alinhamentoEdicao, edicao = true)
         val watcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
             override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
@@ -434,7 +442,7 @@ class ParagrafoAdapter(
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
         tv.setBackgroundColor(Color.TRANSPARENT)
-        tv.aplicarTipografiaLeitor(fonteSerifada, typefaceSerifado, alinhamento)
+        tv.aplicarTipografiaLeitor(tipografia, typefaceSerifado, typefaceDislexia, alinhamento)
 
         // Em modo ALTERACOES, `paragrafos` = parágrafos limpos, `paragrafosOriginais` = originais
         // Exibe todos os parágrafos originais: removidos = tachado vermelho, mantidos = cor normal
@@ -469,16 +477,40 @@ class ParagrafoAdapter(
 }
 
 /**
- * Fonte serifada (Literata) se ativada nas prefs de aparência; senão a padrão do sistema.
- * Função de topo (não membro da classe) para não empurrar ParagrafoAdapter acima do
- * limite de funções do detekt.
+ * Tipografia do texto no leitor: a fonte escolhida (se a opcional não carregou, a padrão do sistema), o espaço
+ * entre letras e o espaço entre parágrafos (padding vertical; o horizontal fica como está, pois a barra do narrado
+ * é desenhada nele). Função de topo (não membro da classe) para não empurrar ParagrafoAdapter acima do limite de
+ * funções do detekt. Na edição ([edicao] = true), o padding vertical segue a tabela do campo de edição.
  */
 private fun TextView.aplicarTipografiaLeitor(
-    serifada: Boolean,
+    tipografia: TipografiaLeitor,
     tipografiaSerifada: android.graphics.Typeface?,
-    alinhamento: AlinhamentoTexto
+    tipografiaDislexia: android.graphics.Typeface?,
+    alinhamento: AlinhamentoTexto,
+    edicao: Boolean = false
 ) {
-    typeface = if (serifada) tipografiaSerifada else android.graphics.Typeface.DEFAULT
+    val fonte = when (tipografia.fonte) {
+        FonteLeitura.PADRAO -> android.graphics.Typeface.DEFAULT
+        FonteLeitura.SERIFADA -> tipografiaSerifada ?: android.graphics.Typeface.DEFAULT
+        FonteLeitura.DISLEXIA -> tipografiaDislexia ?: android.graphics.Typeface.DEFAULT
+    }
+    // Só quando muda: o setter refaz o layout mesmo com o mesmo valor, e esta função roda a cada repintura.
+    if (typeface != fonte) typeface = fonte
+    val espacoLetras = espacoLetrasEm(tipografia.espacoLetras)
+    if (letterSpacing != espacoLetras) letterSpacing = espacoLetras
+    val dpVertical = if (edicao) {
+        espacoParagrafosEdicaoDp(tipografia.espacoParagrafos)
+    } else {
+        espacoParagrafosDp(tipografia.espacoParagrafos)
+    }
+    val paddingVertical = TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        dpVertical.toFloat(),
+        resources.displayMetrics
+    ).toInt()
+    if (paddingTop != paddingVertical || paddingBottom != paddingVertical) {
+        setPaddingRelative(paddingStart, paddingVertical, paddingEnd, paddingVertical)
+    }
     // Justificado distribui o espaço entre as palavras; a última linha do parágrafo fica à esquerda.
     val modo = if (alinhamento == AlinhamentoTexto.JUSTIFICADO) {
         android.text.Layout.JUSTIFICATION_MODE_INTER_WORD

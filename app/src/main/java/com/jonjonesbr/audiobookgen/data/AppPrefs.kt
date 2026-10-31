@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MAX
 import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MIN
+import com.jonjonesbr.audiobookgen.domain.ESPACO_NIVEL_MAX
+import com.jonjonesbr.audiobookgen.domain.ESPACO_NIVEL_PADRAO
+import com.jonjonesbr.audiobookgen.domain.FonteLeitura
 import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.util.AutoRewindMode
@@ -422,10 +425,26 @@ class AppPrefs(context: Context) {
         get() = p.getInt("reader_tema", TemaLeitura.CLARO.ordinal)
         set(v) = p.edit().putInt("reader_tema", v).apply()
 
-    /** Fonte serifada no texto do leitor. */
-    var readerFonteSerifada: Boolean
-        get() = p.getBoolean("reader_fonte_serifada", false)
-        set(v) = p.edit().putBoolean("reader_fonte_serifada", v).apply()
+    /**
+     * Fonte do texto no leitor: nome de [FonteLeitura]. Sem a preferência nova gravada, deriva da antiga
+     * ("reader_fonte_serifada", liga/desliga da serifada), que não é mais gravada.
+     */
+    var readerFonteTipo: String
+        get() = FonteLeitura.derivar(
+            p.getString("reader_fonte_tipo", null),
+            p.getBoolean("reader_fonte_serifada", false)
+        ).name
+        set(v) = p.edit().putString("reader_fonte_tipo", v).apply()
+
+    /** Espaço entre letras do leitor: nível de [ESPACO_NIVEL_PADRAO] a [ESPACO_NIVEL_MAX] (ver espacoLetrasEm). */
+    var readerEspacoLetras: Int
+        get() = p.getInt("reader_espaco_letras", ESPACO_NIVEL_PADRAO)
+        set(v) = p.edit().putInt("reader_espaco_letras", v).apply()
+
+    /** Espaço entre parágrafos do leitor: nível de 0 a [ESPACO_NIVEL_MAX] (ver espacoParagrafosDp). */
+    var readerEspacoParagrafos: Int
+        get() = p.getInt("reader_espaco_paragrafos", ESPACO_NIVEL_PADRAO)
+        set(v) = p.edit().putInt("reader_espaco_paragrafos", v).apply()
 
     /** Nível da margem horizontal do leitor (0=estreita, 1=média, 2=larga). */
     var readerMargemNivel: Int
@@ -453,17 +472,21 @@ class AppPrefs(context: Context) {
         fonte: Float,
         espacamento: Float,
         temaOrdinal: Int,
-        fonteSerifada: Boolean,
+        fonteTipo: FonteLeitura,
         margemNivel: Int,
-        rolagemHorizontal: Boolean
+        rolagemHorizontal: Boolean,
+        espacoLetras: Int,
+        espacoParagrafos: Int
     ) {
         p.edit()
             .putFloat("reader_fonte", fonte)
             .putFloat("reader_espacamento", espacamento)
             .putInt("reader_tema", temaOrdinal)
-            .putBoolean("reader_fonte_serifada", fonteSerifada)
+            .putString("reader_fonte_tipo", fonteTipo.name)
             .putInt("reader_margem_nivel", margemNivel)
             .putBoolean("reader_rolagem_horizontal", rolagemHorizontal)
+            .putInt("reader_espaco_letras", espacoLetras)
+            .putInt("reader_espaco_paragrafos", espacoParagrafos)
             .apply()
     }
 

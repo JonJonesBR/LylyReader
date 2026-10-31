@@ -17,6 +17,7 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto
+import com.jonjonesbr.audiobookgen.domain.FonteLeitura
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.google.android.material.chip.ChipGroup
@@ -198,10 +199,28 @@ class ReaderAparenciaController(
         }
 
         val grupoFonte = view.findViewById<MaterialButtonToggleGroup>(R.id.grupoFonte)
-        grupoFonte.check(if (estado.fonteSerifada) R.id.btnFonteSerifada else R.id.btnFontePadrao)
+        val fontes = mapOf(
+            R.id.btnFontePadrao to FonteLeitura.PADRAO,
+            R.id.btnFonteSerifada to FonteLeitura.SERIFADA,
+            R.id.btnFonteDislexia to FonteLeitura.DISLEXIA
+        )
+        fontes.entries.firstOrNull { it.value == estado.fonte }?.let { grupoFonte.check(it.key) }
         grupoFonte.addOnButtonCheckedListener { _, id, marcado ->
-            if (marcado) viewModel.setFonteSerifada(id == R.id.btnFonteSerifada)
+            if (marcado) fontes[id]?.let { viewModel.setFonte(it) }
         }
+
+        configurarNiveis(
+            view.findViewById(R.id.grupoEspacoLetras),
+            listOf(R.id.btnEspacoLetrasNormal, R.id.btnEspacoLetrasMedio, R.id.btnEspacoLetrasLargo),
+            estado.espacoLetras,
+            viewModel::setEspacoLetras
+        )
+        configurarNiveis(
+            view.findViewById(R.id.grupoEspacoParagrafos),
+            listOf(R.id.btnEspacoParagrafosNormal, R.id.btnEspacoParagrafosMedio, R.id.btnEspacoParagrafosLargo),
+            estado.espacoParagrafos,
+            viewModel::setEspacoParagrafos
+        )
 
         // A posição na lista é o nível da margem: 0 estreita, 1 média, 2 larga.
         val margens = listOf(R.id.btnMargemEstreita, R.id.btnMargemMedia, R.id.btnMargemLarga)
@@ -218,6 +237,22 @@ class ReaderAparenciaController(
             val horizontal = id == R.id.btnRolagemHorizontal
             viewModel.setRolagemHorizontal(horizontal)
             onOrientacaoRolagem(horizontal)
+        }
+    }
+
+    /**
+     * Grupo de três níveis (0 normal, 1 médio, 2 largo), na ordem dos botões: o nível atual vem marcado antes do
+     * listener, e só o botão que fica marcado chama [aoMudar].
+     */
+    private fun configurarNiveis(
+        grupo: MaterialButtonToggleGroup,
+        botoes: List<Int>,
+        atual: Int,
+        aoMudar: (Int) -> Unit
+    ) {
+        grupo.check(botoes[atual.coerceIn(0, botoes.lastIndex)])
+        grupo.addOnButtonCheckedListener { _, id, marcado ->
+            if (marcado) aoMudar(botoes.indexOf(id))
         }
     }
 

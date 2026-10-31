@@ -1563,7 +1563,7 @@ class ReaderActivity : BasePlayerActivity() {
             tema                = state.tema,
             modo                = modoAdapter,
             paragrafosOriginais = state.textoOriginalBruto?.paragrafos ?: emptyList(),
-            fonteSerifada       = state.fonteSerifada,
+            tipografia          = state.tipografia,
             alinhamento         = state.alinhamento
         )
         return paragrafosExibidos

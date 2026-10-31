@@ -63,12 +63,18 @@ data class ReaderUiState(
     val buscaIndiceAtual: Int = -1,
     val buscaVisivel: Boolean = false,
     // T3.2 — Tipografia
-    val fonteSerifada: Boolean = false,
+    val fonte: FonteLeitura = FonteLeitura.PADRAO,
+    val espacoLetras: Int = ESPACO_NIVEL_PADRAO,
+    val espacoParagrafos: Int = ESPACO_NIVEL_PADRAO,
     val margemNivel: Int = MARGEM_NIVEL_PADRAO,
     val alinhamento: AlinhamentoTexto = AlinhamentoTexto.JUSTIFICADO,
     // Rolagem horizontal (paginada) como alternativa ao scroll vertical contínuo.
     val rolagemHorizontal: Boolean = false
-)
+) {
+    /** A tipografia que o adapter do texto recebe; o que mudar aqui repinta os parágrafos. */
+    val tipografia: TipografiaLeitor
+        get() = TipografiaLeitor(fonte = fonte, espacoLetras = espacoLetras, espacoParagrafos = espacoParagrafos)
+}
 
 /** Índice do nível de margem horizontal padrão (0=estreita, 1=média, 2=larga). */
 const val MARGEM_NIVEL_PADRAO = 1

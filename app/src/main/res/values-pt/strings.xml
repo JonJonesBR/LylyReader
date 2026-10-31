@@ -343,6 +343,13 @@
     <string name="label_tipografia">Tipografia</string>
     <string name="btn_fonte_padrao">Sem serifa</string>
     <string name="btn_fonte_serifada">Serifada</string>
+    <string name="btn_fonte_dislexia">Dislexia</string>
+    <string name="cd_fonte_dislexia">Dislexia, fonte OpenDyslexic</string>
+    <string name="label_espaco_letras">Espaço entre letras</string>
+    <string name="label_espaco_paragrafos">Espaço entre parágrafos</string>
+    <string name="btn_espaco_normal">Normal</string>
+    <string name="btn_espaco_medio">Médio</string>
+    <string name="btn_espaco_largo">Largo</string>
     <string name="label_margem">Margem</string>
     <string name="btn_margem_estreita">Estreita</string>
     <string name="btn_margem_media">Média</string>

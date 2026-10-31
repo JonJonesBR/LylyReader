@@ -1,6 +1,9 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
+import com.jonjonesbr.audiobookgen.domain.ESPACO_NIVEL_MAX
+import com.jonjonesbr.audiobookgen.domain.ESPACO_NIVEL_PADRAO
+import com.jonjonesbr.audiobookgen.domain.FonteLeitura
 import com.jonjonesbr.audiobookgen.domain.ExtractionResult
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
@@ -224,7 +227,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
                 tamanhoFonte = prefs.readerFonte,
                 espacamento = prefs.readerEspacamento,
                 tema = TemaLeitura.entries[prefs.readerTema],
-                fonteSerifada = prefs.readerFonteSerifada,
+                fonte = FonteLeitura.porNome(prefs.readerFonteTipo),
+                espacoLetras = prefs.readerEspacoLetras.coerceIn(ESPACO_NIVEL_PADRAO, ESPACO_NIVEL_MAX),
+                espacoParagrafos = prefs.readerEspacoParagrafos.coerceIn(ESPACO_NIVEL_PADRAO, ESPACO_NIVEL_MAX),
                 margemNivel = prefs.readerMargemNivel,
                 alinhamento = com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto.porNome(prefs.readerAlinhamento),
                 rolagemHorizontal = prefs.readerRolagemHorizontal
@@ -238,14 +243,28 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
             fonte = state.tamanhoFonte,
             espacamento = state.espacamento,
             temaOrdinal = state.tema.ordinal,
-            fonteSerifada = state.fonteSerifada,
+            fonteTipo = state.fonte,
             margemNivel = state.margemNivel,
-            rolagemHorizontal = state.rolagemHorizontal
+            rolagemHorizontal = state.rolagemHorizontal,
+            espacoLetras = state.espacoLetras,
+            espacoParagrafos = state.espacoParagrafos
         )
         prefs.readerAlinhamento = state.alinhamento.name
     }
 
-    fun setFonteSerifada(serifada: Boolean) = _uiState.update { it.copy(fonteSerifada = serifada) }
+    fun setFonte(fonte: FonteLeitura) = _uiState.update { it.copy(fonte = fonte) }
+
+    /** @param nivel 0=normal, 1=médio, 2=largo (fora do intervalo é ignorado). */
+    fun setEspacoLetras(nivel: Int) {
+        if (nivel !in ESPACO_NIVEL_PADRAO..ESPACO_NIVEL_MAX) return
+        _uiState.update { it.copy(espacoLetras = nivel) }
+    }
+
+    /** @param nivel 0=normal, 1=médio, 2=largo (fora do intervalo é ignorado). */
+    fun setEspacoParagrafos(nivel: Int) {
+        if (nivel !in ESPACO_NIVEL_PADRAO..ESPACO_NIVEL_MAX) return
+        _uiState.update { it.copy(espacoParagrafos = nivel) }
+    }
 
     fun setAlinhamento(alinhamento: com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto) =
         _uiState.update { it.copy(alinhamento = alinhamento) }
