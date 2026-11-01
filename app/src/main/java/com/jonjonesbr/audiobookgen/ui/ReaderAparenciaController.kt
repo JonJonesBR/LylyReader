@@ -20,7 +20,6 @@ import com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto
 import com.jonjonesbr.audiobookgen.domain.FonteLeitura
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
-import com.google.android.material.chip.ChipGroup
 
 // Constantes do bottom sheet de aparência — movidas do companion de ReaderActivity (T2.2).
 private const val FONTE_MIN = 12f
@@ -80,7 +79,7 @@ class ReaderAparenciaController(
         )
         configurarBotoesAparencia(view, state)
         configurarAlinhamento(
-            view.findViewById(R.id.chipsAlinhamento), view.findViewById(R.id.tvAlinhamentoDica), state.alinhamento
+            view.findViewById(R.id.grupoAlinhamento), view.findViewById(R.id.tvAlinhamentoDica), state.alinhamento
         )
 
         configurarBrilhoSlider(
@@ -257,23 +256,23 @@ class ReaderAparenciaController(
     }
 
     /**
-     * À esquerda (padrão), justificado, centralizado ou à direita; o chip marcado mostra o atual. Com o justificado
+     * À esquerda (padrão), justificado, centralizado ou à direita; o botão marcado mostra o atual. Com o justificado
      * aparece o aviso de que a seleção de texto fica imprecisa (limitação do Android).
      */
-    private fun configurarAlinhamento(grupo: ChipGroup, dica: TextView, atual: AlinhamentoTexto) {
+    private fun configurarAlinhamento(grupo: MaterialButtonToggleGroup, dica: TextView, atual: AlinhamentoTexto) {
         fun mostrarDica(alinhamento: AlinhamentoTexto) {
             dica.visibility = if (alinhamento == AlinhamentoTexto.JUSTIFICADO) View.VISIBLE else View.GONE
         }
-        val chips = mapOf(
-            AlinhamentoTexto.JUSTIFICADO to R.id.chipAlinhJustificado,
-            AlinhamentoTexto.ESQUERDA to R.id.chipAlinhEsquerda,
-            AlinhamentoTexto.CENTRO to R.id.chipAlinhCentro,
-            AlinhamentoTexto.DIREITA to R.id.chipAlinhDireita
+        val botoes = mapOf(
+            AlinhamentoTexto.JUSTIFICADO to R.id.btnAlinhJustificado,
+            AlinhamentoTexto.ESQUERDA to R.id.btnAlinhEsquerda,
+            AlinhamentoTexto.CENTRO to R.id.btnAlinhCentro,
+            AlinhamentoTexto.DIREITA to R.id.btnAlinhDireita
         )
-        chips[atual]?.let { grupo.check(it) }
+        botoes[atual]?.let { grupo.check(it) }
         mostrarDica(atual)
-        grupo.setOnCheckedStateChangeListener { _, ids ->
-            chips.entries.firstOrNull { it.value == ids.firstOrNull() }?.let {
+        grupo.addOnButtonCheckedListener { _, id, marcado ->
+            if (marcado) botoes.entries.firstOrNull { it.value == id }?.let {
                 viewModel.setAlinhamento(it.key)
                 mostrarDica(it.key)
             }

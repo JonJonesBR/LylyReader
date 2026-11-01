@@ -174,41 +174,33 @@
             android:id="@+id/btnTemaClaro"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_tema_claro"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTemaEscuro"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_tema_escuro"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTemaSepia"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_tema_sepia"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTemaOled"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_tema_oled"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Tipografia (fonte) -->
@@ -234,32 +226,26 @@
             android:id="@+id/btnFontePadrao"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_fonte_padrao"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFonteSerifada"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_fonte_serifada"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFonteDislexia"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_fonte_dislexia"
             android:contentDescription="@string/cd_fonte_dislexia"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Espaço entre letras -->
@@ -285,31 +271,25 @@
             android:id="@+id/btnEspacoLetrasNormal"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_espaco_normal"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEspacoLetrasMedio"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_espaco_medio"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEspacoLetrasLargo"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_espaco_largo"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Espaço entre parágrafos -->
@@ -335,31 +315,25 @@
             android:id="@+id/btnEspacoParagrafosNormal"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_espaco_normal"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEspacoParagrafosMedio"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_espaco_medio"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEspacoParagrafosLargo"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_espaco_largo"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Margem horizontal -->
@@ -385,31 +359,25 @@
             android:id="@+id/btnMargemEstreita"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_margem_estreita"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMargemMedia"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_margem_media"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMargemLarga"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_margem_larga"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Alinhamento do texto (justificado é o padrão) -->
@@ -419,44 +387,71 @@
         android:text="@string/label_alinhamento"
         android:textSize="13sp"
         android:textColor="@color/color_on_surface_muted"
-        android:layout_marginTop="4dp"/>
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp"/>
 
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/chipsAlinhamento"
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/grupoAlinhamento"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:orientation="horizontal"
         app:singleSelection="true"
-        app:selectionRequired="true">
+        app:selectionRequired="true"
+        android:layout_marginBottom="8dp">
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipAlinhJustificado"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAlinhJustificado"
+            style="@style/Widget.Lyly.BotaoAparencia"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/alinhamento_justificado"/>
+            android:layout_weight="1"
+            android:contentDescription="@string/alinhamento_justificado"
+            android:tooltipText="@string/alinhamento_justificado"
+            app:icon="@drawable/ic_alinhar_justificado"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="?attr/colorPrimary"/>
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipAlinhEsquerda"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAlinhEsquerda"
+            style="@style/Widget.Lyly.BotaoAparencia"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/alinhamento_esquerda"/>
+            android:layout_weight="1"
+            android:contentDescription="@string/alinhamento_esquerda"
+            android:tooltipText="@string/alinhamento_esquerda"
+            app:icon="@drawable/ic_alinhar_esquerda"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="?attr/colorPrimary"/>
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipAlinhCentro"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAlinhCentro"
+            style="@style/Widget.Lyly.BotaoAparencia"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/alinhamento_centro"/>
+            android:layout_weight="1"
+            android:contentDescription="@string/alinhamento_centro"
+            android:tooltipText="@string/alinhamento_centro"
+            app:icon="@drawable/ic_alinhar_centro"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="?attr/colorPrimary"/>
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipAlinhDireita"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:layout_width="wrap_content"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAlinhDireita"
+            style="@style/Widget.Lyly.BotaoAparencia"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/alinhamento_direita"/>
-    </com.google.android.material.chip.ChipGroup>
+            android:layout_weight="1"
+            android:contentDescription="@string/alinhamento_direita"
+            android:tooltipText="@string/alinhamento_direita"
+            app:icon="@drawable/ic_alinhar_direita"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="?attr/colorPrimary"/>
+
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <TextView
         android:id="@+id/tvAlinhamentoDica"
@@ -491,21 +486,17 @@
             android:id="@+id/btnRolagemVertical"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_rolagem_vertical"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRolagemHorizontal"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:layout_weight="1"
             android:text="@string/btn_rolagem_horizontal"
-            android:textSize="12sp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+            style="@style/Widget.Lyly.BotaoAparencia"/>
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- Brilho -->

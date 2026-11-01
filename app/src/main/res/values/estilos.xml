@@ -102,4 +102,15 @@
     <style name="LylyFolha" parent="Widget.Material3.BottomSheet.Modal">
         <item name="behavior_skipCollapsed">true</item>
     </style>
+
+    <!-- Botões de opção da Aparência do leitor (tema, fonte, espaçamento, margem, rolagem). O padding do Material 3
+         (24dp de cada lado) fazia "Claro" e "Sem serifa" serem cortados em "Cl…" e "Sem …" em ~360dp. Aqui o texto
+         quebra em até duas linhas em vez de ganhar reticências. -->
+    <style name="Widget.Lyly.BotaoAparencia" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:maxLines">2</item>
+    </style>
 </resources>
