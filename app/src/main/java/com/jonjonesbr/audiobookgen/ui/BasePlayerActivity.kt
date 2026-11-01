@@ -33,7 +33,7 @@ import com.jonjonesbr.audiobookgen.util.DestinoLateral
 import com.jonjonesbr.audiobookgen.util.GestoArraste
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.formatarTempo
-import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.abrirExpandida
 import com.jonjonesbr.audiobookgen.util.textosDaSoneca
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -452,7 +452,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_capitulos, null)
         dialog.setContentView(view)
-        dialog.expandirEmPaisagem()
+        dialog.abrirExpandida()
 
         val posicao = state.currentPosition.toLong()
         val ativo = state.capitulos.indexOfLast { posicao >= it.inicioMs }.coerceAtLeast(0)

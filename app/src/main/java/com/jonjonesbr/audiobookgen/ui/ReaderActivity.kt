@@ -27,7 +27,7 @@ import com.jonjonesbr.audiobookgen.util.dpToPx
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
-import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.abrirExpandida
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -1853,7 +1853,7 @@ class ReaderActivity : BasePlayerActivity() {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_capitulos, null)
         dialog.setContentView(view)
-        dialog.expandirEmPaisagem()
+        dialog.abrirExpandida()
 
         val atual = capituloNaBarra.takeIf { it in texto.capitulos.indices } ?: viewModel.uiState.value.capituloAtivo
         // Marcar capítulos para converter (o que os chips faziam); não existe no "Ler sem áudio".

@@ -17,3 +17,14 @@ fun BottomSheetDialog.expandirEmPaisagem() {
     behavior.state = BottomSheetBehavior.STATE_EXPANDED
     behavior.skipCollapsed = true
 }
+
+/**
+ * Abre a folha já expandida, em qualquer orientação. Para folhas com lista rolável: no estado
+ * recolhido, rolar a lista para baixo com força fechava a folha. Expandida, a lista rola e a
+ * folha só fecha ao arrastar com a lista no topo, pela alça ou com Voltar.
+ * Chamar depois de [BottomSheetDialog.setContentView].
+ */
+fun BottomSheetDialog.abrirExpandida() {
+    behavior.state = BottomSheetBehavior.STATE_EXPANDED
+    behavior.skipCollapsed = true
+}
