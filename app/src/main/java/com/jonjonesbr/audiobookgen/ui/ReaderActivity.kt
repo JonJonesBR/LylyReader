@@ -46,7 +46,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -105,8 +104,6 @@ class ReaderActivity : BasePlayerActivity() {
         const val ACAO_CONVERTER_SEM_ESTRUTURA = "converter_sem_estrutura"
         private const val DURACAO_FADE_BANNER_MS = 300L
         private const val DURACAO_PILL_LIMPEZA_MS = 5000L
-        private const val PARAGRAFOS_PREVIEW = 3
-        private const val PREPARO_PARAGRAFOS_SEM_CAPITULO = 120
         private const val LARGURA_MAXIMA_LEITURA_DP = 720
         // Margem horizontal da lista de parágrafos por nível (0=estreita, 1=média, 2=larga).
         val MARGEM_NIVEL_DP = intArrayOf(8, 20, 36)
@@ -197,6 +194,20 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
+    // Voz e pronúncia do leitor (rb-14). Lazy: só é montado no primeiro uso; o manager entra só pelas lambdas.
+    private val vozController by lazy {
+        ReaderVozController(
+            activity = this,
+            viewModel = viewModel,
+            audiobookViewModel = audiobookViewModel,
+            callbacks = ReaderVozController.Callbacks(
+                obterCaminhoArquivo = { caminhoArquivo },
+                obterGuidedPlayerManager = { guidedPlayerManager },
+                obterParagrafoAtual = { paragrafoAtualVisivel() },
+            ),
+        )
+    }
+
     /** Nulo no modo "Ler sem áudio" (não há manager para a barra conectar). Não acessar antes de o manager ser atribuído no onCreate. */
     private val guidedReadingBarController: GuidedReadingBarController? by lazy {
         guidedPlayerManager?.let { manager ->
@@ -228,7 +239,7 @@ class ReaderActivity : BasePlayerActivity() {
                     esconderMiniPlayer = { reavaliarMiniPlayer() },
                     obterCaminhoArquivo = { caminhoArquivo },
                     aoMudarDeLivroNaFila = { guidedPlayerManager?.let(::abrirLeitorDoLivroDaFila) },
-                    prepararCapitulo = { prepararCapituloAtual() },
+                    prepararCapitulo = { vozController.prepararCapituloAtual() },
                     aoEncerrarGuiada = { paragrafoGuiadoAoEncerrar = it },
                 ),
             )
@@ -288,7 +299,7 @@ class ReaderActivity : BasePlayerActivity() {
             callbacks = ReaderPersonagensController.Callbacks(
                 obterCaminhoArquivo = { caminhoArquivo },
                 obterGuidedPlayerManager = { guidedPlayerManager },
-                ouvirPronuncia = ::ouvirPronuncia,
+                ouvirPronuncia = { vozController.ouvirPronuncia(it) },
             ),
         )
     }
@@ -321,7 +332,7 @@ class ReaderActivity : BasePlayerActivity() {
                 onOuvirAudiobook = { conversaoController.ouvirAudiobookDesteLivro() },
                 onConfigurarVozesPersonagens = { personagensController.abrirConfiguracaoVozesPersonagens() },
                 onAbrirMarcacoes = { marcacoesController.mostrarDialogListarMarcacoes() },
-                onAbrirPronuncia = { abrirDicionarioPronuncia() },
+                onAbrirPronuncia = { vozController.abrirDicionarioPronuncia() },
                 onAbrirAparencia = { aparenciaController.mostrarBottomSheet() },
                 onAbrirSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
                 onClonarVoz = { aoEscolherVoz ->
@@ -668,7 +679,9 @@ class ReaderActivity : BasePlayerActivity() {
                 marcacoesController.mostrarDialogDestacarTrecho(indice, inicio, fim)
             },
             onDefinirPronuncia = { palavra ->
-                PronunciationDialog.show(this, palavra, caminhoDoLivro = caminhoArquivo, onOuvir = ::ouvirPronuncia)
+                PronunciationDialog.show(
+                    this, palavra, caminhoDoLivro = caminhoArquivo, onOuvir = { vozController.ouvirPronuncia(it) }
+                )
             },
             mostrarPronuncia = !somenteLeitura,
         )
@@ -1211,40 +1224,6 @@ class ReaderActivity : BasePlayerActivity() {
         return paragrafosExibidos
     }
 
-    /** "Preparar capítulo": pré-sintetiza o capítulo do ponto de leitura atual (ver GuidedPlayerManager). */
-    private fun prepararCapituloAtual() {
-        val manager = guidedPlayerManager ?: return
-        val andamento = com.jonjonesbr.audiobookgen.service.PreRenderBridge.state.value
-        if (andamento != null && !andamento.terminou) {
-            Toast.makeText(this, R.string.prerender_already, Toast.LENGTH_SHORT).show()
-            return
-        }
-        val texto = viewModel.textoEfetivo() ?: return
-        if (texto.paragrafos.isEmpty()) return
-        // Do trecho em leitura (ou visível) até o fim do capítulo dele; antes partia sempre do início do livro.
-        val emLeitura = manager.state.value.index.takeIf { it >= 0 }
-        val inicio = (emLeitura ?: paragrafoAtualVisivel() ?: 0)
-            .coerceIn(0, texto.paragrafos.lastIndex)
-        val capitulo = texto.capitulos.getOrNull(texto.paragrafos[inicio].indiceCapitulo)
-        val fim = (capitulo?.indiceParagrafoFim ?: (inicio + PREPARO_PARAGRAFOS_SEM_CAPITULO))
-            .coerceIn(inicio, texto.paragrafos.lastIndex)
-        val titulo = capitulo?.titulo ?: File(caminhoArquivo).nameWithoutExtension
-        val unidades = manager.contarUnidadesParaPreparo(inicio, fim)
-        if (unidades == 0) {
-            Toast.makeText(this, R.string.prerender_nothing, Toast.LENGTH_SHORT).show()
-            return
-        }
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.prerender_confirm_title)
-            .setMessage(getString(R.string.prerender_confirm_message, unidades, titulo))
-            .setPositiveButton(R.string.prerender_confirm_start) { _, _ ->
-                manager.prepararCapitulo(inicio, fim, titulo)
-                Toast.makeText(this, R.string.prerender_started, Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .exibir()
-    }
-
     /** Abre o painel pedido pela tela do livro (uma vez; o extra é consumido para não repetir na rotação). */
     private fun executarAcaoInicialSeNecessario() {
         val acao = intent.getStringExtra(EXTRA_ACAO_INICIAL) ?: return
@@ -1252,19 +1231,8 @@ class ReaderActivity : BasePlayerActivity() {
         when (acao) {
             ACAO_INICIAL_CAPITULOS -> mostrarBottomSheetCapitulos()
             ACAO_INICIAL_PERSONAGENS -> personagensController.abrirConfiguracaoVozesPersonagens()
-            ACAO_INICIAL_PRONUNCIA -> abrirDicionarioPronuncia()
+            ACAO_INICIAL_PRONUNCIA -> vozController.abrirDicionarioPronuncia()
         }
-    }
-
-    /** Dicionário de pronúncias do livro, com o botão de sugerir pronúncias por IA. */
-    private fun abrirDicionarioPronuncia() {
-        PronunciationDialog.showManager(
-            this, caminhoArquivo, ::ouvirPronuncia,
-            onSugerirIa = {
-                val paragrafos = viewModel.textoEfetivo()?.paragrafos?.map { it.texto }.orEmpty()
-                PronunciationAiFlow.start(this, paragrafos, caminhoArquivo)
-            }
-        )
     }
 
     /** Extraído de [atualizarUI] (restauração da posição de leitura salva). */
@@ -1477,8 +1445,9 @@ class ReaderActivity : BasePlayerActivity() {
     }
 
     // Clonar pela lista de vozes do leitor: a voz nova já fica escolhida.
+    // Inicializador de campo: registra lançadores no construtor, por isso não vai para lazy (só delega por lambda).
     private val cloneVoiceFlow = CloneVoiceFlow(this, aoCriarVoz = { id ->
-        VoiceCatalog.findAny(id)?.let(::selecionarVozNoLeitor)
+        VoiceCatalog.findAny(id)?.let { vozController.selecionarVoz(it) }
     })
 
     // Clonar pelo painel "Voz e velocidade" deste livro: a voz nova vira a voz do livro, pela mesma rotina da
@@ -1491,80 +1460,14 @@ class ReaderActivity : BasePlayerActivity() {
         VoiceCatalog.findAny(id)?.let { voz -> aoEscolher?.invoke(voz) }
     })
 
+    // Inicializador de campo (registra o listener do seletor de vozes no construtor): só delega para o vozController.
     private val voiceSelectionDelegate: VoiceSelectionDelegate = VoiceSelectionDelegate(
         activity = this,
-        onVoiceSelected = ::selecionarVozNoLeitor,
-        onVoicePreview = { voice, onFinished ->
-            audiobookViewModel.pararPreview()
-            if (voice.engine == "elevenlabs" &&
-                SecurePreferences.getElevenLabsKey(this@ReaderActivity).isNullOrBlank()
-            ) {
-                Toast.makeText(
-                    this@ReaderActivity,
-                    R.string.toast_elevenlabs_configure_key,
-                    Toast.LENGTH_LONG
-                ).show()
-                onFinished()
-            } else {
-                val ritmo = appPrefs.ritmo
-                val chave = SecurePreferences.getGeminiKeys(this@ReaderActivity)
-                audiobookViewModel.prepararConfiguracoesPython(voice.engine, chave, appPrefs.pausaMs, caminhoArquivo)
-                val previewText = viewModel.textoEfetivo()?.paragrafos
-                    ?.take(PARAGRAFOS_PREVIEW)?.joinToString(" ") { it.texto }
-                    ?.takeIf { it.isNotBlank() }
-                    ?: com.jonjonesbr.audiobookgen.util.VoiceCatalog.previewSampleText(voice)
-                lifecycleScope.launch {
-                    audiobookViewModel.gerarAmostra(voice.id, ritmo, voice.engine, chave, previewText)
-                    audiobookViewModel.uiState.first { !it.amostraGerando }
-                    onFinished()
-                }
-            }
-        },
+        onVoiceSelected = { vozController.selecionarVoz(it) },
+        onVoicePreview = { voice, onFinished -> vozController.ouvirAmostra(voice, onFinished) },
         obterVozAtualId = { appPrefs.vozSelecionada.orEmpty() },
         onCloneVoiceRequested = { cloneVoiceFlow.iniciar() },
     )
-
-    /** Escolha de voz do leitor (lista de vozes ou voz recém-clonada): grava a voz e refaz o trecho atual. */
-    private fun selecionarVozNoLeitor(voice: VoiceOption) {
-        appPrefs.vozSelecionada = voice.id
-        appPrefs.motorTts = voice.engine
-        guidedPlayerManager?.registrarVozEscolhida(voice.id, voice.engine)
-
-        if (voice.engine == "gemini") {
-            val chave = SecurePreferences.getGeminiKeys(this)
-            if (chave.isNullOrBlank()) {
-                val intent = Intent(this, SettingsActivity::class.java).apply {
-                    putExtra("focar_chave_gemini", true)
-                }
-                startActivity(intent)
-            }
-        }
-        if (voice.engine == "elevenlabs" &&
-            SecurePreferences.getElevenLabsKey(this).isNullOrBlank()
-        ) {
-            val intent = Intent(this, SettingsActivity::class.java).apply {
-                putExtra("focar_chave_elevenlabs", true)
-            }
-            startActivity(intent)
-        }
-
-        // Troca de voz refaz o trecho atual sem sair do modo manual: não é um pedido de ponto da narração.
-        val guidedIndex = guidedPlayerManager?.state?.value?.index ?: -1
-        if (guidedIndex >= 0) {
-            guidedPlayerManager?.play(guidedIndex)
-        }
-    }
-
-    /** Toca [texto] (a pronúncia digitada) com a voz e o motor do livro. */
-    private fun ouvirPronuncia(texto: String) {
-        val manager = guidedPlayerManager ?: return
-        val (voz, motorSalvo) = manager.vozEMotorDoLivro()
-        val motor = VoiceCatalog.effectiveEngine(voz, motorSalvo)
-        val chave = SecurePreferences.getGeminiKeys(this)
-        audiobookViewModel.pararPreview()
-        audiobookViewModel.prepararConfiguracoesPython(motor, chave, appPrefs.pausaMs, caminhoArquivo)
-        audiobookViewModel.ouvirTexto(voz, appPrefs.ritmo, motor, texto, caminhoArquivo)
-    }
 
     private fun compartilharTrechoAtual() {
         val state = viewModel.uiState.value

@@ -1,0 +1,186 @@
+package com.jonjonesbr.audiobookgen.ui
+
+import android.content.Intent
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.data.AppPrefs
+import com.jonjonesbr.audiobookgen.data.SecurePreferences
+import com.jonjonesbr.audiobookgen.domain.Capitulo
+import com.jonjonesbr.audiobookgen.domain.Paragrafo
+import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
+import com.jonjonesbr.audiobookgen.service.PreRenderBridge
+import com.jonjonesbr.audiobookgen.util.VoiceCatalog
+import com.jonjonesbr.audiobookgen.util.VoiceOption
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.io.File
+
+private const val PARAGRAFOS_PREVIEW = 3
+private const val PREPARO_PARAGRAFOS_SEM_CAPITULO = 120
+
+/**
+ * Faixa de parágrafos do "Preparar capítulo": começa no [inicioPedido] (limitado à lista) e termina no fim do
+ * capítulo desse parágrafo; sem capítulo, vai [PREPARO_PARAGRAFOS_SEM_CAPITULO] parágrafos adiante. Só com
+ * [paragrafos] não vazio.
+ */
+internal fun faixaDoPreparo(
+    paragrafos: List<Paragrafo>,
+    capitulos: List<Capitulo>,
+    inicioPedido: Int,
+): Pair<Int, Int> {
+    val inicio = inicioPedido.coerceIn(0, paragrafos.lastIndex)
+    val capitulo = capitulos.getOrNull(paragrafos[inicio].indiceCapitulo)
+    val fim = (capitulo?.indiceParagrafoFim ?: (inicio + PREPARO_PARAGRAFOS_SEM_CAPITULO))
+        .coerceIn(inicio, paragrafos.lastIndex)
+    return inicio to fim
+}
+
+/** Amostra da voz: junta os primeiros [quantos] parágrafos; nulo quando não há texto útil (usa-se o texto padrão). */
+internal fun textoDaAmostra(paragrafos: List<Paragrafo>?, quantos: Int = PARAGRAFOS_PREVIEW): String? =
+    paragrafos?.take(quantos)?.joinToString(" ") { it.texto }?.takeIf { it.isNotBlank() }
+
+/**
+ * Voz e pronúncia do leitor: escolha de voz (e a voz recém-clonada), amostra, "Ouvir pronúncia", dicionário de
+ * pronúncias e "Preparar capítulo" — extraído de [ReaderActivity] pra reduzir o tamanho do arquivo (rb-14). Padrão
+ * do projeto: activity + viewModel + callbacks no construtor, sem acessar campos da Activity. Os lançadores de
+ * clone e o VoiceSelectionDelegate da Activity só delegam para cá por lambda, porque registram lançadores no
+ * construtor (antes de STARTED).
+ */
+class ReaderVozController(
+    private val activity: AppCompatActivity,
+    private val viewModel: ReaderViewModel,
+    private val audiobookViewModel: AudiobookViewModel,
+    private val callbacks: Callbacks,
+) {
+    data class Callbacks(
+        val obterCaminhoArquivo: () -> String,
+        val obterGuidedPlayerManager: () -> GuidedPlayerManager?,
+        val obterParagrafoAtual: () -> Int?,
+    )
+
+    private val caminhoArquivo: String get() = callbacks.obterCaminhoArquivo()
+    /** Nulo no modo "Ler sem áudio". Todo acesso trata o nulo. */
+    private val guidedPlayerManager: GuidedPlayerManager? get() = callbacks.obterGuidedPlayerManager()
+    // Lido só dentro dos métodos (não no construtor): o construtor pode rodar antes de a Activity estar pronta.
+    private val appPrefs by lazy { AppPrefs(activity) }
+
+    private val dialogos = DialogosAbertos(activity)
+    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
+
+    /** Escolha de voz do leitor (lista de vozes ou voz recém-clonada): grava a voz e refaz o trecho atual. */
+    fun selecionarVoz(voice: VoiceOption) {
+        appPrefs.vozSelecionada = voice.id
+        appPrefs.motorTts = voice.engine
+        guidedPlayerManager?.registrarVozEscolhida(voice.id, voice.engine)
+
+        if (voice.engine == "gemini") {
+            val chave = SecurePreferences.getGeminiKeys(activity)
+            if (chave.isNullOrBlank()) {
+                val intent = Intent(activity, SettingsActivity::class.java).apply {
+                    putExtra("focar_chave_gemini", true)
+                }
+                activity.startActivity(intent)
+            }
+        }
+        if (voice.engine == "elevenlabs" &&
+            SecurePreferences.getElevenLabsKey(activity).isNullOrBlank()
+        ) {
+            val intent = Intent(activity, SettingsActivity::class.java).apply {
+                putExtra("focar_chave_elevenlabs", true)
+            }
+            activity.startActivity(intent)
+        }
+
+        // Troca de voz refaz o trecho atual sem sair do modo manual: não é um pedido de ponto da narração.
+        val guidedIndex = guidedPlayerManager?.state?.value?.index ?: -1
+        if (guidedIndex >= 0) {
+            guidedPlayerManager?.play(guidedIndex)
+        }
+    }
+
+    /** Amostra da voz escolhida na lista de vozes: gera um trecho do livro e avisa quando termina. */
+    fun ouvirAmostra(voice: VoiceOption, onFinished: () -> Unit) {
+        audiobookViewModel.pararPreview()
+        if (voice.engine == "elevenlabs" &&
+            SecurePreferences.getElevenLabsKey(activity).isNullOrBlank()
+        ) {
+            Toast.makeText(
+                activity,
+                R.string.toast_elevenlabs_configure_key,
+                Toast.LENGTH_LONG
+            ).show()
+            onFinished()
+        } else {
+            val ritmo = appPrefs.ritmo
+            val chave = SecurePreferences.getGeminiKeys(activity)
+            audiobookViewModel.prepararConfiguracoesPython(voice.engine, chave, appPrefs.pausaMs, caminhoArquivo)
+            val previewText = textoDaAmostra(viewModel.textoEfetivo()?.paragrafos)
+                ?: VoiceCatalog.previewSampleText(voice)
+            activity.lifecycleScope.launch {
+                audiobookViewModel.gerarAmostra(voice.id, ritmo, voice.engine, chave, previewText)
+                audiobookViewModel.uiState.first { !it.amostraGerando }
+                onFinished()
+            }
+        }
+    }
+
+    /** Toca [texto] (a pronúncia digitada) com a voz e o motor do livro. */
+    fun ouvirPronuncia(texto: String) {
+        val manager = guidedPlayerManager ?: return
+        val (voz, motorSalvo) = manager.vozEMotorDoLivro()
+        val motor = VoiceCatalog.effectiveEngine(voz, motorSalvo)
+        val chave = SecurePreferences.getGeminiKeys(activity)
+        audiobookViewModel.pararPreview()
+        audiobookViewModel.prepararConfiguracoesPython(motor, chave, appPrefs.pausaMs, caminhoArquivo)
+        audiobookViewModel.ouvirTexto(voz, appPrefs.ritmo, motor, texto, caminhoArquivo)
+    }
+
+    /** Dicionário de pronúncias do livro, com o botão de sugerir pronúncias por IA. */
+    fun abrirDicionarioPronuncia() {
+        PronunciationDialog.showManager(
+            activity, caminhoArquivo, ::ouvirPronuncia,
+            onSugerirIa = {
+                val paragrafos = viewModel.textoEfetivo()?.paragrafos?.map { it.texto }.orEmpty()
+                PronunciationAiFlow.start(activity, paragrafos, caminhoArquivo)
+            }
+        )
+    }
+
+    /** "Preparar capítulo": pré-sintetiza o capítulo do ponto de leitura atual (ver GuidedPlayerManager). */
+    fun prepararCapituloAtual() {
+        val manager = guidedPlayerManager ?: return
+        val andamento = PreRenderBridge.state.value
+        if (andamento != null && !andamento.terminou) {
+            Toast.makeText(activity, R.string.prerender_already, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val texto = viewModel.textoEfetivo() ?: return
+        if (texto.paragrafos.isEmpty()) return
+        // Do trecho em leitura (ou visível) até o fim do capítulo dele; antes partia sempre do início do livro.
+        val emLeitura = manager.state.value.index.takeIf { it >= 0 }
+        val (inicio, fim) = faixaDoPreparo(
+            texto.paragrafos,
+            texto.capitulos,
+            emLeitura ?: callbacks.obterParagrafoAtual() ?: 0,
+        )
+        val capitulo = texto.capitulos.getOrNull(texto.paragrafos[inicio].indiceCapitulo)
+        val titulo = capitulo?.titulo ?: File(caminhoArquivo).nameWithoutExtension
+        val unidades = manager.contarUnidadesParaPreparo(inicio, fim)
+        if (unidades == 0) {
+            Toast.makeText(activity, R.string.prerender_nothing, Toast.LENGTH_SHORT).show()
+            return
+        }
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.prerender_confirm_title)
+            .setMessage(activity.getString(R.string.prerender_confirm_message, unidades, titulo))
+            .setPositiveButton(R.string.prerender_confirm_start) { _, _ ->
+                manager.prepararCapitulo(inicio, fim, titulo)
+                Toast.makeText(activity, R.string.prerender_started, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .exibir()
+    }
+}
