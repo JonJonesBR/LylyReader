@@ -1,11 +1,13 @@
 package com.jonjonesbr.audiobookgen.service
 
+import com.jonjonesbr.audiobookgen.domain.MetadadosDaConversao
 import com.jonjonesbr.audiobookgen.domain.ProcessamentoResult
 import com.jonjonesbr.audiobookgen.domain.comprimirWavParaAac
 import com.jonjonesbr.audiobookgen.domain.ehWavArquivo
 import com.jonjonesbr.audiobookgen.domain.temEspacoParaCompressao
 import com.jonjonesbr.audiobookgen.domain.ExportStatus
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
+import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.ConversaoPausadaStore
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.domain.DestinoDaParada
@@ -78,11 +80,16 @@ class ConversionWorker(
         // Chaves de progresso (setProgressAsync)
         const val KEY_PROGRESS_PCT = "progress_pct"
         const val KEY_PROGRESS_MSG = "progress_msg"
-        /** Nome do audiobook em geração (do arquivo de saída), para o cartão "Gerando agora" das abas. */
+        /**
+         * Nome do audiobook em geração, para o cartão "Gerando agora" das abas: o título do livro (ver
+         * [MetadadosDaConversao]); sem livro na Biblioteca, o nome do arquivo de saída.
+         */
         const val KEY_PROGRESS_NOME = "progress_nome"
 
         // Chaves de OutputData (sucesso)
         const val KEY_RESULT_CAMINHO    = "result_caminho"
+        /** Nome legível do audiobook pronto (o mesmo título de [KEY_PROGRESS_NOME]). */
+        const val KEY_RESULT_TITULO     = "result_titulo"
         const val KEY_RESULT_DURACAO    = "result_duracao"
         const val KEY_RESULT_TAMANHO    = "result_tamanho"
         const val KEY_RESULT_CAPITULOS  = "result_capitulos"
@@ -113,10 +120,28 @@ class ConversionWorker(
     private fun tokenDaExecucao(): String? = inputData.getString(KEY_RUN_TOKEN_ENTRADA) ?: inputData.getString(KEY_RUN_TOKEN)
 
     /**
-     * Nome legível do audiobook em geração, do [KEY_SAIDA] da entrada: existe desde o primeiro plano e segue igual na
-     * retomada e na fila (cada execução tem a sua entrada). Null se a entrada não tiver saída.
+     * Título e autor do livro desta execução, lidos da Biblioteca por [carregarMetadados] no início de
+     * [executarConversao]. Escrito uma vez, antes do motor, e lido também pelo callback de progresso (outra
+     * thread): por isso o [Volatile].
      */
-    private val nomeDaConversao: String? by lazy { TextosDeNotificacao.nomeDaConversao(inputData.getString(KEY_SAIDA)) }
+    @Volatile
+    private var metadados: MetadadosDaConversao? = null
+
+    /**
+     * Nome do arquivo de saída do [KEY_SAIDA] da entrada, sem extensão e com "_" virando espaço. É a reserva
+     * enquanto o livro não é lido, e o que vale quando ele não está na Biblioteca. Null se a entrada não tiver
+     * saída.
+     */
+    private val nomeDoArquivoDeSaida: String? by lazy {
+        TextosDeNotificacao.nomeDaConversao(inputData.getString(KEY_SAIDA))
+    }
+
+    /**
+     * Nome legível do audiobook em geração: o título do livro (ver [MetadadosDaConversao]), senão o nome do
+     * arquivo de saída. Existe desde o primeiro plano e segue igual na retomada e na fila (cada execução tem a sua
+     * entrada).
+     */
+    private val nomeDaConversao: String? get() = metadados?.titulo ?: nomeDoArquivoDeSaida
 
     override suspend fun doWork(): Result {
         ControleDaConversao.limpar()
@@ -282,6 +307,26 @@ class ConversionWorker(
     /** Tamanho no mesmo formato que o Python devolve (MB com uma casa decimal, ponto como separador). */
     private fun formatarTamanhoMb(bytes: Long): String = String.format(Locale.US, "%.1f", bytes / 1_048_576.0)
 
+    /**
+     * Título e autor do livro da Biblioteca, pelo caminho que a entrada já traz: [KEY_LIVRO_DICIONARIO] (o livro
+     * dono do texto), senão [KEY_LIVRO_ORIGEM], senão o próprio arquivo (conversa de arquivo solto, fora da
+     * Biblioteca). Lê em IO. Falha de leitura não derruba a conversão: vale o nome do arquivo de saída.
+     */
+    private suspend fun carregarMetadados(saida: String): MetadadosDaConversao {
+        val caminho = inputData.getString(KEY_LIVRO_DICIONARIO)
+            ?: inputData.getString(KEY_LIVRO_ORIGEM)
+            ?: inputData.getString(KEY_ARQUIVO)
+        val livro = try {
+            caminho?.let { BibliotecaStore.porCaminho(applicationContext, it) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("ConversionWorker", "Falha ao ler o livro da Biblioteca para o título", e)
+            null
+        }
+        return MetadadosDaConversao.de(livro?.titulo, livro?.autor, caminho, saida)
+    }
+
     private suspend fun executarConversao(
         arquivo: String,
         voz: String,
@@ -298,8 +343,15 @@ class ConversionWorker(
         // Se o trabalho já foi cancelado, yield() lança CancellationException
         yield()
 
+        // Antes do primeiro plano: a notificação e o cartão já saem com o título do livro, e não com o arquivo.
+        metadados = carregarMetadados(saida)
         val notif = ConversionNotificationManager(applicationContext)
         val emPrimeiroPlano = iniciarPrimeiroPlano(notif)
+        // Só o nome, para o cartão "Gerando agora" já ter o título desde o início (sem pct nem msg).
+        setProgressAsync(workDataOf(
+            KEY_PROGRESS_NOME to (nomeDaConversao ?: TextosDeNotificacao.tituloDoArquivo(saida)),
+            KEY_RUN_TOKEN to runToken
+        ))
         val inicioPrimeiroPlanoMs = if (emPrimeiroPlano) System.currentTimeMillis() else 0L
         ConversionWakeLock.acquire(applicationContext)
         var ultimaRenovacaoMs = System.currentTimeMillis()
@@ -355,6 +407,8 @@ class ConversionWorker(
         }
         // O Python zera a flag de cancelamento ao iniciar: se a pausa já foi pedida, não inicia o motor.
         if (devePausar()) return pausar(notif, arquivo, ultimoPct.get(), runToken)
+        // Etiquetas do MP3 (título e autor do livro). O título interno (nome do arquivo de entrada) não muda.
+        val etiquetas = metadados?.etiquetas(nomeDaConversao ?: TextosDeNotificacao.tituloDoArquivo(arquivo))
         val result = if (speakerMapPath != null && textoComMapa != null) {
             engine.processarTexto(
                 texto = textoComMapa,
@@ -366,6 +420,7 @@ class ConversionWorker(
                 motor = motor,
                 chaveGemini = chaveGemini,
                 speakerMapPath = speakerMapPath,
+                etiquetas = etiquetas,
                 onProgress = onProgress
             )
         } else {
@@ -377,6 +432,7 @@ class ConversionWorker(
                 saida = saida,
                 motor = motor,
                 chaveGemini = chaveGemini,
+                etiquetas = etiquetas,
                 onProgress = onProgress
             )
         }
@@ -409,7 +465,9 @@ class ConversionWorker(
                             .gravar(applicationContext, result.caminho, it.toString())
                     }.onFailure { Log.w("ConversionWorker", "Falha ao registrar a cópia exportada", it) }
                 }
-                notif.mostrarConcluida(result.caminho, TextosDeNotificacao.nomeDaConversao(result.caminho))
+                notif.mostrarConcluida(
+                    result.caminho, nomeDaConversao ?: TextosDeNotificacao.nomeDaConversao(result.caminho)
+                )
                 FilaDeConversao.aoTerminarExecucao(
                     applicationContext, inputData.getString(KEY_FILA_ITEM_ID), runToken, result.caminho, null
                 )
@@ -418,6 +476,7 @@ class ConversionWorker(
                 Result.success(
                     workDataOf(
                         KEY_RESULT_CAMINHO to result.caminho,
+                        KEY_RESULT_TITULO to nomeDaConversao,
                         KEY_RESULT_DURACAO to result.duracao,
                         KEY_RESULT_TAMANHO to tamanhoMb,
                         KEY_RESULT_CAPITULOS to capitulosJson,

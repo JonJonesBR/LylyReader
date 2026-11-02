@@ -50,7 +50,9 @@ sealed class ConversionDoneEvent {
         val duracao: String,
         val tamanhoMb: String,
         val exportStatus: ExportStatus?,
-        val runToken: String? = null
+        val runToken: String? = null,
+        /** Título legível do audiobook pronto (o do livro); null se o worker não o informou. */
+        val titulo: String? = null
     ) : ConversionDoneEvent()
     data class Erro(val mensagem: String, val runToken: String? = null) : ConversionDoneEvent()
     data class Cancelada(val runToken: String? = null) : ConversionDoneEvent()
@@ -64,6 +66,8 @@ data class AudiobookUiState(
         val processando: Boolean = false,
         val progressoPct: Int = 0,
         val progressoRunToken: String? = null,
+        /** Título do audiobook em geração, informado pelo worker (o do livro); null até o worker informar. */
+        val progressoNome: String? = null,
         val statusMessage: String = "",
         val arquivoSelecionadoNome: String = "",
         val arquivoSelecionadoUri: Uri? = null,
@@ -358,7 +362,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 progressoPct = 0,
                 statusMessage = getApplication<Application>().getString(R.string.status_starting),
                 conversionDone = null,
-                progressoRunToken = params.runToken
+                progressoRunToken = params.runToken,
+                progressoNome = null
             )
         }
 
@@ -423,7 +428,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                         progressoPct = pausada.pct,
                         statusMessage = app.getString(R.string.status_starting),
                         conversionDone = null,
-                        progressoRunToken = pausada.runToken
+                        progressoRunToken = pausada.runToken,
+                        progressoNome = null
                     )
                 }
                 val request = OneTimeWorkRequestBuilder<ConversionWorker>()
@@ -485,7 +491,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                     progressoPct = 0,
                     statusMessage = "",
                     conversionDone = null,
-                    progressoRunToken = runToken
+                    progressoRunToken = runToken,
+                    progressoNome = null
                 )
             }
             observarTrabalho(ativo.id)
@@ -506,6 +513,9 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                             val pct = info.progress.getInt(ConversionWorker.KEY_PROGRESS_PCT, 0)
                             val msg = info.progress.getString(ConversionWorker.KEY_PROGRESS_MSG) ?: ""
                             val token = info.progress.getString(ConversionWorker.KEY_RUN_TOKEN)
+                            // O nome chega antes do primeiro progresso (só com ele, pct 0 e msg vazia).
+                            val nome = info.progress.getString(ConversionWorker.KEY_PROGRESS_NOME)
+                            if (!nome.isNullOrBlank()) _uiState.update { it.copy(progressoNome = nome) }
                             if (pct > 0 || msg.isNotBlank()) setProgresso(pct, msg, token)
                         }
                         WorkInfo.State.SUCCEEDED -> {
@@ -569,7 +579,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         val finalizado: Boolean = false,
         val exportUri: String? = null,
         val exportPasta: String? = null,
-        val exportErro: String? = null
+        val exportErro: String? = null,
+        val titulo: String? = null
     )
 
     private fun resultadoDeSucesso(outputData: androidx.work.Data): ResultadoConversao {
@@ -584,7 +595,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             finalizado = outputData.getBoolean(w.KEY_RESULT_FINALIZADO, false),
             exportUri = outputData.getString(w.KEY_RESULT_EXPORT_URI),
             exportPasta = outputData.getString(w.KEY_RESULT_EXPORT_PASTA),
-            exportErro = outputData.getString(w.KEY_RESULT_EXPORT_ERRO)
+            exportErro = outputData.getString(w.KEY_RESULT_EXPORT_ERRO),
+            titulo = outputData.getString(w.KEY_RESULT_TITULO)
         )
     }
 
@@ -637,7 +649,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                     duracao    = resultado.duracao,
                     tamanhoMb  = resultado.tamanhoMb,
                     exportStatus = status,
-                    runToken = resultado.runToken
+                    runToken = resultado.runToken,
+                    titulo = resultado.titulo
                 )
             )
         }

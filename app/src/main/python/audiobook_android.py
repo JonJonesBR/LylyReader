@@ -1083,6 +1083,9 @@ def processar_arquivo_sync(
     saida_mp3: str             = "",
     progress_callback          = None,
     blacklist                  = None,
+    titulo_etiqueta: str       = "",
+    autor_etiqueta: str        = "",
+    album_etiqueta: str        = "",
 ) -> dict:
     """
     Versão SÍNCRONA de processar_arquivo() - bloqueia a thread atual.
@@ -1091,6 +1094,8 @@ def processar_arquivo_sync(
     O Kotlin passa um lambda/interface como progress_callback:
         mod.callAttr("processar_arquivo_sync", ..., kotlinCallback)
     O callback recebe (pct: Int, msg: String).
+
+    As etiquetas (título, autor e álbum do livro) vêm como texto, vazias quando não há: o MP3 sai como antes.
 
     Retorna dict Python: {"ok": True/False, "caminho": str, "duracao": str, ...}
     """
@@ -1113,6 +1118,8 @@ def processar_arquivo_sync(
     _cfg.SEMAFORO_TTS = None
     _cfg._RATE_LOCK = None
 
+    etiquetas = {"titulo": titulo_etiqueta or "", "autor": autor_etiqueta or "", "album": album_etiqueta or ""}
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)  # Necessário em threads não-principais (Python 3.10+)
     try:
@@ -1127,6 +1134,7 @@ def processar_arquivo_sync(
                 saida_mp3=saida_mp3,
                 progress_cb=_cb,
                 blacklist=blacklist,
+                etiquetas=etiquetas,
             )
         )
         if result is None:
@@ -1152,10 +1160,13 @@ def processar_texto_sync(
     progress_callback          = None,
     blacklist                  = None,
     speaker_map_path: str      = "",
+    titulo_etiqueta: str       = "",
+    autor_etiqueta: str        = "",
+    album_etiqueta: str        = "",
 ) -> dict:
     """
     Igual a processar_arquivo_sync mas recebe texto diretamente.
-    Útil para converter textos colados na UI.
+    Útil para converter textos colados na UI. As etiquetas seguem o mesmo critério (vazias = como antes).
     """
     import traceback as _tb
     import logging as _logging
@@ -1171,6 +1182,8 @@ def processar_texto_sync(
     import config_android as _cfg
     _cfg.SEMAFORO_TTS = None
     _cfg._RATE_LOCK = None
+
+    etiquetas = {"titulo": titulo_etiqueta or "", "autor": autor_etiqueta or "", "album": album_etiqueta or ""}
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -1188,6 +1201,7 @@ def processar_texto_sync(
                 progress_cb=_cb,
                 blacklist=blacklist,
                 speaker_map_path=speaker_map_path or None,
+                etiquetas=etiquetas,
             )
         )
         if result is None:

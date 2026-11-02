@@ -17,7 +17,7 @@ from typing import Callable, List, Optional
 import edge_tts
 from mutagen.mp3 import MP3
 from mutagen.id3 import (
-    ID3, TIT2, TPE1, TALB, TCON, TDRC, COMM, APIC, ID3NoHeaderError,
+    ID3, TIT2, TPE1, TALB, TCOM, TCON, TDRC, COMM, APIC, ID3NoHeaderError,
     CTOC, CHAP, CTOCFlags,
 )
 
@@ -1057,6 +1057,7 @@ def _carregar_tags_mp3(filepath: str) -> ID3:
 
 def _aplicar_metadados(
     tags: ID3, titulo: str, artista: str, album: str, genero: str, comentario: str, capa_bytes: bytes,
+    marcador: str = "",
 ) -> None:
     if titulo:
         tags.add(TIT2(encoding=3, text=titulo))
@@ -1064,6 +1065,9 @@ def _aplicar_metadados(
         tags.add(TPE1(encoding=3, text=artista))
     if album:
         tags.add(TALB(encoding=3, text=album))
+    # Compositor (TCOM) como marcador do app: o MediaMetadataRetriever lê este campo, não o "encoded by".
+    if marcador:
+        tags.add(TCOM(encoding=3, text=marcador))
     if genero:
         tags.add(TCON(encoding=3, text=genero))
     tags.add(TDRC(encoding=3, text=str(datetime.now().year)))
@@ -1103,7 +1107,7 @@ def _padding_id3(info) -> int:
 def adicionar_metadados_mp3(
     filepath: str, titulo: str = "", artista: str = "LylyReader",
     album: str = "Audiobook", genero: str = "Audiobook", comentario: str = "",
-    capa_bytes: bytes = None,
+    capa_bytes: bytes = None, marcador: str = "",
 ):
     try:
         # WAV disfarçado de .mp3 (Gemini sem FFmpeg): ID3 corromperia o RIFF header
@@ -1111,7 +1115,7 @@ def adicionar_metadados_mp3(
             if _f.read(4) == b'RIFF':
                 return False
         tags = _carregar_tags_mp3(filepath)
-        _aplicar_metadados(tags, titulo, artista, album, genero, comentario, capa_bytes)
+        _aplicar_metadados(tags, titulo, artista, album, genero, comentario, capa_bytes, marcador)
         tags.save(filepath)
         return True
     except Exception as e:
@@ -1139,11 +1143,12 @@ def adicionar_chapter_marks(filepath: str, capitulos: list) -> bool:
 def adicionar_metadados_e_capitulos_mp3(
     filepath: str, titulo: str = "", artista: str = "LylyReader",
     album: str = "Audiobook", genero: str = "Audiobook", comentario: str = "",
-    capa_bytes: bytes = None, capitulos: list = None,
+    capa_bytes: bytes = None, capitulos: list = None, marcador: str = "",
 ) -> bool:
     """Grava metadados e chapter marks numa única passada de tags (P3.4): o arquivo inteiro é
     reescrito uma vez, e não duas, como ocorria com adicionar_metadados_mp3 + adicionar_chapter_marks.
     Sem capítulos, grava só os metadados. Reserva padding (_padding_id3) para updates futuros.
+    Com `marcador`, grava-o no compositor (TCOM); vazio não grava nada.
     WAV disfarçado de .mp3 é ignorado (não recebe ID3)."""
     try:
         # WAV disfarçado de .mp3: ID3 corromperia o RIFF header
@@ -1151,7 +1156,7 @@ def adicionar_metadados_e_capitulos_mp3(
             if _f.read(4) == b'RIFF':
                 return False
         tags = _carregar_tags_mp3(filepath)
-        _aplicar_metadados(tags, titulo, artista, album, genero, comentario, capa_bytes)
+        _aplicar_metadados(tags, titulo, artista, album, genero, comentario, capa_bytes, marcador)
         if capitulos:
             try:
                 _aplicar_capitulos(tags, capitulos)

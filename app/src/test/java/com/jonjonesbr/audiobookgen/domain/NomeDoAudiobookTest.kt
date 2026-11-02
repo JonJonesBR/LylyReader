@@ -117,4 +117,42 @@ class NomeDoAudiobookTest {
     fun `item da fila que vira vazio mostra o nome do arquivo`() {
         assertEquals(".txt", NomeDoAudiobook.doItemDaFila(null, ".txt"))
     }
+
+    @Test
+    fun `MP3 novo com marcador usa o titulo e o autor reais`() {
+        assertEquals("Um Apólogo", NomeDoAudiobook.tituloDaEtiqueta("Um Apólogo", "LylyReader", "LylyReader"))
+        assertEquals(
+            "Um Apólogo",
+            NomeDoAudiobook.paraMostrar("Um Apólogo", "Machado de Assis", "Um_Ap_logo.mp3", "LylyReader")
+        )
+        assertEquals("Machado de Assis", NomeDoAudiobook.autorDaEtiqueta("Machado de Assis"))
+    }
+
+    @Test
+    fun `marcador vale sem diferenca de maiusculas e com espacos`() {
+        assertEquals("Um Apólogo", NomeDoAudiobook.tituloDaEtiqueta("Um Apólogo", "LylyReader", " lylyreader "))
+    }
+
+    @Test
+    fun `MP3 com marcador e titulo vazio cai no nome do arquivo`() {
+        assertEquals("Um Ap logo", NomeDoAudiobook.paraMostrar("", "LylyReader", "Um_Ap_logo.mp3", "LylyReader"))
+    }
+
+    @Test
+    fun `MP3 antigo do app, sem marcador, ignora o titulo como antes`() {
+        assertEquals(
+            "Um Ap logo",
+            NomeDoAudiobook.paraMostrar("reader_selection_1", "LylyReader", "Um_Ap_logo.mp3", null)
+        )
+    }
+
+    @Test
+    fun `MP3 de fora mantem as etiquetas`() {
+        assertEquals("Dom Casmurro", NomeDoAudiobook.paraMostrar("Dom Casmurro", "Machado", "x.mp3", null))
+    }
+
+    @Test
+    fun `artista do app com compositor de outro nao confia no titulo`() {
+        assertNull(NomeDoAudiobook.tituloDaEtiqueta("X", "LylyReader", "Fulano"))
+    }
 }

@@ -800,6 +800,29 @@ def _calcular_timestamps_capitulos(
 
 # ── Função principal ──────────────────────────────────────────────────────────
 
+# Marcador que o app grava no compositor (TCOM) dos MP3 com título e autor do livro. Igual a
+# `NomeDoAudiobook.MARCADOR_DO_APP` no Kotlin: com ele, o app confia no TIT2 e no TPE1 do arquivo.
+MARCADOR_DO_APP = "LylyReader"
+
+
+def etiquetas_do_mp3(titulo_interno: str, etiquetas: Optional[dict]) -> dict:
+    """Etiquetas do MP3 final. Sem título nas `etiquetas` (conversa sem livro na Biblioteca, ou chamada
+    antiga), grava como antes: TIT2 é o nome interno, artista "LylyReader" e sem marcador. Com título,
+    grava o título do livro, o autor (ou "LylyReader" se faltar), o álbum (ou o próprio título) e o marcador."""
+    etq = etiquetas or {}
+    titulo = (etq.get("titulo") or "").strip()
+    if not titulo:
+        return {"titulo": titulo_interno, "artista": "LylyReader", "album": titulo_interno, "marcador": ""}
+    autor = (etq.get("autor") or "").strip()
+    album = (etq.get("album") or "").strip()
+    return {
+        "titulo": titulo,
+        "artista": autor or "LylyReader",
+        "album": album or titulo,
+        "marcador": MARCADOR_DO_APP,
+    }
+
+
 async def _processar_nucleo(
     texto: str,
     voz: str,
@@ -814,6 +837,7 @@ async def _processar_nucleo(
     speaker_map_path: Optional[str] = None,
     metricas: Optional[MetricasConversao] = None,
     tarefas_lote: Optional[list] = None,
+    etiquetas: Optional[dict] = None,
 ) -> dict:
     """Corpo da conversão (ver `processar`). Registra tempos em `metricas`. Os lotes da junção
     incremental entram em `tarefas_lote` (quem chama espera as que sobrarem)."""
@@ -1341,17 +1365,20 @@ async def _processar_nucleo(
     except Exception as e:
         logger.warning(f"Sincronia texto-áudio falhou (não-crítico): {e}")
 
+    # Título e autor do livro, quando o app os tem (ver etiquetas_do_mp3); sem eles, as etiquetas de sempre.
+    etq = etiquetas_do_mp3(titulo, etiquetas)
     inicio_etapa = time.perf_counter()
     await _com_batimento(
         asyncio.to_thread(
             adicionar_metadados_e_capitulos_mp3,
             saida_mp3,
-            titulo=titulo,
-            artista="LylyReader",
-            album=titulo,
+            titulo=etq["titulo"],
+            artista=etq["artista"],
+            album=etq["album"],
             genero="Audiobook",
             capa_bytes=capa_bytes,
             capitulos=caps_com_ts,
+            marcador=etq["marcador"],
         ),
         _cb, PCT_FIM_TIMBRE, msg_metadados,
     )
@@ -1398,6 +1425,7 @@ async def processar(
     capitulos_info: Optional[list] = None,  # [{"titulo", "inicio_chunk", "fim_chunk"}]
     blacklist=None,
     speaker_map_path: Optional[str] = None,
+    etiquetas: Optional[dict] = None,
 ) -> dict:
     """
     Converte texto em audiobook MP3.
@@ -1424,6 +1452,7 @@ async def processar(
         resultado = await _processar_nucleo(
             texto, voz, velocidade, tom, estilo, titulo, saida_mp3, progress_cb,
             capitulos_info, blacklist, speaker_map_path, metricas=metricas, tarefas_lote=lotes,
+            etiquetas=etiquetas,
         )
     finally:
         # Lotes da junção incremental ainda em voo não podem gravar depois que a conversão terminou
@@ -1451,6 +1480,7 @@ async def processar_arquivo(
     saida_mp3: str = "",
     progress_cb: Optional[ProgressCallback] = None,
     blacklist: Optional[str] = "[]",
+    etiquetas: Optional[dict] = None,
 ) -> dict:
     """
     Wrapper de alto nível: extrai texto do arquivo e chama processar().
@@ -1544,4 +1574,5 @@ async def processar_arquivo(
         progress_cb=cb_final,
         capitulos_info=capitulos_info_final,
         blacklist=blacklist,
+        etiquetas=etiquetas,
     )

@@ -214,6 +214,7 @@ class PythonEngineUseCase(private val context: Context) {
      * Dispara o processamento pesado e síncrono do arquivo inteiro.
      * Utiliza callback bridge nativo para relatar progresso em tempo real pra ViewModel.
      */
+    @Suppress("LongParameterList")
     suspend fun processarArquivo(
         arquivo: String,
         voz: String,
@@ -222,6 +223,7 @@ class PythonEngineUseCase(private val context: Context) {
         saida: String,
         motor: String,
         chaveGemini: String,
+        etiquetas: EtiquetasDoMp3? = null,
         onProgress: (Int, String) -> Unit
     ): ProcessamentoResult = withContext(Dispatchers.IO) {
         kotlinx.coroutines.yield() // CancellationException se o usuário cancelou
@@ -246,9 +248,11 @@ class PythonEngineUseCase(private val context: Context) {
             val jsonStr = com.jonjonesbr.audiobookgen.data.AppPrefs(context).blacklistWordsJson
 
             // O Python bloqueia esta IO Thread até terminar tudo
+            // Etiquetas vão como texto, nunca null: vazio = o MP3 sai com as etiquetas de sempre.
             val resultado = mod.callAttr(
                 "processar_arquivo_sync",
-                arquivo, voz, velocidade, "+0Hz", estilo, saida, callbackBridge, jsonStr
+                arquivo, voz, velocidade, "+0Hz", estilo, saida, callbackBridge, jsonStr,
+                etiquetas?.titulo.orEmpty(), etiquetas?.autor.orEmpty(), etiquetas?.album.orEmpty()
             )
 
             if (resultado == null) {
@@ -288,6 +292,7 @@ class PythonEngineUseCase(private val context: Context) {
     }
 
     /** Converte texto já extraído, preservando parágrafos e mapa de vozes do leitor. */
+    @Suppress("LongParameterList")
     suspend fun processarTexto(
         texto: String,
         titulo: String,
@@ -298,6 +303,7 @@ class PythonEngineUseCase(private val context: Context) {
         motor: String,
         chaveGemini: String,
         speakerMapPath: String? = null,
+        etiquetas: EtiquetasDoMp3? = null,
         onProgress: (Int, String) -> Unit
     ): ProcessamentoResult = withContext(Dispatchers.IO) {
         kotlinx.coroutines.yield()
@@ -323,7 +329,8 @@ class PythonEngineUseCase(private val context: Context) {
                 saida,
                 callbackBridge,
                 blacklist,
-                speakerMapPath.orEmpty()
+                speakerMapPath.orEmpty(),
+                etiquetas?.titulo.orEmpty(), etiquetas?.autor.orEmpty(), etiquetas?.album.orEmpty()
             ) ?: return@withContext ProcessamentoResult.Error(context.getString(R.string.python_payload_incompleto))
             val ok = resultado.callAttr("get", "ok")?.toBoolean() ?: false
             if (ok) {

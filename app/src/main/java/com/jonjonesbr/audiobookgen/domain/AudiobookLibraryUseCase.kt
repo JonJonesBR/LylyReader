@@ -108,7 +108,7 @@ object AudiobookLibraryUseCase {
                     val noDisco = if (dataCol >= 0) cursor.getString(dataCol) else null
 
                     dest.add(AudiobookItem(
-                        nome          = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, nome),
+                        nome          = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, nome, meta.compositor),
                         nomeArquivo   = nome,
                         uri           = uri,
                         caminho       = null,
@@ -117,7 +117,7 @@ object AudiobookLibraryUseCase {
                         duracaoMs     = meta.duracaoMs,
                         localizacao   = context.getString(R.string.folder_downloads),
                         progressoPct  = PlaybackProgressStore.percent(context, uri.toString()),
-                        titulo        = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor),
+                        titulo        = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor, meta.compositor),
                         autor         = NomeDoAudiobook.autorDaEtiqueta(meta.autor),
                         caminhoNoDisco = noDisco
                     ))
@@ -135,7 +135,7 @@ object AudiobookLibraryUseCase {
             val meta = lerMetadados(context, null, file.absolutePath)
             val fileUri = Uri.fromFile(file)
             dest.add(AudiobookItem(
-                nome           = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, file.name),
+                nome           = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, file.name, meta.compositor),
                 nomeArquivo    = file.name,
                 uri            = fileUri,
                 caminho        = file.absolutePath,
@@ -144,7 +144,7 @@ object AudiobookLibraryUseCase {
                 duracaoMs      = meta.duracaoMs,
                 localizacao    = context.getString(R.string.folder_downloads),
                 progressoPct   = PlaybackProgressStore.percent(context, fileUri.toString()),
-                titulo         = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor),
+                titulo         = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor, meta.compositor),
                 autor          = NomeDoAudiobook.autorDaEtiqueta(meta.autor)
             ))
         }
@@ -212,7 +212,7 @@ object AudiobookLibraryUseCase {
         val meta = lerMetadados(context, fileUri, null)
 
         return AudiobookItem(
-            nome           = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, nome),
+            nome           = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, nome, meta.compositor),
             nomeArquivo    = nome,
             uri            = fileUri,
             caminho        = null,
@@ -221,26 +221,32 @@ object AudiobookLibraryUseCase {
             duracaoMs      = meta.duracaoMs,
             localizacao    = nomePasta,
             progressoPct   = PlaybackProgressStore.percent(context, fileUri.toString()),
-            titulo         = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor),
+            titulo         = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor, meta.compositor),
             autor          = NomeDoAudiobook.autorDaEtiqueta(meta.autor)
         )
     }
 
-    /** Duração e etiquetas (título e artista) lidas com um único MediaMetadataRetriever; zeros/nulos se não abrir. */
+    /**
+     * Duração e etiquetas (título, artista e compositor) lidas com um único MediaMetadataRetriever;
+     * zeros/nulos se não abrir.
+     */
     @Suppress("TooGenericExceptionCaught")
     private fun lerMetadados(context: Context, uri: Uri?, caminho: String?): MetadadosAudio {
         val retriever = MediaMetadataRetriever()
         return try {
             if (uri != null) retriever.setDataSource(context, uri)
             else if (caminho != null) retriever.setDataSource(caminho)
-            else return MetadadosAudio(0L, null, null)
+            else return MetadadosAudio(0L, null, null, null)
             MetadadosAudio(
                 duracaoMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L,
                 titulo = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)?.trim()?.takeIf { it.isNotEmpty() },
-                autor = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)?.trim()?.takeIf { it.isNotEmpty() }
+                autor = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                    ?.trim()?.takeIf { it.isNotEmpty() },
+                compositor = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_COMPOSER)
+                    ?.trim()?.takeIf { it.isNotEmpty() }
             )
         } catch (_: Exception) {
-            MetadadosAudio(0L, null, null)
+            MetadadosAudio(0L, null, null, null)
         } finally {
             retriever.release()
         }
@@ -271,8 +277,16 @@ object AudiobookLibraryUseCase {
         }
     }
 
-    /** Lido de uma vez do arquivo: [titulo] e [autor] são as etiquetas, sem vazio (null se não houver). */
-    private data class MetadadosAudio(val duracaoMs: Long, val titulo: String?, val autor: String?)
+    /**
+     * Lido de uma vez do arquivo: [titulo], [autor] e [compositor] são as etiquetas, sem vazio (null se não houver).
+     * O [compositor] (TCOM) traz o marcador do app em MP3 gerados a partir da versão com autor real.
+     */
+    private data class MetadadosAudio(
+        val duracaoMs: Long,
+        val titulo: String?,
+        val autor: String?,
+        val compositor: String?
+    )
 }
 
 /** Resultado de [AudiobookLibraryUseCase.lerCapaEmbutida]: a capa, arquivo sem capa, ou falha ao abrir. */

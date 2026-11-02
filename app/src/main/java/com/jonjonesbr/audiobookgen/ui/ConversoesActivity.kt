@@ -322,7 +322,7 @@ class ConversoesActivity : AppCompatActivity() {
                 Toast.makeText(this@ConversoesActivity, R.string.conv_previa_sem_blocos, Toast.LENGTH_SHORT).show()
                 return@launch
             }
-            val titulo = tituloDoLivro.ifBlank { getString(R.string.conv_agora_generico) }
+            val titulo = tituloNaTela(viewModel.uiState.value)
             viewModel.iniciarPlayer(caminho, getString(R.string.conv_previa_titulo, titulo))
         }
     }
@@ -362,8 +362,9 @@ class ConversoesActivity : AppCompatActivity() {
             aoAceitar = {
                 // Job saiu do disco e foi enfileirado: a tela passa a acompanhar a execução (fila ou avulsa).
                 coordenador.sincronizar()
-                tituloDoLivro = coordenador.currentItem?.let { TextosDeNotificacao.tituloDoArquivo(it.nome) }
-                    ?: pausadaAtual?.titulo.orEmpty()
+                // O título guardado na pausa é o do livro; o nome do item da fila só entra se ele faltar.
+                tituloDoLivro = pausadaAtual?.titulo?.takeIf { it.isNotBlank() }
+                    ?: coordenador.currentItem?.let { TextosDeNotificacao.tituloDoArquivo(it.nome) }.orEmpty()
                 atualizarFila()
             }
         )
@@ -462,6 +463,13 @@ class ConversoesActivity : AppCompatActivity() {
         if (proximo == null) mostrar(viewModel.uiState.value)
     }
 
+    /**
+     * Título do cartão "Agora" e da prévia: o nome que o worker informa (o do livro); sem ele, o título da tela.
+     */
+    private fun tituloNaTela(estado: AudiobookUiState): String =
+        estado.progressoNome?.takeIf { it.isNotBlank() }
+            ?: tituloDoLivro.ifBlank { getString(R.string.conv_agora_generico) }
+
     /** Atualiza a seção da fila. Sem itens, a seção e o ⋮ somem (C2): não há o que iniciar nem ler. */
     private fun atualizarFila() {
         val resumo = QueueManager.resumo()
@@ -537,7 +545,7 @@ class ConversoesActivity : AppCompatActivity() {
         when {
             estado.processando -> {
                 mostrarSo(cardAgora)
-                findViewById<TextView>(R.id.tvConvLivro).text = tituloDoLivro.ifBlank { getString(R.string.conv_agora_generico) }
+                findViewById<TextView>(R.id.tvConvLivro).text = tituloNaTela(estado)
                 findViewById<TextView>(R.id.tvConvStatus).text = when {
                     pausandoLocal -> getString(R.string.conv_pausando)
                     else -> estado.statusMessage.ifBlank { getString(R.string.status_starting) }
@@ -597,8 +605,10 @@ class ConversoesActivity : AppCompatActivity() {
             eventoRegistrado = true
             AppPrefs(this).registrarEvento(EventoAprendizado.AUDIOBOOK_GERADO.id)
         }
-        // Mesmo título da notificação de concluída: sem "_" e sem a extensão do arquivo.
-        val nome = TextosDeNotificacao.nomeDaConversao(evento.caminho) ?: File(evento.caminho).nameWithoutExtension
+        // Mesmo título da notificação de concluída: o do livro (informado pelo worker); sem ele, o nome do arquivo.
+        val nome = evento.titulo?.takeIf { it.isNotBlank() }
+            ?: TextosDeNotificacao.nomeDaConversao(evento.caminho)
+            ?: File(evento.caminho).nameWithoutExtension
         findViewById<TextView>(R.id.tvConvProntoInfo).text =
             getString(R.string.conv_pronto_info, nome, evento.duracao, evento.tamanhoMb)
         val aviso = findViewById<TextView>(R.id.tvConvProntoAviso)
