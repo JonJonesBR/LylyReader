@@ -80,6 +80,35 @@
                 android:textSize="12sp"
                 android:textAllCaps="false"
                 android:textColor="@color/color_error"/>
+
+            <!-- Voz pronta: renomear (só clonada) e apagar viram ícones discretos, sem texto vermelho. -->
+            <LinearLayout
+                android:id="@+id/llDownloadIcones"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageButton
+                    android:id="@+id/btnDownloadRenomear"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="12dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_editar"
+                    android:tint="?attr/colorOnSurfaceVariant"/>
+
+                <ImageButton
+                    android:id="@+id/btnDownloadApagar"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="12dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_lixeira"
+                    android:tint="?attr/colorOnSurfaceVariant"/>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

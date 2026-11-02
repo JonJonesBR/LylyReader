@@ -24,6 +24,7 @@ import com.jonjonesbr.audiobookgen.service.AndamentoDownload
 import com.jonjonesbr.audiobookgen.service.DownloadCentral
 import com.jonjonesbr.audiobookgen.service.GrupoDownload
 import com.jonjonesbr.audiobookgen.service.ItemBaixavel
+import com.jonjonesbr.audiobookgen.tts.PocketCustomVoices
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -88,7 +89,8 @@ class DownloadCentralActivity : BasePlayerActivity() {
             onPrincipal = ::aoToquePrincipal,
             onSecundario = ::aoToqueSecundario,
             onPausarTudo = { DownloadCentral.pausarTodos() },
-            onCriarVoz = ::mostrarCriarVoz
+            onCriarVoz = ::mostrarCriarVoz,
+            onRenomear = ::aoToqueRenomear
         )
         recycler.apply {
             this.adapter = androidx.recyclerview.widget.ConcatAdapter(
@@ -297,6 +299,8 @@ class DownloadCentralActivity : BasePlayerActivity() {
 
     private fun montarLista() {
         montarLivrosBaixando()
+        // Com um idioma filtrado, a linha 2 deixa o idioma de fora: o chip já diz.
+        adapter.mostrarIdioma = filtro == com.jonjonesbr.audiobookgen.domain.IdiomaBusca.TODOS
         val linhas = visiveis().map { item -> LinhaDownload(item, andamentoAtual[item.id] ?: AndamentoDownload()) }
         val lista = LinhaLista.montar(linhas, DownloadCentral.temAtividade())
         adapter.submitList(lista)
@@ -335,7 +339,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
         val apagando = linha.estado == EstadoDownload.PRONTO || linha.apagavelSemEstarPronta
         val mensagem = if (apagando) R.string.dl_central_apagar_msg
         else R.string.dl_central_cancelar_msg
-        AlertDialog.Builder(this)
+        val dialogo = AlertDialog.Builder(this)
             .setTitle(nomeExibidoDoPacote(this, linha.item.id, linha.item.nome))
             .setMessage(getString(mensagem, nomeExibidoDoPacote(this, linha.item.id, linha.item.nome)))
             .setPositiveButton(
@@ -346,6 +350,14 @@ class DownloadCentralActivity : BasePlayerActivity() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .exibir()
+        // Confirmar um apagar em vermelho. Depois do show: antes disso o botão ainda não existe (e pode ser nulo).
+        if (apagando) dialogo.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(getColor(R.color.color_error))
+    }
+
+    /** Renomear voz clonada: o mesmo diálogo de Ajustes › Clonagem; a lista se atualiza sozinha ao salvar. */
+    private fun aoToqueRenomear(linha: LinhaDownload) {
+        val voz = PocketCustomVoices.list(this).firstOrNull { it.id == linha.item.id } ?: return
+        cloneVoiceFlow.renomear(voz, aoConcluir = {})
     }
 
     private fun baixarTudo() {

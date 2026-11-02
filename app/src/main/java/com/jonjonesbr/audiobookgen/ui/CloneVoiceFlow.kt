@@ -508,7 +508,11 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             .exibir()
     }
 
-    private fun renomear(voz: PocketCustomVoices.Voice) {
+    /**
+     * Diálogo de renomear, o mesmo em Ajustes e na Central de downloads. [aoConcluir] roda ao salvar ou cancelar
+     * (por padrão, volta para a lista de vozes); quem chama fora dos Ajustes passa um bloco vazio.
+     */
+    fun renomear(voz: PocketCustomVoices.Voice, aoConcluir: () -> Unit = { gerenciar() }) {
         val campo = EditText(activity).apply { setText(voz.name); setSingleLine() }
         val moldura = LinearLayout(activity).apply { setPadding(dp(20), dp(8), dp(20), 0); addView(campo, LinearLayout.LayoutParams(-1, -2)) }
         AlertDialog.Builder(activity)
@@ -519,9 +523,9 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
                 VoiceCatalog.removerPacoteLocal(voz.id)
                 PocketCustomVoiceCatalog.registrarTodas(activity)
                 aoMudar()
-                gerenciar()
+                aoConcluir()
             }
-            .setNegativeButton(android.R.string.cancel) { _, _ -> gerenciar() }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> aoConcluir() }
             .exibir()
     }
 

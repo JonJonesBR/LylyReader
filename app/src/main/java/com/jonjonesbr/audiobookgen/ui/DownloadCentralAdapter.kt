@@ -6,6 +6,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
@@ -14,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.EstadoDownload
 import com.jonjonesbr.audiobookgen.domain.IdiomaDownload
+import com.jonjonesbr.audiobookgen.domain.LinhasVoz
 import com.jonjonesbr.audiobookgen.domain.SecaoDownload
 import com.jonjonesbr.audiobookgen.domain.SecoesDownload
 import com.jonjonesbr.audiobookgen.domain.TipoPacote
@@ -31,6 +34,7 @@ data class LinhaDownload(
     /** Voz clonada ou importada (e os codificadores da clonagem): fica em "Minhas vozes". */
     val ehDoUsuario: Boolean get() = item.grupo == GrupoDownload.IMPORTADAS || item.grupo == GrupoDownload.CODIFICADORES
     val secao: SecaoDownload get() = SecoesDownload.secao(ehLivro, ehDoUsuario, estado)
+    val tipo: TipoPacote get() = SecoesDownload.tipo(item.id, ehLivro, ehDoUsuario)
     /** Não pronto e baixar não resolve (ex.: voz clonada sem o codificador do idioma). */
     val bloqueado: Boolean get() = estado == EstadoDownload.NAO_BAIXADO && andamento.bloqueio != null
     /** Voz do usuário ainda não pronta: não se baixa pela Central (ou não resolve), mas se apaga. */
@@ -71,8 +75,21 @@ class DownloadCentralAdapter(
     private val onPrincipal: (LinhaDownload) -> Unit,
     private val onSecundario: (LinhaDownload) -> Unit,
     private val onPausarTudo: () -> Unit,
-    private val onCriarVoz: () -> Unit
+    private val onCriarVoz: () -> Unit,
+    private val onRenomear: (LinhaDownload) -> Unit = {}
 ) : ListAdapter<LinhaLista, RecyclerView.ViewHolder>(DIFF) {
+
+    /**
+     * Mostra os idiomas na linha 2. A Activity desliga quando o filtro já é um idioma, porque o filtro diz.
+     * Trocar o valor redesenha as linhas: o DiffUtil só olha o andamento, não o texto.
+     */
+    var mostrarIdioma: Boolean = true
+        set(valor) {
+            if (field != valor) {
+                field = valor
+                notifyDataSetChanged()
+            }
+        }
 
     companion object {
         private const val BARRA_MAX = 1000
@@ -86,9 +103,11 @@ class DownloadCentralAdapter(
                 old is LinhaLista.Cabecalho && new is LinhaLista.Cabecalho -> old.secao == new.secao
                 else -> old === new
             }
-            // ItemBaixavel carrega lambdas: a identidade do item já basta, o que muda é o andamento.
+            // ItemBaixavel carrega lambdas: a identidade do item já basta. O que pode mudar é o andamento
+            // e o nome (renomear voz clonada).
             override fun areContentsTheSame(old: LinhaLista, new: LinhaLista) = when {
-                old is LinhaLista.Item && new is LinhaLista.Item -> old.linha.andamento == new.linha.andamento
+                old is LinhaLista.Item && new is LinhaLista.Item ->
+                    old.linha.item.nome == new.linha.item.nome && old.linha.andamento == new.linha.andamento
                 else -> old == new
             }
         }
@@ -101,6 +120,9 @@ class DownloadCentralAdapter(
         val barra: ProgressBar = view.findViewById(R.id.pbDownload)
         val principal: Button = view.findViewById(R.id.btnDownloadPrincipal)
         val secundario: Button = view.findViewById(R.id.btnDownloadSecundario)
+        val icones: LinearLayout = view.findViewById(R.id.llDownloadIcones)
+        val renomear: ImageButton = view.findViewById(R.id.btnDownloadRenomear)
+        val apagar: ImageButton = view.findViewById(R.id.btnDownloadApagar)
     }
 
     class CabecalhoVH(view: View) : RecyclerView.ViewHolder(view) {
@@ -155,9 +177,10 @@ class DownloadCentralAdapter(
     private fun bindItem(holder: ItemVH, linha: LinhaDownload) {
         val ctx = holder.itemView.context
         val a = linha.andamento
-        holder.nome.text = SecoesDownload.nomeAmigavel(nomeExibidoDoPacote(ctx, linha.item.id, linha.item.nome))
-        holder.descricao.text = descricao(ctx, linha)
-        holder.descricao.visibility = if (holder.descricao.text.isNullOrBlank()) View.GONE else View.VISIBLE
+        val textos = textosDaVoz(ctx, linha)
+        holder.nome.text = textos.nome
+        holder.descricao.text = textos.descricao
+        holder.descricao.visibility = if (textos.descricao.isBlank()) View.GONE else View.VISIBLE
 
         val mostraBarra = linha.estado == EstadoDownload.BAIXANDO || linha.estado == EstadoDownload.PAUSADO ||
             linha.estado == EstadoDownload.NA_FILA
@@ -166,7 +189,10 @@ class DownloadCentralAdapter(
         holder.barra.max = BARRA_MAX
         holder.barra.progress = (a.fracao * BARRA_MAX).toInt()
 
-        holder.estado.text = estado(ctx, linha)
+        // Voz pronta não tem linha de estado: o tamanho já está na linha 2.
+        val estadoTexto = estado(ctx, linha)
+        holder.estado.text = estadoTexto
+        holder.estado.visibility = if (estadoTexto.isBlank()) View.GONE else View.VISIBLE
 
         val (textoPrincipal, textoSecundario) = botoes(linha)
         holder.principal.visibility = if (textoPrincipal == null) View.GONE else View.VISIBLE
@@ -175,39 +201,77 @@ class DownloadCentralAdapter(
         textoSecundario?.let { holder.secundario.setText(it) }
         holder.principal.setOnClickListener { onPrincipal(linha) }
         holder.secundario.setOnClickListener { onSecundario(linha) }
+
+        // Apagar (voz pronta, ou voz do usuário ainda não pronta) e renomear (só voz clonada pronta) são ícones.
+        val apagavel = linha.estado == EstadoDownload.PRONTO || linha.apagavelSemEstarPronta
+        val renomeavel = linha.estado == EstadoDownload.PRONTO && linha.tipo == TipoPacote.CLONADA
+        holder.icones.visibility = if (apagavel || renomeavel) View.VISIBLE else View.GONE
+        holder.apagar.visibility = if (apagavel) View.VISIBLE else View.GONE
+        // Nome completo (com o idioma): "Pocket TTS" sozinho seria igual nos três idiomas para o TalkBack.
+        holder.apagar.contentDescription = ctx.getString(R.string.dl_central_apagar_descricao, nomeCompleto(ctx, linha))
+        holder.apagar.setOnClickListener { onSecundario(linha) }
+        holder.renomear.visibility = if (renomeavel) View.VISIBLE else View.GONE
+        holder.renomear.contentDescription =
+            ctx.getString(R.string.dl_central_renomear_descricao, nomeCompleto(ctx, linha))
+        holder.renomear.setOnClickListener { onRenomear(linha) }
     }
 
-    /** Rótulos do botão principal e do secundário (vermelho) para o estado da linha; null = sem botão. */
+    /** Rótulos do botão principal e do secundário (texto, vermelho ou não) para o estado da linha; null = sem botão. */
     private fun botoes(linha: LinhaDownload): Pair<Int?, Int?> = when (linha.estado) {
+        // Apagar não fica aqui: é o ícone de lixeira (ver bindItem).
         EstadoDownload.NAO_BAIXADO -> {
             val principal = if (linha.bloqueado || linha.item.download == null) null else R.string.dl_central_baixar
-            principal to (if (linha.apagavelSemEstarPronta) R.string.dl_central_apagar else null)
+            principal to null
         }
         EstadoDownload.NA_FILA -> R.string.dl_central_tirar_fila to null
         EstadoDownload.BAIXANDO -> R.string.dl_central_pausar to R.string.dl_central_cancelar
         EstadoDownload.PAUSADO -> R.string.dl_central_continuar to R.string.dl_central_cancelar
         EstadoDownload.ERRO -> R.string.dl_central_tentar_novamente to R.string.dl_central_cancelar
-        EstadoDownload.PRONTO -> null to R.string.dl_central_apagar
+        EstadoDownload.PRONTO -> null to null
     }
 
-    /** "Vozes naturais · PT, EN, ES": o que é o pacote e para que idiomas. */
-    private fun descricao(ctx: Context, linha: LinhaDownload): String {
-        val tipo = when (SecoesDownload.tipo(linha.item.id, linha.ehLivro, linha.ehDoUsuario)) {
-            TipoPacote.SUPERTONIC -> R.string.dl_tipo_supertonic
-            TipoPacote.KOKORO -> R.string.dl_tipo_kokoro
-            TipoPacote.PIPER -> R.string.dl_tipo_piper
-            TipoPacote.POCKET -> R.string.dl_tipo_pocket
-            TipoPacote.MMS -> R.string.dl_tipo_mms
-            TipoPacote.CLONADA -> R.string.dl_tipo_clonada
-            TipoPacote.IMPORTADA -> R.string.dl_tipo_importada
-            TipoPacote.LIVRO -> null
-            TipoPacote.OUTRO -> R.string.dl_tipo_outro
-        }
+    /**
+     * Linha 1 (nome sem o motor e o idioma que a linha 2 mostra) e linha 2 ("Piper · leve e rápida · PT · 81 MB").
+     * O tamanho só entra na voz pronta; o idioma só quando [mostrarIdioma].
+     */
+    private fun textosDaVoz(ctx: Context, linha: LinhaDownload): LinhasVoz {
+        val tipo = linha.tipo
+        val nomeCompleto = nomeCompleto(ctx, linha)
         val idiomas = linha.item.idiomas
-        val textoIdiomas = SecoesDownload.idiomasCurtos(idiomas).ifBlank {
-            if (IdiomaDownload.MULTILINGUE in idiomas) ctx.getString(R.string.dl_varios_idiomas) else ""
+        // Voz clonada ou importada tem um idioma só, que é dela: a linha 2 não o repete.
+        val semIdioma = !mostrarIdioma || tipo == TipoPacote.CLONADA || tipo == TipoPacote.IMPORTADA
+        val textoIdiomas = if (semIdioma) null else SecoesDownload.idiomasCurtos(idiomas).ifBlank {
+            if (IdiomaDownload.MULTILINGUE in idiomas) ctx.getString(R.string.dl_varios_idiomas) else null
         }
-        return listOfNotNull(tipo?.let { ctx.getString(it) }, textoIdiomas.ifBlank { null }).joinToString(" · ")
+        val tamanho = if (linha.estado == EstadoDownload.PRONTO) {
+            Formatter.formatShortFileSize(ctx, linha.andamento.ocupadoBytes)
+        } else {
+            null
+        }
+        return SecoesDownload.linhasVoz(
+            nomeCompleto = nomeCompleto,
+            motor = SecoesDownload.motor(tipo),
+            descricao = rotuloTipo(tipo)?.let { ctx.getString(it) },
+            idiomas = textoIdiomas,
+            tamanho = tamanho
+        )
+    }
+
+    /** Nome do pacote sem o sufixo técnico, com o idioma (ex.: "Supertonic (English)"). */
+    private fun nomeCompleto(ctx: Context, linha: LinhaDownload): String =
+        SecoesDownload.nomeAmigavel(nomeExibidoDoPacote(ctx, linha.item.id, linha.item.nome))
+
+    /** Descrição curta do tipo; com motor, vem em minúsculas depois dele ("Piper · leve e rápida"). */
+    private fun rotuloTipo(tipo: TipoPacote): Int? = when (tipo) {
+        TipoPacote.SUPERTONIC -> R.string.dl_tipo_supertonic
+        TipoPacote.KOKORO -> R.string.dl_tipo_kokoro
+        TipoPacote.PIPER -> R.string.dl_tipo_piper
+        TipoPacote.POCKET -> R.string.dl_tipo_pocket
+        TipoPacote.MMS -> R.string.dl_tipo_mms
+        TipoPacote.CLONADA -> R.string.dl_tipo_clonada
+        TipoPacote.IMPORTADA -> R.string.dl_tipo_importada
+        TipoPacote.LIVRO -> null
+        TipoPacote.OUTRO -> R.string.dl_tipo_outro
     }
 
     private fun estado(ctx: Context, linha: LinhaDownload): String {
@@ -228,8 +292,8 @@ class DownloadCentralAdapter(
                     ctx.getString(R.string.dl_central_estado_baixando_sem_total)
                 }
             EstadoDownload.PAUSADO -> ctx.getString(R.string.dl_central_estado_pausado, pct)
-            EstadoDownload.PRONTO ->
-                ctx.getString(R.string.dl_central_estado_pronto, Formatter.formatShortFileSize(ctx, a.ocupadoBytes))
+            // Sem linha de estado: o tamanho está na linha 2 (ver textosDaVoz).
+            EstadoDownload.PRONTO -> ""
             EstadoDownload.ERRO -> ctx.getString(R.string.dl_central_estado_erro, a.erro.orEmpty())
         }
     }

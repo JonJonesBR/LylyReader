@@ -942,7 +942,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dl_central_estado_baixando">Baixando · %1$s de %2$s (%3$d%%)</string>
     <string name="dl_central_estado_baixando_sem_total">Baixando…</string>
     <string name="dl_central_estado_pausado">Pausado · %1$d%%</string>
-    <string name="dl_central_estado_pronto">Baixado · %1$s</string>
     <string name="dl_central_estado_erro">Falhou: %1$s</string>
     <string name="dl_central_baixar">Baixar</string>
     <string name="dl_central_pausar">Pausar</string>
@@ -953,6 +952,8 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dl_central_cancelar">Cancelar</string>
     <string name="dl_central_descartar">Descartar download</string>
     <string name="dl_central_apagar">Apagar</string>
+    <string name="dl_central_apagar_descricao">Apagar %1$s</string>
+    <string name="dl_central_renomear_descricao">Renomear %1$s</string>
     <string name="dl_central_pausar_tudo">Pausar tudo</string>
     <string name="dl_central_nada_a_baixar">Tudo já está baixado.</string>
     <string name="dl_central_vazio">Nenhum resultado para este filtro.</string>
@@ -1463,17 +1464,17 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <!-- Aba Downloads em seções -->
     <string name="dl_espaco_livre">%1$s livres</string>
     <string name="dl_menu_baixar_todas">Baixar todas as vozes</string>
-    <string name="dl_menu_simultaneos">Downloads ao mesmo tempo: %1$d</string>
+    <string name="dl_menu_simultaneos">Baixar %1$d por vez</string>
     <string name="dl_simultaneos_titulo">Downloads ao mesmo tempo</string>
     <string name="dl_secao_baixando">Baixando agora</string>
     <string name="dl_secao_no_aparelho">No aparelho</string>
     <string name="dl_secao_para_baixar">Para baixar</string>
     <string name="dl_secao_minhas_vozes">Minhas vozes</string>
-    <string name="dl_tipo_supertonic">Vozes naturais</string>
-    <string name="dl_tipo_kokoro">Muitas vozes</string>
-    <string name="dl_tipo_piper">Voz leve e rápida</string>
-    <string name="dl_tipo_pocket">Voz expressiva, permite clonar</string>
-    <string name="dl_tipo_mms">Voz simples</string>
+    <string name="dl_tipo_supertonic">vozes naturais</string>
+    <string name="dl_tipo_kokoro">muitas vozes</string>
+    <string name="dl_tipo_piper">leve e rápida</string>
+    <string name="dl_tipo_pocket">expressiva, permite clonar</string>
+    <string name="dl_tipo_mms">voz simples</string>
     <string name="dl_tipo_clonada">Sua voz clonada</string>
     <string name="dl_tipo_importada">Voz importada</string>
     <string name="dl_tipo_outro">Voz offline</string>

@@ -174,7 +174,7 @@ class PacotesVozOfflineCard(
      */
     private fun baixarPacote(pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
         if (!com.jonjonesbr.audiobookgen.util.NetworkStatus.isOnWifi(activity)) {
-            val aviso = android.app.AlertDialog.Builder(activity)
+            val aviso = AlertDialog.Builder(activity)
                 .setTitle(nomeExibidoDoPacote(activity, pacote.id, pacote.nomeExibicao))
                 .setMessage(R.string.pacote_download_wifi_aviso)
                 .setPositiveButton(R.string.pacote_offline_baixar) { _, _ -> baixarPacoteDireto(pacote) }
@@ -192,7 +192,7 @@ class PacotesVozOfflineCard(
     @Suppress("TooGenericExceptionCaught")
     private fun baixarPacoteDireto(pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
         if (pacote.download == null) return
-        val progressDialog = android.app.AlertDialog.Builder(activity).create()
+        val progressDialog = AlertDialog.Builder(activity).create()
         val container = android.widget.LinearLayout(activity).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             setPadding(48, 40, 48, 24)
@@ -210,7 +210,7 @@ class PacotesVozOfflineCard(
             setView(container)
             setCancelable(false)
             setButton(
-                android.app.AlertDialog.BUTTON_NEGATIVE,
+                AlertDialog.BUTTON_NEGATIVE,
                 activity.getString(android.R.string.cancel)
             ) { _, _ ->
                 // Pausa pela Central: o parcial (.part) fica e dá para continuar de onde parou.
