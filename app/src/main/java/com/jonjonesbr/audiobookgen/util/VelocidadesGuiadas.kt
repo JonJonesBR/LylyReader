@@ -1,5 +1,9 @@
 package com.jonjonesbr.audiobookgen.util
 
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+
 /**
  * Presets curados de velocidade da leitura guiada — compartilhados entre o ajuste ao vivo
  * (barra flutuante, [com.jonjonesbr.audiobookgen.ui.GuidedReadingBarController]) e a
@@ -22,4 +26,17 @@ fun aplicarSnapVelocidade(
 ): Float {
     val maisProximo = presets.minByOrNull { kotlin.math.abs(it - valor) } ?: return valor
     return if (kotlin.math.abs(maisProximo - valor) <= limiar) maisProximo else valor
+}
+
+/** Preset mais próximo de [valor], sem o limiar do snap: o chip que representa a velocidade salva. */
+fun velocidadeMaisProxima(valor: Float, presets: FloatArray = VELOCIDADES_GUIADAS): Float =
+    presets.minByOrNull { kotlin.math.abs(it - valor) } ?: valor
+
+/**
+ * Texto de um chip de velocidade: "0,75×" em pt e es, "0.75×" em en, sem zeros inúteis ("1×", "1,5×").
+ * O separador decimal segue o [locale] (o padrão é o do aparelho).
+ */
+fun rotuloVelocidade(valor: Float, locale: Locale = Locale.getDefault()): String {
+    val formato = DecimalFormat("0.##", DecimalFormatSymbols.getInstance(locale))
+    return formato.format(valor.toDouble()) + "×"
 }

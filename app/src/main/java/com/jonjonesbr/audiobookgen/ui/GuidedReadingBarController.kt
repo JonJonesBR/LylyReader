@@ -6,6 +6,8 @@ import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.data.RecentReadingsStore
+import com.jonjonesbr.audiobookgen.util.rotuloVelocidade
+import com.jonjonesbr.audiobookgen.util.valePerguntarPorCapitulo
 import android.text.Layout
 import android.view.View
 import android.widget.ImageButton
@@ -162,8 +164,10 @@ class GuidedReadingBarController(
             return
         }
         val capitulos = texto.capitulos
-        if (capitulos.isEmpty()) {
-            playGuidedFrom(0)
+        // Um capítulo só (ou nenhum): não há o que escolher, então vai direto. Com um capítulo, ainda pula capa
+        // e sumário como o início detectado faria na pergunta; sem capítulo, começa do parágrafo 0.
+        if (!valePerguntarPorCapitulo(capitulos.size)) {
+            playGuidedFrom(if (capitulos.size == 1) obterIndiceInicioLeitura() else 0)
             return
         }
 
@@ -318,9 +322,9 @@ class GuidedReadingBarController(
 
     private fun atualizarRotuloVelocidadeGuided() {
         val mult = guidedPlayerManager.playbackSpeedMultiplier
-        val rotuloVelocidade = if (mult == mult.toInt().toFloat()) "${mult.toInt()}.0×" else "${mult}×"
-        views.btnGuidedVelocidade.text = rotuloVelocidade
-        views.btnGuidedVelocidade.contentDescription = activity.getString(R.string.cd_guided_speed, rotuloVelocidade)
+        val rotulo = rotuloVelocidade(mult)
+        views.btnGuidedVelocidade.text = rotulo
+        views.btnGuidedVelocidade.contentDescription = activity.getString(R.string.cd_guided_speed, rotulo)
     }
 
     private fun atualizarGuidedPlayerUI(guidedState: GuidedState) {

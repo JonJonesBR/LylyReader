@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.valePerguntarPorCapitulo
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import java.io.File
 
@@ -262,10 +263,6 @@ class ReaderRetornoController(
     }
 
     /**
-     * "Gerar audiobook": o livro inteiro, só o capítulo em leitura ou, se houver, os capítulos marcados em
-     * ⋮ › Capítulos (antes os marcados só tinham o botão sobre o texto, que some com a leitura guiada aberta).
-     */
-    /**
      * A limpeza recomeça do texto original: com edições manuais (ou palavras excluídas) feitas depois da
      * primeira limpeza, elas se perdem. Nesse caso pergunta antes, em vez de descartar sem avisar.
      */
@@ -285,11 +282,16 @@ class ReaderRetornoController(
             .exibir()
     }
 
+    /**
+     * "Gerar audiobook": o livro inteiro, só o capítulo em leitura ou, se houver, os capítulos marcados em
+     * ⋮ › Capítulos (antes os marcados só tinham o botão sobre o texto, que some com a leitura guiada aberta).
+     * Com um capítulo só, não pergunta: vai direto ao livro inteiro.
+     */
     private fun mostrarDialogoGerarAudiobook() {
         val texto = viewModel.textoEfetivo() ?: return
         val capitulo = texto.capitulos.getOrNull(viewModel.uiState.value.capituloAtivo)
         val marcados = callbacks.obterCapitulosSelecionados().size
-        if (capitulo == null && marcados == 0) {
+        if (marcados == 0 && (capitulo == null || !valePerguntarPorCapitulo(texto.capitulos.size))) {
             callbacks.onBaixarLivro()
             return
         }
@@ -313,8 +315,13 @@ class ReaderRetornoController(
             .exibir()
     }
 
-    /** "Exportar texto": um arquivo só ou um por capítulo. */
+    /** "Exportar texto": um arquivo só ou um por capítulo. Sem capítulos para separar, exporta o arquivo único direto. */
     private fun mostrarDialogoExportarTexto() {
+        val texto = viewModel.textoEfetivo()
+        if (!valePerguntarPorCapitulo(texto?.capitulos?.size ?: 0)) {
+            callbacks.onExportarTextoLimpo()
+            return
+        }
         val opcoes = arrayOf(
             activity.getString(R.string.exportar_arquivo_unico),
             activity.getString(R.string.exportar_por_capitulo)

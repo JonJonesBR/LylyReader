@@ -84,7 +84,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_recent_history"
+                android:src="@drawable/ic_soneca"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -190,7 +190,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_manage"
+                android:src="@drawable/ic_personagens"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -221,7 +221,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_edit"
+                android:src="@drawable/ic_pronuncia"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -265,7 +265,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_save"
+                android:src="@drawable/ic_gerar_audio"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -297,7 +297,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_media_play"
+                android:src="@drawable/ic_tocar"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -378,7 +378,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_edit"
+                android:src="@drawable/ic_editar"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -409,7 +409,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_delete"
+                android:src="@drawable/ic_lixeira"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -440,7 +440,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_popup_sync"
+                android:src="@drawable/ic_limpar_texto"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -471,7 +471,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_share"
+                android:src="@drawable/ic_exportar"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -502,7 +502,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_share"
+                android:src="@drawable/ic_compartilhar"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@null"/>
 
@@ -541,7 +541,7 @@
         <ImageView
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:src="@android:drawable/ic_menu_help"
+            android:src="@drawable/ic_ajuda"
             app:tint="?attr/colorPrimary"
             android:contentDescription="@null"/>
 

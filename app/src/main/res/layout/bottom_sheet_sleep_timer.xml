@@ -35,13 +35,13 @@
         android:paddingBottom="12dp"
         tools:text="Soneca"/>
 
+    <!-- Presets em grade de 4 colunas; o texto (5 min, 1 h, 1 h 30) é montado em SleepTimerDialog. -->
     <GridLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
-        android:columnCount="4"
-        android:rowCount="2">
+        android:columnCount="4">
 
         <Button
             android:id="@+id/btnSoneca5"
@@ -49,7 +49,6 @@
             android:layout_height="wrap_content"
             android:layout_columnWeight="1"
             android:layout_gravity="fill_horizontal"
-            android:text="5"
             android:textSize="13sp"
             android:textColor="@color/color_on_surface"
             style="@style/Widget.Material3.Button.TextButton"/>
@@ -60,7 +59,6 @@
             android:layout_height="wrap_content"
             android:layout_columnWeight="1"
             android:layout_gravity="fill_horizontal"
-            android:text="10"
             android:textSize="13sp"
             android:textColor="@color/color_on_surface"
             style="@style/Widget.Material3.Button.TextButton"/>
@@ -71,7 +69,6 @@
             android:layout_height="wrap_content"
             android:layout_columnWeight="1"
             android:layout_gravity="fill_horizontal"
-            android:text="20"
             android:textSize="13sp"
             android:textColor="@color/color_on_surface"
             style="@style/Widget.Material3.Button.TextButton"/>
@@ -82,7 +79,6 @@
             android:layout_height="wrap_content"
             android:layout_columnWeight="1"
             android:layout_gravity="fill_horizontal"
-            android:text="30"
             android:textSize="13sp"
             android:textColor="@color/color_on_surface"
             style="@style/Widget.Material3.Button.TextButton"/>
@@ -93,7 +89,6 @@
             android:layout_height="wrap_content"
             android:layout_columnWeight="1"
             android:layout_gravity="fill_horizontal"
-            android:text="60"
             android:textSize="13sp"
             android:textColor="@color/color_on_surface"
             style="@style/Widget.Material3.Button.TextButton"/>
@@ -104,7 +99,6 @@
             android:layout_height="wrap_content"
             android:layout_columnWeight="1"
             android:layout_gravity="fill_horizontal"
-            android:text="90"
             android:textSize="13sp"
             android:textColor="@color/color_on_surface"
             style="@style/Widget.Material3.Button.TextButton"/>
@@ -115,20 +109,8 @@
             android:layout_height="wrap_content"
             android:layout_columnWeight="1"
             android:layout_gravity="fill_horizontal"
-            android:text="120"
             android:textSize="13sp"
             android:textColor="@color/color_on_surface"
-            style="@style/Widget.Material3.Button.TextButton"/>
-
-        <Button
-            android:id="@+id/btnSonecaOff"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_columnWeight="1"
-            android:layout_gravity="fill_horizontal"
-            android:text="@string/sleep_timer_off_option"
-            android:textSize="13sp"
-            android:textColor="@color/color_error"
             style="@style/Widget.Material3.Button.TextButton"/>
 
     </GridLayout>
@@ -145,6 +127,19 @@
         android:textSize="13sp"
         android:textColor="@color/color_on_surface"
         android:visibility="gone"
+        style="@style/Widget.Material3.Button.TextButton"/>
+
+    <!-- Desligar: linha própria e largura cheia, para o texto não quebrar. -->
+    <Button
+        android:id="@+id/btnSonecaOff"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="4dp"
+        android:text="@string/sleep_timer_off_option"
+        android:textSize="13sp"
+        android:textColor="@color/color_error"
         style="@style/Widget.Material3.Button.TextButton"/>
 
     <View

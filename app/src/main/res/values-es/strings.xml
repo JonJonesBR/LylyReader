@@ -25,7 +25,12 @@
     <string name="toast_sleep_timer_off">Temporizador desactivado</string>
     <string name="toast_sleep_timer_set">Temporizador configurado para %1$d minutos</string>
     <string name="sleep_timer_custom_label">Personalizado: %1$d min</string>
-    <string name="sleep_timer_custom_off_label">Personalizado: arrastra para definir (0 = apagado)</string>
+    <string name="sleep_timer_custom_off_label">Personalizado: arrastra para elegir</string>
+    <string name="sleep_timer_chip_minutos">%1$d min</string>
+    <string name="sleep_timer_chip_horas">%1$d h</string>
+    <string name="sleep_timer_chip_horas_minutos">%1$d h %2$d</string>
+    <!-- Descrição falada de 1 h 30 etc.: "%1$s" es la hora ("1 hora") y "%2$s" el resto ("30 minutos"). -->
+    <string name="sleep_timer_cd_horas_minutos">%1$s y %2$s</string>
     <string name="sleep_timer_fim_capitulo_option">Fin del capítulo</string>
     <string name="sleep_timer_fim_capitulo_curto">fin del cap.</string>
     <string name="sleep_timer_title_fim_capitulo">Temporizador — al final del capítulo</string>
@@ -385,8 +390,8 @@
         <item quantity="other">%1$d secciones eliminadas. Capítulos encontrados: %2$d.</item>
         <item quantity="many">%1$d secciones eliminadas. Capítulos encontrados: %2$d.</item>
     </plurals>
-    <string name="scope_edit_text">Editar texto tratado</string>
-    <string name="scope_redo_cleaning">Limpiar de nuevo</string>
+    <string name="scope_edit_text">Corregir el texto</string>
+    <string name="scope_redo_cleaning">Limpiar el texto de nuevo</string>
     <string name="refazer_limpeza_confirma_titulo">¿Limpiar de nuevo?</string>
     <string name="refazer_limpeza_confirma_msg">La limpieza vuelve a empezar desde el texto original, así que se descartarán las ediciones que hiciste a mano en este libro.</string>
     <string name="refazer_limpeza_confirma_ok">Descartar y limpiar</string>
@@ -527,7 +532,7 @@
     <string name="btn_concluir_modo">Listo</string>
     <string name="fab_converter_principal">Generar audiolibro</string>
     <string name="sheet_section_reading">Lectura</string>
-    <string name="action_help_tutorial">Ayuda &amp; Tutorial</string>
+    <string name="action_help_tutorial">Ayuda</string>
     <string name="label_ajuda">Ayuda</string>
     <string name="desc_settings_tutorial">Aprende a usar todas las funciones de LylyReader — conversión, lector, biblioteca, cola y ajustes.</string>
     <string name="btn_ver_tutorial">Ver Tutorial</string>
@@ -562,7 +567,7 @@
     <string name="cd_marcar_capitulo_converter">Convertir %1$s</string>
     <string name="cd_capitulo_toc_atual">%1$s, capítulo actual</string>
     <string name="cd_capitulo_toc_lido">%1$s, leído</string>
-    <string name="action_config_livro">Voz y Velocidad de Este Libro</string>
+    <string name="action_config_livro">Voz y velocidad</string>
     <string name="action_character_voices">Voces de los personajes</string>
     <string name="character_voices_title">Voces de los personajes</string>
     <string name="character_voices_empty">No se encontraron diálogos con un personaje identificado con seguridad en este libro.</string>
@@ -590,7 +595,7 @@
     <string name="label_voz_config_livro">Voz</string>
     <string name="label_velocidade_config_livro">Velocidad</string>
     <string name="action_guided_reading">Lectura Guiada</string>
-    <string name="btn_ouvir_audiobook_livro">Escuchar Audiolibro</string>
+    <string name="btn_ouvir_audiobook_livro">Escuchar el audiolibro</string>
     <string name="mini_player_ler_livro">📖 Leer este libro</string>
     <string name="toast_download_started">Descarga iniciada en segundo plano...</string>
     <string name="toast_download_completed">¡Descarga completada!</string>
@@ -1116,7 +1121,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="onboarding_t3_titulo">Escucha mientras lees</string>
     <string name="onboarding_t3_descricao">Abre un libro y toca Escuchar: el texto se lee en voz alta mientras lo sigues. Toca cualquier párrafo para saltar a él.</string>
     <string name="onboarding_t4_titulo">Crea un audiolibro</string>
-    <string name="onboarding_t4_descricao">En la pantalla del libro, elige la voz y el ritmo y toca Generar audiolibro. Aparece en la pestaña Audiolibros y suena incluso con la pantalla apagada.</string>
+    <string name="onboarding_t4_descricao">En la pantalla del libro, elige la voz y la velocidad y toca Generar audiolibro. Aparece en la pestaña Audiolibros y suena incluso con la pantalla apagada.</string>
     <string name="onboarding_t5_titulo">Voces y apariencia</string>
     <string name="onboarding_t5_descricao">Descarga voces sin conexión en la pestaña Descargas y elige el tema (Claro, Oscuro o Papel) con el icono de paleta.</string>
 
@@ -1128,7 +1133,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dica_bib_tema_titulo">Elige la apariencia</string>
     <string name="dica_bib_tema_texto">Alterna entre Claro, Oscuro y Papel, el tema que imita una hoja de libro.</string>
     <string name="dica_livro_gerar_titulo">Crea un audiolibro</string>
-    <string name="dica_livro_gerar_texto">Elige la voz y el ritmo y convierte este libro en un archivo de audio para escuchar en cualquier lugar.</string>
+    <string name="dica_livro_gerar_texto">Elige la voz y la velocidad y convierte este libro en un archivo de audio para escuchar en cualquier lugar.</string>
     <string name="dica_livro_voz_titulo">Una voz para cada libro</string>
     <string name="dica_livro_voz_texto">Cambia la voz solo de este libro. Los demás siguen con la voz predeterminada.</string>
     <string name="dica_downloads_vozes_titulo">Voces que funcionan sin conexión</string>
@@ -1158,7 +1163,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="licao_guiada_passos">Abre el libro de ejemplo.\nToca Escuchar. La lectura empieza sola; toca cualquier párrafo para saltar a él.</string>
     <string name="licao_gerar_titulo">Crear un audiolibro</string>
     <string name="licao_gerar_resumo">Convierte un libro en un archivo de audio.</string>
-    <string name="licao_gerar_passos">Abre el panel Generar audiolibro.\nElige la voz y el ritmo y toca Generar ahora.\nSigue el progreso en Conversiones.</string>
+    <string name="licao_gerar_passos">Abre el panel Generar audiolibro.\nElige la voz y la velocidad y toca Generar ahora.\nSigue el progreso en Conversiones.</string>
     <string name="licao_voz_titulo">Cambiar la voz de un libro</string>
     <string name="licao_voz_resumo">Cada libro puede tener su propia voz.</string>
     <string name="licao_voz_passos">En la pantalla del libro, toca Cambiar, junto a Voz de este libro.\nElige una voz y escucha la muestra antes.</string>
@@ -1418,15 +1423,15 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="marcacoes_exportar_rotulo_nota">Nota</string>
     <string name="marcacoes_remover_qual">¿Cuál quitar?</string>
     <string name="acao_dicionario_pronuncia">Diccionario de pronunciación</string>
-    <string name="acao_gerar_audiobook">Generar audiolibro (MP3)</string>
+    <string name="acao_gerar_audiobook">Generar audiolibro</string>
     <string name="gerar_audiobook_titulo">Generar audiolibro</string>
-    <string name="gerar_audiobook_livro">Libro completo (elegir voz y ritmo)</string>
+    <string name="gerar_audiobook_livro">Libro completo (elegir voz y velocidad)</string>
     <string name="gerar_audiobook_capitulo">Solo este capítulo: %1$s</string>
     <string name="acao_exportar_texto">Exportar texto</string>
     <string name="exportar_texto_titulo">Exportar texto</string>
     <string name="exportar_arquivo_unico">Archivo único</string>
     <string name="exportar_por_capitulo">Un archivo por capítulo</string>
-    <string name="acao_excluir_ocorrencias">Eliminar palabra o frase del libro</string>
+    <string name="acao_excluir_ocorrencias">Eliminar una palabra del libro</string>
     <string name="guided_options_preload_title">Precargar capítulo</string>
     <string name="guided_options_preload_desc">Genera antes el resto de este capítulo, para que suene sin esperas.</string>
     <string name="cd_section_expanded">abierto</string>

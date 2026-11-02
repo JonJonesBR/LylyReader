@@ -108,97 +108,54 @@
         android:paddingTop="12dp"
         android:paddingBottom="8dp"/>
 
-    <LinearLayout
+    <!-- Velocidades em chips que quebram de linha (cabem em 360dp); o chip da velocidade salva fica marcado. -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipsConfigVel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:paddingBottom="8dp">
-
-        <Button
-            android:id="@+id/btnConfigVel075"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="0.75×"
-            android:textSize="12sp"
-            android:textColor="@color/color_on_surface"
-            style="@style/Widget.Material3.Button.TextButton"/>
-
-        <Button
-            android:id="@+id/btnConfigVel100"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="1.0×"
-            android:textSize="12sp"
-            android:textColor="@color/color_on_surface"
-            style="@style/Widget.Material3.Button.TextButton"/>
-
-        <Button
-            android:id="@+id/btnConfigVel125"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="1.25×"
-            android:textSize="12sp"
-            android:textColor="@color/color_on_surface"
-            style="@style/Widget.Material3.Button.TextButton"/>
-
-        <Button
-            android:id="@+id/btnConfigVel150"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="1.5×"
-            android:textSize="12sp"
-            android:textColor="@color/color_on_surface"
-            style="@style/Widget.Material3.Button.TextButton"/>
-
-        <Button
-            android:id="@+id/btnConfigVel175"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="1.75×"
-            android:textSize="12sp"
-            android:textColor="@color/color_on_surface"
-            style="@style/Widget.Material3.Button.TextButton"/>
-
-        <Button
-            android:id="@+id/btnConfigVel200"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="2.0×"
-            android:textSize="12sp"
-            android:textColor="@color/color_on_surface"
-            style="@style/Widget.Material3.Button.TextButton"/>
-
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/tvConfigVelPersonalizada"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="12sp"
-        android:textColor="@color/color_on_surface_muted"
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
-        android:paddingTop="4dp"
-        tools:text="1.10×"/>
+        android:paddingBottom="8dp"
+        app:singleSelection="true"
+        app:selectionRequired="true">
 
-    <com.google.android.material.slider.Slider
-        android:id="@+id/sliderConfigVel"
-        android:contentDescription="@string/cd_slider_velocidade"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:valueFrom="0.5"
-        android:valueTo="2.5"
-        android:stepSize="0.05"
-        android:value="1.0"/>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipConfigVel075"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipConfigVel100"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipConfigVel125"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipConfigVel150"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipConfigVel175"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipConfigVel200"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    </com.google.android.material.chip.ChipGroup>
 
 </LinearLayout>
 </androidx.core.widget.NestedScrollView>

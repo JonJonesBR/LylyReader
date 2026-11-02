@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.ui
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.VELOCIDADES_GUIADAS
 import com.jonjonesbr.audiobookgen.util.aplicarSnapVelocidade
+import com.jonjonesbr.audiobookgen.util.rotuloVelocidade
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import android.app.Activity
 import android.widget.Button
@@ -39,16 +40,13 @@ object VelocidadeSliderDialog {
         }
 
         val tvPersonalizada = view.findViewById<TextView>(R.id.tvVelocidadePersonalizada)
-        // Mesmo padrão de GuidedReadingBarController.atualizarRotuloVelocidadeGuided(): sem
-        // String.format (evita vírgula decimal em locales pt-BR — "1,15×" ficaria estranho
-        // com o símbolo ×), Float.toString() já é limpo pros valores em passos de 0.05.
-        fun formatar(v: Float) = if (v == v.toInt().toFloat()) "${v.toInt()}.0×" else "${v}×"
-        tvPersonalizada.text = formatar(valorAtual)
+        // Mesmo formato dos chips e da barra de leitura (rotuloVelocidade): "1×", "1,15×" conforme o locale.
+        tvPersonalizada.text = rotuloVelocidade(valorAtual)
 
         val slider = view.findViewById<Slider>(R.id.sliderVelocidade)
         slider.value = valorAtual.coerceIn(slider.valueFrom, slider.valueTo)
         slider.addOnChangeListener { _, value, fromUser ->
-            if (fromUser) tvPersonalizada.text = formatar(value)
+            if (fromUser) tvPersonalizada.text = rotuloVelocidade(value)
         }
         slider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
             @Suppress("EmptyFunctionBlock")

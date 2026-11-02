@@ -24,6 +24,37 @@ import com.google.android.material.slider.Slider
 object SleepTimerDialog {
 
     private const val MS_POR_MINUTO = 60_000L
+    private const val MINUTOS_POR_HORA = 60
+
+    /** Texto de um preset: "5 min", "1 h", "1 h 30" (o número vai no texto, o TalkBack lê a unidade junto). */
+    private fun rotuloPreset(activity: Activity, min: Int): String = when {
+        min < MINUTOS_POR_HORA -> activity.getString(R.string.sleep_timer_chip_minutos, min)
+        min % MINUTOS_POR_HORA == 0 -> activity.getString(R.string.sleep_timer_chip_horas, min / MINUTOS_POR_HORA)
+        else -> activity.getString(
+            R.string.sleep_timer_chip_horas_minutos, min / MINUTOS_POR_HORA, min % MINUTOS_POR_HORA
+        )
+    }
+
+    /** Descrição falada de um preset ("5 minutos", "1 hora", "1 hora e 30 minutos"); o TalkBack lê mal "1 h 30". */
+    private fun descricaoPreset(activity: Activity, min: Int): String {
+        val res = activity.resources
+        return when {
+            min < MINUTOS_POR_HORA -> res.getQuantityString(R.plurals.tempo_minutos, min, min)
+            min % MINUTOS_POR_HORA == 0 -> {
+                val horas = min / MINUTOS_POR_HORA
+                res.getQuantityString(R.plurals.tempo_horas, horas, horas)
+            }
+            else -> {
+                val horas = min / MINUTOS_POR_HORA
+                val minutos = min % MINUTOS_POR_HORA
+                activity.getString(
+                    R.string.sleep_timer_cd_horas_minutos,
+                    res.getQuantityString(R.plurals.tempo_horas, horas, horas),
+                    res.getQuantityString(R.plurals.tempo_minutos, minutos, minutos)
+                )
+            }
+        }
+    }
 
     /** [sessionToken]: token da sessão de leitura guiada vigente (GuidedPlayerManager.sessionToken),
      *  ou null quando a soneca não é para uma sessão de leitura guiada (ex.: mini-player de
@@ -75,9 +106,10 @@ object SleepTimerDialog {
         )
         idsPresets.zip(PRESETS_SONECA_MIN.toList()) { id, min ->
             view.findViewById<Button>(id).apply {
+                text = rotuloPreset(activity, min)
+                // O texto curto ("1 h 30") não é lido por extenso pelo TalkBack: a descrição falada vai aqui.
+                contentDescription = descricaoPreset(activity, min)
                 setOnClickListener { aplicar(min) }
-                // O botão mostra só o número; o TalkBack lê "5 minutos" em vez de "5".
-                contentDescription = activity.resources.getQuantityString(R.plurals.tempo_minutos, min, min)
             }
         }
         view.findViewById<Button>(R.id.btnSonecaOff).setOnClickListener { aplicar(0) }

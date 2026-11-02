@@ -6,17 +6,14 @@ import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
 import com.jonjonesbr.audiobookgen.util.VELOCIDADES_GUIADAS
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
-import com.jonjonesbr.audiobookgen.util.aplicarSnapVelocidade
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
+import com.jonjonesbr.audiobookgen.util.rotuloVelocidade
+import com.jonjonesbr.audiobookgen.util.velocidadeMaisProxima
 import android.view.View
-import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.slider.Slider
-
-private const val EPSILON_VELOCIDADE = 0.01f
+import com.google.android.material.chip.Chip
 
 /**
  * "Configurar este livro" — permite ver/mudar a voz e a velocidade da leitura guiada ANTES de
@@ -41,17 +38,14 @@ object ConfigLivroDialog {
         dialog.expandirEmPaisagem()
 
         val tvVoz = view.findViewById<TextView>(R.id.tvConfigVozAtual)
+        // Um chip por preset, com o texto no locale do aparelho ("0,75×" em pt). Sem deslizante: os chips bastam.
         val idsVelocidade = listOf(
-            R.id.btnConfigVel075, R.id.btnConfigVel100, R.id.btnConfigVel125,
-            R.id.btnConfigVel150, R.id.btnConfigVel175, R.id.btnConfigVel200
+            R.id.chipConfigVel075, R.id.chipConfigVel100, R.id.chipConfigVel125,
+            R.id.chipConfigVel150, R.id.chipConfigVel175, R.id.chipConfigVel200
         )
-        val botoesVelocidade = idsVelocidade.zip(VELOCIDADES_GUIADAS.toList()) { id, valor ->
-            view.findViewById<Button>(id) to valor
+        val chipsVelocidade = idsVelocidade.zip(VELOCIDADES_GUIADAS.toList()) { id, valor ->
+            view.findViewById<Chip>(id).apply { text = rotuloVelocidade(valor) } to valor
         }
-        val tvVelPersonalizada = view.findViewById<TextView>(R.id.tvConfigVelPersonalizada)
-        val sliderVelocidade = view.findViewById<Slider>(R.id.sliderConfigVel)
-
-        fun formatarVelocidade(v: Float) = if (v == v.toInt().toFloat()) "${v.toInt()}.0×" else "${v}×"
 
         fun atualizarUi() {
             val efetivo = resolverEfetivo(activity, caminhoArquivo, appPrefs)
@@ -59,17 +53,9 @@ object ConfigLivroDialog {
                 ?: VoiceCatalog.find(efetivo.motor, efetivo.voz)
                 ?: VoiceCatalog.defaultFor(efetivo.motor)
             tvVoz.text = voz.displayLabel(activity)
-            botoesVelocidade.forEach { (btn, valor) ->
-                val selecionado = kotlin.math.abs(valor - efetivo.speedMult) < EPSILON_VELOCIDADE
-                btn.setTextColor(
-                    ContextCompat.getColor(
-                        activity,
-                        if (selecionado) R.color.color_primary else R.color.color_on_surface
-                    )
-                )
-            }
-            tvVelPersonalizada.text = formatarVelocidade(efetivo.speedMult)
-            sliderVelocidade.value = efetivo.speedMult.coerceIn(sliderVelocidade.valueFrom, sliderVelocidade.valueTo)
+            // Velocidade salva fora dos chips (ex.: 1.1 vindo do ajuste na leitura): marca o chip mais próximo.
+            val maisProxima = velocidadeMaisProxima(efetivo.speedMult)
+            chipsVelocidade.forEach { (chip, valor) -> chip.isChecked = valor == maisProxima }
         }
 
         fun salvarVelocidade(valor: Float) {
@@ -83,31 +69,11 @@ object ConfigLivroDialog {
         view.findViewById<View>(R.id.itemConfigVoz).setOnClickListener {
             abrirSeletorDeVoz(activity, caminhoArquivo, appPrefs, { aoMudarPerfil(); atualizarUi() }, onClonarVoz)
         }
-        botoesVelocidade.forEach { (btn, valor) -> btn.setOnClickListener { salvarVelocidade(valor) } }
-        var arrastando = false
-        sliderVelocidade.addOnChangeListener { _, value, fromUser ->
-            if (!fromUser) return@addOnChangeListener
-            tvVelPersonalizada.text = formatarVelocidade(value)
-            // TalkBack e teclado mudam o valor sem arraste: grava já (o arraste grava ao soltar).
-            if (!arrastando) salvarVelocidade(aplicarSnapVelocidade(value))
-        }
-        sliderVelocidade.addOnSliderTouchListener(
-            criarTouchListenerVelocidade({ arrastando = true }) {
-                arrastando = false
-                salvarVelocidade(aplicarSnapVelocidade(it))
-            }
-        )
+        chipsVelocidade.forEach { (chip, valor) -> chip.setOnClickListener { salvarVelocidade(valor) } }
 
         atualizarUi()
         dialog.show()
     }
-
-    /** Início e fim do arraste — extraído pra manter [mostrar] dentro do limite de linhas do detekt. */
-    private fun criarTouchListenerVelocidade(aoTocar: () -> Unit, aoSoltar: (Float) -> Unit) =
-        object : Slider.OnSliderTouchListener {
-            override fun onStartTrackingTouch(slider: Slider) { aoTocar() }
-            override fun onStopTrackingTouch(slider: Slider) { aoSoltar(slider.value) }
-        }
 
     private fun abrirSeletorDeVoz(
         activity: AppCompatActivity,
