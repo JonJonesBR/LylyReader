@@ -139,7 +139,6 @@ class HelpActivity : AppCompatActivity() {
         findViewById<View>(R.id.layoutBotoesOnboarding).aplicarPaddingInferiorComNavigationBar()
 
         btnFechar.text = getString(R.string.help_btn_close)
-        btnFechar.visibility = View.VISIBLE
 
         viewPager.adapter = PaginaAdapter(paginas)
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
@@ -166,6 +165,8 @@ class HelpActivity : AppCompatActivity() {
     }
 
     private fun atualizarBotoes(posicao: Int) {
+        // Na última página, fica só o botão principal ("Fechar"): o da esquerda seria o mesmo fechamento.
+        btnFechar.visibility = if (posicao == paginas.lastIndex) View.GONE else View.VISIBLE
         btnProximo.text = if (posicao == paginas.lastIndex) {
             getString(R.string.help_btn_finish)
         } else {
@@ -194,6 +195,12 @@ class HelpActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: VH, position: Int) {
             val p = lista[position]
             holder.ivIcon.setImageResource(p.iconRes)
+            // Ícone na cor de destaque do tema (no fundo escuro, o ícone preto não aparecia).
+            holder.ivIcon.imageTintList = android.content.res.ColorStateList.valueOf(
+                com.google.android.material.color.MaterialColors.getColor(
+                    holder.ivIcon, androidx.appcompat.R.attr.colorPrimary
+                )
+            )
             holder.tvTitulo.text = p.titulo
 
             if (p.descricao.isNotBlank()) {

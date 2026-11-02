@@ -145,7 +145,7 @@
     <string name="dialog_audiobook_duplicado_title">Audiobook already exists</string>
     <string name="dialog_audiobook_duplicado_msg">There\'s already an audiobook named \"%1$s\" in your library. Convert it again anyway?</string>
     <string name="dialog_audiobook_duplicado_confirmar">Convert anyway</string>
-    <string name="status_unsupported_format">⚠ Unsupported format: .%1$s\nSupported: EPUB, PDF, TXT, MD, DOCX</string>
+    <string name="status_unsupported_format">⚠ Unsupported format: .%1$s\nSupported: EPUB, PDF, TXT, MD, DOC, DOCX, MOBI</string>
     <string name="status_file_read_error_detail">❌ Could not read the file.\nCheck if it is corrupted or protected.</string>
     <string name="reader_progresso_iniciando">Starting...</string>
     <string name="status_starting">⏳ Starting...</string>
@@ -438,11 +438,11 @@
     <string name="help_library_step1">Generated audiobooks appear on the Audiobooks tab automatically</string>
     <string name="help_library_step2">Tap an item to play it</string>
     <string name="help_library_step3">Use item actions to share or delete</string>
-    <string name="help_library_step4">Tap “Sort” to order by newest, name or what is left to hear; import audio files from the ⋮ menu</string>
+    <string name="help_library_step4">Tap the sort icon at the top of the Audiobooks tab to order by newest, name or what is left to hear; import audio files from the ⋮ menu</string>
     <string name="help_queue_title">Processing multiple files</string>
     <string name="help_queue_step1">Open a book, tap \"Generate audiobook\" and choose \"Add to queue\"</string>
     <string name="help_queue_step2">Repeat for as many files as you want to convert</string>
-    <string name="help_queue_step3">Open Conversions (Library ⋮ menu, or the Generating card) and tap \"Start the queue\"</string>
+    <string name="help_queue_step3">Open Conversions (⋮ menu on the Audiobooks tab, or the Generating card) and tap \"Start the queue\"</string>
     <string name="help_queue_step4">The app processes one at a time and notifies when finished</string>
     <string name="help_settings_title">Customizing the app</string>
     <string name="help_settings_step1">Voices: on the book screen, tap Change to pick a voice. Groups: Recommended offline (Supertonic), On the device (Android voices), Online (Edge, Gemini, ElevenLabs) or Extra offline (Kokoro, Pocket, Piper)</string>
@@ -725,10 +725,12 @@
     <string name="otimizacao_bateria_ativada">Battery optimization enforced</string>
     <string name="btn_config_otimizacao_bateria">Manage</string>
     <string name="toast_config_bateria_indisponivel">Battery settings are not available on this device.</string>
-    <string name="dica_bateria_titulo">Keep long conversions running</string>
-    <string name="dica_bateria_mensagem">To convert long books with the screen off, allow LylyReader to run without battery restrictions. You can change this later in Settings.</string>
-    <string name="dica_bateria_abrir">Open settings</string>
-    <string name="dica_bateria_depois">Not now</string>
+    <string name="bateria_motivo_conversao">To convert long books with the screen off, Android must not pause the app.</string>
+    <string name="bateria_explica_pergunta">An Android question will appear: tap Allow.</string>
+    <string name="bateria_explica_lista">In the list, tap LylyReader and choose No restrictions.</string>
+    <string name="bateria_explica_xiaomi">On Xiaomi, also open: Apps › LylyReader › Battery saver › No restrictions.</string>
+    <string name="bateria_btn_continuar">Continue</string>
+    <string name="bateria_btn_ajustes_app">Open app settings</string>
     <string name="toast_config_notificacoes_indisponivel">Notification settings screen not available on this device.</string>
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
@@ -1005,7 +1007,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="bib_adicionar_titulo">Add book</string>
     <string name="bib_adicionar_desc">The book stays saved in the app, even if the original disappears.</string>
     <string name="bib_add_aparelho">From this device</string>
-    <string name="bib_add_aparelho_sub">EPUB, PDF, TXT, DOCX, MOBI</string>
+    <string name="bib_add_aparelho_sub">EPUB, PDF, TXT, MD, DOC, DOCX, MOBI</string>
     <string name="bib_add_gratis">Free books</string>
     <string name="bib_add_gratis_sub">Gutenberg, Wikisource, Internet Archive</string>
     <string name="bib_add_pasta">A whole folder</string>
@@ -1120,7 +1122,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="label_aprender">Learn</string>
     <string name="aprender_titulo">Learn the app</string>
     <string name="aprender_ajustes_desc">Short hands-on lessons using a sample book.</string>
-    <string name="aprender_rever_intro">Review the introduction</string>
     <string name="aprender_rever_dicas">Show the tips again</string>
     <string name="aprender_dicas_reativadas">Tips will show again.</string>
     <string name="aprender_progresso">%1$d of %2$d lessons done</string>
@@ -1587,7 +1588,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_livros_biblioteca">Books in the library</string>
     <string name="aj_guia">Step-by-step guide</string>
     <string name="aj_guia_sub">How to turn a book into an audiobook</string>
-    <string name="aj_rever_intro_sub">The welcome screens from the first use</string>
     <string name="aj_rever_dicas_sub">Tips show up on the screens again</string>
     <string name="aj_problema">Report a problem</string>
     <string name="aj_sobre">About LylyReader</string>
@@ -1600,6 +1600,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_livros_mais_na_fila">and %1$d more in the queue</string>
     <string name="perm_pagina_titulo">For the app to work well</string>
     <string name="perm_pagina_descricao">Tap Allow below. Android will ask one thing at a time: answer Allow each time.</string>
+    <string name="perm_tudo_pronto">All set.</string>
     <string name="perm_notif_titulo">Notifications</string>
     <string name="perm_notif_desc">To follow conversions and know when the audiobook is ready.</string>
     <string name="perm_audios_titulo">Audio on this device</string>

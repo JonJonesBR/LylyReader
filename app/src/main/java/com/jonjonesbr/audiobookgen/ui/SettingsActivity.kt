@@ -260,7 +260,6 @@ class SettingsActivity : BasePlayerActivity() {
             "v?"
         }
         findViewById<TextView>(R.id.tvVersao).text = versao
-        findViewById<TextView>(R.id.tvVersaoLinha).text = versao
     }
 
     // ── Abas ─────────────────────────────────────────────────────────────────
@@ -304,6 +303,8 @@ class SettingsActivity : BasePlayerActivity() {
         tabsSettings.visibility = View.GONE
         findViewById<View>(R.id.divisorTabsSettings).visibility = View.GONE
         findViewById<View>(R.id.btnVoltarSettings).visibility = View.VISIBLE
+        // A Sobre não tem ajuda própria: o "?" do topo some enquanto ela está aberta.
+        findViewById<View>(R.id.btnAjudaSettings).visibility = if (id == R.id.pagSobre) View.GONE else View.VISIBLE
         findViewById<TextView>(R.id.tvTituloSettings).setText(titulo)
         voltarDaPagina.isEnabled = true
         scrollSettings.scrollTo(0, 0)
@@ -316,6 +317,7 @@ class SettingsActivity : BasePlayerActivity() {
         tabsSettings.visibility = View.VISIBLE
         findViewById<View>(R.id.divisorTabsSettings).visibility = View.VISIBLE
         findViewById<View>(R.id.btnVoltarSettings).visibility = View.GONE
+        findViewById<View>(R.id.btnAjudaSettings).visibility = View.VISIBLE
         findViewById<TextView>(R.id.tvTituloSettings).setText(R.string.nav_ajustes)
         voltarDaPagina.isEnabled = false
         mostrarGrupoSettings(tabsSettings.selectedTabPosition)
@@ -455,9 +457,6 @@ class SettingsActivity : BasePlayerActivity() {
         linha(R.id.rowLogsErro) { abrirLogsErro() }
         linha(R.id.rowAprenderApp) { startActivity(Intent(this, AprenderActivity::class.java)) }
         linha(R.id.rowAbrirTutorial) { HelpActivity.start(this, HelpTopico.CONVERSAO) }
-        linha(R.id.rowReverTour) {
-            startActivity(Intent(this, OnboardingActivity::class.java).putExtra(OnboardingActivity.EXTRA_REVISAO, true))
-        }
         linha(R.id.rowReverDicas) {
             appPrefs.dicasVistas = emptySet()
             Toast.makeText(this, R.string.aprender_dicas_reativadas, Toast.LENGTH_SHORT).show()
@@ -984,9 +983,7 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
     private fun abrirConfiguracaoOtimizacaoBateria() {
-        if (!com.jonjonesbr.audiobookgen.util.BatteryOptimizationHelper.abrir(this)) {
-            mostrarErro(R.string.toast_config_bateria_indisponivel)
-        }
+        PermissoesDoApp.explicarBateria(this)
     }
     /** Aviso no topo de "Voz e leitura" só quando as notificações estão desligadas. */
     private fun carregarInfoPermissaoNotificacao() {

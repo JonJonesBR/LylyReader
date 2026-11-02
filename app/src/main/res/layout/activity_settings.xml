@@ -1054,32 +1054,6 @@
                         <TextView style="@style/AjusteSeta"/>
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="16dp"
-                        android:background="@color/color_divider_faint"/>
-                    <LinearLayout
-                        android:id="@+id/rowReverTour"
-                        style="@style/AjusteLinha">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/AjusteTitulo"
-                                android:text="@string/aprender_rever_intro"/>
-
-                            <TextView
-                                style="@style/AjusteSub"
-                                android:text="@string/aj_rever_intro_sub"/>
-                        </LinearLayout>
-
-                        <TextView style="@style/AjusteSeta"/>
-                    </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
@@ -1165,10 +1139,6 @@
                                 style="@style/AjusteSub"
                                 android:text="@string/aj_sobre_sub"/>
                         </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/tvVersaoLinha"
-                            style="@style/AjusteValor"/>
 
                         <TextView style="@style/AjusteSeta"/>
                     </LinearLayout>
@@ -2120,23 +2090,23 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
+                        android:orientation="vertical"
                         android:layout_marginBottom="12dp">
 
                         <TextView
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
                             android:text="LylyReader"
                             android:textColor="@color/color_on_surface"
                             android:textSize="16sp"
                             android:textStyle="bold"/>
 
+                        <!-- Versão numa linha própria, abaixo do nome: ao lado, o nome quebrava. -->
                         <TextView
                             android:id="@+id/tvVersao"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
                             tools:text="v1.0"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="13sp"

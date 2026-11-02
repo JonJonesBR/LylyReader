@@ -63,7 +63,10 @@ class OnboardingActivity : AppCompatActivity() {
 
     // ── Permissões (última página) ──────────────────────────────────────────
     private val permissoes = OnboardingPermissoes(this) {
-        if (::viewPager.isInitialized) atualizarBotoes(viewPager.currentItem)
+        if (::viewPager.isInitialized) {
+            atualizarBotoes(viewPager.currentItem)
+            atualizarTextoPermissoes()
+        }
     }
 
     override fun onResume() {
@@ -117,6 +120,19 @@ class OnboardingActivity : AppCompatActivity() {
                 else -> concluir()
             }
         }
+    }
+
+    // ── Textos ────────────────────────────────────────────────────────────────
+
+    /** Texto de cima da página: na das permissões, "Tudo pronto." quando nenhuma permissão falta. */
+    private fun textoDescricao(p: Pagina): String =
+        if (p.permissoes && permissoes.pendentes().isEmpty()) getString(R.string.perm_tudo_pronto) else p.descricao
+
+    /** Atualiza o texto da página das permissões se ela estiver na tela (o estado mudou). */
+    private fun atualizarTextoPermissoes() {
+        val holder = (viewPager.getChildAt(0) as? RecyclerView)
+            ?.findViewHolderForAdapterPosition(paginas.lastIndex) as? PaginaAdapter.VH ?: return
+        holder.tvDescricao.text = textoDescricao(paginas[paginas.lastIndex])
     }
 
     // ── Botões ────────────────────────────────────────────────────────────────
@@ -184,8 +200,9 @@ class OnboardingActivity : AppCompatActivity() {
             )
             holder.tvTitulo.text = p.titulo
 
-            if (p.descricao.isNotBlank()) {
-                holder.tvDescricao.text = p.descricao
+            val descricao = textoDescricao(p)
+            if (descricao.isNotBlank()) {
+                holder.tvDescricao.text = descricao
                 holder.tvDescricao.visibility = View.VISIBLE
             } else {
                 holder.tvDescricao.visibility = View.GONE

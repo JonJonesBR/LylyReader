@@ -198,16 +198,7 @@ class ConversoesActivity : AppCompatActivity() {
         ) return
         if (isFinishing || isDestroyed) return
         prefs.dicaBateriaVista = true
-        AlertDialog.Builder(this)
-            .setTitle(R.string.dica_bateria_titulo)
-            .setMessage(R.string.dica_bateria_mensagem)
-            .setPositiveButton(R.string.dica_bateria_abrir) { _, _ ->
-                if (!BatteryOptimizationHelper.abrir(this)) {
-                    Toast.makeText(this, R.string.toast_config_bateria_indisponivel, Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton(R.string.dica_bateria_depois, null)
-            .exibir()
+        PermissoesDoApp.explicarBateria(this, motivo = R.string.bateria_motivo_conversao)
     }
 
     private fun bloqueadoPorFaltaDeRede(caminhoDoLivro: String?, voz: String?, motor: String?, ritmo: Int?): Boolean {

@@ -146,7 +146,7 @@
     <string name="dialog_audiobook_duplicado_title">Audiobook já existe</string>
     <string name="dialog_audiobook_duplicado_msg">Já existe um audiobook chamado \"%1$s\" na sua biblioteca. Converter de novo mesmo assim?</string>
     <string name="dialog_audiobook_duplicado_confirmar">Converter mesmo assim</string>
-    <string name="status_unsupported_format">⚠ Formato não suportado: .%1$s\nSuporte: EPUB, PDF, TXT, MD, DOCX</string>
+    <string name="status_unsupported_format">⚠ Formato não suportado: .%1$s\nSuporte: EPUB, PDF, TXT, MD, DOC, DOCX, MOBI</string>
     <string name="status_file_read_error_detail">❌ Não foi possível ler o arquivo.\nVerifique se ele não está corrompido ou protegido.</string>
     <string name="reader_progresso_iniciando">Iniciando...</string>
     <string name="status_starting">⏳ Iniciando...</string>
@@ -443,11 +443,11 @@
     <string name="help_library_step1">Os audiobooks gerados aparecem automaticamente na aba Audiobooks</string>
     <string name="help_library_step2">Toque em um item para reproduzir</string>
     <string name="help_library_step3">Use as ações do item para compartilhar ou apagar</string>
-    <string name="help_library_step4">Toque em “Ordenar” para organizar por mais recentes, nome ou o que falta ouvir; importe arquivos de áudio pelo ⋮</string>
+    <string name="help_library_step4">Toque no ícone de ordenar, no topo da aba Audiobooks, para organizar por mais recentes, nome ou o que falta ouvir; importe arquivos de áudio pelo ⋮</string>
     <string name="help_queue_title">Processando vários arquivos</string>
     <string name="help_queue_step1">Abra um livro, toque em \"Gerar audiobook\" e escolha \"Adicionar à fila\"</string>
     <string name="help_queue_step2">Repita para quantos arquivos quiser converter</string>
-    <string name="help_queue_step3">Abra Conversões (menu ⋮ da Biblioteca, ou o cartão de geração) e toque em \"Iniciar a fila\"</string>
+    <string name="help_queue_step3">Abra Conversões (menu ⋮ da aba Audiobooks, ou o cartão de geração) e toque em \"Iniciar a fila\"</string>
     <string name="help_queue_step4">O app processa um por um e notifica ao concluir</string>
     <string name="help_settings_title">Personalizando o app</string>
     <string name="help_settings_step1">Vozes: na tela do livro, toque em Trocar para escolher uma voz. Categorias: Offline recomendada (Supertonic), Do aparelho (vozes do Android), Online (Edge, Gemini, ElevenLabs) ou Extras offline (Kokoro, Pocket, Piper)</string>
@@ -724,10 +724,12 @@
     <string name="otimizacao_bateria_ativada">Otimização de bateria ativa</string>
     <string name="btn_config_otimizacao_bateria">Configurar</string>
     <string name="toast_config_bateria_indisponivel">As configurações de bateria não estão disponíveis neste aparelho.</string>
-    <string name="dica_bateria_titulo">Mantenha conversões longas ativas</string>
-    <string name="dica_bateria_mensagem">Para converter livros longos com a tela apagada, permita que o LylyReader funcione sem restrição de bateria. Você pode mudar isso depois em Ajustes.</string>
-    <string name="dica_bateria_abrir">Abrir ajuste</string>
-    <string name="dica_bateria_depois">Agora não</string>
+    <string name="bateria_motivo_conversao">Para converter livros longos com a tela apagada, o Android não pode pausar o app.</string>
+    <string name="bateria_explica_pergunta">Vai aparecer uma pergunta do Android: toque em Permitir.</string>
+    <string name="bateria_explica_lista">Na lista, toque em LylyReader e escolha Sem restrições.</string>
+    <string name="bateria_explica_xiaomi">No Xiaomi, abra também: Apps › LylyReader › Economia de bateria › Sem restrições.</string>
+    <string name="bateria_btn_continuar">Continuar</string>
+    <string name="bateria_btn_ajustes_app">Abrir ajustes do app</string>
     <string name="toast_config_notificacoes_indisponivel">Tela de configurações de notificações indisponível neste aparelho.</string>
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
@@ -1003,7 +1005,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="bib_adicionar_titulo">Adicionar livro</string>
     <string name="bib_adicionar_desc">O livro fica guardado no app, mesmo se o original sumir.</string>
     <string name="bib_add_aparelho">Do aparelho</string>
-    <string name="bib_add_aparelho_sub">EPUB, PDF, TXT, DOCX, MOBI</string>
+    <string name="bib_add_aparelho_sub">EPUB, PDF, TXT, MD, DOC, DOCX, MOBI</string>
     <string name="bib_add_gratis">Livros gratuitos</string>
     <string name="bib_add_gratis_sub">Gutenberg, Wikisource, Internet Archive</string>
     <string name="bib_add_pasta">Uma pasta inteira</string>
@@ -1118,7 +1120,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="label_aprender">Aprender</string>
     <string name="aprender_titulo">Aprender o app</string>
     <string name="aprender_ajustes_desc">Lições curtas, na prática, com um livro de exemplo.</string>
-    <string name="aprender_rever_intro">Rever a introdução</string>
     <string name="aprender_rever_dicas">Mostrar as dicas de novo</string>
     <string name="aprender_dicas_reativadas">As dicas vão aparecer de novo.</string>
     <string name="aprender_progresso">%1$d de %2$d lições concluídas</string>
@@ -1587,7 +1588,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_livros_biblioteca">Livros na biblioteca</string>
     <string name="aj_guia">Guia passo a passo</string>
     <string name="aj_guia_sub">Como transformar um livro em audiobook</string>
-    <string name="aj_rever_intro_sub">As telas de boas-vindas do primeiro uso</string>
     <string name="aj_rever_dicas_sub">As dicas voltam a aparecer nas telas</string>
     <string name="aj_problema">Relatar um problema</string>
     <string name="aj_sobre">Sobre o LylyReader</string>
@@ -1600,6 +1600,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dl_livros_mais_na_fila">e mais %1$d na fila</string>
     <string name="perm_pagina_titulo">Para o app funcionar bem</string>
     <string name="perm_pagina_descricao">Toque em Permitir, lá embaixo. O Android vai perguntar uma coisa de cada vez: responda Permitir em cada uma.</string>
+    <string name="perm_tudo_pronto">Tudo pronto.</string>
     <string name="perm_notif_titulo">Notificações</string>
     <string name="perm_notif_desc">Para acompanhar as conversões e saber quando o audiobook ficar pronto.</string>
     <string name="perm_audios_titulo">Áudios do aparelho</string>

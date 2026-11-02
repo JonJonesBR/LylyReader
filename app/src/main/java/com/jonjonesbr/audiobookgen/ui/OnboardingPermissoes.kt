@@ -68,13 +68,21 @@ class OnboardingPermissoes(
         val resultado = when (qual) {
             NOTIFICACOES -> PermissoesDoApp.pedirNotificacoes(activity, pedidoNotificacoes)
             AUDIOS -> PermissoesDoApp.pedirAudios(activity, pedidoAudios)
-            else -> PermissoesDoApp.pedirBateria(activity)
+            else -> {
+                // A explicação da bateria vem antes da tela; a resposta chega depois, como a de um diálogo.
+                PermissoesDoApp.explicarBateria(activity, aoResolver = ::aoResponderBateria)
+                PermissoesDoApp.Pedido.DIALOGO
+            }
         }
         when (resultado) {
             PermissoesDoApp.Pedido.TELA -> esperandoTela = true
             PermissoesDoApp.Pedido.NADA -> continuar()
             PermissoesDoApp.Pedido.DIALOGO -> Unit
         }
+    }
+
+    private fun aoResponderBateria(abriu: Boolean) {
+        if (abriu) esperandoTela = true else continuar()
     }
 
     fun pedirTodas() {

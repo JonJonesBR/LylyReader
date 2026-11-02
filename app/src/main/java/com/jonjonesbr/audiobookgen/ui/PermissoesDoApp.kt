@@ -12,10 +12,12 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
+import com.jonjonesbr.audiobookgen.domain.ExplicacaoBateria
 import com.jonjonesbr.audiobookgen.util.BatteryOptimizationHelper
 
 /**
@@ -28,8 +30,8 @@ import com.jonjonesbr.audiobookgen.util.BatteryOptimizationHelper
  */
 object PermissoesDoApp {
 
-    /** O que um pedido abriu: o diálogo do Android (resposta no launcher), uma tela do sistema (volta no
-     *  onResume) ou nada (o aparelho não tem a tela). */
+    /** O que um pedido abriu: um diálogo (o do Android, respondido pelo launcher, ou a explicação da bateria),
+     *  uma tela do sistema (volta no onResume) ou nada (o aparelho não tem a tela). */
     enum class Pedido { DIALOGO, TELA, NADA }
 
     /** Ler os áudios do aparelho: lista os audiobooks da pasta pública na aba Audiobooks. */
@@ -75,10 +77,64 @@ object PermissoesDoApp {
         return abrirTela(activity, tela)
     }
 
-    fun pedirBateria(activity: Activity): Pedido {
-        if (BatteryOptimizationHelper.abrir(activity)) return Pedido.TELA
+    /**
+     * Explica a tela de bateria antes de abri-la: a pergunta do Android (quando ainda há restrição) ou a lista
+     * geral (quando o app já aparece nela). Em Xiaomi, Redmi e POCO, acrescenta a economia de bateria do próprio
+     * sistema, com um botão para os ajustes do app. [motivo] (opcional) diz por que o app pede isso, antes da
+     * explicação da tela. [aoResolver] recebe true se uma tela abriu (a volta dela chega no onResume) e false se
+     * a pessoa recusou ou nada abriu. Com a Activity já fechando, não mostra nada e não chama [aoResolver].
+     */
+    fun explicarBateria(
+        activity: AppCompatActivity,
+        motivo: Int? = null,
+        aoResolver: (abriu: Boolean) -> Unit = {}
+    ) {
+        if (activity.isFinishing || activity.isDestroyed) return
+        val xiaomi = ExplicacaoBateria.ehXiaomi(Build.MANUFACTURER)
+        val tela = ExplicacaoBateria.telaDoPedido(BatteryOptimizationHelper.isIgnoringBatteryOptimizations(activity))
+        val partes = listOfNotNull(
+            motivo?.let { activity.getString(it) },
+            activity.getString(
+                if (tela == ExplicacaoBateria.Tela.PERGUNTA) {
+                    R.string.bateria_explica_pergunta
+                } else {
+                    R.string.bateria_explica_lista
+                }
+            ),
+            if (xiaomi) activity.getString(R.string.bateria_explica_xiaomi) else null
+        )
+        val dialogo = AlertDialog.Builder(activity)
+            .setTitle(R.string.perm_bateria_titulo)
+            .setMessage(partes.joinToString("\n\n"))
+            .setPositiveButton(R.string.bateria_btn_continuar) { _, _ -> aoResolver(abrirBateria(activity)) }
+            .setNegativeButton(R.string.perm_agora_nao) { _, _ -> aoResolver(false) }
+            .setOnCancelListener { _ -> aoResolver(false) }
+        if (xiaomi) {
+            dialogo.setNeutralButton(R.string.bateria_btn_ajustes_app) { _, _ ->
+                aoResolver(abrirAjustesDoApp(activity))
+            }
+        }
+        // Fecha o diálogo se a Activity for destruída (ex.: girar a tela), para não vazar a janela (WindowLeaked).
+        DialogosAbertos(activity).mostrar(dialogo)
+    }
+
+    /** Abre a tela de bateria; sem ela no aparelho, avisa e devolve false. */
+    private fun abrirBateria(activity: Activity): Boolean {
+        if (BatteryOptimizationHelper.abrir(activity)) return true
         Toast.makeText(activity, R.string.toast_config_bateria_indisponivel, Toast.LENGTH_SHORT).show()
-        return Pedido.NADA
+        return false
+    }
+
+    /** Página do app nos ajustes do Android (onde a economia de bateria do Xiaomi fica). */
+    private fun abrirAjustesDoApp(activity: Activity): Boolean = try {
+        activity.startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(Uri.fromParts("package", activity.packageName, null))
+        )
+        true
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(activity, R.string.toast_config_bateria_indisponivel, Toast.LENGTH_SHORT).show()
+        false
     }
 
     private fun abrirTela(activity: Activity, intent: Intent): Pedido = try {
