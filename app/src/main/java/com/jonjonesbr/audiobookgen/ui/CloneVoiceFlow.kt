@@ -63,12 +63,13 @@ private const val META_GRAVACAO_S = 15
  * Criação e gestão de vozes clonadas com o Pocket TTS. Instanciar ANTES de a Activity iniciar (registra
  * os seletores de resultado). A referência (gravada ou de arquivo) só é convertida e guardada no
  * aparelho; o aviso de consentimento aparece sempre antes de qualquer captura.
- * [aoCriarVoz] recebe o id da voz já pronta para uso (motor baixado). [aoMudar] avisa que a lista mudou; fica por
- * último para que `CloneVoiceFlow(activity) { ... }` continue sendo o aviso de mudança.
+ * [aoCriarVoz] recebe o id da voz já pronta para uso (motor baixado) e a escolhe, como se o usuário a
+ * tivesse tocado na lista. Sem ele, o aviso só manda escolher a voz na lista. [aoMudar] avisa que a lista
+ * mudou; fica por último para que `CloneVoiceFlow(activity) { ... }` continue sendo o aviso de mudança.
  */
 class CloneVoiceFlow(
     private val activity: AppCompatActivity,
-    private val aoCriarVoz: (String) -> Unit = {},
+    private val aoCriarVoz: ((String) -> Unit)? = null,
     private val aoMudar: () -> Unit = {},
 ) {
 
@@ -449,8 +450,7 @@ class CloneVoiceFlow(
     private fun baixarSeNecessario(voiceId: String) {
         val pacote = VoiceCatalog.pacoteDaVoz(voiceId)
         if (pacote == null || pacote.isPronto(activity)) {
-            toast(R.string.clone_created)
-            aoCriarVoz(voiceId)
+            concluirCriacao(voiceId)
             return
         }
         val barra = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100 }
@@ -478,13 +478,28 @@ class CloneVoiceFlow(
             withContext(Dispatchers.IO) { PocketCustomVoiceCatalog.registrarTodas(activity) }
             aoMudar()
             if (erro == null) {
-                toast(R.string.clone_created)
-                aoCriarVoz(voiceId)
+                concluirCriacao(voiceId)
             } else {
                 Log.w("CloneVoiceFlow", "Falha ao baixar voz clonada", erro)
                 Toast.makeText(activity, activity.getString(R.string.clone_download_failed, activity.getString(mensagemDeErro(erro))), Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    /**
+     * Voz pronta: se há como escolhê-la e o catálogo a conhece, ela já fica escolhida e o aviso diz isso;
+     * senão, manda escolher na lista (sem nome, para não mostrar um id técnico).
+     */
+    private fun concluirCriacao(voiceId: String) {
+        val escolher = aoCriarVoz
+        val voz = VoiceCatalog.findAny(voiceId)
+        if (escolher == null || voz == null) {
+            toast(R.string.clone_created)
+            return
+        }
+        val aviso = activity.getString(R.string.clone_created_escolhida, voz.name)
+        Toast.makeText(activity, aviso, Toast.LENGTH_LONG).show()
+        escolher(voiceId)
     }
 
     // ── Gestão ───────────────────────────────────────────────────────────────

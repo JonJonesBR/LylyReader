@@ -72,12 +72,6 @@
     <string name="btn_abrir_configuracoes">Open settings</string>
     <string name="toast_tts_settings_indisponivel">Couldn\'t open the voice download screen for this engine.</string>
     <string name="status_downloading_voice">Downloading voice files... %1$d%%</string>
-    <string name="voice_status_offline_ready">[Offline – Ready]</string>
-    <string name="voice_status_offline_download">[Offline – Download]</string>
-    <string name="voice_status_device">[Device]</string>
-    <string name="voice_status_download_needed">[Download in system settings]</string>
-    <string name="voice_speed_edge">⚡ Fast</string>
-    <string name="voice_speed_offline">🐢 Local (slower for books)</string>
     <string name="menu_pronuncia">Pronunciation</string>
     <string name="pron_title">How is it pronounced?</string>
     <string name="pron_explanation">Type the word as it appears in the book and how it should be SPOKEN, spelled the way it sounds (e.g. Hermione → Hermy-oh-nee). Applies to every voice and to audiobooks. Leave the second field empty and save to remove.</string>
@@ -429,10 +423,21 @@
     <string name="voice_recommended_for_language">For your app language: %1$s</string>
     <string name="voice_no_recommended_for_language">No voices are specifically tagged for %1$s yet. Available alternatives:</string>
     <string name="voice_other_languages_count">Other languages and multilingual (%1$d)</string>
+    <string name="voice_section_suas">Your voices</string>
+    <string name="voice_section_aparelho">On this device</string>
+    <string name="voice_section_online">Online</string>
+    <string name="voice_motor_importada">Imported</string>
+    <string name="voice_offline">offline</string>
+    <string name="voice_precisa_internet">needs internet</string>
+    <string name="voice_precisa_baixar">download needed</string>
+    <string name="voice_precisa_baixar_no_sistema">download in system settings</string>
+    <string name="voz_android_numerada">Android voice %1$d</string>
+    <string name="voz_qualidade_alta">high</string>
+    <string name="voz_qualidade_normal">normal</string>
     <string name="voice_expand_section">Expand section</string>
     <string name="voice_collapse_section">Collapse section</string>
-    <string name="btn_vozes_dispositivo">🔊 Device voices</string>
-    <string name="btn_vozes_clonar">🎙️ Clone my voice</string>
+    <string name="btn_vozes_dispositivo">Device voices</string>
+    <string name="btn_vozes_clonar">Clone my voice</string>
     <string name="dialogo_escolher_motor_titulo">Choose a TTS engine</string>
     <string name="toast_carregando_vozes_android">Loading voices…</string>
     <string name="erro_nenhum_motor_tts">No TTS engine found. Install a voice engine (e.g., Google TTS) from the Play Store.</string>
@@ -839,7 +844,8 @@
     <string name="clone_lang_en">English</string>
     <string name="clone_lang_es">Spanish</string>
     <string name="clone_create">Create voice</string>
-    <string name="clone_created">Voice created. Pick it in the voice list (Pocket).</string>
+    <string name="clone_created">Voice created. Pick it in the list.</string>
+    <string name="clone_created_escolhida">Voice \"%1$s\" created and selected</string>
     <string name="clone_downloading_title">Getting what is missing</string>
     <string name="clone_downloading">Downloading the language pack and the voice encoder…</string>
     <string name="clone_download_failed">Download failed: %1$s. The voice was saved; try again when you choose it.</string>
@@ -982,17 +988,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dl_central_confirmar_msg">Download %1$d package(s), about %2$s in total?</string>
     <string name="dl_central_pouco_espaco">There may not be enough free space (%1$s free; downloading and unpacking needs about twice the size).</string>
     <string name="dl_central_apagar_msg">Delete %1$s from this device? You can download it again later.</string>
-    <string name="voz_apagar_titulo">Delete voice</string>
-    <string name="voz_apagar_msg">Delete %1$s from this device? Frees %2$s. You can download it again later.</string>
-    <string name="voz_apagar_msg_clonada">Delete the cloned voice %1$s? Its reference audio is removed from this device and cannot be recovered.</string>
-    <string name="voz_apagar_em_uso">This is the voice in use: after deleting it, choose another one.</string>
-    <string name="voz_apagada">Voice deleted.</string>
-    <string name="voz_apagar_falhou">Could not delete the voice.</string>
-    <string name="cd_apagar_voz">Delete %1$s</string>
-    <plurals name="voz_apagar_msg_pacote">
-        <item quantity="one">%1$s is part of the %2$s package, which has %3$d more voice. Delete the whole package from this device? Frees %4$s; you can download it again later.</item>
-        <item quantity="other">%1$s is part of the %2$s package, which has %3$d more voices. Delete the whole package from this device? Frees %4$s; you can download it again later.</item>
-    </plurals>
     <string name="dl_central_cancelar_msg">Cancel and discard what was downloaded of %1$s?</string>
     <string name="dl_notif_canal">Downloads</string>
     <string name="dl_notif_titulo">Downloading files</string>
@@ -1240,9 +1235,9 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="gerar_pasta_padrao">Downloads (default)</string>
     <string name="gerar_escolher">Choose</string>
     <string name="gerar_estilo_titulo">Narration style (Gemini voices only)</string>
-    <string name="gerar_tempo_estimado">Estimated time: about %1$s on this device</string>
-    <string name="gerar_tempo_estimado_aprox">Estimated time: about %1$s (approximate)</string>
-    <string name="gerar_tempo_calculando">Estimated time: calculating…</string>
+    <string name="gerar_tempo_estimado">About %1$s on this device</string>
+    <string name="gerar_tempo_estimado_aprox">About %1$s</string>
+    <string name="gerar_tempo_calculando">Calculating time…</string>
     <string name="gerar_tempo_aviso_lento">This local voice may take over an hour on this device. Piper voices are usually faster.</string>
     <string name="tempo_juntar">%1$s and %2$s</string>
     <plurals name="tempo_horas">
@@ -1257,7 +1252,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="conferir_trocas_titulo">How the text will be spoken</string>
     <string name="conferir_trocas_explicacao">See what changes before converting. This only shows the text; nothing is changed.</string>
     <string name="conferir_trocas_carregando">Checking the text…</string>
-    <string name="conferir_trocas_vazio">No changes found</string>
+    <string name="conferir_trocas_vazio">The text will be read as is, with no changes.</string>
     <string name="conferir_trocas_erro">Could not check the text. Try again.</string>
 
     <string name="toast_edicoes_salvas">Edits saved as a new book: %1$s</string>

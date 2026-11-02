@@ -14,30 +14,36 @@
         android:textColor="?android:attr/textColorSecondary"
         android:textSize="14sp"/>
 
-    <FrameLayout
+    <!-- Carregando e vazio ocupam só o espaço do texto; a lista cresce com o conteúdo até a altura máxima. -->
+    <ProgressBar
+        android:id="@+id/pbConferir"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="16dp"/>
+
+    <TextView
+        android:id="@+id/tvConferirEstado"
         android:layout_width="match_parent"
-        android:layout_height="360dp"
-        android:layout_marginTop="12dp">
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp"
+        android:text="@string/conferir_trocas_carregando"
+        android:textSize="15sp"/>
 
-        <TextView
-            android:id="@+id/tvConferirEstado"
+    <com.jonjonesbr.audiobookgen.util.ScrollViewAlturaLimitada
+        android:id="@+id/svConferirTrocas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/llConferirTrocas"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:text="@string/conferir_trocas_carregando"
-            android:textSize="15sp"/>
-
-        <ProgressBar
-            android:id="@+id/pbConferir"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginBottom="48dp"/>
-
-        <ListView
-            android:id="@+id/lvConferirTrocas"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone"/>
-    </FrameLayout>
+            android:orientation="vertical"/>
+    </com.jonjonesbr.audiobookgen.util.ScrollViewAlturaLimitada>
 </LinearLayout>

@@ -2,6 +2,8 @@ package com.jonjonesbr.audiobookgen.tts
 
 import android.content.Context
 import android.util.Log
+import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.util.TextoDaListaDeVozes
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -80,18 +82,22 @@ object AndroidTtsEngineCache {
 
                 // TextToSpeech.getVoices() retorna um Set (sem ordem garantida) — ordena por
                 // idioma/nome para a lista não aparecer embaralhada na UI.
-                todasAsVozes
-                    .sortedWith(compareBy({ it.locale.toLanguageTag() }, { it.name }))
-                    .map { v ->
-                        VoiceOption(
-                            id = AndroidVoiceId.encode(enginePackage, v.name),
-                            name = v.label,
-                            language = v.locale.toLanguageTag(),
-                            isMale = false,
-                            engine = "android",
-                            precisaBaixarNoSistema = v.precisaBaixar
-                        )
-                    }
+                val ordenadas = todasAsVozes.sortedWith(compareBy({ it.locale.toLanguageTag() }, { it.name }))
+                // O nome técnico ("pt-br-x-afs-local") não serve ao usuário: a lista mostra "Voz do Android N",
+                // numerada dentro de cada idioma, na ordem desta lista.
+                val numeros = TextoDaListaDeVozes.numeroPorIdioma(ordenadas.map { it.locale.toLanguageTag() })
+                ordenadas.mapIndexed { indice, v ->
+                    VoiceOption(
+                        id = AndroidVoiceId.encode(enginePackage, v.name),
+                        name = context.getString(R.string.voz_android_numerada, numeros[indice]),
+                        language = v.locale.toLanguageTag(),
+                        isMale = false,
+                        engine = "android",
+                        precisaBaixarNoSistema = v.precisaBaixar,
+                        precisaInternet = v.precisaInternet,
+                        qualidade = v.qualidade
+                    )
+                }
             }
         }
     }

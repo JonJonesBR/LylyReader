@@ -2,8 +2,7 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.ListView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -31,7 +30,8 @@ object ConferirTrocasDialog {
         val vista = LayoutInflater.from(activity).inflate(R.layout.dialog_conferir_trocas, null)
         val estado = vista.findViewById<TextView>(R.id.tvConferirEstado)
         val progresso = vista.findViewById<View>(R.id.pbConferir)
-        val lista = vista.findViewById<ListView>(R.id.lvConferirTrocas)
+        val rolagem = vista.findViewById<View>(R.id.svConferirTrocas)
+        val linhas = vista.findViewById<LinearLayout>(R.id.llConferirTrocas)
 
         val dialogo = AlertDialog.Builder(activity)
             .setTitle(R.string.conferir_trocas_titulo)
@@ -41,7 +41,7 @@ object ConferirTrocasDialog {
 
         fun mostrarEstado(texto: Int) {
             progresso.visibility = View.GONE
-            lista.visibility = View.GONE
+            rolagem.visibility = View.GONE
             estado.setText(texto)
             estado.visibility = View.VISIBLE
         }
@@ -66,12 +66,14 @@ object ConferirTrocasDialog {
                 } else {
                     progresso.visibility = View.GONE
                     estado.visibility = View.GONE
-                    lista.adapter = ArrayAdapter(
-                        activity,
-                        android.R.layout.simple_list_item_1,
-                        agrupadas.map { formatarLinhaTroca(it) },
-                    )
-                    lista.visibility = View.VISIBLE
+                    // Poucas linhas: a janela tem a altura delas. Muitas: a rolagem limita a altura.
+                    val inflater = LayoutInflater.from(activity)
+                    agrupadas.forEach { troca ->
+                        val linha = inflater.inflate(android.R.layout.simple_list_item_1, linhas, false) as TextView
+                        linha.text = formatarLinhaTroca(troca)
+                        linhas.addView(linha)
+                    }
+                    rolagem.visibility = View.VISIBLE
                 }
             } catch (e: CancellationException) {
                 throw e

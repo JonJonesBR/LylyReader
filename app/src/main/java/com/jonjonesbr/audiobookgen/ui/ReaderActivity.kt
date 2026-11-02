@@ -19,6 +19,7 @@ import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
+import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.mostrarErro
 import com.jonjonesbr.audiobookgen.util.aplicarMargemInferiorComNavigationBar
@@ -367,7 +368,7 @@ class ReaderActivity : BasePlayerActivity() {
                 onAbrirPronuncia = { abrirDicionarioPronuncia() },
                 onAbrirAparencia = { aparenciaController.mostrarBottomSheet() },
                 onAbrirSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
-                onClonarVoz = { cloneVoiceFlow.iniciar() },
+                onClonarVoz = { cloneVoiceFlowDoLivro.iniciar() },
                 onPerfilDoLivroMudou = {
                     guidedPlayerManager?.recarregarPerfilDoLivro()
                     guidedReadingBarController?.atualizarRotulosDoPerfil()
@@ -1902,39 +1903,17 @@ class ReaderActivity : BasePlayerActivity() {
         dialog.show()
     }
 
-    private val cloneVoiceFlow = CloneVoiceFlow(this)
+    // Clonar pela lista de vozes do leitor: a voz nova já fica escolhida.
+    private val cloneVoiceFlow = CloneVoiceFlow(this, aoCriarVoz = { id ->
+        VoiceCatalog.findAny(id)?.let(::selecionarVozNoLeitor)
+    })
+
+    // Clonar pela configuração deste livro: só cria a voz (a escolha continua na lista do livro).
+    private val cloneVoiceFlowDoLivro = CloneVoiceFlow(this)
 
     private val voiceSelectionDelegate: VoiceSelectionDelegate = VoiceSelectionDelegate(
         activity = this,
-        onVoiceSelected = { voice ->
-            appPrefs.vozSelecionada = voice.id
-            appPrefs.motorTts = voice.engine
-            guidedPlayerManager?.registrarVozEscolhida(voice.id, voice.engine)
-
-            if (voice.engine == "gemini") {
-                val chave = SecurePreferences.getGeminiKeys(this@ReaderActivity)
-                if (chave.isNullOrBlank()) {
-                    val intent = Intent(this@ReaderActivity, SettingsActivity::class.java).apply {
-                        putExtra("focar_chave_gemini", true)
-                    }
-                    startActivity(intent)
-                }
-            }
-            if (voice.engine == "elevenlabs" &&
-                SecurePreferences.getElevenLabsKey(this@ReaderActivity).isNullOrBlank()
-            ) {
-                val intent = Intent(this@ReaderActivity, SettingsActivity::class.java).apply {
-                    putExtra("focar_chave_elevenlabs", true)
-                }
-                startActivity(intent)
-            }
-
-            // Troca de voz refaz o trecho atual sem sair do modo manual: não é um pedido de ponto da narração.
-            val guidedIndex = guidedPlayerManager?.state?.value?.index ?: -1
-            if (guidedIndex >= 0) {
-                guidedPlayerManager?.play(guidedIndex)
-            }
-        },
+        onVoiceSelected = ::selecionarVozNoLeitor,
         onVoicePreview = { voice, onFinished ->
             audiobookViewModel.pararPreview()
             if (voice.engine == "elevenlabs" &&
@@ -1964,6 +1943,37 @@ class ReaderActivity : BasePlayerActivity() {
         obterVozAtualId = { appPrefs.vozSelecionada.orEmpty() },
         onCloneVoiceRequested = { cloneVoiceFlow.iniciar() },
     )
+
+    /** Escolha de voz do leitor (lista de vozes ou voz recém-clonada): grava a voz e refaz o trecho atual. */
+    private fun selecionarVozNoLeitor(voice: VoiceOption) {
+        appPrefs.vozSelecionada = voice.id
+        appPrefs.motorTts = voice.engine
+        guidedPlayerManager?.registrarVozEscolhida(voice.id, voice.engine)
+
+        if (voice.engine == "gemini") {
+            val chave = SecurePreferences.getGeminiKeys(this)
+            if (chave.isNullOrBlank()) {
+                val intent = Intent(this, SettingsActivity::class.java).apply {
+                    putExtra("focar_chave_gemini", true)
+                }
+                startActivity(intent)
+            }
+        }
+        if (voice.engine == "elevenlabs" &&
+            SecurePreferences.getElevenLabsKey(this).isNullOrBlank()
+        ) {
+            val intent = Intent(this, SettingsActivity::class.java).apply {
+                putExtra("focar_chave_elevenlabs", true)
+            }
+            startActivity(intent)
+        }
+
+        // Troca de voz refaz o trecho atual sem sair do modo manual: não é um pedido de ponto da narração.
+        val guidedIndex = guidedPlayerManager?.state?.value?.index ?: -1
+        if (guidedIndex >= 0) {
+            guidedPlayerManager?.play(guidedIndex)
+        }
+    }
 
     /** Toca [texto] (a pronúncia digitada) com a voz e o motor do livro. */
     private fun ouvirPronuncia(texto: String) {

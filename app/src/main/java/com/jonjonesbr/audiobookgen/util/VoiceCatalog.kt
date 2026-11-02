@@ -30,7 +30,11 @@ data class VoiceOption(
      */
     val precisaBaixarNoSistema: Boolean = false,
     /** False quando o gênero não está confirmado pela fonte do modelo. */
-    val generoConhecido: Boolean = true
+    val generoConhecido: Boolean = true,
+    /** Voz do Android que o motor diz precisar de internet (Voice.isNetworkConnectionRequired). */
+    val precisaInternet: Boolean = false,
+    /** Qualidade que o motor Android informa (Voice.quality); 0 = não informada. Só vozes Android. */
+    val qualidade: Int = 0
 ) {
     /**
      * Nome mostrado ao usuário. A Santa inglesa (`am_santa`) tem o mesmo nome da Santa pt-BR; por isso

@@ -15,15 +15,17 @@ import java.io.RandomAccessFile
 import java.util.Locale
 
 /**
- * Voz reportada pelo motor TTS já inicializado (nome real da engine + locale + rótulo amigável).
+ * Voz reportada pelo motor TTS já inicializado (nome real da engine + locale).
  * [precisaBaixar] reflete [TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED] — o motor conhece a
  * voz (ex.: pacotes pt-BR do Google TTS) mas os dados ainda não foram baixados no aparelho.
+ * [precisaInternet] e [qualidade] vêm de [android.speech.tts.Voice] e só servem para a lista.
  */
 data class AndroidVoiceInfo(
     val name: String,
     val locale: Locale,
-    val label: String,
-    val precisaBaixar: Boolean = false
+    val precisaBaixar: Boolean = false,
+    val precisaInternet: Boolean = false,
+    val qualidade: Int = 0
 )
 
 /**
@@ -116,7 +118,7 @@ class AndroidTtsEngine(private val context: Context) {
         val t = tts ?: return emptyList()
         return t.voices?.map { v ->
             val precisaBaixar = v.features?.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) == true
-            AndroidVoiceInfo(v.name, v.locale, "${v.locale.displayLanguage} - ${v.name}", precisaBaixar)
+            AndroidVoiceInfo(v.name, v.locale, precisaBaixar, v.isNetworkConnectionRequired, v.quality)
         } ?: emptyList()
     }
 

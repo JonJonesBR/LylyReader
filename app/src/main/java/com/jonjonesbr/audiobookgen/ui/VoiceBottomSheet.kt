@@ -1,5 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import com.jonjonesbr.audiobookgen.util.NetworkStatus
+import com.jonjonesbr.audiobookgen.util.TextoDaListaDeVozes
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.R
 import android.os.Bundle
@@ -8,7 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
@@ -28,6 +29,9 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         private const val PREVIEW_ICON_IDLE = "▶"
         private const val PREVIEW_ICON_LOADING = "⏳"
         private const val MAX_HEIGHT_DP = 720
+        // Valores de android.speech.tts.Voice.QUALITY_HIGH e QUALITY_NORMAL
+        private const val QUALIDADE_ALTA = 400
+        private const val QUALIDADE_NORMAL = 300
         private const val TYPE_SECTION = 0
         private const val TYPE_VOICE = 1
         internal const val RESULT_KEY = "voice_bottom_sheet_result"
@@ -58,6 +62,8 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             putBoolean("gender_known", voice.generoConhecido)
             putBoolean("generic", voice.isGenerico)
             putBoolean("needs_system_download", voice.precisaBaixarNoSistema)
+            putBoolean("needs_internet", voice.precisaInternet)
+            putInt("quality", voice.qualidade)
         }
 
         internal fun voiceFromBundle(bundle: Bundle?): VoiceOption? {
@@ -71,7 +77,9 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                 description = bundle.getString("description").orEmpty(),
                 isGenerico = bundle.getBoolean("generic"),
                 precisaBaixarNoSistema = bundle.getBoolean("needs_system_download"),
-                generoConhecido = bundle.getBoolean("gender_known", true)
+                generoConhecido = bundle.getBoolean("gender_known", true),
+                precisaInternet = bundle.getBoolean("needs_internet"),
+                qualidade = bundle.getInt("quality")
             )
         }
     }
@@ -123,7 +131,6 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
     }
 
     private var filtroVozes = ""
-    private var adapterVozes: VoiceAdapter? = null
     private var outrasVozesExpandidas = false
     private val callbacksPreviewPorVoz = mutableMapOf<String, () -> Unit>()
 
@@ -219,7 +226,6 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         val adapter = VoiceAdapter(grupos, outrasVozesExpandidas) { expanded ->
             outrasVozesExpandidas = expanded
         }
-        adapterVozes = adapter
         view.findViewById<RecyclerView>(R.id.rvVozes).apply {
             layoutManager = LinearLayoutManager(requireContext())
             this.adapter = adapter
@@ -242,6 +248,13 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         return locale.getDisplayName(idiomaDaTela).ifBlank { tag }
     }
 
+    /** Seções da lista de vozes do idioma do app. */
+    private enum class SecaoVoz(val titulo: Int) {
+        SUAS_VOZES(R.string.voice_section_suas),
+        NO_APARELHO(R.string.voice_section_aparelho),
+        ONLINE(R.string.voice_section_online)
+    }
+
     private sealed class VoiceRow {
         data class Section(
             val label: String,
@@ -249,42 +262,12 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             val expanded: Boolean = false
         ) : VoiceRow()
 
-        data class Voice(val option: VoiceOption) : VoiceRow()
-    }
-
-    /**
-     * Apaga a voz baixada (o pacote dela) depois de confirmar. Vozes que deixam de existir (clonadas, importadas)
-     * saem da lista; as do catálogo ficam, agora como "baixar".
-     */
-    private fun apagarVoz(voz: VoiceOption, pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
-        viewLifecycleOwner.lifecycleScope.launch { confirmarEApagar(voz, pacote) }
-    }
-
-    private suspend fun confirmarEApagar(voz: VoiceOption, pacote: com.jonjonesbr.audiobookgen.util.PacoteVozes) {
-        val ctx = requireContext()
-        ApagarVozFlow.confirmar(ctx, voz, pacote, selectedVoiceId) {
-            val app = ctx.applicationContext
-            val idsDoPacote = pacote.vozes.map { it.id }.toSet()
-            viewLifecycleOwner.lifecycleScope.launch {
-                val ok = ApagarVozFlow.apagar(app, pacote)
-                prontidaoPorModelo.clear()
-                voices = voices.filterNot {
-                    it.id in idsDoPacote && com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacoteDaVoz(it.id) == null
-                }
-                arguments?.putParcelableArrayList(ARG_VOICES, ArrayList(voices.map(::voiceToBundle)))
-                val idioma = (resources.configuration.locales[0] ?: Locale.getDefault()).toLanguageTag()
-                adapterVozes?.trocarGrupos(
-                    com.jonjonesbr.audiobookgen.util.VoiceCatalog.agruparPorIdiomaPreferido(voices, idioma)
-                )
-                android.widget.Toast.makeText(
-                    app, if (ok) R.string.voz_apagada else R.string.voz_apagar_falhou, android.widget.Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
+        /** [comIdioma]: mostra o idioma na linha de detalhe (só quando a lista mistura idiomas). */
+        data class Voice(val option: VoiceOption, val comIdioma: Boolean = false) : VoiceRow()
     }
 
     private inner class VoiceAdapter(
-        private var grupos: com.jonjonesbr.audiobookgen.util.GruposVozesPorIdioma,
+        private val grupos: com.jonjonesbr.audiobookgen.util.GruposVozesPorIdioma,
         inicialmenteExpandido: Boolean,
         private val aoAlterarExpansao: (Boolean) -> Unit
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -302,7 +285,6 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             val name: TextView = itemView.findViewById(R.id.tvVoiceName)
             val meta: TextView = itemView.findViewById(R.id.tvVoiceMeta)
             val preview: Button = itemView.findViewById(R.id.btnVoicePreview)
-            val apagar: ImageButton = itemView.findViewById(R.id.btnVoiceApagar)
         }
 
         override fun getItemViewType(position: Int): Int = when (items[position]) {
@@ -322,7 +304,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when (val row = items[position]) {
                 is VoiceRow.Section -> bindSection(holder as SectionVH, row)
-                is VoiceRow.Voice -> bindVoice(holder as VH, row.option)
+                is VoiceRow.Voice -> bindVoice(holder as VH, row)
             }
         }
 
@@ -348,13 +330,6 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             }
         }
 
-        /** Lista nova depois de apagar uma voz. */
-        fun trocarGrupos(novos: com.jonjonesbr.audiobookgen.util.GruposVozesPorIdioma) {
-            grupos = novos
-            rebuildRows()
-            notifyDataSetChanged() // o status das vozes do pacote apagado mudou ("baixar"), não só a lista
-        }
-
         fun submitFilter(value: String) {
             query = value
             rebuildRows()
@@ -374,15 +349,25 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                         nomeDoIdioma(grupos.idiomaPreferido)
                     )
                 )
-            } else if (recomendadas.isNotEmpty()) {
+            }
+            // Vozes do idioma do app em seções (Suas vozes, No aparelho, Online). As do Android não têm
+            // seção: ficam sob o título do idioma, com o idioma na linha de detalhe.
+            for (secao in SecaoVoz.values()) {
+                val vozes = recomendadas.filter { secaoDaVoz(it) == secao }
+                if (vozes.isEmpty()) continue
+                result += VoiceRow.Section(getString(secao.titulo))
+                result += vozes.map { VoiceRow.Voice(it) }
+            }
+            val semSecao = recomendadas.filter { secaoDaVoz(it) == null }
+            if (semSecao.isNotEmpty()) {
                 result += VoiceRow.Section(
                     getString(
                         R.string.voice_recommended_for_language,
                         nomeDoIdioma(grupos.idiomaPreferido)
                     )
                 )
+                result += semSecao.map { VoiceRow.Voice(it, comIdioma = true) }
             }
-            result += recomendadas.map { VoiceRow.Voice(it) }
 
             if (alternativas.isNotEmpty()) {
                 val expandido = query.isNotBlank() || outrasExpandidas
@@ -394,7 +379,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                     expandable = query.isBlank(),
                     expanded = expandido
                 )
-                if (expandido) result += alternativas.map { VoiceRow.Voice(it) }
+                if (expandido) result += alternativas.map { VoiceRow.Voice(it, comIdioma = true) }
             }
 
             val antigos = items
@@ -415,46 +400,95 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             is VoiceRow.Voice -> "v:${row.option.id}"
         }
 
+        // Busca pelo nome, pelo idioma e pelo motor mostrado na linha 2 ("Piper", "Edge"). Não busca pela linha
+        // de detalhe inteira: ela consulta o disco (prontidão do modelo) a cada tecla.
         private fun filtrar(list: List<VoiceOption>): List<VoiceOption> =
             if (query.isBlank()) list
             else list.filter {
                 it.displayLabel(requireContext()).contains(query, ignoreCase = true) ||
-                    nomeDoIdioma(it.language).contains(query, ignoreCase = true)
+                    nomeDoIdioma(it.language).contains(query, ignoreCase = true) ||
+                    rotuloDoMotor(it)?.contains(query, ignoreCase = true) == true
             }
 
-        private fun statusTagPara(voice: VoiceOption): String = when {
-            voice.isGenerico -> ""
-            voice.engine == "onnx" -> {
-                val ready = isModeloPronto(voice)
-                val status = if (ready) getString(R.string.voice_status_offline_ready)
-                else getString(R.string.voice_status_offline_download)
-                "$status ${getString(R.string.voice_speed_offline)}"
+        /** Rótulo do motor na linha de detalhe; null para vozes do Android, que não mostram motor. */
+        private fun rotuloDoMotor(voice: VoiceOption): String? = when (voice.engine) {
+            "edge" -> "Edge"
+            "gemini" -> "Gemini"
+            "elevenlabs" -> "ElevenLabs"
+            "onnx" -> "Supertonic"
+            "pocket" -> "Pocket"
+            "kokoro" -> {
+                val pacote = voice.id.substringBefore("::")
+                when {
+                    pacote == "mms-por" -> "MMS"
+                    com.jonjonesbr.audiobookgen.tts.PiperVitsModelManager.models.any { it.id == pacote } -> "Piper"
+                    voice.id.startsWith("kokoro-") -> "Kokoro"
+                    // Pacote importado pelo usuário (BYOM) que roda pelo mesmo motor
+                    else -> getString(R.string.voice_motor_importada)
+                }
             }
-            voice.engine == "kokoro" -> {
-                val ready = isModeloPronto(voice)
-                val status = if (ready) getString(R.string.voice_status_offline_ready)
-                else getString(R.string.voice_status_offline_download)
-                "$status ${getString(R.string.voice_speed_offline)}"
-            }
-            voice.engine == "pocket" -> {
-                val ready = isModeloPronto(voice)
-                val status = if (ready) getString(R.string.voice_status_offline_ready)
-                else getString(R.string.voice_status_offline_download)
-                "$status ${getString(R.string.voice_speed_offline)}"
-            }
-            voice.engine == "gemini" -> "Gemini"
-            voice.engine == "android" && voice.precisaBaixarNoSistema ->
-                getString(R.string.voice_status_download_needed)
-            voice.engine == "android" -> getString(R.string.voice_status_device)
-            voice.engine == "elevenlabs" -> "ElevenLabs"
-            else -> "Edge · ${getString(R.string.voice_speed_edge)}"
+            else -> null
         }
 
-        private fun bindVoice(holder: VH, voice: VoiceOption) {
-            val statusTag = statusTagPara(voice)
+        /** Seção da voz no idioma do app; null para vozes do Android (ficam sob o título do idioma). */
+        private fun secaoDaVoz(voice: VoiceOption): SecaoVoz? = when {
+            voice.engine == "android" -> null
+            ehPropria(voice) -> SecaoVoz.SUAS_VOZES
+            NetworkStatus.engineRequiresNetwork(voice.engine) -> SecaoVoz.ONLINE
+            else -> SecaoVoz.NO_APARELHO
+        }
 
+        /** Clonada pelo usuário ou importada (BYOM): o pacote é dela, não do catálogo. */
+        private fun ehPropria(voice: VoiceOption): Boolean {
+            // Pacote importado não tem download pelo catálogo (download == null).
+            val pacote = com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacoteDaVoz(voice.id)
+            return com.jonjonesbr.audiobookgen.tts.PocketCustomVoices.isCustom(voice.id) ||
+                (pacote != null && pacote.download == null)
+        }
+
+        private fun rotuloDaConexao(online: Boolean): String =
+            getString(if (online) R.string.voice_precisa_internet else R.string.voice_offline)
+
+        private fun rotuloDoIdioma(tag: String): String =
+            if (tag == "multilingual") getString(R.string.voice_language_multilingual) else nomeDoIdioma(tag)
+
+        private fun rotuloDaQualidade(qualidade: Int): String? = when {
+            qualidade >= QUALIDADE_ALTA -> getString(R.string.voz_qualidade_alta)
+            qualidade >= QUALIDADE_NORMAL -> getString(R.string.voz_qualidade_normal)
+            else -> null
+        }
+
+        /** Linha 2 da voz: idioma (se [comIdioma]), motor, gênero e conexão; o que faltar sai. */
+        private fun linhaDeDetalhe(voice: VoiceOption, comIdioma: Boolean): String {
+            if (voice.engine == "android") {
+                // O gênero não vem da API do Android, então não aparece.
+                return TextoDaListaDeVozes.linhaDeDetalhe(
+                    rotuloDoIdioma(voice.language),
+                    rotuloDaQualidade(voice.qualidade),
+                    rotuloDaConexao(voice.precisaInternet),
+                    if (voice.precisaBaixarNoSistema) getString(R.string.voice_precisa_baixar_no_sistema) else null,
+                )
+            }
+            val online = NetworkStatus.engineRequiresNetwork(voice.engine)
+            val precisaBaixar = !online && !isModeloPronto(voice)
+            return TextoDaListaDeVozes.linhaDeDetalhe(
+                if (comIdioma) rotuloDoIdioma(voice.language) else null,
+                rotuloDoMotor(voice),
+                if (voice.generoConhecido) {
+                    getString(if (voice.isMale) R.string.voice_gender_male else R.string.voice_gender_female)
+                } else {
+                    null
+                },
+                rotuloDaConexao(online),
+                if (precisaBaixar) getString(R.string.voice_precisa_baixar) else null,
+            )
+        }
+
+        private fun bindVoice(holder: VH, row: VoiceRow.Voice) {
+            val voice = row.option
             val isSelected = voice.id == selectedVoiceId
-            holder.name.text = if (isSelected) "✓ ${voice.nomeExibido(requireContext())}" else voice.nomeExibido(requireContext())
+            val nome = TextoDaListaDeVozes.nomeSemMotor(voice.nomeExibido(requireContext()), rotuloDoMotor(voice).orEmpty())
+            holder.name.text = if (isSelected) "✓ $nome" else nome
             holder.name.setTextColor(
                 ContextCompat.getColor(
                     requireContext(),
@@ -466,7 +500,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                 holder.meta.visibility = View.GONE
             } else {
                 holder.meta.visibility = View.VISIBLE
-                holder.meta.text = "${voice.metaLabel(requireContext())} · $statusTag"
+                holder.meta.text = linhaDeDetalhe(voice, row.comIdioma)
             }
 
             holder.itemView.setOnClickListener {
@@ -477,12 +511,6 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                 })
                 dismiss()
             }
-            val pacoteApagavel =
-                if (voice.isGenerico) null else ApagarVozFlow.pacoteApagavel(voice, isModeloPronto(voice))
-            holder.apagar.visibility = if (pacoteApagavel != null) View.VISIBLE else View.GONE
-            holder.apagar.contentDescription = getString(R.string.cd_apagar_voz, voice.nomeExibido(requireContext()))
-            holder.apagar.tooltipText = holder.apagar.contentDescription
-            holder.apagar.setOnClickListener { pacoteApagavel?.let { apagarVoz(voice, it) } }
             val canPreview = onVoicePreview != null || arguments?.getBoolean(ARG_HAS_PREVIEW) == true
             holder.preview.visibility = if (canPreview) View.VISIBLE else View.GONE
             // Reseta o botão ao estado padrão sempre que a view é (re)vinculada — evita que um

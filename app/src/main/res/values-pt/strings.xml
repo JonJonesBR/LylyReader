@@ -72,12 +72,6 @@
     <string name="btn_abrir_configuracoes">Abrir configurações</string>
     <string name="toast_tts_settings_indisponivel">Não foi possível abrir a tela de download de voz deste motor.</string>
     <string name="status_downloading_voice">Baixando arquivos da voz... %1$d%%</string>
-    <string name="voice_status_offline_ready">[Offline – Pronto]</string>
-    <string name="voice_status_offline_download">[Offline – Baixar]</string>
-    <string name="voice_status_device">[Dispositivo]</string>
-    <string name="voice_status_download_needed">[Baixar nas configurações do sistema]</string>
-    <string name="voice_speed_edge">⚡ Rápido</string>
-    <string name="voice_speed_offline">🐢 Local (mais lento para livros)</string>
     <string name="menu_pronuncia">Pronúncia</string>
     <string name="pron_title">Como se fala?</string>
     <string name="pron_explanation">Digite a palavra como aparece no livro e como ela deve ser FALADA, escrita do jeito que soa (ex.: Hermione → Hermáione). Vale para todas as vozes e para audiobooks. Deixe o segundo campo vazio e salve para remover.</string>
@@ -438,10 +432,21 @@
     <string name="voice_recommended_for_language">Para o idioma do app: %1$s</string>
     <string name="voice_no_recommended_for_language">Ainda não há vozes identificadas especificamente para %1$s. Estas são as opções disponíveis:</string>
     <string name="voice_other_languages_count">Outros idiomas e vozes multilíngues (%1$d)</string>
+    <string name="voice_section_suas">Suas vozes</string>
+    <string name="voice_section_aparelho">No aparelho</string>
+    <string name="voice_section_online">Online</string>
+    <string name="voice_motor_importada">Importada</string>
+    <string name="voice_offline">offline</string>
+    <string name="voice_precisa_internet">precisa de internet</string>
+    <string name="voice_precisa_baixar">precisa baixar</string>
+    <string name="voice_precisa_baixar_no_sistema">baixar nas configurações do sistema</string>
+    <string name="voz_android_numerada">Voz do Android %1$d</string>
+    <string name="voz_qualidade_alta">alta</string>
+    <string name="voz_qualidade_normal">normal</string>
     <string name="voice_expand_section">Expandir seção</string>
     <string name="voice_collapse_section">Recolher seção</string>
-    <string name="btn_vozes_dispositivo">🔊 Vozes do dispositivo</string>
-    <string name="btn_vozes_clonar">🎙️ Clonar minha voz</string>
+    <string name="btn_vozes_dispositivo">Vozes do dispositivo</string>
+    <string name="btn_vozes_clonar">Clonar minha voz</string>
     <string name="dialogo_escolher_motor_titulo">Escolha um motor TTS</string>
     <string name="toast_carregando_vozes_android">Carregando vozes…</string>
     <string name="erro_nenhum_motor_tts">Nenhum motor TTS encontrado. Instale um motor de voz (ex.: Google TTS) pela Play Store.</string>
@@ -842,7 +847,8 @@
     <string name="clone_lang_en">Inglês</string>
     <string name="clone_lang_es">Espanhol</string>
     <string name="clone_create">Criar voz</string>
-    <string name="clone_created">Voz criada. Escolha-a na lista de vozes (Pocket).</string>
+    <string name="clone_created">Voz criada. Escolha na lista.</string>
+    <string name="clone_created_escolhida">Voz \"%1$s\" criada e escolhida</string>
     <string name="clone_downloading_title">Baixando o que falta</string>
     <string name="clone_downloading">Baixando o pacote do idioma e o codificador de voz…</string>
     <string name="clone_download_failed">O download falhou: %1$s. A voz foi salva; tente de novo ao escolhê-la.</string>
@@ -986,18 +992,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dl_central_confirmar_msg">Baixar %1$d pacote(s), cerca de %2$s no total?</string>
     <string name="dl_central_pouco_espaco">Pode faltar espaço (%1$s livres; baixar e descompactar ocupa cerca do dobro do tamanho).</string>
     <string name="dl_central_apagar_msg">Apagar %1$s do aparelho? Você pode baixar de novo depois.</string>
-    <string name="voz_apagar_titulo">Apagar voz</string>
-    <string name="voz_apagar_msg">Apagar %1$s do aparelho? Libera %2$s. Você pode baixar de novo depois.</string>
-    <string name="voz_apagar_msg_clonada">Apagar a voz clonada %1$s? O áudio de referência é apagado do aparelho e não dá para recuperar.</string>
-    <string name="voz_apagar_em_uso">É a voz em uso: depois de apagar, escolha outra.</string>
-    <string name="voz_apagada">Voz apagada.</string>
-    <string name="voz_apagar_falhou">Não foi possível apagar a voz.</string>
-    <string name="cd_apagar_voz">Apagar %1$s</string>
-    <plurals name="voz_apagar_msg_pacote">
-        <item quantity="one">%1$s faz parte do pacote %2$s, que tem mais %3$d voz. Apagar o pacote inteiro do aparelho? Libera %4$s; você pode baixar de novo depois.</item>
-        <item quantity="other">%1$s faz parte do pacote %2$s, que tem mais %3$d vozes. Apagar o pacote inteiro do aparelho? Libera %4$s; você pode baixar de novo depois.</item>
-        <item quantity="many">%1$s faz parte do pacote %2$s, que tem mais %3$d vozes. Apagar o pacote inteiro do aparelho? Libera %4$s; você pode baixar de novo depois.</item>
-    </plurals>
     <string name="dl_central_cancelar_msg">Cancelar e descartar o que já foi baixado de %1$s?</string>
     <string name="dl_notif_canal">Downloads</string>
     <string name="dl_notif_titulo">Baixando arquivos</string>
@@ -1243,9 +1237,9 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="gerar_pasta_padrao">Downloads (padrão)</string>
     <string name="gerar_escolher">Escolher</string>
     <string name="gerar_estilo_titulo">Estilo de narração (só vozes Gemini)</string>
-    <string name="gerar_tempo_estimado">Tempo estimado: cerca de %1$s neste aparelho</string>
-    <string name="gerar_tempo_estimado_aprox">Tempo estimado: cerca de %1$s (aproximado)</string>
-    <string name="gerar_tempo_calculando">Tempo estimado: calculando…</string>
+    <string name="gerar_tempo_estimado">Cerca de %1$s neste aparelho</string>
+    <string name="gerar_tempo_estimado_aprox">Cerca de %1$s</string>
+    <string name="gerar_tempo_calculando">Calculando o tempo…</string>
     <string name="gerar_tempo_aviso_lento">Esta voz local pode levar mais de 1 hora neste aparelho. As vozes Piper costumam ser mais rápidas.</string>
     <string name="tempo_juntar">%1$s e %2$s</string>
     <plurals name="tempo_horas">
@@ -1260,7 +1254,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="conferir_trocas_titulo">Como o texto será falado</string>
     <string name="conferir_trocas_explicacao">Veja o que muda antes de converter. Esta tela só mostra; nada é alterado.</string>
     <string name="conferir_trocas_carregando">Conferindo o texto…</string>
-    <string name="conferir_trocas_vazio">Nenhuma troca encontrada</string>
+    <string name="conferir_trocas_vazio">O texto será lido como está, sem mudanças.</string>
     <string name="conferir_trocas_erro">Não foi possível conferir o texto. Tente de novo.</string>
 
     <string name="toast_edicoes_salvas">Edições salvas como um novo livro: %1$s</string>
