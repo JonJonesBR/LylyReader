@@ -165,7 +165,18 @@ android {
             // rb-1: o teste de fumaça do Leitor (Robolectric) infla layouts e lê recursos do app.
             isIncludeAndroidResources = true
             // Robolectric com o SDK 34 passa do heap padrão de 512 MB do worker de teste do Gradle.
-            all { it.maxHeapSize = "1536m" }
+            all {
+                it.maxHeapSize = "1536m"
+                // rb-5b: o log padrão do Gradle mostra só o tipo da exceção (ex.: AssertionError), sem a mensagem.
+                // Sem relatório HTML publicado no Checks, este log é o único jeito de ver por que um teste falhou.
+                it.testLogging {
+                    events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
+                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                    showExceptions = true
+                    showCauses = true
+                    showStackTraces = true
+                }
+            }
         }
     }
 
