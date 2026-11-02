@@ -107,6 +107,10 @@ class SettingsActivity : BasePlayerActivity() {
     private lateinit var tvCacheAudioInfo: TextView
     private lateinit var seekTetoCache: android.widget.SeekBar
     private lateinit var tvTetoCacheValor: TextView
+    // Espaço dos livros na biblioteca (aba Dados, só informativo)
+    private lateinit var tvLivrosEspaco: TextView
+    // true enquanto "Liberar espaço" roda: a atualização da tela (onResume) não troca o "Liberando…"
+    private var liberandoEspaco = false
 
     // Vozes Offline (card generalizado por pacote — V6 T2.2)
 
@@ -176,7 +180,8 @@ class SettingsActivity : BasePlayerActivity() {
     override fun onResume() {
         super.onResume()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.AJUSTES) // volta de outra tela: realça de novo a aba certa
-        carregarInfoCache()
+        atualizarInfoCacheAudio()
+        atualizarEspacoLivros()
         carregarInfoLogsErro()
         carregarInfoPermissaoNotificacao()
         carregarInfoOtimizacaoBateria()
@@ -225,6 +230,7 @@ class SettingsActivity : BasePlayerActivity() {
         tvCacheAudioInfo = findViewById(R.id.tvCacheAudioInfo)
         seekTetoCache = findViewById(R.id.seekTetoCache)
         tvTetoCacheValor = findViewById(R.id.tvTetoCacheValor)
+        tvLivrosEspaco = findViewById(R.id.tvLivrosEspaco)
 
 
         // Blacklist
@@ -869,28 +875,33 @@ class SettingsActivity : BasePlayerActivity() {
         atualizarInfoCacheAudio()
     }
 
+    /**
+     * Total que "Liberar espaço" apaga (temporários do Python e falas das vozes; o TtsChunkCache já soma
+     * a pasta audio_chunks do Python) e o limite atual.
+     */
     private fun atualizarInfoCacheAudio() {
         lifecycleScope.launch {
             val bytes = withContext(Dispatchers.IO) {
                 com.jonjonesbr.audiobookgen.tts.TtsChunkCache.tamanhoBytes(applicationContext)
             }
-            tvCacheAudioInfo.text = getString(
-                R.string.cache_audio_info,
-                android.text.format.Formatter.formatShortFileSize(this@SettingsActivity, bytes),
-                rotuloTetoCache(appPrefs.tetoCacheAudioMb)
-            )
+            if (!liberandoEspaco) { // durante a limpeza mantém "Liberando…"
+                tvCacheInfo.text = if (bytes <= 0L) {
+                    getString(R.string.cache_empty)
+                } else {
+                    android.text.format.Formatter.formatShortFileSize(this@SettingsActivity, bytes)
+                }
+            }
+            tvCacheAudioInfo.text = getString(R.string.aj_limite_valor, rotuloTetoCache(appPrefs.tetoCacheAudioMb))
         }
     }
 
-    private fun carregarInfoCache() {
-        tvCacheInfo.text = getString(R.string.cache_calculando)
+    /** Tamanho da pasta dos livros da biblioteca, só para mostrar (sem botão). */
+    private fun atualizarEspacoLivros() {
         lifecycleScope.launch {
-            val info = pythonEngine.obterInfoCache()
-            tvCacheInfo.text = when {
-                info == null -> getString(R.string.cache_unavailable)
-                info.arquivos == 0 -> getString(R.string.cache_empty)
-                else -> getString(R.string.cache_info_chunks, info.tamanhoMb, info.arquivos)
+            val bytes = withContext(Dispatchers.IO) {
+                com.jonjonesbr.audiobookgen.data.BibliotecaStore.espacoUsado(applicationContext)
             }
+            tvLivrosEspaco.text = android.text.format.Formatter.formatShortFileSize(this@SettingsActivity, bytes)
         }
     }
 
@@ -904,20 +915,21 @@ class SettingsActivity : BasePlayerActivity() {
 
     private fun limparCache() {
         btnLimparCache.isEnabled = false
+        liberandoEspaco = true
         tvCacheInfo.text = getString(R.string.cache_cleaning)
         lifecycleScope.launch {
             try {
-                val removed = withContext(Dispatchers.IO) {
-                    val pyRemoved = pythonEngine.limparCachePython()
-                    // Limpa também o cache ONNX do lado Kotlin (leitura guiada + conversão).
-                    val ktRemoved = com.jonjonesbr.audiobookgen.tts.TtsChunkCache.clear(applicationContext)
-                    pyRemoved + ktRemoved
+                withContext(Dispatchers.IO) {
+                    pythonEngine.limparCachePython()
+                    // Apaga também as falas guardadas do lado Kotlin (leitura guiada + conversão).
+                    com.jonjonesbr.audiobookgen.tts.TtsChunkCache.clear(applicationContext)
                 }
-                tvCacheInfo.text = resources.getQuantityString(R.plurals.cache_empty_removed_qtd, removed, removed)
+                liberandoEspaco = false // antes da atualização final, senão ela não mostra o total
                 atualizarInfoCacheAudio()
                 btnLimparCache.isEnabled = true
-                Toast.makeText(this@SettingsActivity, R.string.toast_cache_cleared, Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SettingsActivity, R.string.toast_espaco_liberado, Toast.LENGTH_SHORT).show()
             } catch (_: Exception) {
+                liberandoEspaco = false
                 tvCacheInfo.text = getString(R.string.cache_clean_error)
                 btnLimparCache.isEnabled = true
             }

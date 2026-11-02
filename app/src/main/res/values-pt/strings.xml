@@ -105,7 +105,6 @@
     <string name="guided_steps_chip">⚙ %1$d</string>
     <string name="guided_steps_apply">Aplicar</string>
     <string name="guided_steps_desc_supertonic">Qualidade x velocidade das vozes Supertonic. Menos passos = mais rápido; mais passos = melhor qualidade. Vale para os próximos trechos a serem preparados. Mais passos deixam a síntese mais lenta; em aparelhos mais lentos, valores altos podem causar pausas na leitura guiada.</string>
-    <string name="cache_audio_info">Áudio das vozes: %1$s · teto: %2$s</string>
     <string name="cache_teto_desc">Limite do áudio que as vozes guardam para reaproveitar. Acima do teto, o app apaga o áudio usado há mais tempo; o que for apagado é sintetizado de novo se precisar.</string>
     <string name="cache_teto_sem_limite">sem limite</string>
     <string name="cache_teto_mb">%1$d MB</string>
@@ -266,7 +265,7 @@
     <string name="settings_tab_audio">Som</string>
     <string name="settings_tab_dados">Dados</string>
     <string name="settings_tab_ajuda">Ajuda</string>
-    <string name="cache_calculando">Calculando...</string>
+    <string name="cache_calculando">Calculando…</string>
     <string name="btn_limpar_cache">Limpar</string>
     <string name="label_sobre">SOBRE</string>
     <string name="label_creditos_voz">Créditos de voz e modelos</string>
@@ -298,17 +297,10 @@
     <string name="toast_key_removed">Chave removida</string>
     <string name="toast_key_secure_save_failed">Não foi possível salvar a chave com segurança</string>
     <string name="toast_key_saved_local_fallback">Chave salva somente neste aparelho. O armazenamento seguro não está disponível.</string>
-    <string name="cache_empty">Cache vazio</string>
-    <string name="cache_info_chunks">%1$.1fMB  ·  %2$d blocos</string>
-    <string name="cache_unavailable">Não disponível</string>
-    <plurals name="cache_empty_removed_qtd">
-        <item quantity="one">Cache vazio (%1$d removido)</item>
-        <item quantity="other">Cache vazio (%1$d removidos)</item>
-        <item quantity="many">Cache vazio (%1$d removidos)</item>
-    </plurals>
-    <string name="cache_cleaning">Limpando...</string>
-    <string name="cache_clean_error">Erro ao limpar</string>
-    <string name="toast_cache_cleared">Cache limpo</string>
+    <string name="cache_empty">Nada guardado</string>
+    <string name="cache_cleaning">Liberando…</string>
+    <string name="cache_clean_error">Erro ao liberar espaço</string>
+    <string name="toast_espaco_liberado">Espaço liberado</string>
 
     <!-- Mini Player -->
     <string name="tempo_inicial">0:00 / 0:00</string>
@@ -1023,7 +1015,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="bib_ord_recentes">Recentes</string>
     <string name="bib_ord_titulo">Título</string>
     <string name="bib_ord_autor">Autor</string>
-    <string name="bib_espaco">Espaço usado: %1$s</string>
     <string name="bib_acao_ler">Ler</string>
     <string name="bib_acao_audiobook">Gerar audiobook</string>
     <string name="bib_acao_detalhes">Detalhes</string>
@@ -1589,10 +1580,11 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_backup_restaurar_sub">Escolha um arquivo de backup do LylyReader</string>
     <string name="aj_backup_tudo">Tudo: configurações, marcadores, destaques e progresso (recomendado)</string>
     <string name="aj_backup_so_config">Só as configurações</string>
-    <string name="aj_temporarios">Arquivos temporários</string>
+    <string name="aj_falas_guardadas">Falas guardadas</string>
     <string name="aj_liberar_espaco">Liberar espaço</string>
-    <string name="aj_limite_falas">Limite para as falas guardadas</string>
+    <string name="aj_limite_valor">Limite: %1$s</string>
     <string name="aj_limite_falas_sub">O app guarda falas já geradas para não gerar de novo</string>
+    <string name="aj_livros_biblioteca">Livros na biblioteca</string>
     <string name="aj_guia">Guia passo a passo</string>
     <string name="aj_guia_sub">Como transformar um livro em audiobook</string>
     <string name="aj_rever_intro_sub">As telas de boas-vindas do primeiro uso</string>

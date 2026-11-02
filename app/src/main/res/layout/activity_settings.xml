@@ -885,7 +885,11 @@
 
                             <TextView
                                 style="@style/AjusteTitulo"
-                                android:text="@string/aj_temporarios"/>
+                                android:text="@string/aj_falas_guardadas"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_limite_falas_sub"/>
 
                             <TextView
                                 android:id="@+id/tvCacheInfo"
@@ -918,14 +922,6 @@
                         android:paddingBottom="6dp">
 
                         <TextView
-                            style="@style/AjusteTitulo"
-                            android:text="@string/aj_limite_falas"/>
-
-                        <TextView
-                            style="@style/AjusteSub"
-                            android:text="@string/aj_limite_falas_sub"/>
-
-                        <TextView
                             android:id="@+id/tvCacheAudioInfo"
                             style="@style/AjusteSub"
                             android:text="@string/cache_calculando"/>
@@ -956,6 +952,34 @@
                         </LinearLayout>
                     </LinearLayout>
 
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp">
+
+                    <TextView
+                        style="@style/AjusteTitulo"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:text="@string/aj_livros_biblioteca"/>
+
+                    <TextView
+                        android:id="@+id/tvLivrosEspaco"
+                        style="@style/AjusteValor"
+                        tools:text="149 MB"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

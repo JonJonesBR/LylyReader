@@ -105,7 +105,6 @@
     <string name="guided_steps_chip">⚙ %1$d</string>
     <string name="guided_steps_apply">Apply</string>
     <string name="guided_steps_desc_supertonic">Quality vs. speed of Supertonic voices. Fewer steps = faster; more steps = better quality. Applies to the next passages to be prepared. More steps make synthesis slower; on slower phones, high values may cause pauses in guided reading.</string>
-    <string name="cache_audio_info">Voice audio: %1$s · limit: %2$s</string>
     <string name="cache_teto_desc">Limit for the audio the voices keep so it can be reused. Over the limit, the app deletes the audio used longest ago; anything deleted is simply synthesized again if needed.</string>
     <string name="cache_teto_sem_limite">no limit</string>
     <string name="cache_teto_mb">%1$d MB</string>
@@ -296,16 +295,10 @@
     <string name="toast_key_removed">Key removed</string>
     <string name="toast_key_secure_save_failed">Could not save the key securely</string>
     <string name="toast_key_saved_local_fallback">Key saved only on this device. Secure storage is unavailable.</string>
-    <string name="cache_empty">Cache empty</string>
-    <string name="cache_info_chunks">%1$.1fMB  ·  %2$d chunks</string>
-    <string name="cache_unavailable">Unavailable</string>
-    <plurals name="cache_empty_removed_qtd">
-        <item quantity="one">Cache empty (%1$d removed)</item>
-        <item quantity="other">Cache empty (%1$d removed)</item>
-    </plurals>
-    <string name="cache_cleaning">Clearing...</string>
-    <string name="cache_clean_error">Error clearing</string>
-    <string name="toast_cache_cleared">Cache cleared</string>
+    <string name="cache_empty">Nothing saved</string>
+    <string name="cache_cleaning">Freeing up…</string>
+    <string name="cache_clean_error">Error freeing up space</string>
+    <string name="toast_espaco_liberado">Space freed</string>
 
     <!-- Mini Player -->
     <string name="tempo_inicial">0:00 / 0:00</string>
@@ -1024,7 +1017,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="bib_ord_recentes">Recent</string>
     <string name="bib_ord_titulo">Title</string>
     <string name="bib_ord_autor">Author</string>
-    <string name="bib_espaco">Space used: %1$s</string>
     <string name="bib_acao_ler">Read</string>
     <string name="bib_acao_audiobook">Generate audiobook</string>
     <string name="bib_acao_detalhes">Details</string>
@@ -1588,10 +1580,11 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_backup_restaurar_sub">Choose a LylyReader backup file</string>
     <string name="aj_backup_tudo">Everything: settings, bookmarks, highlights and progress (recommended)</string>
     <string name="aj_backup_so_config">Settings only</string>
-    <string name="aj_temporarios">Temporary files</string>
+    <string name="aj_falas_guardadas">Saved speech</string>
     <string name="aj_liberar_espaco">Free up space</string>
-    <string name="aj_limite_falas">Limit for saved speech</string>
+    <string name="aj_limite_valor">Limit: %1$s</string>
     <string name="aj_limite_falas_sub">The app keeps speech it already generated so it does not generate it again</string>
+    <string name="aj_livros_biblioteca">Books in the library</string>
     <string name="aj_guia">Step-by-step guide</string>
     <string name="aj_guia_sub">How to turn a book into an audiobook</string>
     <string name="aj_rever_intro_sub">The welcome screens from the first use</string>
