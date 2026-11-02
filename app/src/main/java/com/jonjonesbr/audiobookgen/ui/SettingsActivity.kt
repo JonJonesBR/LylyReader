@@ -2,6 +2,8 @@ package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
+import com.jonjonesbr.audiobookgen.domain.TipoRegistroErro
+import com.jonjonesbr.audiobookgen.domain.resumirArquivoDeErro
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.mostrarErro
@@ -949,11 +951,13 @@ class SettingsActivity : BasePlayerActivity() {
     private fun carregarInfoLogsErro() {
         tvLogsErroInfo.text = getString(R.string.logs_erro_calculando)
         lifecycleScope.launch {
+            // Encerramentos normais do sistema (pouca memória, limpeza) não contam: não são defeito do app.
             val count = withContext(Dispatchers.IO) {
-                com.jonjonesbr.audiobookgen.util.CrashLogWriter.getLogFiles(this@SettingsActivity).size
+                com.jonjonesbr.audiobookgen.util.CrashLogWriter.getLogFiles(this@SettingsActivity)
+                    .count { resumirArquivoDeErro(it).tipo != TipoRegistroErro.ENCERRAMENTO_NORMAL }
             }
             if (count == 0) {
-                tvLogsErroInfo.text = getString(R.string.logs_erro_vazio)
+                tvLogsErroInfo.text = getString(R.string.logs_erro_nenhum)
             } else {
                 tvLogsErroInfo.text = resources.getQuantityString(R.plurals.logs_erro_contagem, count, count)
             }

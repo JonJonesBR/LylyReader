@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="4dp"
-            android:text="@string/label_logs_erro"
+            android:text="@string/aj_problema"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@color/color_on_surface"/>
@@ -50,12 +50,46 @@
 
     </LinearLayout>
 
-    <FrameLayout
+    <!-- Texto fixo no topo: explica para quem serve a lista e leva ao GitHub do projeto -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/tvExplicacaoLogs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/logs_explicacao_avancado"
+            android:textColor="@color/color_on_surface_muted"
+            android:textSize="14sp"/>
+
+        <TextView
+            android:id="@+id/tvLinkGithubLogs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="@string/logs_abrir_github"
+            android:textColor="@color/color_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvErrorLogs"
@@ -76,4 +110,19 @@
             android:visibility="gone"/>
 
     </FrameLayout>
+
+    <!-- Enviar todos: aparece só quando há registros -->
+    <Button
+        android:id="@+id/btnEnviarTodosLogs"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:minHeight="48dp"
+        android:text="@string/logs_btn_enviar_todos"
+        android:textAllCaps="false"
+        android:visibility="gone"/>
 </LinearLayout>

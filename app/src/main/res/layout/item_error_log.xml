@@ -28,13 +28,11 @@
             android:textStyle="bold"/>
 
         <TextView
-            android:id="@+id/tvLogSize"
+            android:id="@+id/tvLogResumo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/color_on_surface_muted"
-            android:textSize="12sp"
-            android:layout_marginTop="2dp"
-            android:fontFamily="monospace"/>
+            android:textSize="13sp"
+            android:layout_marginTop="2dp"/>
 
     </LinearLayout>
 

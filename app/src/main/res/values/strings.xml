@@ -612,18 +612,18 @@
     <string name="toast_erro_importar_voz">Could not open the file picker.</string>
     <string name="toast_erro_importar_voz_motivo">Failed to import voice: %1$s</string>
     <!-- Logs de Erro Settings Section -->
-    <string name="label_logs_erro">Error Logs</string>
     <string name="desc_logs_erro">View or share error reports generated locally by the application. Reports are saved privately and do not occupy the public downloads folder.</string>
     <string name="btn_visualizar_logs">View Logs</string>
     <string name="logs_erro_calculando">Calculating…</string>
     <string name="logs_erro_vazio">No error logs</string>
+    <string name="logs_erro_nenhum">No errors</string>
     <string name="reader_valor_entre">Enter a value between %1$s and %2$s</string>
     <string name="reader_manter_tela_ligada">Keep screen on</string>
     <string name="reader_valor_invalido">Invalid value. Use %1$s–%2$s.</string>
     <string name="toast_valor_invalido">Invalid value. Use %1$d–%2$d.</string>
     <plurals name="logs_erro_contagem">
-        <item quantity="one">%d log</item>
-        <item quantity="other">%d logs</item>
+        <item quantity="one">%d error report</item>
+        <item quantity="other">%d error reports</item>
     </plurals>
     <string name="toast_logs_limpos">Error logs deleted!</string>
 
@@ -712,6 +712,21 @@
     <string name="logs_confirmar_apagar_todos">Delete all error reports?</string>
     <string name="logs_btn_apagar_todos">Delete</string>
     <string name="logs_btn_excluir">Delete</string>
+    <string name="logs_explicacao_avancado">For advanced users: these records help fix errors. You can share them in the problem reports of the project on GitHub.</string>
+    <string name="logs_abrir_github">Open on GitHub</string>
+    <string name="logs_btn_enviar_todos">Send all</string>
+    <string name="logs_compartilhar_todos_titulo">Share logs</string>
+    <string name="logs_detalhes_titulo">%1$s · %2$s</string>
+    <string name="logs_quando_hoje">Today, %1$s</string>
+    <string name="logs_quando_ontem">Yesterday, %1$s</string>
+    <string name="logs_quando_data">%1$s, %2$s</string>
+    <string name="logs_resumo_pouca_memoria">Closed by the system (low memory)</string>
+    <string name="logs_resumo_encerrado">Closed by the system</string>
+    <string name="logs_resumo_travamento">App error</string>
+    <string name="logs_resumo_travamento_excecao">App error: %1$s</string>
+    <string name="logs_resumo_sem_resposta">The app stopped responding</string>
+    <string name="logs_resumo_outro">Technical record</string>
+    <string name="logs_erro_abrir_link">Could not open the link.</string>
     <string name="toast_log_apagado">Log deleted successfully.</string>
     <string name="toast_erro_apagar_log">Could not delete the log. Please try again.</string>
     <string name="ordenar_nao_concluidos_primeiro">Unfinished first</string>

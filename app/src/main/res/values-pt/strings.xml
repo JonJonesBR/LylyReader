@@ -598,19 +598,19 @@
     <string name="toast_erro_importar_voz">Não foi possível abrir o seletor de arquivo.</string>
     <string name="toast_erro_importar_voz_motivo">Falha ao importar voz: %1$s</string>
     <!-- Logs de Erro Settings Section -->
-    <string name="label_logs_erro">Logs de Erro</string>
     <string name="desc_logs_erro">Consulte ou compartilhe relatórios de erro gerados localmente pelo aplicativo. Os relatórios são salvos de forma privada e não ocupam a pasta pública de downloads.</string>
     <string name="btn_visualizar_logs">Visualizar Logs</string>
     <string name="logs_erro_calculando">Calculando…</string>
     <string name="logs_erro_vazio">Nenhum log de erro</string>
+    <string name="logs_erro_nenhum">Nenhum erro</string>
     <string name="reader_valor_entre">Digite um valor entre %1$s e %2$s</string>
     <string name="reader_manter_tela_ligada">Manter tela ligada</string>
     <string name="reader_valor_invalido">Valor inválido. Use %1$s–%2$s.</string>
     <string name="toast_valor_invalido">Valor inválido. Use %1$d–%2$d.</string>
     <plurals name="logs_erro_contagem">
-        <item quantity="one">%d log</item>
-        <item quantity="other">%d logs</item>
-        <item quantity="many">%d logs</item>
+        <item quantity="one">%d registro</item>
+        <item quantity="other">%d registros</item>
+        <item quantity="many">%d registros</item>
     </plurals>
     <string name="toast_logs_limpos">Logs de erro apagados!</string>
 
@@ -700,6 +700,21 @@
     <string name="logs_confirmar_apagar_todos">Apagar todos os relatórios de erro?</string>
     <string name="logs_btn_apagar_todos">Apagar</string>
     <string name="logs_btn_excluir">Apagar</string>
+    <string name="logs_explicacao_avancado">Para usuários avançados: estes registros ajudam a corrigir erros. Você pode compartilhá-los nos relatos de problema do projeto no GitHub.</string>
+    <string name="logs_abrir_github">Abrir no GitHub</string>
+    <string name="logs_btn_enviar_todos">Enviar todos</string>
+    <string name="logs_compartilhar_todos_titulo">Compartilhar registros</string>
+    <string name="logs_detalhes_titulo">%1$s · %2$s</string>
+    <string name="logs_quando_hoje">Hoje, %1$s</string>
+    <string name="logs_quando_ontem">Ontem, %1$s</string>
+    <string name="logs_quando_data">%1$s, %2$s</string>
+    <string name="logs_resumo_pouca_memoria">Fechado pelo sistema (pouca memória)</string>
+    <string name="logs_resumo_encerrado">Fechado pelo sistema</string>
+    <string name="logs_resumo_travamento">Erro no app</string>
+    <string name="logs_resumo_travamento_excecao">Erro no app: %1$s</string>
+    <string name="logs_resumo_sem_resposta">O app parou de responder</string>
+    <string name="logs_resumo_outro">Registro técnico</string>
+    <string name="logs_erro_abrir_link">Não foi possível abrir o link.</string>
     <string name="toast_log_apagado">Log apagado com sucesso.</string>
     <string name="toast_erro_apagar_log">Não foi possível apagar o log. Tente novamente.</string>
     <string name="ordenar_nao_concluidos_primeiro">Não concluídos primeiro</string>
