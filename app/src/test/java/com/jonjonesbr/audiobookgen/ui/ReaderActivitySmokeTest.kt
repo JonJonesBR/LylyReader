@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
@@ -32,8 +33,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.io.File
+import java.lang.reflect.Modifier
 import java.time.Duration
 import java.util.Locale
+import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -90,9 +93,16 @@ class ReaderActivitySmokeTest {
     private lateinit var iniciarPythonOriginal: (Context) -> Unit
     private var handlerOriginal: Thread.UncaughtExceptionHandler? = null
     private val falhas = CopyOnWriteArrayList<Throwable>()
+    // Estado do livro gravado no @Before, para comparar com o que o Leitor procura quando a falha acontece.
+    private lateinit var chaveBrutaInicial: String
+    private lateinit var chaveLimpaInicial: String
+    private var tamanhoInicial = 0L
+    private var modificadoInicial = 0L
 
     @Before
     fun setUp() {
+        // Antes de qualquer Activity: a fábrica de ViewModels guarda o Application do teste anterior.
+        zerarFabricaDeViewModel()
         app = ApplicationProvider.getApplicationContext()
         // Sem Python na JVM: a costura faz o motor "indisponível", e todo caminho do Python desiste sozinho.
         iniciarPythonOriginal = PythonInicio.iniciar
@@ -109,6 +119,7 @@ class ReaderActivitySmokeTest {
     fun tearDown() {
         PythonInicio.iniciar = iniciarPythonOriginal
         Thread.setDefaultUncaughtExceptionHandler(handlerOriginal)
+        zerarFabricaDeViewModel()
     }
 
     @Test
@@ -235,25 +246,49 @@ class ReaderActivitySmokeTest {
     /**
      * Grava o arquivo e põe o texto nos dois caches (bruto e limpo, iguais), com as mesmas chaves que o app usa. Assim
      * ExtractTextUseCase e TextoNarravelDoLivro.limpar acham o texto e não chamam o Python.
+     *
+     * Cada teste grava o livro numa pasta própria (UUID no caminho). O caminho entra na chave do cache e na trava do
+     * ExtractTextUseCase, que são estáticas: se dois testes usassem o mesmo caminho, um herdaria o estado do outro.
      */
     private fun gravarLivroNoCache(texto: TextoExtraido): File {
         // O arquivo precisa existir antes da chave: a chave leva tamanho e data de modificação.
-        val f = File(app.filesDir, "fumaca/$NOME.txt")
+        val f = File(app.filesDir, "fumaca/${UUID.randomUUID()}/$NOME.txt")
         f.parentFile?.mkdirs()
         f.writeText(PARAGRAFOS.joinToString("\n\n"))
         val bruto = requireNotNull(CacheDeTextoDoLivro.chaveBruto(app, f.absolutePath)) { "Arquivo do teste ausente" }
-        CacheDeTextoDoLivro.gravar(app, bruto, texto)
-        CacheDeTextoDoLivro.gravar(
-            app,
-            CacheDeTextoDoLivro.chaveLimpo(bruto, "txt", Locale.getDefault().language, BlacklistStore(app).load()),
-            texto,
-            removidas = 0
+        val limpo = CacheDeTextoDoLivro.chaveLimpo(
+            bruto,
+            "txt",
+            Locale.getDefault().language,
+            BlacklistStore(app).load()
         )
+        chaveBrutaInicial = bruto
+        chaveLimpaInicial = limpo
+        tamanhoInicial = f.length()
+        modificadoInicial = f.lastModified()
+        CacheDeTextoDoLivro.gravar(app, bruto, texto)
+        CacheDeTextoDoLivro.gravar(app, limpo, texto, removidas = 0)
         assertEquals(texto, CacheDeTextoDoLivro.ler(app, bruto))
         return f
     }
 
     // ── Ajudantes ─────────────────────────────────────────────────────────────
+
+    /**
+     * Zera o singleton estático de `ViewModelProvider.AndroidViewModelFactory`. Ele guarda o Application do primeiro
+     * uso e o devolve depois: o ReaderViewModel (só com construtor de Application) passa por essa fábrica, então o
+     * 2º teste do sandbox extrairia com o cacheDir do 1º, já apagado. O campo acha-se pelo tipo, não pelo nome
+     * (sInstance ou outro, conforme a versão do lifecycle).
+     */
+    private fun zerarFabricaDeViewModel() {
+        val tipo = ViewModelProvider.AndroidViewModelFactory::class.java
+        tipo.declaredFields
+            .filter { Modifier.isStatic(it.modifiers) && it.type == tipo }
+            .forEach { campo ->
+                campo.isAccessible = true
+                campo.set(null, null)
+            }
+    }
 
     private fun lista(a: ReaderActivity): RecyclerView = a.findViewById(R.id.recyclerViewParagrafos)
 
@@ -284,18 +319,43 @@ class ReaderActivitySmokeTest {
         condicao: (ReaderActivity) -> Boolean
     ) {
         val fim = System.nanoTime() + TEMPO_LIMITE_MS * 1_000_000L
+        // Application da tela (o que a Activity recebeu), para o diagnóstico comparar com o do teste.
+        var appDaTela: Application? = null
         while (System.nanoTime() < fim) {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(50))
             var pronto = false
             scenario.onActivity { a ->
+                appDaTela = a.application
                 if (a.findViewById<View>(R.id.layoutReaderErro).visibility == View.VISIBLE) {
-                    fail("Leitor mostrou erro: " + a.findViewById<TextView>(R.id.tvReaderErro).text)
+                    val erro = a.findViewById<TextView>(R.id.tvReaderErro).text
+                    fail("Leitor mostrou erro: $erro. ${diagnosticoDoCache(appDaTela)}")
                 }
                 pronto = condicao(a)
             }
             if (pronto) return
             Thread.sleep(10)
         }
-        fail("Tempo esgotado: $descricao")
+        fail("Tempo esgotado: $descricao. ${diagnosticoDoCache(appDaTela)}")
     }
+
+    /**
+     * Estado do cache e do arquivo agora, comparado com o que o @Before gravou, e os cacheDir dos dois Applications (o
+     * do teste e o da tela). Vai na mensagem da falha. A contagem dos .json vem antes das leituras, porque a leitura
+     * atualiza a data do cache e apaga um JSON ilegível. Nunca lança: a mensagem não pode esconder o motivo real.
+     */
+    private fun diagnosticoDoCache(appDaTela: Application?): String = runCatching {
+        val jsons = File(app.cacheDir, "texto_livros").listFiles { f -> f.name.endsWith(".json") }?.size ?: -1
+        val chaveAgora = CacheDeTextoDoLivro.chaveBruto(app, arquivo.absolutePath)
+        val naTela = appDaTela?.let { CacheDeTextoDoLivro.ler(it, chaveBrutaInicial) != null }
+        "[diagnóstico] chave bruta do @Before=$chaveBrutaInicial; " +
+            "chave bruta agora=$chaveAgora; " +
+            "cache bruto agora=${CacheDeTextoDoLivro.ler(app, chaveAgora) != null}; " +
+            "cache limpo do @Before=${CacheDeTextoDoLivro.ler(app, chaveLimpaInicial) != null}; " +
+            "arquivo existe=${arquivo.exists()}, tamanho=${arquivo.length()} (@Before: $tamanhoInicial), " +
+            "modificado=${arquivo.lastModified()} (@Before: $modificadoInicial); " +
+            "jsons em texto_livros=$jsons; " +
+            "cacheDir do teste=${app.cacheDir}; " +
+            "cacheDir da tela=${appDaTela?.cacheDir}; " +
+            "cache bruto do @Before na tela=$naTela"
+    }.getOrElse { "diagnóstico indisponível: $it" }
 }
