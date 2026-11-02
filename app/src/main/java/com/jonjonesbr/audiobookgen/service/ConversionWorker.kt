@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.PowerManager
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkInfo
@@ -397,6 +398,14 @@ class ConversionWorker(
                     ?.let { android.net.Uri.parse(it) }
                 val exportacao = com.jonjonesbr.audiobookgen.domain.DocumentExportUseCase(applicationContext)
                     .exportar(File(result.caminho), pastaDestino)
+                // A Biblioteca lista a cópia exportada; o registro liga o arquivo interno a ela (P2).
+                exportacao.getOrNull()?.destUri?.let {
+                    // Falha aqui não pode derrubar uma conversão que já foi exportada (P2).
+                    runCatching {
+                        com.jonjonesbr.audiobookgen.data.CopiaExportadaStore
+                            .gravar(applicationContext, result.caminho, it.toString())
+                    }.onFailure { Log.w("ConversionWorker", "Falha ao registrar a cópia exportada", it) }
+                }
                 notif.mostrarConcluida(result.caminho, TextosDeNotificacao.nomeDaConversao(result.caminho))
                 FilaDeConversao.aoTerminarExecucao(
                     applicationContext, inputData.getString(KEY_FILA_ITEM_ID), runToken, result.caminho, null

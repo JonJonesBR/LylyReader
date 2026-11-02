@@ -612,7 +612,7 @@
     <string name="label_velocidade_config_livro">Velocidade</string>
     <string name="action_guided_reading">Leitura Guiada</string>
     <string name="btn_ouvir_audiobook_livro">Ouvir o audiobook</string>
-    <string name="mini_player_ler_livro">📖 Ler este livro</string>
+    <string name="mini_player_ler_livro">Ler o livro</string>
     <string name="toast_download_started">Download iniciado em segundo plano...</string>
     <string name="toast_download_completed">Download concluído!</string>
     <string name="toast_download_failed">Download falhou: %1$s. Verifique sua conexão e tente novamente.</string>
@@ -758,12 +758,9 @@
     <string name="toast_erro_apagar_log">Não foi possível apagar o log. Tente novamente.</string>
     <string name="ordenar_nao_concluidos_primeiro">Não concluídos primeiro</string>
     <string name="mini_player_avancar">+15s</string>
+    <string name="mini_player_soneca">Soneca</string>
+    <string name="mini_player_vel_atual">velocidade atual</string>
     <string name="mini_player_recuar">-15s</string>
-    <string name="mini_player_vel_075">0,75x</string>
-    <string name="mini_player_vel_100">1x</string>
-    <string name="mini_player_vel_125">1,25x</string>
-    <string name="mini_player_vel_150">1,5x</string>
-    <string name="mini_player_vel_200">2x</string>
     <string name="sleep_timer_label">Soneca</string>
     <string name="toast_erro_preparar_download">Erro ao preparar download: %1$s. Verifique a conexão e o espaço livre.</string>
     <string name="toast_leitura_pausada_soneca">Leitura pausada pela soneca</string>

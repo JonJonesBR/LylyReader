@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.domain.PlayerState
+import android.graphics.Typeface
 import android.os.Bundle
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
@@ -35,8 +36,11 @@ import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.formatarTempo
 import com.jonjonesbr.audiobookgen.util.abrirExpandida
 import com.jonjonesbr.audiobookgen.util.textosDaSoneca
+import com.jonjonesbr.audiobookgen.util.rotuloSonecaMiniPlayer
+import com.jonjonesbr.audiobookgen.util.rotuloVelocidade
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 /**
  * Activity base que gerencia o mini-player colapsível.
@@ -50,6 +54,11 @@ abstract class BasePlayerActivity : AppCompatActivity() {
     // true enquanto o bind foi aceito pelo sistema (pode ser antes de onServiceConnected).
     private var bindeado = false
     private var playerExpanded = false
+    // Última velocidade destacada nos botões do mini-player: só mexe nas views quando ela muda.
+    private var velocidadeMarcada: Float? = null
+    // Fonte original de cada botão de velocidade (a do Material3, sans-serif-medium): o negrito parte dela,
+    // senão setTypeface(null, …) trocaria a família e os botões ficariam com outro peso que -15s/+15s.
+    private val tipografiaDosBotoesVelocidade = mutableMapOf<Int, Typeface>()
 
     // O mini-player exibe o player de áudio OU o indicador de leitura guiada (mutuamente
     // exclusivos). O root fica visível se qualquer um dos dois estiver ativo.
@@ -182,8 +191,9 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         bindeado = bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    /** Contagem regressiva da soneca ao lado do 😴 no mini-player — achado real (2026-09-16):
-     *  o botão nunca teve essa atualização, só o emoji fixo do XML. A notificação já mostra o
+    /** Contagem regressiva da soneca no botão do mini-player: "Soneca" desarmada, só a contagem armada
+     *  (o ícone fica no início, via app:icon).
+     *  Achado real (2026-09-16): o botão nunca teve essa atualização, só o texto fixo do XML. A notificação já mostra o
      *  texto certo internamente (`android.text`, confirmado via dumpsys), mas o layout de mídia
      *  redesenhado do Android moderno ignora esse texto e mostra o nome do app no lugar — fora
      *  do controle do app; aqui pelo menos garante que a contagem apareça em algum lugar. */
@@ -193,12 +203,12 @@ abstract class BasePlayerActivity : AppCompatActivity() {
                 // O mini-player não oferece a soneca "fim do capítulo" (sem token), mas o texto segue o modo
                 // para não mostrar a contagem errada se ela estiver armada pela leitura guiada.
                 combine(SleepTimerManager.remainingMs, SleepTimerManager.fimDoCapitulo) { restanteMs, cap ->
-                    textosDaSoneca(restanteMs, cap)
-                }.collect { textos ->
+                    Pair(textosDaSoneca(restanteMs, cap), rotuloSonecaMiniPlayer(restanteMs, cap))
+                }.collect { (textos, rotulo) ->
                     val btn = findViewById<View>(R.id.miniPlayerRoot)
                         ?.findViewById<android.widget.Button?>(R.id.miniPlayerSleepTimer)
                         ?: return@collect
-                    btn.text = textos.rotulo
+                    btn.text = rotulo
                     // Como o chip da guiada: a contagem vai só para a descrição, sem anúncio (a11y-5).
                     btn.contentDescription = textos.descricao
                 }
@@ -223,9 +233,18 @@ abstract class BasePlayerActivity : AppCompatActivity() {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 playerService?.state?.collect { ps ->
                     atualizarMiniPlayer(ps)
+                    aoMudarEstadoDoPlayer(ps)
                 }
             }
         }
+    }
+
+    /**
+     * Cada estado do serviço, depois de atualizar o mini-player. Telas que mostram o estado do player em outro
+     * lugar (os cartões da Biblioteca) seguem esta mesma fonte, para não ficar atrás do mini-player.
+     */
+    protected open fun aoMudarEstadoDoPlayer(ps: PlayerState) {
+        // Por padrão nada: só as telas que mostram o estado do player sobrescrevem.
     }
 
     private fun atualizarRootVisivel(root: View) {
@@ -257,7 +276,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
             root.findViewById<View>(R.id.miniPlayerExpanded)?.visibility = View.GONE
             playerExpanded = false
             // Sem isto, ao voltar recolhido, o botão mantinha o ícone e a descrição de "recolher".
-            atualizarBotaoExpandir(root)
+            atualizarBotoesDaBarra(root)
         } else if (acabouDeIniciar && deveExpandirMiniPlayerAoIniciar()) {
             toggleExpandido(root, forcarExpandido = true)
         }
@@ -277,6 +296,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         nomeView.text = state.trackName
         playPauseMini.setImageResource(if (state.isPlaying) pauseIcon else playIcon)
         playPauseGrande.setImageResource(if (state.isPlaying) pauseIcon else playIcon)
+        marcarVelocidade(root, state.speed)
 
         seekBar.max      = state.duration
         seekBar.progress = state.currentPosition
@@ -348,21 +368,31 @@ abstract class BasePlayerActivity : AppCompatActivity() {
                 override fun onStopTrackingTouch(sb: SeekBar)   { playerService?.seek(sb.progress, false) }
             })
 
-            listOf(
-                Triple(R.id.miniPlayerVel075, VELOCIDADE_075, "0.75x"),
-                Triple(R.id.miniPlayerVel100, 1.0f, "1x"),
-                Triple(R.id.miniPlayerVel125, VELOCIDADE_125, "1.25x"),
-                Triple(R.id.miniPlayerVel150, VELOCIDADE_150, "1.5x"),
-                Triple(R.id.miniPlayerVel200, 2.0f, "2x")
-            ).forEach { (id, vel, label) ->
+            botoesVelocidade.forEach { (id, vel) ->
                 root.findViewById<Button>(id)?.apply {
-                    text = label
+                    text = rotuloVelocidade(vel)
                     setTextColor(ContextCompat.getColor(this@BasePlayerActivity, R.color.color_on_surface))
                     setOnClickListener { playerService?.aplicarVelocidade(vel) }
                 }
             }
         } catch (e: Exception) {
             Log.w("BasePlayerActivity", "Mini-player não disponível neste layout", e)
+        }
+    }
+
+    /** Destaca (negrito, cor de destaque, estado "atual" para o TalkBack) o botão da velocidade em uso. */
+    private fun marcarVelocidade(root: View, velocidade: Float) {
+        if (velocidadeMarcada == velocidade) return
+        velocidadeMarcada = velocidade
+        botoesVelocidade.forEach { (id, vel) ->
+            val botao = root.findViewById<Button?>(id) ?: return@forEach
+            val ativa = abs(vel - velocidade) < TOLERANCIA_VELOCIDADE
+            val base = tipografiaDosBotoesVelocidade.getOrPut(id) { botao.typeface }
+            botao.typeface = Typeface.create(base, if (ativa) Typeface.BOLD else Typeface.NORMAL)
+            botao.setTextColor(
+                ContextCompat.getColor(this, if (ativa) R.color.color_primary else R.color.color_on_surface)
+            )
+            ViewCompat.setStateDescription(botao, if (ativa) getString(R.string.mini_player_vel_atual) else null)
         }
     }
 
@@ -475,14 +505,18 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         val expanded = root.findViewById<View>(R.id.miniPlayerExpanded)
         playerExpanded = forcarExpandido ?: !playerExpanded
         expanded.visibility = if (playerExpanded) View.VISIBLE else View.GONE
-        atualizarBotaoExpandir(root)
+        atualizarBotoesDaBarra(root)
     }
 
     /**
-     * Ícone, descrição e dica do botão de expandir seguem o estado (a11y-8): o TalkBack diz o que o toque faz.
+     * Botões da barra de cima seguem o estado. O de tocar some enquanto o player está expandido: o botão grande
+     * do meio faz o mesmo, então ficam dois play só quando recolhido (P1). O de expandir tem ícone, descrição e
+     * dica que dizem o que o toque faz (a11y-8), para o TalkBack.
      * Na criação o layout já está recolhido, igual a playerExpanded = false.
      */
-    private fun atualizarBotaoExpandir(root: View) {
+    private fun atualizarBotoesDaBarra(root: View) {
+        root.findViewById<View?>(R.id.miniPlayerPlayPause)?.visibility =
+            if (playerExpanded) View.GONE else View.VISIBLE
         val btnExpandir = root.findViewById<ImageButton?>(R.id.miniPlayerExpandir) ?: return
         btnExpandir.setImageResource(
             if (playerExpanded) android.R.drawable.arrow_down_float
@@ -496,10 +530,23 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         }
     }
 
+    /** Botões de velocidade do mini-player e o valor de cada um. */
+    private val botoesVelocidade: List<Pair<Int, Float>> = listOf(
+        R.id.miniPlayerVel075 to VELOCIDADE_075,
+        R.id.miniPlayerVel100 to VELOCIDADE_100,
+        R.id.miniPlayerVel125 to VELOCIDADE_125,
+        R.id.miniPlayerVel150 to VELOCIDADE_150,
+        R.id.miniPlayerVel200 to VELOCIDADE_200
+    )
+
     companion object {
         private const val VELOCIDADE_075 = 0.75f
+        private const val VELOCIDADE_100 = 1.0f
         private const val VELOCIDADE_125 = 1.25f
         private const val VELOCIDADE_150 = 1.5f
+        private const val VELOCIDADE_200 = 2.0f
+        // Velocidade que o serviço devolve pode vir com erro de ponto flutuante: menos que isto é o mesmo botão.
+        private const val TOLERANCIA_VELOCIDADE = 0.001f
         private const val REWIND_MS = 15_000
     }
 }

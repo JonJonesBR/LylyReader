@@ -25,3 +25,17 @@ internal fun Context.textosDaSoneca(restanteMs: Long?, fimDoCapitulo: Boolean): 
             getString(R.string.sleep_timer_title_fim_capitulo)
         )
     }
+
+/**
+ * Rótulo do botão Soneca do mini-player (o ícone fica ao lado, no XML). Desarmada, a palavra "Soneca";
+ * armada, só a contagem ou o "fim do cap.", porque três botões na linha cortam o texto longo e a contagem
+ * some. A palavra segue na descrição para o TalkBack ([textosDaSoneca]). Sem o emoji, que fica na notificação.
+ */
+internal fun Context.rotuloSonecaMiniPlayer(restanteMs: Long?, fimDoCapitulo: Boolean): String {
+    val palavra = getString(R.string.mini_player_soneca)
+    return when (modoDaSoneca(restanteMs, fimDoCapitulo)) {
+        ModoSoneca.DESLIGADA -> palavra
+        ModoSoneca.CONTAGEM -> restanteMs?.let { SleepTimerManager.formatRemaining(it) } ?: palavra
+        ModoSoneca.FIM_DO_CAPITULO -> getString(R.string.sleep_timer_fim_capitulo_curto)
+    }
+}

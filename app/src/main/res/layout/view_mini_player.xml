@@ -209,7 +209,6 @@
                 android:paddingStart="2dp"
                 android:paddingEnd="2dp"
                 android:maxLines="1"
-                android:text="@string/mini_player_vel_075"
                 android:textColor="@color/color_on_surface"
                 android:textSize="13sp"/>
 
@@ -223,7 +222,6 @@
                 android:paddingStart="2dp"
                 android:paddingEnd="2dp"
                 android:maxLines="1"
-                android:text="@string/mini_player_vel_100"
                 android:textColor="@color/color_on_surface"
                 android:textSize="13sp"/>
 
@@ -237,7 +235,6 @@
                 android:paddingStart="2dp"
                 android:paddingEnd="2dp"
                 android:maxLines="1"
-                android:text="@string/mini_player_vel_125"
                 android:textColor="@color/color_on_surface"
                 android:textSize="13sp"/>
 
@@ -251,7 +248,6 @@
                 android:paddingStart="2dp"
                 android:paddingEnd="2dp"
                 android:maxLines="1"
-                android:text="@string/mini_player_vel_150"
                 android:textColor="@color/color_on_surface"
                 android:textSize="13sp"/>
 
@@ -265,7 +261,6 @@
                 android:paddingStart="2dp"
                 android:paddingEnd="2dp"
                 android:maxLines="1"
-                android:text="@string/mini_player_vel_200"
                 android:textColor="@color/color_on_surface"
                 android:textSize="13sp"/>
 
@@ -284,8 +279,16 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:minWidth="0dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:maxLines="1"
-                android:text="😴"
+                android:ellipsize="end"
+                app:icon="@drawable/ic_soneca"
+                app:iconTint="@color/color_on_surface"
+                app:iconSize="18dp"
+                app:iconPadding="4dp"
+                app:iconGravity="textStart"
+                android:text="@string/mini_player_soneca"
                 android:textSize="14sp"
                 android:textColor="@color/color_on_surface"
                 android:contentDescription="@string/cd_sleep_timer"/>
@@ -295,7 +298,15 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:minWidth="0dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:maxLines="2"
+                android:ellipsize="end"
+                app:icon="@drawable/ic_nav_livros"
+                app:iconTint="@color/color_on_surface"
+                app:iconSize="18dp"
+                app:iconPadding="4dp"
+                app:iconGravity="textStart"
                 android:layout_height="wrap_content"
                 android:text="@string/mini_player_ler_livro"
                 android:textColor="@color/color_on_surface"

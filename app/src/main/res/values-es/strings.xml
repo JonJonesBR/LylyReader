@@ -599,7 +599,7 @@
     <string name="label_velocidade_config_livro">Velocidad</string>
     <string name="action_guided_reading">Lectura Guiada</string>
     <string name="btn_ouvir_audiobook_livro">Escuchar el audiolibro</string>
-    <string name="mini_player_ler_livro">📖 Leer este libro</string>
+    <string name="mini_player_ler_livro">Leer el libro</string>
     <string name="toast_download_started">Descarga iniciada en segundo plano...</string>
     <string name="toast_download_completed">¡Descarga completada!</string>
     <string name="toast_download_failed">Descarga fallida: %1$s. Verifique su conexión e intente de nuevo.</string>
@@ -749,12 +749,9 @@
     <string name="ordenar_nao_concluidos_primeiro">No concluidos primero</string>
 
     <string name="mini_player_avancar">+15s</string>
+    <string name="mini_player_soneca">Temporizador</string>
+    <string name="mini_player_vel_atual">velocidad actual</string>
     <string name="mini_player_recuar">-15s</string>
-    <string name="mini_player_vel_075">0,75x</string>
-    <string name="mini_player_vel_100">1x</string>
-    <string name="mini_player_vel_125">1,25x</string>
-    <string name="mini_player_vel_150">1,5x</string>
-    <string name="mini_player_vel_200">2x</string>
     <string name="sleep_timer_label">Temporizador</string>
     <string name="label_permissao_notificacao">Permiso de notificaciones</string>
     <string name="desc_permissao_notificacao">Android solo pide permiso de notificaciones una vez. Si se deniega, las notificaciones de conversión y reproducción desaparecen silenciosamente. Revisa el estado actual y abre la configuración del sistema para activarlo.</string>

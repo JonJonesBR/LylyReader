@@ -601,7 +601,7 @@
     <string name="label_voz_config_livro">Voice</string>
     <string name="label_velocidade_config_livro">Speed</string>
     <string name="btn_ouvir_audiobook_livro">Listen to the audiobook</string>
-    <string name="mini_player_ler_livro">📖 Read this book</string>
+    <string name="mini_player_ler_livro">Read the book</string>
     <string name="toast_download_started">Download started in background...</string>
     <string name="toast_download_completed">Download completed!</string>
     <string name="toast_download_failed">Download failed: %1$s. Check connection or try again.</string>
@@ -618,11 +618,8 @@
     <!-- Mini player labels -->
     <string name="mini_player_recuar">-15s</string>
     <string name="mini_player_avancar">+15s</string>
-    <string name="mini_player_vel_075">0.75x</string>
-    <string name="mini_player_vel_100">1x</string>
-    <string name="mini_player_vel_125">1.25x</string>
-    <string name="mini_player_vel_150">1.5x</string>
-    <string name="mini_player_vel_200">2x</string>
+    <string name="mini_player_soneca">Sleep</string>
+    <string name="mini_player_vel_atual">current speed</string>
 
     <!-- Sleep timer -->
     <string name="sleep_timer_label">Sleep timer</string>

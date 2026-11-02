@@ -62,7 +62,9 @@ object AudiobookLibraryUseCase {
     // é uma particularidade do MediaProvider, não um filtro desta query. READ_MEDIA_AUDIO
     // garante visibilidade irrestrita só na coleção Audio, onde o mesmo arquivo .mp3 também é
     // indexado.
-    @Suppress("TooGenericExceptionCaught")
+    // DATA (caminho no disco) é deprecado, mas ainda vem preenchido; sem ele o cartão não casa com o player
+    // quando este recebe o caminho do arquivo (P2). Opcional: se o sistema não informar, fica nulo.
+    @Suppress("TooGenericExceptionCaught", "DEPRECATION")
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun carregarDoMediaStore(context: Context, dest: MutableList<AudiobookItem>) {
         val projection = arrayOf(
@@ -70,6 +72,7 @@ object AudiobookLibraryUseCase {
             MediaStore.Audio.Media.DISPLAY_NAME,
             MediaStore.Audio.Media.SIZE,
             MediaStore.Audio.Media.DATE_ADDED,
+            MediaStore.Audio.Media.DATA,
         )
         // MIME_TYPE aceita audio/mpeg E audio/x-wav|audio/wav: sem FFmpeg no device (nenhum
         // Android real tem o binário em PATH), o fallback Python puro salva WAV (Kokoro/
@@ -93,6 +96,7 @@ object AudiobookLibraryUseCase {
                 val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
                 val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)
                 val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+                val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
 
                 while (cursor.moveToNext()) {
                     val id      = cursor.getLong(idCol)
@@ -101,6 +105,7 @@ object AudiobookLibraryUseCase {
                     val data    = cursor.getLong(dateCol) * MS_POR_SEGUNDO
                     val uri     = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
                     val meta    = lerMetadados(context, uri, null)
+                    val noDisco = if (dataCol >= 0) cursor.getString(dataCol) else null
 
                     dest.add(AudiobookItem(
                         nome          = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, nome),
@@ -113,7 +118,8 @@ object AudiobookLibraryUseCase {
                         localizacao   = context.getString(R.string.folder_downloads),
                         progressoPct  = PlaybackProgressStore.percent(context, uri.toString()),
                         titulo        = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor),
-                        autor         = NomeDoAudiobook.autorDaEtiqueta(meta.autor)
+                        autor         = NomeDoAudiobook.autorDaEtiqueta(meta.autor),
+                        caminhoNoDisco = noDisco
                     ))
                 }
             }

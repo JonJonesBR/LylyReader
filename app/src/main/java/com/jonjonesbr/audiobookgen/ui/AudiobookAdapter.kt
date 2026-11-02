@@ -1,7 +1,10 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.util.ChaveDoPlayer
+import com.jonjonesbr.audiobookgen.util.IdentidadeDoAudiobook
 import com.jonjonesbr.audiobookgen.util.formatarDuracao
+import com.jonjonesbr.audiobookgen.util.mesmoAudiobook
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Typeface
@@ -37,10 +40,16 @@ data class AudiobookItem(
     val progressoPct: Int = 0,
     val nomeArquivo: String? = null,
     val titulo: String? = null,
-    val autor: String? = null
+    val autor: String? = null,
+    /** Caminho no disco, quando o MediaStore informa (DATA): só serve para casar o cartão com o player. */
+    val caminhoNoDisco: String? = null
 ) {
     /** Chave da capa em cache: muda com o arquivo (reconversão com o mesmo nome, arquivo ainda sendo gravado). */
     val chaveDaCapa: String get() = "$uri#$dataAdicionado#$tamanhoBytes"
+
+    /** O que o cartão sabe do próprio áudio, para casar com o que o player toca (ver [mesmoAudiobook]). */
+    val identidade: IdentidadeDoAudiobook
+        get() = IdentidadeDoAudiobook(uri.toString(), caminho, caminhoNoDisco, nomeArquivo)
 }
 
 class AudiobookAdapter(
@@ -70,26 +79,33 @@ class AudiobookAdapter(
 
     var onBindCover: ((AudiobookItem, ImageView) -> Unit)? = null
 
-    // O que está no player agora (uri do item, como o AudioPlayerService recebe): o botão desse
-    // cartão vira pausar e a porcentagem acompanha a posição em tempo real.
-    private var chaveNoPlayer: String? = null
+    // O que está no player agora (ver ChaveDoPlayer): o botão desse cartão vira pausar e a porcentagem
+    // acompanha a posição em tempo real.
+    private var chaveNoPlayer = ChaveDoPlayer(null)
     private var tocandoAgora = false
     private var pctAoVivo: Int? = null
 
-    fun atualizarPlayer(caminho: String?, tocando: Boolean, pct: Int?) {
+    /**
+     * Guarda o que o player toca agora e repinta só os cartões afetados. Chamado a cada estado do serviço
+     * (cerca de duas vezes por segundo): sem mudança, não faz nada. Cartão novo ou reaproveitado da lista
+     * recebe o estado atual no onBindViewHolder, que lê estes campos.
+     */
+    fun atualizarPlayer(chave: ChaveDoPlayer, tocando: Boolean, pct: Int?) {
         val anterior = chaveNoPlayer
-        if (anterior == caminho && tocandoAgora == tocando && pctAoVivo == pct) return
-        chaveNoPlayer = caminho
+        if (anterior == chave && tocandoAgora == tocando && pctAoVivo == pct) return
+        chaveNoPlayer = chave
         tocandoAgora = tocando
         pctAoVivo = pct
         currentList.forEachIndexed { i, item ->
-            if (item.ehOArquivo(caminho) || item.ehOArquivo(anterior)) notifyItemChanged(i, PAYLOAD_PLAYER)
+            if (item.ehOArquivo(chave) || item.ehOArquivo(anterior)) notifyItemChanged(i, PAYLOAD_PLAYER)
         }
     }
 
-    /** O player pode ter recebido a uri do item (aba Audiobooks) ou o caminho do arquivo (tela do livro). */
-    private fun AudiobookItem.ehOArquivo(chave: String?) =
-        chave != null && (uri.toString() == chave || caminho == chave)
+    /**
+     * O player pode ter recebido a uri do item (aba Audiobooks), o caminho do arquivo interno (tela do livro,
+     * leitor) ou uma uri "file:", e o cartão lista a cópia exportada: [mesmoAudiobook] casa tudo isso (P2).
+     */
+    private fun AudiobookItem.ehOArquivo(chave: ChaveDoPlayer) = mesmoAudiobook(chave, identidade)
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val ivCover: ImageView = view.findViewById(R.id.ivCover)

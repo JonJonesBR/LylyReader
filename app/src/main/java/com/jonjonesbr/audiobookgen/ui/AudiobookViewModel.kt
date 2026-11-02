@@ -607,7 +607,16 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 )
             }
             exportUseCase.exportar(java.io.File(resultado.caminho), _uiState.value.pastaDestinoUri).fold(
-                onSuccess = { ExportStatus.Sucesso(it) },
+                onSuccess = { exportado ->
+                    // A Biblioteca lista a cópia exportada; o registro liga o arquivo interno a ela (P2).
+                    // Falha aqui não pode derrubar uma exportação que já foi feita (P2).
+                    runCatching {
+                        com.jonjonesbr.audiobookgen.data.CopiaExportadaStore.gravar(
+                            getApplication(), resultado.caminho, exportado.destUri.toString()
+                        )
+                    }.onFailure { Log.w("AudiobookViewModel", "Falha ao registrar a cópia exportada", it) }
+                    ExportStatus.Sucesso(exportado)
+                },
                 onFailure = {
                     Log.w("AudiobookViewModel", "Falha ao exportar audiolivro", it)
                     ExportStatus.Erro(getApplication<Application>().getString(mensagemDeErro(it)))

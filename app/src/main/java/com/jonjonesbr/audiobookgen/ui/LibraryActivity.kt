@@ -2,9 +2,11 @@ package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
+import com.jonjonesbr.audiobookgen.data.CopiaExportadaStore
 import com.jonjonesbr.audiobookgen.data.DocumentRepository
 import com.jonjonesbr.audiobookgen.data.LinkedBookStore
 import com.jonjonesbr.audiobookgen.domain.AudiobookLibraryUseCase
+import com.jonjonesbr.audiobookgen.domain.PlayerState
 import com.jonjonesbr.audiobookgen.domain.CapaEmbutida
 import com.jonjonesbr.audiobookgen.domain.DocumentExportUseCase
 import com.jonjonesbr.audiobookgen.domain.ImportedFileNamePolicy
@@ -14,7 +16,9 @@ import com.jonjonesbr.audiobookgen.domain.OpcoesVideo
 import com.jonjonesbr.audiobookgen.domain.ResolucaoVideo
 import com.jonjonesbr.audiobookgen.domain.ResumoBibliotecaRegras
 import com.jonjonesbr.audiobookgen.util.dpToPx
+import com.jonjonesbr.audiobookgen.util.ChaveDoPlayer
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
+import com.jonjonesbr.audiobookgen.util.mesmoAudiobook
 import com.jonjonesbr.audiobookgen.util.mostrarErro
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.service.ChapterMarksStore
@@ -57,8 +61,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -221,22 +223,38 @@ class LibraryActivity : BasePlayerActivity() {
         override fun handleOnBackPressed() = alternarBusca()
     }
 
-    /** Botão do item que está tocando vira pausar, e a porcentagem ouvida acompanha o player. */
+    /**
+     * Botão do item que está tocando vira pausar, e a porcentagem ouvida acompanha o player. Com o serviço
+     * ligado, a fonte é o estado dele ([aoMudarEstadoDoPlayer]), a mesma do mini-player (P2). A holder, que o
+     * serviço atualiza só em alguns pontos, fica de reserva para o tempo em que o serviço não está ligado.
+     */
     private fun observarPlayer() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state
-                    .map { st ->
-                        val pct = if (st.duration > 0) {
-                            (st.currentPosition.toLong() * PCT_TOTAL / st.duration).toInt().coerceIn(0, PCT_TOTAL)
-                        } else null
-                        Triple(st.caminho.ifEmpty { null }, st.isPlaying, pct)
-                    }
-                    .distinctUntilChanged()
-                    .collect { (caminho, tocando, pct) -> adapter.atualizarPlayer(caminho, tocando, pct) }
+                com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state.collect { st ->
+                    if (playerService == null) aplicarNoCartoes(st)
+                }
             }
         }
     }
+
+    override fun aoMudarEstadoDoPlayer(ps: PlayerState) {
+        aplicarNoCartoes(ps)
+    }
+
+    private fun aplicarNoCartoes(st: PlayerState) {
+        val pct = if (st.duration > 0) {
+            (st.currentPosition.toLong() * PCT_TOTAL / st.duration).toInt().coerceIn(0, PCT_TOTAL)
+        } else null
+        adapter.atualizarPlayer(chaveDoPlayer(st.caminho), st.isPlaying, pct)
+    }
+
+    /** Chave do player para o áudio [caminho] (vazio = nada tocando), com a cópia exportada e a pasta interna. */
+    private fun chaveDoPlayer(caminho: String): ChaveDoPlayer = ChaveDoPlayer(
+        chave = caminho.ifEmpty { null },
+        copiaExportada = if (caminho.isEmpty()) null else CopiaExportadaStore.exportadaDe(this, caminho),
+        pastaInterna = filesDir.absolutePath
+    )
 
     override fun onDestroy() {
         dialogoVideo?.dialog?.dismiss()
@@ -482,9 +500,9 @@ class LibraryActivity : BasePlayerActivity() {
     private fun abrirNoPlayer(item: AudiobookItem) {
         // Aberta como aba (ninguém espera resultado): toca aqui mesmo; o mini-player aparece na base.
         if (callingActivity == null) {
-            // Já é o que está no player: o botão pausa/retoma, em vez de recomeçar o arquivo.
-            val noPlayer = com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state.value.caminho
-            if (noPlayer.isNotEmpty() && (noPlayer == item.uri.toString() || noPlayer == item.caminho)) {
+            // Já é o que está no player (mesma regra do cartão, P2): pausa/retoma, em vez de recomeçar o arquivo.
+            val estado = playerService?.state?.value ?: com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state.value
+            if (mesmoAudiobook(chaveDoPlayer(estado.caminho), item.identidade)) {
                 startService(
                     Intent(this, com.jonjonesbr.audiobookgen.service.AudioPlayerService::class.java)
                         .setAction(com.jonjonesbr.audiobookgen.service.PlayerNotificationManager.ACTION_PLAY_PAUSE)
