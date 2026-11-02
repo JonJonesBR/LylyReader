@@ -139,6 +139,8 @@ class ReaderActivity : BasePlayerActivity() {
     private lateinit var tvTitulo: TextView
     private lateinit var btnOpcoes: ImageButton
     private var dicaLeitorTentada = false
+    /** Painel de capítulos aberto agora: a dica do leitor não aparece por cima dele. */
+    private var capitulosAbertos = false
     private lateinit var barraCapitulo: View
     private lateinit var tvCapituloAtual: TextView
     private lateinit var btnCapituloAnterior: android.widget.ImageButton
@@ -1319,6 +1321,7 @@ class ReaderActivity : BasePlayerActivity() {
             dicaLeitorTentada = true
             // Uma dica por abertura: primeiro o menu ⋮, na seguinte a barra de capítulos.
             btnOpcoes.post {
+                if (capitulosAbertos) return@post
                 CoachMark.mostrarProxima(this, com.jonjonesbr.audiobookgen.domain.TelaDica.LEITOR) { dica ->
                     when (dica) {
                         com.jonjonesbr.audiobookgen.domain.Dica.LEITOR_GUIADA -> btnOpcoes
@@ -1850,11 +1853,15 @@ class ReaderActivity : BasePlayerActivity() {
     private fun mostrarBottomSheetCapitulos() {
         val texto = viewModel.textoEfetivo() ?: return
         if (texto.capitulos.isEmpty()) return
+        // Quem abriu o painel já descobriu a barra de capítulos: a dica dela não aparece depois.
+        appPrefs.marcarDicaVista(com.jonjonesbr.audiobookgen.domain.Dica.LEITOR_CAPITULOS.id)
 
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_capitulos, null)
         dialog.setContentView(view)
         dialog.abrirExpandida()
+        capitulosAbertos = true
+        dialog.setOnDismissListener { capitulosAbertos = false }
 
         val atual = capituloNaBarra.takeIf { it in texto.capitulos.indices } ?: viewModel.uiState.value.capituloAtivo
         // Marcar capítulos para converter (o que os chips faziam); não existe no "Ler sem áudio".

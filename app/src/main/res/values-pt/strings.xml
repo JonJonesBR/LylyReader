@@ -79,7 +79,7 @@
     <string name="status_downloading_voice">Baixando arquivos da voz... %1$d%%</string>
     <string name="menu_pronuncia">Pronúncia</string>
     <string name="pron_title">Como se fala?</string>
-    <string name="pron_explanation">Digite a palavra como aparece no livro e como ela deve ser FALADA, escrita do jeito que soa (ex.: Hermione → Hermáione). Vale para todas as vozes e para audiobooks. Deixe o segundo campo vazio e salve para remover.</string>
+    <string name="pron_explanation">Escreva a palavra como está no livro e como deve soar (ex.: Hermione → Hermáione). Vale para todas as vozes e audiobooks.</string>
     <string name="pron_hint_word">Palavra no livro</string>
     <string name="pron_hint_spoken">Como se fala</string>
     <string name="pron_save">Salvar</string>
@@ -89,6 +89,7 @@
     <string name="pron_manage_title">Dicionário de pronúncia</string>
     <string name="pron_manage_empty">Nenhuma pronúncia ainda. Selecione uma palavra no leitor e escolha \"Pronúncia\", ou toque em \"Adicionar\".</string>
     <string name="pron_add">Adicionar</string>
+    <string name="pron_remove">Remover</string>
     <string name="pron_close">Fechar</string>
     <string name="settings_pron_title">Dicionário de pronúncia</string>
     <string name="settings_pron_desc">Ensine ao app como falar nomes e palavras difíceis. Funciona com qualquer voz, na leitura guiada e nos audiobooks.</string>
@@ -920,10 +921,11 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="ia_custom_model_hint">Nome do modelo</string>
     <string name="ia_custom_key_hint">Chave de API (opcional)</string>
     <string name="ia_custom_note">Funciona com serviços no formato da OpenAI (OpenRouter, Groq e outros). A chave fica criptografada neste aparelho.</string>
-    <string name="pron_menu_more">Mais…</string>
+    <string name="pron_menu_more">Importar ou exportar</string>
     <string name="pron_import">Importar um dicionário</string>
     <string name="pron_export">Exportar o dicionário</string>
     <string name="pron_ai_suggest">Sugerir pronúncias deste livro com IA</string>
+    <string name="pron_ai_suggest_button">Sugerir com IA</string>
     <string name="pron_import_done">%1$d pronúncias importadas.</string>
     <string name="pron_import_empty">Nenhuma pronúncia encontrada no arquivo. Use JSON ou linhas como palavra=falada.</string>
     <string name="pron_export_done">Dicionário salvo.</string>

@@ -126,7 +126,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="@android:color/transparent"
-                android:src="@android:drawable/ic_media_previous"
+                android:src="@drawable/ic_busca_seta_cima"
                 app:tint="@color/color_on_surface_dim"
                 android:contentDescription="@string/cd_busca_anterior"/>
 
@@ -135,7 +135,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="@android:color/transparent"
-                android:src="@android:drawable/ic_media_next"
+                android:src="@drawable/ic_busca_seta_baixo"
                 app:tint="@color/color_on_surface_dim"
                 android:contentDescription="@string/cd_busca_proximo"/>
 
