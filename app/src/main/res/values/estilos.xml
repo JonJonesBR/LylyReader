@@ -103,6 +103,22 @@
         <item name="behavior_skipCollapsed">true</item>
     </style>
 
+    <!-- Diálogos comuns (AlertDialog): janela com cantos e cores do tema, em vez do cinza padrão do Android
+         (o windowBackground do AppCompat usa colorBackgroundFloating, #424242 no escuro). Os valores são
+         atributos do tema (?attr/...), então o mesmo estilo serve no Claro, no Escuro e no Papel. -->
+    <style name="LylyDialogo" parent="ThemeOverlay.Material3.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/fundo_dialogo</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
+        <item name="editTextColor">?attr/colorOnSurface</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
+        <item name="textColorAlertDialogListItem">?attr/colorOnSurface</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Material3.Button.TextButton.Dialog</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.Material3.Button.TextButton.Dialog</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.Material3.Button.TextButton.Dialog.Flush</item>
+    </style>
+
     <!-- Botões de opção da Aparência do leitor (tema, fonte, espaçamento, margem, rolagem). O padding do Material 3
          (24dp de cada lado) fazia "Claro" e "Sem serifa" serem cortados em "Cl…" e "Sem …" em ~360dp. Aqui o texto
          quebra em até duas linhas em vez de ganhar reticências. -->

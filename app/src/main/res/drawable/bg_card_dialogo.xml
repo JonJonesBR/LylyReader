@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Campo e cartões de termo dentro de um diálogo: usam colorSurface, que contrasta com o fundo do diálogo
+     (colorSurfaceContainerHigh) nos três temas. O bg_card_variant ficou igual ao fundo do diálogo. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/colorSurface"/>
+    <corners android:radius="8dp"/>
+</shape>

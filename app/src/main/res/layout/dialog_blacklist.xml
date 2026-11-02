@@ -30,7 +30,7 @@
             android:textColor="@color/color_on_surface"
             android:textColorHint="@color/color_on_surface_faint"
             android:textSize="14sp"
-            android:background="@drawable/bg_card_variant"
+            android:background="@drawable/bg_card_dialogo"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:inputType="text"
@@ -52,7 +52,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="@color/color_divider_faint"
+        android:background="?attr/colorOutline"
         android:layout_marginBottom="12dp"/>
 
     <ScrollView

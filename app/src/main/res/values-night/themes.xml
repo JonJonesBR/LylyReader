@@ -49,5 +49,8 @@
 
         <!-- Folhas de baixo: um arraste para baixo fecha direto, sem parar na altura intermediária -->
         <item name="bottomSheetDialogTheme">@style/LylyFolhaDialogo</item>
+
+        <!-- Janelas de diálogo comuns: mesmo visual das folhas, em vez do cinza padrão do Android -->
+        <item name="alertDialogTheme">@style/LylyDialogo</item>
     </style>
 </resources>

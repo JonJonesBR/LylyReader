@@ -9,7 +9,7 @@
     android:paddingStart="8dp"
     android:paddingEnd="4dp"
     android:layout_marginBottom="4dp"
-    android:background="@drawable/bg_card_variant">
+    android:background="@drawable/bg_card_dialogo">
 
     <TextView
         android:id="@+id/tvTermo"
