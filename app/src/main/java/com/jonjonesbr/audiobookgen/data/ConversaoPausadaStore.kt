@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.data
 import android.content.Context
 import androidx.work.Data
 import com.jonjonesbr.audiobookgen.domain.CodificadorDeDadosDeTrabalho
+import com.jonjonesbr.audiobookgen.domain.NomeDoAudiobook
 import com.jonjonesbr.audiobookgen.service.ConversionWorker
 import org.json.JSONObject
 import java.io.File
@@ -80,7 +81,8 @@ object ConversaoPausadaStore {
             }
             Pausada(
                 data = builder.build(),
-                titulo = obj.getString("titulo"),
+                // Pausas gravadas antes trazem o nome do arquivo ("Um_Apologo"): mostra o título legível também nelas.
+                titulo = NomeDoAudiobook.paraMostrar(null, null, obj.getString("titulo")),
                 pct = obj.getInt("pct"),
                 filaItemId = if (obj.has("filaItemId")) obj.getString("filaItemId") else null,
                 runToken = if (obj.has("runToken")) obj.getString("runToken") else null,

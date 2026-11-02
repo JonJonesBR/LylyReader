@@ -17,6 +17,12 @@ object TextosDeNotificacao {
         return NomeDoAudiobook.paraMostrar(null, null, File(caminhoSaida).name).takeIf { it.isNotEmpty() }
     }
 
+    /**
+     * Título legível de um arquivo de entrada da conversão ("Um_Apologo.txt" vira "Um Apologo"). Para quando não há
+     * arquivo de saída, como a fila e a conversão pausada. Tira só a extensão do próprio arquivo: o nome pode ter ponto.
+     */
+    fun tituloDoArquivo(nome: String): String = NomeDoAudiobook.paraMostrar(null, null, File(nome).nameWithoutExtension)
+
     /** Percentual limitado a 0..100, para o título da notificação nunca mostrar valor fora da faixa. */
     fun pctNoTitulo(pct: Int): Int = pct.coerceIn(0, 100)
 

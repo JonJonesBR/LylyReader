@@ -130,5 +130,43 @@ class GerarPreviaTest(unittest.TestCase):
             self.assertEqual("", self._gerar(tmp, "0123456789abcdef", 2))
 
 
+@unittest.skipIf(cpa is None, "módulos de conversão indisponíveis")
+class TemPreviaTest(unittest.TestCase):
+    def _job(self, tmp, total, concluidos, duracoes=None):
+        return GerarPreviaTest._job(self, tmp, total, concluidos, duracoes=duracoes)
+
+    def _tem_previa(self, tmp, jh, total):
+        with mock.patch.object(cpa, "TEMP_DIR", tmp), \
+                mock.patch.dict(cpa._job_ativo, {"jh": jh, "total": total}):
+            return cpa.tem_previa()
+
+    def test_com_bloco_pronto_tem_previa(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            jh = self._job(tmp, 3, {0}, duracoes={0: 1000})
+            self.assertTrue(self._tem_previa(tmp, jh, 3))
+
+    def test_sem_bloco_pronto_nao_tem_previa(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            jh = self._job(tmp, 3, set())
+            self.assertFalse(self._tem_previa(tmp, jh, 3))
+
+    def test_bloco_so_depois_de_um_que_falta_nao_tem_previa(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            jh = self._job(tmp, 3, {1, 2})
+            self.assertFalse(self._tem_previa(tmp, jh, 3))
+
+    def test_sem_job_ativo_nao_tem_previa(self):
+        with mock.patch.dict(cpa._job_ativo, {"jh": None, "total": 0}):
+            self.assertFalse(cpa.tem_previa())
+
+    def test_nao_junta_nem_grava_previa(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            jh = self._job(tmp, 3, {0}, duracoes={0: 1000})
+            with mock.patch.object(cpa, "_concatenar_mp3_puro") as concatenar:
+                self.assertTrue(self._tem_previa(tmp, jh, 3))
+            concatenar.assert_not_called()
+            self.assertFalse([n for n in os.listdir(tmp) if n.startswith("previa")])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1172,7 +1172,12 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="conv_titulo">Conversiones</string>
     <string name="conv_agora">Creando ahora</string>
     <string name="conv_agora_generico">Audiolibro</string>
-    <string name="conv_pct">%1$d%%</string>
+    <string name="conv_cartao_pct_calculando">%1$d%% · calculando el tiempo…</string>
+    <string name="conv_cartao_pct_menos_de_um_min">%1$d%% · faltan menos de 1 min</string>
+    <string name="conv_cartao_pct_min">%1$d%% · faltan unos %2$d min</string>
+    <string name="conv_cartao_pct_h">%1$d%% · faltan unas %2$d h</string>
+    <string name="conv_cartao_pct_h_min">%1$d%% · faltan unas %2$d h %3$d min</string>
+    <string name="conv_cartao_com_falhas">%1$s · %2$s</string>
     <string name="conv_cancelar">Cancelar conversión</string>
     <string name="conv_cancelar_msg">El audiolibro que se está creando se descartará. ¿Quieres cancelar?</string>
     <string name="conv_continuar">Continuar</string>
@@ -1219,6 +1224,11 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
         <item quantity="one">%d elemento en espera</item>
         <item quantity="other">%d elementos en espera</item>
         <item quantity="many">%d elementos en espera</item>
+    </plurals>
+    <plurals name="conv_cartao_falhas">
+        <item quantity="one">%d trozo falló</item>
+        <item quantity="other">%d trozos fallaron</item>
+        <item quantity="many">%d trozos fallaron</item>
     </plurals>
 
     <string name="gerar_fila">Añadir a la cola</string>

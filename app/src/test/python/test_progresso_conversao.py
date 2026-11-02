@@ -41,33 +41,37 @@ class FracaoSintesePctTest(unittest.TestCase):
 
 
 class MensagemProgressoTest(unittest.TestCase):
-    def test_mensagem_tem_tres_linhas_sem_barra_nem_spinner(self):
+    def test_mensagem_e_uma_linha_estruturada_sem_barra_nem_spinner(self):
         with patch("utils.time.time", return_value=1.0):
             t = ProgressTracker(4, inicio=0.0)
             t.registrar(0, True)
             msg = t.mensagem_simples(45)
-        linhas = msg.split("\n")
-        self.assertEqual(3, len(linhas))
-        self.assertEqual("Convertendo 45%", linhas[0])
-        self.assertEqual("1/4 blocos", linhas[1])
-        self.assertTrue(linhas[2].startswith("Tempo: "))
+        # 1 bloco em 1 s, restam 3: 3 s. Sem texto de tela: só os números, para o Kotlin montar a frase.
+        self.assertEqual("@progresso pct=45 eta_s=3", msg)
+        self.assertNotIn("\n", msg)
         self.assertNotIn("█", msg)
         self.assertNotIn("░", msg)
         self.assertFalse(any(c in msg for c in _SPINNERS))
 
-    def test_falhas_aparecem_na_segunda_linha(self):
+    def test_sem_estimativa_eta_vai_como_menos_um(self):
+        with patch("utils.time.time", return_value=1.0):
+            t = ProgressTracker(4, inicio=0.0)
+            msg = t.mensagem_simples(10)
+        self.assertEqual("@progresso pct=10 eta_s=-1", msg)
+
+    def test_falhas_aparecem_na_mesma_linha(self):
         with patch("utils.time.time", return_value=1.0):
             t = ProgressTracker(4, inicio=0.0)
             t.registrar(2, False)
-            linhas = t.mensagem_simples(10).split("\n")
-        self.assertEqual("0/4 blocos | 1 falhas", linhas[1])
+            msg = t.mensagem_simples(10)
+        self.assertEqual("@progresso pct=10 eta_s=-1 falhas=1", msg)
 
     def test_sem_pct_explicito_usa_percentual_dos_blocos(self):
         with patch("utils.time.time", return_value=1.0):
             t = ProgressTracker(2, inicio=0.0)
             t.registrar(0, True)
             msg = t.mensagem_simples()
-        self.assertTrue(msg.startswith("Convertendo 50%\n"))
+        self.assertTrue(msg.startswith("@progresso pct=50 "))
 
 
 class BatimentoTest(unittest.TestCase):

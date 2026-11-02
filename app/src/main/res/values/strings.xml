@@ -1184,7 +1184,12 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="conv_titulo">Conversions</string>
     <string name="conv_agora">Creating now</string>
     <string name="conv_agora_generico">Audiobook</string>
-    <string name="conv_pct">%1$d%%</string>
+    <string name="conv_cartao_pct_calculando">%1$d%% · calculating time…</string>
+    <string name="conv_cartao_pct_menos_de_um_min">%1$d%% · less than 1 min left</string>
+    <string name="conv_cartao_pct_min">%1$d%% · about %2$d min left</string>
+    <string name="conv_cartao_pct_h">%1$d%% · about %2$d h left</string>
+    <string name="conv_cartao_pct_h_min">%1$d%% · about %2$d h %3$d min left</string>
+    <string name="conv_cartao_com_falhas">%1$s · %2$s</string>
     <string name="conv_cancelar">Cancel conversion</string>
     <string name="conv_cancelar_msg">The audiobook being created will be discarded. Do you want to cancel?</string>
     <string name="conv_continuar">Keep going</string>
@@ -1230,6 +1235,10 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <plurals name="conv_fila_resumo">
         <item quantity="one">%d item waiting</item>
         <item quantity="other">%d items waiting</item>
+    </plurals>
+    <plurals name="conv_cartao_falhas">
+        <item quantity="one">%d part failed</item>
+        <item quantity="other">%d parts failed</item>
     </plurals>
 
     <string name="gerar_fila">Add to queue</string>

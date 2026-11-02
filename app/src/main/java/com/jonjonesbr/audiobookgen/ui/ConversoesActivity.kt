@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -32,6 +33,7 @@ import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.domain.ExportStatus
 import com.jonjonesbr.audiobookgen.domain.MotivoParada
 import com.jonjonesbr.audiobookgen.domain.PausaRegras
+import com.jonjonesbr.audiobookgen.domain.TextosDeNotificacao
 import com.jonjonesbr.audiobookgen.domain.semExtensaoDeAudio
 import com.jonjonesbr.audiobookgen.service.ConversionQueueCoordinator
 import com.jonjonesbr.audiobookgen.service.ConversionWorker
@@ -73,6 +75,14 @@ class ConversoesActivity : AppCompatActivity() {
     private var tokenDaPausa: String? = null
     /** Usuário confirmou o descarte; o ViewModel apaga o arquivo em segundo plano, então a tela esconde o card antes. */
     private var pausadaOcultada = false
+    /**
+     * Trecho pronto para ouvir, confirmado para uma execução. Fica preso ao token dela: o que valia para o item
+     * anterior da fila não passa para o seguinte. Null = ainda não confirmado (ou a execução mudou).
+     */
+    private var previaConfirmada: PreviaConfirmada? = null
+    /** Última conferência no Python (relógio do aparelho): não confere a cada atualização de tela. */
+    private var ultimaConferenciaMs = 0L
+    private var conferindoPrevia = false
 
     private val prefsLegado get() = getSharedPreferences("audiobookgen_prefs", MODE_PRIVATE)
 
@@ -164,7 +174,7 @@ class ConversoesActivity : AppCompatActivity() {
     private suspend fun acompanharConversaoEmAndamento() {
         if (viewModel.uiState.value.processando || !jaHaConversao()) return
         coordenador.sincronizar()
-        coordenador.currentItem?.let { tituloDoLivro = it.nome }
+        coordenador.currentItem?.let { tituloDoLivro = TextosDeNotificacao.tituloDoArquivo(it.nome) }
         viewModel.acompanharTrabalhoAtual(coordenador.currentItem?.runToken)
     }
 
@@ -276,6 +286,34 @@ class ConversoesActivity : AppCompatActivity() {
             .exibir()
     }
 
+    /** Confere, fora da thread principal, se já há trecho pronto e ativa o botão "Ouvir". Uma conferência por vez. */
+    private fun conferirPrevia() {
+        if (conferindoPrevia) return
+        conferindoPrevia = true
+        ultimaConferenciaMs = SystemClock.elapsedRealtime()
+        val token = viewModel.uiState.value.progressoRunToken
+        lifecycleScope.launch {
+            val pronta = try {
+                PythonEngineUseCase(applicationContext).haPrevia()
+            } finally {
+                conferindoPrevia = false
+            }
+            // O resultado pode chegar depois do fim da conversão ou de uma troca de item da fila: só vale para a
+            // mesma execução, enquanto ela ainda roda.
+            val atual = viewModel.uiState.value
+            if (atual.processando && atual.progressoRunToken == token) {
+                previaConfirmada = if (pronta) PreviaConfirmada(token) else null
+                findViewById<Button>(R.id.btnConvOuvirPrevia).isEnabled = pronta
+            }
+        }
+    }
+
+    /** Há trecho pronto para a execução que a tela está mostrando agora. */
+    private fun previaProntaParaAtual(estado: AudiobookUiState): Boolean {
+        val confirmada = previaConfirmada ?: return false
+        return confirmada.runToken == estado.progressoRunToken
+    }
+
     /** Toca o que já foi gerado da conversão em andamento. Sem trecho pronto, avisa em vez de tocar. */
     private fun ouvirPrevia() {
         lifecycleScope.launch {
@@ -324,7 +362,8 @@ class ConversoesActivity : AppCompatActivity() {
             aoAceitar = {
                 // Job saiu do disco e foi enfileirado: a tela passa a acompanhar a execução (fila ou avulsa).
                 coordenador.sincronizar()
-                tituloDoLivro = coordenador.currentItem?.nome ?: pausadaAtual?.titulo.orEmpty()
+                tituloDoLivro = coordenador.currentItem?.let { TextosDeNotificacao.tituloDoArquivo(it.nome) }
+                    ?: pausadaAtual?.titulo.orEmpty()
                 atualizarFila()
             }
         )
@@ -387,7 +426,7 @@ class ConversoesActivity : AppCompatActivity() {
             val inicio = coordenador.startNext(AppPrefs(applicationContext).motorTts) ?: return@launch
             resultadoLocal = null
             salvarFila()
-            tituloDoLivro = inicio.item.nome
+            tituloDoLivro = TextosDeNotificacao.tituloDoArquivo(inicio.item.nome)
             viewModel.pararPlayer()
             viewModel.iniciarConversao(
                 arquivo = inicio.item.caminhoLocal,
@@ -409,10 +448,12 @@ class ConversoesActivity : AppCompatActivity() {
     private fun aoConcluirNaFila(evento: ConversionDoneEvent) {
         coordenador.sincronizar()
         viewModel.consumirEventoConversao()
+        // O trecho pronto era do item que acabou: o próximo começa sem ele (o token também já o separa).
+        previaConfirmada = null
         if (evento is ConversionDoneEvent.Sucesso) AppPrefs(this).registrarEvento(EventoAprendizado.AUDIOBOOK_GERADO.id)
         val proximo = coordenador.currentItem
         if (proximo != null) {
-            tituloDoLivro = proximo.nome
+            tituloDoLivro = TextosDeNotificacao.tituloDoArquivo(proximo.nome)
             viewModel.acompanharTrabalhoAtual(proximo.runToken)
         } else {
             resultadoLocal = evento
@@ -489,6 +530,10 @@ class ConversoesActivity : AppCompatActivity() {
         }
         val exibir = evento ?: resultadoLocal
         if (!estado.processando || estado.progressoRunToken != tokenDaPausa) pausandoLocal = false
+        if (!estado.processando) {
+            previaConfirmada = null
+            ultimaConferenciaMs = 0L
+        }
         when {
             estado.processando -> {
                 mostrarSo(cardAgora)
@@ -499,7 +544,12 @@ class ConversoesActivity : AppCompatActivity() {
                 }
                 findViewById<Button>(R.id.btnConvPausar).isEnabled = !pausandoLocal
                 findViewById<ProgressBar>(R.id.pbConv).progress = estado.progressoPct
-                findViewById<TextView>(R.id.tvConvPct).text = getString(R.string.conv_pct, estado.progressoPct)
+                // "Ouvir" só ativa com trecho pronto (a mesma regra da prévia); até lá, confere no Python,
+                // no máximo a cada 5 s.
+                val pronta = previaProntaParaAtual(estado)
+                findViewById<Button>(R.id.btnConvOuvirPrevia).isEnabled = pronta
+                val intervaloVencido = SystemClock.elapsedRealtime() - ultimaConferenciaMs >= INTERVALO_CONFERENCIA_MS
+                if (!pronta && intervaloVencido) conferirPrevia()
                 val naFila = coordenador.isProcessingQueue
                 findViewById<TextView>(R.id.tvConvFilaPos).apply {
                     visibility = if (naFila) View.VISIBLE else View.GONE
@@ -547,14 +597,16 @@ class ConversoesActivity : AppCompatActivity() {
             eventoRegistrado = true
             AppPrefs(this).registrarEvento(EventoAprendizado.AUDIOBOOK_GERADO.id)
         }
+        // Mesmo título da notificação de concluída: sem "_" e sem a extensão do arquivo.
+        val nome = TextosDeNotificacao.nomeDaConversao(evento.caminho) ?: File(evento.caminho).nameWithoutExtension
         findViewById<TextView>(R.id.tvConvProntoInfo).text =
-            getString(R.string.conv_pronto_info, File(evento.caminho).nameWithoutExtension, evento.duracao, evento.tamanhoMb)
+            getString(R.string.conv_pronto_info, nome, evento.duracao, evento.tamanhoMb)
         val aviso = findViewById<TextView>(R.id.tvConvProntoAviso)
         val exportou = evento.exportStatus is ExportStatus.Sucesso
         aviso.visibility = if (exportou) View.GONE else View.VISIBLE
         if (!exportou) aviso.setText(R.string.conv_exportar_falhou)
         findViewById<Button>(R.id.btnConvOuvir).setOnClickListener {
-            viewModel.iniciarPlayer(evento.caminho, File(evento.caminho).nameWithoutExtension)
+            viewModel.iniciarPlayer(evento.caminho, nome)
             irParaAba(LibraryActivity::class.java)
         }
         findViewById<Button>(R.id.btnConvCompartilhar).setOnClickListener { compartilhar(evento) }
@@ -582,6 +634,9 @@ class ConversoesActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+    /** Trecho pronto confirmado para a execução [runToken] (null = conversão avulsa, sem fila). */
+    private class PreviaConfirmada(val runToken: String?)
+
     companion object {
         /** Pedido vindo da notificação de conversão para abrir a confirmação de cancelamento. */
         const val EXTRA_CONFIRMAR_CANCELAR = "extra_conv_confirmar_cancelar"
@@ -601,6 +656,8 @@ class ConversoesActivity : AppCompatActivity() {
         const val EXTRA_DEBUG_ENFILEIRAR = "extra_debug_enfileirar"
         private const val SEM_RITMO = -1
         private const val MENU_LIMPAR_FILA = 1
+        /** Intervalo mínimo entre duas conferências no Python (cada uma lê o progresso e os arquivos de bloco). */
+        private const val INTERVALO_CONFERENCIA_MS = 5_000L
         private const val ESTADO_TITULO = "estado_titulo"
         private const val TAG = "ConversoesActivity"
 

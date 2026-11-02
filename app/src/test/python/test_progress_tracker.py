@@ -41,9 +41,18 @@ class ProgressTrackerTest(unittest.TestCase):
         with patch("utils.time.time", return_value=1.0):
             t = ProgressTracker(3, inicio=0.0)
             t.registrar(0, False)
-            self.assertIn("| 1 falhas", t.mensagem_simples())
+            self.assertIn("falhas=1", t.mensagem_simples())
             t.registrar(0, True)
             self.assertNotIn("falhas", t.mensagem_simples())
+
+    def test_mensagem_traz_eta_em_segundos_para_o_android(self):
+        with patch("utils.time.time") as relogio:
+            relogio.return_value = 0.0
+            t = ProgressTracker(2, inicio=0.0)
+            relogio.return_value = 0.1
+            t.registrar(0, True)
+            msg = t.mensagem_simples()
+        self.assertEqual("@progresso pct=50 eta_s=1", msg)
 
     def test_eta_nunca_zero_com_blocos_restantes(self):
         with patch("utils.time.time") as relogio:

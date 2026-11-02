@@ -382,6 +382,20 @@ class PythonEngineUseCase(private val context: Context) {
     }
 
     /**
+     * Há trecho pronto para [gerarPrevia] juntar? Mesma regra, mas sem juntar o áudio: a tela usa para ativar o
+     * botão "Ouvir o que já foi gerado". Falso se o Python não estiver no ar; nunca lança.
+     */
+    suspend fun haPrevia(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            if (!Python.isStarted()) return@withContext false
+            Python.getInstance().getModule("audiobook_android").callAttr("tem_previa").toBoolean()
+        } catch (e: Exception) {
+            Log.w(TAG, "Erro ao conferir a prévia: ${e.message}")
+            false
+        }
+    }
+
+    /**
      * Junta o que já foi gerado da conversão em andamento (previa.mp3). Devolve o caminho, ou null se não
      * há trecho pronto ou a conversa com o Python falhou; nunca lança.
      */

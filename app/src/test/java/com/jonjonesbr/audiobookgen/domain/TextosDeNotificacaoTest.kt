@@ -31,6 +31,17 @@ class TextosDeNotificacaoTest {
     }
 
     @Test
+    fun `titulo do arquivo de entrada vira legivel sem extensao e sem underscore`() {
+        assertEquals("Um Apologo", TextosDeNotificacao.tituloDoArquivo("Um_Apologo.txt"))
+        assertEquals("Um Apologo", TextosDeNotificacao.tituloDoArquivo("/storage/livros/Um_Apologo.epub"))
+    }
+
+    @Test
+    fun `titulo do arquivo mantem o ponto que faz parte do nome`() {
+        assertEquals("Dr. Jekyll", TextosDeNotificacao.tituloDoArquivo("Dr. Jekyll.txt"))
+    }
+
+    @Test
     fun `percentual do titulo fica entre 0 e 100`() {
         assertEquals(0, TextosDeNotificacao.pctNoTitulo(-5))
         assertEquals(100, TextosDeNotificacao.pctNoTitulo(150))

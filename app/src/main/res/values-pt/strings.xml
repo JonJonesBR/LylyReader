@@ -1185,7 +1185,12 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="conv_titulo">Conversões</string>
     <string name="conv_agora">Gerando agora</string>
     <string name="conv_agora_generico">Audiobook</string>
-    <string name="conv_pct">%1$d%%</string>
+    <string name="conv_cartao_pct_calculando">%1$d%% · calculando o tempo…</string>
+    <string name="conv_cartao_pct_menos_de_um_min">%1$d%% · falta menos de 1 min</string>
+    <string name="conv_cartao_pct_min">%1$d%% · faltam cerca de %2$d min</string>
+    <string name="conv_cartao_pct_h">%1$d%% · faltam cerca de %2$d h</string>
+    <string name="conv_cartao_pct_h_min">%1$d%% · faltam cerca de %2$d h %3$d min</string>
+    <string name="conv_cartao_com_falhas">%1$s · %2$s</string>
     <string name="conv_cancelar">Cancelar conversão</string>
     <string name="conv_cancelar_msg">O audiobook que está sendo gerado será descartado. Deseja cancelar?</string>
     <string name="conv_continuar">Continuar</string>
@@ -1232,6 +1237,11 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
         <item quantity="one">%d item aguardando</item>
         <item quantity="other">%d itens aguardando</item>
         <item quantity="many">%d itens aguardando</item>
+    </plurals>
+    <plurals name="conv_cartao_falhas">
+        <item quantity="one">%d trecho falhou</item>
+        <item quantity="other">%d trechos falharam</item>
+        <item quantity="many">%d trechos falharam</item>
     </plurals>
 
     <string name="gerar_fila">Adicionar à fila</string>

@@ -132,6 +132,12 @@ def gerar_previa() -> str:
     return _gerar_previa()
 
 
+def tem_previa() -> bool:
+    """Há trecho pronto para a prévia da conversão em andamento? Mesma regra de gerar_previa, sem juntar o áudio."""
+    from core_processor_android import tem_previa as _tem_previa
+    return _tem_previa()
+
+
 def descartar_job(jh: str) -> bool:
     """Apaga o job dir de uma conversão pausada descartada. Recusa hash em formato inválido."""
     from core_processor_android import descartar_job as _descartar_job

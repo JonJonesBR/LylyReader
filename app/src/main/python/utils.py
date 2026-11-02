@@ -131,36 +131,39 @@ class ProgressTracker:
             self._ultima_atualizacao_ts = agora
         return deve
 
-    def _eta(self) -> str:
+    def _eta_segundos(self) -> Optional[int]:
+        """Segundos até o fim, ou None enquanto não há bloco produzido nesta execução para estimar."""
         restantes = self.total - self.concluidos
         if restantes <= 0:
-            return "0s"
+            return 0
         # Base só com blocos produzidos NESTA execução: a retomada não entra na taxa.
         produzidos = self.concluidos - self._iniciais
         if produzidos <= 0:
-            return "calculando..."
+            return None
         decorrido = time.time() - self.inicio
         taxa = decorrido / produzidos  # segundos por bloco, média da execução
         if len(self._janela) >= 3:
             taxa_janela = sum(self._janela) / len(self._janela)
             taxa = (taxa + taxa_janela) / 2  # suaviza com a janela recente
         # Mínimo de 1s: nunca mostrar "0s" enquanto restam blocos.
-        return formatar_duracao(max(1.0, taxa * restantes))
+        return int(max(1.0, taxa * restantes))
+
+    def _eta(self) -> str:
+        segundos = self._eta_segundos()
+        return "calculando..." if segundos is None else formatar_duracao(segundos)
 
     def mensagem_simples(self, pct: Optional[int] = None) -> str:
-        """Versão sem Markdown para uso no Android (TextView). `pct` é o percentual já na faixa
-        global da conversão (ver pct_sintese_global); sem ele, usa o percentual dos blocos."""
+        """Linha de progresso para o Android: "@progresso pct=18 eta_s=168". `eta_s=-1` enquanto não há
+        estimativa; ` falhas=N` só se houver blocos falhando. Não traz texto de tela: o Kotlin monta a
+        frase no idioma do app (TextoDeProgresso). `pct` é o percentual já na faixa global da conversão
+        (ver pct_sintese_global); sem ele, usa o percentual dos blocos."""
         self._ultima_pct = self.pct()
         p = self.pct() if pct is None else pct
-        decorrido = time.time() - self.inicio
-        falhas_str = f" | {len(self.falhas)} falhas" if self.falhas else ""
-        eta = self._eta()
-        prefixo_eta = "" if eta == "calculando..." else "~"
-        return (
-            f"Convertendo {p}%\n"
-            f"{self.concluidos}/{self.total} blocos{falhas_str}\n"
-            f"Tempo: {formatar_duracao(decorrido)} | ETA: {prefixo_eta}{eta}"
-        )
+        eta = self._eta_segundos()
+        partes = [f"@progresso pct={p}", f"eta_s={-1 if eta is None else eta}"]
+        if self.falhas:
+            partes.append(f"falhas={len(self.falhas)}")
+        return " ".join(partes)
 
 
 def estimar_duracao(texto: str, velocidade: str = "+0%") -> str:

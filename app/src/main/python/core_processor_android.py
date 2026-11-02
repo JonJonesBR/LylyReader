@@ -153,33 +153,51 @@ def _limitar_por_duracao(indices: list, duracoes_ms: dict, limite_ms: int) -> li
     return escolhidos
 
 
+def _arquivos_da_previa() -> list:
+    """Blocos prontos do início do job ativo que formam a prévia, em ordem. Lista vazia se não há job,
+    nenhum bloco pronto ou se os blocos não se juntam. Não grava nada: é a regra de gerar_previa e de
+    tem_previa, para o botão "Ouvir" só ficar ativo quando a prévia de fato sairia."""
+    jh = _job_ativo.get("jh")
+    total = int(_job_ativo.get("total") or 0)
+    if not jh or total <= 0:
+        return []
+    pasta = _job_dir(jh)
+    caminhos = [os.path.join(pasta, f"part_{i}.mp3") for i in range(total)]
+    concluidos = {
+        i for i in _carregar_progresso(jh)
+        if 0 <= i < total and os.path.exists(caminhos[i]) and os.path.getsize(caminhos[i]) > 500
+    }
+    indices = _prefixo_contiguo(concluidos, total)
+    if not indices:
+        return []
+    duracoes = _carregar_duracoes(jh)
+    for i in indices:
+        if not duracoes.get(i):
+            lida = _duracao_ms_bloco(caminhos[i])
+            if lida:
+                duracoes[i] = lida
+    escolhidos = _limitar_por_duracao(indices, duracoes, _PREVIA_LIMITE_MS)
+    arquivos = [caminhos[i] for i in escolhidos]
+    if not _formato_homogeneo(arquivos):
+        return []
+    return arquivos
+
+
+def tem_previa() -> bool:
+    """True se gerar_previa teria o que juntar agora. Não junta nada. Nunca levanta exceção."""
+    try:
+        return bool(_arquivos_da_previa())
+    except Exception:
+        return False
+
+
 def gerar_previa() -> str:
     """Junta os blocos já prontos do início do job ativo (sem buraco, até ~60 min) em
     TEMP_DIR/previa.mp3, por arquivo temporário + os.replace. Devolve o caminho, ou "" se não há
     bloco pronto ou algo falhar. Nunca levanta exceção."""
     try:
-        jh = _job_ativo.get("jh")
-        total = int(_job_ativo.get("total") or 0)
-        if not jh or total <= 0:
-            return ""
-        pasta = _job_dir(jh)
-        caminhos = [os.path.join(pasta, f"part_{i}.mp3") for i in range(total)]
-        concluidos = {
-            i for i in _carregar_progresso(jh)
-            if 0 <= i < total and os.path.exists(caminhos[i]) and os.path.getsize(caminhos[i]) > 500
-        }
-        indices = _prefixo_contiguo(concluidos, total)
-        if not indices:
-            return ""
-        duracoes = _carregar_duracoes(jh)
-        for i in indices:
-            if not duracoes.get(i):
-                lida = _duracao_ms_bloco(caminhos[i])
-                if lida:
-                    duracoes[i] = lida
-        escolhidos = _limitar_por_duracao(indices, duracoes, _PREVIA_LIMITE_MS)
-        arquivos = [caminhos[i] for i in escolhidos]
-        if not _formato_homogeneo(arquivos):
+        arquivos = _arquivos_da_previa()
+        if not arquivos:
             return ""
         os.makedirs(TEMP_DIR, exist_ok=True)
         _apagar_previa()  # a anterior sai antes: só uma prévia existe por vez
@@ -1450,7 +1468,7 @@ async def processar_arquivo(
 
     try:
         if progress_cb:
-            progress_cb(0, f"Extraindo texto de {Path(caminho_arquivo).name}...")
+            progress_cb(0, "Extraindo o texto…")
         texto = extrair_texto_limpo(caminho_arquivo, ext)
     except Exception as e:
         return {"ok": False, "erro": f"Erro ao ler arquivo: {e}"}

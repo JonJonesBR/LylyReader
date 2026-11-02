@@ -247,7 +247,8 @@ class ConversionWorker(
     private suspend fun pausar(
         notif: ConversionNotificationManager, arquivo: String, pct: Int, runToken: String?, job: String? = null
     ): Result {
-        val titulo = File(arquivo).nameWithoutExtension
+        // Mesmo título da notificação de conversão (e não o nome do arquivo de entrada, com "_"): a tela guarda este.
+        val titulo = nomeDaConversao ?: TextosDeNotificacao.tituloDoArquivo(arquivo)
         notif.cancelar()
         if (!ConversaoPausadaStore.salvar(applicationContext, inputData, titulo, pct, job)) {
             // Sem o job guardado não há como retomar: trata como erro, pelo mesmo caminho do erro comum.
@@ -272,7 +273,7 @@ class ConversionWorker(
         setProgressAsync(workDataOf(
             KEY_PROGRESS_PCT to PCT_COMPRIMINDO,
             KEY_PROGRESS_MSG to mensagem,
-            KEY_PROGRESS_NOME to arquivo.nameWithoutExtension,
+            KEY_PROGRESS_NOME to (nomeDaConversao ?: TextosDeNotificacao.tituloDoArquivo(arquivo.name)),
             KEY_RUN_TOKEN to runToken
         ))
         return comprimirWavParaAac(arquivo)
@@ -329,11 +330,13 @@ class ConversionWorker(
                 // Pausa pedida antes/durante a extração: o Python zera a flag em _reset_cancelar, então reforça a cada chamada.
                 if (devePausar()) engine.cancelar()
                 if (LimiteDeProgresso.deveAtualizar(ultimaAtualizacaoMs, agora, pct)) {
-                    notif.mostrar(pct, msg, nomeDaConversao)
+                    // A linha de números do Python vira frase no idioma do app; a notificação e o cartão usam a mesma.
+                    val texto = TextoDeProgresso.montar(applicationContext, msg)
+                    notif.mostrar(pct, texto, nomeDaConversao)
                     setProgressAsync(workDataOf(
                         KEY_PROGRESS_PCT to pct,
-                        KEY_PROGRESS_MSG to msg,
-                        KEY_PROGRESS_NOME to File(saida).nameWithoutExtension,
+                        KEY_PROGRESS_MSG to texto,
+                        KEY_PROGRESS_NOME to (nomeDaConversao ?: TextosDeNotificacao.tituloDoArquivo(saida)),
                         KEY_RUN_TOKEN to runToken
                     ))
                     ultimaAtualizacaoMs = agora
