@@ -11,6 +11,7 @@ import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
@@ -49,7 +50,12 @@ object PermissoesDoApp {
 
     fun bateriaLiberada(ctx: Context) = BatteryOptimizationHelper.isIgnoringBatteryOptimizations(ctx)
 
-    fun pedirNotificacoes(activity: Activity, pedido: ActivityResultLauncher<String>): Pedido {
+    /** [dica] (opcional): frase com o que tocar na tela do sistema, mostrada quando ela abre. */
+    fun pedirNotificacoes(
+        activity: Activity,
+        pedido: ActivityResultLauncher<String>,
+        @StringRes dica: Int? = null
+    ): Pedido {
         val prefs = AppPrefs(activity)
         val podePedir = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && (
             !prefs.notificationPermissionPrompted ||
@@ -62,10 +68,15 @@ object PermissoesDoApp {
         }
         val tela = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
             .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
-        return abrirTela(activity, tela)
+        return abrirTela(activity, tela, dica)
     }
 
-    fun pedirAudios(activity: Activity, pedido: ActivityResultLauncher<String>): Pedido {
+    /** [dica] (opcional): frase com o que tocar na tela do sistema, mostrada quando ela abre. */
+    fun pedirAudios(
+        activity: Activity,
+        pedido: ActivityResultLauncher<String>,
+        @StringRes dica: Int? = null
+    ): Pedido {
         val prefs = AppPrefs(activity)
         if (!prefs.permissaoAudiosPedida || activity.shouldShowRequestPermissionRationale(permissaoAudios)) {
             prefs.permissaoAudiosPedida = true
@@ -74,7 +85,7 @@ object PermissoesDoApp {
         }
         val tela = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             .setData(Uri.fromParts("package", activity.packageName, null))
-        return abrirTela(activity, tela)
+        return abrirTela(activity, tela, dica)
     }
 
     /**
@@ -137,8 +148,10 @@ object PermissoesDoApp {
         false
     }
 
-    private fun abrirTela(activity: Activity, intent: Intent): Pedido = try {
+    // A dica aparece já na tela do sistema: só depois de ela abrir, para não mostrar frase de tela que não existe.
+    private fun abrirTela(activity: Activity, intent: Intent, @StringRes dica: Int? = null): Pedido = try {
         activity.startActivity(intent)
+        dica?.let { Toast.makeText(activity, it, Toast.LENGTH_LONG).show() }
         Pedido.TELA
     } catch (_: ActivityNotFoundException) {
         Toast.makeText(activity, R.string.toast_config_notificacoes_indisponivel, Toast.LENGTH_SHORT).show()

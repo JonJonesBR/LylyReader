@@ -1620,6 +1620,9 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="aj_problema">Informar un problema</string>
     <string name="aj_sobre">Acerca de LylyReader</string>
     <string name="aj_sobre_sub">Formatos admitidos y créditos de las voces</string>
+    <string name="aj_permissoes_app">Permisos de la app</string>
+    <string name="aj_permissoes_app_sub">Notificaciones, audios del dispositivo y batería</string>
+    <string name="aj_permissoes_descricao">Nada es obligatorio. Toca una tarjeta para permitir ese permiso.</string>
     <!-- Downloads em abas e permissões -->
     <string name="dl_aba_vozes">Voces</string>
     <string name="dl_aba_livros">Libros gratuitos</string>
@@ -1644,6 +1647,14 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="perm_agora_nao">Ahora no</string>
     <string name="perm_toque_para_permitir">Toca para permitir</string>
     <string name="perm_permitir_tudo">Permitir</string>
+    <string name="perm_tudo_liberado">Todo permitido</string>
+    <string name="perm_dica_notificacoes">Activa las notificaciones en esta pantalla.</string>
+    <string name="perm_dica_audios">Toca Permisos y permite el acceso a los audios del dispositivo.</string>
+    <plurals name="perm_pendentes_qtd">
+        <item quantity="one">%1$d pendiente</item>
+        <item quantity="other">%1$d pendientes</item>
+        <item quantity="many">%1$d pendientes</item>
+    </plurals>
     <string name="livros_acervo">Colección</string>
     <string name="livros_idioma">Idioma</string>
     <string name="aj_secao_naturalidade">Naturalidad de la voz (experimental)</string>

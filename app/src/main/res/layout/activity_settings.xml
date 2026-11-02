@@ -1033,6 +1033,37 @@
                         android:layout_marginStart="16dp"
                         android:background="@color/color_divider_faint"/>
                     <LinearLayout
+                        android:id="@+id/rowPermissoesApp"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_permissoes_app"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_permissoes_app_sub"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvPermissoesResumo"
+                            style="@style/AjusteValor"/>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
                         android:id="@+id/rowAbrirTutorial"
                         style="@style/AjusteLinha">
 
@@ -2171,6 +2202,30 @@
             </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
             <!-- fim pagSobre -->
+
+
+            <!-- Permissões do app (aberta pela linha da Ajuda): os mesmos cartões da introdução. -->
+            <LinearLayout
+                android:id="@+id/pagPermissoes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/aj_permissoes_descricao"
+                    android:textColor="@color/color_on_surface_muted"
+                    android:textSize="13sp"/>
+
+                <include
+                    layout="@layout/view_onboarding_permissoes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+            <!-- fim pagPermissoes -->
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

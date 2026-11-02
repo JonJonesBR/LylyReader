@@ -1629,6 +1629,9 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_problema">Report a problem</string>
     <string name="aj_sobre">About LylyReader</string>
     <string name="aj_sobre_sub">Supported formats and voice credits</string>
+    <string name="aj_permissoes_app">App permissions</string>
+    <string name="aj_permissoes_app_sub">Notifications, device audio and battery</string>
+    <string name="aj_permissoes_descricao">Nothing is required. Tap a card to allow that permission.</string>
     <!-- Downloads em abas e permissões -->
     <string name="dl_aba_vozes">Voices</string>
     <string name="dl_aba_livros">Free books</string>
@@ -1653,6 +1656,13 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="perm_agora_nao">Not now</string>
     <string name="perm_toque_para_permitir">Tap to allow</string>
     <string name="perm_permitir_tudo">Allow</string>
+    <string name="perm_tudo_liberado">All allowed</string>
+    <string name="perm_dica_notificacoes">Turn on notifications on this screen.</string>
+    <string name="perm_dica_audios">Tap Permissions and allow access to audio on this device.</string>
+    <plurals name="perm_pendentes_qtd">
+        <item quantity="one">%1$d pending</item>
+        <item quantity="other">%1$d pending</item>
+    </plurals>
     <string name="livros_acervo">Collection</string>
     <string name="livros_idioma">Language</string>
     <string name="aj_secao_naturalidade">Natural-sounding voice (experimental)</string>

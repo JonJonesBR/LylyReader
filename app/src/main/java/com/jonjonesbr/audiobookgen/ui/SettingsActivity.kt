@@ -158,6 +158,10 @@ class SettingsActivity : BasePlayerActivity() {
         restaurarDeArquivo(uri)
     }
 
+    // Cartões de "Permissões do app" (Ajuda): os da introdução. Criado aqui, como propriedade, para registrar
+    // os launchers antes de a Activity iniciar.
+    private val permissoes = OnboardingPermissoes(this) { atualizarResumoPermissoes() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
@@ -171,6 +175,7 @@ class SettingsActivity : BasePlayerActivity() {
         configurarTabsSettings()
         carregarConfigAtual()
         configurarListeners()
+        vincularPermissoes()
         naturalidade.vincular()
         tratarExtraFocoChave()
     }
@@ -187,6 +192,7 @@ class SettingsActivity : BasePlayerActivity() {
         carregarInfoLogsErro()
         carregarInfoPermissaoNotificacao()
         carregarInfoOtimizacaoBateria()
+        permissoes.aoRetomar() // volta da tela do Android: atualiza os cartões e o resumo da linha
     }
 
     private fun vincularViews() {
@@ -458,6 +464,7 @@ class SettingsActivity : BasePlayerActivity() {
         linha(R.id.rowBackupRestaurar) { restaurarBackup() }
         linha(R.id.rowLogsErro) { abrirLogsErro() }
         linha(R.id.rowAprenderApp) { startActivity(Intent(this, AprenderActivity::class.java)) }
+        linha(R.id.rowPermissoesApp) { abrirPagina(R.id.pagPermissoes, R.string.aj_permissoes_app) }
         linha(R.id.rowAbrirTutorial) { HelpActivity.start(this, HelpTopico.CONVERSAO) }
         linha(R.id.rowReverDicas) {
             appPrefs.dicasVistas = emptySet()
@@ -979,6 +986,26 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
+
+    // ── Permissões do app (Ajuda) ────────────────────────────────────────────
+    // Página aberta pela linha: cada cartão age sozinho (sem "Começar" nem sequência da introdução).
+
+    private fun vincularPermissoes() {
+        // O layout deixa o contêiner oculto (a introdução o mostra no adapter); aqui a página já o exibe.
+        val cartoes = findViewById<View>(R.id.containerPermissoes)
+        cartoes.visibility = View.VISIBLE
+        permissoes.vincular(cartoes)
+    }
+
+    /** Resumo da linha: "Tudo liberado" ou quantas permissões ainda faltam. */
+    private fun atualizarResumoPermissoes() {
+        val pendentes = permissoes.pendentes().size
+        findViewById<TextView>(R.id.tvPermissoesResumo).text = if (pendentes == 0) {
+            getString(R.string.perm_tudo_liberado)
+        } else {
+            resources.getQuantityString(R.plurals.perm_pendentes_qtd, pendentes, pendentes)
+        }
+    }
 
     /** Aviso no topo de "Voz e leitura" só quando o Android pode pausar conversões longas. */
     private fun carregarInfoOtimizacaoBateria() {

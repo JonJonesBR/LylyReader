@@ -12,6 +12,9 @@ import com.jonjonesbr.audiobookgen.R
  * da Activity ([aoRetomar]). Tocar num cartão pede só aquela. Criar como propriedade da Activity (registra os
  * launchers antes de ela iniciar).
  *
+ * Também usada na página "Permissões do app" dos Ajustes (aba Ajuda): lá não há [pedirTodas] nem "Começar",
+ * e cada cartão age sozinho.
+ *
  * @param aoMudar chamado sempre que o estado muda (a Activity atualiza o botão do rodapé).
  */
 class OnboardingPermissoes(
@@ -66,8 +69,9 @@ class OnboardingPermissoes(
     private fun pedir(qual: Int) {
         if (liberada(qual)) return
         val resultado = when (qual) {
-            NOTIFICACOES -> PermissoesDoApp.pedirNotificacoes(activity, pedidoNotificacoes)
-            AUDIOS -> PermissoesDoApp.pedirAudios(activity, pedidoAudios)
+            NOTIFICACOES ->
+                PermissoesDoApp.pedirNotificacoes(activity, pedidoNotificacoes, R.string.perm_dica_notificacoes)
+            AUDIOS -> PermissoesDoApp.pedirAudios(activity, pedidoAudios, R.string.perm_dica_audios)
             else -> {
                 // A explicação da bateria vem antes da tela; a resposta chega depois, como a de um diálogo.
                 PermissoesDoApp.explicarBateria(activity, aoResolver = ::aoResponderBateria)
