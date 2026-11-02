@@ -13,9 +13,14 @@ import com.chaquo.python.android.AndroidPlatform
 object PythonInicio {
     private val trava = Any()
 
+    /** Injetável nos testes (na JVM não há Python). Roda dentro da trava. */
+    @Volatile internal var iniciar: (Context) -> Unit = { ctx ->
+        if (!Python.isStarted()) Python.start(AndroidPlatform(ctx))
+    }
+
     fun garantir(context: Context) {
         synchronized(trava) {
-            if (!Python.isStarted()) Python.start(AndroidPlatform(context.applicationContext))
+            iniciar(context.applicationContext)
         }
     }
 }

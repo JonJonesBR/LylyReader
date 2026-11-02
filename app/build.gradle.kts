@@ -160,6 +160,15 @@ android {
         }
     }
 
+    testOptions {
+        unitTests {
+            // rb-1: o teste de fumaça do Leitor (Robolectric) infla layouts e lê recursos do app.
+            isIncludeAndroidResources = true
+            // Robolectric com o SDK 34 passa do heap padrão de 512 MB do worker de teste do Gradle.
+            all { it.maxHeapSize = "1536m" }
+        }
+    }
+
 }
 
 // A variante publicada só sai assinada com a chave fixa. Sem ela, a tarefa para com mensagem clara, em vez de
@@ -252,6 +261,10 @@ dependencies {
     // Versão alinhada com kotlinx-coroutines-android:1.7.3 (implementation acima).
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("io.mockk:mockk:1.13.12")
+    // rb-1: Robolectric para o teste de fumaça do Leitor (ui/ReaderActivitySmokeTest). Fixado em SDK 34 no teste.
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("androidx.work:work-testing:2.9.0") // mesma versão do work-runtime-ktx
     androidTestImplementation("androidx.room:room-testing:2.7.0")
 }
 
