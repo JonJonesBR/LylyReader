@@ -1012,7 +1012,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="bib_aba_todos">Todos</string>
     <string name="bib_aba_lendo">Lendo</string>
     <string name="bib_aba_audio">Com áudio</string>
-    <string name="bib_aba_baixados">Baixados</string>
+    <string name="bib_aba_lidos">Lidos</string>
     <string name="bib_continuar">Continuar</string>
     <string name="bib_continuar_ouvir">Continuar ouvindo</string>
     <string name="bib_continuar_pausar">Pausar</string>
@@ -1433,9 +1433,9 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="gerando_agora_ver">Ver</string>
     <string name="bib_menu_conversoes">Conversões e fila</string>
     <plurals name="gerando_agora_fila_texto">
-        <item quantity="one">%1$d livro esperando para gerar</item>
-        <item quantity="many">%1$d livros esperando para gerar</item>
-        <item quantity="other">%1$d livros esperando para gerar</item>
+        <item quantity="one">%1$d livro na fila</item>
+        <item quantity="many">%1$d livros na fila</item>
+        <item quantity="other">%1$d livros na fila</item>
     </plurals>
     <!-- Ajuda: vozes, pronúncia e recursos da leitura -->
     <string name="help_voices_title">Vozes</string>

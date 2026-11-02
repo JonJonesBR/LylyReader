@@ -66,9 +66,10 @@ class BibliotecaTest {
     }
 
     @Test
-    fun `aba baixados mostra so o que nao veio de arquivo`() {
-        val livros = listOf(livro("1", "A"), livro("2", "B", origem = OrigemLivro.WIKISOURCE))
-        assertEquals(listOf("2"), filtrar(livros, AbaBiblioteca.BAIXADOS, "", semProgresso, semAudio).map { it.id })
+    fun `aba lidos mostra so o que chegou ao fim`() {
+        val livros = listOf(livro("1", "A"), livro("2", "B"), livro("3", "C"), livro("4", "D"))
+        val progresso: (LivroBiblioteca) -> Float? = { mapOf("1" to 1.0f, "2" to 0.98f, "3" to 0.5f)[it.id] }
+        assertEquals(listOf("1", "2"), filtrar(livros, AbaBiblioteca.LIDOS, "", progresso, semAudio).map { it.id })
     }
 
     @Test

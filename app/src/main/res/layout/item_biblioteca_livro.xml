@@ -35,15 +35,34 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/tvBibEstado"
+        <!-- Ícone de fone (livro com áudio) antes do texto: cabe onde "Áudio pronto" era cortado -->
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textColor="@color/color_on_surface_dim"
-            android:textSize="12sp"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/ivBibAudio"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_nav_audiobooks"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@string/bib_audio_pronto"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/tvBibEstado"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/color_on_surface_dim"
+                android:textSize="12sp"/>
+        </LinearLayout>
 
         <ImageButton
             android:id="@+id/btnBibMais"

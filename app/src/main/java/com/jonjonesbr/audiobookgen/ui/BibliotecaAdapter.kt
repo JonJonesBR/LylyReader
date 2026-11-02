@@ -61,6 +61,7 @@ class BibliotecaAdapter(
         init { view.marcarComoBotao() } // uma vez por view; o delegate fica com ela ao ser reciclada
         val capa: CapaView = view.findViewById(R.id.ivBibCapa)
         val titulo: TextView = view.findViewById(R.id.tvBibTitulo)
+        val audio: ImageView = view.findViewById(R.id.ivBibAudio)
         val estado: TextView = view.findViewById(R.id.tvBibEstado)
         val mais: ImageButton = view.findViewById(R.id.btnBibMais)
     }
@@ -100,8 +101,9 @@ class BibliotecaAdapter(
                 val livro = item.livro
                 val ctx = h.itemView.context
                 h.titulo.text = livro.titulo
+                // Com áudio, o ícone de fone aparece antes do texto; o texto segue o progresso como nos outros livros.
+                h.audio.visibility = if (item.temAudio) View.VISIBLE else View.GONE
                 h.estado.text = when {
-                    item.temAudio -> ctx.getString(R.string.bib_audio_pronto)
                     item.progresso != null && item.progresso > 0f -> textoDoProgresso(ctx, item.progresso)
                     else -> ctx.getString(R.string.bib_nao_iniciado)
                 }

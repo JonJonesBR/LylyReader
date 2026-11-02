@@ -83,14 +83,14 @@
             android:tooltipText="@string/bib_cd_buscar"/>
 
         <ImageButton
-            android:id="@+id/btnMaisBib"
+            android:id="@+id/btnOrdenarBib"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@android:color/transparent"
-            android:src="@drawable/ic_mais"
+            android:src="@drawable/ic_ordenar"
             app:tint="@color/color_on_surface_dim"
-            android:contentDescription="@string/cd_mais_opcoes"
-            android:tooltipText="@string/cd_mais_opcoes"/>
+            android:contentDescription="@string/bib_ordenar"
+            android:tooltipText="@string/bib_ordenar"/>
     </LinearLayout>
 
     <com.google.android.material.tabs.TabLayout
@@ -129,7 +129,7 @@
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/bib_aba_baixados"/>
+            android:text="@string/bib_aba_lidos"/>
     </com.google.android.material.tabs.TabLayout>
 
     <View

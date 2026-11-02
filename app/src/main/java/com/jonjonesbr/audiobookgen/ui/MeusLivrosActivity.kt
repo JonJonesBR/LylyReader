@@ -156,7 +156,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
         findViewById<ImageButton>(R.id.btnAprenderBib).setOnClickListener {
             startActivity(Intent(this, AprenderActivity::class.java))
         }
-        findViewById<ImageButton>(R.id.btnMaisBib).setOnClickListener { mostrarMenuMais(it) }
+        findViewById<ImageButton>(R.id.btnOrdenarBib).setOnClickListener { escolherOrdem() }
         fab.setOnClickListener { mostrarAdicionar() }
 
         val colunas = (resources.displayMetrics.widthPixels / resources.displayMetrics.density / LARGURA_COLUNA_DP)
@@ -542,29 +542,6 @@ class MeusLivrosActivity : BasePlayerActivity() {
         }
     }
 
-    private fun mostrarMenuMais(ancora: View) {
-        val popup = PopupMenu(this, ancora).apply {
-            menu.add(0, MENU_ORDENAR, 0, R.string.bib_ordenar)
-            menu.add(0, MENU_CONVERSOES, 3, R.string.bib_menu_conversoes)
-            menu.add(0, MENU_ESPACO, 1, getString(R.string.bib_espaco, "…"))
-                .isEnabled = false
-            setOnMenuItemClickListener {
-                when (it.itemId) {
-                    MENU_ORDENAR -> escolherOrdem()
-                    MENU_CONVERSOES -> startActivity(Intent(this@MeusLivrosActivity, ConversoesActivity::class.java))
-                }
-                true
-            }
-        }
-        popup.show()
-        // Espaço usado: percorre a pasta da biblioteca em 2º plano e preenche o item quando pronto.
-        lifecycleScope.launch {
-            val bytes = withContext(Dispatchers.IO) { BibliotecaStore.espacoUsado(applicationContext) }
-            popup.menu.findItem(MENU_ESPACO)?.title =
-                getString(R.string.bib_espaco, Formatter.formatShortFileSize(this@MeusLivrosActivity, bytes))
-        }
-    }
-
     private fun escolherOrdem() {
         val opcoes = arrayOf(getString(R.string.bib_ord_recentes), getString(R.string.bib_ord_titulo), getString(R.string.bib_ord_autor))
         AlertDialog.Builder(this)
@@ -748,9 +725,6 @@ class MeusLivrosActivity : BasePlayerActivity() {
         const val ACAO_FILA = 5
         const val ACAO_DETALHES = 3
         const val ACAO_APAGAR = 4
-        const val MENU_ORDENAR = 1
-        const val MENU_ESPACO = 2
-        const val MENU_CONVERSOES = 5
         const val LARGURA_COLUNA_DP = 120f
         const val COLUNAS_MIN = 3
         const val COLUNAS_MAX = 8

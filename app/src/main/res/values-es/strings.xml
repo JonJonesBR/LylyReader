@@ -997,7 +997,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="bib_aba_todos">Todos</string>
     <string name="bib_aba_lendo">Leyendo</string>
     <string name="bib_aba_audio">Con audio</string>
-    <string name="bib_aba_baixados">Descargados</string>
+    <string name="bib_aba_lidos">Leídos</string>
     <string name="bib_continuar">Continuar</string>
     <string name="bib_continuar_ouvir">Seguir escuchando</string>
     <string name="bib_continuar_pausar">Pausar</string>
@@ -1418,9 +1418,9 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="gerando_agora_ver">Ver</string>
     <string name="bib_menu_conversoes">Conversiones y cola</string>
     <plurals name="gerando_agora_fila_texto">
-        <item quantity="one">%1$d libro esperando para generarse</item>
-        <item quantity="many">%1$d libros esperando para generarse</item>
-        <item quantity="other">%1$d libros esperando para generarse</item>
+        <item quantity="one">%1$d libro en la cola</item>
+        <item quantity="many">%1$d libros en la cola</item>
+        <item quantity="other">%1$d libros en la cola</item>
     </plurals>
     <!-- Ajuda: vozes, pronúncia e recursos da leitura -->
     <string name="help_voices_title">Voces</string>

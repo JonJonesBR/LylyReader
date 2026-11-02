@@ -124,7 +124,7 @@ fun nomeSeguroNaPasta(nome: String): String {
 fun semAcentos(texto: String): String =
     Normalizer.normalize(texto, Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").lowercase()
 
-enum class AbaBiblioteca { TODOS, LENDO, COM_AUDIO, BAIXADOS }
+enum class AbaBiblioteca { TODOS, LENDO, COM_AUDIO, LIDOS }
 
 /** Fração de leitura concluída considerada "terminou" (a partir daqui o livro sai de Lendo/Continuar). */
 const val PROGRESSO_CONCLUIDO = 0.98f
@@ -146,7 +146,7 @@ fun filtrar(
             AbaBiblioteca.TODOS -> true
             AbaBiblioteca.LENDO -> progresso(livro)?.let { it > 0f && it < PROGRESSO_CONCLUIDO } == true
             AbaBiblioteca.COM_AUDIO -> temAudio(livro)
-            AbaBiblioteca.BAIXADOS -> livro.origem != OrigemLivro.ARQUIVO
+            AbaBiblioteca.LIDOS -> progresso(livro)?.let { it >= PROGRESSO_CONCLUIDO } == true
         }
         naAba && (termo.isEmpty() ||
             semAcentos(livro.titulo).contains(termo) ||
