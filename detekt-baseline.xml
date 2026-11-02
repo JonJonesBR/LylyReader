@@ -212,10 +212,6 @@
     <ID>MagicNumber:DownloadService.kt$DownloadService$100</ID>
     <ID>MagicNumber:EpubMetadados.kt$1024</ID>
     <ID>MagicNumber:EpubMetadados.kt$16</ID>
-    <ID>MagicNumber:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$100</ID>
-    <ID>MagicNumber:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$1000</ID>
-    <ID>MagicNumber:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$2500</ID>
-    <ID>MagicNumber:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$8000</ID>
     <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$12f</ID>
     <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$14f</ID>
     <ID>MagicNumber:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$15f</ID>
@@ -269,10 +265,6 @@
     <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P480$848</ID>
     <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P720$1280</ID>
     <ID>MagicNumber:MediaEncoderShared.kt$ResolucaoVideo.P720$720</ID>
-    <ID>MagicNumber:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$100</ID>
-    <ID>MagicNumber:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$1000</ID>
-    <ID>MagicNumber:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$2500</ID>
-    <ID>MagicNumber:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$8000</ID>
     <ID>MagicNumber:MeusLivrosActivity.kt$MeusLivrosActivity$1.3f</ID>
     <ID>MagicNumber:MeusLivrosActivity.kt$MeusLivrosActivity$3</ID>
     <ID>MagicNumber:MeusLivrosActivity.kt$MeusLivrosActivity$4</ID>
@@ -618,7 +610,6 @@
     <ID>MaxLineLength:EpubMetadadosTest.kt$EpubMetadadosTest$"content.opf" to opf("""&lt;item id="x" href="nao-existe.jpg" media-type="image/jpeg" properties="cover-image"/&gt;""").toByteArray()</ID>
     <ID>MaxLineLength:EscolhaPrimeiroLivroActivity.kt$EscolhaPrimeiroLivroActivity$if (!PoliticaDownloadSilencioso.deveIniciar(false, redeTarifada, filesDir.usableSpace, tamanhoBytes)) return@launch</ID>
     <ID>MaxLineLength:EscolhaPrimeiroLivroActivity.kt$EscolhaPrimeiroLivroActivity$val redeTarifada = NetworkStatus.isMetered(applicationContext) || !NetworkStatus.isOnline(applicationContext)</ID>
-    <ID>MaxLineLength:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$eq.setBandLevel(banda.toShort(), (-corteDb * 100).toInt().coerceIn(faixa[0].toInt(), faixa[1].toInt()).toShort())</ID>
     <ID>MaxLineLength:ExtractTextUseCase.kt$ExtractTextUseCase$titulo = m[py.builtins.callAttr("str", "titulo")]?.toString() ?: context.getString(R.string.capitulo_sem_titulo)</ID>
     <ID>MaxLineLength:FilaDeConversao.kt$FilaDeConversao$*</ID>
     <ID>MaxLineLength:FilaDeConversao.kt$FilaDeConversao$private</ID>
@@ -680,7 +671,6 @@
     <ID>MaxLineLength:MainActivity.kt$MainActivity$arrayOf(biblioteca, Intent(this@MainActivity, LivroActivity::class.java).putExtra(LivroActivity.EXTRA_ID, livro.id))</ID>
     <ID>MaxLineLength:MainActivity.kt$MainActivity$startActivity(Intent(this, ConversoesActivity::class.java).putExtra(ConversoesActivity.EXTRA_INICIAR_FILA, true))</ID>
     <ID>MaxLineLength:MediaEncoderShared.kt$/** Drena TUDO que o encoder já tem pronto, sem esperar (timeout 0) — não deixa a saída acumular enquanto a entrada é alimentada. */</ID>
-    <ID>MaxLineLength:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$eq.setBandLevel(banda.toShort(), (-corteDb * 100).toInt().coerceIn(faixa[0].toInt(), faixa[1].toInt()).toShort())</ID>
     <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$*</ID>
     <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$/** Link direto de um arquivo, com a declaração de que a pessoa tem o direito de usá-lo (a responsabilidade é dela). */</ID>
     <ID>MaxLineLength:MeusLivrosActivity.kt$MeusLivrosActivity$/** Transição curta (fade) ao abrir o leitor ou a tela do livro; o Android já a zera se as animações estiverem desligadas. */</ID>

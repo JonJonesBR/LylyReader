@@ -15,7 +15,7 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
     // Último volume pedido (fade da soneca): cada trecho cria um MediaPlayer novo, que nasceria em 1.0.
     private var volumeAtual: Float = 1.0f
     private var timbre: TimbreVoz = TimbreVoz.PADRAO
-    private var equalizador: android.media.audiofx.Equalizer? = null
+    private val agudos = AgudosNoEqualizador()
 
     override fun play(audioFile: File, speed: Float) {
         try {
@@ -41,7 +41,7 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
 
             mediaPlayer = player
             // Equalizador antes do som: preso à sessão com o áudio já tocando, dava um estalo no começo.
-            aplicarAgudos(player.audioSessionId)
+            agudos.aplicar(player.audioSessionId, timbre.agudosDb)
             // Depois do prepare(), PlaybackParams com velocidade > 0 já inicia a reprodução (= start()).
             aplicarParametros(player)
             if (!player.isPlaying) player.start()
@@ -78,40 +78,13 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
         this.timbre = timbre
         mediaPlayer?.let { player ->
             if (tocando(player)) aplicarParametros(player)
-            aplicarAgudos(player.audioSessionId)
-        }
-    }
-
-    /** Corte suave de agudos com o equalizador do sistema (bandas acima de ~2,5 kHz). */
-    private fun aplicarAgudos(sessao: Int) {
-        try {
-            equalizador?.release()
-            equalizador = null
-            if (timbre.agudosDb <= 0) return
-            val eq = android.media.audiofx.Equalizer(0, sessao)
-            val faixa = eq.bandLevelRange
-            for (banda in 0 until eq.numberOfBands) {
-                val centroHz = eq.getCenterFreq(banda.toShort()) / 1000
-                val corteDb = when {
-                    centroHz >= 8000 -> timbre.agudosDb.toDouble()
-                    centroHz >= 2500 -> timbre.agudosDb / 2.0
-                    else -> 0.0
-                }
-                if (corteDb > 0) {
-                    eq.setBandLevel(banda.toShort(), (-corteDb * 100).toInt().coerceIn(faixa[0].toInt(), faixa[1].toInt()).toShort())
-                }
-            }
-            eq.enabled = true
-            equalizador = eq
-        } catch (e: Exception) {
-            Log.w("MediaPlayerEngine", "Equalizador indisponível: ${e.message}")
+            agudos.aplicar(player.audioSessionId, timbre.agudosDb)
         }
     }
 
     override fun stop() {
         try {
-            equalizador?.release()
-            equalizador = null
+            agudos.liberar()
             mediaPlayer?.let {
                 if (it.isPlaying) {
                     it.stop()
