@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.app.ActivityOptions
 import android.content.Intent
+import android.text.format.DateFormat
 import android.text.format.Formatter
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -10,6 +11,8 @@ import androidx.lifecycle.lifecycleScope
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.domain.LivroBiblioteca
+import com.jonjonesbr.audiobookgen.domain.OrigemLivro
+import java.util.Date
 import kotlinx.coroutines.launch
 
 /** Ações de um livro da biblioteca, usadas pela Biblioteca e pela tela do livro (um só comportamento). */
@@ -133,6 +136,31 @@ object AcoesDoLivro {
                 Toast.LENGTH_SHORT
             ).show()
         }
+    }
+
+    /**
+     * Janela de detalhes (autor, formato, tamanho, origem, data de entrada): a mesma na Biblioteca e na tela do livro.
+     */
+    fun mostrarDetalhes(activity: AppCompatActivity, livro: LivroBiblioteca) {
+        val origem = when (livro.origem) {
+            OrigemLivro.ARQUIVO -> R.string.bib_origem_arquivo
+            OrigemLivro.GUTENBERG -> R.string.bib_origem_gutenberg
+            OrigemLivro.WIKISOURCE -> R.string.bib_origem_wikisource
+            OrigemLivro.ARCHIVE -> R.string.bib_origem_archive
+        }
+        val tamanho = Formatter.formatShortFileSize(activity, livro.tamanhoBytes)
+        val adicionado = DateFormat.getMediumDateFormat(activity).format(Date(livro.adicionadoEm))
+        val linhas = buildList {
+            livro.autor?.let { add("${activity.getString(R.string.bib_det_autor)}: $it") }
+            add("${activity.getString(R.string.bib_det_formato)}: ${livro.formato.uppercase()}")
+            add("${activity.getString(R.string.bib_det_tamanho)}: $tamanho")
+            add("${activity.getString(R.string.bib_det_origem)}: ${activity.getString(origem)}")
+            add("${activity.getString(R.string.bib_det_adicionado)}: $adicionado")
+        }
+        activity.mostrarDialogo(
+            AlertDialog.Builder(activity).setTitle(livro.titulo).setMessage(linhas.joinToString("\n"))
+                .setPositiveButton(android.R.string.ok, null)
+        )
     }
 
     /** Confirma e apaga o livro (o audiobook gerado continua em Audiobooks). [aoApagar] roda depois. */

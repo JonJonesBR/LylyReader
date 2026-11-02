@@ -1101,9 +1101,10 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="audiobook_pronto_acao">Listen</string>
 
     <!-- Tela do livro (Fase O) -->
-    <string name="livro_continuar">Continue guided reading</string>
-    <string name="livro_comecar">Start listening</string>
-    <string name="livro_ler_sem_audio">Read without audio</string>
+    <string name="livro_ouvir">Listen</string>
+    <string name="livro_continuar_ouvindo">Continue listening</string>
+    <string name="livro_leitura_guiada">Guided reading</string>
+    <string name="livro_so_ler">Just read</string>
     <string name="livro_voz_titulo">Voice for this book</string>
     <string name="livro_trocar">Change</string>
     <string name="livro_opcoes_titulo">Options</string>
@@ -1130,7 +1131,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="onboarding_t2_titulo">Build your library</string>
     <string name="onboarding_t2_descricao">Tap Add to import a file or search free public domain books. Everything stays saved in the app.</string>
     <string name="onboarding_t3_titulo">Listen while you read</string>
-    <string name="onboarding_t3_descricao">Open a book and tap Start listening: the text is read aloud while you follow along. Tap any paragraph to jump to it.</string>
+    <string name="onboarding_t3_descricao">Open a book and tap Listen: the text is read aloud while you follow along. Tap any paragraph to jump to it.</string>
     <string name="onboarding_t4_titulo">Create an audiobook</string>
     <string name="onboarding_t4_descricao">On the book screen, choose the voice and pace and tap Generate audiobook. It shows up in the Audiobooks tab and plays even with the screen off.</string>
     <string name="onboarding_t5_titulo">Voices and appearance</string>
@@ -1171,7 +1172,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="licao_adicionar_passos">Tap Add in the Library.\nPick a file, search free books or share one from another app.</string>
     <string name="licao_guiada_titulo">Listen with guided reading</string>
     <string name="licao_guiada_resumo">Follow the text while it is read aloud.</string>
-    <string name="licao_guiada_passos">Open the sample book.\nTap Start listening. Reading begins on its own; tap any paragraph to jump to it.</string>
+    <string name="licao_guiada_passos">Open the sample book.\nTap Listen. Reading begins on its own; tap any paragraph to jump to it.</string>
     <string name="licao_gerar_titulo">Create an audiobook</string>
     <string name="licao_gerar_resumo">Turn a book into an audio file.</string>
     <string name="licao_gerar_passos">Open the Generate audiobook panel.\nPick the voice and pace and tap Generate now.\nFollow the progress in Conversions.</string>
@@ -1472,7 +1473,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="help_more_step1">The bookmark icon at the top marks where you are; ⋮ › Bookmarks &amp; highlights lists everything you marked</string>
     <string name="help_more_step2">To highlight, select a passage and tap \"Highlight\"</string>
     <string name="help_more_step3">⋮ › Sleep timer stops reading after a while; ⋮ › Appearance changes the font, size and theme</string>
-    <string name="help_more_step4">On the book screen, \"Read without audio\" opens just the text, without voices</string>
+    <string name="help_more_step4">On the book screen, \"Just read\" opens just the text, without voices</string>
     <string name="dl_voz_criar">Create or import voice</string>
     <string name="dl_voz_clonar">Clone a voice from a recording</string>
     <string name="dl_voz_clonadas">My cloned voices</string>
@@ -1683,8 +1684,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="pocket_expr_maxima">Maximum</string>
     <string name="erro_excluir_ocorrencias">Could not delete the occurrences. Try again.</string>
     <string name="erro_conversao_memoria">The book is too large for this device\'s memory. Close other apps and try again, or convert one chapter at a time.</string>
-    <string name="livro_ouvir_audiobook">Listen to the audiobook</string>
-    <string name="livro_ouvir_outra_voz">Listen with another voice (guided reading)</string>
     <string name="cd_slider_velocidade">Reading speed</string>
     <string name="cd_slider_soneca">Sleep timer minutes</string>
     <string name="logs_aviso_privacidade_titulo">Before sharing</string>

@@ -7,8 +7,6 @@ import android.os.Bundle
 import android.provider.DocumentsContract
 import android.text.Editable
 import android.text.TextWatcher
-import android.text.format.DateFormat
-import android.text.format.Formatter
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -54,7 +52,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Date
 
 /** Abre direto o painel "Adicionar" (usado pela lição 1 da central "Aprender o app"). */
 const val EXTRA_ABRIR_ADICIONAR = "extra_abrir_adicionar"
@@ -500,30 +497,12 @@ class MeusLivrosActivity : BasePlayerActivity() {
                         fadeAoAbrir()
                     )
                     ACAO_FILA -> AcoesDoLivro.adicionarAFila(this@MeusLivrosActivity, livro)
-                    ACAO_DETALHES -> mostrarDetalhes(livro)
+                    ACAO_DETALHES -> AcoesDoLivro.mostrarDetalhes(this@MeusLivrosActivity, livro)
                     ACAO_APAGAR -> AcoesDoLivro.confirmarApagar(this@MeusLivrosActivity, livro) { carregar() }
                 }
                 true
             }
         }.show()
-    }
-
-    private fun mostrarDetalhes(livro: LivroBiblioteca) {
-        val origem = when (livro.origem) {
-            OrigemLivro.ARQUIVO -> R.string.bib_origem_arquivo
-            OrigemLivro.GUTENBERG -> R.string.bib_origem_gutenberg
-            OrigemLivro.WIKISOURCE -> R.string.bib_origem_wikisource
-            OrigemLivro.ARCHIVE -> R.string.bib_origem_archive
-        }
-        val linhas = buildList {
-            livro.autor?.let { add("${getString(R.string.bib_det_autor)}: $it") }
-            add("${getString(R.string.bib_det_formato)}: ${livro.formato.uppercase()}")
-            add("${getString(R.string.bib_det_tamanho)}: ${Formatter.formatShortFileSize(this@MeusLivrosActivity, livro.tamanhoBytes)}")
-            add("${getString(R.string.bib_det_origem)}: ${getString(origem)}")
-            add("${getString(R.string.bib_det_adicionado)}: ${DateFormat.getMediumDateFormat(this@MeusLivrosActivity).format(Date(livro.adicionadoEm))}")
-        }
-        AlertDialog.Builder(this).setTitle(livro.titulo).setMessage(linhas.joinToString("\n"))
-            .setPositiveButton(android.R.string.ok, null).exibir()
     }
 
     // ── Busca, ordenação, espaço ─────────────────────────────────────────────

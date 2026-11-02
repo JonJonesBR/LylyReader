@@ -63,8 +63,14 @@ private const val META_GRAVACAO_S = 15
  * Criação e gestão de vozes clonadas com o Pocket TTS. Instanciar ANTES de a Activity iniciar (registra
  * os seletores de resultado). A referência (gravada ou de arquivo) só é convertida e guardada no
  * aparelho; o aviso de consentimento aparece sempre antes de qualquer captura.
+ * [aoCriarVoz] recebe o id da voz já pronta para uso (motor baixado). [aoMudar] avisa que a lista mudou; fica por
+ * último para que `CloneVoiceFlow(activity) { ... }` continue sendo o aviso de mudança.
  */
-class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMudar: () -> Unit = {}) {
+class CloneVoiceFlow(
+    private val activity: AppCompatActivity,
+    private val aoCriarVoz: (String) -> Unit = {},
+    private val aoMudar: () -> Unit = {},
+) {
 
     private val handler = Handler(Looper.getMainLooper())
     private val dialogos = DialogosAbertos(activity)
@@ -444,6 +450,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
         val pacote = VoiceCatalog.pacoteDaVoz(voiceId)
         if (pacote == null || pacote.isPronto(activity)) {
             toast(R.string.clone_created)
+            aoCriarVoz(voiceId)
             return
         }
         val barra = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100 }
@@ -472,6 +479,7 @@ class CloneVoiceFlow(private val activity: AppCompatActivity, private val aoMuda
             aoMudar()
             if (erro == null) {
                 toast(R.string.clone_created)
+                aoCriarVoz(voiceId)
             } else {
                 Log.w("CloneVoiceFlow", "Falha ao baixar voz clonada", erro)
                 Toast.makeText(activity, activity.getString(R.string.clone_download_failed, activity.getString(mensagemDeErro(erro))), Toast.LENGTH_LONG).show()

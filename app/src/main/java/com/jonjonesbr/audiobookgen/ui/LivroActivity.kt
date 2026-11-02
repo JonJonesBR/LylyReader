@@ -38,8 +38,9 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 /**
- * Tela do livro: capa, ação principal (continuar a leitura guiada), gerar audiobook, a voz DESTE livro e atalhos para
- * capítulos, personagens, pronúncia e timbre. Voz escolhida aqui vale só para este livro (`GuidedBookPrefsStore`).
+ * Tela do livro: capa, ação principal (Ouvir), leitura guiada e só ler, gerar audiobook, a voz DESTE livro e atalhos
+ * para capítulos, personagens, pronúncia e timbre. A voz escolhida aqui (inclusive uma clonada) vale só para este
+ * livro (`GuidedBookPrefsStore`).
  */
 class LivroActivity : BasePlayerActivity() {
 
@@ -47,7 +48,7 @@ class LivroActivity : BasePlayerActivity() {
     private val appPrefs by lazy { AppPrefs(this) }
     private var livro: LivroBiblioteca? = null
 
-    private val cloneVoiceFlow = CloneVoiceFlow(this)
+    private val cloneVoiceFlow = CloneVoiceFlow(this, aoCriarVoz = ::aoCriarVozDoLivro)
 
     private val seletorDeVoz = VoiceSelectionDelegate(
         activity = this,
@@ -142,17 +143,20 @@ class LivroActivity : BasePlayerActivity() {
         val principal = findViewById<Button>(R.id.btnLivroContinuar)
         val leituraGuiada = findViewById<Button>(R.id.btnLivroLeituraGuiada)
         val mp3 = AcoesDoLivro.audiobookPronto(this, l)
-        if (mp3 != null) {
-            // Audiobook já gerado: tocar o arquivo pronto (sem gerar a voz de novo); a leitura guiada fica para outra voz.
-            principal.setText(R.string.livro_ouvir_audiobook)
-            principal.setOnClickListener { AcoesDoLivro.ouvirAudiobookPronto(this, l, mp3, abrirTexto = true) }
-            leituraGuiada.visibility = View.VISIBLE
-            leituraGuiada.setOnClickListener { AcoesDoLivro.abrirNoLeitor(this, l, continuar = true) }
-        } else {
-            principal.setText(if (iniciado) R.string.livro_continuar else R.string.livro_comecar)
-            principal.setOnClickListener { AcoesDoLivro.abrirNoLeitor(this, l, continuar = true) }
-            leituraGuiada.visibility = View.GONE
+        // "Ouvir": com audiobook já gerado, toca o arquivo pronto (sem gerar a voz de novo);
+        // sem ele, abre a leitura guiada, que retoma de onde parou se o livro já foi iniciado.
+        principal.setText(if (iniciado && mp3 == null) R.string.livro_continuar_ouvindo else R.string.livro_ouvir)
+        principal.setOnClickListener {
+            if (mp3 != null) {
+                AcoesDoLivro.ouvirAudiobookPronto(this, l, mp3, abrirTexto = true)
+            } else {
+                AcoesDoLivro.abrirNoLeitor(this, l, continuar = true)
+            }
         }
+        // Com audiobook, a leitura guiada é a forma de ouvir com outra voz.
+        // Sem ele, seria igual ao "Ouvir": fica oculta.
+        leituraGuiada.visibility = if (mp3 != null) View.VISIBLE else View.GONE
+        leituraGuiada.setOnClickListener { AcoesDoLivro.abrirNoLeitor(this, l, continuar = true) }
         findViewById<Button>(R.id.btnLivroLerSemAudio).setOnClickListener {
             AcoesDoLivro.abrirNoLeitor(this, l, continuar = false, somenteLeitura = true)
         }
@@ -383,10 +387,7 @@ class LivroActivity : BasePlayerActivity() {
     /** Grava a voz só neste livro; a velocidade que ele já tinha é mantida. */
     private fun aoEscolherVoz(voz: VoiceOption) {
         appPrefs.registrarEvento(com.jonjonesbr.audiobookgen.domain.EventoAprendizado.VOZ_DO_LIVRO_TROCADA.id)
-        val atual = GuidedBookPrefsStore.load(this, caminho())
-        GuidedBookPrefsStore.save(this, caminho(), voz.id, voz.engine, atual?.speedMult ?: 1.0f)
-        mostrarVoz()
-        atualizarPainelVoz()
+        gravarVozDoLivro(voz)
         val precisaChave = (voz.engine == "gemini" && SecurePreferences.getGeminiKeys(this).isNullOrBlank()) ||
             (voz.engine == "elevenlabs" && SecurePreferences.getElevenLabsKey(this).isNullOrBlank())
         if (precisaChave) {
@@ -395,6 +396,23 @@ class LivroActivity : BasePlayerActivity() {
                     .putExtra(if (voz.engine == "gemini") "focar_chave_gemini" else "focar_chave_elevenlabs", true)
             )
         }
+    }
+
+    /** Grava a voz no perfil deste livro e atualiza o cartão e o painel. Não registra evento de troca. */
+    private fun gravarVozDoLivro(voz: VoiceOption) {
+        val atual = GuidedBookPrefsStore.load(this, caminho())
+        GuidedBookPrefsStore.save(this, caminho(), voz.id, voz.engine, atual?.speedMult ?: 1.0f)
+        mostrarVoz()
+        atualizarPainelVoz()
+    }
+
+    /**
+     * Voz clonada aqui (painel ou seletor deste livro), já pronta para uso: vira a voz DESTE livro, como qualquer
+     * escolha no seletor. Sem isso, a voz nova ficava só na lista e o livro continuava com a anterior.
+     * Só grava: o evento de troca de voz (lições) vale para a escolha no seletor, não para o clone.
+     */
+    private fun aoCriarVozDoLivro(vozId: String) {
+        VoiceCatalog.findAny(vozId)?.let(::gravarVozDoLivro)
     }
 
     private fun ouvirAmostra(voz: VoiceOption, aoTerminar: () -> Unit) {
@@ -418,9 +436,13 @@ class LivroActivity : BasePlayerActivity() {
     private fun mostrarMenu(ancora: View) {
         val atual = livro ?: return
         PopupMenu(this, ancora).apply {
-            menu.add(0, 1, 0, R.string.bib_acao_apagar)
+            menu.add(0, ACAO_DETALHES, 0, R.string.bib_acao_detalhes)
+            menu.add(0, ACAO_APAGAR, 1, R.string.bib_acao_apagar)
             setOnMenuItemClickListener {
-                AcoesDoLivro.confirmarApagar(this@LivroActivity, atual) { finish() }
+                when (it.itemId) {
+                    ACAO_DETALHES -> AcoesDoLivro.mostrarDetalhes(this@LivroActivity, atual)
+                    ACAO_APAGAR -> AcoesDoLivro.confirmarApagar(this@LivroActivity, atual) { finish() }
+                }
                 true
             }
         }.show()
@@ -436,6 +458,8 @@ class LivroActivity : BasePlayerActivity() {
         const val EXTRA_ABRIR_PAINEL_GERAR = "abrir_painel_gerar"
         /** Só o painel "Gerar audiobook" (vindo do leitor): fechar o painel fecha a tela. */
         const val EXTRA_SO_PAINEL = "so_painel"
+        private const val ACAO_DETALHES = 1
+        private const val ACAO_APAGAR = 2
         private const val BARRA_MAX = 1000
         private const val PCT_POR_MULTIPLICADOR = 100f
     }

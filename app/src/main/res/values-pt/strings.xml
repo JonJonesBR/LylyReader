@@ -1103,9 +1103,10 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="audiobook_pronto_acao">Ouvir</string>
 
     <!-- Tela do livro (Fase O) -->
-    <string name="livro_continuar">Continuar leitura guiada</string>
-    <string name="livro_comecar">Começar a ouvir</string>
-    <string name="livro_ler_sem_audio">Ler sem áudio</string>
+    <string name="livro_ouvir">Ouvir</string>
+    <string name="livro_continuar_ouvindo">Continuar ouvindo</string>
+    <string name="livro_leitura_guiada">Leitura guiada</string>
+    <string name="livro_so_ler">Só ler</string>
     <string name="livro_voz_titulo">Voz deste livro</string>
     <string name="livro_trocar">Trocar</string>
     <string name="livro_opcoes_titulo">Opções</string>
@@ -1132,7 +1133,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="onboarding_t2_titulo">Monte sua biblioteca</string>
     <string name="onboarding_t2_descricao">Toque em Adicionar para importar um arquivo ou buscar livros gratuitos de domínio público. Tudo fica guardado no app.</string>
     <string name="onboarding_t3_titulo">Ouça lendo</string>
-    <string name="onboarding_t3_descricao">Abra um livro e toque em Começar a ouvir: o texto é lido em voz alta enquanto você acompanha. Toque em qualquer parágrafo para pular para ele.</string>
+    <string name="onboarding_t3_descricao">Abra um livro e toque em Ouvir: o texto é lido em voz alta enquanto você acompanha. Toque em qualquer parágrafo para pular para ele.</string>
     <string name="onboarding_t4_titulo">Gere um audiobook</string>
     <string name="onboarding_t4_descricao">Na tela do livro, escolha a voz e o ritmo e toque em Gerar audiobook. Ele aparece na aba Audiobooks e toca até com a tela apagada.</string>
     <string name="onboarding_t5_titulo">Vozes e aparência</string>
@@ -1173,7 +1174,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="licao_adicionar_passos">Toque em Adicionar na Biblioteca.\nEscolha um arquivo, busque livros gratuitos ou compartilhe de outro app.</string>
     <string name="licao_guiada_titulo">Ouvir com a leitura guiada</string>
     <string name="licao_guiada_resumo">Acompanhe o texto enquanto ele é lido em voz alta.</string>
-    <string name="licao_guiada_passos">Abra o livro de exemplo.\nToque em Começar a ouvir. A leitura começa sozinha; toque em qualquer parágrafo para pular para ele.</string>
+    <string name="licao_guiada_passos">Abra o livro de exemplo.\nToque em Ouvir. A leitura começa sozinha; toque em qualquer parágrafo para pular para ele.</string>
     <string name="licao_gerar_titulo">Gerar um audiobook</string>
     <string name="licao_gerar_resumo">Transforme um livro em um arquivo de áudio.</string>
     <string name="licao_gerar_passos">Abra o painel Gerar audiobook.\nEscolha a voz e o ritmo e toque em Gerar agora.\nAcompanhe o andamento em Conversões.</string>
@@ -1476,7 +1477,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="help_more_step1">O ícone de marcador no topo marca onde você está; ⋮ › Marcadores e destaques lista tudo o que você marcou</string>
     <string name="help_more_step2">Para destacar, selecione um trecho e toque em \"Destacar\"</string>
     <string name="help_more_step3">⋮ › Soneca para a leitura depois de um tempo; ⋮ › Aparência muda fonte, tamanho e tema</string>
-    <string name="help_more_step4">Na tela do livro, \"Ler sem áudio\" abre só o texto, sem vozes</string>
+    <string name="help_more_step4">Na tela do livro, \"Só ler\" abre só o texto, sem vozes</string>
     <string name="dl_voz_criar">Criar ou importar voz</string>
     <string name="dl_voz_clonar">Clonar uma voz a partir de uma gravação</string>
     <string name="dl_voz_clonadas">Minhas vozes clonadas</string>
@@ -1688,8 +1689,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="pocket_expr_maxima">Máxima</string>
     <string name="erro_excluir_ocorrencias">Não foi possível apagar as ocorrências. Tente novamente.</string>
     <string name="erro_conversao_memoria">O livro é grande demais para a memória do aparelho. Feche outros apps e tente de novo, ou converta um capítulo por vez.</string>
-    <string name="livro_ouvir_audiobook">Ouvir o audiobook</string>
-    <string name="livro_ouvir_outra_voz">Ouvir com outra voz (leitura guiada)</string>
     <string name="cd_slider_velocidade">Velocidade da leitura</string>
     <string name="cd_slider_soneca">Minutos da soneca</string>
     <string name="logs_aviso_privacidade_titulo">Antes de compartilhar</string>
