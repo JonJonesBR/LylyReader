@@ -1,11 +1,14 @@
 package com.jonjonesbr.audiobookgen.service
 
 import com.jonjonesbr.audiobookgen.data.AppPrefs
+import com.jonjonesbr.audiobookgen.data.BibliotecaStore
+import com.jonjonesbr.audiobookgen.data.LinkedBookStore
 import com.jonjonesbr.audiobookgen.data.StatsStore
 import com.jonjonesbr.audiobookgen.domain.AudiobookLibraryUseCase
 import com.jonjonesbr.audiobookgen.domain.CapituloAudio
 import com.jonjonesbr.audiobookgen.domain.EsperaPrimeiroReady
 import com.jonjonesbr.audiobookgen.domain.PlayerState
+import com.jonjonesbr.audiobookgen.domain.TextosDeNotificacao
 import com.jonjonesbr.audiobookgen.domain.ehPlayPauseExterno
 import com.jonjonesbr.audiobookgen.domain.reconciliarIsPlaying
 import com.jonjonesbr.audiobookgen.R
@@ -182,10 +185,16 @@ class AudioPlayerService : MediaLibraryService() {
     private val _state = MutableStateFlow(PlayerState())
     val state: StateFlow<PlayerState> get() = _state.asStateFlow()
 
+    // Autor do livro e artista da etiqueta, guardados por caminho: o texto da notificação é montado no tick e no
+    // listener, e não pode ir ao disco ou ao player a cada vez. Só a faixa atual importa (o par traz o caminho).
+    @Volatile private var autorDoLivroCache: Pair<String, String?>? = null
+    @Volatile private var artistaDaEtiqueta: Pair<String, String?>? = null
+
     private val playerNotificationManager by lazy {
         PlayerNotificationManager(
             context = applicationContext,
             obterEstado = { _state.value },
+            obterAutor = { autorParaNotificacao() },
             mediaSession = mediaLibrarySession,
             onStartForeground = { notif ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -354,6 +363,29 @@ class AudioPlayerService : MediaLibraryService() {
         override fun handleCustomCommand(session: MediaSession, action: String, extras: Bundle) = false
     }
 
+    /**
+     * Autor do livro vinculado ao MP3 [caminho] (ver [LinkedBookStore]), calculado uma vez por faixa. Null se o MP3
+     * não é de um livro da biblioteca ou o autor está vazio. O runCatching cobre o canonicalPath, que pode lançar
+     * IOException.
+     */
+    private fun autorDoLivro(caminho: String): String? {
+        autorDoLivroCache?.takeIf { it.first == caminho }?.let { return it.second }
+        val autor = runCatching {
+            LinkedBookStore.textoVinculado(applicationContext, caminho)
+                ?.let { BibliotecaStore.autorPorCaminho(applicationContext, it) }
+        }.getOrNull()?.trim()?.takeIf { it.isNotEmpty() }
+        autorDoLivroCache = caminho to autor
+        return autor
+    }
+
+    /** Autor mostrado na notificação da faixa atual (livro vinculado, senão a etiqueta do MP3). Null sem faixa. */
+    private fun autorParaNotificacao(): String? {
+        val caminho = _state.value.caminho
+        if (caminho.isBlank()) return null
+        val etiqueta = artistaDaEtiqueta?.takeIf { it.first == caminho }?.second
+        return TextosDeNotificacao.autorNoPlayer(autorDoLivro(caminho), etiqueta)
+    }
+
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             val caminho = mediaItem?.mediaId ?: return
@@ -369,6 +401,13 @@ class AudioPlayerService : MediaLibraryService() {
             if (caminhoPreparado == caminho) return
             val nome = mediaItem.mediaMetadata.title?.toString() ?: File(caminho).nameWithoutExtension
             prepararNovoItem(caminho, nome)
+        }
+
+        // Etiqueta do MP3 (ID3) guardada para a notificação. Sem atualizarNotificacao(): fecharPlayer() faz
+        // clearMediaItems, que dispara este evento, e a notificação seria recriada depois de fechada.
+        // O próximo refresh já pega o valor.
+        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            artistaDaEtiqueta = (exoPlayer.currentMediaItem?.mediaId ?: return) to mediaMetadata.artist?.toString()
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -557,11 +596,15 @@ class AudioPlayerService : MediaLibraryService() {
         if (concluido && caminhoPreparado == caminho) {
             prepararNovoItem(caminho, nome)
         }
+        // Relê o livro.json a cada pedido de reprodução: o autor pode ter sido editado na biblioteca.
+        autorDoLivroCache = null
         val item = MediaItem.Builder()
             .setUri(uriPara(caminho))
             .setMediaId(caminho)
             .setMediaMetadata(
-                MediaMetadata.Builder().setTitle(nome).setIsBrowsable(false).setIsPlayable(true).build()
+                // Com autor do livro conhecido, a mídia (Android 13+) mostra o autor, não a etiqueta do MP3.
+                MediaMetadata.Builder().setTitle(nome).setArtist(autorDoLivro(caminho))
+                    .setIsBrowsable(false).setIsPlayable(true).build()
             )
             .build()
         // Garante foreground + notificação desde o primeiro momento (inclusive em falha

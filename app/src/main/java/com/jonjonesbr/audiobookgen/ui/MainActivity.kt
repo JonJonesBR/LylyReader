@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.jonjonesbr.audiobookgen.R
@@ -14,6 +15,7 @@ import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.DocumentRepository
 import com.jonjonesbr.audiobookgen.domain.ehFormatoSuportado
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
+import com.jonjonesbr.audiobookgen.service.ConversionNotificationManager
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -46,6 +48,8 @@ class MainActivity : AppCompatActivity() {
     private fun rotear(intent: Intent): Boolean {
         intent.getStringExtra(EXTRA_ABRIR_AUDIOBOOK_CAMINHO)?.let { pedido ->
             intent.removeExtra(EXTRA_ABRIR_AUDIOBOOK_CAMINHO)
+            // O toque no corpo já apaga a notificação (autoCancel); o botão "Ouvir" não, então ela sai aqui.
+            NotificationManagerCompat.from(this).cancel(ConversionNotificationManager.NOTIF_ID_CONCLUIDA)
             // Só áudio: a activity é exportada e o "Abrir com…" dá leitura do arquivo a outro app.
             val arquivo = com.jonjonesbr.audiobookgen.util.audiobookCompartilhavel(pedido)
             if (arquivo == null) {

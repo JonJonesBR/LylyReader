@@ -138,7 +138,8 @@
     <string name="dialog_paralelismo_experimental_titulo">¿Activar concurrencia experimental?</string>
     <string name="dialog_paralelismo_experimental_mensagem">Esto nunca fue probado en un dispositivo real. Puede hacer que el proceso de síntesis de Supertonic se detenga a mitad de la lectura (la app en sí no se cierra — solo tendrías que reintentar ese fragmento). Actívalo solo si quieres ayudar a probarlo.</string>
     <string name="btn_ativar_mesmo_assim">Activar de todos modos</string>
-    <string name="notif_sintetizando_titulo">Sintetizando voz…</string>
+    <string name="notif_preparando_voz_titulo">Preparando la voz</string>
+    <string name="notif_canal_preparo_voz">Preparación de voz (%1$s)</string>
     <string name="dialog_downloading_title">Descargando</string>
     <string name="toast_download_cancelled">Descarga cancelada.</string>
     <string name="toast_download_voice_first">Seleccione y descargue la voz primero para escuchar la muestra.</string>
@@ -419,10 +420,11 @@
     <string name="status_conversion_canceled">Conversión cancelada.</string>
     <string name="status_conversion_paused">Conversión pausada.</string>
     <string name="notification_conversion_done">Audiobook listo</string>
-    <string name="notification_conversion_done_message">Conversión completada correctamente.</string>
+    <string name="notification_conversion_done_titulo">%1$s está listo</string>
+    <string name="notification_conversion_gerando">Generando %1$s · %2$d%%</string>
+    <string name="notification_conversion_gerando_sem_nome">Generando audiolibro · %1$d%%</string>
     <string name="notification_conversion_paused">Conversión pausada</string>
     <string name="notification_conversion_paused_message">Toca para continuar — %1$s</string>
-    <string name="notification_conversion_progress">Convirtiendo audio</string>
     <string name="notification_conversion_channel">Conversión de audio</string>
     <string name="notification_conversion_channel_description">Progreso de conversión de texto a voz</string>
     <string name="hint_paragrafo_edit">Editar párrafo…</string>

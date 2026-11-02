@@ -14,6 +14,7 @@ import com.jonjonesbr.audiobookgen.domain.MotivoParada
 import com.jonjonesbr.audiobookgen.domain.PoliticaPrimeiroPlano
 import com.jonjonesbr.audiobookgen.domain.RegraDaParada
 import com.jonjonesbr.audiobookgen.domain.RenovacaoDeTrava
+import com.jonjonesbr.audiobookgen.domain.TextosDeNotificacao
 import com.jonjonesbr.audiobookgen.domain.TipoServicoConversao
 import com.jonjonesbr.audiobookgen.util.ConversionWakeLock
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
@@ -109,6 +110,12 @@ class ConversionWorker(
     }
 
     private fun tokenDaExecucao(): String? = inputData.getString(KEY_RUN_TOKEN_ENTRADA) ?: inputData.getString(KEY_RUN_TOKEN)
+
+    /**
+     * Nome legível do audiobook em geração, do [KEY_SAIDA] da entrada: existe desde o primeiro plano e segue igual na
+     * retomada e na fila (cada execução tem a sua entrada). Null se a entrada não tiver saída.
+     */
+    private val nomeDaConversao: String? by lazy { TextosDeNotificacao.nomeDaConversao(inputData.getString(KEY_SAIDA)) }
 
     override suspend fun doWork(): Result {
         ControleDaConversao.limpar()
@@ -210,7 +217,7 @@ class ConversionWorker(
      * as constantes de ServiceInfo só são usadas nos ramos de SDK correspondentes (29+ e 35+).
      */
     private fun infoPrimeiroPlano(notif: ConversionNotificationManager): ForegroundInfo {
-        val notificacao = notif.construir(0, "")
+        val notificacao = notif.construir(0, "", nomeDaConversao)
         return when (PoliticaPrimeiroPlano.tipoDeServico(Build.VERSION.SDK_INT)) {
             TipoServicoConversao.MEDIA_PROCESSING -> ForegroundInfo(
                 ConversionNotificationManager.NOTIF_ID, notificacao,
@@ -260,7 +267,7 @@ class ConversionWorker(
         if (!ehWavArquivo(arquivo)) return false
         if (!temEspacoParaCompressao(arquivo.usableSpace, arquivo.length())) return false
         val mensagem = applicationContext.getString(com.jonjonesbr.audiobookgen.R.string.conv_comprimindo_audio)
-        notif.mostrar(PCT_COMPRIMINDO, mensagem)
+        notif.mostrar(PCT_COMPRIMINDO, mensagem, nomeDaConversao)
         setProgressAsync(workDataOf(
             KEY_PROGRESS_PCT to PCT_COMPRIMINDO,
             KEY_PROGRESS_MSG to mensagem,
@@ -321,7 +328,7 @@ class ConversionWorker(
                 // Pausa pedida antes/durante a extração: o Python zera a flag em _reset_cancelar, então reforça a cada chamada.
                 if (devePausar()) engine.cancelar()
                 if (LimiteDeProgresso.deveAtualizar(ultimaAtualizacaoMs, agora, pct)) {
-                    notif.mostrar(pct, msg)
+                    notif.mostrar(pct, msg, nomeDaConversao)
                     setProgressAsync(workDataOf(
                         KEY_PROGRESS_PCT to pct,
                         KEY_PROGRESS_MSG to msg,
@@ -390,7 +397,7 @@ class ConversionWorker(
                     ?.let { android.net.Uri.parse(it) }
                 val exportacao = com.jonjonesbr.audiobookgen.domain.DocumentExportUseCase(applicationContext)
                     .exportar(File(result.caminho), pastaDestino)
-                notif.mostrarConcluida(result.caminho, File(result.caminho).nameWithoutExtension)
+                notif.mostrarConcluida(result.caminho, TextosDeNotificacao.nomeDaConversao(result.caminho))
                 FilaDeConversao.aoTerminarExecucao(
                     applicationContext, inputData.getString(KEY_FILA_ITEM_ID), runToken, result.caminho, null
                 )

@@ -153,12 +153,16 @@ class PocketSynthService : Service() {
 
     private fun startSynthesisForeground() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "Síntese Pocket TTS", NotificationManager.IMPORTANCE_MIN)
+            NotificationChannel(
+                CHANNEL_ID,
+                getString(com.jonjonesbr.audiobookgen.R.string.notif_canal_preparo_voz, NOME_MOTOR),
+                NotificationManager.IMPORTANCE_MIN
+            )
                 .apply { setShowBadge(false) }
         )
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_media_play)
-            .setContentTitle(getString(com.jonjonesbr.audiobookgen.R.string.notif_sintetizando_titulo))
+            .setSmallIcon(com.jonjonesbr.audiobookgen.R.drawable.ic_stat_lyly)
+            .setContentTitle(getString(com.jonjonesbr.audiobookgen.R.string.notif_preparando_voz_titulo))
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setSilent(true)
             .setOngoing(true)
@@ -173,6 +177,7 @@ class PocketSynthService : Service() {
     private companion object {
         const val TAG = "PocketSynthService"
         const val CHANNEL_ID = "lylyreader_pocket_synth"
+        const val NOME_MOTOR = "Pocket"
         const val NOTIFICATION_ID = 2003
         const val MIN_AUDIO_BYTES = 500L
         const val DEFAULT_LSD_STEPS = 1

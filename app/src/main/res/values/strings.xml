@@ -137,7 +137,8 @@
     <string name="dialog_paralelismo_experimental_titulo">Enable experimental concurrency?</string>
     <string name="dialog_paralelismo_experimental_mensagem">This was never tested on a real device. It may cause the Supertonic synthesis process to crash mid-reading (the app itself won\'t crash — you\'d just need to retry that spot). Only enable it if you want to help test this.</string>
     <string name="btn_ativar_mesmo_assim">Enable anyway</string>
-    <string name="notif_sintetizando_titulo">Synthesizing voice…</string>
+    <string name="notif_preparando_voz_titulo">Preparing the voice</string>
+    <string name="notif_canal_preparo_voz">Voice preparation (%1$s)</string>
     <string name="dialog_downloading_title">Downloading</string>
     <string name="toast_download_cancelled">Download cancelled.</string>
     <string name="toast_download_voice_first">Select and download the voice first to hear the sample.</string>
@@ -412,10 +413,11 @@
     <string name="status_conversion_canceled">Conversion canceled.</string>
     <string name="status_conversion_paused">Conversion paused.</string>
     <string name="notification_conversion_done">Audiobook ready</string>
-    <string name="notification_conversion_done_message">Conversion completed successfully.</string>
+    <string name="notification_conversion_done_titulo">%1$s is ready</string>
+    <string name="notification_conversion_gerando">Generating %1$s · %2$d%%</string>
+    <string name="notification_conversion_gerando_sem_nome">Generating audiobook · %1$d%%</string>
     <string name="notification_conversion_paused">Conversion paused</string>
     <string name="notification_conversion_paused_message">Tap to continue — %1$s</string>
-    <string name="notification_conversion_progress">Converting audio</string>
     <string name="notification_conversion_channel">Audio conversion</string>
     <string name="notification_conversion_channel_description">Text-to-speech conversion progress</string>
     <string name="hint_paragrafo_edit">Edit paragraph…</string>

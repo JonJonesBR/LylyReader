@@ -27,6 +27,11 @@ import androidx.media3.session.MediaStyleNotificationHelper
 class PlayerNotificationManager(
     private val context: Context,
     private val obterEstado: () -> PlayerState,
+    /**
+     * Autor do livro (ou da etiqueta) mostrado abaixo do título; null mantém "Reproduzindo"/"Pausado".
+     * Não acessa o player.
+     */
+    private val obterAutor: () -> String?,
     private val mediaSession: MediaSession,
     private val onStartForeground: (Notification) -> Unit,
 ) {
@@ -86,12 +91,15 @@ class PlayerNotificationManager(
         nm.createNotificationChannel(channel)
     }
 
-    /** Texto da notificação: mensagem de erro de playback (P1) quando houver, senão o estado
-     *  normal ("Reproduzindo"/"Pausado") com o sufixo do sleep timer quando armado. */
+    /**
+     * Texto da notificação: mensagem de erro de playback (P1) quando houver; senão o autor do livro quando conhecido
+     * (o estado já aparece no botão play/pausa); senão "Reproduzindo"/"Pausado". Sufixo do sleep timer quando armado.
+     */
     private fun conteudoDaNotificacao(st: PlayerState): String {
         val erro = st.erroMensagem
         if (erro != null) return erro
-        val baseText = context.getString(if (st.isPlaying) R.string.widget_reproduzindo else R.string.widget_pausado)
+        val baseText = obterAutor()
+            ?: context.getString(if (st.isPlaying) R.string.widget_reproduzindo else R.string.widget_pausado)
         val sonecaMs = SleepTimerManager.remainingMs.value
         return if (sonecaMs != null)
             "$baseText · 😴 ${SleepTimerManager.formatRemaining(sonecaMs)}" else baseText

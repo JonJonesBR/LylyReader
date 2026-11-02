@@ -1097,7 +1097,7 @@ async def _processar_nucleo(
     # Sinal de vida: reenvia o andamento a cada 5 s, para o Tempo/ETA andar mesmo sem bloco novo.
     # Motor local: a 1ª síntese demora (carrega o modelo). Avisa já no início; o batimento segue depois.
     if pending and any(_voz_local(v) for v in set(chunk_voices)):
-        _cb(_pct_sintese(), "Carregando o modelo de voz…")
+        _cb(_pct_sintese(), "Preparando a voz…")
     # Grupos que já estavam completos (retomada) viram lote logo no início, sem esperar bloco novo.
     for g in range(math.ceil(total / _CONCAT_BATCH_SIZE)):
         _disparar_lote_se_pronto(g)

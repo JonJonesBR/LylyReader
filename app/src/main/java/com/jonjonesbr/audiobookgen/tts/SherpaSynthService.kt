@@ -80,8 +80,8 @@ class SherpaSynthService : Service() {
     private fun iniciarForeground() {
         criarCanal()
         val notif = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_media_play)
-            .setContentTitle(getString(com.jonjonesbr.audiobookgen.R.string.notif_sintetizando_titulo))
+            .setSmallIcon(com.jonjonesbr.audiobookgen.R.drawable.ic_stat_lyly)
+            .setContentTitle(getString(com.jonjonesbr.audiobookgen.R.string.notif_preparando_voz_titulo))
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setSilent(true)
             .setOngoing(true)
@@ -100,7 +100,11 @@ class SherpaSynthService : Service() {
     private fun criarCanal() {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "Síntese de voz", NotificationManager.IMPORTANCE_MIN)
+            NotificationChannel(
+                CHANNEL_ID,
+                getString(com.jonjonesbr.audiobookgen.R.string.notif_canal_preparo_voz, NOME_MOTOR),
+                NotificationManager.IMPORTANCE_MIN
+            )
                 .apply { setShowBadge(false) }
         )
     }
@@ -109,6 +113,7 @@ class SherpaSynthService : Service() {
         const val TAG = "SherpaSynthSvc"
         const val TAMANHO_MIN_ARQUIVO_VALIDO = 500
         const val CHANNEL_ID = "lylyreader_sherpa_synth"
+        const val NOME_MOTOR = "Kokoro"
         const val NOTIF_ID = 2001
     }
 }

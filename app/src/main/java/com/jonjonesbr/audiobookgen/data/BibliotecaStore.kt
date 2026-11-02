@@ -181,6 +181,12 @@ object BibliotecaStore {
     /** Título (da biblioteca) do livro dono deste caminho, ou null se o caminho não é de um livro da biblioteca. Leitura rápida de um arquivo pequeno. */
     fun tituloPorCaminho(ctx: Context, caminho: String): String? = porCaminhoSincrono(ctx, caminho)?.titulo
 
+    /**
+     * Autor (da biblioteca) do livro dono deste caminho, ou null se não houver.
+     * Leitura rápida de um arquivo pequeno.
+     */
+    fun autorPorCaminho(ctx: Context, caminho: String): String? = porCaminhoSincrono(ctx, caminho)?.autor
+
     /** O livro dono deste caminho (`.../livros/<id>/<arquivo>`), ou null se o caminho não é da biblioteca. */
     suspend fun porCaminho(ctx: Context, caminho: String): LivroBiblioteca? = withContext(Dispatchers.IO) {
         porCaminhoSincrono(ctx, caminho)

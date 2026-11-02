@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.service
 
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.domain.TextosDeNotificacao
 import com.jonjonesbr.audiobookgen.ui.MainActivity
 import android.app.Notification
 import android.app.NotificationChannel
@@ -9,6 +10,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
+import java.io.File
 
 class ConversionNotificationManager(private val context: Context) {
 
@@ -34,19 +36,26 @@ class ConversionNotificationManager(private val context: Context) {
 
     init { criarCanal() }
 
-    fun mostrar(progresso: Int, mensagem: String) {
-        nm.notify(NOTIF_ID, construir(progresso, mensagem))
+    fun mostrar(progresso: Int, mensagem: String, nome: String?) {
+        nm.notify(NOTIF_ID, construir(progresso, mensagem, nome))
     }
 
-    /** Notificação de andamento da conversão (também usada como primeiro plano do WorkManager). */
-    fun construir(progresso: Int, mensagem: String): Notification {
+    /**
+     * Notificação de andamento da conversão (também usada como primeiro plano do WorkManager). O título diz o livro e
+     * o percentual ("Gerando <livro> · 18%"); a etapa atual vai na segunda linha. [nome] null = título sem livro.
+     */
+    fun construir(progresso: Int, mensagem: String, nome: String?): Notification {
+        val pct = TextosDeNotificacao.pctNoTitulo(progresso)
+        val titulo = nome?.let { context.getString(R.string.notification_conversion_gerando, it, pct) }
+            ?: context.getString(R.string.notification_conversion_gerando_sem_nome, pct)
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setContentTitle(context.getString(R.string.notification_conversion_progress))
-            .setContentText(mensagem)
+            .setContentTitle(titulo)
+            .setContentText(mensagem.takeIf { it.isNotBlank() })
             .setProgress(PROGRESSO_MAX, progresso, progresso == 0)
             .setOngoing(true)
             .setSilent(true)
+            .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentIntent(intentParaConversoes())
             .addAction(
@@ -114,28 +123,37 @@ class ConversionNotificationManager(private val context: Context) {
         )
     }
 
-    /** [caminho]/[nome] do audiobook recém-gerado — tocar na notificação abre a decisão de
-     * player (app ou "Abrir com...", ver [MainActivity.EXTRA_ABRIR_AUDIOBOOK_CAMINHO]). */
-    fun mostrarConcluida(caminho: String, nome: String) {
+    /**
+     * [caminho]/[nome] do audiobook recém-gerado. O título diz o livro ("<livro> está pronto"). Tocar na notificação
+     * ou em "Ouvir" usa o mesmo PendingIntent: abre a decisão de player (app ou "Abrir com...", ver
+     * [MainActivity.EXTRA_ABRIR_AUDIOBOOK_CAMINHO]). Toque ou ação partem do usuário, então a Activity pode abrir.
+     */
+    fun mostrarConcluida(caminho: String, nome: String?) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(MainActivity.EXTRA_ABRIR_AUDIOBOOK_CAMINHO, caminho)
-            putExtra(MainActivity.EXTRA_ABRIR_AUDIOBOOK_NOME, nome)
+            putExtra(MainActivity.EXTRA_ABRIR_AUDIOBOOK_NOME, nome ?: File(caminho).nameWithoutExtension)
         }
         val pendingIntent = PendingIntent.getActivity(
             context, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val titulo = nome?.let { context.getString(R.string.notification_conversion_done_titulo, it) }
+            ?: context.getString(R.string.notification_conversion_done)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_check)
-            .setContentTitle(context.getString(R.string.notification_conversion_done))
-            .setContentText(context.getString(R.string.notification_conversion_done_message))
+            .setContentTitle(titulo)
             .setProgress(0, 0, false)
             .setOngoing(false)
             .setAutoCancel(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentIntent(pendingIntent)
+            .addAction(
+                android.R.drawable.ic_media_play,
+                context.getString(R.string.audiobook_pronto_acao),
+                pendingIntent
+            )
             .build()
         nm.notify(NOTIF_ID_CONCLUIDA, notification)
     }
