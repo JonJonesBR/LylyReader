@@ -265,7 +265,6 @@
     <string name="btn_player_conversao_sistema">Other app</string>
     <string name="label_estatisticas">STATISTICS</string>
     <string name="desc_estatisticas_privacidade">100% local and private — nothing here is ever sent to any server.</string>
-    <string name="btn_ver_estatisticas">View statistics</string>
     <string name="stats_minutos_ouvidos">Minutes listened</string>
     <string name="stats_minutos_lidos">Minutes read</string>
     <string name="stats_livros_concluidos">Books finished</string>
@@ -324,7 +323,7 @@
 
     <!-- Audiobook Item -->
     <string name="btn_ouvir">▶ Play</string>
-    <string name="btn_compartilhar">↗ Share</string>
+    <string name="btn_compartilhar">Share</string>
     <string name="btn_deletar"> Delete</string>
 
     <!-- Appearance Bottom Sheet -->
@@ -715,8 +714,6 @@
         <item quantity="one">%1$d audiobook imported</item>
         <item quantity="other">%1$d audiobooks imported</item>
     </plurals>
-    <string name="stats_dialog_title">Library Statistics</string>
-    <string name="stats_dialog_message">Total audiobooks: %1$d\nTotal listening time: %2$s\nCompleted: %3$d\nIn progress: %4$d</string>
     <string name="stats_tempo_horas_minutos">%1$dh %2$dmin</string>
     <string name="stats_tempo_minutos">%1$dmin</string>
     <string name="stats_tempo_segundos">%1$ds</string>
@@ -1485,9 +1482,17 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <!-- Aba Audiobooks -->
     <string name="lib_ordem_recentes">Newest</string>
     <string name="lib_ordem_nome">Name (A–Z)</string>
-    <string name="lib_ordenar_rotulo">Sort: %1$s</string>
     <string name="lib_vazio_escolher_livro">Choose a book</string>
     <string name="lib_importar_audio">Import an audio file I already have</string>
+    <string name="lib_importar_audio_curto">Import audio</string>
+    <plurals name="lib_resumo_qtd">
+        <item quantity="one">%1$d audiobook</item>
+        <item quantity="other">%1$d audiobooks</item>
+    </plurals>
+    <plurals name="lib_resumo_ouvidos">
+        <item quantity="one">%1$d finished</item>
+        <item quantity="other">%1$d finished</item>
+    </plurals>
     <!-- Leitor › Aparência › Alinhamento -->
     <string name="label_alinhamento">Text alignment</string>
     <string name="alinhamento_justificado">Justified</string>

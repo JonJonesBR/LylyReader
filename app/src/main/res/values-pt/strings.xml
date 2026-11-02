@@ -267,7 +267,6 @@
     <string name="btn_player_conversao_sistema">Outro app</string>
     <string name="label_estatisticas">ESTATÍSTICAS</string>
     <string name="desc_estatisticas_privacidade">100% local e privado — nada aqui é enviado para servidor algum.</string>
-    <string name="btn_ver_estatisticas">Ver estatísticas</string>
     <string name="stats_minutos_ouvidos">Minutos ouvidos</string>
     <string name="stats_minutos_lidos">Minutos lidos</string>
     <string name="stats_livros_concluidos">Livros concluídos</string>
@@ -327,7 +326,7 @@
 
     <!-- Audiobook Item -->
     <string name="btn_ouvir">▶ Ouvir</string>
-    <string name="btn_compartilhar">↗ Compartilhar</string>
+    <string name="btn_compartilhar">Compartilhar</string>
     <string name="btn_deletar">Apagar</string>
 
     <!-- Appearance Bottom Sheet -->
@@ -704,8 +703,6 @@
         <item quantity="other">%1$d audiobooks importados</item>
         <item quantity="many">%1$d audiobooks importados</item>
     </plurals>
-    <string name="stats_dialog_title">Estatísticas da Biblioteca</string>
-    <string name="stats_dialog_message">Total de audiobooks: %1$d\nTempo total de áudio: %2$s\nConcluídos: %3$d\nEm andamento: %4$d</string>
     <string name="stats_tempo_horas_minutos">%1$d h %2$d min</string>
     <string name="stats_tempo_minutos">%1$d min</string>
     <string name="stats_tempo_segundos">%1$d s</string>
@@ -1486,9 +1483,17 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <!-- Aba Audiobooks -->
     <string name="lib_ordem_recentes">Mais recentes</string>
     <string name="lib_ordem_nome">Nome (A–Z)</string>
-    <string name="lib_ordenar_rotulo">Ordenar: %1$s</string>
     <string name="lib_vazio_escolher_livro">Escolher um livro</string>
     <string name="lib_importar_audio">Importar um áudio que já tenho</string>
+    <string name="lib_importar_audio_curto">Importar áudio</string>
+    <plurals name="lib_resumo_qtd">
+        <item quantity="one">%1$d audiobook</item>
+        <item quantity="other">%1$d audiobooks</item>
+    </plurals>
+    <plurals name="lib_resumo_ouvidos">
+        <item quantity="one">%1$d ouvido até o fim</item>
+        <item quantity="other">%1$d ouvidos até o fim</item>
+    </plurals>
     <!-- Leitor › Aparência › Alinhamento -->
     <string name="label_alinhamento">Alinhamento do texto</string>
     <string name="alinhamento_justificado">Justificado</string>

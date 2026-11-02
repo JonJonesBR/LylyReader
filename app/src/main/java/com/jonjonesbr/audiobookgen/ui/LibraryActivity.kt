@@ -12,6 +12,7 @@ import com.jonjonesbr.audiobookgen.domain.DURACAO_MAX_PARTE_PADRAO_MIN
 import com.jonjonesbr.audiobookgen.domain.ModoDivisao
 import com.jonjonesbr.audiobookgen.domain.OpcoesVideo
 import com.jonjonesbr.audiobookgen.domain.ResolucaoVideo
+import com.jonjonesbr.audiobookgen.domain.ResumoBibliotecaRegras
 import com.jonjonesbr.audiobookgen.util.dpToPx
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.mostrarErro
@@ -40,6 +41,7 @@ import androidx.core.content.ContextCompat
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.text.InputType
 import android.widget.ArrayAdapter
 import android.widget.ImageButton
@@ -60,6 +62,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
@@ -93,15 +96,20 @@ class LibraryActivity : BasePlayerActivity() {
         private const val SORT_MODE_NAME = 1
         private const val SORT_MODE_PROGRESS = 2
         private const val MENU_IMPORTAR = 1
-        private const val MENU_ESTATISTICAS = 2
+        private const val MENU_CONVERSOES = 2
     }
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var layoutVazio: LinearLayout
-    private lateinit var tvOrdenar: TextView
+    private lateinit var tvTitulo: TextView
+    private lateinit var etBusca: EditText
+    private lateinit var btnBuscar: ImageButton
+    private lateinit var btnOrdenar: ImageButton
+    private lateinit var tvResumo: TextView
     private var progressBarLibrary: ProgressBar? = null
 
     private var sortMode = SORT_MODE_DATE
+    private var buscando = false
     private var filtroBusca = ""
     private val audiobooks = mutableListOf<AudiobookItem>()
     private lateinit var adapter: AudiobookAdapter
@@ -148,14 +156,23 @@ class LibraryActivity : BasePlayerActivity() {
         layoutVazio = findViewById(R.id.layoutVazio)
         recyclerView.limitarLarguraEmTelaAmpla(840)
         layoutVazio.limitarLarguraEmTelaAmpla(840)
-        findViewById<View>(R.id.etBuscaLibrary).limitarLarguraEmTelaAmpla(840)
-        tvOrdenar = findViewById(R.id.tvOrdenar)
+        tvResumo = findViewById(R.id.tvResumoLibrary)
+        tvResumo.limitarLarguraEmTelaAmpla(840)
+        tvTitulo = findViewById(R.id.tvTituloLibrary)
+        etBusca = findViewById(R.id.etBuscaLibrary)
+        // Sem salvar o estado: se a Activity for recriada (girar a tela), o campo volta fechado e vazio,
+        // em vez de restaurar o texto e filtrar a lista sem nenhum campo visível.
+        etBusca.isSaveEnabled = false
+        btnBuscar = findViewById(R.id.btnBuscarLibrary)
+        btnOrdenar = findViewById(R.id.btnOrdenarLibrary)
         progressBarLibrary = findViewById<ProgressBar?>(R.id.progressBarLibrary)
 
         findViewById<ImageButton>(R.id.btnVoltarLibrary).setOnClickListener { finish() }
         CartaoGerandoAgora.vincular(this)
         findViewById<ImageButton>(R.id.btnAjudaLibrary)
             .setOnClickListener { HelpActivity.start(this, HelpTopico.BIBLIOTECA) }
+        btnBuscar.setOnClickListener { alternarBusca() }
+        btnOrdenar.setOnClickListener { escolherOrdem() }
         findViewById<ImageButton>(R.id.btnMaisLibrary).setOnClickListener { mostrarMenuMais(it) }
         findViewById<Button>(R.id.btnImportarVazio).setOnClickListener { importarAudio.launch(arrayOf("audio/*")) }
         // Audiobook nasce de um livro: o vazio leva à Biblioteca, onde se escolhe o livro e se gera.
@@ -171,9 +188,6 @@ class LibraryActivity : BasePlayerActivity() {
             solicitarPermissaoMidia.launch(permissaoMidia)
         }
 
-        atualizarRotuloOrdem()
-        tvOrdenar.setOnClickListener { escolherOrdem() }
-
         adapter = AudiobookAdapter(
             onOuvir = { item -> abrirNoPlayer(item) },
             onCompartilhar = { item -> compartilhar(item) },
@@ -186,10 +200,18 @@ class LibraryActivity : BasePlayerActivity() {
 
         configurarCapas()
 
-        findViewById<EditText>(R.id.etBuscaLibrary).addTextChangedListener { texto ->
+        etBusca.addTextChangedListener { texto ->
             filtroBusca = texto?.toString()?.trim().orEmpty()
             aplicarOrdenacao()
         }
+
+        onBackPressedDispatcher.addCallback(this, voltarFechaBusca)
+    }
+
+    // Voltar com a busca aberta só fecha a busca; ligado só enquanto ela está aberta (alternarBusca),
+    // sem ele o Voltar segue o caminho normal da aba raiz.
+    private val voltarFechaBusca = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = alternarBusca()
     }
 
     /** Botão do item que está tocando vira pausar, e a porcentagem ouvida acompanha o player. */
@@ -232,36 +254,50 @@ class LibraryActivity : BasePlayerActivity() {
         R.string.lib_ordem_recentes, R.string.lib_ordem_nome, R.string.ordenar_nao_concluidos_primeiro
     )
 
-    private fun atualizarRotuloOrdem() {
-        tvOrdenar.text = getString(R.string.lib_ordenar_rotulo, getString(nomesDasOrdens[sortMode]))
-    }
-
-    /** "Ordenar: …" abre as três ordens de uma vez (antes um ícone trocava em ciclo, sem mostrar as opções). */
+    /** Ícone de ordenar: mostra as três ordens de uma vez, com a atual marcada. */
     private fun escolherOrdem() {
         AlertDialog.Builder(this)
             .setTitle(R.string.bib_ordenar)
             .setSingleChoiceItems(nomesDasOrdens.map { getString(it) }.toTypedArray(), sortMode) { dialogo, qual ->
                 sortMode = qual
-                atualizarRotuloOrdem()
                 aplicarOrdenacao()
                 dialogo.dismiss()
             }
             .exibir()
     }
 
-    /** ⋮: importar um arquivo de áudio que já está no aparelho e as estatísticas da biblioteca. */
+    /**
+     * ⋮: importar um arquivo de áudio que já está no aparelho e abrir as conversões (fila).
+     * Sem nenhum audiobook, a importação já está na tela vazia, então o menu leva só às conversões.
+     */
     private fun mostrarMenuMais(ancora: View) {
         android.widget.PopupMenu(this, ancora).apply {
-            menu.add(0, MENU_IMPORTAR, 0, R.string.lib_importar_audio)
-            menu.add(0, MENU_ESTATISTICAS, 1, R.string.btn_ver_estatisticas)
+            if (audiobooks.isNotEmpty()) menu.add(0, MENU_IMPORTAR, 0, R.string.lib_importar_audio_curto)
+            menu.add(0, MENU_CONVERSOES, 1, R.string.bib_menu_conversoes)
             setOnMenuItemClickListener {
                 when (it.itemId) {
                     MENU_IMPORTAR -> importarAudio.launch(arrayOf("audio/*"))
-                    MENU_ESTATISTICAS -> mostrarEstatisticas()
+                    MENU_CONVERSOES -> startActivity(Intent(this@LibraryActivity, ConversoesActivity::class.java))
                 }
                 true
             }
         }.show()
+    }
+
+    /** Lupa: abre o campo de busca no lugar do título, com o teclado (como na Biblioteca). */
+    private fun alternarBusca() {
+        buscando = !buscando
+        voltarFechaBusca.isEnabled = buscando
+        tvTitulo.visibility = if (buscando) View.GONE else View.VISIBLE
+        etBusca.visibility = if (buscando) View.VISIBLE else View.GONE
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        if (buscando) {
+            etBusca.requestFocus()
+            imm.showSoftInput(etBusca, InputMethodManager.SHOW_IMPLICIT)
+        } else {
+            etBusca.setText("") // o TextWatcher limpa o filtro e refaz a lista
+            imm.hideSoftInputFromWindow(etBusca.windowToken, 0)
+        }
     }
 
     private fun configurarCapas() {
@@ -353,6 +389,15 @@ class LibraryActivity : BasePlayerActivity() {
     }
 
     private fun aplicarOrdenacao() {
+        // Sem audiobook nenhum, a busca se fecha e busca/ordenar somem: ficam só o aviso e as ações.
+        val semNenhum = audiobooks.isEmpty()
+        if (semNenhum && buscando) alternarBusca()
+        val visivelComAudiobooks = if (semNenhum) View.GONE else View.VISIBLE
+        btnBuscar.visibility = visivelComAudiobooks
+        btnOrdenar.visibility = visivelComAudiobooks
+        tvResumo.visibility = visivelComAudiobooks
+        if (!semNenhum) atualizarResumo()
+
         val filtrado = if (filtroBusca.isBlank()) audiobooks
             else audiobooks.filter { it.nome.contains(filtroBusca, ignoreCase = true) }
         val ordenado = when (sortMode) {
@@ -367,13 +412,26 @@ class LibraryActivity : BasePlayerActivity() {
         adapter.submitList(ordenado.toList())
 
         val vazio = ordenado.isEmpty()
-        // Sem nenhum audiobook, buscar e ordenar não servem para nada: ficam só o aviso e as ações.
-        val semNenhum = audiobooks.isEmpty()
-        findViewById<View>(R.id.etBuscaLibrary).visibility = if (semNenhum) View.GONE else View.VISIBLE
-        tvOrdenar.visibility = if (semNenhum) View.GONE else View.VISIBLE
         layoutVazio.visibility    = if (vazio) View.VISIBLE else View.GONE
         recyclerView.visibility   = if (vazio) View.GONE    else View.VISIBLE
         if (vazio) mostrarVazio(semNenhum)
+    }
+
+    /** Resumo da biblioteca inteira (não muda com a busca): "12 audiobooks · 48h 0min · 3 ouvidos até o fim". */
+    private fun atualizarResumo() {
+        val resumo = ResumoBibliotecaRegras.calcular(
+            audiobooks, { it.duracaoMs }, { it.progressoPct }, COMPLETED_THRESHOLD
+        )
+        val partes = mutableListOf(
+            resources.getQuantityString(R.plurals.lib_resumo_qtd, resumo.total, resumo.total),
+            formatarDuracao(resumo.duracaoMs)
+        )
+        if (resumo.mostrarConcluidos) {
+            partes += resources.getQuantityString(
+                R.plurals.lib_resumo_ouvidos, resumo.concluidos, resumo.concluidos
+            )
+        }
+        tvResumo.text = partes.joinToString(" · ")
     }
 
     /** Aviso do vazio: sem permissão de mídia, sem nenhum audiobook (com as ações) ou busca sem resultado. */
@@ -670,29 +728,6 @@ class LibraryActivity : BasePlayerActivity() {
         val bm = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
         val nivel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         return nivel in 1..BATERIA_BAIXA_PCT && !bm.isCharging
-    }
-
-    private fun mostrarEstatisticas() {
-        val total = audiobooks.size
-        val duracaoTotalMs = audiobooks.sumOf { it.duracaoMs }
-        val concluidos = audiobooks.count { it.progressoPct >= COMPLETED_THRESHOLD }
-        val emAndamento = audiobooks.count {
-            it.progressoPct in 1 until COMPLETED_THRESHOLD
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(R.string.stats_dialog_title)
-            .setMessage(
-                getString(
-                    R.string.stats_dialog_message,
-                    total,
-                    formatarDuracao(duracaoTotalMs),
-                    concluidos,
-                    emAndamento
-                )
-            )
-            .setPositiveButton(R.string.dialog_ok, null)
-            .exibir()
     }
 
     private fun formatarDuracao(ms: Long): String {
