@@ -83,6 +83,22 @@
         <item name="android:textColor">?attr/colorPrimary</item>
     </style>
 
+    <!-- Etiqueta "Experimental" ao lado do título de uma opção da página de ajustes avançados. -->
+    <style name="AjusteEtiqueta">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:paddingStart">6dp</item>
+        <item name="android:paddingEnd">6dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+        <item name="android:background">@drawable/fundo_etiqueta_experimental</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
     <style name="AjusteSeta">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>

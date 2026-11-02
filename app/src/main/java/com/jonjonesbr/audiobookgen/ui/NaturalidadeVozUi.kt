@@ -2,17 +2,17 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.content.Context
 import android.widget.CompoundButton
-import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.chip.ChipGroup
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import java.util.Locale
+import kotlin.math.abs
 
 /**
  * Ajustes › Som › "Naturalidade da voz (experimental)" (quatro interruptores) e, em Ajustes avançados, a
- * expressividade do Pocket TTS: deslizante de mínimo a máximo, com atalhos (Padrão, Moderada, Expressiva, Máxima).
+ * expressividade do Pocket TTS: quatro atalhos (Padrão, Moderada, Expressiva, Máxima) e o valor salvo ao lado.
  */
 class NaturalidadeVozUi(private val activity: AppCompatActivity) {
 
@@ -21,7 +21,6 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
     private val swAcabamento: CompoundButton = activity.findViewById(R.id.swAcabamentoAudio)
     private val swDialogos: CompoundButton = activity.findViewById(R.id.swDialogosVivos)
     private val swFolga: CompoundButton = activity.findViewById(R.id.swFolgaFrasesCurtas)
-    private val seekExpr: SeekBar = activity.findViewById(R.id.seekPocketExpressividade)
     private val tvExpr: TextView = activity.findViewById(R.id.tvPocketExpressividadeValor)
     private val chipsExpr: ChipGroup = activity.findViewById(R.id.chipsPocketExpressividade)
     private var carregando = false
@@ -36,21 +35,11 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
         swDialogos.setOnCheckedChangeListener { _, v -> prefs.dialogosVivos = v }
         swFolga.setOnCheckedChangeListener { _, v -> prefs.folgaFrasesCurtas = v }
 
-        seekExpr.max = AppPrefs.POCKET_EXPRESSIVIDADE_MAX - AppPrefs.POCKET_EXPRESSIVIDADE_MIN
-        seekExpr.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
-                mostrarExpressividade(progress + AppPrefs.POCKET_EXPRESSIVIDADE_MIN)
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) = Unit
-            override fun onStopTrackingTouch(sb: SeekBar?) {
-                prefs.pocketExpressividade = seekExpr.progress + AppPrefs.POCKET_EXPRESSIVIDADE_MIN
-            }
-        })
         chipsExpr.setOnCheckedStateChangeListener { _, ids ->
             val valor = PRESETS.entries.firstOrNull { it.key == ids.firstOrNull() }?.value
             if (!carregando && valor != null) {
                 prefs.pocketExpressividade = valor
-                seekExpr.progress = valor - AppPrefs.POCKET_EXPRESSIVIDADE_MIN
+                mostrarExpressividade(valor)
             }
         }
         carregar()
@@ -63,17 +52,18 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
         swAcabamento.isChecked = prefs.acabamentoAudio
         swDialogos.isChecked = prefs.dialogosVivos
         swFolga.isChecked = prefs.folgaFrasesCurtas
-        seekExpr.progress = prefs.pocketExpressividade - AppPrefs.POCKET_EXPRESSIVIDADE_MIN
         mostrarExpressividade(prefs.pocketExpressividade)
         carregando = false
     }
 
     private fun mostrarExpressividade(decimos: Int) {
         tvExpr.text = rotuloExpressividade(activity, decimos)
-        val chip = PRESETS.entries.firstOrNull { it.value == decimos }?.key
+        // Um valor sem atalho próprio (o deslizante antigo deixava 2, 4, 5...) marca o atalho mais próximo.
+        val atalho = atalhoExpressividadeMaisProximo(decimos, PRESETS.values)
+        val chip = PRESETS.entries.first { it.value == atalho }.key
         val antes = carregando
         carregando = true
-        if (chip != null) chipsExpr.check(chip) else chipsExpr.clearCheck()
+        chipsExpr.check(chip)
         carregando = antes
     }
 
@@ -106,3 +96,10 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
         }
     }
 }
+
+/**
+ * Atalho de expressividade mais perto do valor salvo (em décimos). No empate, vale o primeiro da lista,
+ * que é o menor: 5 marca Moderada (3), não Expressiva (7). Função pura, para o teste.
+ */
+internal fun atalhoExpressividadeMaisProximo(decimos: Int, atalhos: Collection<Int>): Int =
+    atalhos.minBy { abs(it - decimos) }

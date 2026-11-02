@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fundo da etiqueta "Experimental" ao lado do título de uma opção (AjusteEtiqueta em estilos.xml). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="8dp"/>
+    <solid android:color="@color/color_primary_surface"/>
+</shape>

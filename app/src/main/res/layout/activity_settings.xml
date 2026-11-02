@@ -1494,7 +1494,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
-
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -1504,42 +1503,16 @@
                 android:text="@string/aj_avancado_intro"
                 android:textColor="@color/color_on_surface_dim"
                 android:textSize="13sp"/>
-            <!-- â”€â”€ PAUSA ENTRE BLOCOS / VOZES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_pausa_blocos"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-                <ImageButton
-                    android:id="@+id/btnAjudaPausa"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:padding="10dp"
-                    android:background="@android:color/transparent"
-                    android:src="@drawable/ic_ajuda"
-                    app:tint="@color/color_on_surface_dim"
-                    android:contentDescription="@string/cd_ajuda_pausa"/>
-            </LinearLayout>
 
+            <!-- ── Geral: vale para qualquer voz ── -->
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_grupo_geral"/>
+
+            <!-- Pausa entre blocos: os cinco rótulos cabem numa linha (o texto encolhe se precisar). -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardVozes"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                android:layout_marginBottom="14dp">
+                style="@style/AjusteCartao"
+                android:layout_marginBottom="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1547,13 +1520,33 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/desc_pausa_blocos"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            style="@style/AjusteTitulo"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="@string/settings_help_pause_title"/>
+
+                        <ImageButton
+                            android:id="@+id/btnAjudaPausa"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:padding="10dp"
+                            android:background="@android:color/transparent"
+                            android:src="@drawable/ic_ajuda"
+                            app:tint="@color/color_on_surface_dim"
+                            android:contentDescription="@string/cd_ajuda_pausa"/>
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/AjusteSub"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/desc_pausa_blocos"/>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -1565,8 +1558,16 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="0ms"
+                            android:minHeight="48dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp"
+                            android:singleLine="true"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="9sp"
+                            android:autoSizeMaxTextSize="12sp"
+                            android:autoSizeStepGranularity="1sp"
+                            android:text="@string/aj_pausa_0"
                             android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
@@ -1577,8 +1578,16 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="300ms"
+                            android:minHeight="48dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp"
+                            android:singleLine="true"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="9sp"
+                            android:autoSizeMaxTextSize="12sp"
+                            android:autoSizeStepGranularity="1sp"
+                            android:text="@string/aj_pausa_300"
                             android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
@@ -1589,8 +1598,16 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="600ms"
+                            android:minHeight="48dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp"
+                            android:singleLine="true"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="9sp"
+                            android:autoSizeMaxTextSize="12sp"
+                            android:autoSizeStepGranularity="1sp"
+                            android:text="@string/aj_pausa_600"
                             android:textSize="12sp"
                             android:textColor="?attr/colorPrimary"
                             android:backgroundTint="@color/color_primary_surface"
@@ -1601,8 +1618,16 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="900ms"
+                            android:minHeight="48dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp"
+                            android:singleLine="true"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="9sp"
+                            android:autoSizeMaxTextSize="12sp"
+                            android:autoSizeStepGranularity="1sp"
+                            android:text="@string/aj_pausa_900"
                             android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"
@@ -1613,8 +1638,16 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="1.5s"
+                            android:minHeight="48dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp"
+                            android:singleLine="true"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="9sp"
+                            android:autoSizeMaxTextSize="12sp"
+                            android:autoSizeStepGranularity="1sp"
+                            android:text="@string/aj_pausa_1500"
                             android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"/>
@@ -1624,33 +1657,9 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-
-            <!-- ── PASSOS DO SUPERTONIC ─────────────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/settings_supertonic_passos_titulo"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
-
+            <!-- Pré-carregamento: quanto texto fica pronto à frente (a folga de Kokoro e Supertonic usa o mesmo número). -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardSupertonicSteps"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
+                style="@style/AjusteCartao"
                 android:layout_marginBottom="14dp">
 
                 <LinearLayout
@@ -1660,12 +1669,66 @@
                     android:padding="16dp">
 
                     <TextView
+                        style="@style/AjusteTitulo"
+                        android:text="@string/settings_buffering_title"/>
+
+                    <TextView
+                        style="@style/AjusteSub"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/settings_buffer_paragrafos_desc"/>
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/settings_supertonic_passos_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <SeekBar
+                            android:id="@+id/seekBufferParagrafos"
+                            android:contentDescription="@string/cd_seek_buffer_paragrafos"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:max="8"/>
+
+                        <TextView
+                            android:id="@+id/tvBufferParagrafosValor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="96dp"
+                            android:gravity="end"
+                            tools:text="Automático"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorPrimary"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── Supertonic ── -->
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_grupo_supertonic"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        style="@style/AjusteTitulo"
+                        android:text="@string/aj_passos_titulo"/>
+
+                    <TextView
+                        style="@style/AjusteSub"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/settings_supertonic_passos_desc"/>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -1696,25 +1759,8 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ── PASSOS DO POCKET TTS (experimental) ─────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_pocket_steps_title"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPocketPassos"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
+                style="@style/AjusteCartao"
                 android:layout_marginBottom="14dp">
 
                 <LinearLayout
@@ -1723,13 +1769,97 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/settings_pocket_steps_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            style="@style/AjusteTitulo"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="@string/aj_trechos_titulo"/>
+
+                        <TextView
+                            style="@style/AjusteEtiqueta"
+                            android:text="@string/aj_experimental"/>
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/AjusteSub"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/settings_paralelismo_supertonic_desc"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnParalelismoSupertonicoPadrao"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/btn_paralelismo_supertonico_padrao"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:backgroundTint="@color/color_primary_surface"
+                            android:layout_marginEnd="4dp"/>
+
+                        <Button
+                            android:id="@+id/btnParalelismoSupertonicoExperimental"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/btn_paralelismo_supertonico_experimental"
+                            android:textSize="12sp"
+                            android:textColor="@color/color_on_surface_muted"
+                            android:backgroundTint="@color/color_surface_variant"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── Pocket TTS ── -->
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_grupo_pocket"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            style="@style/AjusteTitulo"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="@string/aj_passos_titulo"/>
+
+                        <TextView
+                            style="@style/AjusteEtiqueta"
+                            android:text="@string/aj_experimental"/>
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/AjusteSub"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/aj_pocket_passos_desc"/>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -1762,7 +1892,7 @@
 
             <com.google.android.material.card.MaterialCardView
                 style="@style/AjusteCartao"
-                android:layout_marginBottom="14dp">
+                android:layout_marginBottom="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1778,9 +1908,22 @@
                             android:layout_weight="1"
                             android:orientation="vertical">
 
-                            <TextView
-                                style="@style/AjusteTitulo"
-                                android:text="@string/settings_pocket_mais_rapido"/>
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    style="@style/AjusteTitulo"
+                                    android:layout_width="0dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/settings_pocket_mais_rapido"/>
+
+                                <TextView
+                                    style="@style/AjusteEtiqueta"
+                                    android:text="@string/aj_experimental"/>
+                            </LinearLayout>
 
                             <TextView
                                 style="@style/AjusteSub"
@@ -1797,25 +1940,8 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ── EXPRESSIVIDADE DO POCKET TTS ───────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/pocket_expr_titulo"
-                android:textSize="12sp"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="6dp"/>
-
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPocketExpressividade"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
+                style="@style/AjusteCartao"
                 android:layout_marginBottom="14dp">
 
                 <LinearLayout
@@ -1824,19 +1950,35 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/pocket_expr_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="8dp"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            style="@style/AjusteTitulo"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="@string/aj_pocket_expr_titulo"/>
+
+                        <TextView
+                            android:id="@+id/tvPocketExpressividadeValor"
+                            style="@style/AjusteValor"
+                            tools:text="0,1 · Padrão"/>
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/AjusteSub"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/aj_pocket_expr_desc"/>
 
                     <com.google.android.material.chip.ChipGroup
                         android:id="@+id/chipsPocketExpressividade"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:singleSelection="true">
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipExprPadrao"
@@ -1867,60 +2009,16 @@
                             android:text="@string/pocket_expr_maxima"/>
                     </com.google.android.material.chip.ChipGroup>
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <SeekBar
-                            android:id="@+id/seekPocketExpressividade"
-                            android:contentDescription="@string/pocket_expr_titulo"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="48dp"
-                            android:max="9"/>
-
-                        <TextView
-                            android:id="@+id/tvPocketExpressividadeValor"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="64dp"
-                            android:gravity="end"
-                            tools:text="0,3 · Padrão"
-                            android:textSize="13sp"
-                            android:textColor="?attr/colorPrimary"/>
-                    </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ── BUFFERING DA LEITURA GUIADA ──────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/settings_buffering_title"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.15"/>
-            </LinearLayout>
+            <!-- ── Kokoro ── -->
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_grupo_kokoro"/>
 
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardBuffering"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
+                style="@style/AjusteCartao"
                 android:layout_marginBottom="14dp">
 
                 <LinearLayout
@@ -1930,66 +2028,25 @@
                     android:padding="16dp">
 
                     <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_buffer_paragrafos_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="14dp">
-
-                        <SeekBar
-                            android:id="@+id/seekBufferParagrafos"
-                            android:contentDescription="@string/cd_seek_buffer_paragrafos"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:max="8"/>
-
-                        <TextView
-                            android:id="@+id/tvBufferParagrafosValor"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="96dp"
-                            android:gravity="end"
-                            tools:text="Automático"
-                            android:textSize="13sp"
-                            android:textColor="?attr/colorPrimary"/>
-
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/color_divider"
-                        android:layout_marginBottom="14dp"/>
+                        style="@style/AjusteTitulo"
+                        android:text="@string/aj_kokoro_vozes_titulo"/>
 
                     <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_paralelismo_kokoro_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
+                        style="@style/AjusteSub"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/settings_paralelismo_kokoro_desc"/>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="14dp">
+                        android:orientation="horizontal">
 
                         <Button
                             android:id="@+id/btnParalelismoPadrao"
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+                            android:minHeight="48dp"
                             android:text="@string/btn_paralelismo_padrao"
                             android:textSize="12sp"
                             android:textColor="?attr/colorPrimary"
@@ -2001,67 +2058,13 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-        android:minHeight="48dp"
+                            android:minHeight="48dp"
                             android:text="@string/btn_paralelismo_reduzido"
                             android:textSize="12sp"
                             android:textColor="@color/color_on_surface_muted"
                             android:backgroundTint="@color/color_surface_variant"/>
 
                     </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/color_divider"
-                        android:layout_marginBottom="14dp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_paralelismo_supertonic_desc"
-                        android:textColor="@color/color_on_surface_dim"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="12dp"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="14dp">
-
-                        <Button
-                            android:id="@+id/btnParalelismoSupertonicoPadrao"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_paralelismo_supertonico_padrao"
-                            android:textSize="12sp"
-                            android:textColor="?attr/colorPrimary"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnParalelismoSupertonicoExperimental"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-        android:minHeight="48dp"
-                            android:text="@string/btn_paralelismo_supertonico_experimental"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"/>
-
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnResetarBuffering"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/btn_resetar_buffering"
-                        android:textSize="12sp"
-                        android:textColor="@color/color_on_surface_dim"/>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

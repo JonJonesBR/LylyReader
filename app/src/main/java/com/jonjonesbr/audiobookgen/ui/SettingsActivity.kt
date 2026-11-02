@@ -92,7 +92,6 @@ class SettingsActivity : BasePlayerActivity() {
     private lateinit var tvBufferParagrafosValor: TextView
     private lateinit var btnParalelismoPadrao: Button
     private lateinit var btnParalelismoReduzido: Button
-    private lateinit var btnResetarBuffering: Button
     private val botoesParalelismo get() = listOf(
         btnParalelismoPadrao to false, btnParalelismoReduzido to true
     )
@@ -220,7 +219,6 @@ class SettingsActivity : BasePlayerActivity() {
         btnParalelismoReduzido  = findViewById(R.id.btnParalelismoReduzido)
         btnParalelismoSupertonicoPadrao       = findViewById(R.id.btnParalelismoSupertonicoPadrao)
         btnParalelismoSupertonicoExperimental = findViewById(R.id.btnParalelismoSupertonicoExperimental)
-        btnResetarBuffering     = findViewById(R.id.btnResetarBuffering)
 
         tvCacheInfo   = findViewById(R.id.tvCacheInfo)
         btnLimparCache = findViewById(R.id.btnLimparCache)
@@ -751,12 +749,6 @@ class SettingsActivity : BasePlayerActivity() {
                 }
                 .setNegativeButton(android.R.string.cancel, null)
                 .exibir()
-        }
-
-        btnResetarBuffering.setOnClickListener {
-            appPrefs.resetarBufferingLeituraGuiada()
-            atualizarUiBuffering()
-            Toast.makeText(this, R.string.toast_buffering_resetado, Toast.LENGTH_SHORT).show()
         }
     }
 

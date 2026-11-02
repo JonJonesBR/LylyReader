@@ -112,8 +112,8 @@
     <string name="cache_teto_gb">%1$d GB</string>
     <string name="settings_pocket_steps_title">Pasos de Pocket TTS (experimental)</string>
     <string name="settings_pocket_steps_desc">Pasos de decodificación por fotograma de audio en las voces Pocket TTS. 10 es el valor predeterminado. Más pasos hacen la síntesis más lenta y pueden mejorar la fidelidad. Por encima de 10, la síntesis es mucho más lenta y puede causar pausas en la lectura guiada. Se aplica a nuevas síntesis; el audio ya preparado se regenera al cambiarlo.</string>
-    <string name="settings_pocket_mais_rapido">Pocket más rápido (experimental)</string>
-    <string name="settings_pocket_mais_rapido_sub">Usa más núcleos del procesador. Puede ser más rápido o más lento según el teléfono, y calentarlo más.</string>
+    <string name="settings_pocket_mais_rapido">Pocket más rápido</string>
+    <string name="settings_pocket_mais_rapido_sub">Usa más núcleos del procesador: puede ser más rápido o más lento, y calienta más.</string>
     <plurals name="settings_steps_value_qtd">
         <item quantity="one">%1$d paso</item>
         <item quantity="other">%1$d pasos</item>
@@ -127,17 +127,15 @@
     <string name="settings_pausas_naturais_title">Pausas naturales</string>
     <string name="settings_pausas_naturais_desc">Pausas que varían como las de un narrador: más largas en los puntos suspensivos y al final del párrafo, más cortas en las comas, con una respiración después de frases largas. Funciona con todas las voces. Desactívalo para usar una pausa fija entre frases.</string>
     <string name="settings_buffering_title">Buffering de la lectura guiada</string>
-    <string name="settings_buffer_paragrafos_desc">Cuántas unidades de texto (párrafo u oración, según el motor de voz) la lectura guiada prepara por delante de la que está sonando ahora. Se aplica a cualquier motor de voz. Más adelante: menos silencio entre fragmentos, pero usa más memoria/batería y puede sintetizar texto que nunca llegues a escuchar si saltas de posición. Menos adelante: ahorra recursos, pero aumenta el riesgo de pausas si la síntesis no sigue el ritmo de la lectura.</string>
+    <string name="settings_buffer_paragrafos_desc">Cuánto texto prepara la voz por delante. Más: menos pausas, más batería.</string>
     <string name="settings_buffer_paragrafos_valor_automatico">Automático</string>
     <string name="settings_buffer_paragrafos_valor">%1$d por delante</string>
-    <string name="settings_paralelismo_kokoro_desc">Cuántas síntesis puede procesar el motor Kokoro al mismo tiempo (el único motor de voz con esta opción hoy — los demás ya procesan una síntesis a la vez). Estándar (2) es más rápido y ya fue probado en un dispositivo real. Reducido (1) procesa una a la vez — más lento, pero usa menos procesador a la vez. No se ofrece nada por encima de 2 porque nunca fue probado.</string>
+    <string name="settings_paralelismo_kokoro_desc">Dos voces a la vez es más rápido; una usa menos el procesador.</string>
     <string name="btn_paralelismo_padrao">Estándar (2)</string>
     <string name="btn_paralelismo_reduzido">Reducido (1)</string>
-    <string name="btn_resetar_buffering">Restaurar valor de fábrica</string>
-    <string name="toast_buffering_resetado">Buffering restaurado al valor de cada motor de voz</string>
-    <string name="settings_paralelismo_supertonic_desc">Cuántos fragmentos prepara la voz Supertonic al mismo tiempo. “Uno a la vez” es como Supertonic siempre funcionó en la app. “Dos a la vez” es EXPERIMENTAL: puede hacer la lectura más fluida, pero nunca se probó en un dispositivo real y la voz puede detenerse a mitad del libro (la app no se cierra, pero la lectura puede fallar y haber que reintentar). Pruébalo con cuidado antes de dejarlo activado.</string>
+    <string name="settings_paralelismo_supertonic_desc">Dos a la vez puede hacer la lectura más fluida, pero puede fallar en algunos dispositivos.</string>
     <string name="btn_paralelismo_supertonico_padrao">Uno a la vez</string>
-    <string name="btn_paralelismo_supertonico_experimental">Dos a la vez ⚠️</string>
+    <string name="btn_paralelismo_supertonico_experimental">Dos a la vez</string>
     <string name="dialog_paralelismo_experimental_titulo">¿Activar concurrencia experimental?</string>
     <string name="dialog_paralelismo_experimental_mensagem">Esto nunca fue probado en un dispositivo real. Puede hacer que el proceso de síntesis de Supertonic se detenga a mitad de la lectura (la app en sí no se cierra — solo tendrías que reintentar ese fragmento). Actívalo solo si quieres ayudar a probarlo.</string>
     <string name="btn_ativar_mesmo_assim">Activar de todos modos</string>
@@ -243,8 +241,7 @@
     <string name="label_gemini_key">Clave API de Gemini</string>
     <string name="label_elevenlabs_key">Clave API de ElevenLabs</string>
     <string name="btn_salvar_chave">Guardar clave</string>
-    <string name="label_pausa_blocos">PAUSA ENTRE BLOQUES</string>
-    <string name="desc_pausa_blocos">Silencio añadido en el audiolibro entre un bloque de frases y el siguiente.</string>
+    <string name="desc_pausa_blocos">Silencio entre un bloque de frases y el siguiente. Más pausa: habla más espaciada.</string>
     <string name="label_cache">CACHÉ</string>
     <string name="desc_cache">Los fragmentos de audio en caché evitan la re-síntesis al reanudar procesamientos.</string>
     <string name="label_auto_rewind">RETROCESO AUTOMÁTICO</string>
@@ -1249,8 +1246,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="status_gerando_amostra">Generando muestra…</string>
     <string name="status_amostra_onnx_falha">⚠ No se pudo generar la muestra ONNX. Verifica que el modelo esté descargado.</string>
     <string name="status_amostra_falha">⚠ No se pudo generar la muestra.</string>
-    <string name="settings_supertonic_passos_titulo">Pasos de Supertonic</string>
-    <string name="settings_supertonic_passos_desc">Equilibra calidad y velocidad de la síntesis de las voces Supertonic. Menos pasos = más rápido; más pasos = mejor calidad. Predeterminado: 18. Vale para la lectura guiada y la creación de audiolibros. Más pasos hacen la síntesis más lenta; en teléfonos más lentos, valores altos pueden causar pausas en la lectura guiada.</string>
+    <string name="settings_supertonic_passos_desc">Más pasos: voz mejor, pero más lenta. En teléfonos lentos, la lectura puede pausarse.</string>
     <!-- Asistente que habilita la clonación con el archivo oficial de Kyutai (sin inicio de sesión en la app) -->
     <string name="clone_prep_title_intro">Habilitar la clonación de voz</string>
     <string name="clone_prep_intro">Para clonar una voz, la app necesita un archivo gratuito de Kyutai, la empresa que creó Pocket TTS. Hará 4 pasos sencillos, una sola vez:\n\n1. Entrar en el sitio Hugging Face con una cuenta gratuita\n2. Aceptar los términos de uso de Kyutai\n3. Descargar el archivo (unos 220 MB, mejor con Wi-Fi)\n4. Traer el archivo a la app\n\nUsted inicia sesión solo en el navegador. La app nunca ve ni guarda su contraseña.</string>
@@ -1551,6 +1547,22 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="aj_fim_app">En esta app</string>
     <string name="aj_fim_sistema">En otra app</string>
     <string name="aj_avancado_sub">Calidad, velocidad de preparación y memoria. Los valores por defecto ya funcionan bien.</string>
+    <string name="aj_grupo_geral">General</string>
+    <string name="aj_grupo_supertonic">Supertonic</string>
+    <string name="aj_grupo_pocket">Pocket TTS</string>
+    <string name="aj_grupo_kokoro">Kokoro</string>
+    <string name="aj_passos_titulo">Pasos</string>
+    <string name="aj_trechos_titulo">Uno o dos fragmentos a la vez</string>
+    <string name="aj_pocket_passos_desc">Más pasos: síntesis más lenta, quizá con más fidelidad. Por encima de 10, la lectura guiada puede pausarse.</string>
+    <string name="aj_pocket_expr_titulo">Expresividad</string>
+    <string name="aj_pocket_expr_desc">Más alta: entonación más viva y variada, con más riesgo de pequeños fallos. Más baja: más contenida y estable.</string>
+    <string name="aj_kokoro_vozes_titulo">Cuántas voces a la vez</string>
+    <string name="aj_experimental">Experimental</string>
+    <string name="aj_pausa_0">0 ms</string>
+    <string name="aj_pausa_300">300 ms</string>
+    <string name="aj_pausa_600">600 ms</string>
+    <string name="aj_pausa_900">900 ms</string>
+    <string name="aj_pausa_1500">1,5 s</string>
     <string name="aj_avancado_titulo">Ajustes avanzados</string>
     <string name="aj_avancado_intro">Los valores por defecto funcionan bien en la mayoría de los dispositivos. Si algo empeora, usa "Restaurar el sonido por defecto" en la pestaña Sonido.</string>
     <string name="aj_restaurar_som">Restaurar el sonido por defecto</string>
