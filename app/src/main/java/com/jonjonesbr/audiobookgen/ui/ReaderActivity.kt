@@ -370,7 +370,10 @@ class ReaderActivity : BasePlayerActivity() {
                 onAbrirPronuncia = { abrirDicionarioPronuncia() },
                 onAbrirAparencia = { aparenciaController.mostrarBottomSheet() },
                 onAbrirSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
-                onClonarVoz = { cloneVoiceFlowDoLivro.iniciar() },
+                onClonarVoz = { aoEscolherVoz ->
+                    aoClonarVozDoPainel = aoEscolherVoz
+                    cloneVoiceFlowDoLivro.iniciar()
+                },
                 onPerfilDoLivroMudou = {
                     guidedPlayerManager?.recarregarPerfilDoLivro()
                     guidedReadingBarController?.atualizarRotulosDoPerfil()
@@ -1915,8 +1918,15 @@ class ReaderActivity : BasePlayerActivity() {
         VoiceCatalog.findAny(id)?.let(::selecionarVozNoLeitor)
     })
 
-    // Clonar pela configuração deste livro: só cria a voz (a escolha continua na lista do livro).
-    private val cloneVoiceFlowDoLivro = CloneVoiceFlow(this)
+    // Clonar pelo painel "Voz e velocidade" deste livro: a voz nova vira a voz do livro, pela mesma rotina da
+    // lista do painel (ConfigLivroDialog). O painel entrega a sua escolha em [aoClonarVozDoPainel] antes de clonar.
+    private var aoClonarVozDoPainel: ((VoiceOption) -> Unit)? = null
+    private val cloneVoiceFlowDoLivro = CloneVoiceFlow(this, aoCriarVoz = { id ->
+        // Usa a escolha uma vez só: não segura o painel depois do clone.
+        val aoEscolher = aoClonarVozDoPainel
+        aoClonarVozDoPainel = null
+        VoiceCatalog.findAny(id)?.let { voz -> aoEscolher?.invoke(voz) }
+    })
 
     private val voiceSelectionDelegate: VoiceSelectionDelegate = VoiceSelectionDelegate(
         activity = this,

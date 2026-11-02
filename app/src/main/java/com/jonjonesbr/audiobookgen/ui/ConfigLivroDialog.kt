@@ -6,6 +6,7 @@ import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
 import com.jonjonesbr.audiobookgen.util.VELOCIDADES_GUIADAS
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
+import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.rotuloVelocidade
 import com.jonjonesbr.audiobookgen.util.velocidadeMaisProxima
@@ -24,11 +25,14 @@ import com.google.android.material.chip.Chip
  */
 object ConfigLivroDialog {
 
-    /** [aoMudarPerfil]: chamado depois de cada gravação, para a leitura guiada aberta aplicar a escolha já. */
+    /**
+     * [aoMudarPerfil]: chamado depois de cada gravação, para a leitura guiada aberta aplicar a escolha já.
+     * [onClonarVoz] recebe a escolha deste painel: a voz clonada a passa para ela, como a lista faz.
+     */
     fun mostrar(
         activity: AppCompatActivity,
         caminhoArquivo: String,
-        onClonarVoz: () -> Unit = {},
+        onClonarVoz: ((aoEscolherVoz: (VoiceOption) -> Unit) -> Unit) = { _ -> },
         aoMudarPerfil: () -> Unit = {}
     ) {
         val appPrefs = AppPrefs(activity)
@@ -65,9 +69,16 @@ object ConfigLivroDialog {
             atualizarUi()
         }
 
+        // Escolha de voz deste livro (na lista ou voz recém-clonada): grava, avisa a leitura e atualiza o painel.
+        val aoEscolherVoz: (VoiceOption) -> Unit = { voz ->
+            gravarVozDoLivro(activity, caminhoArquivo, appPrefs, voz)
+            aoMudarPerfil()
+            atualizarUi()
+        }
+
         view.findViewById<View>(R.id.itemConfigVoz).marcarComoBotao()
         view.findViewById<View>(R.id.itemConfigVoz).setOnClickListener {
-            abrirSeletorDeVoz(activity, caminhoArquivo, appPrefs, { aoMudarPerfil(); atualizarUi() }, onClonarVoz)
+            abrirSeletorDeVoz(activity, caminhoArquivo, appPrefs, aoEscolherVoz, onClonarVoz)
         }
         chipsVelocidade.forEach { (chip, valor) -> chip.setOnClickListener { salvarVelocidade(valor) } }
 
@@ -79,22 +90,32 @@ object ConfigLivroDialog {
         activity: AppCompatActivity,
         caminhoArquivo: String,
         appPrefs: AppPrefs,
-        aoConcluir: () -> Unit,
-        onClonarVoz: () -> Unit
+        aoEscolherVoz: (VoiceOption) -> Unit,
+        onClonarVoz: ((aoEscolherVoz: (VoiceOption) -> Unit) -> Unit)
     ) {
         val efetivo = resolverEfetivo(activity, caminhoArquivo, appPrefs)
         VoiceSelectionDelegate(
             activity = activity,
-            onVoiceSelected = { voz ->
-                val atual = resolverEfetivo(activity, caminhoArquivo, appPrefs)
-                GuidedBookPrefsStore.save(activity, caminhoArquivo, voz.id, voz.engine, atual.speedMult)
-                aoConcluir()
-            },
+            onVoiceSelected = aoEscolherVoz,
             onVoicePreview = { _, onFinished -> onFinished() },
             obterVozAtualId = { efetivo.voz },
             restorable = false,
-            onCloneVoiceRequested = onClonarVoz
+            onCloneVoiceRequested = { onClonarVoz(aoEscolherVoz) }
         ).abrirSeletorVozes()
+    }
+
+    /**
+     * Grava [voz] como voz deste livro, mantendo a velocidade que ele já tem.
+     * Mesma rotina para a escolha na lista e para a voz clonada.
+     */
+    private fun gravarVozDoLivro(
+        activity: AppCompatActivity,
+        caminhoArquivo: String,
+        appPrefs: AppPrefs,
+        voz: VoiceOption
+    ) {
+        val atual = resolverEfetivo(activity, caminhoArquivo, appPrefs)
+        GuidedBookPrefsStore.save(activity, caminhoArquivo, voz.id, voz.engine, atual.speedMult)
     }
 
     /** Voz/motor/velocidade efetivos deste livro: override salvo, ou fallback pras prefs globais. */

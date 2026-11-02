@@ -12,6 +12,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import com.jonjonesbr.audiobookgen.util.valePerguntarPorCapitulo
+import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import java.io.File
 
@@ -50,7 +51,8 @@ class ReaderRetornoController(
         val onAbrirPronuncia: () -> Unit,
         val onAbrirAparencia: () -> Unit,
         val onAbrirSleepTimer: () -> Unit,
-        val onClonarVoz: () -> Unit = {},
+        /** Clona uma voz para este livro; a voz pronta vai para o [aoEscolherVoz] do painel "Voz e velocidade". */
+        val onClonarVoz: ((aoEscolherVoz: (VoiceOption) -> Unit) -> Unit) = { _ -> },
         val onPerfilDoLivroMudou: () -> Unit = {},
         /** Gera o audiobook dos capítulos marcados em ⋮ › Capítulos. */
         val onGerarCapitulosMarcados: () -> Unit = {},
