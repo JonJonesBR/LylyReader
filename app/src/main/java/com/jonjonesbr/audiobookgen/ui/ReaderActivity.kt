@@ -1,7 +1,5 @@
 package com.jonjonesbr.audiobookgen.ui
 
-import android.net.Uri
-import com.jonjonesbr.audiobookgen.domain.DocumentExportUseCase
 import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
 import com.jonjonesbr.audiobookgen.domain.RegraDeReconexaoGuiada
 import com.jonjonesbr.audiobookgen.service.GuidedState
@@ -9,19 +7,15 @@ import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
-import com.jonjonesbr.audiobookgen.domain.ChapterExportPolicy
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
-import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.VoiceOption
-import com.jonjonesbr.audiobookgen.util.mensagemDeErro
-import com.jonjonesbr.audiobookgen.util.mostrarErro
 import com.jonjonesbr.audiobookgen.util.aplicarMargemInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.dpToPx
@@ -31,7 +25,6 @@ import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
 import com.jonjonesbr.audiobookgen.util.abrirExpandida
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -40,7 +33,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.Toast
 import android.widget.SeekBar
 import android.widget.TextView
@@ -55,11 +47,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 
 class ReaderActivity : BasePlayerActivity() {
@@ -117,11 +106,6 @@ class ReaderActivity : BasePlayerActivity() {
          *  arquivo ORIGINAL pra MainActivity converter pelo pipeline tolerante (que não precisa de
          *  estrutura de capítulos) — o resultado pode sair sem divisão por capítulo. */
         const val ACAO_CONVERTER_SEM_ESTRUTURA = "converter_sem_estrutura"
-        private const val DIALOG_PROGRESSO_PADDING_H = 24
-        private const val DIALOG_PROGRESSO_PADDING_TOPO = 20
-        private const val DIALOG_PROGRESSO_TEXT_SIZE_SP = 15f
-        private const val DIALOG_PROGRESSO_TEXTO_BAIXO_DP = 16
-        private const val PROGRESSO_MAX = 100
         private const val DURACAO_FADE_BANNER_MS = 300L
         private const val DURACAO_PILL_LIMPEZA_MS = 5000L
         private const val PARAGRAFOS_PREVIEW = 3
@@ -195,31 +179,11 @@ class ReaderActivity : BasePlayerActivity() {
     private val capitulosSelecionados = linkedSetOf<Int>()
     private val exportarTextoLimpo = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/plain")
-    ) { uri ->
-        if (uri == null) return@registerForActivityResult
-        val texto = viewModel.textoEfetivo()?.paragrafos
-            ?.joinToString("\n\n") { it.texto } ?: return@registerForActivityResult
-        // A escrita vai para IO: em nuvem ou cartão SD ela pode travar a tela.
-        lifecycleScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    val output = contentResolver.openOutputStream(uri)
-                        ?: throw IllegalStateException("Output stream unavailable")
-                    output.bufferedWriter().use { it.write(texto) }
-                }
-                Toast.makeText(this@ReaderActivity, R.string.toast_clean_text_exported, Toast.LENGTH_SHORT).show()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w("ReaderActivity", "Erro ao exportar texto limpo", e)
-                mostrarErro(R.string.toast_clean_text_export_error)
-            }
-        }
-    }
+    ) { uri -> if (uri != null) conversaoController.exportarTextoLimpo(uri) }
 
     private val exportarCapitulosPasta = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
-    ) { uri -> if (uri != null) exportarCapitulosPara(uri) }
+    ) { uri -> if (uri != null) conversaoController.exportarCapitulosPara(uri) }
 
     /** Nulo no modo "Ler sem áudio" (o manager nunca é criado). Todo acesso trata o nulo. */
     private var guidedPlayerManager: GuidedPlayerManager? = null
@@ -359,12 +323,14 @@ class ReaderActivity : BasePlayerActivity() {
                 },
                 onExportarCapitulosPasta = { exportarCapitulosPasta.launch(null) },
                 onCompartilharTrecho = { compartilharTrechoAtual() },
-                onBaixarCapitulo = { baixarCapitulo() },
-                onBaixarLivro = { gerarLivroInteiro() },
+                onBaixarCapitulo = { conversaoController.baixarCapitulo() },
+                onBaixarLivro = { conversaoController.gerarLivroInteiro() },
                 onGerarCapitulosMarcados = {
-                    verificarConectividadeAntesDeConverter { retornoController.retornarComSelecao() }
+                    conversaoController.verificarConectividadeAntesDeConverter {
+                        retornoController.retornarComSelecao()
+                    }
                 },
-                onOuvirAudiobook = { ouvirAudiobookDesteLivro() },
+                onOuvirAudiobook = { conversaoController.ouvirAudiobookDesteLivro() },
                 onConfigurarVozesPersonagens = { personagensController.abrirConfiguracaoVozesPersonagens() },
                 onAbrirMarcacoes = { marcacoesController.mostrarDialogListarMarcacoes() },
                 onAbrirPronuncia = { abrirDicionarioPronuncia() },
@@ -382,6 +348,22 @@ class ReaderActivity : BasePlayerActivity() {
         )
     }
     
+    private val conversaoController by lazy {
+        ReaderConversaoController(
+            activity = this,
+            viewModel = viewModel,
+            audiobookViewModel = audiobookViewModel,
+            callbacks = ReaderConversaoController.Callbacks(
+                obterCaminhoArquivo = { caminhoArquivo },
+                obterGuidedPlayerManager = { guidedPlayerManager },
+                obterPlayerService = { playerService },
+                obterParagrafoAtual = { paragrafoAtualVisivel() },
+                caminhoMapaDePersonagens = { personagensController.caminhoMapaDePersonagens(it) },
+                aguardarAnaliseDeFalantes = { personagensController.aguardarAnaliseDeFalantes() },
+            ),
+        )
+    }
+
     // Sleep Timer: a contagem vive em SleepTimerManager (sobrevive à Activity e aparece na
     // notificação). A Activity só dispara/observa.
 
@@ -505,7 +487,7 @@ class ReaderActivity : BasePlayerActivity() {
         observarViewModel()
         guidedReadingBarController?.observarGuidedPlayer()
         if (!somenteLeitura) sonecaController.observarSleepTimer()
-        observarAudiobookViewModel()
+        conversaoController.observar()
 
         // NÃO usar `savedInstanceState == null` aqui: após morte de processo o Android
         // recria a Activity com savedInstanceState preenchido (restaurado do disco), mas o
@@ -740,7 +722,7 @@ class ReaderActivity : BasePlayerActivity() {
 
         // FAB de conversão: converter livro inteiro OU seleção, dependendo do estado atual
         fabConverterPrincipal.setOnClickListener {
-            verificarConectividadeAntesDeConverter { retornoController.retornarComSelecao() }
+            conversaoController.verificarConectividadeAntesDeConverter { retornoController.retornarComSelecao() }
         }
         fabVoltarNarracao.setOnClickListener { guidedReadingBarController?.voltarAoAcompanhamento() }
 
@@ -755,7 +737,7 @@ class ReaderActivity : BasePlayerActivity() {
         // pra MainActivity converter pelo pipeline tolerante — o leitor não tem texto estruturado
         // pra devolver, então só fecha depois de checar conectividade (como os demais caminhos).
         btnConverterAssim.setOnClickListener {
-            verificarConectividadeAntesDeConverter {
+            conversaoController.verificarConectividadeAntesDeConverter {
                 retornoController.retornarConvertendoOriginalSemEstrutura()
             }
         }
@@ -980,298 +962,8 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
-    private var dialogProgressoConversao: androidx.appcompat.app.AlertDialog? = null
-    private var tvDialogProgressoStatus: TextView? = null
-    private var barDialogProgresso: ProgressBar? = null
-
-    private fun mostrarOuAtualizarDialogProgress(progresso: Int, mensagem: String) {
-        if (isFinishing) return
-        if (dialogProgressoConversao == null) {
-            val container = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(
-                    dpToPx(DIALOG_PROGRESSO_PADDING_H),
-                    dpToPx(DIALOG_PROGRESSO_PADDING_TOPO),
-                    dpToPx(DIALOG_PROGRESSO_PADDING_H),
-                    dpToPx(DIALOG_PROGRESSO_PADDING_H)
-                )
-            }
-            tvDialogProgressoStatus = TextView(this).apply {
-                text = getString(R.string.reader_progresso_iniciando)
-                textSize = DIALOG_PROGRESSO_TEXT_SIZE_SP
-                setTextColor(com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface))
-                setPadding(0, 0, 0, dpToPx(DIALOG_PROGRESSO_TEXTO_BAIXO_DP))
-            }
-            barDialogProgresso = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-                max = PROGRESSO_MAX
-                progress = 0
-            }
-            container.addView(tvDialogProgressoStatus)
-            container.addView(barDialogProgresso)
-            
-            dialogProgressoConversao = androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle(getString(R.string.toast_download_started))
-                .setView(container)
-                .setCancelable(false)
-                .setNegativeButton(android.R.string.cancel) { _, _ ->
-                    audiobookViewModel.cancelarProcessamento()
-                }
-                .create()
-            dialogProgressoConversao?.let { dialogos.mostrar(it) }
-        }
-        
-        tvDialogProgressoStatus?.text = mensagem
-        barDialogProgresso?.progress = progresso
-    }
-
-    private fun esconderDialogProgress() {
-        dialogProgressoConversao?.dismiss()
-        dialogProgressoConversao = null
-        tvDialogProgressoStatus = null
-        barDialogProgresso = null
-    }
-
     /** Último parágrafo lido pela leitura guiada encerrada nesta tela (-1: nenhum ou o usuário rolou depois). */
     private var paragrafoGuiadoAoEncerrar = -1
-
-    /** Última geração de audiobook pedida aqui (capítulo ou livro), para o "Tentar de novo" do aviso de erro. */
-    private var refazerConversao: (() -> Unit)? = null
-
-    private fun observarAudiobookViewModel() {
-        lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                audiobookViewModel.uiState.collect { state ->
-                    if (state.processando) {
-                        mostrarOuAtualizarDialogProgress(state.progressoPct, state.statusMessage)
-                    } else {
-                        esconderDialogProgress()
-                    }
-
-                    state.conversionDone?.let { evento ->
-                        audiobookViewModel.consumirEventoConversao()
-                        when (evento) {
-                            is ConversionDoneEvent.Sucesso -> {
-                                // Aviso com ação "Abrir": toca o audiobook pronto, como o "Ouvir" das conversões.
-                                com.google.android.material.snackbar.Snackbar.make(
-                                    findViewById(android.R.id.content),
-                                    R.string.toast_download_completed,
-                                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG
-                                ).setAction(R.string.dl_abrir_livro) {
-                                    abrirAudiobookGerado(evento.caminho)
-                                }.show()
-                            }
-                            is ConversionDoneEvent.Cancelada -> {
-                                Toast.makeText(
-                                    this@ReaderActivity,
-                                    R.string.status_conversion_canceled,
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            is ConversionDoneEvent.Erro -> {
-                                val msg = getString(R.string.toast_download_failed, evento.mensagem)
-                                // "Tentar de novo" refaz a mesma geração (capítulo ou livro) a partir do texto atual.
-                                mostrarErro(msg, refazerConversao?.let { getString(R.string.acao_tentar_de_novo) to it })
-                            }
-                            is ConversionDoneEvent.Pausada -> {
-                                Toast.makeText(
-                                    this@ReaderActivity,
-                                    R.string.status_conversion_paused,
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun baixarCapitulo() {
-        val texto = viewModel.textoEfetivo() ?: return
-        refazerConversao = ::baixarCapitulo
-        val capAtivo = viewModel.uiState.value.capituloAtivo
-        val cap = texto.capitulos.getOrNull(capAtivo) ?: return
-        
-        val trechoTexto = texto.paragrafos.subList(
-            cap.indiceParagrafoInicio.coerceAtLeast(0),
-            (cap.indiceParagrafoFim + 1).coerceAtMost(texto.paragrafos.size)
-        ).joinToString("\n\n") { it.texto }
-        
-        val nomeSemExt = File(caminhoArquivo).nameWithoutExtension
-        val nomeCapitulo = "${nomeSemExt} - ${cap.titulo}"
-        
-        // Vozes dos personagens também no capítulo avulso (o mapa serve a qualquer trecho contínuo do livro).
-        val textosDoLivro = texto.paragrafos.map { it.texto }
-        val speakerMapPath = personagensController.caminhoMapaDePersonagens(textosDoLivro)
-        val arquivoTemp = File(cacheDir, "download_chapter_${System.currentTimeMillis()}.txt")
-        try {
-            arquivoTemp.writeText(trechoTexto, Charsets.UTF_8)
-            iniciarDownloadBackground(arquivoTemp.absolutePath, nomeCapitulo, speakerMapPath = speakerMapPath, caminhoDoLivro = caminhoArquivo)
-        } catch (e: Exception) {
-            Log.w("ReaderActivity", "Erro ao preparar download de capítulo", e)
-            mostrarErro(getString(R.string.toast_erro_preparar_download, getString(mensagemDeErro(e))))
-        }
-    }
-
-    /**
-     * "Gerar audiobook › Livro inteiro": abre o painel da tela do livro (voz, ritmo, tempo estimado, pasta, fila).
-     * Com o texto editado ou limpo aqui no leitor, ou um arquivo fora da biblioteca, gera direto deste texto.
-     */
-    private fun gerarLivroInteiro() {
-        val state = viewModel.uiState.value
-        lifecycleScope.launch {
-            val livro = if (state.temEdicoes || state.textoLimpo != null) {
-                null
-            } else {
-                com.jonjonesbr.audiobookgen.data.BibliotecaStore.porCaminho(applicationContext, caminhoArquivo)
-            }
-            if (livro == null) {
-                baixarLivroCompleto()
-            } else {
-                startActivity(
-                    Intent(this@ReaderActivity, LivroActivity::class.java)
-                        .putExtra(LivroActivity.EXTRA_ID, livro.id)
-                        .putExtra(LivroActivity.EXTRA_ABRIR_PAINEL_GERAR, true)
-                        .putExtra(LivroActivity.EXTRA_SO_PAINEL, true)
-                )
-            }
-        }
-    }
-
-    private fun baixarLivroCompleto() {
-        val texto = viewModel.textoEfetivo() ?: return
-        refazerConversao = ::baixarLivroCompleto
-        val nomeSemExt = File(caminhoArquivo).nameWithoutExtension
-        lifecycleScope.launch {
-            personagensController.aguardarAnaliseDeFalantes()
-            val trechoTexto = texto.paragrafos.joinToString("\n\n") { it.texto }
-            val textosDoLivro = texto.paragrafos.map { it.texto }
-            val speakerMapPath = personagensController.caminhoMapaDePersonagens(textosDoLivro)
-            val arquivoTemp = File(cacheDir, "download_book_${System.currentTimeMillis()}.txt")
-            try {
-                arquivoTemp.writeText(trechoTexto, Charsets.UTF_8)
-                iniciarDownloadBackground(
-                    arquivoTemp.absolutePath,
-                    nomeSemExt,
-                    livroOrigemCaminho = caminhoArquivo,
-                    speakerMapPath = speakerMapPath
-                )
-            } catch (e: Exception) {
-                Log.w("ReaderActivity", "Erro ao preparar download de livro completo", e)
-                mostrarErro(getString(R.string.toast_erro_preparar_download, getString(mensagemDeErro(e))))
-            }
-        }
-    }
-
-    private fun exportarCapitulosPara(pastaUri: Uri) {
-        val texto = viewModel.textoEfetivo()
-        if (texto == null || texto.capitulos.isEmpty()) {
-            Toast.makeText(this, R.string.toast_sem_capitulos_para_exportar, Toast.LENGTH_SHORT).show()
-            return
-        }
-        val nomeLivro = File(caminhoArquivo).nameWithoutExtension
-        val arquivos = ChapterExportPolicy.montarArquivosCapitulos(texto.capitulos, texto.paragrafos)
-        lifecycleScope.launch {
-            val resultado = DocumentExportUseCase(this@ReaderActivity)
-                .exportarTextos("${nomeLivro}_capitulos", arquivos, pastaUri)
-            val mensagem = if (resultado.isSuccess) {
-                val total = resultado.getOrDefault(0)
-                resources.getQuantityString(R.plurals.toast_capitulos_exportados_qtd, total, total)
-            } else {
-                getString(
-                    R.string.toast_erro_exportar_capitulos,
-                    resultado.exceptionOrNull()?.let { getString(mensagemDeErro(it)) }
-                        ?: getString(R.string.erro_amigavel_generico)
-                )
-            }
-            if (resultado.isSuccess) {
-                Toast.makeText(this@ReaderActivity, mensagem, Toast.LENGTH_LONG).show()
-            } else {
-                mostrarErro(mensagem)
-            }
-        }
-    }
-
-
-    private fun iniciarDownloadBackground(
-        caminhoTexto: String,
-        nomeAudiobook: String,
-        livroOrigemCaminho: String? = null,
-        speakerMapPath: String? = null,
-        caminhoDoLivro: String? = livroOrigemCaminho
-    ) {
-        val iniciou = audiobookViewModel.iniciarProcessamentoDeTexto(
-            caminhoTexto,
-            nomeAudiobook,
-            livroOrigemCaminho,
-            speakerMapPath,
-            caminhoDoLivro
-        )
-        if (!iniciou) {
-            mostrarErro(R.string.conv_pausada_bloqueia)
-            return
-        }
-        // Avisa que começou e leva ao andamento (antes a conversão iniciada aqui não tinha onde ser acompanhada).
-        com.google.android.material.snackbar.Snackbar.make(
-            findViewById(android.R.id.content),
-            getString(R.string.conv_iniciada_do_leitor),
-            com.google.android.material.snackbar.Snackbar.LENGTH_LONG
-        ).setAction(R.string.conv_ver) {
-            startActivity(Intent(this, ConversoesActivity::class.java))
-        }.show()
-    }
-
-    /** Toca o audiobook recém-gerado e leva à biblioteca (mesmo fluxo do "Ouvir" em [ConversoesActivity]). */
-    private fun abrirAudiobookGerado(caminhoMp3: String) {
-        // Ouvir o audiobook encerra a leitura guiada, como em [ouvirAudiobookDesteLivro].
-        guidedPlayerManager?.stop()
-        audiobookViewModel.iniciarPlayer(caminhoMp3, File(caminhoMp3).nameWithoutExtension)
-        startActivity(Intent(this, LibraryActivity::class.java))
-    }
-
-    /**
-     * Abre o audiobook já convertido deste livro (vínculo criado em [baixarLivroCompleto],
-     * via [com.jonjonesbr.audiobookgen.data.LinkedBookStore]) — ponte de UI entre leitura e
-     * escuta (Fase 5, item 2). Começa do parágrafo da guiada (se ela tocava este livro) ou do
-     * visível, pelas âncoras de sincronia; sem âncoras, retoma da posição salva.
-     */
-    private fun ouvirAudiobookDesteLivro() {
-        val mp3 = com.jonjonesbr.audiobookgen.data.LinkedBookStore.mp3Vinculado(this, caminhoArquivo)
-            ?: return
-        if (!File(mp3).exists()) return
-        // Parágrafo de partida: o da leitura guiada, se ela estava tocando este livro; senão o da tela.
-        val guiada = guidedPlayerManager
-        val guiadaTocandoEsteLivro = guiada != null && guiada.state.value.index >= 0 &&
-            guiada.caminhoArquivo == caminhoArquivo
-        val paragrafoPartida = if (guiada != null && guiadaTocandoEsteLivro) {
-            guiada.state.value.index
-        } else {
-            paragrafoAtualVisivel()
-        }
-        val nome = File(mp3).nameWithoutExtension
-        // O cálculo (âncoras do MP3, lidas do disco) sai da main. A guiada só para depois dele: se a Activity
-        // for destruída no meio, a corrotina é cancelada e nenhuma das duas coisas acontece.
-        lifecycleScope.launch {
-            val posicao = paragrafoPartida?.let { viewModel.posicaoDoParagrafoNoAudiobook(mp3, it) }
-            // Se a pessoa saiu do app durante o cálculo, não se inicia o serviço em segundo plano (Android 12+
-            // lança exceção); a guiada segue como estava.
-            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return@launch
-            // Ouvir o audiobook encerra a leitura guiada: a barra dela sai e o mini player do audiobook aparece.
-            guiada?.stop()
-            val service = playerService
-            if (service != null) {
-                service.iniciar(mp3, nome, posicao)
-            } else {
-                val intent = Intent(this@ReaderActivity, AudioPlayerService::class.java).apply {
-                    action = AudioPlayerService.ACTION_INICIAR
-                    putExtra(AudioPlayerService.EXTRA_CAMINHO, mp3)
-                    putExtra(AudioPlayerService.EXTRA_NOME, nome)
-                    posicao?.let { putExtra(AudioPlayerService.EXTRA_POSICAO_MS, it) }
-                }
-                startForegroundService(intent)
-            }
-        }
-    }
 
     private fun atualizarUI(state: ReaderUiState) {
         // A fila já narra outro livro: esta tela não pode entregar o texto dela ao manager (setParagraphs).
@@ -1797,56 +1489,6 @@ class ReaderActivity : BasePlayerActivity() {
         atualizarDescricaoAreaCapitulo()
         // Rolar com o dedo não muda o estado da tela: a barra do capítulo acompanha por aqui.
         viewModel.textoEfetivo()?.let(::atualizarBarraCapitulo)
-    }
-
-    // ── Resultado ─────────────────────────────────────────────────────────────
-
-    private fun verificarConectividadeAntesDeConverter(prosseguir: () -> Unit) {
-        // O motor salvo pode divergir do que vai sintetizar de fato (voz Supertonic com
-        // motor "edge" salvo, por ex.) — decide pela voz selecionada.
-        val motorEfetivo = VoiceCatalog.effectiveEngine(
-            appPrefs.vozSelecionada.orEmpty(), appPrefs.motorTts
-        )
-        // "Motor Android" só é realmente offline se já existe uma voz do dispositivo
-        // configurada (ID composto "android::pkg::nome") — sem isso, motorTts="android" é um
-        // estado inválido (não dá pra sintetizar nada) e não deve ser tratado como pronto.
-        val temVozAndroidValida = com.jonjonesbr.audiobookgen.tts.AndroidVoiceId.isAndroidVoice(
-            appPrefs.vozSelecionada.orEmpty()
-        )
-        val prontoOffline = when (motorEfetivo) {
-            "android" -> temVozAndroidValida
-            "onnx" -> true // Supertonic sintetiza offline
-            "kokoro" -> VoiceCatalog.modeloProntoParaVoz(appPrefs.vozSelecionada.orEmpty(), this)
-            else -> false
-        }
-        if (prontoOffline) {
-            prosseguir()
-            return
-        }
-
-        val online = com.jonjonesbr.audiobookgen.util.NetworkStatus.isOnline(this)
-
-        if (!online) {
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle(getString(R.string.offline_titulo))
-                .setMessage(getString(R.string.offline_mensagem))
-                .setNegativeButton(getString(R.string.offline_btn_ok), null)
-                .setPositiveButton(getString(R.string.offline_btn_alternar)) { _, _ ->
-                    if (temVozAndroidValida) {
-                        appPrefs.motorTts = "android"
-                        prosseguir()
-                    } else {
-                        android.widget.Toast.makeText(
-                            this,
-                            R.string.erro_precisa_configurar_voz_dispositivo,
-                            android.widget.Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-                .exibir()
-        } else {
-            prosseguir()
-        }
     }
 
     // ── Bottom Sheet de Aparência ─────────────────────────────────────────────

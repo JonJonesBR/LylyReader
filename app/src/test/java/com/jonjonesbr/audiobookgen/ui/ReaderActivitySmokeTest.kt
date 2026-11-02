@@ -159,6 +159,19 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun abreSemCaminhoFechaSemCrash() {
+        // Sem EXTRA_CAMINHO, o onCreate chama finish() logo depois do setContentView: a tela tem de fechar sozinha.
+        val intent = Intent(app, ReaderActivity::class.java)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            scenario.moveToState(Lifecycle.State.DESTROYED)
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals(Lifecycle.State.DESTROYED, scenario.state)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Dois capítulos: parágrafos 0 a 4 no primeiro, 5 a 9 no segundo. */
