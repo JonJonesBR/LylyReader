@@ -2,4 +2,6 @@
 <paths>
     <!-- Arquivos MP3 gerados ficam em filesDir -->
     <files-path name="audiobooks" path="." />
+    <!-- Cartão de Estatísticas de leitura como imagem (cacheDir/compartilhar) -->
+    <cache-path name="compartilhar" path="compartilhar/" />
 </paths>

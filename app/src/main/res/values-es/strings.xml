@@ -259,7 +259,33 @@
     <string name="stats_minutos_lidos">Minutos leídos</string>
     <string name="stats_livros_concluidos">Libros terminados</string>
     <string name="stats_streak_dias">Racha de días</string>
-    <string name="label_stats_ultimos_7_dias">ÚLTIMOS 7 DÍAS</string>
+    <string name="label_stats_ultimos_7_dias">Últimos 7 días (minutos)</string>
+    <string name="stats_compartilhar_cd">Compartir estadísticas</string>
+    <string name="stats_compartilhar_como_imagem">Como imagen</string>
+    <string name="stats_compartilhar_como_texto">Como texto</string>
+    <string name="stats_compartilhar_erro">No se pudo crear la imagen.</string>
+    <string name="stats_compartilhar_cabecalho">Mis lecturas en LylyReader:</string>
+    <string name="stats_compartilhar_ultimos_7_dias">Últimos 7 días (min): %1$s</string>
+    <plurals name="stats_compartilhar_minutos_ouvidos">
+        <item quantity="one">%1$d minuto escuchado</item>
+        <item quantity="other">%1$d minutos escuchados</item>
+        <item quantity="many">%1$d minutos escuchados</item>
+    </plurals>
+    <plurals name="stats_compartilhar_minutos_lidos">
+        <item quantity="one">%1$d minuto leído</item>
+        <item quantity="other">%1$d minutos leídos</item>
+        <item quantity="many">%1$d minutos leídos</item>
+    </plurals>
+    <plurals name="stats_compartilhar_livros">
+        <item quantity="one">%1$d libro terminado</item>
+        <item quantity="other">%1$d libros terminados</item>
+        <item quantity="many">%1$d libros terminados</item>
+    </plurals>
+    <plurals name="stats_compartilhar_dias">
+        <item quantity="one">%1$d día seguido</item>
+        <item quantity="other">%1$d días seguidos</item>
+        <item quantity="many">%1$d días seguidos</item>
+    </plurals>
     <string name="settings_tab_geral">Voz</string>
     <string name="settings_tab_audio">Sonido</string>
     <string name="settings_tab_dados">Datos</string>
