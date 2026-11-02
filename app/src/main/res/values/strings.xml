@@ -263,16 +263,16 @@
     <string name="btn_player_conversao_perguntar">Ask me</string>
     <string name="btn_player_conversao_app">This app</string>
     <string name="btn_player_conversao_sistema">Other app</string>
-    <string name="label_estatisticas">STATISTICS</string>
+    <string name="label_estatisticas">Reading statistics</string>
     <string name="desc_estatisticas_privacidade">100% local and private — nothing here is ever sent to any server.</string>
     <string name="stats_minutos_ouvidos">Minutes listened</string>
     <string name="stats_minutos_lidos">Minutes read</string>
     <string name="stats_livros_concluidos">Books finished</string>
     <string name="stats_streak_dias">Day streak</string>
     <string name="label_stats_ultimos_7_dias">LAST 7 DAYS</string>
-    <string name="settings_tab_geral">Voice &amp; reading</string>
+    <string name="settings_tab_geral">Voice</string>
     <string name="settings_tab_audio">Sound</string>
-    <string name="settings_tab_dados">Backup &amp; storage</string>
+    <string name="settings_tab_dados">Data</string>
     <string name="settings_tab_ajuda">Help</string>
     <string name="cache_calculando">Calculating…</string>
     <string name="btn_limpar_cache">Clear</string>
@@ -465,7 +465,7 @@
     <string name="help_settings_step1">Voices: on the book screen, tap Change to pick a voice. Groups: Recommended offline (Supertonic), On the device (Android voices), Online (Edge, Gemini, ElevenLabs) or Extra offline (Kokoro, Pocket, Piper)</string>
     <string name="help_settings_step2">Voice and speed: adjust on the book screen, in Generate audiobook</string>
     <string name="help_settings_step3">Output folder: in Generate audiobook › Advanced options, choose where the MP3 files are saved</string>
-    <string name="help_settings_step4">In Settings: Sound has pauses and voice pitch; Backup &amp; storage makes backups and frees up space</string>
+    <string name="help_settings_step4">In Settings: Sound has pauses and voice pitch; Data makes backups and frees up space</string>
 
     <!-- Diálogos Offline e FAB -->
     <string name="offline_titulo">You\'re offline</string>
@@ -487,11 +487,11 @@
     <string name="label_blacklist">EXCLUDED WORDS</string>
     <string name="desc_blacklist">Words or phrases automatically removed during text cleaning.</string>
     <string name="btn_gerenciar_blacklist">Manage</string>
-    <string name="title_blacklist">Excluded Words</string>
+    <string name="title_blacklist">Words the voice skips</string>
     <string name="hint_novo_termo">New word or phrase</string>
     <string name="btn_adicionar">Add</string>
     <string name="blacklist_empty">No excluded words.</string>
-    <string name="cd_ajuda_blacklist">Excluded Words Help</string>
+    <string name="cd_ajuda_blacklist">Help: words the voice skips</string>
     <string name="settings_help_blacklist_title">Excluded words</string>
     <string name="settings_help_blacklist_message">You can specify words or phrases that should be automatically removed from the books during text cleaning.\n\nThis is useful for removing repeating header/footer text, formatting errors, or words you do not want the engine to read.</string>
     <plurals name="blacklist_terms_count">
@@ -751,7 +751,7 @@
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
     <string name="release_notes_corpo">• Fixed: guided reading and the audiobook no longer both show up in the player. Starting one closes the other and keeps your place.\n• The guided reading bar now has an X to close it from any screen.\n• Fixed: continuing guided reading from the library started one paragraph before the highlighted one. It now resumes exactly where you stopped.\n• Pocket TTS voice: no longer skips the last word of some sentences (like a quoted word at the end), and each sentence starts without a click or echo.\n• Supertonic voice: default steps raised from 5 to 8, so it skips fewer words.\n• New experimental option in Settings › Natural-sounding voice: “More time for short sentences”, so Supertonic does not swallow words.\n• If generating an audiobook fails in the reader, the message now has a “Try again” button.\n• Small text fixes.</string>
-    <string name="timbre_title">Voice tone</string>
+    <string name="timbre_title">Voice pitch</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
     <string name="timbre_treble_label">Treble smoothing: %1$s</string>
@@ -761,7 +761,7 @@
     <string name="timbre_treble_value">−%1$d dB</string>
     <string name="timbre_reset">Restore default</string>
     <string name="timbre_close">Close</string>
-    <string name="settings_timbre_title">Voice tone</string>
+    <string name="settings_timbre_title">Voice pitch</string>
     <string name="settings_timbre_desc">Deeper or higher voices and softer treble, to your taste. Works with any voice.</string>
     <string name="btn_timbre">Adjust tone</string>
     <string name="clone_title">Cloned voices (Pocket TTS)</string>
@@ -1061,7 +1061,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="bib_erro_abrir">Could not open the book file.</string>
 
     <!-- Temas (Fase O) -->
-    <string name="tema_titulo">Appearance</string>
+    <string name="tema_titulo">Theme</string>
     <string name="tema_subtitulo">Choose how the app looks. It applies to every screen.</string>
     <string name="theme_papel">Paper</string>
     <string name="tema_desc_sistema">Follows your phone</string>
@@ -1089,7 +1089,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="livro_op_capitulos">Chapters</string>
     <string name="livro_op_personagens">Character voices</string>
     <string name="livro_op_pronuncia">Pronunciation</string>
-    <string name="livro_op_timbre">Voice timbre</string>
+    <string name="livro_op_timbre">Voice pitch</string>
     <string name="livro_voz_online">online</string>
     <string name="livro_voz_offline">offline</string>
     <string name="livro_motor_android">Phone voices</string>
@@ -1448,7 +1448,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="help_pron_step1">A word read wrong? Select it in the text and tap \"Pronunciation\" to teach how to say it</string>
     <string name="help_pron_step2">See every word you taught in ⋮ › Pronunciation dictionary; \"Suggest with AI\" fills in character and place names</string>
     <string name="help_pron_step3">⋮ › Character voices finds who speaks each line and gives each character a different voice</string>
-    <string name="help_pron_step4">On the book screen, Voice timbre makes the voice deeper or brighter</string>
+    <string name="help_pron_step4">On the book screen, Voice pitch makes the voice deeper or brighter</string>
     <string name="help_more_title">More reading tools</string>
     <string name="help_more_step1">The bookmark icon at the top marks where you are; ⋮ › Bookmarks &amp; highlights lists everything you marked</string>
     <string name="help_more_step2">To highlight, select a passage and tap \"Highlight\"</string>
@@ -1510,6 +1510,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_secao_leitura">Reading</string>
     <string name="aj_secao_pausas">Pauses</string>
     <string name="aj_secao_ouvir">While listening</string>
+    <string name="aj_secao_audiobooks">Audiobooks</string>
     <string name="aj_secao_tecnico">For those who like to tweak</string>
     <string name="aj_secao_backup">Backup</string>
     <string name="aj_secao_espaco">Storage on this device</string>
@@ -1543,7 +1544,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_motor_grupo_extras_desc">Other voices that work offline. Some download a pack the first time (about 132 to 350 MB).</string>
     <string name="aj_vozes">Voices on this device</string>
     <string name="aj_vozes_sub">Download, create or delete voices</string>
-    <string name="aj_pron">Word pronunciation</string>
+    <string name="aj_pron">Pronunciation dictionary</string>
     <string name="aj_pron_sub">Teach the voice how to say a word</string>
     <string name="aj_blacklist">Words the voice skips</string>
     <string name="aj_tema_sub">Light, dark or same as the phone</string>
@@ -1565,7 +1566,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_fim_perguntar">Ask</string>
     <string name="aj_fim_app">In this app</string>
     <string name="aj_fim_sistema">In another app</string>
-    <string name="aj_avancado">Settings for experts</string>
     <string name="aj_avancado_sub">Quality, preparation speed and memory. The defaults already work well.</string>
     <string name="aj_avancado_titulo">Advanced settings</string>
     <string name="aj_avancado_intro">The default values work well on most devices. If something gets worse, use "Restore default sound" in the Sound tab.</string>

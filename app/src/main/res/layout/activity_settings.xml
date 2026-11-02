@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Ajustes em linhas compactas (nome, frase curta, valor atual e ›), em 4 abas: Voz e leitura, Som,
-     Backup e espaço e Ajuda. O que é longo ou técnico abre numa página dentro desta tela (pag*):
+     Dados e Ajuda. O que é longo ou técnico abre numa página dentro desta tela (pag*):
      a escolha da voz, os ajustes avançados e o Sobre. -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -69,8 +69,8 @@
         app:tabSelectedTextColor="?attr/colorPrimary"
         app:tabTextColor="@color/color_on_surface_muted"
         app:tabTextAppearance="@style/TextAppearance.Material3.LabelLarge"
-        app:tabMode="scrollable"
-        app:tabGravity="start">
+        app:tabMode="fixed"
+        app:tabGravity="fill">
 
         <com.google.android.material.tabs.TabItem
             android:id="@+id/tabSettingsGeral"
@@ -390,6 +390,45 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <TextView
+                style="@style/AjusteSecao"
+                android:text="@string/aj_secao_audiobooks"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/rowPlayerConversao"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_fim_conversao"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_fim_conversao_sub"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvPlayerConversaoAtual"
+                            style="@style/AjusteValor"/>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             </LinearLayout>
             <!-- fim grupoSettingsGeral -->
 
@@ -440,11 +479,13 @@
                     </LinearLayout>
 
                     <View
+                        android:id="@+id/divPausaFrase"
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginStart="16dp"
                         android:background="@color/color_divider_faint"/>
                     <LinearLayout
+                        android:id="@+id/blocoPausaFrase"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
@@ -691,37 +732,6 @@
                         <TextView style="@style/AjusteSeta"/>
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="16dp"
-                        android:background="@color/color_divider_faint"/>
-                    <LinearLayout
-                        android:id="@+id/rowPlayerConversao"
-                        style="@style/AjusteLinha">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/AjusteTitulo"
-                                android:text="@string/aj_fim_conversao"/>
-
-                            <TextView
-                                style="@style/AjusteSub"
-                                android:text="@string/aj_fim_conversao_sub"/>
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/tvPlayerConversaoAtual"
-                            style="@style/AjusteValor"/>
-
-                        <TextView style="@style/AjusteSeta"/>
-                    </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -748,7 +758,7 @@
 
                             <TextView
                                 style="@style/AjusteTitulo"
-                                android:text="@string/aj_avancado"/>
+                                android:text="@string/aj_avancado_titulo"/>
 
                             <TextView
                                 style="@style/AjusteSub"

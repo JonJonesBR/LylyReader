@@ -265,16 +265,16 @@
     <string name="btn_player_conversao_perguntar">Perguntar</string>
     <string name="btn_player_conversao_app">Este app</string>
     <string name="btn_player_conversao_sistema">Outro app</string>
-    <string name="label_estatisticas">ESTATÍSTICAS</string>
+    <string name="label_estatisticas">Estatísticas de leitura</string>
     <string name="desc_estatisticas_privacidade">100% local e privado — nada aqui é enviado para servidor algum.</string>
     <string name="stats_minutos_ouvidos">Minutos ouvidos</string>
     <string name="stats_minutos_lidos">Minutos lidos</string>
     <string name="stats_livros_concluidos">Livros concluídos</string>
     <string name="stats_streak_dias">Sequência de dias</string>
     <string name="label_stats_ultimos_7_dias">ÚLTIMOS 7 DIAS</string>
-    <string name="settings_tab_geral">Voz e leitura</string>
+    <string name="settings_tab_geral">Voz</string>
     <string name="settings_tab_audio">Som</string>
-    <string name="settings_tab_dados">Backup e espaço</string>
+    <string name="settings_tab_dados">Dados</string>
     <string name="settings_tab_ajuda">Ajuda</string>
     <string name="cache_calculando">Calculando...</string>
     <string name="btn_limpar_cache">Limpar</string>
@@ -471,7 +471,7 @@
     <string name="help_settings_step1">Vozes: na tela do livro, toque em Trocar para escolher uma voz. Categorias: Offline recomendada (Supertonic), Do aparelho (vozes do Android), Online (Edge, Gemini, ElevenLabs) ou Extras offline (Kokoro, Pocket, Piper)</string>
     <string name="help_settings_step2">Voz e ritmo: ajuste na tela do livro, em Gerar audiobook</string>
     <string name="help_settings_step3">Pasta de saída: em Gerar audiobook › Opções avançadas, escolha onde os MP3 são salvos</string>
-    <string name="help_settings_step4">Em Ajustes: Som tem pausas e tom da voz; Backup e espaço faz backup e libera espaço</string>
+    <string name="help_settings_step4">Em Ajustes: Som tem pausas e tom da voz; Dados faz backup e libera espaço</string>
 
     <!-- Diálogos Offline e FAB -->
     <string name="offline_titulo">Você está offline</string>
@@ -494,11 +494,11 @@
     <string name="label_blacklist">PALAVRAS EXCLUÍDAS</string>
     <string name="desc_blacklist">Palavras ou trechos removidos automaticamente durante a limpeza do texto.</string>
     <string name="btn_gerenciar_blacklist">Gerenciar</string>
-    <string name="title_blacklist">Palavras Excluídas</string>
+    <string name="title_blacklist">Palavras que a voz pula</string>
     <string name="hint_novo_termo">Nova palavra ou frase</string>
     <string name="btn_adicionar">Adicionar</string>
     <string name="blacklist_empty">Nenhuma palavra excluída.</string>
-    <string name="cd_ajuda_blacklist">Ajuda Palavras Excluídas</string>
+    <string name="cd_ajuda_blacklist">Ajuda: palavras que a voz pula</string>
     <string name="settings_help_blacklist_title">Palavras excluídas</string>
     <string name="settings_help_blacklist_message">Você pode definir palavras ou trechos de texto que serão removidos automaticamente dos livros durante a limpeza inteligente.\n\nÚtil para retirar cabeçalhos ou rodapés repetitivos, erros de formatação ou termos indesejados na narração.</string>
     <plurals name="blacklist_terms_count">
@@ -751,7 +751,7 @@
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
     <string name="release_notes_corpo">• Corrigido: a leitura guiada e o audiobook não aparecem mais os dois juntos no player. Ao começar um, o outro fecha e guarda onde parou.\n• A barra da leitura guiada agora tem um X para fechá-la de qualquer tela.\n• Corrigido: ao continuar a leitura guiada pelo livro na biblioteca, ela recomeçava um parágrafo antes do marcado. Agora retoma exatamente do parágrafo onde você parou.\n• Voz Pocket TTS: não pula mais a última palavra de algumas frases (como uma palavra entre aspas no fim), e o começo de cada frase sai sem estalo nem eco.\n• Voz Supertonic: o padrão de passos subiu de 5 para 8, para engolir menos palavras.\n• Nova opção experimental em Ajustes › Naturalidade da voz: “Mais tempo para frases curtas”, para a Supertonic não engolir palavras.\n• Se a geração de um audiobook falhar no leitor, o aviso agora tem o botão “Tentar de novo”.\n• Pequenas correções de texto.</string>
-    <string name="timbre_title">Timbre da voz</string>
+    <string name="timbre_title">Tom da voz</string>
     <string name="timbre_desc">Voz mais grave ou mais aguda, e agudos mais suaves. Vale na hora.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
     <string name="timbre_treble_label">Suavizar agudos: %1$s</string>
@@ -761,7 +761,7 @@
     <string name="timbre_treble_value">−%1$d dB</string>
     <string name="timbre_reset">Restaurar padrão</string>
     <string name="timbre_close">Fechar</string>
-    <string name="settings_timbre_title">Timbre da voz</string>
+    <string name="settings_timbre_title">Tom da voz</string>
     <string name="settings_timbre_desc">Vozes mais graves ou mais agudas e agudos mais suaves, do seu jeito. Funciona com qualquer voz.</string>
     <string name="btn_timbre">Ajustar timbre</string>
     <string name="clone_title">Vozes clonadas (Pocket TTS)</string>
@@ -1060,7 +1060,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="bib_erro_abrir">Não foi possível abrir o arquivo do livro.</string>
 
     <!-- Temas (Fase O) -->
-    <string name="tema_titulo">Aparência</string>
+    <string name="tema_titulo">Tema</string>
     <string name="tema_subtitulo">Escolha como o app aparece. Vale para todas as telas.</string>
     <string name="theme_papel">Papel</string>
     <string name="tema_desc_sistema">Segue o aparelho</string>
@@ -1088,7 +1088,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="livro_op_capitulos">Capítulos</string>
     <string name="livro_op_personagens">Vozes dos personagens</string>
     <string name="livro_op_pronuncia">Pronúncia</string>
-    <string name="livro_op_timbre">Timbre da voz</string>
+    <string name="livro_op_timbre">Tom da voz</string>
     <string name="livro_voz_online">online</string>
     <string name="livro_voz_offline">offline</string>
     <string name="livro_motor_android">Vozes do aparelho</string>
@@ -1413,7 +1413,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="marcacoes_exportar_chooser">Compartilhar marcadores e destaques</string>
     <string name="marcacoes_exportar_rotulo_nota">Nota</string>
     <string name="marcacoes_remover_qual">Remover qual?</string>
-    <string name="acao_dicionario_pronuncia">Dicionário de pronúncias</string>
+    <string name="acao_dicionario_pronuncia">Dicionário de pronúncia</string>
     <string name="acao_gerar_audiobook">Gerar audiobook (MP3)</string>
     <string name="gerar_audiobook_titulo">Gerar audiobook</string>
     <string name="gerar_audiobook_livro">Livro inteiro (escolher voz e ritmo)</string>
@@ -1447,9 +1447,9 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="help_voices_step4">Para liberar espaço, toque na lixeira ao lado de uma voz baixada, no seletor de vozes ou em Downloads</string>
     <string name="help_pron_title">Pronúncia e personagens</string>
     <string name="help_pron_step1">Alguma palavra lida errado? Selecione-a no texto e toque em \"Pronúncia\" para ensinar como se fala</string>
-    <string name="help_pron_step2">Veja tudo o que você ensinou em ⋮ › Dicionário de pronúncias; \"Sugerir com IA\" preenche nomes de personagens e lugares</string>
+    <string name="help_pron_step2">Veja tudo o que você ensinou em ⋮ › Dicionário de pronúncia; \"Sugerir com IA\" preenche nomes de personagens e lugares</string>
     <string name="help_pron_step3">⋮ › Vozes dos personagens descobre quem fala cada fala e dá uma voz diferente a cada personagem</string>
-    <string name="help_pron_step4">Na tela do livro, Timbre da voz deixa a voz mais grave ou mais aguda</string>
+    <string name="help_pron_step4">Na tela do livro, Tom da voz deixa a voz mais grave ou mais aguda</string>
     <string name="help_more_title">Mais recursos da leitura</string>
     <string name="help_more_step1">O ícone de marcador no topo marca onde você está; ⋮ › Marcadores e destaques lista tudo o que você marcou</string>
     <string name="help_more_step2">Para destacar, selecione um trecho e toque em \"Destacar\"</string>
@@ -1511,6 +1511,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_secao_leitura">Leitura</string>
     <string name="aj_secao_pausas">Pausas</string>
     <string name="aj_secao_ouvir">Ao ouvir</string>
+    <string name="aj_secao_audiobooks">Audiobooks</string>
     <string name="aj_secao_tecnico">Para quem quer mexer em detalhes</string>
     <string name="aj_secao_backup">Backup</string>
     <string name="aj_secao_espaco">Espaço no aparelho</string>
@@ -1544,7 +1545,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_motor_grupo_extras_desc">Outras vozes que funcionam sem internet. Algumas baixam um pacote na primeira vez (cerca de 132 a 350 MB).</string>
     <string name="aj_vozes">Vozes no aparelho</string>
     <string name="aj_vozes_sub">Baixar, criar ou apagar vozes</string>
-    <string name="aj_pron">Pronúncia de palavras</string>
+    <string name="aj_pron">Dicionário de pronúncia</string>
     <string name="aj_pron_sub">Ensine como a voz deve falar uma palavra</string>
     <string name="aj_blacklist">Palavras que a voz pula</string>
     <string name="aj_tema_sub">Claro, escuro ou igual ao celular</string>
@@ -1566,7 +1567,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_fim_perguntar">Perguntar</string>
     <string name="aj_fim_app">Neste app</string>
     <string name="aj_fim_sistema">Em outro app</string>
-    <string name="aj_avancado">Ajustes para quem entende do assunto</string>
     <string name="aj_avancado_sub">Qualidade, velocidade de preparo e memória. Os padrões já funcionam bem.</string>
     <string name="aj_avancado_titulo">Ajustes avançados</string>
     <string name="aj_avancado_intro">Os valores padrão funcionam bem na maioria dos aparelhos. Se algo piorar, use "Restaurar o padrão do som" na aba Som.</string>

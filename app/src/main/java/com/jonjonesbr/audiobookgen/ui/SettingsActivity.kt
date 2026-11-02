@@ -84,6 +84,8 @@ class SettingsActivity : BasePlayerActivity() {
     private lateinit var seekPausaFinalFrase: android.widget.SeekBar
     private lateinit var tvPausaFinalFraseValor: TextView
     private lateinit var chkPausasNaturais: android.widget.CompoundButton
+    private lateinit var divPausaFrase: View
+    private lateinit var blocoPausaFrase: View
 
     // Buffering da leitura guiada (profundidade de prefetch + paralelismo do kokoro)
     private lateinit var seekBufferParagrafos: android.widget.SeekBar
@@ -209,6 +211,8 @@ class SettingsActivity : BasePlayerActivity() {
         seekPausaFinalFrase    = findViewById(R.id.seekPausaFinalFrase)
         tvPausaFinalFraseValor = findViewById(R.id.tvPausaFinalFraseValor)
         chkPausasNaturais      = findViewById(R.id.chkPausasNaturais)
+        divPausaFrase          = findViewById(R.id.divPausaFrase)
+        blocoPausaFrase        = findViewById(R.id.blocoPausaFrase)
 
         seekBufferParagrafos    = findViewById(R.id.seekBufferParagrafos)
         tvBufferParagrafosValor = findViewById(R.id.tvBufferParagrafosValor)
@@ -262,6 +266,11 @@ class SettingsActivity : BasePlayerActivity() {
     // segue a aba selecionada.
     private fun configurarTabsSettings() {
         mostrarGrupoSettings(0)
+        // Fonte ampliada: as abas de largura igual cortariam o nome; nesse caso elas rolam.
+        if (resources.configuration.fontScale >= 1.3f) {
+            tabsSettings.tabMode = TabLayout.MODE_SCROLLABLE
+            tabsSettings.tabGravity = TabLayout.GRAVITY_START
+        }
         tabsSettings.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 mostrarGrupoSettings(tab.position)
@@ -360,7 +369,7 @@ class SettingsActivity : BasePlayerActivity() {
         tvPausaFinalFraseValor.text = getString(R.string.settings_pausa_frase_value, pausaFrase)
         ViewCompat.setStateDescription(seekPausaFinalFrase, tvPausaFinalFraseValor.text)
         chkPausasNaturais.isChecked = appPrefs.pausasNaturais
-        atualizarPausaFixaHabilitada()
+        atualizarPausaFixaVisivel()
 
         atualizarUiBuffering()
 
@@ -652,17 +661,17 @@ class SettingsActivity : BasePlayerActivity() {
 
     // ── Pausa entre frases (kokoro) ─────────────────────────────────────────
 
-    /** Com as pausas naturais ligadas a pausa fixa não vale: o controle fica desabilitado. */
-    private fun atualizarPausaFixaHabilitada() {
-        val fixa = !appPrefs.pausasNaturais
-        seekPausaFinalFrase.isEnabled = fixa
-        tvPausaFinalFraseValor.alpha = if (fixa) 1f else ALFA_DESABILITADO
+    /** Com as pausas naturais ligadas a pausa fixa não vale: o bloco some até elas serem desligadas. */
+    private fun atualizarPausaFixaVisivel() {
+        val visivel = if (appPrefs.pausasNaturais) View.GONE else View.VISIBLE
+        divPausaFrase.visibility = visivel
+        blocoPausaFrase.visibility = visivel
     }
 
     private fun configurarPausaFinalFraseSeekbar() {
         chkPausasNaturais.setOnCheckedChangeListener { _, marcado ->
             appPrefs.pausasNaturais = marcado
-            atualizarPausaFixaHabilitada()
+            atualizarPausaFixaVisivel()
         }
         seekPausaFinalFrase.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
@@ -1187,7 +1196,7 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
     companion object {
-        /** Aba inicial (0 = Voz e leitura, 1 = Som, 2 = Backup e espaço, 3 = Ajuda). */
+        /** Aba inicial (0 = Voz e leitura, 1 = Som, 2 = Dados, 3 = Ajuda). */
         const val EXTRA_ABA = "extra_aba"
         const val ABA_SOM = 1
         private const val JSON_INDENT = 4
@@ -1197,7 +1206,6 @@ class SettingsActivity : BasePlayerActivity() {
         // Teto do slider de pausa entre frases (kokoro) — 2s já é uma pausa dramática pra uma
         // frase só; casa com o android:max="2000" do SeekBar (progresso = ms direto, sem offset).
         private const val PAUSA_FINAL_FRASE_MS_MAX = 2000
-        private const val ALFA_DESABILITADO = 0.4f
         private const val DIALOG_PADDING_H = 48
         private const val DIALOG_PADDING_V = 24
         private const val PAUSA_300_MS = 300
