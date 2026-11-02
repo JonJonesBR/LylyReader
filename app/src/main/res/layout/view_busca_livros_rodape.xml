@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fim da lista de livros: mais resultados, baixar todos e o aviso do acervo (rolam junto com a lista). -->
+<!-- Fim da lista de livros: mais resultados e o aviso do acervo (rolam junto com a lista). "Baixar todos" fica no ⋮. -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -17,16 +17,6 @@
         android:layout_height="wrap_content"
         android:minHeight="48dp"
         android:text="@string/livros_mais"
-        android:textAllCaps="false"
-        android:visibility="gone"/>
-
-    <Button
-        android:id="@+id/btnBaixarTodosLivros"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:text="@string/livros_baixar_todos"
         android:textAllCaps="false"
         android:visibility="gone"/>
 

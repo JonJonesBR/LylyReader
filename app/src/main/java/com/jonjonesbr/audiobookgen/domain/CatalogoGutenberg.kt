@@ -10,6 +10,8 @@ const val GUTENBERG_BASE = "https://www.gutenberg.org"
 object CatalogoGutenberg {
     private val padraoId = Regex("""/ebooks/(\d+)\.opds""")
     private val padraoIdioma = Regex("""^(.*)\s+\(([^()]+)\)\s*$""")
+    /** Obra sem autor: o feed põe a contagem de downloads no lugar do autor ("24203 downloads"). */
+    private val padraoContagem = Regex("""\d[\d,.]*\s+downloads?""", RegexOption.IGNORE_CASE)
 
     /** Endereço da busca no feed OPDS oficial. [inicio] é o `start_index` (1 = primeira página). */
     fun urlBusca(consulta: String, idioma: IdiomaBusca, inicio: Int = 1): String {
@@ -55,7 +57,7 @@ object CatalogoGutenberg {
             val no = filhos.item(i) as? Element ?: continue
             when (no.tagName) {
                 "title" -> titulo = no.textContent.trim()
-                "content" -> autor = no.textContent.trim()
+                "content" -> autor = no.textContent.trim().let { if (padraoContagem.matches(it)) "" else it }
                 "link" -> if (no.getAttribute("rel") == "subsection") {
                     padraoId.find(no.getAttribute("href"))?.let { id = it.groupValues[1].toInt() }
                 }

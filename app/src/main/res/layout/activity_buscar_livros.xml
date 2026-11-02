@@ -35,6 +35,16 @@
             android:textStyle="bold"
             android:textColor="@color/color_on_surface"
             android:layout_marginStart="4dp"/>
+
+        <ImageButton
+            android:id="@+id/btnMaisBuscarLivros"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_mais"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_mais_opcoes"
+            android:tooltipText="@string/cd_mais_opcoes"/>
     </LinearLayout>
 
     <View

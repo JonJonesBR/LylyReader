@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
 import com.jonjonesbr.audiobookgen.R
@@ -29,6 +28,7 @@ import com.jonjonesbr.audiobookgen.domain.FonteLivros
 import com.jonjonesbr.audiobookgen.domain.IdiomaBusca
 import com.jonjonesbr.audiobookgen.domain.LivroBiblioteca
 import com.jonjonesbr.audiobookgen.domain.LivroEncontrado
+import com.jonjonesbr.audiobookgen.domain.linhaDetalheLivro
 import com.jonjonesbr.audiobookgen.domain.origemDaChave
 import com.jonjonesbr.audiobookgen.service.DownloadCentral
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
@@ -38,6 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
  * Busca de livros em domínio público / licença livre (Projeto Gutenberg, Wikisource e Internet Archive), sobre o
@@ -47,19 +48,26 @@ import kotlinx.coroutines.withContext
  *
  * @param aoGuardar chamado com o livro já na Biblioteca depois de "Baixar".
  * @param aoVerDownloads ação "Ver" do aviso de "Baixar todos"; null quando a fila já está na própria tela.
+ * @param aoAbrir chamado no lugar de [aoGuardar] quando o botão é "Abrir" (livro que já estava na Biblioteca);
+ * null = usa [aoGuardar] também para ele.
  */
 class BuscaLivrosPainel(
     private val activity: AppCompatActivity,
     private val raiz: View,
     private val aoGuardar: (LivroEncontrado, LivroBiblioteca) -> Unit,
-    private val aoVerDownloads: (() -> Unit)? = null
+    private val aoVerDownloads: (() -> Unit)? = null,
+    private val aoAbrir: ((LivroBiblioteca) -> Unit)? = null
 ) {
     private val etBusca: EditText = raiz.findViewById(R.id.etBuscaLivro)
-    private val rgIdioma: ChipGroup = raiz.findViewById(R.id.rgIdiomaLivro)
+    private val chipIdioma: Chip = raiz.findViewById(R.id.chipIdiomaLivro)
     private val chipFonte: Chip = raiz.findViewById(R.id.chipFonteLivro)
     private val tvStatus: TextView = raiz.findViewById(R.id.tvStatusLivros)
     private val pbBusca: LinearProgressIndicator = raiz.findViewById(R.id.pbBuscaLivros)
-    private val adapter = LivrosAdapter(activity.lifecycleScope, onBaixar = ::baixar)
+    private val adapter = LivrosAdapter(
+        activity.lifecycleScope,
+        onBaixar = ::baixar,
+        mostrarIdioma = { idiomaAtual == IdiomaBusca.TODOS }
+    )
 
     // O LayoutManager vem antes de inflar o rodapé com a lista como pai (sem ele a RecyclerView lança exceção).
     private val recycler: RecyclerView = raiz.findViewById<RecyclerView>(R.id.recyclerLivros).apply {
@@ -70,13 +78,14 @@ class BuscaLivrosPainel(
     private val rodape: View =
         LayoutInflater.from(activity).inflate(R.layout.view_busca_livros_rodape, recycler, false)
     private val btnMais: Button = rodape.findViewById(R.id.btnMaisLivros)
-    private val btnBaixarTodos: Button = rodape.findViewById(R.id.btnBaixarTodosLivros)
     private var fonteAtual = FonteLivros.GUTENBERG
+    private var idiomaAtual = IdiomaBusca.TODOS
 
     private val livros = mutableListOf<LivroEncontrado>()
     private var proximoInicio: Int? = null
     private var buscaAtual: Job? = null
     private var baixando: String? = null
+    private var baixandoTodos = false
     private var jaBuscou = false
 
     /** Limite de "Baixar todos" (a tela da Biblioteca reduz em build de depuração). */
@@ -90,25 +99,66 @@ class BuscaLivrosPainel(
             if (acao == EditorInfo.IME_ACTION_SEARCH) buscar(reiniciar = true)
             acao == EditorInfo.IME_ACTION_SEARCH
         }
-        rgIdioma.setOnCheckedStateChangeListener { _, _ -> buscar(reiniciar = true) }
+        chipIdioma.setOnClickListener { escolherIdioma() }
+        chipIdioma.setOnCloseIconClickListener { escolherIdioma() }
         chipFonte.setOnClickListener { escolherFonte() }
         chipFonte.setOnCloseIconClickListener { escolherFonte() }
         btnMais.setOnClickListener { buscar(reiniciar = false) }
-        btnBaixarTodos.setOnClickListener { baixarTodosOsResultados() }
+        atualizarChipFonte(R.string.livros_fonte_gutenberg)
+        atualizarChipIdioma()
     }
 
     /** Primeira lista: os mais baixados no idioma escolhido. Só busca uma vez (a aba de Downloads chama ao abrir). */
     fun iniciar(idiomaInicial: IdiomaBusca? = null) {
         if (jaBuscou) return
         jaBuscou = true
-        val chip = when (idiomaInicial) {
-            IdiomaBusca.PT -> R.id.rbIdiomaPt
-            IdiomaBusca.EN -> R.id.rbIdiomaEn
-            IdiomaBusca.ES -> R.id.rbIdiomaEs
-            else -> null
+        idiomaAtual = idiomaInicial ?: IdiomaBusca.TODOS
+        atualizarChipIdioma()
+        buscar(reiniciar = true)
+    }
+
+    /** Dá para pôr "Baixar todos" na lista: há resultados e não há um "Baixar todos" já rodando. */
+    fun podeBaixarTodos(): Boolean = livros.isNotEmpty() && !baixandoTodos
+
+    /** Idioma: Todos, Português, English ou Español. Como o rótulo do acervo, abre uma escolha. */
+    private fun escolherIdioma() {
+        // O Wikisource é um site por idioma: "Todos" não existe nele.
+        val opcoes = IdiomaBusca.entries.filter { it != IdiomaBusca.TODOS || fonteAtual != FonteLivros.WIKISOURCE }
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setTitle(R.string.livros_idioma)
+            .setSingleChoiceItems(
+                opcoes.map { rotuloDoIdioma(it) }.toTypedArray(), opcoes.indexOf(idiomaAtual)
+            ) { d, i ->
+                d.dismiss()
+                if (opcoes[i] == idiomaAtual) return@setSingleChoiceItems
+                idiomaAtual = opcoes[i]
+                atualizarChipIdioma()
+                buscar(reiniciar = true)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun rotuloDoIdioma(idioma: IdiomaBusca): String = activity.getString(
+        when (idioma) {
+            IdiomaBusca.TODOS -> R.string.livros_idioma_todos
+            IdiomaBusca.PT -> R.string.chip_idioma_pt
+            IdiomaBusca.EN -> R.string.chip_idioma_en
+            IdiomaBusca.ES -> R.string.chip_idioma_es
         }
-        // Marcar o chip já dispara a busca pelo listener; sem chip para marcar, busca direto.
-        if (chip != null && rgIdioma.checkedChipId != chip) rgIdioma.check(chip) else buscar(reiniciar = true)
+    )
+
+    /** Com o TalkBack, o chip de idioma diz também o nome do filtro ("Idioma: Português"), não só a palavra. */
+    private fun atualizarChipIdioma() {
+        val rotulo = rotuloDoIdioma(idiomaAtual)
+        chipIdioma.text = rotulo
+        chipIdioma.contentDescription = activity.getString(R.string.livros_idioma) + ": " + rotulo
+    }
+
+    /** Mesmo cuidado do idioma: "Colección: Gutenberg" para quem usa leitor de tela. */
+    private fun atualizarChipFonte(rotulo: Int) {
+        chipFonte.setText(rotulo)
+        chipFonte.contentDescription = activity.getString(R.string.livros_acervo) + ": " + activity.getString(rotulo)
     }
 
     /** Acervo: Gutenberg, Wikisource ou Internet Archive (antes três chips numa linha só deles). */
@@ -124,7 +174,7 @@ class BuscaLivrosPainel(
                 d.dismiss()
                 if (fontes[i] == fonteAtual) return@setSingleChoiceItems
                 fonteAtual = fontes[i]
-                chipFonte.setText(nomes[i])
+                atualizarChipFonte(nomes[i])
                 ajustarParaFonte()
                 buscar(reiniciar = true)
             }
@@ -141,8 +191,10 @@ class BuscaLivrosPainel(
     /** O Wikisource é um site por idioma (não há "todos") e só busca com texto digitado. */
     private fun ajustarParaFonte() {
         val wiki = fonteAtual == FonteLivros.WIKISOURCE
-        raiz.findViewById<View>(R.id.rbIdiomaTodos).visibility = if (wiki) View.GONE else View.VISIBLE
-        if (wiki && rgIdioma.checkedChipId == R.id.rbIdiomaTodos) rgIdioma.check(R.id.rbIdiomaPt)
+        if (wiki && idiomaAtual == IdiomaBusca.TODOS) {
+            idiomaAtual = IdiomaBusca.PT
+            atualizarChipIdioma()
+        }
         rodape.findViewById<TextView>(R.id.tvAvisoLivros).setText(
             when (fonteAtual) {
                 FonteLivros.WIKISOURCE -> R.string.livros_aviso_wikisource
@@ -150,13 +202,6 @@ class BuscaLivrosPainel(
                 FonteLivros.GUTENBERG -> R.string.livros_aviso
             }
         )
-    }
-
-    private fun idiomaEscolhido(): IdiomaBusca = when (rgIdioma.checkedChipId) {
-        R.id.rbIdiomaPt -> IdiomaBusca.PT
-        R.id.rbIdiomaEn -> IdiomaBusca.EN
-        R.id.rbIdiomaEs -> IdiomaBusca.ES
-        else -> IdiomaBusca.TODOS
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -180,7 +225,7 @@ class BuscaLivrosPainel(
         pbBusca.visibility = View.VISIBLE
         buscaAtual = activity.lifecycleScope.launch {
             try {
-                val r = LivrosClient.buscar(fonte, etBusca.text.toString(), idiomaEscolhido(), inicio)
+                val r = LivrosClient.buscar(fonte, etBusca.text.toString(), idiomaAtual, inicio)
                 val primeiroNovo = livros.size
                 livros += r.livros
                 proximoInicio = r.proximoInicio
@@ -191,7 +236,6 @@ class BuscaLivrosPainel(
                 }
                 marcarJaBaixados()
                 btnMais.visibility = if (proximoInicio != null) View.VISIBLE else View.GONE
-                btnBaixarTodos.visibility = if (livros.isEmpty()) View.GONE else View.VISIBLE
                 status(if (livros.isEmpty()) activity.getString(R.string.livros_nada) else "")
                 pbBusca.visibility = View.GONE
             } catch (e: CancellationException) {
@@ -205,12 +249,29 @@ class BuscaLivrosPainel(
     }
 
     /**
+     * Pede confirmação e então chama [baixarTodosOsResultados]. É o que os ⋮ chamam: o item fica no topo, fácil de
+     * tocar sem querer, e pode enfileirar até [limiteBaixar] livros de uma vez.
+     */
+    fun confirmarBaixarTodos() {
+        if (baixandoTodos) return
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setTitle(R.string.livros_baixar_todos)
+            .setMessage(activity.getString(R.string.livros_baixar_todos_aviso, limiteBaixar))
+            .setPositiveButton(R.string.livros_baixar_usar) { _, _ -> baixarTodosOsResultados() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /**
      * "Coleção completa": carrega as próximas páginas da busca atual (até [limiteBaixar] livros) e põe todos na fila
      * de downloads em segundo plano, com notificação. Ex.: buscar um autor e baixar a obra toda de uma vez.
+     * Chamado pela caixa de [confirmarBaixarTodos] (e pelo modo de depuração).
+     * Os ⋮ só o oferecem com [podeBaixarTodos].
      */
     @Suppress("TooGenericExceptionCaught")
     fun baixarTodosOsResultados() {
-        btnBaixarTodos.isEnabled = false
+        if (baixandoTodos) return
+        baixandoTodos = true
         buscaAtual?.cancel()
         pbBusca.visibility = View.GONE
         activity.lifecycleScope.launch {
@@ -218,7 +279,7 @@ class BuscaLivrosPainel(
                 while (proximoInicio != null && livros.size < limiteBaixar) {
                     status(activity.getString(R.string.livros_carregando_todos, livros.size))
                     val r = LivrosClient.buscar(
-                        fonteAtual, etBusca.text.toString(), idiomaEscolhido(), proximoInicio
+                        fonteAtual, etBusca.text.toString(), idiomaAtual, proximoInicio
                     )
                     livros += r.livros
                     proximoInicio = r.proximoInicio
@@ -240,7 +301,7 @@ class BuscaLivrosPainel(
                 Log.w(TAG, "Falha na busca de livros", e)
                 status(activity.getString(R.string.livros_erro_busca, activity.getString(mensagemDeErro(e))))
             } finally {
-                btnBaixarTodos.isEnabled = true
+                baixandoTodos = false
             }
         }
     }
@@ -283,9 +344,12 @@ class BuscaLivrosPainel(
         adapter.marcarBaixando(livro.chave)
         activity.lifecycleScope.launch {
             try {
+                // "Abrir" é o rótulo de quem já está na lista de baixados: a ação segue o mesmo conjunto.
+                val jaEstava = livro.chave in adapter.baixadosAtuais()
                 val noAcervo = guardarNaBiblioteca(livro)
                 adapter.marcarBaixado(livro.chave)
-                aoGuardar(livro, noAcervo)
+                val abrir = aoAbrir
+                if (jaEstava && abrir != null) abrir(noAcervo) else aoGuardar(livro, noAcervo)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -310,7 +374,9 @@ class BuscaLivrosPainel(
 
 private class LivrosAdapter(
     private val scope: CoroutineScope,
-    private val onBaixar: (LivroEncontrado) -> Unit
+    private val onBaixar: (LivroEncontrado) -> Unit,
+    /** Idioma aparece na linha de detalhe só com o filtro "Todos" (com um idioma, ele já é o filtro). */
+    private val mostrarIdioma: () -> Boolean
 ) : ListAdapter<LivroEncontrado, LivrosAdapter.VH>(DIFF) {
 
     private var emDownload: String? = null
@@ -322,6 +388,9 @@ private class LivrosAdapter(
     }
 
     fun marcarBaixado(chave: String) = definirBaixados(baixados + chave)
+
+    /** Chaves dos livros que o botão mostra como "Abrir" neste momento. */
+    fun baixadosAtuais(): Set<String> = baixados
 
     fun marcarBaixando(id: String?) {
         emDownload = id
@@ -344,10 +413,13 @@ private class LivrosAdapter(
         holder.titulo.text = livro.titulo
         val jaBaixado = livro.chave in baixados
         val ctx = holder.itemView.context
-        holder.detalhe.text = listOfNotNull(
-            livro.autor.ifBlank { null }, livro.idioma, livro.ano,
-            if (jaBaixado) ctx.getString(R.string.livros_ja_baixado) else null
-        ).joinToString(" · ")
+        holder.detalhe.text = linhaDetalheLivro(
+            livro,
+            mostrarIdioma = mostrarIdioma(),
+            jaBaixado = jaBaixado,
+            rotuloJaBaixado = ctx.getString(R.string.livros_ja_baixado),
+            idiomaDoApp = Locale.getDefault()
+        )
         holder.botao.setText(if (jaBaixado) R.string.livros_usar else R.string.livros_baixar_usar)
         carregarCapa(holder, livro)
         val esteBaixando = emDownload == livro.chave

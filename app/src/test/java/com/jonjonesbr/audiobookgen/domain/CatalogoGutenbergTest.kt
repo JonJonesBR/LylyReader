@@ -43,6 +43,19 @@ class CatalogoGutenbergTest {
     }
 
     @Test
+    fun `contagem de downloads no lugar do autor nao vira autor`() {
+        val semAutor = """<feed xmlns="http://www.w3.org/2005/Atom">
+<entry>
+<title>The Holy Bible</title>
+<content type="text">24203 downloads</content>
+<link type="application/atom+xml" rel="subsection" href="/ebooks/10.opds"/>
+</entry>
+</feed>"""
+        val livro = CatalogoGutenberg.interpretar(semAutor).livros.single()
+        assertEquals("", livro.autor)
+    }
+
+    @Test
     fun `titulo sem idioma entre parenteses fica inteiro`() {
         val livro = CatalogoGutenberg.interpretar(feed).livros.last()
         assertEquals("The Odyssey", livro.titulo)

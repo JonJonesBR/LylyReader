@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Busca de livros grátis (BuscaLivrosPainel): usada na tela "Livros grátis" da Biblioteca e na aba
-     "Livros grátis" de Downloads. Fixos no topo só a busca e uma linha de filtros (acervo ▾ e idioma); a lista
-     fica com o resto da tela e termina em "Mais resultados", "Baixar todos" e o aviso do acervo
+<!-- Busca de livros grátis (BuscaLivrosPainel): usada na tela "Livros gratuitos" da Biblioteca e na aba
+     "Livros gratuitos" de Downloads. Fixos no topo só a busca e os dois seletores lado a lado (acervo ▾ e idioma ▾);
+     a lista fica com o resto da tela e termina em "Mais resultados" e o aviso do acervo
      (view_busca_livros_rodape). -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -49,65 +49,34 @@
             android:textAllCaps="false"/>
     </LinearLayout>
 
-    <!-- Uma linha só, rolando para o lado: acervo (abre a escolha) e idioma. -->
-    <HorizontalScrollView
+    <!-- Dois seletores lado a lado, cada um do tamanho do próprio texto (sem rolagem): acervo e idioma.
+         Quebram de linha só quando não cabem (fonte ampliada, tela estreita), para o de idioma não sumir. -->
+    <com.google.android.material.chip.ChipGroup
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scrollbars="none"
         android:paddingStart="12dp"
-        android:paddingEnd="12dp">
+        android:paddingEnd="12dp"
+        app:singleLine="false"
+        app:chipSpacingHorizontal="8dp">
 
-        <LinearLayout
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipFonteLivro"
+            style="@style/Widget.Material3.Chip.Assist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:text="@string/livros_fonte_gutenberg"
+            app:closeIcon="@drawable/ic_seta_baixo"
+            app:closeIconVisible="true"/>
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipFonteLivro"
-                style="@style/Widget.Material3.Chip.Assist"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:text="@string/livros_fonte_gutenberg"
-                app:closeIcon="@drawable/ic_seta_baixo"
-                app:closeIconVisible="true"/>
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/rgIdiomaLivro"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:singleSelection="true"
-                app:selectionRequired="true"
-                app:singleLine="true">
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/rbIdiomaTodos"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/livros_idioma_todos"
-                    android:checked="true"/>
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/rbIdiomaPt"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/chip_idioma_pt"/>
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/rbIdiomaEn"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/chip_idioma_en"/>
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/rbIdiomaEs"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/chip_idioma_es"/>
-            </com.google.android.material.chip.ChipGroup>
-        </LinearLayout>
-    </HorizontalScrollView>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipIdiomaLivro"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/livros_idioma_todos"
+            app:closeIcon="@drawable/ic_seta_baixo"
+            app:closeIconVisible="true"/>
+    </com.google.android.material.chip.ChipGroup>
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/pbBuscaLivros"

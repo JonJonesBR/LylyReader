@@ -992,14 +992,14 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="livros_nada">Nenhum livro encontrado.</string>
     <string name="livros_erro_busca">Não foi possível buscar: %1$s</string>
     <string name="livros_erro_download">Não foi possível baixar o livro: %1$s</string>
-    <string name="livros_baixar_usar">Baixar e usar</string>
+    <string name="livros_baixar_usar">Baixar</string>
     <string name="livros_fonte_gutenberg">Gutenberg</string>
     <string name="livros_fonte_wikisource">Wikisource</string>
     <string name="livros_digite_busca">Digite um título ou autor para buscar no Wikisource.</string>
     <string name="livros_aviso_wikisource">Textos do Wikisource (wikisource.org), em domínio público ou com licença livre; confira a página de cada obra. Os EPUBs são gerados pela ferramenta ws-export da Wikimedia.</string>
     <string name="livros_fonte_archive">Internet Archive</string>
     <string name="livros_aviso_archive">Livros do Internet Archive (archive.org) publicados até 1928 e marcados como domínio público por quem os enviou. A marcação não é verificada pelo app: as regras de direitos autorais do seu país podem ser diferentes.</string>
-    <string name="livros_usar">Usar</string>
+    <string name="livros_usar">Abrir</string>
     <string name="livros_ja_baixado">já baixado</string>
     <string name="livros_aviso">Livros do Projeto Gutenberg (gutenberg.org), em domínio público nos Estados Unidos. As regras de direitos autorais do seu país podem ser diferentes.</string>
 
@@ -1246,7 +1246,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="bib_add_link_sub">Endereço direto de um arquivo (EPUB, PDF, TXT...)</string>
     <string name="link_titulo">Importar de um link</string>
     <string name="link_hint">Cole o endereço do arquivo</string>
-    <string name="link_aviso">O LylyReader só baixa o arquivo para a sua biblioteca. Ele não faz busca nem confere o conteúdo: a responsabilidade pelo que você baixa é sua. Funciona com links diretos, inclusive de arquivos seus no Google Drive e no Dropbox.</string>
+    <string name="link_aviso">Funciona com links diretos, inclusive do Google Drive e do Dropbox. O conteúdo baixado é de sua responsabilidade.</string>
     <string name="link_declaracao">Declaro que tenho o direito de usar este conteúdo (é meu, é de domínio público ou tenho permissão).</string>
     <string name="link_baixar">Baixar</string>
     <string name="link_baixando">Baixando...</string>
@@ -1259,6 +1259,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
 
     <string name="dl_central_grupo_livros">Livros</string>
     <string name="livros_baixar_todos">Baixar todos estes livros</string>
+    <string name="livros_baixar_todos_aviso">Até %1$d livros desta busca vão para a fila de downloads, em segundo plano, e para a sua Biblioteca.</string>
     <string name="livros_carregando_todos">Carregando a lista... %1$d livros</string>
     <string name="livros_na_fila">%1$d livros na fila de downloads.</string>
     <string name="livros_nada_novo">Esses livros já estão na sua biblioteca.</string>
@@ -1592,7 +1593,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_sobre_sub">Formatos aceitos e créditos das vozes</string>
     <!-- Downloads em abas e permissões -->
     <string name="dl_aba_vozes">Vozes</string>
-    <string name="dl_aba_livros">Livros grátis</string>
+    <string name="dl_aba_livros">Livros gratuitos</string>
     <string name="dl_livro_na_biblioteca">“%1$s” está na sua Biblioteca</string>
     <string name="dl_abrir_livro">Abrir</string>
     <string name="dl_livros_mais_na_fila">e mais %1$d na fila</string>
@@ -1614,6 +1615,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="perm_toque_para_permitir">Toque para permitir</string>
     <string name="perm_permitir_tudo">Permitir</string>
     <string name="livros_acervo">Acervo</string>
+    <string name="livros_idioma">Idioma</string>
     <string name="aj_secao_naturalidade">Naturalidade da voz (experimental)</string>
     <string name="aj_entonacao_continua">Entonação contínua</string>
     <string name="aj_entonacao_continua_sub">Lê frases seguidas de uma vez, sem “fechar” a voz em cada ponto. Supertonic e Pocket, na leitura guiada.</string>
