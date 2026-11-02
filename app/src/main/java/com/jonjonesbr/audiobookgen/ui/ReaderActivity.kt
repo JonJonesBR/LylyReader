@@ -21,7 +21,6 @@ import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
 import com.jonjonesbr.audiobookgen.util.dpToPx
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
-import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
 import com.jonjonesbr.audiobookgen.util.abrirExpandida
 import android.content.Intent
 import android.os.Bundle
@@ -71,8 +70,6 @@ class ReaderActivity : BasePlayerActivity() {
         private const val ALFA_SETA_DESABILITADA = 0.3f
         private const val CAPITULOS_ACIMA_DO_ATUAL = 2
         private const val MIN_CAPITULOS_PARA_BUSCA = 12
-        /** O resultado da busca fica a 1/[FRACAO_MARGEM_BUSCA] da altura, contando do topo da lista. */
-        private const val FRACAO_MARGEM_BUSCA = 4
         /** Marca de "fim do livro na tela" para não refazer o texto do progresso a cada rolagem parada. */
         private const val PROGRESSO_CHAVE_FIM = -2
         const val EXTRA_TRECHO_NOME = "extra_trecho_nome"
@@ -156,15 +153,6 @@ class ReaderActivity : BasePlayerActivity() {
     private lateinit var tvModoAtivo: TextView
     private lateinit var btnConcluirModo: Button
     private lateinit var btnBookmark: android.widget.ImageButton
-
-    // T4.1 — Busca
-    private lateinit var layoutBuscaReader: View
-    private lateinit var etBuscaReader: android.widget.EditText
-    private lateinit var tvBuscaContador: TextView
-    private lateinit var btnBuscaAnterior: android.widget.ImageButton
-    private lateinit var btnBuscaProximo: android.widget.ImageButton
-    private lateinit var btnBuscaFechar: android.widget.ImageButton
-    private var ultimaBuscaRolada: List<Int> = emptyList()
 
     private lateinit var adapter: ParagrafoAdapter
     private var caminhoArquivo: String = ""
@@ -361,6 +349,25 @@ class ReaderActivity : BasePlayerActivity() {
                 caminhoMapaDePersonagens = { personagensController.caminhoMapaDePersonagens(it) },
                 aguardarAnaliseDeFalantes = { personagensController.aguardarAnaliseDeFalantes() },
             ),
+        )
+    }
+
+    // Busca no texto: as views vêm do layout já inflado (vincularViews roda antes de configurarBotoes).
+    private val buscaController by lazy {
+        ReaderBuscaController(
+            activity = this,
+            viewModel = viewModel,
+            recyclerView = recyclerView,
+            views = ReaderBuscaController.Views(
+                abrir = findViewById(R.id.btnBuscarReader),
+                layout = findViewById(R.id.layoutBuscaReader),
+                campo = findViewById(R.id.etBuscaReader),
+                contador = findViewById(R.id.tvBuscaContador),
+                anterior = findViewById(R.id.btnBuscaAnterior),
+                proximo = findViewById(R.id.btnBuscaProximo),
+                fechar = findViewById(R.id.btnBuscaFechar),
+            ),
+            obterAdapter = { adapter },
         )
     }
 
@@ -643,13 +650,6 @@ class ReaderActivity : BasePlayerActivity() {
         tvGuidedSoneca        = findViewById(R.id.tvGuidedSoneca)
 
         btnBookmark          = findViewById(R.id.btnBookmarkReader)
-
-        layoutBuscaReader    = findViewById(R.id.layoutBuscaReader)
-        etBuscaReader        = findViewById(R.id.etBuscaReader)
-        tvBuscaContador      = findViewById(R.id.tvBuscaContador)
-        btnBuscaAnterior     = findViewById(R.id.btnBuscaAnterior)
-        btnBuscaProximo      = findViewById(R.id.btnBuscaProximo)
-        btnBuscaFechar       = findViewById(R.id.btnBuscaFechar)
     }
 
     // ── RecyclerView ──────────────────────────────────────────────────────────
@@ -708,9 +708,6 @@ class ReaderActivity : BasePlayerActivity() {
     private fun configurarBotoes() {
         btnVoltar.setOnClickListener { retornoController.voltar() }
 
-        findViewById<android.widget.ImageButton>(R.id.btnBuscarReader)
-            .setOnClickListener { alternarBusca() }
-
         btnBookmark.setOnClickListener { marcacoesController.alternarBookmarkNaPosicaoAtual() }
 
         // Botão de mais opções: abre o BottomSheet unificado de ações
@@ -742,62 +739,8 @@ class ReaderActivity : BasePlayerActivity() {
             }
         }
 
-        // ── Busca ──────────────────────────────────────────────────────
-        etBuscaReader.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {
-                val naTela = (recyclerView.layoutManager as? LinearLayoutManager)
-                    ?.findFirstVisibleItemPosition()?.coerceAtLeast(0) ?: 0
-                viewModel.buscarTexto(s?.toString() ?: "", naTela)
-            }
-        })
-
-        etBuscaReader.setOnEditorActionListener { _, action, _ ->
-            if (action == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
-                viewModel.navegarBusca(1)
-                scrollParaBuscaAtual()
-                true
-            } else false
-        }
-
-        btnBuscaAnterior.setOnClickListener {
-            viewModel.navegarBusca(-1)
-            scrollParaBuscaAtual()
-        }
-
-        btnBuscaProximo.setOnClickListener {
-            viewModel.navegarBusca(1)
-            scrollParaBuscaAtual()
-        }
-
-        btnBuscaFechar.setOnClickListener { alternarBusca() }
-    }
-
-    private fun alternarBusca() {
-        viewModel.toggleBusca()
-        layoutBuscaReader.visibility = if (viewModel.uiState.value.buscaVisivel) View.VISIBLE else View.GONE
-        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as
-            android.view.inputmethod.InputMethodManager
-        if (viewModel.uiState.value.buscaVisivel) {
-            etBuscaReader.requestFocus()
-            imm.showSoftInput(etBuscaReader, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-        } else {
-            etBuscaReader.setText("")
-            imm.hideSoftInputFromWindow(etBuscaReader.windowToken, 0)
-        }
-    }
-
-    private fun scrollParaBuscaAtual() {
-        val posicao = posicaoResultadoBusca(adapter.buscaResultados, adapter.buscaIndiceAtual)
-        val lm = recyclerView.layoutManager as? LinearLayoutManager
-        if (posicao != null && lm != null) {
-            // Salto direto (o smoothScroll era lento em livros longos e deixava o parágrafo achado
-            // colado na borda, às vezes atrás da barra de busca). Fica a ~1/4 da altura da tela.
-            val vertical = lm.orientation == LinearLayoutManager.VERTICAL
-            val margem = if (vertical) recyclerView.height / FRACAO_MARGEM_BUSCA else 0
-            lm.scrollToPositionWithOffset(posicao, margem)
-        }
+        // Busca no texto: campo, anterior, próximo e fechar (ver ReaderBuscaController).
+        buscaController.configurar()
     }
 
     private fun configurarScrollListener() {
@@ -1006,7 +949,7 @@ class ReaderActivity : BasePlayerActivity() {
         val paragrafosExibidos = atualizarAdapterDeLeitura(state, texto)
 
         // ── Busca ──────────────────────────────────────────────────────────────
-        atualizarContadorBusca(state)
+        buscaController.aplicar(state)
 
         // Restaura a posição de leitura salva — apenas uma vez, no carregamento inicial,
         // e nunca quando a leitura guiada vai iniciar sozinha (ela faz seu próprio scroll).
@@ -1322,28 +1265,6 @@ class ReaderActivity : BasePlayerActivity() {
                 PronunciationAiFlow.start(this, paragrafos, caminhoArquivo)
             }
         )
-    }
-
-    /** Extraído de [atualizarUI] (contador da busca). */
-    private fun atualizarContadorBusca(state: ReaderUiState) {
-        // ── Busca ──────────────────────────────────────────────────────────────
-        val totalResultados = state.buscaResultados.size
-        // Chegou um resultado novo da busca: leva o leitor direto ao primeiro achado (antes ficava
-        // parado, e o "Próximo" pulava o primeiro resultado).
-        if (state.buscaResultados !== ultimaBuscaRolada) {
-            ultimaBuscaRolada = state.buscaResultados
-            if (totalResultados > 0) recyclerView.post { scrollParaBuscaAtual() }
-        }
-        layoutBuscaReader.visibility = if (state.buscaVisivel) View.VISIBLE else View.GONE
-        if (totalResultados > 0) {
-            tvBuscaContador.visibility = View.VISIBLE
-            tvBuscaContador.text = getString(R.string.busca_contador, state.buscaIndiceAtual + 1, totalResultados)
-        } else if (state.buscaQuery.isNotEmpty()) {
-            tvBuscaContador.visibility = View.VISIBLE
-            tvBuscaContador.text = getString(R.string.busca_sem_resultados)
-        } else {
-            tvBuscaContador.visibility = View.GONE
-        }
     }
 
     /** Extraído de [atualizarUI] (restauração da posição de leitura salva). */

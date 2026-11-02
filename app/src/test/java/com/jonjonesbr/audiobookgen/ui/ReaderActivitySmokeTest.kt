@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Looper
 import android.view.View
+import android.widget.EditText
 import android.widget.TextView
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -47,6 +48,8 @@ class ReaderActivitySmokeTest {
     private companion object {
         const val NOME = "livro_fumaca"
         const val TEMPO_LIMITE_MS = 10_000L
+        /** Índices dos parágrafos 8 e 9 do livro: os dois únicos com "estrangeiro". */
+        val INDICES_ESTRANGEIRO = listOf(7, 8)
 
         val PARAGRAFOS: List<String> = listOf(
             "Capítulo um, parágrafo 1. A chuva começou cedo naquela manhã e ninguém na vila " +
@@ -172,6 +175,47 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun buscaAchaContaENavega() {
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+
+            // (a) Abre a busca: a barra aparece.
+            scenario.onActivity { it.findViewById<View>(R.id.btnBuscarReader).performClick() }
+            scenario.onActivity { a ->
+                assertEquals(View.VISIBLE, a.findViewById<View>(R.id.layoutBuscaReader).visibility)
+            }
+
+            // (b) "estrangeiro" acha dois parágrafos: o contador mostra 1 de 2 e o primeiro achado fica na tela.
+            scenario.onActivity { it.findViewById<EditText>(R.id.etBuscaReader).setText("estrangeiro") }
+            esperarAte(scenario, "contador 1 de 2 e primeiro achado na tela") { a ->
+                contadorEm(a) == a.getString(R.string.busca_contador, 1, 2) &&
+                    estaVisivel(a, INDICES_ESTRANGEIRO[0])
+            }
+
+            // (c) Próximo: 2 de 2, com o segundo achado na tela.
+            scenario.onActivity { it.findViewById<View>(R.id.btnBuscaProximo).performClick() }
+            esperarAte(scenario, "contador 2 de 2 e segundo achado na tela") { a ->
+                contadorEm(a) == a.getString(R.string.busca_contador, 2, 2) &&
+                    estaVisivel(a, INDICES_ESTRANGEIRO[1])
+            }
+
+            // (d) Fecha: a barra some e a consulta sai do campo.
+            scenario.onActivity { it.findViewById<View>(R.id.btnBuscaFechar).performClick() }
+            scenario.onActivity { a ->
+                assertEquals(View.GONE, a.findViewById<View>(R.id.layoutBuscaReader).visibility)
+                assertEquals("", a.findViewById<EditText>(R.id.etBuscaReader).text.toString())
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Dois capítulos: parágrafos 0 a 4 no primeiro, 5 a 9 no segundo. */
@@ -215,6 +259,16 @@ class ReaderActivitySmokeTest {
 
     private fun primeiroVisivel(a: ReaderActivity): Int =
         (lista(a).layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+
+    /** Texto do contador da busca (vazio enquanto a barra não mostra nada). */
+    private fun contadorEm(a: ReaderActivity): String =
+        a.findViewById<TextView>(R.id.tvBuscaContador).text.toString()
+
+    /** Se o parágrafo [pos] está entre os visíveis agora (a busca rola até o achado). */
+    private fun estaVisivel(a: ReaderActivity, pos: Int): Boolean {
+        val lm = lista(a).layoutManager as LinearLayoutManager
+        return pos in lm.findFirstVisibleItemPosition()..lm.findLastVisibleItemPosition()
+    }
 
     /** No ParagrafoAdapter o item é o próprio TextView (VHLeitura). */
     private fun textoEm(rv: RecyclerView, pos: Int): String? =
