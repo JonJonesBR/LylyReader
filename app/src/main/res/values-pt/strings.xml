@@ -235,13 +235,6 @@
     <string name="queue_status_paused">Pausada</string>
 
     <!-- Settings Activity -->
-    <string name="desc_edge_tts">Sem custo. Requer conexão com a internet.</string>
-    <string name="desc_gemini_tts">Voz mais natural. Gratuito com cota da API.</string>
-
-    <string name="desc_onnx_tts">Vozes neurais altamente realistas (Supertonic). Totalmente offline.</string>
-    <string name="desc_elevenlabs_tts">Vozes oficiais da ElevenLabs, usando sua própria chave de API.</string>
-    <string name="desc_kokoro_tts">Vozes neurais pt-BR (Dora, Alex, Santa) via Sherpa-ONNX local. Totalmente offline após um download de ~350MB.</string>
-    <string name="desc_pocket_tts">Vozes públicas fixas em português, inglês e espanhol. Baixa o pacote do idioma escolhido (~132MB) sob demanda; sem clonagem de voz.</string>
     <string name="pocket_download_title">Baixar voz Pocket</string>
     <string name="pocket_download_message">Baixar o pacote Pocket TTS em %2$s (~%1$d MB) para usar offline? Licença: %3$s.</string>
     <string name="pocket_mobile_data_notice">Você não está no Wi-Fi. Este download usará dados móveis.</string>
@@ -1523,26 +1516,30 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_permitir">Permitir</string>
     <string name="aj_motor">Voz que lê os livros</string>
     <string name="aj_motor_sub">Vozes no aparelho ou pela internet</string>
-    <string name="aj_motor_intro">As vozes no aparelho são grátis e funcionam sem internet; as outras precisam de conexão ou de uma conta no site, e o texto lido é enviado ao serviço escolhido.</string>
-    <string name="aj_motor_nome_onnx_rec">Supertonic (recomendada)</string>
+    <string name="aj_motor_intro">O texto lido é enviado ao serviço escolhido, exceto nas vozes offline e do aparelho.</string>
+    <string name="aj_motor_nome_onnx">Supertonic</string>
     <string name="aj_motor_nome_kokoro">Kokoro</string>
     <string name="aj_motor_nome_pocket">Pocket</string>
     <string name="aj_motor_nome_android">Vozes do Android</string>
     <string name="aj_motor_nome_edge">Microsoft Edge</string>
     <string name="aj_motor_nome_gemini">Gemini (Google)</string>
     <string name="aj_motor_nome_elevenlabs">ElevenLabs</string>
-    <string name="aj_selo_offline">Grátis · sem internet</string>
-    <string name="aj_selo_online">Grátis · precisa de internet</string>
     <string name="aj_selo_conta">Precisa de uma chave da sua conta no site</string>
-    <string name="aj_desc_android">Usa as vozes que já vêm instaladas no celular.</string>
+    <string name="aj_motor_desc_android">As vozes que já vêm no celular.</string>
+    <string name="aj_motor_desc_edge">Vozes da Microsoft, pela internet.</string>
+    <string name="aj_motor_desc_gemini">Voz muito natural; tem uso grátis limitado.</string>
+    <string name="aj_motor_desc_elevenlabs">Vozes da ElevenLabs.</string>
+    <string name="aj_motor_desc_onnx">As vozes mais naturais.</string>
+    <string name="aj_motor_desc_kokoro">Várias vozes em português do Brasil. Baixa um pacote de %1$d MB na primeira vez.</string>
+    <string name="aj_motor_desc_pocket">Voz expressiva em português, inglês e espanhol; permite clonar uma voz. Baixa %1$d MB por idioma na primeira vez.</string>
     <string name="aj_motor_grupo_offline_rec">Offline recomendada</string>
-    <string name="aj_motor_grupo_offline_rec_desc">Funciona sem internet e tem as vozes mais naturais. A melhor escolha para a maioria.</string>
+    <string name="aj_motor_grupo_offline_rec_desc">Grátis e sem internet. A melhor escolha para a maioria.</string>
     <string name="aj_motor_grupo_aparelho">Do aparelho</string>
-    <string name="aj_motor_grupo_aparelho_desc">As vozes que já estão instaladas no celular. Grátis e sem internet.</string>
+    <string name="aj_motor_grupo_aparelho_desc">Grátis e sem internet.</string>
     <string name="aj_motor_grupo_online">Online</string>
-    <string name="aj_motor_grupo_online_desc">Precisa de internet. O Edge é grátis; Gemini e ElevenLabs precisam de uma chave da sua conta no site.</string>
+    <string name="aj_motor_grupo_online_desc">Precisa de internet. O Edge é grátis e não pede chave.</string>
     <string name="aj_motor_grupo_extras">Extras offline</string>
-    <string name="aj_motor_grupo_extras_desc">Outras vozes que funcionam sem internet. Algumas baixam um pacote na primeira vez (cerca de 132 a 350 MB).</string>
+    <string name="aj_motor_grupo_extras_desc">Grátis e sem internet. Algumas baixam um pacote na primeira vez.</string>
     <string name="aj_vozes">Vozes no aparelho</string>
     <string name="aj_vozes_sub">Baixar, criar ou apagar vozes</string>
     <string name="aj_pron">Dicionário de pronúncia</string>

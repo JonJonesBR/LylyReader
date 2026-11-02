@@ -349,6 +349,7 @@ class SettingsActivity : BasePlayerActivity() {
         layoutElevenLabsKey.visibility = if (motor == "elevenlabs") View.VISIBLE else View.GONE
         etElevenLabsKey.setText(SecurePreferences.getElevenLabsKey(this))
         atualizarMotorAtual(motor)
+        carregarTamanhosDoMotor()
 
         // Pausas
         atualizarBotoesPausa(com.jonjonesbr.audiobookgen.data.AppPrefs(this).pausaMs)
@@ -477,6 +478,31 @@ class SettingsActivity : BasePlayerActivity() {
             "android" -> "Android"
             "elevenlabs" -> "ElevenLabs"
             else -> "Microsoft"
+        }
+    }
+
+    /**
+     * Tamanho do download do Kokoro e do Pocket nas descrições do motor. Vem do mesmo catálogo que a Central
+     * de downloads mostra antes de baixar (`tamanhoDownloadMb`); lido fora da thread principal, como o card de vozes.
+     */
+    private fun carregarTamanhosDoMotor() {
+        lifecycleScope.launch {
+            val (kokoroMb, pocketMb) = withContext(Dispatchers.IO) {
+                val pacotes = com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesRegistrados()
+                // O Pocket baixa um pacote por idioma; o do português representa os três.
+                val kokoro = pacotes.firstOrNull { it.id == "kokoro" }?.tamanhoDownloadMb
+                val pocket = pacotes.firstOrNull { it.id == "pocket-ptbr-int8" }?.tamanhoDownloadMb
+                kokoro to pocket
+            }
+            // Sem tamanho (catálogo não carregou ou pacote ausente), a linha fica oculta em vez de vazia.
+            findViewById<TextView>(R.id.tvMotorDescKokoro).apply {
+                text = kokoroMb?.let { getString(R.string.aj_motor_desc_kokoro, it) } ?: ""
+                visibility = if (kokoroMb != null) View.VISIBLE else View.GONE
+            }
+            findViewById<TextView>(R.id.tvMotorDescPocket).apply {
+                text = pocketMb?.let { getString(R.string.aj_motor_desc_pocket, it) } ?: ""
+                visibility = if (pocketMb != null) View.VISIBLE else View.GONE
+            }
         }
     }
 

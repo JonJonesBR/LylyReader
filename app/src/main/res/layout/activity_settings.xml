@@ -1208,7 +1208,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:minHeight="48dp"
-                            android:text="@string/aj_motor_nome_onnx_rec"
+                            android:text="@string/aj_motor_nome_onnx"
                             android:textColor="@color/color_on_surface"
                             android:textSize="15sp"
                             android:buttonTint="?attr/colorPrimary"/>
@@ -1217,15 +1217,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="32dp"
-                            android:text="@string/aj_selo_offline"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="12sp"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="32dp"
-                            android:text="@string/desc_onnx_tts"
+                            android:text="@string/aj_motor_desc_onnx"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 
@@ -1258,15 +1250,8 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="32dp"
-                            android:text="@string/aj_selo_offline"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="12sp"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="32dp"
-                            android:text="@string/desc_kokoro_tts"
+                            android:id="@+id/tvMotorDescKokoro"
+                            android:visibility="gone"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 
@@ -1285,15 +1270,8 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="32dp"
-                            android:text="@string/aj_selo_offline"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="12sp"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="32dp"
-                            android:text="@string/desc_pocket_tts"
+                            android:id="@+id/tvMotorDescPocket"
+                            android:visibility="gone"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 
@@ -1326,15 +1304,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="32dp"
-                            android:text="@string/aj_selo_offline"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="12sp"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="32dp"
-                            android:text="@string/aj_desc_android"
+                            android:text="@string/aj_motor_desc_android"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 
@@ -1367,15 +1337,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="32dp"
-                            android:text="@string/aj_selo_online"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="12sp"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="32dp"
-                            android:text="@string/desc_edge_tts"
+                            android:text="@string/aj_motor_desc_edge"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 
@@ -1402,7 +1364,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="32dp"
-                            android:text="@string/desc_gemini_tts"
+                            android:text="@string/aj_motor_desc_gemini"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 
@@ -1429,7 +1391,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="32dp"
-                            android:text="@string/desc_elevenlabs_tts"
+                            android:text="@string/aj_motor_desc_elevenlabs"
                             android:textColor="@color/color_on_surface_dim"
                             android:textSize="12sp"/>
 

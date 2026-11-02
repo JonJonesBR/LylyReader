@@ -233,13 +233,6 @@
     <string name="queue_status_paused">Paused</string>
 
     <!-- Settings Activity -->
-    <string name="desc_edge_tts">No cost. Requires internet connection.</string>
-    <string name="desc_gemini_tts">More natural voice. Free with API quota.</string>
-
-    <string name="desc_onnx_tts">Highly realistic neural voices (Supertonic). Fully offline.</string>
-    <string name="desc_elevenlabs_tts">Official ElevenLabs voices, using your own API key.</string>
-    <string name="desc_kokoro_tts">Neural pt-BR voices (Dora, Alex, Santa) via local Sherpa-ONNX. Fully offline after one ~350MB download.</string>
-    <string name="desc_pocket_tts">Fixed public voices for Portuguese, English and Spanish. Downloads one ~132MB language pack on demand; no voice cloning.</string>
     <string name="pocket_download_title">Download Pocket voice</string>
     <string name="pocket_download_message">Download the %2$s Pocket TTS package (~%1$d MB) for offline use? License: %3$s.</string>
     <string name="pocket_mobile_data_notice">You are not on Wi-Fi. This download will use mobile data.</string>
@@ -1522,26 +1515,30 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_permitir">Allow</string>
     <string name="aj_motor">Voice that reads the books</string>
     <string name="aj_motor_sub">Voices on the device or over the internet</string>
-    <string name="aj_motor_intro">Voices on the device are free and work offline; the others need a connection or an account on the website, and the text being read is sent to the chosen service.</string>
-    <string name="aj_motor_nome_onnx_rec">Supertonic (recommended)</string>
+    <string name="aj_motor_intro">The text being read is sent to the chosen service, except for offline and on-device voices.</string>
+    <string name="aj_motor_nome_onnx">Supertonic</string>
     <string name="aj_motor_nome_kokoro">Kokoro</string>
     <string name="aj_motor_nome_pocket">Pocket</string>
     <string name="aj_motor_nome_android">Android voices</string>
     <string name="aj_motor_nome_edge">Microsoft Edge</string>
     <string name="aj_motor_nome_gemini">Gemini (Google)</string>
     <string name="aj_motor_nome_elevenlabs">ElevenLabs</string>
-    <string name="aj_selo_offline">Free · no internet needed</string>
-    <string name="aj_selo_online">Free · needs internet</string>
     <string name="aj_selo_conta">Needs a key from your account on the website</string>
-    <string name="aj_desc_android">Uses the voices already installed on the phone.</string>
+    <string name="aj_motor_desc_android">The voices already on the phone.</string>
+    <string name="aj_motor_desc_edge">Microsoft voices, over the internet.</string>
+    <string name="aj_motor_desc_gemini">Very natural voice; limited free use.</string>
+    <string name="aj_motor_desc_elevenlabs">ElevenLabs voices.</string>
+    <string name="aj_motor_desc_onnx">The most natural voices.</string>
+    <string name="aj_motor_desc_kokoro">Several Brazilian Portuguese voices. Downloads a %1$d MB pack the first time.</string>
+    <string name="aj_motor_desc_pocket">Expressive voice in Portuguese, English and Spanish; can clone a voice. Downloads %1$d MB per language the first time.</string>
     <string name="aj_motor_grupo_offline_rec">Recommended offline</string>
-    <string name="aj_motor_grupo_offline_rec_desc">Works without internet and sounds the most natural. The best choice for most people.</string>
+    <string name="aj_motor_grupo_offline_rec_desc">Free and offline. The best choice for most people.</string>
     <string name="aj_motor_grupo_aparelho">On the device</string>
-    <string name="aj_motor_grupo_aparelho_desc">The voices already installed on the phone. Free and offline.</string>
+    <string name="aj_motor_grupo_aparelho_desc">Free and offline.</string>
     <string name="aj_motor_grupo_online">Online</string>
-    <string name="aj_motor_grupo_online_desc">Needs internet. Edge is free; Gemini and ElevenLabs need a key from your account on the website.</string>
+    <string name="aj_motor_grupo_online_desc">Needs internet. Edge is free and needs no key.</string>
     <string name="aj_motor_grupo_extras">Extra offline</string>
-    <string name="aj_motor_grupo_extras_desc">Other voices that work offline. Some download a pack the first time (about 132 to 350 MB).</string>
+    <string name="aj_motor_grupo_extras_desc">Free and offline. Some download a pack the first time.</string>
     <string name="aj_vozes">Voices on this device</string>
     <string name="aj_vozes_sub">Download, create or delete voices</string>
     <string name="aj_pron">Pronunciation dictionary</string>
