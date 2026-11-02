@@ -22,6 +22,17 @@ object NomeDoAudiobook {
     }
 
     /**
+     * Nome de um item da fila de conversão: o título do livro na Biblioteca, se ele tiver um; senão o nome do
+     * arquivo sem a extensão, com "_" virando espaço. Não usa [semExtensaoDeAudio], porque o item da fila é um
+     * .txt ou um .epub.
+     */
+    fun doItemDaFila(tituloDaBiblioteca: String?, nomeDoArquivo: String): String {
+        tituloDaBiblioteca?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+        val base = nomeDoArquivo.substringBeforeLast('.', nomeDoArquivo)
+        return base.replace('_', ' ').replace(ESPACOS, " ").trim().ifEmpty { nomeDoArquivo }
+    }
+
+    /**
      * Título da etiqueta, sem vazio. Não vale para MP3 gravado pelo app: nele o TIT2 é o nome do
      * arquivo de entrada da conversão (ex.: "reader_selection_123"), não o nome do audiobook.
      */

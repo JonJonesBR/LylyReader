@@ -34,6 +34,27 @@
             android:text="@string/conv_titulo"
             android:textSize="22sp"
             android:textColor="@color/color_on_surface"/>
+
+        <ImageButton
+            android:id="@+id/btnAjudaConv"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_ajuda"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_ajuda"
+            android:tooltipText="@string/cd_ajuda"/>
+
+        <ImageButton
+            android:id="@+id/btnConvMais"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_mais"
+            android:visibility="gone"
+            app:tint="@color/color_on_surface_dim"
+            android:contentDescription="@string/cd_mais_opcoes"
+            android:tooltipText="@string/cd_mais_opcoes"/>
     </LinearLayout>
 
     <View
@@ -385,61 +406,64 @@
                     android:textAllCaps="false"/>
             </LinearLayout>
 
-            <!-- Fila -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Fila: a lista fica junto do que está sendo gerado. Sem cartão de fundo: cada item já é um cartão. -->
+            <LinearLayout
                 android:id="@+id/cardConvFila"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:visibility="gone"
-                app:cardBackgroundColor="@color/color_surface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <LinearLayout
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:text="@string/conv_fila_titulo"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="12sp"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.12"/>
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/conv_fila_titulo"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="12sp"
-                        android:textAllCaps="true"
-                        android:letterSpacing="0.12"/>
+                <TextView
+                    android:id="@+id/tvConvFilaResumo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/color_on_surface"
+                    android:textSize="15sp"/>
 
-                    <TextView
-                        android:id="@+id/tvConvFilaResumo"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:textColor="@color/color_on_surface"
-                        android:textSize="15sp"/>
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerConvFila"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"/>
 
-                    <Button
-                        android:id="@+id/btnConvIniciarFila"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:minHeight="48dp"
-                        android:text="@string/conv_iniciar_fila"
-                        android:textAllCaps="false"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <Button
+                    android:id="@+id/btnConvIniciarFila"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:minHeight="48dp"
+                    android:text="@string/conv_iniciar_fila"
+                    android:textAllCaps="false"/>
 
-            <Button
-                android:id="@+id/btnConvVerFila"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp"
-                android:text="@string/conv_ver_fila"
-                android:textAllCaps="false"/>
+                <Button
+                    android:id="@+id/btnConvLerTudoFila"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:minHeight="48dp"
+                    android:text="@string/btn_ler_tudo_fila"
+                    android:textAllCaps="false"/>
+            </LinearLayout>
 
             <Button
                 android:id="@+id/btnConvVerAudiobooks"

@@ -24,7 +24,7 @@
             android:exported="true"/>
         <activity-alias
             android:name=".DebugQueue"
-            android:targetActivity=".ui.QueueActivity"
+            android:targetActivity=".ui.ConversoesActivity"
             android:exported="true"/>
         <activity-alias
             android:name=".DebugLibrary"

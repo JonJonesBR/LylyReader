@@ -92,4 +92,29 @@ class NomeDoAudiobookTest {
     fun `autor real da etiqueta e devolvido sem espacos`() {
         assertEquals("Machado de Assis", NomeDoAudiobook.autorDaEtiqueta(" Machado de Assis "))
     }
+
+    @Test
+    fun `item da fila com titulo da biblioteca mostra o titulo`() {
+        assertEquals("Um Apólogo", NomeDoAudiobook.doItemDaFila("Um Apólogo", "Um_Apologo.txt"))
+    }
+
+    @Test
+    fun `item da fila sem livro na biblioteca mostra o nome do arquivo arrumado`() {
+        assertEquals("Um Apologo", NomeDoAudiobook.doItemDaFila(null, "Um_Apologo.txt"))
+    }
+
+    @Test
+    fun `titulo da biblioteca so com espacos cai no nome do arquivo`() {
+        assertEquals("a b c", NomeDoAudiobook.doItemDaFila("  ", "a__b  c.epub"))
+    }
+
+    @Test
+    fun `item da fila sem extensao mostra o nome inteiro`() {
+        assertEquals("semext", NomeDoAudiobook.doItemDaFila(null, "semext"))
+    }
+
+    @Test
+    fun `item da fila que vira vazio mostra o nome do arquivo`() {
+        assertEquals(".txt", NomeDoAudiobook.doItemDaFila(null, ".txt"))
+    }
 }

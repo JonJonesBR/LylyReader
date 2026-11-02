@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
     android:orientation="horizontal"
     android:background="@drawable/bg_card"
     android:gravity="center_vertical"
@@ -37,7 +38,7 @@
             android:textColor="@color/color_on_surface"
             android:textSize="14sp"
             android:ellipsize="end"
-            android:maxLines="1"/>
+            android:maxLines="2"/>
 
         <TextView
             android:id="@+id/tvQueueStatus"
@@ -64,9 +65,10 @@
         android:layout_height="48dp"
         android:padding="6dp"
         android:background="@android:color/transparent"
-        android:src="@android:drawable/ic_menu_agenda"
+        android:src="@drawable/ic_tocar"
         app:tint="@color/color_primary"
-        android:contentDescription="@string/cd_ler_item_fila"/>
+        android:contentDescription="@string/cd_ler_item_fila"
+        android:tooltipText="@string/cd_ler_item_fila"/>
 
     <ImageButton
         android:id="@+id/btnRepetirFila"

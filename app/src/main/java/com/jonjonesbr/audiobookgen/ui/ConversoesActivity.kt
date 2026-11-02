@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -22,6 +23,7 @@ import androidx.work.WorkManager
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.ConversaoPausadaStore
+import com.jonjonesbr.audiobookgen.data.QueueStatus
 import com.jonjonesbr.audiobookgen.data.nomeNormalizadoParaDedupe
 import com.jonjonesbr.audiobookgen.domain.AudiobookLibraryUseCase
 import com.jonjonesbr.audiobookgen.domain.DicaDeBateria
@@ -48,7 +50,8 @@ import java.io.File
 import kotlin.coroutines.resume
 
 /**
- * Tela "Conversões": o que está sendo gerado agora, a fila de processamento, o resultado e atalhos para os audiobooks.
+ * Tela "Conversões": o que está sendo gerado agora, a fila de processamento (a lista fica abaixo do cartão, ver
+ * [FilaNaTelaDeConversoes]), o resultado e atalhos para os audiobooks. A tela da Fila antiga foi juntada aqui (C1).
  * Substitui a tela antiga de conversão: a conversão roda no WorkManager e aqui só se acompanha; a fila também roda aqui.
  * Ver Fase P do plano.
  */
@@ -79,6 +82,7 @@ class ConversoesActivity : AppCompatActivity() {
     private lateinit var cardPausada: View
     private lateinit var layoutVazio: View
     private lateinit var cardFila: View
+    private lateinit var fila: FilaNaTelaDeConversoes
 
     override fun onCreate(savedInstanceState: Bundle?) {
         com.jonjonesbr.audiobookgen.util.ThemePrefs.aplicarNaActivity(this)
@@ -91,6 +95,14 @@ class ConversoesActivity : AppCompatActivity() {
         cardPausada = findViewById(R.id.cardConvPausada)
         layoutVazio = findViewById(R.id.layoutConvVazio)
         cardFila = findViewById(R.id.cardConvFila)
+        // Antes do uiState.collect abaixo: o collect roda já no onCreate e chama mostrar(), que mexe na fila.
+        fila = FilaNaTelaDeConversoes(
+            this,
+            findViewById(R.id.recyclerConvFila),
+            salvar = ::salvarFila,
+            redesenhar = { salvarFila(); mostrar(viewModel.uiState.value) },
+            aoLimparPausada = ::atualizarPausadaDoDisco,
+        )
 
         tituloDoLivro = savedInstanceState?.getString(ESTADO_TITULO) ?: intent.getStringExtra(EXTRA_TITULO).orEmpty()
 
@@ -107,8 +119,10 @@ class ConversoesActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnConvFecharErro).setOnClickListener { fecharResultado() }
         findViewById<Button>(R.id.btnConvIrBiblioteca).setOnClickListener { irParaAba(MeusLivrosActivity::class.java) }
         findViewById<Button>(R.id.btnConvVerAudiobooks).setOnClickListener { irParaAba(LibraryActivity::class.java) }
-        findViewById<Button>(R.id.btnConvVerFila).setOnClickListener { startActivity(Intent(this, QueueActivity::class.java)) }
         findViewById<Button>(R.id.btnConvIniciarFila).setOnClickListener { rodarFila() }
+        findViewById<Button>(R.id.btnConvLerTudoFila).setOnClickListener { fila.lerTudo() }
+        findViewById<ImageButton>(R.id.btnAjudaConv).setOnClickListener { HelpActivity.start(this, HelpTopico.FILA) }
+        findViewById<ImageButton>(R.id.btnConvMais).setOnClickListener { mostrarMenuMais(it) }
 
         tratarPedidoDeCancelamento(intent)
 
@@ -407,16 +421,62 @@ class ConversoesActivity : AppCompatActivity() {
         if (proximo == null) mostrar(viewModel.uiState.value)
     }
 
+    /** Atualiza a seção da fila. Sem itens, a seção e o ⋮ somem (C2): não há o que iniciar nem ler. */
     private fun atualizarFila() {
         val resumo = QueueManager.resumo()
-        val temFila = resumo.pendentes + resumo.processando > 0
-        cardFila.visibility = if (temFila) View.VISIBLE else View.GONE
-        if (!temFila) return
-        findViewById<TextView>(R.id.tvConvFilaResumo).text = resources.getQuantityString(
-            R.plurals.conv_fila_resumo, resumo.pendentes, resumo.pendentes
-        )
-        findViewById<Button>(R.id.btnConvIniciarFila).visibility =
-            if (resumo.pendentes > 0 && !viewModel.uiState.value.processando && !pausadaVisivel()) View.VISIBLE else View.GONE
+        val temItens = resumo.total > 0
+        cardFila.visibility = if (temItens) View.VISIBLE else View.GONE
+        findViewById<ImageButton>(R.id.btnConvMais).visibility = if (temItens) View.VISIBLE else View.GONE
+        val estado = viewModel.uiState.value
+        fila.mostrar(estado.progressoPct.takeIf { estado.processando })
+        if (!temItens) return
+        // Com itens, o vazio ("Abra um livro…") contradiz a lista. Ele volta pelo mostrar() quando a fila esvaziar.
+        layoutVazio.visibility = View.GONE
+        val resumoView = findViewById<TextView>(R.id.tvConvFilaResumo)
+        resumoView.visibility = if (resumo.pendentes > 0) View.VISIBLE else View.GONE
+        if (resumo.pendentes > 0) {
+            resumoView.text =
+                resources.getQuantityString(R.plurals.conv_fila_resumo, resumo.pendentes, resumo.pendentes)
+        }
+        val podeIniciar = resumo.pendentes > 0 && !estado.processando && !pausadaVisivel()
+        findViewById<Button>(R.id.btnConvIniciarFila).visibility = if (podeIniciar) View.VISIBLE else View.GONE
+    }
+
+    /**
+     * ⋮ da fila: limpar. Com item rodando ou pausado, o botão só limpa o que já terminou (concluído ou com erro),
+     * então o rótulo segue essa ação. Sem nada para limpar, o item fica desativado.
+     */
+    private fun mostrarMenuMais(ancora: View) {
+        val resumo = QueueManager.resumo()
+        val ativo = resumo.processando + resumo.pausados > 0
+        PopupMenu(this, ancora).apply {
+            val titulo = if (ativo) R.string.btn_limpar_historico else R.string.conv_menu_limpar_fila
+            val limpar = menu.add(0, MENU_LIMPAR_FILA, 0, titulo)
+            limpar.isEnabled = if (ativo) resumo.concluidos + resumo.erros > 0 else resumo.total > 0
+            setOnMenuItemClickListener {
+                confirmarLimparFila(ativo)
+                true
+            }
+        }.show()
+    }
+
+    private fun confirmarLimparFila(soHistorico: Boolean) {
+        val titulo = if (soHistorico) R.string.btn_limpar_historico else R.string.conv_menu_limpar_fila
+        val mensagem = if (soHistorico) R.string.conv_fila_limpar_historico_msg else R.string.conv_fila_limpar_tudo_msg
+        AlertDialog.Builder(this)
+            .setTitle(titulo)
+            .setMessage(mensagem)
+            .setPositiveButton(titulo) { _, _ -> limparFila() }
+            .setNegativeButton(R.string.btn_cancelar, null)
+            .exibir()
+    }
+
+    /** Mesma regra de sempre: com item rodando ou pausado, tira só o que já terminou; senão esvazia a fila. */
+    private fun limparFila() {
+        val ativo = QueueManager.items.any { it.status == QueueStatus.PROCESSANDO || it.status == QueueStatus.PAUSADO }
+        if (ativo) QueueManager.limparNaoAtivos() else QueueManager.items.clear()
+        salvarFila()
+        mostrar(viewModel.uiState.value)
     }
 
     // ── Estado na tela ───────────────────────────────────────────────────────
@@ -536,10 +596,11 @@ class ConversoesActivity : AppCompatActivity() {
         const val EXTRA_MOTOR = "extra_conv_motor"
         const val EXTRA_RITMO = "extra_conv_ritmo"
         const val EXTRA_ESTILO = "extra_conv_estilo"
-        /** Começa a processar a fila (vindo da tela da fila). */
+        /** Começa a processar a fila (vindo da tela principal). */
         const val EXTRA_INICIAR_FILA = "extra_conv_iniciar_fila"
         const val EXTRA_DEBUG_ENFILEIRAR = "extra_debug_enfileirar"
         private const val SEM_RITMO = -1
+        private const val MENU_LIMPAR_FILA = 1
         private const val ESTADO_TITULO = "estado_titulo"
         private const val TAG = "ConversoesActivity"
 

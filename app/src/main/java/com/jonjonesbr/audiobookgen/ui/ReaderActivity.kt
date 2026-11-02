@@ -107,7 +107,7 @@ class ReaderActivity : BasePlayerActivity() {
         const val EXTRA_SOMENTE_LEITURA = "extra_somente_leitura"
         /** Caminhos (ArrayList<String>) dos PRÓXIMOS arquivos a ler em sequência, em ordem,
          *  NÃO incluindo o arquivo atual — usado pelo botão "Ler tudo" da fila de conversão
-         *  (QueueActivity). Quem avança é o GuidedPlayerManager: ele guarda a fila e troca de
+         *  (tela Conversões). Quem avança é o GuidedPlayerManager: ele guarda a fila e troca de
          *  livro sozinho, inclusive com a tela apagada. Esta Activity só segue o livro que está
          *  sendo narrado (ver abrirLeitorDoLivroDaFila). */
         const val EXTRA_FILA_SEQUENCIA = "extra_fila_sequencia"

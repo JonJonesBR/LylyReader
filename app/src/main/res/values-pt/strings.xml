@@ -220,9 +220,6 @@
     <string name="toast_save_selection_error">Não foi possível salvar a seleção. Verifique o armazenamento e tente novamente.</string>
 
     <!-- Queue Activity -->
-    <string name="titulo_fila">Fila</string>
-    <string name="msg_fila_vazia">Nenhum arquivo na fila.\nAbra um livro na Biblioteca e escolha Gerar audiobook.</string>
-    <string name="btn_iniciar_fila">Iniciar a fila</string>
     <string name="btn_ler_tudo_fila">Ler tudo (leitura guiada)</string>
     <string name="btn_limpar_fila">Limpar</string>
     <string name="btn_limpar_historico">Limpar histórico</string>
@@ -486,8 +483,8 @@
     <string name="help_queue_title">Processando vários arquivos</string>
     <string name="help_queue_step1">Abra um livro, toque em \"Gerar audiobook\" e escolha \"Adicionar à fila\"</string>
     <string name="help_queue_step2">Repita para quantos arquivos quiser converter</string>
-    <string name="help_queue_step3">Abra Conversões (menu ⋮ da aba Audiobooks, ou o cartão de geração) e toque em \"Iniciar a fila\"</string>
-    <string name="help_queue_step4">O app processa um por um e notifica ao concluir</string>
+    <string name="help_queue_step3">Abra Conversões (menu ⋮ da aba Audiobooks, ou o cartão de geração). A fila fica abaixo do que está sendo gerado: arraste pela alça para mudar a ordem</string>
+    <string name="help_queue_step4">Toque em \"Iniciar a fila\": o app gera um por um e avisa ao concluir. \"Ler tudo\" lê a fila na leitura guiada, e o ⋮ do topo limpa a fila</string>
     <string name="help_settings_title">Personalizando o app</string>
     <string name="help_settings_step1">Vozes: na tela do livro, toque em Trocar para escolher uma voz. Categorias: Offline recomendada (Supertonic), Do aparelho (vozes do Android), Online (Edge, Gemini, ElevenLabs) ou Extras offline (Kokoro, Pocket, Piper)</string>
     <string name="help_settings_step2">Voz e velocidade: ajuste na tela do livro, em Gerar audiobook</string>
@@ -1207,7 +1204,6 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="conv_vazio_titulo">Nenhuma conversão em andamento</string>
     <string name="conv_vazio_texto">Abra um livro e toque em Gerar audiobook para começar.</string>
     <string name="conv_ir_biblioteca">Ir para a Biblioteca</string>
-    <string name="conv_ver_fila">Ver e organizar a fila</string>
     <string name="conv_ver_audiobooks">Ver meus audiobooks</string>
     <string name="conv_pronto_titulo">Audiobook pronto</string>
     <string name="conv_pronto_info">%1$s · %2$s · %3$s MB</string>
@@ -1227,6 +1223,9 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
 
     <string name="conv_fila_titulo">Fila</string>
     <string name="conv_iniciar_fila">Iniciar a fila</string>
+    <string name="conv_menu_limpar_fila">Limpar a fila</string>
+    <string name="conv_fila_limpar_tudo_msg">Tirar todos os itens da fila? Os livros continuam na Biblioteca.</string>
+    <string name="conv_fila_limpar_historico_msg">Tirar da lista os itens concluídos ou com erro? Os que aguardam continuam na fila.</string>
     <string name="conv_fila_vazia">A fila está vazia.</string>
     <string name="conv_na_fila">Fila: %1$d aguardando</string>
     <plurals name="conv_fila_resumo">
@@ -1701,5 +1700,4 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="cofre_recriado_titulo">Digite suas chaves de API de novo</string>
     <string name="cofre_recriado_msg">O Android não conseguiu abrir o cofre protegido onde ficavam suas chaves de API (Gemini, ElevenLabs, IA), e ele foi recriado. Seus livros e ajustes não foram afetados; só digite as chaves de novo em Ajustes.</string>
     <string name="cofre_recriado_abrir_ajustes">Abrir Ajustes</string>
-    <string name="fila_ir_biblioteca">Ir para a Biblioteca</string>
 </resources>

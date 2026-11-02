@@ -220,9 +220,6 @@
     <string name="toast_save_selection_error">No se pudo guardar la selección. Verifique el almacenamiento e inténtelo de nuevo.</string>
 
     <!-- Queue Activity -->
-    <string name="titulo_fila">Cola</string>
-    <string name="msg_fila_vazia">Ningún archivo en la cola.\nAbre un libro en tu Biblioteca y elige Generar audiolibro.</string>
-    <string name="btn_iniciar_fila">Iniciar la cola</string>
     <string name="btn_ler_tudo_fila">Leer todo (lectura guiada)</string>
     <string name="btn_limpar_fila">Limpiar</string>
     <string name="btn_limpar_historico">Limpiar historial</string>
@@ -483,8 +480,8 @@
     <string name="help_queue_title">Procesando varios archivos</string>
     <string name="help_queue_step1">Abre un libro, toca \"Generar audiolibro\" y elige \"Agregar a la cola\"</string>
     <string name="help_queue_step2">Repite para cuantos archivos quieras convertir</string>
-    <string name="help_queue_step3">Abre Conversiones (menú ⋮ de la pestaña Audiolibros, o la tarjeta de generación) y toca \"Iniciar la cola\"</string>
-    <string name="help_queue_step4">La app procesa uno por uno y notifica al finalizar</string>
+    <string name="help_queue_step3">Abre Conversiones (menú ⋮ de la pestaña Audiolibros, o la tarjeta de generación). La cola queda debajo de lo que se está generando: arrastra el asa para cambiar el orden</string>
+    <string name="help_queue_step4">Toca \"Iniciar la cola\": la app genera uno por uno y avisa al terminar. \"Leer todo\" lee la cola en lectura guiada, y el ⋮ de arriba limpia la cola</string>
     <string name="help_settings_title">Personalizando la app</string>
     <string name="help_settings_step1">Voces: en la pantalla del libro, toca Cambiar para elegir una voz. Categorías: Sin conexión recomendada (Supertonic), En el dispositivo (voces de Android), En línea (Edge, Gemini, ElevenLabs) o Extras sin conexión (Kokoro, Pocket, Piper)</string>
     <string name="help_settings_step2">Voz y velocidad: ajusta en la pantalla del libro, en Generar audiolibro</string>
@@ -1194,7 +1191,6 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="conv_vazio_titulo">Ninguna conversión en curso</string>
     <string name="conv_vazio_texto">Abre un libro y toca Generar audiolibro para empezar.</string>
     <string name="conv_ir_biblioteca">Ir a la Biblioteca</string>
-    <string name="conv_ver_fila">Ver y organizar la cola</string>
     <string name="conv_ver_audiobooks">Ver mis audiolibros</string>
     <string name="conv_pronto_titulo">Audiolibro listo</string>
     <string name="conv_pronto_info">%1$s · %2$s · %3$s MB</string>
@@ -1214,6 +1210,9 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
 
     <string name="conv_fila_titulo">Cola</string>
     <string name="conv_iniciar_fila">Iniciar la cola</string>
+    <string name="conv_menu_limpar_fila">Limpiar la cola</string>
+    <string name="conv_fila_limpar_tudo_msg">¿Quitar todos los elementos de la cola? Los libros siguen en tu Biblioteca.</string>
+    <string name="conv_fila_limpar_historico_msg">¿Quitar de la lista los elementos terminados o con error? Los que esperan siguen en la cola.</string>
     <string name="conv_fila_vazia">La cola está vacía.</string>
     <string name="conv_na_fila">Cola: %1$d en espera</string>
     <plurals name="conv_fila_resumo">
@@ -1688,5 +1687,4 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="cofre_recriado_titulo">Vuelve a escribir tus claves de API</string>
     <string name="cofre_recriado_msg">Android no pudo abrir el almacén protegido donde estaban tus claves de API (Gemini, ElevenLabs, IA), y se volvió a crear. Tus libros y ajustes no se vieron afectados; solo vuelve a escribir las claves en Ajustes.</string>
     <string name="cofre_recriado_abrir_ajustes">Abrir Ajustes</string>
-    <string name="fila_ir_biblioteca">Ir a la Biblioteca</string>
 </resources>

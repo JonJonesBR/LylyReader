@@ -2,7 +2,6 @@ package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.data.QueueStatus
 import com.jonjonesbr.audiobookgen.R
-import com.jonjonesbr.audiobookgen.service.QueueManager
 import com.jonjonesbr.audiobookgen.data.QueueItem
 import android.text.format.DateFormat
 import android.view.LayoutInflater
@@ -16,17 +15,20 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
-class QueueAdapter(
+/** Uma linha da fila na tela: a cópia do item (com o progresso mostrado) e o nome que aparece para ele. */
+internal data class LinhaDaFila(val item: QueueItem, val titulo: String)
+
+internal class QueueAdapter(
     private val onRemove: (QueueItem) -> Unit,
     private val onRetry: (QueueItem) -> Unit,
     private val onLer: (QueueItem) -> Unit,
     private val onDragStart: (RecyclerView.ViewHolder) -> Unit,
-) : ListAdapter<QueueItem, QueueAdapter.VH>(DIFF) {
+) : ListAdapter<LinhaDaFila, QueueAdapter.VH>(DIFF) {
 
     companion object {
-        private val DIFF = object : DiffUtil.ItemCallback<QueueItem>() {
-            override fun areItemsTheSame(old: QueueItem, new: QueueItem) = old.id == new.id
-            override fun areContentsTheSame(old: QueueItem, new: QueueItem) = old == new
+        private val DIFF = object : DiffUtil.ItemCallback<LinhaDaFila>() {
+            override fun areItemsTheSame(old: LinhaDaFila, new: LinhaDaFila) = old.item.id == new.item.id
+            override fun areContentsTheSame(old: LinhaDaFila, new: LinhaDaFila) = old == new
         }
     }
 
@@ -44,10 +46,11 @@ class QueueAdapter(
         VH(LayoutInflater.from(parent.context).inflate(R.layout.item_queue, parent, false))
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        val item = getItem(position)
+        val linha = getItem(position)
+        val item = linha.item
         val ctx = holder.itemView.context
 
-        holder.tvNome.text = item.nome
+        holder.tvNome.text = linha.titulo
         holder.tvMeta.text = metadataText(item, ctx)
         holder.btnRetry.visibility = View.GONE
 
@@ -100,14 +103,6 @@ class QueueAdapter(
             if (event.actionMasked == MotionEvent.ACTION_DOWN) onDragStart(holder)
             false
         }
-    }
-
-    fun moverItem(de: Int, para: Int) {
-        QueueManager.mover(de, para)
-        // notifyItemMoved() sozinho só anima a view — a lista interna do ListAdapter (usada
-        // pelo próximo DiffUtil) não fica sabendo do movimento. Sem submitList(), a próxima
-        // atualização (rotação, remoção de outro item) desfazia a reordenação.
-        submitList(QueueManager.items.toList())
     }
 
     private fun metadataText(item: QueueItem, ctx: android.content.Context): String {

@@ -218,9 +218,6 @@
     <string name="toast_save_selection_error">Could not save the selection. Check storage and try again.</string>
 
     <!-- Queue Activity -->
-    <string name="titulo_fila">Queue</string>
-    <string name="msg_fila_vazia">No files in the queue.\nOpen a book in your Library and choose Generate audiobook.</string>
-    <string name="btn_iniciar_fila">Start the queue</string>
     <string name="btn_ler_tudo_fila">Read all (guided reading)</string>
     <string name="btn_limpar_fila">Clear</string>
     <string name="btn_limpar_historico">Clear history</string>
@@ -477,8 +474,8 @@
     <string name="help_queue_title">Processing multiple files</string>
     <string name="help_queue_step1">Open a book, tap \"Generate audiobook\" and choose \"Add to queue\"</string>
     <string name="help_queue_step2">Repeat for as many files as you want to convert</string>
-    <string name="help_queue_step3">Open Conversions (⋮ menu on the Audiobooks tab, or the Generating card) and tap \"Start the queue\"</string>
-    <string name="help_queue_step4">The app processes one at a time and notifies when finished</string>
+    <string name="help_queue_step3">Open Conversions (⋮ menu on the Audiobooks tab, or the Generating card). The queue is below what is being generated: drag the handle to change the order</string>
+    <string name="help_queue_step4">Tap \"Start the queue\": the app generates one by one and notifies when done. \"Read all\" reads the queue in guided reading, and the ⋮ at the top clears the queue</string>
     <string name="help_settings_title">Customizing the app</string>
     <string name="help_settings_step1">Voices: on the book screen, tap Change to pick a voice. Groups: Recommended offline (Supertonic), On the device (Android voices), Online (Edge, Gemini, ElevenLabs) or Extra offline (Kokoro, Pocket, Piper)</string>
     <string name="help_settings_step2">Voice and speed: adjust on the book screen, in Generate audiobook</string>
@@ -1206,7 +1203,6 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="conv_vazio_titulo">No conversion in progress</string>
     <string name="conv_vazio_texto">Open a book and tap Generate audiobook to start.</string>
     <string name="conv_ir_biblioteca">Go to the Library</string>
-    <string name="conv_ver_fila">View and arrange the queue</string>
     <string name="conv_ver_audiobooks">See my audiobooks</string>
     <string name="conv_pronto_titulo">Audiobook ready</string>
     <string name="conv_pronto_info">%1$s · %2$s · %3$s MB</string>
@@ -1226,6 +1222,9 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
 
     <string name="conv_fila_titulo">Queue</string>
     <string name="conv_iniciar_fila">Start the queue</string>
+    <string name="conv_menu_limpar_fila">Clear the queue</string>
+    <string name="conv_fila_limpar_tudo_msg">Remove every item from the queue? The books stay in your Library.</string>
+    <string name="conv_fila_limpar_historico_msg">Remove finished and failed items from the list? Waiting items stay in the queue.</string>
     <string name="conv_fila_vazia">The queue is empty.</string>
     <string name="conv_na_fila">Queue: %1$d waiting</string>
     <plurals name="conv_fila_resumo">
@@ -1697,5 +1696,4 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="cofre_recriado_titulo">API keys need to be entered again</string>
     <string name="cofre_recriado_msg">Android could not open the protected storage where your API keys (Gemini, ElevenLabs, AI) were saved, so it was reset. Your books and settings were not affected; just enter the keys again in Settings.</string>
     <string name="cofre_recriado_abrir_ajustes">Open Settings</string>
-    <string name="fila_ir_biblioteca">Go to the Library</string>
 </resources>

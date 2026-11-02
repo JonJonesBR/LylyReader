@@ -211,10 +211,11 @@
             android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize"/>
 
-        <!-- Fila de processamento -->
+        <!-- Fila de processamento: juntada à tela Conversões (C1); só redireciona. NoDisplay, sem layout. -->
         <activity
             android:name=".ui.QueueActivity"
-            android:exported="false"/>
+            android:exported="false"
+            android:theme="@android:style/Theme.NoDisplay"/>
 
         <!-- Serviço de reprodução de áudio em background — MediaLibraryService (media3),
              exportado pra ser descoberto pelo Android Auto -->
