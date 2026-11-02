@@ -2,6 +2,8 @@ package com.jonjonesbr.audiobookgen.domain
 
 import android.content.ContentUris
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -98,17 +100,20 @@ object AudiobookLibraryUseCase {
                     val tamanho = cursor.getLong(sizeCol)
                     val data    = cursor.getLong(dateCol) * MS_POR_SEGUNDO
                     val uri     = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
-                    val duracao = obterDuracao(context, uri, null)
+                    val meta    = lerMetadados(context, uri, null)
 
                     dest.add(AudiobookItem(
-                        nome          = semExtensaoDeAudio(nome),
+                        nome          = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, nome),
+                        nomeArquivo   = nome,
                         uri           = uri,
                         caminho       = null,
                         tamanhoBytes  = tamanho,
                         dataAdicionado = data,
-                        duracaoMs     = duracao,
+                        duracaoMs     = meta.duracaoMs,
                         localizacao   = context.getString(R.string.folder_downloads),
-                        progressoPct  = PlaybackProgressStore.percent(context, uri.toString())
+                        progressoPct  = PlaybackProgressStore.percent(context, uri.toString()),
+                        titulo        = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor),
+                        autor         = NomeDoAudiobook.autorDaEtiqueta(meta.autor)
                     ))
                 }
             }
@@ -121,17 +126,20 @@ object AudiobookLibraryUseCase {
         @Suppress("DEPRECATION")
         val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         dir.listFiles { f -> f.extension.lowercase() == "mp3" }?.forEach { file ->
-            val duracao = obterDuracao(context, null, file.absolutePath)
+            val meta = lerMetadados(context, null, file.absolutePath)
             val fileUri = Uri.fromFile(file)
             dest.add(AudiobookItem(
-                nome           = file.nameWithoutExtension,
+                nome           = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, file.name),
+                nomeArquivo    = file.name,
                 uri            = fileUri,
                 caminho        = file.absolutePath,
                 tamanhoBytes   = file.length(),
                 dataAdicionado = file.lastModified(),
-                duracaoMs      = duracao,
+                duracaoMs      = meta.duracaoMs,
                 localizacao    = context.getString(R.string.folder_downloads),
-                progressoPct   = PlaybackProgressStore.percent(context, fileUri.toString())
+                progressoPct   = PlaybackProgressStore.percent(context, fileUri.toString()),
+                titulo         = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor),
+                autor          = NomeDoAudiobook.autorDaEtiqueta(meta.autor)
             ))
         }
     }
@@ -195,31 +203,79 @@ object AudiobookLibraryUseCase {
         val tamanho = cursor.getLong(colunas.sizeCol)
         val data = cursor.getLong(colunas.dateCol)
         val fileUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, docId)
-        val duracao = obterDuracao(context, fileUri, null)
+        val meta = lerMetadados(context, fileUri, null)
 
         return AudiobookItem(
-            nome           = semExtensaoDeAudio(nome),
+            nome           = NomeDoAudiobook.paraMostrar(meta.titulo, meta.autor, nome),
+            nomeArquivo    = nome,
             uri            = fileUri,
             caminho        = null,
             tamanhoBytes   = tamanho,
             dataAdicionado = data,
-            duracaoMs      = duracao,
+            duracaoMs      = meta.duracaoMs,
             localizacao    = nomePasta,
-            progressoPct   = PlaybackProgressStore.percent(context, fileUri.toString())
+            progressoPct   = PlaybackProgressStore.percent(context, fileUri.toString()),
+            titulo         = NomeDoAudiobook.tituloDaEtiqueta(meta.titulo, meta.autor),
+            autor          = NomeDoAudiobook.autorDaEtiqueta(meta.autor)
         )
     }
 
-    private fun obterDuracao(context: Context, uri: Uri?, caminho: String?): Long {
+    /** Duração e etiquetas (título e artista) lidas com um único MediaMetadataRetriever; zeros/nulos se não abrir. */
+    @Suppress("TooGenericExceptionCaught")
+    private fun lerMetadados(context: Context, uri: Uri?, caminho: String?): MetadadosAudio {
         val retriever = MediaMetadataRetriever()
         return try {
             if (uri != null) retriever.setDataSource(context, uri)
             else if (caminho != null) retriever.setDataSource(caminho)
-            else return 0L
-            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+            else return MetadadosAudio(0L, null, null)
+            MetadadosAudio(
+                duracaoMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L,
+                titulo = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)?.trim()?.takeIf { it.isNotEmpty() },
+                autor = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)?.trim()?.takeIf { it.isNotEmpty() }
+            )
         } catch (_: Exception) {
-            0L
+            MetadadosAudio(0L, null, null)
         } finally {
             retriever.release()
         }
     }
+
+    /**
+     * Capa embutida no arquivo (quadro APIC), reduzida para cerca de [ladoPx] e lida fora da thread principal.
+     * [CapaEmbutida.Ausente] só quando o arquivo abriu e não tem capa; se não abrir, [CapaEmbutida.Falha].
+     */
+    @Suppress("TooGenericExceptionCaught")
+    suspend fun lerCapaEmbutida(context: Context, uri: Uri, ladoPx: Int): CapaEmbutida = withContext(Dispatchers.IO) {
+        val retriever = MediaMetadataRetriever()
+        try {
+            val abriu = runCatching { retriever.setDataSource(context, uri) }.isSuccess
+            if (!abriu) return@withContext CapaEmbutida.Falha
+            val bytes = retriever.embeddedPicture ?: return@withContext CapaEmbutida.Ausente
+            val limites = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, limites)
+            var amostra = 1
+            while (limites.outWidth / (amostra * 2) >= ladoPx && limites.outHeight / (amostra * 2) >= ladoPx) amostra *= 2
+            val opcoes = BitmapFactory.Options().apply { inSampleSize = amostra }
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opcoes)
+            if (bitmap != null) CapaEmbutida.Encontrada(bitmap) else CapaEmbutida.Ausente
+        } catch (_: Exception) {
+            CapaEmbutida.Falha
+        } finally {
+            retriever.release()
+        }
+    }
+
+    /** Lido de uma vez do arquivo: [titulo] e [autor] são as etiquetas, sem vazio (null se não houver). */
+    private data class MetadadosAudio(val duracaoMs: Long, val titulo: String?, val autor: String?)
+}
+
+/** Resultado de [AudiobookLibraryUseCase.lerCapaEmbutida]: a capa, arquivo sem capa, ou falha ao abrir. */
+sealed class CapaEmbutida {
+    class Encontrada(val bitmap: Bitmap) : CapaEmbutida()
+
+    /** O arquivo abriu e não tem capa: a lista não pede de novo (a chave do item muda se o arquivo mudar). */
+    object Ausente : CapaEmbutida()
+
+    /** O arquivo não abriu (ainda sendo gravado, por exemplo): a lista tenta de novo numa próxima exibição. */
+    object Falha : CapaEmbutida()
 }

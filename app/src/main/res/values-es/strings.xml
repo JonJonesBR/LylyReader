@@ -1034,6 +1034,9 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="bib_det_tamanho">Tamaño</string>
     <string name="bib_det_origem">Origen</string>
     <string name="bib_det_adicionado">Añadido el</string>
+    <string name="lib_det_duracao">Duración</string>
+    <string name="lib_det_pasta">Carpeta</string>
+    <string name="lib_det_arquivo">Archivo</string>
     <string name="bib_origem_arquivo">Archivo</string>
     <string name="bib_origem_gutenberg">Proyecto Gutenberg</string>
     <string name="bib_origem_wikisource">Wikisource</string>

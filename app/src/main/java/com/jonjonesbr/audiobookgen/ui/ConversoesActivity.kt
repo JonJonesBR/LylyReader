@@ -30,6 +30,7 @@ import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.domain.ExportStatus
 import com.jonjonesbr.audiobookgen.domain.MotivoParada
 import com.jonjonesbr.audiobookgen.domain.PausaRegras
+import com.jonjonesbr.audiobookgen.domain.semExtensaoDeAudio
 import com.jonjonesbr.audiobookgen.service.ConversionQueueCoordinator
 import com.jonjonesbr.audiobookgen.service.ConversionWorker
 import com.jonjonesbr.audiobookgen.service.ControleDaConversao
@@ -230,9 +231,10 @@ class ConversoesActivity : AppCompatActivity() {
         }.getOrDefault(false)
     }
 
+    // Compara pelo nome do arquivo: o nome mostrado pode ser o título da etiqueta, não o do arquivo.
     private suspend fun jaExisteAudiobook(nome: String): Boolean = withContext(Dispatchers.IO) {
         AudiobookLibraryUseCase.listar(applicationContext).any {
-            nomeNormalizadoParaDedupe(it.nome) == nomeNormalizadoParaDedupe(nome)
+            nomeNormalizadoParaDedupe(semExtensaoDeAudio(it.nomeArquivo ?: it.nome)) == nomeNormalizadoParaDedupe(nome)
         }
     }
 

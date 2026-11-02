@@ -5,7 +5,7 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.DocumentRepository
 import com.jonjonesbr.audiobookgen.data.LinkedBookStore
 import com.jonjonesbr.audiobookgen.domain.AudiobookLibraryUseCase
-import com.jonjonesbr.audiobookgen.domain.CoverArtUseCase
+import com.jonjonesbr.audiobookgen.domain.CapaEmbutida
 import com.jonjonesbr.audiobookgen.domain.DocumentExportUseCase
 import com.jonjonesbr.audiobookgen.domain.ImportedFileNamePolicy
 import com.jonjonesbr.audiobookgen.domain.DURACAO_MAX_PARTE_PADRAO_MIN
@@ -35,6 +35,8 @@ import android.os.Build
 import android.app.RecoverableSecurityException
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import android.text.format.DateFormat
+import android.text.format.Formatter
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -44,6 +46,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.text.InputType
 import android.widget.ArrayAdapter
+import android.widget.ImageView
 import android.widget.ImageButton
 import android.widget.Spinner
 import android.widget.Button
@@ -69,6 +72,7 @@ import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.io.File
+import java.util.Date
 
 class LibraryActivity : BasePlayerActivity() {
 
@@ -92,6 +96,8 @@ class LibraryActivity : BasePlayerActivity() {
         private const val MAX_PARTE_VIDEO_MIN = 11 * 60 + 59
         private const val BATERIA_BAIXA_PCT = 20
         private const val SECONDS_PER_HOUR = 3600L
+        // Capa da lista: a view tem 64dp; 200px cobre até 3x de densidade.
+        private const val LADO_CAPA_LISTA_PX = 200
         private const val SORT_MODE_DATE = 0
         private const val SORT_MODE_NAME = 1
         private const val SORT_MODE_PROGRESS = 2
@@ -192,7 +198,8 @@ class LibraryActivity : BasePlayerActivity() {
             onOuvir = { item -> abrirNoPlayer(item) },
             onCompartilhar = { item -> compartilhar(item) },
             onDeletar = { item -> confirmarDelecao(item) },
-            onExportarVideo = { item -> confirmarExportarVideo(item) }
+            onExportarVideo = { item -> confirmarExportarVideo(item) },
+            onDetalhes = { item -> mostrarDetalhes(item) }
         )
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
@@ -300,24 +307,26 @@ class LibraryActivity : BasePlayerActivity() {
         }
     }
 
+    /**
+     * Capa embutida no MP3 (etiqueta APIC), lida em segundo plano. Sem ela, a capa tipográfica do item
+     * já está na tela (placeholder do adapter). A checagem da tag evita pôr a capa de um item em outro.
+     * A capa lida fica no cache mesmo se a view já foi reaproveitada; só a view é checada pela tag.
+     */
     private fun configurarCapas() {
-        val coverUseCase = CoverArtUseCase(this)
         adapter.onBindCover = { item, imageView ->
-            val caminho = item.caminho
-            if (caminho != null) {
-                imageView.tag = caminho
-                lifecycleScope.launch {
-                    val bitmap = withContext(Dispatchers.IO) {
-                        coverUseCase.extrairOuGerarCapa(
-                            caminhoLivro = null,
-                            titulo = item.nome,
-                            autor = "LylyReader"
-                        )?.let { coverUseCase.carregarBitmap(it, ladoMax = 400) }
+            val chave = item.chaveDaCapa
+            lifecycleScope.launch {
+                val resultado = AudiobookLibraryUseCase.lerCapaEmbutida(this@LibraryActivity, item.uri, LADO_CAPA_LISTA_PX)
+                when (resultado) {
+                    is CapaEmbutida.Encontrada -> {
+                        adapter.cacheCover(chave, resultado.bitmap)
+                        if (imageView.tag == chave) {
+                            imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+                            imageView.setImageBitmap(resultado.bitmap)
+                        }
                     }
-                    if (bitmap != null && imageView.tag == caminho) {
-                        adapter.cacheCover(caminho, bitmap)
-                        imageView.setImageBitmap(bitmap)
-                    }
+                    is CapaEmbutida.Ausente -> adapter.marcarSemCapaEmbutida(chave)
+                    is CapaEmbutida.Falha -> Unit
                 }
             }
         }
@@ -728,6 +737,24 @@ class LibraryActivity : BasePlayerActivity() {
         val bm = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
         val nivel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         return nivel in 1..BATERIA_BAIXA_PCT && !bm.isCharging
+    }
+
+    /** ⋮ > Detalhes: o que o cartão não mostra (autor, tamanho, pasta e nome do arquivo). */
+    private fun mostrarDetalhes(item: AudiobookItem) {
+        val linhas = buildList {
+            item.autor?.let { add("${getString(R.string.bib_det_autor)}: $it") }
+            val duracao = if (item.duracaoMs > 0) com.jonjonesbr.audiobookgen.util.formatarDuracao(item.duracaoMs) else "\u2014"
+            add("${getString(R.string.lib_det_duracao)}: $duracao")
+            add("${getString(R.string.bib_det_adicionado)}: ${DateFormat.getMediumDateFormat(this@LibraryActivity).format(Date(item.dataAdicionado))}")
+            add("${getString(R.string.bib_det_tamanho)}: ${Formatter.formatShortFileSize(this@LibraryActivity, item.tamanhoBytes)}")
+            add("${getString(R.string.lib_det_pasta)}: ${item.localizacao}")
+            item.nomeArquivo?.let { add("${getString(R.string.lib_det_arquivo)}: $it") }
+        }
+        AlertDialog.Builder(this)
+            .setTitle(item.nome)
+            .setMessage(linhas.joinToString("\n"))
+            .setPositiveButton(android.R.string.ok, null)
+            .exibir()
     }
 
     private fun formatarDuracao(ms: Long): String {

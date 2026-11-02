@@ -1049,6 +1049,9 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="bib_det_tamanho">Tamanho</string>
     <string name="bib_det_origem">Origem</string>
     <string name="bib_det_adicionado">Adicionado em</string>
+    <string name="lib_det_duracao">Duração</string>
+    <string name="lib_det_pasta">Pasta</string>
+    <string name="lib_det_arquivo">Arquivo</string>
     <string name="bib_origem_arquivo">Arquivo</string>
     <string name="bib_origem_gutenberg">Projeto Gutenberg</string>
     <string name="bib_origem_wikisource">Wikisource</string>

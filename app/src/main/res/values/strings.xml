@@ -1050,6 +1050,9 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="bib_det_tamanho">Size</string>
     <string name="bib_det_origem">Source</string>
     <string name="bib_det_adicionado">Added</string>
+    <string name="lib_det_duracao">Duration</string>
+    <string name="lib_det_pasta">Folder</string>
+    <string name="lib_det_arquivo">File</string>
     <string name="bib_origem_arquivo">File</string>
     <string name="bib_origem_gutenberg">Project Gutenberg</string>
     <string name="bib_origem_wikisource">Wikisource</string>
