@@ -1,19 +1,26 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import android.content.Intent
+import android.view.View
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.BookmarkStore
 import com.jonjonesbr.audiobookgen.data.HighlightStore
 import com.jonjonesbr.audiobookgen.domain.MarcacaoExportavel
-import com.jonjonesbr.audiobookgen.domain.MarkdownMarcacoes
 import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
+import com.jonjonesbr.audiobookgen.domain.TextoExportacaoMarcacoes
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
+import com.jonjonesbr.audiobookgen.util.abrirExpandida
+import com.jonjonesbr.audiobookgen.util.progressoLivroPct
 import java.io.File
-import java.util.Date
-import java.util.Locale
 
 // Constante movida do companion de ReaderActivity (T2.2) — usada só no bloco de marcadores.
 private const val BOOKMARK_NOME_MAX = 40
@@ -30,6 +37,19 @@ class ReaderMarcacoesController(
 ) {
     private val dialogos = DialogosAbertos(activity)
     private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
+
+    // A folha (BottomSheetDialog) não passa pelo DialogosAbertos: ela é fechada junto com a Activity (rotação, saída),
+    // para não deixar a janela vazada (WindowLeaked).
+    private var folhaAberta: BottomSheetDialog? = null
+
+    init {
+        activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                folhaAberta?.takeIf { it.isShowing }?.dismiss()
+                folhaAberta = null
+            }
+        })
+    }
 
     data class Callbacks(
         val obterCaminhoArquivo: () -> String,
@@ -109,69 +129,149 @@ class ReaderMarcacoesController(
             .exibir()
     }
 
-    /** Uma marcação da lista unificada: onde está, como aparece e como se remove. */
-    private class Marcacao(val indiceParagrafo: Int, val rotulo: String, val remover: () -> Unit)
+    /**
+     * Uma linha da folha: o que mostrar, se é destaque (ícone próprio e nota) e o que faz ao apagar.
+     * A posição vem em duas partes (capítulo e porcentagem) para a porcentagem nunca sair da linha.
+     */
+    private class LinhaMarcacao(
+        val indiceParagrafo: Int,
+        val destaque: Boolean,
+        val trecho: String,
+        val nota: String,
+        val capitulo: String,
+        val percentual: String,
+        val remover: () -> Unit,
+    )
 
     /**
-     * Marcadores e destaques numa lista só, na ordem do livro: tocar leva ao trecho, "Remover" apaga o marcado.
-     * Antes eram dois itens no menu de ações, cada um com o seu diálogo.
+     * Folha "Marcadores e destaques" (M1): título com "Exportar" à direita e duas seções, marcadores e destaques,
+     * cada uma na ordem do livro. Tocar numa linha fecha a folha e vai ao trecho. A lixeira pede confirmação e
+     * atualiza a própria lista. Sem nada marcado, a folha mostra a dica de como marcar.
      */
     fun mostrarDialogListarMarcacoes() {
+        val folha = BottomSheetDialog(activity)
+        val raiz = activity.layoutInflater.inflate(R.layout.bottom_sheet_marcacoes, null)
+        folha.setContentView(raiz)
+        folha.abrirExpandida()
+        raiz.findViewById<View>(R.id.acaoExportarMarcacoes).setOnClickListener { exportarMarcacoes() }
+        preencherFolhaMarcacoes(folha, raiz)
+        folhaAberta = folha
+        folha.show()
+    }
+
+    /** Monta as duas seções a partir das lojas. Chamada de novo depois de apagar, para mostrar o que sobrou. */
+    private fun preencherFolhaMarcacoes(folha: BottomSheetDialog, raiz: View) {
         val caminho = callbacks.obterCaminhoArquivo()
         val texto = viewModel.textoEfetivo()
-        val marcadores = BookmarkStore.listarPara(activity, caminho).map { bm ->
-            Marcacao(bm.indiceParagrafo, "🔖 ${bm.nome}") {
-                BookmarkStore.remover(activity, bm.id)
-                Toast.makeText(activity, R.string.toast_bookmark_removido, Toast.LENGTH_SHORT).show()
-                atualizarIconeBookmark(callbacks.obterParagrafoAtual())
-            }
+        val marcadores = BookmarkStore.listarPara(activity, caminho).sortedBy { it.indiceParagrafo }.map { bm ->
+            LinhaMarcacao(
+                indiceParagrafo = bm.indiceParagrafo,
+                destaque = false,
+                trecho = bm.nome,
+                nota = "",
+                capitulo = capituloDoParagrafo(texto, bm.indiceParagrafo),
+                percentual = percentualDoParagrafo(texto, bm.indiceParagrafo),
+                remover = {
+                    BookmarkStore.remover(activity, bm.id)
+                    Toast.makeText(activity, R.string.toast_bookmark_removido, Toast.LENGTH_SHORT).show()
+                    atualizarIconeBookmark(callbacks.obterParagrafoAtual())
+                },
+            )
         }
-        val destaques = HighlightStore.listarPara(activity, caminho).map { d ->
-            // Limites presos ao tamanho atual do parágrafo: uma edição pode tê-lo encurtado depois do destaque.
-            val trecho = trechoDoDestaque(texto, d.indiceParagrafo, d.inicio, d.fim).take(BOOKMARK_NOME_MAX)
-            val rotulo = if (d.nota.isNotBlank()) "${d.nota} — “$trecho”" else "“$trecho”"
-            Marcacao(d.indiceParagrafo, "🖍 $rotulo") {
-                HighlightStore.remover(activity, d.id)
-                carregarDestaques()
-                Toast.makeText(activity, R.string.toast_destaque_removido, Toast.LENGTH_SHORT).show()
-            }
+        val destaques = HighlightStore.listarPara(activity, caminho).sortedBy { it.indiceParagrafo }.map { d ->
+            LinhaMarcacao(
+                indiceParagrafo = d.indiceParagrafo,
+                destaque = true,
+                // Limites presos ao tamanho atual do parágrafo: uma edição pode tê-lo encurtado depois do destaque.
+                trecho = trechoDoDestaque(texto, d.indiceParagrafo, d.inicio, d.fim),
+                nota = d.nota,
+                capitulo = capituloDoParagrafo(texto, d.indiceParagrafo),
+                percentual = percentualDoParagrafo(texto, d.indiceParagrafo),
+                remover = {
+                    HighlightStore.remover(activity, d.id)
+                    carregarDestaques()
+                    Toast.makeText(activity, R.string.toast_destaque_removido, Toast.LENGTH_SHORT).show()
+                },
+            )
         }
-        val marcacoes = (marcadores + destaques).sortedBy { it.indiceParagrafo }
-        if (marcacoes.isEmpty()) {
-            Toast.makeText(activity, R.string.marcacoes_sem_itens, Toast.LENGTH_SHORT).show()
-            return
-        }
+        val temAlgum = marcadores.isNotEmpty() || destaques.isNotEmpty()
+        raiz.findViewById<View>(R.id.vazioMarcacoes).visibility = if (temAlgum) View.GONE else View.VISIBLE
+        raiz.findViewById<View>(R.id.acaoExportarMarcacoes).visibility = if (temAlgum) View.VISIBLE else View.GONE
+        val aoAlterar = { preencherFolhaMarcacoes(folha, raiz) }
+        preencherSecaoMarcacoes(
+            folha, raiz.findViewById<View>(R.id.secaoMarcadores), raiz.findViewById<LinearLayout>(R.id.listaMarcadores),
+            marcadores, aoAlterar,
+        )
+        preencherSecaoMarcacoes(
+            folha, raiz.findViewById<View>(R.id.secaoDestaques), raiz.findViewById<LinearLayout>(R.id.listaDestaques),
+            destaques, aoAlterar,
+        )
+    }
 
-        androidx.appcompat.app.AlertDialog.Builder(activity)
-            .setTitle(R.string.marcacoes_titulo)
-            // Tocar num item salta para o trecho e fecha a lista (setItems fecha ao tocar).
-            .setItems(marcacoes.map { it.rotulo }.toTypedArray()) { _, which ->
-                callbacks.rolarParaParagrafo(marcacoes[which].indiceParagrafo)
+    /** Uma seção some quando não tem linhas; senão, recria as linhas dela. */
+    private fun preencherSecaoMarcacoes(
+        folha: BottomSheetDialog,
+        secao: View,
+        lista: LinearLayout,
+        linhas: List<LinhaMarcacao>,
+        aoAlterar: () -> Unit,
+    ) {
+        secao.visibility = if (linhas.isEmpty()) View.GONE else View.VISIBLE
+        lista.removeAllViews()
+        linhas.forEach { linha -> lista.addView(criarLinhaMarcacao(folha, lista, linha, aoAlterar)) }
+    }
+
+    private fun criarLinhaMarcacao(
+        folha: BottomSheetDialog,
+        pai: LinearLayout,
+        linha: LinhaMarcacao,
+        aoAlterar: () -> Unit,
+    ): View {
+        val view = activity.layoutInflater.inflate(R.layout.item_marcacao, pai, false)
+        view.findViewById<ImageView>(R.id.iconeMarcacao).setImageResource(
+            if (linha.destaque) R.drawable.ic_marca_texto else R.drawable.ic_bookmark_filled
+        )
+        view.findViewById<TextView>(R.id.trechoMarcacao).text = linha.trecho
+        view.findViewById<TextView>(R.id.notaMarcacao).apply {
+            text = linha.nota
+            visibility = if (linha.nota.isBlank()) View.GONE else View.VISIBLE
+        }
+        view.findViewById<TextView>(R.id.capituloMarcacao).apply {
+            text = linha.capitulo
+            visibility = if (linha.capitulo.isBlank()) View.GONE else View.VISIBLE
+        }
+        view.findViewById<TextView>(R.id.percentualMarcacao).apply {
+            text = linha.percentual
+            visibility = if (linha.percentual.isBlank()) View.GONE else View.VISIBLE
+        }
+        view.findViewById<View>(R.id.linhaPosicaoMarcacao).visibility =
+            if (linha.capitulo.isBlank() && linha.percentual.isBlank()) View.GONE else View.VISIBLE
+        // Salto exato ao topo, como antes: fecha a folha e rola para o parágrafo.
+        view.setOnClickListener {
+            folha.dismiss()
+            callbacks.rolarParaParagrafo(linha.indiceParagrafo)
+        }
+        view.findViewById<View>(R.id.removerMarcacao).setOnClickListener {
+            confirmarRemocaoMarcacao {
+                linha.remover()
+                aoAlterar()
             }
-            .setPositiveButton(R.string.btn_remover_marcador) { _, _ -> escolherMarcacaoParaRemover(marcacoes) }
-            .setNegativeButton(R.string.marcacoes_exportar) { _, _ -> exportarMarcacoes() }
-            .setNeutralButton(android.R.string.cancel, null)
+        }
+        return view
+    }
+
+    /** Confirmação curta antes de apagar: marcação apagada não volta, e a lixeira fica perto do toque da linha. */
+    private fun confirmarRemocaoMarcacao(aoConfirmar: () -> Unit) {
+        androidx.appcompat.app.AlertDialog.Builder(activity)
+            .setMessage(R.string.marcacoes_remover_confirma)
+            .setPositiveButton(R.string.btn_remover_marcador) { _, _ -> aoConfirmar() }
+            .setNegativeButton(android.R.string.cancel, null)
             .exibir()
     }
 
     /**
-     * Segundo diálogo do "Remover": pergunta qual marcação apagar. Depois de apagar, a lista volta
-     * (sem nada para mostrar, [mostrarDialogListarMarcacoes] avisa e não abre). "Cancelar" também volta.
-     */
-    private fun escolherMarcacaoParaRemover(marcacoes: List<Marcacao>) {
-        androidx.appcompat.app.AlertDialog.Builder(activity)
-            .setTitle(R.string.marcacoes_remover_qual)
-            .setItems(marcacoes.map { it.rotulo }.toTypedArray()) { _, which ->
-                marcacoes[which].remover()
-                mostrarDialogListarMarcacoes()
-            }
-            .setNegativeButton(android.R.string.cancel) { _, _ -> mostrarDialogListarMarcacoes() }
-            .exibir()
-    }
-
-    /**
-     * Exporta marcadores e destaques do livro como Markdown (título, depois cada marcação com
-     * capítulo, trecho, nota e data) e compartilha pelo sistema. Na ordem do livro, como a lista.
+     * Exporta marcadores e destaques do livro em texto simples (título, depois cada marcação com
+     * trecho, nota e capítulo) e compartilha pelo sistema. Na ordem do livro, como a lista.
      */
     fun exportarMarcacoes() {
         val caminho = callbacks.obterCaminhoArquivo()
@@ -181,14 +281,12 @@ class ReaderMarcacoesController(
                 capitulo = capituloDoParagrafo(texto, bm.indiceParagrafo),
                 trecho = bm.nome,
                 nota = "",
-                data = formatarDataMarcacao(bm.ts),
             )
         } + HighlightStore.listarPara(activity, caminho).map { d ->
             d.indiceParagrafo to MarcacaoExportavel(
                 capitulo = capituloDoParagrafo(texto, d.indiceParagrafo),
                 trecho = trechoDoDestaque(texto, d.indiceParagrafo, d.inicio, d.fim),
                 nota = d.nota,
-                data = formatarDataMarcacao(d.ts),
             )
         }
         if (itens.isEmpty()) {
@@ -198,7 +296,7 @@ class ReaderMarcacoesController(
 
         val titulo = BibliotecaStore.tituloPorCaminho(activity, caminho)
             ?: File(caminho).nameWithoutExtension
-        val markdown = MarkdownMarcacoes.montar(
+        val conteudo = TextoExportacaoMarcacoes.montar(
             titulo,
             itens.sortedBy { it.first }.map { it.second },
             activity.getString(R.string.marcacoes_exportar_rotulo_nota),
@@ -206,11 +304,18 @@ class ReaderMarcacoesController(
         val envio = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, titulo)
-            putExtra(Intent.EXTRA_TEXT, markdown)
+            putExtra(Intent.EXTRA_TEXT, conteudo)
         }
         activity.startActivity(
             Intent.createChooser(envio, activity.getString(R.string.marcacoes_exportar_chooser))
         )
+    }
+
+    /** Quanto do livro foi lido até o parágrafo ("42%"); vazio se o texto ainda não estiver carregado. */
+    private fun percentualDoParagrafo(texto: TextoExtraido?, indice: Int): String {
+        if (texto == null) return ""
+        val porcento = (progressoLivroPct(texto.paragrafos, indice, texto.totalChars) * 100).toInt()
+        return activity.getString(R.string.marcacoes_percentual, porcento)
     }
 
     /** Capítulo (título legível) do parágrafo; vazio se o texto ou o capítulo não for conhecido. */
@@ -229,13 +334,5 @@ class ReaderMarcacoesController(
         val ini = inicio.coerceIn(0, paragrafo.length)
         val fimLimpo = fim.coerceIn(ini, paragrafo.length)
         return paragrafo.substring(ini, fimLimpo).trim().ifBlank { "…" }
-    }
-
-    /** Data e hora no formato do locale do aparelho; vazio se a marcação não tem data gravada. */
-    private fun formatarDataMarcacao(ts: Long): String {
-        if (ts <= 0L) return ""
-        return java.text.DateFormat
-            .getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT, Locale.getDefault())
-            .format(Date(ts))
     }
 }

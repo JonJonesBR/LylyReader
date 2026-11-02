@@ -1436,7 +1436,12 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="marcacoes_exportar">Exportar</string>
     <string name="marcacoes_exportar_chooser">Compartilhar marcadores e destaques</string>
     <string name="marcacoes_exportar_rotulo_nota">Nota</string>
-    <string name="marcacoes_remover_qual">Remover qual?</string>
+    <string name="marcacoes_secao_marcadores">Marcadores</string>
+    <string name="marcacoes_secao_destaques">Destaques</string>
+    <string name="marcacoes_vazio">Nenhum marcador ou destaque ainda. Toque no marcador do topo ou selecione um trecho e escolha Destacar.</string>
+    <string name="marcacoes_remover_confirma">Remover este marcador ou destaque?</string>
+    <string name="marcacoes_percentual">%1$d%%</string>
+    <string name="cd_marcacao_remover">Remover marcador ou destaque</string>
     <string name="acao_dicionario_pronuncia">Dicionário de pronúncia</string>
     <string name="acao_gerar_audiobook">Gerar audiobook</string>
     <string name="gerar_audiobook_titulo">Gerar audiobook</string>

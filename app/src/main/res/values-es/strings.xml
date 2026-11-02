@@ -1423,7 +1423,12 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="marcacoes_exportar">Exportar</string>
     <string name="marcacoes_exportar_chooser">Compartir marcadores y destacados</string>
     <string name="marcacoes_exportar_rotulo_nota">Nota</string>
-    <string name="marcacoes_remover_qual">¿Cuál quitar?</string>
+    <string name="marcacoes_secao_marcadores">Marcadores</string>
+    <string name="marcacoes_secao_destaques">Destacados</string>
+    <string name="marcacoes_vazio">Todavía no hay marcadores ni destacados. Toca el icono de marcador de arriba o selecciona un fragmento y elige Destacar.</string>
+    <string name="marcacoes_remover_confirma">¿Quitar este marcador o destacado?</string>
+    <string name="marcacoes_percentual">%1$d%%</string>
+    <string name="cd_marcacao_remover">Quitar marcador o destacado</string>
     <string name="acao_dicionario_pronuncia">Diccionario de pronunciación</string>
     <string name="acao_gerar_audiobook">Generar audiolibro</string>
     <string name="gerar_audiobook_titulo">Generar audiolibro</string>

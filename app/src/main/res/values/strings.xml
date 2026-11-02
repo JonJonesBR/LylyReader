@@ -1434,7 +1434,12 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="marcacoes_exportar">Export</string>
     <string name="marcacoes_exportar_chooser">Share bookmarks and highlights</string>
     <string name="marcacoes_exportar_rotulo_nota">Note</string>
-    <string name="marcacoes_remover_qual">Remove which one?</string>
+    <string name="marcacoes_secao_marcadores">Bookmarks</string>
+    <string name="marcacoes_secao_destaques">Highlights</string>
+    <string name="marcacoes_vazio">No bookmarks or highlights yet. Tap the bookmark icon at the top, or select a passage and choose Highlight.</string>
+    <string name="marcacoes_remover_confirma">Remove this bookmark or highlight?</string>
+    <string name="marcacoes_percentual">%1$d%%</string>
+    <string name="cd_marcacao_remover">Remove bookmark or highlight</string>
     <string name="acao_dicionario_pronuncia">Pronunciation dictionary</string>
     <string name="acao_gerar_audiobook">Generate audiobook</string>
     <string name="gerar_audiobook_titulo">Generate audiobook</string>

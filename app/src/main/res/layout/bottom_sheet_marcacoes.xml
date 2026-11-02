@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Folha "Marcadores e destaques" do leitor (M1): título com "Exportar" à direita e duas seções. Cada seção some
+    quando está vazia; sem nenhuma marcação, aparece a dica de como marcar. As linhas são criadas em
+    ReaderMarcacoesController.
+-->
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="16dp">
+
+    <!-- Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="4dp"
+        android:background="@color/color_divider"
+        android:backgroundTintMode="src_atop"/>
+
+    <!-- Título e ação Exportar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/marcacoes_titulo"
+            android:accessibilityHeading="true"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/color_on_surface"/>
+
+        <TextView
+            android:id="@+id/acaoExportarMarcacoes"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="@string/marcacoes_exportar"
+            android:textSize="14sp"
+            android:textColor="?attr/colorPrimary"/>
+
+    </LinearLayout>
+
+    <!-- Sem nenhuma marcação -->
+    <TextView
+        android:id="@+id/vazioMarcacoes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        android:text="@string/marcacoes_vazio"
+        android:textSize="14sp"
+        android:textColor="@color/color_on_surface_muted"
+        android:visibility="gone"/>
+
+    <!-- ═══ MARCADORES ═══ -->
+    <LinearLayout
+        android:id="@+id/secaoMarcadores"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            style="@style/TituloSecaoAcoes"
+            android:text="@string/marcacoes_secao_marcadores"/>
+
+        <LinearLayout
+            android:id="@+id/listaMarcadores"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+
+    </LinearLayout>
+
+    <!-- ═══ DESTAQUES ═══ -->
+    <LinearLayout
+        android:id="@+id/secaoDestaques"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            style="@style/TituloSecaoAcoes"
+            android:text="@string/marcacoes_secao_destaques"/>
+
+        <LinearLayout
+            android:id="@+id/listaDestaques"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+
+    </LinearLayout>
+
+</LinearLayout>
+</androidx.core.widget.NestedScrollView>

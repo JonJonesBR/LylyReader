@@ -329,22 +329,24 @@ class ParagrafoAdapter(
 
         tv.customSelectionActionModeCallback = object : android.view.ActionMode.Callback {
             override fun onCreateActionMode(mode: android.view.ActionMode, menu: android.view.Menu): Boolean {
-                val item1 = menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
+                // À vista: Destacar e Pronúncia. Copiar, Compartilhar e Ler em voz alta vêm do sistema, depois.
+                val item1 = menu.add(0, MENU_ITEM_DESTACAR, 0, R.string.menu_destacar_trecho)
                 item1.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
 
-                val item2 = menu.add(0, MENU_ITEM_SELECIONAR_PARAGRAFO, 0, R.string.menu_selecionar_paragrafo)
-                item2.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
+                if (mostrarPronuncia) {
+                    val item2 = menu.add(0, MENU_ITEM_PRONUNCIA, 0, R.string.menu_pronuncia)
+                    item2.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_IF_ROOM)
+                }
 
-                val item3 = menu.add(0, MENU_ITEM_DESTACAR, 0, R.string.menu_destacar_trecho)
-                item3.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
+                // No ⋮. Apagar frase é destrutiva, por isso fica por último.
+                val item3 = menu.add(0, MENU_ITEM_SELECIONAR_PARAGRAFO, 0, R.string.menu_selecionar_paragrafo)
+                item3.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_NEVER)
 
                 val item4 = menu.add(0, MENU_ITEM_DEFINIR, 0, R.string.menu_definir_palavra)
-                item4.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
+                item4.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_NEVER)
 
-                if (mostrarPronuncia) {
-                    val item5 = menu.add(0, MENU_ITEM_PRONUNCIA, 0, R.string.menu_pronuncia)
-                    item5.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_IF_ROOM)
-                }
+                val item5 = menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
+                item5.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_NEVER)
                 return true
             }
 
