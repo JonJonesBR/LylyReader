@@ -41,6 +41,12 @@ class PaginaDoParagrafo @JvmOverloads constructor(
     /** Parágrafo que a página mostra agora (ver [mostrar]). */
     private var posicaoMostrada = RecyclerView.NO_POSITION
 
+    // Não dá para pôr isto no XML (nestedScrollingEnabled="false"): o construtor do View lê o atributo antes de a
+    // NestedScrollView montar o mChildHelper, e o setter sobrescrito cairia num NPE. Aqui o super já terminou.
+    init {
+        isNestedScrollingEnabled = false
+    }
+
     override fun onFinishInflate() {
         super.onFinishInflate()
         texto = findViewById(R.id.tvParagrafo)
