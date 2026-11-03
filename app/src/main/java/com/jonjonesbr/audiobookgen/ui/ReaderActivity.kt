@@ -701,6 +701,7 @@ class ReaderActivity : BasePlayerActivity() {
         adapter = ParagrafoAdapter(
             activity = this,
             recyclerView = recyclerView,
+            barraSelecaoTexto = findViewById(R.id.barraSelecaoTexto),
             viewModel = viewModel,
             onLongPress = { indice -> viewModel.onParagrafoLongPress(indice) },
             // Sem a guiada, o toque só age na seleção (o viewModel retorna cedo sem seleção ativa, sem áudio).

@@ -5,10 +5,18 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Looper
+import android.view.ActionMode
 import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.widget.EditText
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -466,17 +474,134 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun paragrafoReaproveitadoAceitaSelecao() {
+        // Sessenta parágrafos: a lista desce e volta, e as views são reaproveitadas e religadas a outros textos.
+        val textos = List(6) { PARAGRAFOS }.flatten()
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == textos.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { lista(it).scrollToPosition(textos.lastIndex) }
+            esperarAte(scenario, "último parágrafo na tela") { a -> textoEm(lista(a), textos.lastIndex) != null }
+            scenario.onActivity { lista(it).scrollToPosition(0) }
+            esperarAte(scenario, "primeiro parágrafo de volta") { a -> textoEm(lista(a), 0) != null }
+
+            // Cada parágrafo visível aceita seleção: o rearme acontece quando a view volta à janela (rb-38).
+            scenario.onActivity { a ->
+                val lm = lista(a).layoutManager as LinearLayoutManager
+                for (pos in lm.findFirstVisibleItemPosition()..lm.findLastVisibleItemPosition()) {
+                    val tv = lista(a).findViewHolderForAdapterPosition(pos)?.itemView as? TextView ?: continue
+                    assertTrue("parágrafo $pos não aceita seleção", podeSelecionar(tv))
+                }
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun toqueNaListaSeguraRepinturaDaSincronia() {
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+
+            // Dedo sobre o parágrafo 2 e a sincronia chega a ele: a repintura espera o dedo (rb-38).
+            val t0 = 10_000L
+            evento(scenario, 2, MotionEvent.ACTION_DOWN, t0, t0)
+            scenario.onActivity { modeloDe(it).setParagrafoSyncAtual(2) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> assertFalse(fundoDoParagrafo(lista(a), 2) is LayerDrawable) }
+
+            // Soltou (CANCEL, como quando a lista rola): a repintura segurada aplica e o parágrafo ganha a barra.
+            evento(scenario, 2, MotionEvent.ACTION_CANCEL, t0, t0 + 50L)
+            esperarAte(scenario, "barra de sincronia no parágrafo 2") { a ->
+                fundoDoParagrafo(lista(a), 2) is LayerDrawable
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun barraDaSelecaoDeTextoNoLerSemAudio() {
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+
+            // "Capítulo" selecionado no parágrafo 0, com o menu da seleção aberto (como o toque longo faria).
+            scenario.onActivity { a ->
+                val tv = lista(a).findViewHolderForAdapterPosition(0)!!.itemView as TextView
+                tv.setSelection(0, 5)
+                val cb = tv.customSelectionActionModeCallback
+                val menu = PopupMenu(a, tv).menu
+                cb.onCreateActionMode(ModoFalso(cb, menu), menu)
+            }
+            esperarAte(scenario, "barra própria da seleção aparece") { a -> barraDaSelecaoTextoVisivel(a) }
+            scenario.onActivity { a ->
+                // Só ler: sem o que toca o texto (áudio, pronúncia, vários parágrafos); Destacar e Definir ficam.
+                assertTrue(botaoVisivel(a, R.id.btnSelecaoTextoDestacar))
+                assertTrue(botaoVisivel(a, R.id.btnSelecaoTextoDefinir))
+                assertFalse(botaoVisivel(a, R.id.btnSelecaoTextoGerar))
+                assertFalse(botaoVisivel(a, R.id.btnSelecaoTextoPronuncia))
+                assertFalse(botaoVisivel(a, R.id.btnSelecaoTextoVarios))
+            }
+
+            // Destacar: o menu fecha, a barra some e o diálogo de destaque abre.
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "barra escondida depois de destacar") { a -> !barraDaSelecaoTextoVisivel(a) }
+            scenario.onActivity { assertTrue(ShadowDialog.getLatestDialog()?.isShowing == true) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun toqueLongoNaoAmpliaSelecaoDeParagrafos() {
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { modeloDe(it).onParagrafoLongPress(1) }
+            esperarAte(scenario, "barra com 1 parágrafo") { a ->
+                barraDeSelecaoVisivel(a) && textoDaBarra(a) == plural(a, 1)
+            }
+
+            // Toque longo sobre o parágrafo 3: não vale como "ampliar" (o toque que falhou em selecionar não é clique).
+            val limite = ViewConfiguration.getLongPressTimeout().toLong()
+            val inicioLongo = 10_000L
+            evento(scenario, 3, MotionEvent.ACTION_DOWN, inicioLongo, inicioLongo)
+            evento(scenario, 3, MotionEvent.ACTION_UP, inicioLongo, inicioLongo + 2 * limite)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { assertEquals(plural(it, 1), textoDaBarra(it)) }
+
+            // Toque curto, cinco segundos depois: amplia a seleção até o parágrafo 3.
+            val inicioCurto = inicioLongo + 5_000L
+            evento(scenario, 3, MotionEvent.ACTION_DOWN, inicioCurto, inicioCurto)
+            evento(scenario, 3, MotionEvent.ACTION_UP, inicioCurto, inicioCurto + 50L)
+            esperarAte(scenario, "toque curto amplia a seleção até o parágrafo 3") { a ->
+                textoDaBarra(a) == plural(a, 3)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
-    /** Dois capítulos: parágrafos 0 a 4 no primeiro, 5 a 9 no segundo. */
+    /** Dois capítulos: a primeira metade dos parágrafos no primeiro (0 a 4 nos 10 de sempre), o resto no segundo. */
     private fun livroDeTeste(textos: List<String> = PARAGRAFOS): TextoExtraido {
+        val metade = textos.size / 2
         var offset = 0
         val paragrafos = textos.mapIndexed { indice, texto ->
-            Paragrafo(texto = texto, charOffset = offset, indiceCapitulo = if (indice < 5) 0 else 1)
+            Paragrafo(texto = texto, charOffset = offset, indiceCapitulo = if (indice < metade) 0 else 1)
                 .also { offset += texto.length + 2 }
         }
         return TextoExtraido(
-            capitulos = listOf(Capitulo("Capítulo 1", 0, 4), Capitulo("Capítulo 2", 5, 9)),
+            capitulos = listOf(
+                Capitulo("Capítulo 1", 0, metade - 1),
+                Capitulo("Capítulo 2", metade, textos.size - 1),
+            ),
             paragrafos = paragrafos,
             totalChars = offset
         )
@@ -573,6 +698,44 @@ class ReaderActivitySmokeTest {
     private fun paginaEm(rv: RecyclerView, pos: Int): PaginaDoParagrafo? =
         rv.findViewHolderForAdapterPosition(pos)?.itemView as? PaginaDoParagrafo
 
+    private fun intencaoSomenteLeitura(livro: File): Intent =
+        Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+    /** Manda um toque à lista sobre o item [pos]: [acao] (DOWN, UP ou CANCEL) com os tempos dados. */
+    private fun evento(
+        scenario: ActivityScenario<ReaderActivity>,
+        pos: Int,
+        acao: Int,
+        downTime: Long,
+        eventTime: Long,
+    ) {
+        scenario.onActivity { a ->
+            val rv = lista(a)
+            val item = requireNotNull(rv.findViewHolderForAdapterPosition(pos)).itemView
+            val x = item.left + item.width / 2f
+            val y = item.top + item.height / 2f
+            val ev = MotionEvent.obtain(downTime, eventTime, acao, x, y, 0)
+            rv.dispatchTouchEvent(ev)
+            ev.recycle()
+        }
+    }
+
+    /** Fundo do parágrafo na rolagem vertical: com a barra de sincronia, é um LayerDrawable (pintarFundoParagrafo). */
+    private fun fundoDoParagrafo(rv: RecyclerView, pos: Int): Drawable? =
+        rv.findViewHolderForAdapterPosition(pos)?.itemView?.background
+
+    /** Se o TextView aceita seleção agora (canSelectText, método oculto do SDK: por reflexão). */
+    private fun podeSelecionar(tv: TextView): Boolean =
+        TextView::class.java.getDeclaredMethod("canSelectText").apply { isAccessible = true }.invoke(tv) == true
+
+    /** Barra própria das ações da seleção de texto (rb-38), visível ou não. */
+    private fun barraDaSelecaoTextoVisivel(a: ReaderActivity): Boolean =
+        a.findViewById<View>(R.id.barraSelecaoTexto).visibility == View.VISIBLE
+
+    private fun botaoVisivel(a: ReaderActivity, id: Int): Boolean = a.findViewById<View>(id).visibility == View.VISIBLE
+
     /**
      * Espera a tela chegar à condição, deixando a main looper andar (a extração e o cache rodam em IO e voltam pela
      * looper). Falha logo se o Leitor mostrar erro, e ao estourar o tempo limite.
@@ -622,4 +785,23 @@ class ReaderActivitySmokeTest {
             "cacheDir da tela=${appDaTela?.cacheDir}; " +
             "cache bruto do @Before na tela=$naTela"
     }.getOrElse { "diagnóstico indisponível: $it" }
+
+    /**
+     * ActionMode de mentira: o Robolectric não monta o da seleção nativa. Só o que o menu da seleção usa (rb-38);
+     * finish() avisa o callback, como o sistema faz ao fechar a seleção.
+     */
+    private class ModoFalso(private val cb: ActionMode.Callback, private val menu: Menu) : ActionMode() {
+        override fun setTitle(title: CharSequence?) {}
+        override fun setTitle(resId: Int) {}
+        override fun setSubtitle(subtitle: CharSequence?) {}
+        override fun setSubtitle(resId: Int) {}
+        override fun invalidate() {}
+        override fun finish() = cb.onDestroyActionMode(this)
+        override fun getMenu(): Menu = menu
+        override fun getTitle(): CharSequence? = null
+        override fun getSubtitle(): CharSequence? = null
+        override fun getCustomView(): View? = null
+        override fun setCustomView(view: View?) {}
+        override fun getMenuInflater(): MenuInflater = throw UnsupportedOperationException("sem inflater no teste")
+    }
 }

@@ -36,3 +36,58 @@ internal fun paragrafosNaSelecao(selecaoInicio: Int?, selecaoFim: Int?): Int {
     val inicio = selecaoInicio ?: return 0
     return abs((selecaoFim ?: inicio) - inicio) + 1
 }
+
+// Regras da barra própria da seleção e das repinturas seguradas durante o toque (rb-38).
+
+/** Ações da barra do Leitor que aparece enquanto há seleção nativa de texto, na ordem em que aparecem. */
+internal enum class AcaoDaBarraDeSelecao { GERAR_AUDIO, DESTACAR, PRONUNCIA, VARIOS_PARAGRAFOS, DEFINIR }
+
+/** Com áudio: as ações de geração e a pronúncia. Só ler: Destacar e Definir (sem o que toca o texto). */
+internal fun acoesDaBarraDeSelecao(comAudio: Boolean): List<AcaoDaBarraDeSelecao> =
+    if (comAudio) {
+        listOf(AcaoDaBarraDeSelecao.GERAR_AUDIO, AcaoDaBarraDeSelecao.DESTACAR,
+            AcaoDaBarraDeSelecao.PRONUNCIA, AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS)
+    } else {
+        listOf(AcaoDaBarraDeSelecao.DESTACAR, AcaoDaBarraDeSelecao.DEFINIR)
+    }
+
+/**
+ * A repintura de sincronia espera enquanto há dedo na lista, menu aberto ou texto selecionado com foco: trocar a view
+ * cancela o toque, e trocar o texto sob uma seleção recém-feita a desloca.
+ */
+internal fun segurarRepinturaDeSincronia(
+    toqueEmAndamento: Boolean,
+    selecoesAbertas: Int,
+    textoComSelecao: Boolean,
+): Boolean = toqueEmAndamento || selecoesAbertas > 0 || textoComSelecao
+
+/** Só um toque curto vale como clique (ler daqui, ampliar). Um toque longo que falhou em selecionar não vale. */
+internal fun toqueValeComoClique(duracaoMs: Long, limiteDoToqueLongoMs: Long, fechavaSelecao: Boolean): Boolean =
+    !fechavaSelecao && duracaoMs < limiteDoToqueLongoMs
+
+/**
+ * Duração do último toque, se o clique veio dele. Um clique que chega depois da janela do toque (Enter, D-pad, leitor
+ * de tela) não herda a duração de um toque antigo: vale como toque curto (zero).
+ */
+internal fun duracaoDoUltimoToque(duracaoMs: Long, desdeOUpMs: Long, janelaMs: Long): Long =
+    if (desdeOUpMs <= janelaMs) duracaoMs else 0L
+
+/**
+ * Repinturas de sincronia que esperam o toque ou o menu terminar (rb-38). Só na main thread: o adapter e a lista
+ * chamam daí. Guarda cada índice uma vez, na ordem em que chegou.
+ */
+internal class RepinturasPendentes {
+    private val pendentes = LinkedHashSet<Int>()
+
+    /** Segurando, guarda os índices e devolve vazio. Sem segurar, devolve os guardados mais os novos e esvazia. */
+    fun pedir(indices: Collection<Int>, segurar: Boolean): List<Int> {
+        pendentes.addAll(indices)
+        return if (segurar) emptyList() else liberar()
+    }
+
+    /** Devolve os índices guardados, na ordem, e esvazia. */
+    fun liberar(): List<Int> = pendentes.toList().also { pendentes.clear() }
+
+    /** Esquece o que estava guardado (lista ou aparência trocada: a repintura inteira já cobre tudo). */
+    fun descartar() = pendentes.clear()
+}

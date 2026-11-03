@@ -2,7 +2,9 @@ package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** rb-30: regras puras da seleção de trecho e de parágrafos no Leitor. */
@@ -96,5 +98,95 @@ class SelecaoDoLeitorTest {
         assertEquals(1, paragrafosNaSelecao(2, 2))
         assertEquals(4, paragrafosNaSelecao(2, 5))
         assertEquals(1, paragrafosNaSelecao(2, null))
+    }
+
+    @Test
+    fun barraComAudioTemQuatroAcoesEmOrdem() {
+        assertEquals(
+            listOf(
+                AcaoDaBarraDeSelecao.GERAR_AUDIO,
+                AcaoDaBarraDeSelecao.DESTACAR,
+                AcaoDaBarraDeSelecao.PRONUNCIA,
+                AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS,
+            ),
+            acoesDaBarraDeSelecao(comAudio = true),
+        )
+    }
+
+    @Test
+    fun barraSoLerTemDestacarEDefinir() {
+        assertEquals(
+            listOf(AcaoDaBarraDeSelecao.DESTACAR, AcaoDaBarraDeSelecao.DEFINIR),
+            acoesDaBarraDeSelecao(comAudio = false),
+        )
+    }
+
+    @Test
+    fun repinturaSeguraComToqueOuMenuAberto() {
+        assertTrue(segurarRepinturaDeSincronia(toqueEmAndamento = true, selecoesAbertas = 0, textoComSelecao = false))
+        assertTrue(segurarRepinturaDeSincronia(toqueEmAndamento = false, selecoesAbertas = 1, textoComSelecao = false))
+        assertFalse(segurarRepinturaDeSincronia(toqueEmAndamento = false, selecoesAbertas = 0, textoComSelecao = false))
+    }
+
+    @Test
+    fun repinturaSeguraComTextoSelecionadoComFoco() {
+        // Entre o UP do toque longo e a abertura do menu: sem dedo e sem menu, ainda segura.
+        assertTrue(segurarRepinturaDeSincronia(toqueEmAndamento = false, selecoesAbertas = 0, textoComSelecao = true))
+    }
+
+    @Test
+    fun duracaoSoValeNaJanelaDoToque() {
+        assertEquals(800L, duracaoDoUltimoToque(duracaoMs = 800L, desdeOUpMs = 10L, janelaMs = 300L))
+        // Clique que chega depois da janela (Enter, D-pad) não herda a duração de um toque antigo.
+        assertEquals(0L, duracaoDoUltimoToque(duracaoMs = 800L, desdeOUpMs = 1_000L, janelaMs = 300L))
+    }
+
+    @Test
+    fun toqueCurtoValeComoClique() {
+        assertTrue(toqueValeComoClique(duracaoMs = 120L, limiteDoToqueLongoMs = 500L, fechavaSelecao = false))
+        // Toque de duração zero (TalkBack, duplo toque): vale.
+        assertTrue(toqueValeComoClique(duracaoMs = 0L, limiteDoToqueLongoMs = 500L, fechavaSelecao = false))
+    }
+
+    @Test
+    fun toqueNoLimiteOuLongoNaoValeComoClique() {
+        assertFalse(toqueValeComoClique(duracaoMs = 500L, limiteDoToqueLongoMs = 500L, fechavaSelecao = false))
+        assertFalse(toqueValeComoClique(duracaoMs = 900L, limiteDoToqueLongoMs = 500L, fechavaSelecao = false))
+    }
+
+    @Test
+    fun toqueQueFechaSelecaoNaoValeComoClique() {
+        assertFalse(toqueValeComoClique(duracaoMs = 50L, limiteDoToqueLongoMs = 500L, fechavaSelecao = true))
+    }
+
+    @Test
+    fun repinturasSemSegurarDevolvemNaHora() {
+        val repinturas = RepinturasPendentes()
+        assertEquals(listOf(1, 2), repinturas.pedir(listOf(1, 2), segurar = false))
+        assertEquals(emptyList<Int>(), repinturas.liberar())
+    }
+
+    @Test
+    fun repinturasSeguradasAcumulamSemRepetir() {
+        val repinturas = RepinturasPendentes()
+        assertEquals(emptyList<Int>(), repinturas.pedir(listOf(3, 4), segurar = true))
+        assertEquals(emptyList<Int>(), repinturas.pedir(listOf(4, 5), segurar = true))
+        assertEquals(listOf(3, 4, 5), repinturas.liberar())
+        assertEquals(emptyList<Int>(), repinturas.liberar())
+    }
+
+    @Test
+    fun pedirSemSegurarDespejaPendentesJuntoComAsNovas() {
+        val repinturas = RepinturasPendentes()
+        repinturas.pedir(listOf(7), segurar = true)
+        assertEquals(listOf(7, 8), repinturas.pedir(listOf(8), segurar = false))
+    }
+
+    @Test
+    fun descartarEsqueceAsPendentes() {
+        val repinturas = RepinturasPendentes()
+        repinturas.pedir(listOf(1, 2), segurar = true)
+        repinturas.descartar()
+        assertEquals(emptyList<Int>(), repinturas.liberar())
     }
 }

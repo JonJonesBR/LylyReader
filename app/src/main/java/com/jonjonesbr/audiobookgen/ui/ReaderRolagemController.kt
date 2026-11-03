@@ -79,8 +79,10 @@ class ReaderRolagemController(
         pagerSnapHelper?.attachToRecyclerView(null)
         recyclerView.layoutManager = LeitorLayoutManager(
             activity,
-            if (horizontal) LinearLayoutManager.HORIZONTAL else LinearLayoutManager.VERTICAL
-        ) { guiadaConduzRolagem() }
+            if (horizontal) LinearLayoutManager.HORIZONTAL else LinearLayoutManager.VERTICAL,
+            seguindoLeitura = { guiadaConduzRolagem() },
+            toqueEmAndamento = { recyclerView.toqueEmAndamento },
+        )
         if (horizontal) {
             pagerSnapHelper = PagerSnapHelper().apply {
                 attachToRecyclerView(recyclerView)
@@ -120,7 +122,7 @@ class ReaderRolagemController(
         val controlador = callbacks.obterBarraGuiada() ?: return
         // Na leitura guiada o acompanhamento fino (GuidedReadingBarController) já rola; este salto até o
         // parágrafo brigava com ele (subia para o topo ou descia até o fim do parágrafo a cada troca).
-        if (callbacks.obterIndiceGuiada() >= 0) return
+        if (callbacks.obterIndiceGuiada() >= 0 || recyclerView.textoEmUso) return
         val podeRolarAutomaticamente = RegraDaRolagemDoLeitor.podeRolarComAudiobook(
             SystemClock.uptimeMillis(),
             rolagemAudiobookSuspensaAte,

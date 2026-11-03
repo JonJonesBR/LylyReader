@@ -474,7 +474,7 @@
     <string name="help_reader_step1">Toque em qualquer parágrafo para começar a leitura guiada e ouvir enquanto lê</string>
     <string name="help_reader_step2">Use as setas ‹ › da barra do capítulo para ir ao anterior ou ao próximo; toque no nome do capítulo para ver a lista e marcar capítulos para converter</string>
     <string name="help_reader_step3">Pressione um parágrafo para iniciar a seleção de trecho</string>
-    <string name="help_reader_step4">Toque e segure um parágrafo, marque o trecho e toque em \"Gerar áudio\" no menu da seleção; para vários parágrafos, toque em \"Selecionar vários parágrafos\" e use o botão Gerar áudio da barra. Para o livro inteiro ou o capítulo atual, use ⋮ › Gerar audiobook</string>
+    <string name="help_reader_step4">Toque e segure um parágrafo, marque o trecho e use a barra que aparece no topo (Gerar áudio, Destacar, Pronúncia, Vários parágrafos). Para o livro inteiro ou o capítulo atual, use ⋮ › Gerar audiobook</string>
     <string name="help_library_title">Sua biblioteca de audiobooks</string>
     <string name="help_library_step1">Os audiobooks gerados aparecem automaticamente na aba Audiobooks</string>
     <string name="help_library_step2">Toque em um item para reproduzir</string>
@@ -532,6 +532,7 @@
     </plurals>
     <string name="toast_blacklist_duplicate">Termo já cadastrado</string>
     <string name="menu_selecionar_varios_paragrafos">Selecionar vários parágrafos</string>
+    <string name="barra_selecao_texto_varios">Vários parágrafos</string>
     <string name="selecao_gerar_audio">Gerar áudio</string>
     <string name="menu_definir_palavra">Definir</string>
     <string name="toast_definir_indisponivel">Nenhum app de dicionário ou navegador encontrado</string>

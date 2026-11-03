@@ -26,8 +26,9 @@ internal data class AcoesDaSelecaoDeTexto(
     val pronuncia: (String) -> Unit,
     val definir: (String) -> Unit,
     val excluirOcorrencias: (String) -> Unit,
-    val aoAbrir: () -> Unit,
-    val aoFechar: () -> Unit,
+    // Recebem o menu que abriu ou fechou: o adapter sabe qual seleção está aberta (rb-38).
+    val aoAbrir: (MenuDaSelecaoDeTexto) -> Unit,
+    val aoFechar: (MenuDaSelecaoDeTexto) -> Unit,
 )
 
 /**
@@ -42,8 +43,12 @@ internal class MenuDaSelecaoDeTexto(
     private val acoes: AcoesDaSelecaoDeTexto,
 ) : ActionMode.Callback {
 
+    /** Modo aberto agora. A barra do Leitor (rb-38) executa a ação por ele, como faria o item do menu. */
+    private var modoAberto: ActionMode? = null
+
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-        acoes.aoAbrir()
+        modoAberto = mode
+        acoes.aoAbrir(this)
         if (comAudio) {
             menu.add(0, MENU_ITEM_GERAR_AUDIO, 0, R.string.selecao_gerar_audio)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -66,18 +71,31 @@ internal class MenuDaSelecaoDeTexto(
 
     override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = false
 
-    override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+    override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = executarItem(item.itemId, mode)
+
+    /** Executa a ação da barra do Leitor, como se o item equivalente do menu tivesse sido tocado (rb-38). */
+    fun executarPelaBarra(acao: AcaoDaBarraDeSelecao): Boolean = executarItem(idDoItem(acao), modoAberto)
+
+    override fun onDestroyActionMode(mode: ActionMode) {
+        modoAberto = null
+        acoes.aoFechar(this)
+    }
+
+    private fun executarItem(id: Int, mode: ActionMode?): Boolean {
         // A seleção é lida antes de fechar o menu: ao fechar, o Editor a desfaz.
         val sel = trechoSelecionado(tv.selectionStart, tv.selectionEnd, tv.text)
-        val acao = sel?.let { executar(item.itemId, it, posicao()) }
-        if (acao == null) return false
-        mode.finish()
+        val acao = sel?.let { executar(id, it, posicao()) } ?: return false
+        mode?.finish()
         acao()
         return true
     }
 
-    override fun onDestroyActionMode(mode: ActionMode) {
-        acoes.aoFechar()
+    private fun idDoItem(acao: AcaoDaBarraDeSelecao): Int = when (acao) {
+        AcaoDaBarraDeSelecao.GERAR_AUDIO -> MENU_ITEM_GERAR_AUDIO
+        AcaoDaBarraDeSelecao.DESTACAR -> MENU_ITEM_DESTACAR
+        AcaoDaBarraDeSelecao.PRONUNCIA -> MENU_ITEM_PRONUNCIA
+        AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS -> MENU_ITEM_SELECIONAR_PARAGRAFO
+        AcaoDaBarraDeSelecao.DEFINIR -> MENU_ITEM_DEFINIR
     }
 
     /** A ação do item tocado, ou nulo quando ela não se aplica ao trecho (sem texto ou sem parágrafo). */
@@ -98,14 +116,29 @@ internal class MenuDaSelecaoDeTexto(
 }
 
 /**
- * Avisa o início de cada toque (ACTION_DOWN) e devolve false, para o Editor seguir como antes. Serve para o clique
- * que vem depois saber se o menu da seleção estava aberto: nesse caso o clique só fecha a seleção.
+ * Avisa o início (ACTION_DOWN) e o fim (ACTION_UP) de cada toque, e devolve false para o Editor seguir como antes:
+ * o clique continua no performClick. A duração do toque separa o toque curto do toque longo que falhou (rb-38).
  */
-// Só observa o ACTION_DOWN e devolve false: o clique continua no performClick.
+// Só observa DOWN e UP e devolve false: o clique continua no performClick.
 @SuppressLint("ClickableViewAccessibility")
-internal fun TextView.aoComecarToque(acao: () -> Unit) {
+internal fun TextView.observarToque(aoDescer: () -> Unit, aoSoltar: (duracaoMs: Long) -> Unit) {
     setOnTouchListener { _, ev ->
-        if (ev.actionMasked == MotionEvent.ACTION_DOWN) acao()
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> aoDescer()
+            MotionEvent.ACTION_UP -> aoSoltar(ev.eventTime - ev.downTime)
+        }
         false
     }
+}
+
+/**
+ * Rearma a seleção de um TextView já anexado à janela. Quando o RecyclerView liga a view reciclada, ela ainda não
+ * está na janela: o Editor então não monta os controles de seleção (prepareCursorControllers) e o toque longo não
+ * seleciona nada. Alternar isEnabled com a view já anexada refaz esses controles, sem refazer o layout do texto.
+ * Com foco não mexe, para não tirar a seleção que a pessoa está usando.
+ */
+internal fun TextView.rearmarSelecao() {
+    if (!isTextSelectable || hasFocus()) return
+    isEnabled = false
+    isEnabled = true
 }

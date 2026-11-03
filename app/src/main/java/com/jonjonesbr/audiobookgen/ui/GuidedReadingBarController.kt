@@ -45,7 +45,7 @@ class GuidedReadingBarController(
     private val activity: AppCompatActivity,
     val guidedPlayerManager: GuidedPlayerManager,
     private val viewModel: ReaderViewModel,
-    private val recyclerView: RecyclerView,
+    private val recyclerView: RecyclerViewParagrafos,
     private val views: Views,
     private val callbacks: Callbacks,
 ) {
@@ -335,7 +335,10 @@ class GuidedReadingBarController(
             ultimoEstadoUi?.copy(progressPct = guidedState.progressPct) == guidedState
         ultimoEstadoUi = guidedState
         if (soProgresso) {
-            if (!scrollManual) manterDestaqueVisivel(guidedState.index, guidedState.progressPct)
+            // Com a seleção de texto em uso (dedo na lista ou menu aberto), o destaque não rola o texto (rb-38).
+            if (!scrollManual && !recyclerView.textoEmUso) {
+                manterDestaqueVisivel(guidedState.index, guidedState.progressPct)
+            }
             viewModel.setProgressPct(guidedState.progressPct)
             return
         }
@@ -390,7 +393,7 @@ class GuidedReadingBarController(
             )
         }
 
-        if (!scrollManual && guidedState.index >= 0) {
+        if (!scrollManual && !recyclerView.textoEmUso && guidedState.index >= 0) {
             manterDestaqueVisivel(guidedState.index, guidedState.progressPct)
         }
 

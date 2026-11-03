@@ -360,63 +360,143 @@
                 android:textSize="14sp"/>
         </LinearLayout>
 
-        <!-- ── Erro ──────────────────────────────────────────────────── -->
-        <LinearLayout
-            android:id="@+id/layoutReaderErro"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="32dp"
-            android:visibility="gone">
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_dialog_alert"
-                android:contentDescription="@string/cd_warning"
-                android:layout_marginBottom="12dp"/>
-
-            <TextView
-                android:id="@+id/tvReaderErro"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="@color/color_on_surface_medium"
-                android:gravity="center"
-                android:layout_marginBottom="20dp"/>
-
-            <!-- Refaz a abertura do livro (ex.: falha de leitura passageira); some sozinho quando o texto carrega. -->
-            <Button
-                android:id="@+id/btnTentarDeNovo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/acao_tentar_de_novo"
-                android:textSize="13sp"/>
-
-            <Button
-                android:id="@+id/btnConverterAssim"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_converter_assim_mesmo"
-                android:textSize="13sp"/>
-
-        </LinearLayout>
-
         <!-- ── Paragraph list ────────────────────────────────────────── -->
-        <com.jonjonesbr.audiobookgen.ui.RecyclerViewParagrafos
-            android:id="@+id/recyclerViewParagrafos"
+        <!-- Área da lista: a barra da seleção de texto (rb-38) fica sobreposta no topo, sem empurrar o texto. -->
+        <FrameLayout
+            android:id="@+id/areaDaListaParagrafos"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:paddingTop="12dp"
-            android:paddingBottom="96dp"
-            android:clipToPadding="false"
-            android:overScrollMode="never"
-            android:scrollbars="none"
-            android:visibility="gone"/>
+            android:layout_weight="1">
+
+            <com.jonjonesbr.audiobookgen.ui.RecyclerViewParagrafos
+                android:id="@+id/recyclerViewParagrafos"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingTop="12dp"
+                android:paddingBottom="96dp"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:scrollbars="none"
+                android:visibility="gone"/>
+
+            <!-- Erro dentro da área da lista: ocupa a área toda quando a lista some (rb-38). -->
+            <!-- ── Erro ──────────────────────────────────────────────────── -->
+            <LinearLayout
+                android:id="@+id/layoutReaderErro"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_dialog_alert"
+                    android:contentDescription="@string/cd_warning"
+                    android:layout_marginBottom="12dp"/>
+
+                <TextView
+                    android:id="@+id/tvReaderErro"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/color_on_surface_medium"
+                    android:gravity="center"
+                    android:layout_marginBottom="20dp"/>
+
+                <!-- Refaz a abertura do livro (ex.: falha de leitura passageira); some sozinho quando o texto carrega. -->
+                <Button
+                    android:id="@+id/btnTentarDeNovo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/acao_tentar_de_novo"
+                    android:textSize="13sp"/>
+
+                <Button
+                    android:id="@+id/btnConverterAssim"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/btn_converter_assim_mesmo"
+                    android:textSize="13sp"/>
+
+            </LinearLayout>
+
+
+            <!-- ── Barra das ações da seleção de texto (rb-38): aparece com o menu da seleção aberto ── -->
+            <HorizontalScrollView
+                android:id="@+id/barraSelecaoTexto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top"
+                android:background="?attr/colorSurfaceVariant"
+                android:elevation="4dp"
+                android:clickable="true"
+                android:scrollbars="none"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp">
+
+                    <Button
+                        android:id="@+id/btnSelecaoTextoGerar"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/selecao_gerar_audio"
+                        android:textSize="13sp"
+                        app:icon="@drawable/ic_gerar_audio"/>
+
+                    <Button
+                        android:id="@+id/btnSelecaoTextoDestacar"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/menu_destacar_trecho"
+                        android:textSize="13sp"/>
+
+                    <Button
+                        android:id="@+id/btnSelecaoTextoPronuncia"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/menu_pronuncia"
+                        android:textSize="13sp"/>
+
+                    <Button
+                        android:id="@+id/btnSelecaoTextoVarios"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/barra_selecao_texto_varios"
+                        android:textSize="13sp"/>
+
+                    <Button
+                        android:id="@+id/btnSelecaoTextoDefinir"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/menu_definir_palavra"
+                        android:textSize="13sp"/>
+
+                </LinearLayout>
+
+            </HorizontalScrollView>
+
+        </FrameLayout>
 
     </LinearLayout>
 

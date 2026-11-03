@@ -14,6 +14,7 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
+import android.os.SystemClock
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextWatcher
@@ -23,6 +24,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
@@ -78,7 +80,9 @@ private const val LARGURA_BARRA_SYNC_DP = 4f
 @Suppress("LongParameterList") // callbacks do adapter, só lambdas: a contagem cresceu com o menu da seleção (rb-30)
 class ParagrafoAdapter(
     private val activity: AppCompatActivity,
-    private val recyclerView: RecyclerView,
+    private val recyclerView: RecyclerViewParagrafos,
+    // Barra própria das ações da seleção de texto (HorizontalScrollView sobreposto ao topo da lista, rb-38).
+    barraSelecaoTexto: View,
     private val viewModel: ReaderViewModel,
     private val onLongPress: (Int) -> Unit,
     private val onToque: (Int) -> Unit,
@@ -114,11 +118,26 @@ class ParagrafoAdapter(
     var modo: AdapterModo = AdapterModo.LEITURA
         private set
 
-    // Menu da seleção nativa (ver VHLeitura.init). Contador e não booleano: ao trocar a seleção de um parágrafo
-    // para outro, a ordem entre fechar o antigo e abrir o novo não é garantida.
-    private var menusDeSelecaoAbertos = 0
+    // Menu da seleção nativa aberto agora (rb-38): a barra do Leitor executa a ação por ele.
+    private var menuAberto: MenuDaSelecaoDeTexto? = null
+    private val barraDaSelecao = BarraDaSelecaoDeTexto(barraSelecaoTexto, comAudio) { acao ->
+        menuAberto?.executarPelaBarra(acao)
+    }
+    // Repinturas de sincronia seguradas enquanto há dedo na lista ou seleção aberta (rb-38).
+    private val repinturas = RepinturasPendentes()
+    // Duração do último toque (DOWN até UP): separa o toque curto do toque longo que falhou em selecionar.
+    private var duracaoDoToqueMs = 0L
+    // Instante do UP desse toque: passada a janela do toque, a duração guardada não vale mais para um clique.
+    private var instanteDoUp = 0L
     // Marcado no ACTION_DOWN, quando o menu já estava aberto: o clique que vem depois só fecha a seleção.
     private var toqueSoFechaSelecao = false
+
+    init {
+        // Depois de a lista de parágrafos e as repinturas existirem: aplica o que ficou seguro ao soltar o dedo.
+        recyclerView.aoLiberarTexto = {
+            repinturas.liberar().filter { it in paragrafos.indices }.forEach { notifyItemChanged(it) }
+        }
+    }
 
     private val acoesDoMenu = AcoesDaSelecaoDeTexto(
         gerarAudio = onGerarAudioDoTrecho,
@@ -137,8 +156,17 @@ class ParagrafoAdapter(
             viewModel.excluirOcorrencias(trecho)
             Toast.makeText(activity, activity.getString(R.string.toast_blacklist_added), Toast.LENGTH_SHORT).show()
         },
-        aoAbrir = { menusDeSelecaoAbertos++ },
-        aoFechar = { menusDeSelecaoAbertos = (menusDeSelecaoAbertos - 1).coerceAtLeast(0) },
+        aoAbrir = { menu ->
+            menuAberto = menu
+            recyclerView.abriuSelecao()
+            barraDaSelecao.mostrar()
+        },
+        aoFechar = { menu ->
+            if (menuAberto === menu) menuAberto = null
+            recyclerView.fechouSelecao()
+            // Por post: o fechar pode vir de dentro de um layout, e a barra confere se mais algum menu ficou aberto.
+            recyclerView.post { if (recyclerView.selecoesAbertas == 0) barraDaSelecao.esconder() }
+        },
     )
 
     /**
@@ -224,8 +252,14 @@ class ParagrafoAdapter(
         this.tipografia = tipografia
         this.alinhamento = alinhamento
         when {
-            mudouLista -> notifyDataSetChanged()
-            mudouAparencia -> notifyItemRangeChanged(0, paragrafos.size)
+            mudouLista -> {
+                repinturas.descartar()
+                notifyDataSetChanged()
+            }
+            mudouAparencia -> {
+                repinturas.descartar()
+                notifyItemRangeChanged(0, paragrafos.size)
+            }
             modo == AdapterModo.LEITURA -> {
                 // Atualização só de progresso/sync (leitura guiada, 20fps):
                 // repinta apenas o parágrafo atual e o anterior — repintar a lista
@@ -234,8 +268,9 @@ class ParagrafoAdapter(
                 // nada a repintar: o fallback antigo repintava a LISTA INTEIRA a cada tick, e cada
                 // repintura reinicia o estado de seleção dos TextViews — a causa de não conseguir
                 // selecionar palavras depois de rolar.
-                linkedSetOf(syncAntigo, syncAtual).filter { it in paragrafos.indices }
-                    .forEach { notifyItemChanged(it) }
+                // Com dedo na lista ou seleção aberta, a repintura espera (ver RecyclerViewParagrafos.textoEmUso).
+                val alvos = linkedSetOf(syncAntigo, syncAtual).filter { it in paragrafos.indices }
+                repinturas.pedir(alvos, segurar = recyclerView.textoEmUso).forEach { notifyItemChanged(it) }
             }
             // Edição: sem mudança de lista nem de aparência não há o que repintar. Repintar refazia o
             // setText do campo em que o usuário digitava (cursor no início, palavra em composição cortada).
@@ -259,14 +294,23 @@ class ParagrafoAdapter(
             // Menu e clique são ligados uma vez por item, e não a cada bind: o narrado é repintado ~20x/s.
             tv.customSelectionActionModeCallback =
                 MenuDaSelecaoDeTexto(tv, { bindingAdapterPosition }, comAudio, acoesDoMenu)
-            tv.aoComecarToque { toqueSoFechaSelecao = menusDeSelecaoAbertos > 0 }
+            tv.observarToque(
+                aoDescer = { toqueSoFechaSelecao = recyclerView.selecoesAbertas > 0 },
+                aoSoltar = { duracao ->
+                    duracaoDoToqueMs = duracao
+                    instanteDoUp = SystemClock.uptimeMillis()
+                },
+            )
             tv.setOnClickListener {
+                // Só toque curto vale como clique: o longo que não selecionou não pode virar "ler daqui" (rb-38).
                 // Com o menu da seleção aberto, o toque só fecha a seleção: não toca a guiada nem amplia.
-                if (toqueSoFechaSelecao) {
-                    toqueSoFechaSelecao = false
-                } else if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
-                    onToque(bindingAdapterPosition)
-                }
+                val limite = ViewConfiguration.getLongPressTimeout().toLong()
+                val janela = ViewConfiguration.getDoubleTapTimeout().toLong()
+                val duracao = duracaoDoUltimoToque(duracaoDoToqueMs, SystemClock.uptimeMillis() - instanteDoUp, janela)
+                val vale = toqueValeComoClique(duracao, limite, toqueSoFechaSelecao)
+                duracaoDoToqueMs = 0L
+                toqueSoFechaSelecao = false
+                if (vale && bindingAdapterPosition != RecyclerView.NO_POSITION) onToque(bindingAdapterPosition)
             }
         }
     }
