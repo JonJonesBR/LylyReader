@@ -23,7 +23,6 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.Toast
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.addCallback
@@ -321,7 +320,14 @@ class ReaderActivity : BasePlayerActivity() {
                     exportarTextoLimpo.launch("texto_limpo_${System.currentTimeMillis()}.txt")
                 },
                 onExportarCapitulosPasta = { exportarCapitulosPasta.launch(null) },
-                onCompartilharTrecho = { compartilharTrechoAtual() },
+                onCompartilharTrecho = {
+                    val paragrafos = viewModel.uiState.value.textoLimpo?.paragrafos
+                        ?: viewModel.textoEfetivo()?.paragrafos
+                    val paragrafo = paragrafoParaCompartilhar(paragrafos, guidedPlayerManager?.state?.value?.index) {
+                        rolagemController.paragrafoAtualVisivel()
+                    }
+                    compartilharTrecho(this, paragrafo)
+                },
                 onBaixarCapitulo = { conversaoController.baixarCapitulo() },
                 onBaixarLivro = { conversaoController.gerarLivroInteiro() },
                 onGerarCapitulosMarcados = {
@@ -964,33 +970,4 @@ class ReaderActivity : BasePlayerActivity() {
         obterVozAtualId = { appPrefs.vozSelecionada.orEmpty() },
         onCloneVoiceRequested = { cloneVoiceFlow.iniciar() },
     )
-
-    private fun compartilharTrechoAtual() {
-        val state = viewModel.uiState.value
-        // Parágrafo da narração (guiada ou audiobook) ou, sem áudio, o primeiro visível na tela.
-        val index = guidedPlayerManager?.state?.value?.index?.takeIf { it >= 0 }
-            ?: rolagemController.paragrafoAtualVisivel()
-            ?: -1
-        val texto = viewModel.textoEfetivo()
-        val paragrafos = state.textoLimpo?.paragrafos ?: texto?.paragrafos
-
-        val paragrafo = if (index in 0 until (paragrafos?.size ?: 0)) {
-            paragrafos?.get(index)
-        } else {
-            null
-        }
-
-        if (paragrafo == null || paragrafo.texto.trim().isEmpty()) {
-            Toast.makeText(this, R.string.toast_nada_para_compartilhar, Toast.LENGTH_SHORT).show()
-        } else {
-            val textoCompartilhar = paragrafo.texto + getString(R.string.share_excerpt_signature)
-            val sendIntent = Intent().apply {
-                action = Intent.ACTION_SEND
-                putExtra(Intent.EXTRA_TEXT, textoCompartilhar)
-                type = "text/plain"
-            }
-            val shareIntent = Intent.createChooser(sendIntent, getString(R.string.share_excerpt_chooser))
-            startActivity(shareIntent)
-        }
-    }
 }
