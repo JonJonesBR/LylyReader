@@ -21,6 +21,24 @@ class ReaderConversaoControllerTest {
         totalChars = 4,
     )
 
+    // ── geraDoTextoDoLeitor ──────────────────────────────────────────────────
+
+    @Test
+    fun edicaoGeraDireto() {
+        assertTrue(geraDoTextoDoLeitor(temEdicoes = true, livroNaBiblioteca = true))
+        assertTrue(geraDoTextoDoLeitor(temEdicoes = true, livroNaBiblioteca = false))
+    }
+
+    @Test
+    fun livroDaBibliotecaSemEdicaoAbreOPainel() {
+        assertFalse(geraDoTextoDoLeitor(temEdicoes = false, livroNaBiblioteca = true))
+    }
+
+    @Test
+    fun arquivoForaDaBibliotecaGeraDireto() {
+        assertTrue(geraDoTextoDoLeitor(temEdicoes = false, livroNaBiblioteca = false))
+    }
+
     // ── motorProntoOffline ────────────────────────────────────────────────────
 
     @Test

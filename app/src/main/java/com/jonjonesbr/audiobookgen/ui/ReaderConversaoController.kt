@@ -36,6 +36,13 @@ private const val DIALOG_PROGRESSO_TEXTO_BAIXO_DP = 16
 private const val PROGRESSO_MAX = 100
 
 /**
+ * "Gerar audiobook › Livro inteiro" gera direto do texto do leitor só com edição feita aqui ou arquivo fora da
+ * biblioteca. A limpeza automática (textoLimpo) não conta: a fila aplica a mesma limpeza, então o painel serve.
+ */
+internal fun geraDoTextoDoLeitor(temEdicoes: Boolean, livroNaBiblioteca: Boolean): Boolean =
+    temEdicoes || !livroNaBiblioteca
+
+/**
  * Conversão em áudio a partir do leitor: acompanha a geração (diálogo de progresso, aviso de conclusão e
  * "Tentar de novo"), baixa capítulo ou livro, exporta texto e capítulos e abre o audiobook já convertido
  * ("Ouvir") — extraído de [ReaderActivity] pra reduzir o tamanho do arquivo (rb-4). Padrão do projeto:
@@ -185,12 +192,13 @@ class ReaderConversaoController(
 
     /**
      * "Gerar audiobook › Livro inteiro": abre o painel da tela do livro (voz, ritmo, tempo estimado, pasta, fila).
-     * Com o texto editado ou limpo aqui no leitor, ou um arquivo fora da biblioteca, gera direto deste texto.
+     * Com edições feitas aqui no leitor, ou um arquivo fora da biblioteca, gera direto deste texto.
      */
     fun gerarLivroInteiro() {
         val state = viewModel.uiState.value
         activity.lifecycleScope.launch {
-            val livro = if (state.temEdicoes || state.textoLimpo != null) {
+            // Com edições, o livro nem é consultado: o texto editado é que vai para a conversão.
+            val livro = if (state.temEdicoes) {
                 null
             } else {
                 com.jonjonesbr.audiobookgen.data.BibliotecaStore.porCaminho(
@@ -198,7 +206,8 @@ class ReaderConversaoController(
                     caminhoArquivo
                 )
             }
-            if (livro == null) {
+            // "|| livro == null" não muda o resultado (livro nulo já dá true); só faz o smart cast do else.
+            if (geraDoTextoDoLeitor(state.temEdicoes, livroNaBiblioteca = livro != null) || livro == null) {
                 baixarLivroCompleto()
             } else {
                 activity.startActivity(
