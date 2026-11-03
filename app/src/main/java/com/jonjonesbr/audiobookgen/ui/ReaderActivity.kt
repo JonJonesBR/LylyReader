@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
+import com.jonjonesbr.audiobookgen.domain.RegraDaRolagemDoLeitor
 import com.jonjonesbr.audiobookgen.domain.RegraDeReconexaoGuiada
 import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
@@ -23,7 +24,6 @@ import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -41,7 +41,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import kotlinx.coroutines.launch
 import java.io.File
@@ -49,7 +48,6 @@ import java.io.File
 class ReaderActivity : BasePlayerActivity() {
 
     companion object {
-        private const val PAUSA_ROLAGEM_MANUAL_MS = 8_000L
         /** Respiro entre o botão "Voltar à narração" e a barra da leitura guiada (que fica na base da tela). */
         private const val MARGEM_FAB_VOLTAR_DP = 16
         const val EXTRA_CAMINHO = "extra_caminho"
@@ -120,7 +118,6 @@ class ReaderActivity : BasePlayerActivity() {
     private lateinit var btnConverterAssim: Button
     private lateinit var btnTentarDeNovo: Button
     private lateinit var recyclerView: RecyclerViewParagrafos
-    private var scrollListener: RecyclerView.OnScrollListener? = null
     // FAB único de conversão: texto/ícone mudam conforme há seleção ativa ou não
     // (antes eram dois FABs separados, fabConverterPrincipal e fabConverterSelecao,
     // sempre mutuamente exclusivos — unificados num só, ver atualizarFabs()).
@@ -162,7 +159,6 @@ class ReaderActivity : BasePlayerActivity() {
     private val somenteLeitura: Boolean by lazy { intent.getBooleanExtra(EXTRA_SOMENTE_LEITURA, false) }
     private var ultimoTextoExibido: List<Paragrafo>? = null
     private var autoStartGuidedTriggered = false
-    private var scrollRestaurado = false
     private var reconectandoGuided = false
     private var margemNivelAplicado = -1
     private var temaBarrasAplicado: TemaLeitura? = null
@@ -189,8 +185,8 @@ class ReaderActivity : BasePlayerActivity() {
             capitulosSelecionados = capitulosSelecionados,
             somenteLeitura = somenteLeitura,
             callbacks = ReaderCapitulosController.Callbacks(
-                obterParagrafoAtual = { paragrafoAtualVisivel() },
-                fimDoLivroNaTela = { fimDoLivroNaTela() },
+                obterParagrafoAtual = { rolagemController.paragrafoAtualVisivel() },
+                fimDoLivroNaTela = { rolagemController.fimDoLivroNaTela() },
                 obterBarraGuiada = { guidedReadingBarController },
                 obterIndiceGuiada = { guidedPlayerManager?.state?.value?.index ?: -1 },
                 atualizarIconeBookmark = { marcacoesController.atualizarIconeBookmark(it) },
@@ -199,9 +195,28 @@ class ReaderActivity : BasePlayerActivity() {
         )
     }
 
+    // Rolagem, teclas, posição salva e acompanhamento do audiobook (rb-6). Lazy: abre no configurarRecyclerView.
+    private val rolagemController by lazy {
+        ReaderRolagemController(
+            activity = this, viewModel = viewModel, recyclerView = recyclerView,
+            callbacks = ReaderRolagemController.Callbacks(
+                obterBarraGuiada = { guidedReadingBarController },
+                obterIndiceGuiada = { guidedPlayerManager?.state?.value?.index ?: -1 },
+                obterAdapter = { if (::adapter.isInitialized) adapter else null },
+                reconectandoGuiada = { reconectandoGuided },
+                guiadaIniciaSozinha = {
+                    intent.getBooleanExtra(EXTRA_AUTO_START_GUIDED, false) ||
+                        intent.getBooleanExtra(EXTRA_CONTINUAR_GUIADA, false)
+                },
+                posicaoSalva = { appPrefs.posicaoLeitura(caminhoArquivo, 0) },
+                aoPararDeRolar = { capitulosController.atualizarProgressoLeitura() },
+            ),
+        )
+    }
+
     private val aparenciaController by lazy {
         ReaderAparenciaController(this, viewModel) { horizontal ->
-            aplicarOrientacaoRolagem(horizontal)
+            rolagemController.aplicarOrientacao(horizontal)
         }
     }
 
@@ -214,7 +229,7 @@ class ReaderActivity : BasePlayerActivity() {
             callbacks = ReaderVozController.Callbacks(
                 obterCaminhoArquivo = { caminhoArquivo },
                 obterGuidedPlayerManager = { guidedPlayerManager },
-                obterParagrafoAtual = { paragrafoAtualVisivel() },
+                obterParagrafoAtual = { rolagemController.paragrafoAtualVisivel() },
             ),
         )
     }
@@ -251,7 +266,7 @@ class ReaderActivity : BasePlayerActivity() {
                     obterCaminhoArquivo = { caminhoArquivo },
                     aoMudarDeLivroNaFila = { guidedPlayerManager?.let(::abrirLeitorDoLivroDaFila) },
                     prepararCapitulo = { vozController.prepararCapituloAtual() },
-                    aoEncerrarGuiada = { paragrafoGuiadoAoEncerrar = it },
+                    aoEncerrarGuiada = { rolagemController.aoEncerrarGuiada(it) },
                 ),
             )
         }
@@ -262,7 +277,7 @@ class ReaderActivity : BasePlayerActivity() {
             viewModel = viewModel,
             callbacks = ReaderMarcacoesController.Callbacks(
                 obterCaminhoArquivo = { caminhoArquivo },
-                obterParagrafoAtual = { paragrafoAtualVisivel() },
+                obterParagrafoAtual = { rolagemController.paragrafoAtualVisivel() },
                 // Salto exato ao topo (como a navegação por capítulos): smoothScrollToPosition parava onde o item
                 // "aparecia", e um segundo toque na mesma marcação levava a outro ponto do texto.
                 rolarParaParagrafo = { pos ->
@@ -367,7 +382,7 @@ class ReaderActivity : BasePlayerActivity() {
                 obterCaminhoArquivo = { caminhoArquivo },
                 obterGuidedPlayerManager = { guidedPlayerManager },
                 obterPlayerService = { playerService },
-                obterParagrafoAtual = { paragrafoAtualVisivel() },
+                obterParagrafoAtual = { rolagemController.paragrafoAtualVisivel() },
                 caminhoMapaDePersonagens = { personagensController.caminhoMapaDePersonagens(it) },
                 aguardarAnaliseDeFalantes = { personagensController.aguardarAnaliseDeFalantes() },
             ),
@@ -487,7 +502,7 @@ class ReaderActivity : BasePlayerActivity() {
         configurarRecyclerView()
         configurarBotoes()
         guidedReadingBarController?.configurarGuidedPlayerBotoes()
-        configurarScrollListener()
+        rolagemController.configurar()
         onBackPressedDispatcher.addCallback(this) { retornoController.voltar() }
 
         tvTitulo.text = tituloCompleto
@@ -503,7 +518,7 @@ class ReaderActivity : BasePlayerActivity() {
         viewModel.carregarPreferencias(appPrefs)
         // configurarRecyclerView() já rodou com o default (vertical) — carregarPreferencias()
         // só agora carrega o valor salvo, então reaplica a orientação correta.
-        aplicarOrientacaoRolagem(viewModel.uiState.value.rolagemHorizontal)
+        rolagemController.aplicarOrientacao(viewModel.uiState.value.rolagemHorizontal)
 
         // Bug #4 fix: sincroniza motor TTS, chave e pausas para o GuidedPlayerManager
         val motorInit = appPrefs.motorTts
@@ -555,15 +570,7 @@ class ReaderActivity : BasePlayerActivity() {
         // rolagem manual depois (o marcador fica abaixo do topo da tela); senão o primeiro parágrafo visível.
         // Livro já trocado pela fila: o manager gravou a posição final do livro concluído; esta tela não grava por cima.
         if (!livroTrocadoPelaFila && ::recyclerView.isInitialized && caminhoArquivo.isNotEmpty()) {
-            val guiadaEncerrada = paragrafoGuiadoAoEncerrar
-                .takeIf { it >= 0 && viewModel.uiState.value.paragrafoSyncAtual < 0 }
-            // Fim do livro na tela: grava o último parágrafo, para a biblioteca mostrar o livro como lido (100%).
-            val fim = if (viewModel.uiState.value.paragrafoSyncAtual < 0 && fimDoLivroNaTela()) {
-                adapter.itemCount - 1 // fimDoLivroNaTela() já garante o adapter inicializado e com itens
-            } else {
-                null
-            }
-            (guiadaEncerrada ?: fim ?: paragrafoAtualVisivel())
+            rolagemController.paragrafoParaSalvar()
                 ?.let {
                     // Total de parágrafos: dá a porcentagem lida (progresso = scroll / total) na biblioteca.
                     appPrefs.salvarPosicaoLeitura(caminhoArquivo, it, if (::adapter.isInitialized) adapter.itemCount else 0)
@@ -573,8 +580,7 @@ class ReaderActivity : BasePlayerActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        scrollListener?.let { recyclerView.removeOnScrollListener(it) }
-        scrollListener = null
+        if (::recyclerView.isInitialized) rolagemController.liberar()
         val manager = guidedPlayerManager
         if (manager != null) {
             // Mantém a leitura guiada tocando em 2º plano (foreground service); só libera o
@@ -691,7 +697,7 @@ class ReaderActivity : BasePlayerActivity() {
             },
             mostrarPronuncia = !somenteLeitura,
         )
-        aplicarOrientacaoRolagem(viewModel.uiState.value.rolagemHorizontal)
+        rolagemController.aplicarOrientacao(viewModel.uiState.value.rolagemHorizontal)
         // O destaque de progresso da leitura guiada repinta o parágrafo atual ~20x/s
         // (notifyItemChanged); o ItemAnimator padrão faz uma animação de troca (cross-fade)
         // a cada repintura, o que pisca o parágrafo em sincronia e disputa o layout com o
@@ -700,26 +706,6 @@ class ReaderActivity : BasePlayerActivity() {
         recyclerView.itemAnimator = null
         recyclerView.adapter = adapter
         viewModel.registrarAdapter(adapter)
-    }
-
-    private var pagerSnapHelper: androidx.recyclerview.widget.PagerSnapHelper? = null
-
-    /** Alterna o RecyclerView entre scroll vertical contínuo (padrão) e horizontal paginado
-     * (com PagerSnapHelper — "página" por página é o mesmo parágrafo, unidade de navegação
-     * inalterada). Chamada tanto na criação quanto ao alternar a opção ao vivo. */
-    private fun aplicarOrientacaoRolagem(horizontal: Boolean) {
-        pagerSnapHelper?.attachToRecyclerView(null)
-        recyclerView.layoutManager = LeitorLayoutManager(
-            this,
-            if (horizontal) LinearLayoutManager.HORIZONTAL else LinearLayoutManager.VERTICAL
-        ) { leituraGuiadaConduzRolagem() }
-        if (horizontal) {
-            pagerSnapHelper = androidx.recyclerview.widget.PagerSnapHelper().apply {
-                attachToRecyclerView(recyclerView)
-            }
-        } else {
-            pagerSnapHelper = null
-        }
     }
 
     // ── Botões ────────────────────────────────────────────────────────────────
@@ -762,86 +748,16 @@ class ReaderActivity : BasePlayerActivity() {
         buscaController.configurar()
     }
 
-    private fun configurarScrollListener() {
-        scrollListener = object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(rv: RecyclerView, newState: Int) {
-                // Só o arraste com o dedo chega em DRAGGING: a rolagem automática do código não entra nesse estado.
-                if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                    rolagemPeloLeitor()
-                } else if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    guidedReadingBarController?.aguardandoAutoScroll = false
-                    capitulosController.atualizarProgressoLeitura()
-                }
-            }
-        }
-        recyclerView.addOnScrollListener(scrollListener!!)
-        // As outras entradas de quem lê: TalkBack (ações de rolagem da lista), roda do mouse/touchpad e teclado.
-        recyclerView.aoRolagemDeAcessibilidade = { rolagemPeloLeitor() }
-        recyclerView.setOnGenericMotionListener { _, evento ->
-            if (evento.action == MotionEvent.ACTION_SCROLL) rolagemPeloLeitor()
-            false // o RecyclerView continua tratando a roda normalmente
-        }
-    }
-
-    /**
-     * Rolagem iniciada por quem lê, qualquer que seja a entrada (dedo, TalkBack, teclado ou roda). Liga o modo manual
-     * da leitura guiada, que só se desliga com um pedido explícito (ver GuidedReadingBarController).
-     */
-    private fun rolagemPeloLeitor() {
-        guidedReadingBarController?.ligarRolagemManual()
-        // Rolou por conta própria: a posição a guardar volta a ser a da tela, não a da leitura guiada encerrada.
-        paragrafoGuiadoAoEncerrar = -1
-        // Rolar suspende a rolagem automática do audiobook por um tempo; antes desligava o acompanhamento de vez
-        // (o destaque parava até reabrir o leitor).
-        rolagemAudiobookSuspensaAte = android.os.SystemClock.uptimeMillis() + PAUSA_ROLAGEM_MANUAL_MS
-    }
-
     /**
      * Teclado: as teclas que rolam o texto contam como rolagem de quem lê, mas só quando a lista de fato rola (no fim
      * do livro, PAGE_DOWN não muda nada e não liga o modo manual). A busca, que tem o foco, fica de fora.
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.action != KeyEvent.ACTION_DOWN || currentFocus is EditText) return super.dispatchKeyEvent(event)
-        when (event.keyCode) {
-            // O RecyclerView não trata as teclas de página: a rolagem é feita aqui, uma tela por vez.
-            KeyEvent.KEYCODE_PAGE_UP -> if (rolarPagina(-1)) return true
-            KeyEvent.KEYCODE_PAGE_DOWN -> if (rolarPagina(1)) return true
-            // Setas: a lista só rola se o foco for para um filho fora da tela. Conta só se o deslocamento mudou.
-            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
-                val antes = deslocamentoAtual()
-                val tratada = super.dispatchKeyEvent(event)
-                if (deslocamentoAtual() != antes) rolagemPeloLeitor()
-                return tratada
-            }
-        }
-        return super.dispatchKeyEvent(event)
+        // Só as teclas de rolagem vão ao controller: as outras nunca tocam na lista (ver RegraDaRolagemDoLeitor).
+        if (event.action != KeyEvent.ACTION_DOWN || currentFocus is EditText ||
+            !RegraDaRolagemDoLeitor.teclaDeRolagem(event.keyCode)) return super.dispatchKeyEvent(event)
+        return rolagemController.tratarTecla(event) { super.dispatchKeyEvent(it) }
     }
-
-    /** Rola uma tela para trás (-1) ou para frente (1), no eixo da lista. Falso se a lista já está no limite. */
-    private fun rolarPagina(sentido: Int): Boolean {
-        val vertical = recyclerView.layoutManager?.canScrollVertically() == true
-        val podeRolar = if (vertical) {
-            recyclerView.canScrollVertically(sentido)
-        } else {
-            recyclerView.canScrollHorizontally(sentido)
-        }
-        if (!podeRolar) return false
-        if (vertical) {
-            recyclerView.smoothScrollBy(0, sentido * recyclerView.height)
-        } else {
-            recyclerView.smoothScrollBy(sentido * recyclerView.width, 0)
-        }
-        rolagemPeloLeitor()
-        return true
-    }
-
-    /** Deslocamento da lista no eixo atual, para saber se uma tecla mexeu nela. */
-    private fun deslocamentoAtual(): Int =
-        if (recyclerView.layoutManager?.canScrollVertically() == true) {
-            recyclerView.computeVerticalScrollOffset()
-        } else {
-            recyclerView.computeHorizontalScrollOffset()
-        }
 
     /**
      * Visibilidade e conteúdo do FAB de conversão (único — ver [fabConverterPrincipal]).
@@ -924,9 +840,6 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
-    /** Último parágrafo lido pela leitura guiada encerrada nesta tela (-1: nenhum ou o usuário rolou depois). */
-    private var paragrafoGuiadoAoEncerrar = -1
-
     private fun atualizarUI(state: ReaderUiState) {
         // A fila já narra outro livro: esta tela não pode entregar o texto dela ao manager (setParagraphs).
         if (guiadaEmOutroLivro()) {
@@ -972,7 +885,7 @@ class ReaderActivity : BasePlayerActivity() {
 
         // Restaura a posição de leitura salva — apenas uma vez, no carregamento inicial,
         // e nunca quando a leitura guiada vai iniciar sozinha (ela faz seu próprio scroll).
-        restaurarPosicaoLeituraSeNecessario(paragrafosExibidos)
+        rolagemController.restaurarPosicaoSeNecessario(paragrafosExibidos)
         executarAcaoInicialSeNecessario()
         if (!dicaLeitorTentada && !somenteLeitura) {
             dicaLeitorTentada = true
@@ -995,7 +908,7 @@ class ReaderActivity : BasePlayerActivity() {
         // Scroll sync automático (só se não foi scroll manual). Só rola quando o
         // parágrafo muda — atualizarUI roda a cada tick de progresso (20fps) e
         // re-rolar para o mesmo índice causava flicker (#3).
-        sincronizarScrollAutomatico(state)
+        rolagemController.sincronizarComAudiobook(state)
 
         // Aplica tema ao fundo
         aplicarTemaFundo(state)
@@ -1167,56 +1080,6 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
-    /** Extraído de [atualizarUI] (restauração da posição de leitura salva). */
-    private fun restaurarPosicaoLeituraSeNecessario(paragrafosExibidos: List<Paragrafo>) {
-        // Restaura a posição de leitura salva — apenas uma vez, no carregamento inicial,
-        // e nunca quando a leitura guiada vai iniciar sozinha (ela faz seu próprio scroll).
-        if (!scrollRestaurado && paragrafosExibidos.isNotEmpty()) {
-            scrollRestaurado = true
-            val guidedIdx = guidedPlayerManager?.state?.value?.index ?: -1
-            if (reconectandoGuided && guidedIdx in 0 until paragrafosExibidos.size) {
-                // Reconexão: rola para o parágrafo em execução, não para o scroll salvo.
-                recyclerView.post {
-                    (recyclerView.layoutManager as? LinearLayoutManager)
-                        ?.scrollToPositionWithOffset(guidedIdx, 0)
-                }
-            } else if (!intent.getBooleanExtra(EXTRA_AUTO_START_GUIDED, false) &&
-                !intent.getBooleanExtra(EXTRA_CONTINUAR_GUIADA, false)) {
-                val pos = appPrefs.posicaoLeitura(caminhoArquivo, 0)
-                if (pos in 1 until paragrafosExibidos.size) {
-                    recyclerView.post {
-                        (recyclerView.layoutManager as? LinearLayoutManager)
-                            ?.scrollToPositionWithOffset(pos, 0)
-                    }
-                }
-            }
-        }
-    }
-
-    /** Até quando (uptime) a rolagem automática do audiobook fica suspensa depois de o usuário rolar com o dedo. */
-    private var rolagemAudiobookSuspensaAte = 0L
-
-    /** Leitura guiada ativa e o usuário não rolou com o dedo: só o acompanhamento dela mexe na rolagem. */
-    private fun leituraGuiadaConduzRolagem(): Boolean =
-        (guidedPlayerManager?.state?.value?.index ?: -1) >= 0 && guidedReadingBarController?.scrollManual != true
-
-    /** Extraído de [atualizarUI] (scroll automático do audiobook tocando, não da leitura guiada). */
-    private fun sincronizarScrollAutomatico(state: ReaderUiState) {
-        val controlador = guidedReadingBarController ?: return
-        // Na leitura guiada o acompanhamento fino (GuidedReadingBarController) já rola; este salto até o
-        // parágrafo brigava com ele (subia para o topo ou descia até o fim do parágrafo a cada troca).
-        if ((guidedPlayerManager?.state?.value?.index ?: -1) >= 0) return
-        val paragrafoMudouDesdeUltimoSync =
-            state.paragrafoSyncAtual != controlador.ultimoScrollSyncStandard
-        val podeRolarAutomaticamente = android.os.SystemClock.uptimeMillis() >= rolagemAudiobookSuspensaAte && state.syncAtivo &&
-            state.paragrafoSyncAtual >= 0 && paragrafoMudouDesdeUltimoSync
-        if (podeRolarAutomaticamente) {
-            controlador.ultimoScrollSyncStandard = state.paragrafoSyncAtual
-            (recyclerView.layoutManager as? LinearLayoutManager)
-                ?.smoothScrollToPosition(recyclerView, null, state.paragrafoSyncAtual)
-        }
-    }
-
     /** Extraído de [atualizarUI] (tema de fundo do leitor). */
     private fun aplicarTemaFundo(state: ReaderUiState) {
         if (temaBarrasAplicado == state.tema) return // roda a cada atualização da tela: só repinta quando muda
@@ -1233,39 +1096,6 @@ class ReaderActivity : BasePlayerActivity() {
             val margemDp = MARGEM_NIVEL_DP.getOrElse(state.margemNivel) { MARGEM_NIVEL_DP[MARGEM_NIVEL_PADRAO] }
             val margemPx = dpToPx(margemDp)
             recyclerView.setPadding(margemPx, recyclerView.paddingTop, margemPx, recyclerView.paddingBottom)
-        }
-    }
-
-    /**
-     * Parágrafo de referência pra leitura manual: o em sincronia da leitura guiada quando
-     * ativa; senão o primeiro parágrafo visível na tela. Usado tanto pra progresso de leitura
-     * quanto pra marcadores — extraído pra não duplicar a lógica (era duplicada, com um bug:
-     * marcadores usavam `findFirstCompletelyVisibleItemPosition`, que retorna -1 sempre que
-     * nenhum parágrafo cabe inteiro na tela — comum com parágrafos longos — e o marcador
-     * acabava sendo salvo no início do livro em vez da posição real).
-     */
-    private fun paragrafoAtualVisivel(): Int? {
-        val state = viewModel.uiState.value
-        return when {
-            state.texto == null -> null
-            state.paragrafoSyncAtual >= 0 -> state.paragrafoSyncAtual
-            else -> (recyclerView.layoutManager as? LinearLayoutManager)
-                ?.findFirstVisibleItemPosition()
-                ?.takeIf { it >= 0 }
-        }
-    }
-
-    /** A lista chegou ao fim (não rola mais para baixo, ou para a frente na rolagem horizontal) e há texto. */
-    private fun fimDoLivroNaTela(): Boolean {
-        val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return false
-        // Antes do primeiro layout a lista "não rola" por não ter nada medido: isso não é o fim do livro.
-        val medida = ::adapter.isInitialized && adapter.itemCount > 0 && recyclerView.isLaidOut &&
-            recyclerView.childCount > 0
-        if (!medida) return false
-        return if (lm.orientation == LinearLayoutManager.HORIZONTAL) {
-            !recyclerView.canScrollHorizontally(1)
-        } else {
-            !recyclerView.canScrollVertically(1)
         }
     }
 
@@ -1300,7 +1130,7 @@ class ReaderActivity : BasePlayerActivity() {
         val state = viewModel.uiState.value
         // Parágrafo da narração (guiada ou audiobook) ou, sem áudio, o primeiro visível na tela.
         val index = guidedPlayerManager?.state?.value?.index?.takeIf { it >= 0 }
-            ?: paragrafoAtualVisivel()
+            ?: rolagemController.paragrafoAtualVisivel()
             ?: -1
         val texto = viewModel.textoEfetivo()
         val paragrafos = state.textoLimpo?.paragrafos ?: texto?.paragrafos

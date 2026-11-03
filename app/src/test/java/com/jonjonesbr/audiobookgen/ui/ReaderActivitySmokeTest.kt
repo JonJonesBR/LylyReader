@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Looper
+import android.view.KeyEvent
 import android.view.View
 import android.widget.EditText
 import android.widget.TextView
@@ -16,6 +17,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.BlacklistStore
 import com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro
 import com.jonjonesbr.audiobookgen.domain.Capitulo
@@ -266,6 +268,53 @@ class ReaderActivitySmokeTest {
             val painel = ShadowDialog.getLatestDialog()
             assertTrue("Painel de capítulos não abriu", painel is BottomSheetDialog && painel.isShowing)
             painel?.dismiss()
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun pageDownRolaUmaTela() {
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            esperarAte(scenario, "lista que ainda pode rolar para baixo") { a -> lista(a).canScrollVertically(1) }
+
+            // PAGE_DOWN rola uma tela pelo teclado (rb-6: o controller de rolagem trata a tecla).
+            scenario.onActivity {
+                assertTrue(it.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PAGE_DOWN)))
+            }
+            esperarAte(scenario, "uma tela abaixo") { a -> primeiroVisivel(a) > 0 }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun fimDoLivroGravaUltimoParagrafo() {
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            // Ainda na tela, nada foi gravado: quem grava a posição é o onStop.
+            assertEquals(-1, AppPrefs(app).posicaoLeitura(arquivo.absolutePath, -1))
+
+            scenario.onActivity { lista(it).scrollToPosition(PARAGRAFOS.lastIndex) }
+            esperarAte(scenario, "fim do livro na tela") { a ->
+                !lista(a).canScrollVertically(1) && textoEm(lista(a), PARAGRAFOS.lastIndex) != null
+            }
+
+            // Sai da tela: o fim do livro grava o último parágrafo, para a biblioteca mostrar o livro como lido.
+            scenario.moveToState(Lifecycle.State.CREATED)
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals(PARAGRAFOS.lastIndex, AppPrefs(app).posicaoLeitura(arquivo.absolutePath, -1))
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
