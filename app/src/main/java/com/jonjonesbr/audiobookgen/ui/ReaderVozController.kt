@@ -11,17 +11,14 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.domain.Capitulo
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
-import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
-import com.jonjonesbr.audiobookgen.service.PreRenderBridge
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.io.File
 
 private const val PARAGRAFOS_PREVIEW = 3
 private const val PREPARO_PARAGRAFOS_SEM_CAPITULO = 120
@@ -50,8 +47,8 @@ internal fun textoDaAmostra(paragrafos: List<Paragrafo>?, quantos: Int = PARAGRA
     paragrafos?.take(quantos)?.joinToString(" ") { it.texto }?.takeIf { it.isNotBlank() }
 
 /**
- * Voz e pronúncia do leitor: escolha de voz (e a voz recém-clonada), amostra, "Ouvir pronúncia", dicionário de
- * pronúncias e "Preparar capítulo" — extraído de [ReaderActivity] pra reduzir o tamanho do arquivo (rb-14). Padrão
+ * Voz e pronúncia do leitor: escolha de voz (e a voz recém-clonada), amostra, "Ouvir pronúncia" e dicionário de
+ * pronúncias — extraído de [ReaderActivity] pra reduzir o tamanho do arquivo (rb-14). Padrão
  * do projeto: activity + viewModel + callbacks no construtor, sem acessar campos da Activity. Os lançadores de
  * clone e o VoiceSelectionDelegate da Activity só delegam para cá por lambda, porque registram lançadores no
  * construtor (antes de STARTED).
@@ -68,7 +65,6 @@ class ReaderVozController(
     data class Callbacks(
         val obterCaminhoArquivo: () -> String,
         val obterGuidedPlayerManager: () -> GuidedPlayerManager?,
-        val obterParagrafoAtual: () -> Int?,
     )
 
     private val caminhoArquivo: String get() = callbacks.obterCaminhoArquivo()
@@ -223,44 +219,5 @@ class ReaderVozController(
     /** Diálogo de uma palavra (toque longo): a guiada pausa enquanto o diálogo e o "Ouvir" estiverem abertos. */
     fun abrirPronunciaDaPalavra(palavra: String) {
         PronunciationDialog.show(activity, palavra, caminhoDoLivro = caminhoArquivo, onOuvir = ouvirNoFluxo)
-    }
-
-    /** "Preparar capítulo": pré-sintetiza o capítulo do ponto de leitura atual (ver GuidedPlayerManager). */
-    fun prepararCapituloAtual() {
-        val manager = guidedPlayerManager ?: return
-        val andamento = PreRenderBridge.state.value
-        if (andamento != null && !andamento.terminou) {
-            Toast.makeText(activity, R.string.prerender_already, Toast.LENGTH_SHORT).show()
-            return
-        }
-        val texto = viewModel.textoEfetivo()
-        if (texto != null && texto.paragrafos.isNotEmpty()) abrirConfirmacaoDoPreparo(manager, texto)
-    }
-
-    /** Faixa do "Preparar capítulo" a partir do ponto de leitura, com o título e as unidades; pede confirmação. */
-    private fun abrirConfirmacaoDoPreparo(manager: GuidedPlayerManager, texto: TextoExtraido) {
-        // Do trecho em leitura (ou visível) até o fim do capítulo dele; antes partia sempre do início do livro.
-        val emLeitura = manager.state.value.index.takeIf { it >= 0 }
-        val (inicio, fim) = faixaDoPreparo(
-            texto.paragrafos,
-            texto.capitulos,
-            emLeitura ?: callbacks.obterParagrafoAtual() ?: 0,
-        )
-        val capitulo = texto.capitulos.getOrNull(texto.paragrafos[inicio].indiceCapitulo)
-        val titulo = capitulo?.titulo ?: File(caminhoArquivo).nameWithoutExtension
-        val unidades = manager.contarUnidadesParaPreparo(inicio, fim)
-        if (unidades == 0) {
-            Toast.makeText(activity, R.string.prerender_nothing, Toast.LENGTH_SHORT).show()
-            return
-        }
-        AlertDialog.Builder(activity)
-            .setTitle(R.string.prerender_confirm_title)
-            .setMessage(activity.getString(R.string.prerender_confirm_message, unidades, titulo))
-            .setPositiveButton(R.string.prerender_confirm_start) { _, _ ->
-                manager.prepararCapitulo(inicio, fim, titulo)
-                Toast.makeText(activity, R.string.prerender_started, Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .exibir()
     }
 }

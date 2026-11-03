@@ -56,6 +56,8 @@ class ReaderRetornoController(
         val onPerfilDoLivroMudou: () -> Unit = {},
         /** Gera o audiobook dos capítulos marcados em ⋮ › Capítulos. */
         val onGerarCapitulosMarcados: () -> Unit = {},
+        /** Pré-carregar capítulo (rb-25); some no Ler sem áudio com o grupo de voz. */
+        val onPrepararCapitulo: () -> Unit = {},
     )
 
     fun retornarComSelecao() {
@@ -197,6 +199,7 @@ class ReaderRetornoController(
                 activity, callbacks.obterCaminhoArquivo(), callbacks.onClonarVoz, callbacks.onPerfilDoLivroMudou
             )
         }
+        view.item(R.id.itemAcaoPrepararCapitulo, dialog) { callbacks.onPrepararCapitulo() }
         view.item(R.id.itemAcaoVozesPersonagens, dialog) { callbacks.onConfigurarVozesPersonagens() }
         view.item(R.id.itemAcaoPronuncia, dialog) { callbacks.onAbrirPronuncia() }
     }
@@ -340,7 +343,8 @@ class ReaderRetornoController(
     /** Todos os itens clicáveis do bottom sheet de ações: contêineres que o TalkBack anuncia como botão. */
     private val itensAcaoClicaveis = listOf(
         R.id.itemAcaoMarcacoes, R.id.itemAcaoSleepTimer, R.id.itemAcaoAparencia, R.id.itemAcaoConfigLivro,
-        R.id.itemAcaoVozesPersonagens, R.id.itemAcaoPronuncia, R.id.itemAcaoGerarAudiobook,
+        R.id.itemAcaoPrepararCapitulo, R.id.itemAcaoVozesPersonagens, R.id.itemAcaoPronuncia,
+        R.id.itemAcaoGerarAudiobook,
         R.id.itemAcaoOuvirAudiobook, R.id.itemAcaoMaisOpcoes, R.id.itemAcaoEditar, R.id.itemAcaoExcluirPalavras,
         R.id.itemAcaoRefazerLimpeza, R.id.itemAcaoExportar, R.id.itemAcaoCompartilharTrecho, R.id.itemAcaoAjuda,
     )

@@ -863,8 +863,10 @@
     <string name="clone_delete_message">Apagar "%1$s"? O áudio de referência dela é removido deste aparelho.</string>
     <string name="action_prepare_chapter">Pré-carregar capítulo (tocar sem esperas)</string>
     <string name="prerender_confirm_title">Pré-carregar capítulo</string>
-    <string name="prerender_confirm_message">O app vai falar %1$d trechos de "%2$s" com a voz atual e guardá-los neste aparelho, para a leitura guiada tocar sem esperar. Pode demorar; uma notificação mostra o andamento e permite cancelar. Trocar a voz ou a velocidade cancela o preparo.</string>
-    <string name="prerender_confirm_start">Preparar</string>
+    <string name="prerender_confirm_message">O app vai falar %1$d trechos de "%2$s" com a voz atual e guardá-los neste aparelho, para a leitura guiada tocar sem esperar. Pode demorar; uma notificação mostra o andamento e permite cancelar. Trocar a voz ou a velocidade cancela o preparo. Em \"Preparar e ouvir\", a leitura começa já e o preparo corre à frente dela.</string>
+    <string name="prerender_confirm_start">Só preparar</string>
+    <string name="prerender_confirm_listen">Preparar e ouvir</string>
+    <string name="prerender_confirm_lento">Com esta voz, o preparo só avança com a leitura pausada, para não atrasá-la.</string>
     <string name="prerender_started">Preparando o capítulo em segundo plano.</string>
     <string name="prerender_already">Já há um capítulo sendo preparado.</string>
     <string name="prerender_nothing">Não há nada para preparar aqui.</string>

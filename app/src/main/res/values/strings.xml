@@ -860,8 +860,10 @@
     <string name="clone_delete_message">Delete "%1$s"? Its reference audio is removed from this device.</string>
     <string name="action_prepare_chapter">Preload chapter (play without waits)</string>
     <string name="prerender_confirm_title">Preload chapter</string>
-    <string name="prerender_confirm_message">The app will voice %1$d passages of "%2$s" with the current voice and keep them on this device, so guided reading plays without waiting. It can take a while; a notification shows the progress and lets you cancel. Changing the voice or speed cancels the preparation.</string>
-    <string name="prerender_confirm_start">Prepare</string>
+    <string name="prerender_confirm_message">The app will voice %1$d passages of "%2$s" with the current voice and keep them on this device, so guided reading plays without waiting. It can take a while; a notification shows the progress and lets you cancel. Changing the voice or speed cancels the preparation. With \"Prepare and listen\", reading starts now and the preparation runs ahead of it.</string>
+    <string name="prerender_confirm_start">Just prepare</string>
+    <string name="prerender_confirm_listen">Prepare and listen</string>
+    <string name="prerender_confirm_lento">With this voice, preparing only moves on while the reading is paused, so it doesn\'t slow it down.</string>
     <string name="prerender_started">Preparing the chapter in the background.</string>
     <string name="prerender_already">A chapter is already being prepared.</string>
     <string name="prerender_nothing">Nothing to prepare here.</string>

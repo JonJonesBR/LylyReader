@@ -101,6 +101,8 @@ class GuidedPlayerManager(
         /** "Entonação contínua": até quanto juntar frases (o mesmo limite por chamada do Supertonic). */
         private const val TETO_ENTONACAO_CONTINUA = com.jonjonesbr.audiobookgen.tts.TrechosSupertonic.MAX_CHARS
         private const val MAX_FALHAS_PRERENDER = 5
+        /** Motor mais lento que a fala: o preparo só anda com a leitura parada (rb-25). */
+        private const val MOTOR_LENTO_PREPARO = "kokoro"
         // Quantas orações ANTES da última o handoff pro próximo parágrafo é disparado (ver
         // uso em tocarParagrafoPorOracoes) — 2 dá ~2 orações de folga extra de parede pro
         // kokoro/onnx/Pocket sintetizarem a virada antes do parágrafo atual acabar, sem disputar
@@ -1507,9 +1509,9 @@ class GuidedPlayerManager(
     // ── Preparar capítulo (pré-renderização) ────────────────────────────────
     // Sintetiza com antecedência as unidades que a leitura guiada vai pedir (as MESMAS de play():
     // segmentos por personagem, orações ou parágrafo inteiro) e as deixa no cache de áudio em disco.
-    // Depois disso a leitura só encontra arquivos prontos, sem esperar o motor. Vozes mais lentas que a
-    // fala (Kokoro) não conseguem "ficar na frente" enquanto tocam, então o preparo serve para usar o
-    // tempo parado (tela apagada, carregando): espera a leitura ao vivo terminar de tocar antes de seguir.
+    // Depois disso a leitura só encontra arquivos prontos, sem esperar o motor. O preparo corre à frente da
+    // leitura (rb-25): pula o que a leitura ao vivo já cobre, cede a vez quando ela sintetiza e, no Kokoro
+    // (motor lento), só anda com a leitura parada, para não atrasar a fala.
     private var preRenderJob: Job? = null
 
     /**
@@ -1551,6 +1553,39 @@ class GuidedPlayerManager(
             .sumOf { unidadesDoParagrafo(it, voz, motorEfetivo).size }
     }
 
+    /** Motor lento: o preparo só anda com a leitura parada. Só para a nota da confirmação (rb-25). */
+    fun preparoEsperaALeitura(): Boolean {
+        val (voz, motor) = vozEMotorAtuais()
+        return VoiceCatalog.effectiveEngine(voz, motor) == MOTOR_LENTO_PREPARO
+    }
+
+    /** Leitura ao vivo sintetizando agora (carregando, orações pendentes, handoff ou prefetch). Só na Main. */
+    private fun leituraSintetizando(): Boolean {
+        val estado = _state.value
+        return estado.index >= 0 && (
+            estado.isLoading || pendingOracaoJobs.isNotEmpty() ||
+                proximoParagrafoJob?.isActive == true || prefetchJob?.isActive == true
+            )
+    }
+
+    /**
+     * Espera a vez antes de cada unidade do preparo: a conversão de audiobook ativa primeiro, depois a leitura ao vivo
+     * (ver [PreparoAFrente.esperaALeitura]). Só a Main lê o estado da leitura, então não roda dentro de IO.
+     */
+    private suspend fun esperarVezDoPreparo(lento: Boolean) {
+        while (PythonEngineUseCase.conversaoAtiva()) {
+            PreRenderBridge.state.update { it?.copy(esperandoConversao = true) }
+            delay(ESPERA_PRERENDER_MS)
+        }
+        PreRenderBridge.state.update { it?.copy(esperandoConversao = false) }
+        while (PreparoAFrente.esperaALeitura(lento, _state.value.isPlaying, leituraSintetizando(), estaPausado)) {
+            // Só o motor lento mostra "esperando a leitura parar": nos outros, a espera é curta e a nota piscaria.
+            if (lento) PreRenderBridge.state.update { it?.copy(esperandoLeitura = true) }
+            delay(ESPERA_PRERENDER_MS)
+        }
+        PreRenderBridge.state.update { it?.copy(esperandoLeitura = false) }
+    }
+
     fun preparandoCapitulo(): Boolean = preRenderJob?.isActive == true
 
     fun cancelarPreparo() {
@@ -1571,7 +1606,8 @@ class GuidedPlayerManager(
         val indices = (desde.coerceAtLeast(0)..ate.coerceAtMost(paragraphs.lastIndex)).toList()
         val unidades = indices.flatMap { i -> unidadesDoParagrafo(i, voz, motorEfetivo).map { i to it } }
         if (unidades.isEmpty()) return
-        val lento = motorEfetivo == "kokoro"
+        val lento = motorEfetivo == MOTOR_LENTO_PREPARO
+        val paragrafosDasUnidades = unidades.map { it.first }
 
         PreRenderBridge.state.value = PreRenderState(0, unidades.size, titulo)
         PreRenderBridge.cancelar = cancelarPeloBridge
@@ -1584,25 +1620,30 @@ class GuidedPlayerManager(
             var falhasSeguidas = 0
             val sintetizadores = mutableMapOf<String, com.jonjonesbr.audiobookgen.tts.TtsSynthesizer>()
             try {
-                for ((_, unidade) in unidades) {
-                    val (texto, vozUnidade) = unidade
-                    // Conversão de audiobook ativa: o pré-render não disputa o motor com ela.
-                    while (PythonEngineUseCase.conversaoAtiva()) {
-                        PreRenderBridge.state.update { it?.copy(esperandoConversao = true) }
-                        delay(ESPERA_PRERENDER_MS)
-                    }
-                    PreRenderBridge.state.update { it?.copy(esperandoConversao = false) }
+                var cursor = 0
+                while (cursor < unidades.size) {
+                    // Conversão ativa, leitura ao vivo sintetizando (ou tocando, no motor lento): espera a vez.
+                    esperarVezDoPreparo(lento)
                     // Voz ou ritmo mudaram no meio: o que já foi feito ficou com a chave antiga; para aqui.
+                    // Depois das esperas: uma troca durante a espera não pode sintetizar um trecho com a chave velha.
                     if (vozEMotorAtuais().first != voz || appPrefs.ritmo != ritmo) {
                         PreRenderBridge.state.update { it?.copy(cancelado = true) }
                         return@launch
                     }
-                    // Motor lento: não disputa a CPU com a leitura ao vivo.
-                    while (lento && (_state.value.isPlaying || _state.value.isLoading)) {
-                        PreRenderBridge.state.update { it?.copy(esperandoLeitura = true) }
-                        delay(ESPERA_PRERENDER_MS)
+                    // A leitura já cobre (ou passou de) trechos da frente do cursor: pula, a leitura cuida deles.
+                    // Pausada, parada ou com erro não há leitura ao vivo: a janela fica só para trás do em leitura.
+                    val estado = _state.value
+                    val aoVivo = !estaPausado && (estado.isPlaying || estado.isLoading)
+                    val alvo = PreparoAFrente.proximaUnidade(
+                        paragrafosDasUnidades, cursor, estado.index, PreparoAFrente.janelaDaLeitura(aoVivo)
+                    )
+                    if (alvo > cursor) {
+                        feitos += alvo - cursor
+                        cursor = alvo
+                        PreRenderBridge.state.update { it?.copy(feitos = feitos) }
+                        continue
                     }
-                    PreRenderBridge.state.update { it?.copy(esperandoLeitura = false) }
+                    val (texto, vozUnidade) = unidades[cursor].second
                     val motorDaUnidade = VoiceCatalog.effectiveEngine(vozUnidade, motorEfetivo)
                     val sintetizador = sintetizadores.getOrPut(motorDaUnidade) {
                         com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(
@@ -1611,19 +1652,28 @@ class GuidedPlayerManager(
                     }
                     val caminho = withContext(Dispatchers.IO) { sintetizador.synthesize(texto, vozUnidade, ritmo) }
                     if (caminho == null) {
-                        falhasSeguidas++
-                        val motivo = sintetizador.ultimoErro() ?: "motivo desconhecido"
-                        CrashLogWriter.log(null, "prerender", "Falha ao preparar trecho: voz=$vozUnidade, motivo=$motivo")
-                        if (falhasSeguidas >= MAX_FALHAS_PRERENDER) {
-                            PreRenderBridge.state.update {
-                                it?.copy(erro = context.getString(TtsErrorMapper.toUserMessageRes(motivo)))
+                        // A leitura passou deste trecho (ou cancelou o produtor que o preparo esperava): não é falha.
+                        val ficouParaALeitura = PreparoAFrente.ficouParaALeitura(
+                            paragrafosDasUnidades[cursor], _state.value.index
+                        )
+                        if (!ficouParaALeitura) {
+                            falhasSeguidas++
+                            val motivo = sintetizador.ultimoErro() ?: "motivo desconhecido"
+                            CrashLogWriter.log(
+                                null, "prerender", "Falha ao preparar trecho: voz=$vozUnidade, motivo=$motivo"
+                            )
+                            if (falhasSeguidas >= MAX_FALHAS_PRERENDER) {
+                                PreRenderBridge.state.update {
+                                    it?.copy(erro = context.getString(TtsErrorMapper.toUserMessageRes(motivo)))
+                                }
+                                return@launch
                             }
-                            return@launch
                         }
                     } else {
                         falhasSeguidas = 0
                     }
                     feitos++
+                    cursor++
                     PreRenderBridge.state.update { it?.copy(feitos = feitos) }
                 }
                 PreRenderBridge.state.update { it?.copy(feitos = unidades.size, concluido = true) }

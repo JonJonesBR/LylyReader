@@ -2,10 +2,12 @@ package com.jonjonesbr.audiobookgen.domain
 
 import android.app.Application
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.tts.PythonTtsSynthesizer
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
 import com.jonjonesbr.audiobookgen.util.TtsRate
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -180,7 +182,11 @@ class AmostraVozUseCase(
             }
         }
 
-        return when (val result = pythonEngine.gerarPreviewVoz(voz, velStr, motorEfetivo, chaveGemini, texto)) {
+        // Mesma fila da síntese Python da leitura (rb-25): o caminho Python não aguenta duas chamadas em paralelo.
+        val resultadoPython = PythonTtsSynthesizer.chamadaUnica.withLock {
+            pythonEngine.gerarPreviewVoz(voz, velStr, motorEfetivo, chaveGemini, texto)
+        }
+        return when (val result = resultadoPython) {
             is PreviewResult.Success -> ResultadoAmostra.Pronta(result.caminho)
             is PreviewResult.Error -> ResultadoAmostra.Falha("⚠ ${result.mensagem}")
         }

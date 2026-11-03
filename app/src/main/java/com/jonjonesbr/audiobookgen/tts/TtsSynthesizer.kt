@@ -9,6 +9,8 @@ import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.domain.SinteseResult
 import com.jonjonesbr.audiobookgen.util.TtsRate
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -311,7 +313,14 @@ class AndroidTtsSynthesizer(private val context: Context) : TtsSynthesizer {
     }
 }
 
-/** Síntese via Python (Edge TTS / Gemini TTS), delegada ao [PythonEngineUseCase]. */
+/**
+ * Síntese via Python (Edge TTS / Gemini TTS), delegada ao [PythonEngineUseCase].
+ *
+ * O caminho Python não é seguro para chamadas paralelas (primitivas asyncio globais, um event loop por chamada).
+ * Por isso a chamada passa por [chamadaUnica]: a guiada, o prefetch e o preparo do capítulo (rb-25) dividem a mesma
+ * fila, e a prévia de voz Python (AmostraVozUseCase) também. Quem chega depois espera a vez (a espera pode ser
+ * cancelada) e encontra o cache pronto.
+ */
 class PythonTtsSynthesizer(
     private val pythonUseCase: PythonEngineUseCase,
     private val motor: String,
@@ -324,18 +333,26 @@ class PythonTtsSynthesizer(
 
     override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
         val velocidade = TtsRate.fromRitmo(ritmo)
-        return when (val result = pythonUseCase.sintetizarParagrafo(texto, voz, velocidade, motor, geminiKey)) {
+        val resultado = chamadaUnica.withLock {
+            pythonUseCase.sintetizarParagrafo(texto, voz, velocidade, motor, geminiKey)
+        }
+        return when (resultado) {
             is SinteseResult.Success -> {
                 ultimoErro = null
-                result.caminho
+                resultado.caminho
             }
             is SinteseResult.Error -> {
-                // result.mensagem já chega mapeada por TtsErrorMapper — sem isso o usuário
+                // resultado.mensagem já chega mapeada por TtsErrorMapper — sem isso o usuário
                 // só via "motivo desconhecido" mesmo com diagnóstico real disponível.
-                Log.e(TAG, "Synthesis error: ${result.mensagem}")
-                ultimoErro = result.mensagem
+                Log.e(TAG, "Synthesis error: ${resultado.mensagem}")
+                ultimoErro = resultado.mensagem
                 null
             }
         }
+    }
+
+    companion object {
+        /** Uma chamada Python por vez, em todo o app (ver a KDoc da classe). A prévia de voz usa a mesma fila. */
+        internal val chamadaUnica = Mutex()
     }
 }

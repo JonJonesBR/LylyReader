@@ -114,7 +114,7 @@ object GuidedVoiceOptionsDialog {
             }
         ) { valor -> alterar { it.copy(tomNasFalasMeiosTons = valor) } }
 
-        // Pré-carregar o capítulo: antes ficava no menu de ações do leitor, longe do player.
+        // Pré-carregar o capítulo: também no ⋮ do leitor (rb-25); aqui fica junto dos ajustes de voz.
         if (prepararCapitulo != null) {
             secao(R.string.guided_options_preload_title)
             conteudo.addView(TextView(activity).apply { setText(R.string.guided_options_preload_desc); textSize = 12f })

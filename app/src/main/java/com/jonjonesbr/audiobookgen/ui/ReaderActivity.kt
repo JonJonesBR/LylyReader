@@ -198,7 +198,20 @@ class ReaderActivity : BasePlayerActivity() {
             callbacks = ReaderVozController.Callbacks(
                 obterCaminhoArquivo = { caminhoArquivo },
                 obterGuidedPlayerManager = { guidedPlayerManager },
+            ),
+        )
+    }
+
+    // Pré-carregar capítulo (rb-25): o ⋮ e a barra da guiada abrem a mesma confirmação. Só religa callbacks.
+    private val preparoController: ReaderPreparoController by lazy {
+        ReaderPreparoController(
+            activity = this,
+            viewModel = viewModel,
+            callbacks = ReaderPreparoController.Callbacks(
+                obterCaminhoArquivo = { caminhoArquivo },
+                obterGuidedPlayerManager = { guidedPlayerManager },
                 obterParagrafoAtual = { rolagemController.paragrafoAtualVisivel() },
+                tocarGuiadaDesde = { guidedReadingBarController?.playGuidedFrom(it) },
             ),
         )
     }
@@ -238,7 +251,7 @@ class ReaderActivity : BasePlayerActivity() {
                     esconderMiniPlayer = { reavaliarMiniPlayer() },
                     obterCaminhoArquivo = { caminhoArquivo },
                     aoMudarDeLivroNaFila = { guidedPlayerManager?.let(::abrirLeitorDoLivroDaFila) },
-                    prepararCapitulo = { vozController.prepararCapituloAtual() },
+                    prepararCapitulo = { preparoController.abrir() },
                     aoEncerrarGuiada = { rolagemController.aoEncerrarGuiada(it) },
                 ),
             )
@@ -341,6 +354,7 @@ class ReaderActivity : BasePlayerActivity() {
                 onAbrirPronuncia = { vozController.abrirDicionarioPronuncia() },
                 onAbrirAparencia = { aparenciaController.mostrarBottomSheet() },
                 onAbrirSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
+                onPrepararCapitulo = { preparoController.abrir() },
                 onClonarVoz = { aoEscolherVoz ->
                     aoClonarVozDoPainel = aoEscolherVoz
                     cloneVoiceFlowDoLivro.iniciar()
