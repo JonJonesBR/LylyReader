@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
@@ -187,6 +188,10 @@ class AndroidTtsEngine(private val context: Context) {
 
             concatenarWav(tempFiles, arquivoSaida)
             Result.success(arquivoSaida)
+        } catch (e: CancellationException) {
+            // Cancelamento (ex.: a amostra foi interrompida) não é falha da voz: relança sem log de erro e sem
+            // deixar o AndroidTtsEngineCache recriar o TextToSpeech compartilhado (rb-24b).
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Falha ao sintetizar/concatenar (voz=$vozId): ${e.message}", e)
             Result.failure(e)

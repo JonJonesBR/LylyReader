@@ -113,6 +113,12 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
      */
     private var geracaoDaAmostra = 0
 
+    /**
+     * Job da amostra ou pronúncia em geração. [pararPreview] o cancela, para a síntese cancelada não seguir
+     * gastando cota nem gravando cache à toa (rb-24b). O contador [geracaoDaAmostra] continua protegendo o resultado.
+     */
+    private var jobDaAmostra: Job? = null
+
     /** Verdadeiro enquanto a amostra é gerada ou a prévia toca; a leitura guiada espera isso acabar (rb-24). */
     val previewEmCurso: Flow<Boolean>
         get() = combine(_uiState, playerUseCase.tocando) { ui, tocando -> ui.amostraGerando || tocando }
@@ -219,7 +225,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(amostraGerando = true, statusMessage = getApplication<Application>().getString(R.string.status_gerando_amostra)) }
         val geracao = geracaoDaAmostra
 
-        viewModelScope.launch {
+        jobDaAmostra = viewModelScope.launch {
             when (val resultado = amostraVoz.gerar(voz, ritmo, motor, chaveGemini, texto)) {
                 is ResultadoAmostra.Pronta -> {
                     // Pedido cancelado por pararPreview (outra voz, outro ouvir): não toca nem mexe no "gerando".
@@ -748,7 +754,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         if (_uiState.value.amostraGerando || texto.isBlank()) return
         _uiState.update { it.copy(amostraGerando = true, statusMessage = getApplication<Application>().getString(R.string.status_gerando_amostra)) }
         val geracao = geracaoDaAmostra
-        viewModelScope.launch {
+        jobDaAmostra = viewModelScope.launch {
             val app = getApplication<android.app.Application>()
             val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motor)
             val caminho = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -776,6 +782,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
      */
     fun pararPreview() {
         geracaoDaAmostra++
+        jobDaAmostra?.cancel()
+        jobDaAmostra = null
         _uiState.update {
             if (it.amostraGerando) it.copy(amostraGerando = false, statusMessage = "") else it
         }

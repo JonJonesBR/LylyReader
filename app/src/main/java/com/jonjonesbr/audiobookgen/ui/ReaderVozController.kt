@@ -128,9 +128,14 @@ class ReaderVozController(
         // Troca de voz refaz o trecho atual sem sair do modo manual: não é um pedido de ponto da narração.
         val guidedIndex = guidedPlayerManager?.state?.value?.index ?: -1
         if (guidedIndex >= 0) {
+            // Segura em volta: o pararPreview solta a segurada da amostra, e sem esta a guiada retomaria a voz
+            // antiga até a síntese da nova ficar pronta. Solta depois do play, que já mudou o contador de comandos,
+            // então a regra não retoma (rb-24b).
+            val segura = pausaParaOuvir.segurar()
             // Para a amostra que estiver tocando: a voz nova já vai narrar o trecho (rb-24).
             audiobookViewModel.pararPreview()
             guidedPlayerManager?.play(guidedIndex)
+            segura.soltar()
         }
     }
 

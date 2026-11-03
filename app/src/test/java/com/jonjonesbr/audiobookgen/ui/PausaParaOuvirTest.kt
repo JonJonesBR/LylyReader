@@ -253,6 +253,22 @@ class PausaParaOuvirTest {
     }
 
     @Test
+    fun trocarDeVozDuranteAAmostraNaoRetomaAVozAntiga() {
+        val pausa = pausaParaOuvir()
+        val amostra = pausa.segurar()
+        // A troca de voz segura em volta do pararPreview e do play (ReaderVozController.selecionarVoz).
+        val troca = pausa.segurar()
+        previa = false // o pararPreview encerra a prévia...
+        amostra.soltar() // ...e solta a segurada da amostra antes do play: a voz antiga não pode voltar aqui
+        verify(exactly = 0) { manager.resume() }
+
+        comandos++ // o play da voz nova muda o contador de comandos
+        troca.soltar()
+
+        verify(exactly = 0) { manager.resume() }
+    }
+
+    @Test
     fun telaDestruidaNaoRetoma() {
         val pausa = pausaParaOuvir()
         val segura = pausa.segurar()

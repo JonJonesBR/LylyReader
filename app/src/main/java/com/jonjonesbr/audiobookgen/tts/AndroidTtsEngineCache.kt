@@ -6,6 +6,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.TextoDaListaDeVozes
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -118,6 +119,8 @@ object AndroidTtsEngineCache {
                     ?: return@withContext Result.failure(IllegalStateException("Motor '$enginePackage' indisponível"))
                 val resultado = engine.synthesize(texto, voiceName, destino, speed)
                 if (resultado.isSuccess) return@withContext resultado
+                // Cancelado (ex.: a amostra foi interrompida): não derruba o motor compartilhado para tentar de novo.
+                if (!isActive) return@withContext resultado
 
                 // Vários motores de terceiros degradam depois de algumas sínteses na mesma
                 // instância/conexão (passam a falhar mesmo sem rajada, com chamadas espaçadas) —
