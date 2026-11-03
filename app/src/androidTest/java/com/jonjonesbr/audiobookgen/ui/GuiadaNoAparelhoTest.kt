@@ -104,17 +104,22 @@ class GuiadaNoAparelhoTest {
         regras.usarVoz(VozFalsa.curta(contexto))
 
         val scenario = abrirLeitorComGuiada(contexto)
-        // Antes do try: se a guiada nem começou, a falha é dela, não do avanço.
-        esperarAte(scenario, "leitura guiada começou no parágrafo 0 (ou adiante)") { _ ->
+        // Prova de que o parágrafo 0 tocou: só aceita o índice 1 depois de ver index 0 com isPlaying. Antes do try:
+        // se a guiada nem começou, a falha é dela, não do avanço.
+        var viuParagrafo0Tocando = false
+        esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
             val s = GuidedPlaybackBridge.manager?.state?.value
-            s != null && (s.index >= 1 || (s.isPlaying && s.index == 0))
+            if (s != null && s.isPlaying && s.index == 0) viuParagrafo0Tocando = true
+            viuParagrafo0Tocando
         }
         try {
             esperarAte(scenario, "leitura guiada passando do parágrafo 0 para o 1") { _ ->
-                (GuidedPlaybackBridge.manager?.state?.value?.index ?: -1) >= 1
+                val s = GuidedPlaybackBridge.manager?.state?.value
+                if (s != null && s.isPlaying && s.index == 0) viuParagrafo0Tocando = true
+                (s?.index ?: -1) >= 1 && viuParagrafo0Tocando && pediuParagrafo0(regras.vozFalsa)
             }
         } catch (erro: AssertionError) {
-            val mensagem = mensagemDeAvancoFalhou(erro.message)
+            val mensagem = mensagemDeAvancoFalhou(erro.message, viuParagrafo0Tocando)
             Capturas.anotar("guiada-avanco-falhou", mensagem)
             throw AssertionError(mensagem, erro)
         }
@@ -129,12 +134,21 @@ class GuiadaNoAparelhoTest {
     }
 
     /**
+     * Se algum texto pedido à voz começa pelo parágrafo 0: a guiada mandou sintetizá-lo, e não só pulou para o 1.
+     * Lê a lista da voz falsa (thread-safe), então pode ser chamada na condição da espera.
+     */
+    private fun pediuParagrafo0(voz: VozFalsa): Boolean {
+        val inicio = LivroNoAparelho.PARAGRAFOS[0].take(TAMANHO_DO_INICIO_DO_PARAGRAFO_0)
+        return voz.textosPedidos.any { it.contains(inicio) }
+    }
+
+    /**
      * Mensagem para quando o avanço do parágrafo 0 para o 1 não acontece. Lê o estado da guiada no momento da
      * falha.
      * Só atribui a falta de áudio quando o padrão bate (tocando, sem progresso e sem erro); nos demais casos diz que
      * a guiada não chegou a tocar ou que houve erro, sem culpar o -noaudio.
      */
-    private fun mensagemDeAvancoFalhou(motivo: String?): String {
+    private fun mensagemDeAvancoFalhou(motivo: String?, viuParagrafo0Tocando: Boolean): String {
         val s = GuidedPlaybackBridge.manager?.state?.value
         val diagnostico = when {
             s?.error != null -> "a leitura guiada reportou erro: ${s.error}"
@@ -145,7 +159,13 @@ class GuiadaNoAparelhoTest {
             else -> "a guiada tocou, mas não avançou para o parágrafo 1"
         }
         return "$diagnostico. index=${s?.index} isPlaying=${s?.isPlaying} isLoading=${s?.isLoading} " +
-            "progressPct=${s?.progressPct} error=${s?.error} textosPedidos=${regras.vozFalsa.textosPedidos.size}. " +
+            "progressPct=${s?.progressPct} error=${s?.error} textosPedidos=${regras.vozFalsa.textosPedidos.size} " +
+            "viuParagrafo0Tocando=$viuParagrafo0Tocando pediuParagrafo0=${pediuParagrafo0(regras.vozFalsa)}. " +
             "Motivo: $motivo"
+    }
+
+    private companion object {
+        /** Começo do parágrafo 0 que tem de aparecer num texto pedido à voz (basta para achar o trecho). */
+        const val TAMANHO_DO_INICIO_DO_PARAGRAFO_0 = 20
     }
 }

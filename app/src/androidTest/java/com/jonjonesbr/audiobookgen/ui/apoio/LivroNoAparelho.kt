@@ -73,9 +73,10 @@ object LivroNoAparelho {
 
     /**
      * Grava o arquivo em filesDir/ui/<UUID>/ e põe o texto nos dois caches (bruto e limpo), com as chaves do app.
-     * Cada teste grava numa pasta própria: o caminho entra na chave do cache.
+     * Cada teste grava numa pasta própria: o caminho entra na chave do cache. [removidas] é o número de linhas que a
+     * limpeza tirou (a pílula do Leitor mostra esse número).
      */
-    fun gravarLivroNoCache(textos: List<String> = PARAGRAFOS): File {
+    fun gravarLivroNoCache(textos: List<String> = PARAGRAFOS, removidas: Int = 0): File {
         val app = InstrumentationRegistry.getInstrumentation().targetContext
         // O arquivo precisa existir antes da chave: a chave leva tamanho e data de modificação.
         val arquivo = File(app.filesDir, "ui/${UUID.randomUUID()}/$NOME.txt")
@@ -92,7 +93,7 @@ object LivroNoAparelho {
         )
         val texto = livroDeTeste(textos)
         CacheDeTextoDoLivro.gravar(app, bruto, texto)
-        CacheDeTextoDoLivro.gravar(app, limpo, texto, removidas = 0)
+        CacheDeTextoDoLivro.gravar(app, limpo, texto, removidas = removidas)
         check(CacheDeTextoDoLivro.ler(app, bruto) == texto) { "Cache de texto do teste não gravou" }
         return arquivo
     }
