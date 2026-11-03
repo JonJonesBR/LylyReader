@@ -31,6 +31,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
+ * "Ouvir" do fluxo de pronúncia. O fluxo repassa o onOuvir de diálogo em diálogo (voltar, showMore, importar), então
+ * passar este objeto acompanha o fluxo inteiro: [aoMostrar] é chamado para cada diálogo que abre (rb-24).
+ */
+internal class OuvirNoFluxo(
+    private val tocar: (String) -> Unit,
+    val aoMostrar: (AlertDialog) -> Unit,
+) : (String) -> Unit {
+    override fun invoke(texto: String) = tocar(texto)
+}
+
+/**
  * Telas do dicionário de pronúncia: editar uma palavra e gerenciar a lista.
  * No leitor (com [caminhoDoLivro]) o padrão é "Este livro" e há um seletor para "Todos os livros".
  * Em Ajustes (sem livro) tudo é global e não aparece seletor.
@@ -156,7 +167,7 @@ object PronunciationDialog {
             .setNegativeButton(android.R.string.cancel, null)
         if (onOuvir != null) builder.setNeutralButton(R.string.pron_listen, null)
         val dialogo = builder.create()
-        activity.mostrarDialogo(dialogo)
+        mostrarNoFluxo(activity, dialogo, onOuvir)
 
         /** Grava [falada] para [nova] no escopo escolhido e fecha o diálogo. [falada] vazia remove a entrada. */
         fun gravar(nova: String, falada: String) {
@@ -297,7 +308,7 @@ object PronunciationDialog {
             dialogo.dismiss()
             showMore(activity, caminhoDoLivro, onOuvir, onSugerirIa)
         }
-        activity.mostrarDialogo(dialogo)
+        mostrarNoFluxo(activity, dialogo, onOuvir)
     }
 
     /** Importar e exportar do dicionário (com livro, do global: todos os livros). Fechar volta à lista. */
@@ -316,10 +327,24 @@ object PronunciationDialog {
             },
             rotuloExportar to { exportar(activity) }
         )
-        activity.mostrarDialogo(AlertDialog.Builder(activity)
+        val dialogo = AlertDialog.Builder(activity)
             .setTitle(R.string.pron_menu_more)
             .setItems(itens.map { it.first }.toTypedArray()) { _, indice -> itens[indice].second() }
-            .setNegativeButton(R.string.pron_close) { _, _ -> showManager(activity, caminhoDoLivro, onOuvir, onSugerirIa) })
+            .setNegativeButton(R.string.pron_close) { _, _ ->
+                showManager(activity, caminhoDoLivro, onOuvir, onSugerirIa)
+            }
+            .create()
+        mostrarNoFluxo(activity, dialogo, onOuvir)
+    }
+
+    /**
+     * Mostra um diálogo do fluxo de pronúncia. Se o fluxo veio com [OuvirNoFluxo] e o diálogo de fato abriu, a
+     * leitura guiada fica segurada até o último diálogo fechar (rb-24). Sem o isShowing, a Activity já estaria
+     * destruída: o dismiss nunca viria e a segurada ficaria presa.
+     */
+    private fun mostrarNoFluxo(activity: AppCompatActivity, dialogo: AlertDialog, onOuvir: ((String) -> Unit)?) {
+        activity.mostrarDialogo(dialogo)
+        if (dialogo.isShowing) (onOuvir as? OuvirNoFluxo)?.aoMostrar?.invoke(dialogo)
     }
 
     /** Importa um dicionário pronto (JSON ou linhas "palavra=falada") e junta ao global. */

@@ -655,6 +655,29 @@ class GuidedPlayerManagerTest {
         verify(exactly = 1) { anyConstructed<MediaPlayerEngineImpl>().resume() }
     }
 
+    // rb-24: o contador de comandos é a base de "nada mexeu na reprodução desde a pausa" (PausaParaOuvir).
+    @Test
+    fun pausarDuasVezesContaDoisComandos() {
+        val manager = createManager()
+        val antes = manager.comandosDeReproducao
+        manager.pause()
+        manager.pause() // a soneca que vence com a pausa já feita também conta
+
+        assertEquals(antes + 2, manager.comandosDeReproducao)
+    }
+
+    @Test
+    fun resumeContaUmComando() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(0)
+        val antes = manager.comandosDeReproducao
+
+        manager.resume()
+
+        assertEquals(antes + 1, manager.comandosDeReproducao)
+    }
+
     @Test
     fun resumeDepoisDeErroDoPlayerRecomecaOParagrafo() {
         val manager = createManager()

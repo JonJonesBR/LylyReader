@@ -298,7 +298,7 @@ class ReaderActivity : BasePlayerActivity() {
             callbacks = ReaderPersonagensController.Callbacks(
                 obterCaminhoArquivo = { caminhoArquivo },
                 obterGuidedPlayerManager = { guidedPlayerManager },
-                ouvirPronuncia = { vozController.ouvirPronuncia(it) },
+                ouvirPronuncia = vozController.ouvirNoFluxo,
             ),
         )
     }
@@ -695,9 +695,7 @@ class ReaderActivity : BasePlayerActivity() {
                 marcacoesController.mostrarDialogDestacarTrecho(indice, inicio, fim)
             },
             onDefinirPronuncia = { palavra ->
-                PronunciationDialog.show(
-                    this, palavra, caminhoDoLivro = caminhoArquivo, onOuvir = { vozController.ouvirPronuncia(it) }
-                )
+                vozController.abrirPronunciaDaPalavra(palavra)
             },
             mostrarPronuncia = !somenteLeitura,
         )

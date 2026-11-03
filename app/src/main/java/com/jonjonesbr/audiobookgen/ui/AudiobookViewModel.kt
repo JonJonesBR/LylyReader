@@ -34,9 +34,12 @@ import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -103,6 +106,20 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _uiState = MutableStateFlow(AudiobookUiState())
     val uiState: StateFlow<AudiobookUiState> = _uiState.asStateFlow()
+
+    /**
+     * Sobe a cada [pararPreview]. Uma amostra ou pronúncia que ainda está sendo gerada quando isso acontece não toca
+     * depois, por cima da leitura guiada (rb-24). Só na main thread.
+     */
+    private var geracaoDaAmostra = 0
+
+    /** Verdadeiro enquanto a amostra é gerada ou a prévia toca; a leitura guiada espera isso acabar (rb-24). */
+    val previewEmCurso: Flow<Boolean>
+        get() = combine(_uiState, playerUseCase.tocando) { ui, tocando -> ui.amostraGerando || tocando }
+            .distinctUntilChanged()
+
+    /** Versão síncrona de [previewEmCurso], lida no momento (a regra de retomar da guiada usa). */
+    fun previewEmCursoAgora(): Boolean = _uiState.value.amostraGerando || playerUseCase.tocando.value
 
     // ── Catálogos Originais ──────────────────────────────────────────────────
     private val estilos =
@@ -200,16 +217,21 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
     fun gerarAmostra(voz: String, ritmo: Int, motor: String, chaveGemini: String, texto: String = "") {
         if (_uiState.value.amostraGerando) return
         _uiState.update { it.copy(amostraGerando = true, statusMessage = getApplication<Application>().getString(R.string.status_gerando_amostra)) }
+        val geracao = geracaoDaAmostra
 
         viewModelScope.launch {
             when (val resultado = amostraVoz.gerar(voz, ritmo, motor, chaveGemini, texto)) {
                 is ResultadoAmostra.Pronta -> {
+                    // Pedido cancelado por pararPreview (outra voz, outro ouvir): não toca nem mexe no "gerando".
+                    if (geracao != geracaoDaAmostra) return@launch
+                    // A prévia começa antes de soltar "gerando": não existe instante com os dois falsos (rb-24).
+                    iniciarPreview(resultado.caminho)
                     _uiState.update {
                         it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta))
                     }
-                    iniciarPreview(resultado.caminho)
                 }
                 is ResultadoAmostra.Falha -> {
+                    if (geracao != geracaoDaAmostra) return@launch
                     _uiState.update { it.copy(amostraGerando = false, statusMessage = resultado.mensagem) }
                 }
             }
@@ -725,6 +747,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
     fun ouvirTexto(voz: String, ritmo: Int, motor: String, texto: String, caminhoDoLivro: String? = null) {
         if (_uiState.value.amostraGerando || texto.isBlank()) return
         _uiState.update { it.copy(amostraGerando = true, statusMessage = getApplication<Application>().getString(R.string.status_gerando_amostra)) }
+        val geracao = geracaoDaAmostra
         viewModelScope.launch {
             val app = getApplication<android.app.Application>()
             val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motor)
@@ -733,9 +756,12 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                     com.jonjonesbr.audiobookgen.tts.OnnxTtsEngine(app)
                 }.synthesize(texto, voz, ritmo)
             }
+            // Pedido cancelado por pararPreview: não toca nem mexe no "gerando" (rb-24).
+            if (geracao != geracaoDaAmostra) return@launch
             if (caminho != null) {
-                _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
+                // A prévia começa antes de soltar "gerando": não existe instante com os dois falsos (rb-24).
                 iniciarPreview(caminho)
+                _uiState.update { it.copy(amostraGerando = false, statusMessage = " " + getApplication<Application>().getString(R.string.amostra_pronta)) }
             } else {
                 _uiState.update { it.copy(amostraGerando = false, statusMessage = getApplication<Application>().getString(R.string.status_amostra_falha)) }
             }
@@ -744,7 +770,17 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun iniciarPreview(caminho: String) = playerUseCase.iniciarPreview(caminho)
 
-    fun pararPreview() = playerUseCase.pararPreview()
+    /**
+     * Para a prévia e cancela a amostra em geração: quem esperava "gerando" acabar é liberado agora, e a geração
+     * que ainda volta não toca (rb-24).
+     */
+    fun pararPreview() {
+        geracaoDaAmostra++
+        _uiState.update {
+            if (it.amostraGerando) it.copy(amostraGerando = false, statusMessage = "") else it
+        }
+        playerUseCase.pararPreview()
+    }
 
     override fun onCleared() {
         super.onCleared()

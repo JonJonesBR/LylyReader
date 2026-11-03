@@ -619,6 +619,7 @@ class GuidedPlayerManager(
     // causa do log de diagnóstico de falha silenciosa, não vale fragmentar agora.
     @Suppress("LongMethod")
     fun play(index: Int) {
+        comandosDeReproducao++
         // Já liberado (ex.: leitor antigo ainda na pilha depois de outro livro tocar): o escopo cancelado
         // nunca rodaria o playJob e a barra ficaria presa em "carregando".
         if (!coroutineScope.isActive) return
@@ -1196,7 +1197,15 @@ class GuidedPlayerManager(
     /** Pausado pelo usuário, pela soneca, pelo fone ou pelo foco de áudio (o laço está segurado). */
     val estaPausado: Boolean get() = pausadoPeloUsuario
 
+    /**
+     * Conta tocar, pausar, retomar e parar, venham de onde vierem (tela, notificação, soneca, foco, chamada).
+     * Quem pausa por conta própria (rb-24, PausaParaOuvir) guarda o valor e só retoma se nada mudou.
+     */
+    var comandosDeReproducao: Long = 0L
+        private set
+
     fun pause() {
+        comandosDeReproducao++
         // Já pausado: uma segunda pausa (soneca, fone, foco de áudio) leria o player parado, marcaria
         // "pausado sem áudio", e o próximo "tocar" não retomaria o som.
         if (pausadoPeloUsuario) return
@@ -1208,6 +1217,7 @@ class GuidedPlayerManager(
     }
 
     fun resume() {
+        comandosDeReproducao++
         // Troca de livro em andamento: a pessoa tocou em "tocar" enquanto o próximo livro carrega. Não há o que
         // tocar ainda; a troca segue sozinha quando o livro abrir.
         if (trocandoDeLivro) {
@@ -1271,6 +1281,7 @@ class GuidedPlayerManager(
      * encerram como sempre. Cancela também a troca para o próximo livro da fila, se houver uma em andamento.
      */
     fun stop(livroConcluido: Boolean = false) {
+        comandosDeReproducao++
         trocaDeLivroJob?.cancel()
         trocaDeLivroJob = null
         interromperAudio()

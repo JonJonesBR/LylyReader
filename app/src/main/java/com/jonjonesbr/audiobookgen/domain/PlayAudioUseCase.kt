@@ -4,6 +4,10 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.util.Log
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 data class PlayerState(
     val isVisible: Boolean = false,
     val isPlaying: Boolean = false,
@@ -35,6 +39,10 @@ class PlayAudioUseCase(private val context: Context) {
 
     private var previewPlayer: MediaPlayer? = null
 
+    private val _tocando = MutableStateFlow(false)
+    /** Verdadeiro enquanto a prévia (amostra ou pronúncia) está tocando; a leitura guiada usa para esperar o fim. */
+    val tocando: StateFlow<Boolean> = _tocando.asStateFlow()
+
     fun iniciarPreview(caminho: String) {
         try {
             previewPlayer?.release()
@@ -51,18 +59,22 @@ class PlayAudioUseCase(private val context: Context) {
                     setOnCompletionListener {
                         previewPlayer?.release()
                         previewPlayer = null
+                        _tocando.value = false
                     }
                     setOnErrorListener { _, _, _ ->
                         previewPlayer?.release()
                         previewPlayer = null
+                        _tocando.value = false
                         true
                     }
                     start()
                 }
+            _tocando.value = true
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao tocar preview: ${e.message}", e)
             previewPlayer?.release()
             previewPlayer = null
+            _tocando.value = false
         }
     }
 
@@ -74,6 +86,7 @@ class PlayAudioUseCase(private val context: Context) {
             }
         } catch (e: Exception) { Log.w(TAG, "Falha ao parar preview: ${e.message}") }
         previewPlayer = null
+        _tocando.value = false
     }
 
     /** Deve ser chamado em ViewModel.onCleared() para liberar recursos. */
