@@ -529,7 +529,8 @@
     </plurals>
     <string name="toast_blacklist_duplicate">El término ya está en la lista</string>
     <string name="menu_selecionar_varios_paragrafos">Seleccionar varios párrafos</string>
-    <string name="barra_selecao_texto_varios">Varios párrafos</string>
+    <string name="barra_selecao_texto_varios">Varios</string>
+    <string name="barra_selecao_texto_pronuncia">Pronunciar</string>
     <string name="selecao_gerar_audio">Generar audio</string>
     <string name="menu_definir_palavra">Definir</string>
     <string name="toast_definir_indisponivel">No se encontró app de diccionario ni navegador</string>

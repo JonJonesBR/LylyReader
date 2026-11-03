@@ -520,7 +520,8 @@
     </plurals>
     <string name="toast_blacklist_duplicate">Term already in the list</string>
     <string name="menu_selecionar_varios_paragrafos">Select multiple paragraphs</string>
-    <string name="barra_selecao_texto_varios">Several paragraphs</string>
+    <string name="barra_selecao_texto_varios">Several</string>
+    <string name="barra_selecao_texto_pronuncia">Pronounce</string>
     <string name="selecao_gerar_audio">Generate audio</string>
     <string name="menu_definir_palavra">Define</string>
     <string name="toast_definir_indisponivel">No dictionary app or browser found</string>
