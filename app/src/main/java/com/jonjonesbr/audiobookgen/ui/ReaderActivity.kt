@@ -199,6 +199,7 @@ class ReaderActivity : BasePlayerActivity() {
                 obterCaminhoArquivo = { caminhoArquivo },
                 obterGuidedPlayerManager = { guidedPlayerManager },
                 obterParagrafoAtual = { rolagemController.paragrafoAtualVisivel() },
+                rolouParaLonge = { guidedReadingBarController?.scrollManual == true },
             ),
         )
     }
@@ -337,9 +338,11 @@ class ReaderActivity : BasePlayerActivity() {
                 onCompartilharTrecho = {
                     val paragrafos = viewModel.uiState.value.textoLimpo?.paragrafos
                         ?: viewModel.textoEfetivo()?.paragrafos
-                    val paragrafo = paragrafoParaCompartilhar(paragrafos, guidedPlayerManager?.state?.value?.index) {
-                        rolagemController.paragrafoAtualVisivel()
-                    }
+                    val paragrafo = paragrafoParaCompartilhar(
+                        paragrafos,
+                        guidedPlayerManager?.state?.value?.index,
+                        rolouParaLonge = guidedReadingBarController?.scrollManual == true,
+                    ) { rolagemController.paragrafoAtualVisivel() }
                     compartilharTrecho(this, paragrafo)
                 },
                 onBaixarCapitulo = { conversaoController.baixarCapitulo() },

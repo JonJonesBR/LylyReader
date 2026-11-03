@@ -8,15 +8,17 @@ import com.jonjonesbr.audiobookgen.domain.Paragrafo
 
 /**
  * Parágrafo que o "compartilhar trecho" envia: o da narração (guiada ou audiobook) quando há uma; senão o
- * primeiro visível na tela, avaliado só nesse caso (por isso é uma função, não um valor). Devolve nulo se o
- * índice cair fora da lista ou se o parágrafo estiver em branco.
+ * primeiro visível na tela, avaliado só nesse caso (por isso é uma função, não um valor). Se a pessoa rolou para
+ * longe da narração ([rolouParaLonge], rb-34), vale a tela. Devolve nulo se o índice cair fora da lista ou se o
+ * parágrafo estiver em branco.
  */
 internal fun paragrafoParaCompartilhar(
     paragrafos: List<Paragrafo>?,
     indiceGuiada: Int?,
+    rolouParaLonge: Boolean,
     indiceNaTela: () -> Int?,
 ): Paragrafo? {
-    val index = indiceDoTrechoAtual(indiceGuiada, indiceNaTela)
+    val index = indiceDoTrechoAtual(indiceGuiada, rolouParaLonge, indiceNaTela)
     val paragrafo = if (index in 0 until (paragrafos?.size ?: 0)) paragrafos?.get(index) else null
     return paragrafo?.takeIf { it.texto.trim().isNotEmpty() }
 }

@@ -16,45 +16,112 @@ class CompartilharTrechoTest {
 
     @Test
     fun guiadaVenceATela() {
-        val escolhido = paragrafoParaCompartilhar(paragrafos, indiceGuiada = 2, indiceNaTela = { 0 })
+        val escolhido = paragrafoParaCompartilhar(
+            paragrafos,
+            indiceGuiada = 2,
+            rolouParaLonge = false,
+            indiceNaTela = { 0 },
+        )
         assertEquals("terceiro", escolhido?.texto)
     }
 
     @Test
     fun semGuiadaUsaATela() {
-        val escolhido = paragrafoParaCompartilhar(paragrafos, indiceGuiada = -1, indiceNaTela = { 1 })
+        val escolhido = paragrafoParaCompartilhar(
+            paragrafos,
+            indiceGuiada = -1,
+            rolouParaLonge = false,
+            indiceNaTela = { 1 },
+        )
+        assertEquals("segundo", escolhido?.texto)
+    }
+
+    @Test
+    fun rolouParaLongeUsaATela() {
+        val escolhido = paragrafoParaCompartilhar(
+            paragrafos,
+            indiceGuiada = 2,
+            rolouParaLonge = true,
+            indiceNaTela = { 0 },
+        )
+        assertEquals("primeiro", escolhido?.texto)
+    }
+
+    @Test
+    fun rolouSemTelaCaiNaGuiada() {
+        val escolhido = paragrafoParaCompartilhar(
+            paragrafos,
+            indiceGuiada = 1,
+            rolouParaLonge = true,
+            indiceNaTela = { null },
+        )
         assertEquals("segundo", escolhido?.texto)
     }
 
     @Test
     fun semGuiadaNemTelaDaNulo() {
-        assertNull(paragrafoParaCompartilhar(paragrafos, indiceGuiada = null, indiceNaTela = { null }))
+        val escolhido = paragrafoParaCompartilhar(
+            paragrafos,
+            indiceGuiada = null,
+            rolouParaLonge = false,
+            indiceNaTela = { null },
+        )
+        assertNull(escolhido)
     }
 
     @Test
     fun indiceForaDosLimitesDaNulo() {
-        assertNull(paragrafoParaCompartilhar(paragrafos, indiceGuiada = 3, indiceNaTela = { 0 }))
-        assertNull(paragrafoParaCompartilhar(paragrafos, indiceGuiada = null, indiceNaTela = { 7 }))
+        val foraDaGuiada = paragrafoParaCompartilhar(
+            paragrafos,
+            indiceGuiada = 3,
+            rolouParaLonge = false,
+            indiceNaTela = { 0 },
+        )
+        val foraDaTela = paragrafoParaCompartilhar(
+            paragrafos,
+            indiceGuiada = null,
+            rolouParaLonge = false,
+            indiceNaTela = { 7 },
+        )
+        assertNull(foraDaGuiada)
+        assertNull(foraDaTela)
     }
 
     @Test
     fun paragrafoEmBrancoDaNulo() {
         val comBranco = listOf(Paragrafo("  \n\t ", 0, 0))
-        assertNull(paragrafoParaCompartilhar(comBranco, indiceGuiada = 0, indiceNaTela = { null }))
+        val escolhido = paragrafoParaCompartilhar(
+            comBranco,
+            indiceGuiada = 0,
+            rolouParaLonge = false,
+            indiceNaTela = { null },
+        )
+        assertNull(escolhido)
     }
 
     @Test
     fun semTextoDaNulo() {
-        assertNull(paragrafoParaCompartilhar(null, indiceGuiada = 0, indiceNaTela = { 0 }))
+        val escolhido = paragrafoParaCompartilhar(
+            null,
+            indiceGuiada = 0,
+            rolouParaLonge = false,
+            indiceNaTela = { 0 },
+        )
+        assertNull(escolhido)
     }
 
     @Test
     fun naTelaNaoEChamadoComGuiada() {
         var consultouTela = false
-        paragrafoParaCompartilhar(paragrafos, indiceGuiada = 0, indiceNaTela = {
-            consultouTela = true
-            0
-        })
+        paragrafoParaCompartilhar(
+            paragrafos,
+            indiceGuiada = 0,
+            rolouParaLonge = false,
+            indiceNaTela = {
+                consultouTela = true
+                0
+            },
+        )
         assertFalse("Com leitura guiada, o índice da tela não deveria ser consultado", consultouTela)
     }
 }

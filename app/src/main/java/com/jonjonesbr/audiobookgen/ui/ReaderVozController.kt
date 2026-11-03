@@ -78,6 +78,8 @@ class ReaderVozController(
         val obterGuidedPlayerManager: () -> GuidedPlayerManager?,
         /** Primeiro parágrafo visível na tela; usado pela amostra de voz (rb-31). */
         val obterParagrafoAtual: () -> Int?,
+        /** Pessoa rolou para longe da narração: a amostra segue a tela, não a guiada (rb-34). */
+        val rolouParaLonge: () -> Boolean,
     )
 
     private val caminhoArquivo: String get() = callbacks.obterCaminhoArquivo()
@@ -168,7 +170,10 @@ class ReaderVozController(
         val chave = SecurePreferences.getGeminiKeys(activity)
         audiobookViewModel.prepararConfiguracoesPython(voice.engine, chave, appPrefs.pausaMs, caminhoArquivo)
         // Começa no trecho que a pessoa está vendo ou ouvindo, não no começo do livro (rb-31).
-        val inicio = indiceDoTrechoAtual(guidedPlayerManager?.state?.value?.index) { callbacks.obterParagrafoAtual() }
+        val inicio = indiceDoTrechoAtual(
+            guidedPlayerManager?.state?.value?.index,
+            callbacks.rolouParaLonge(),
+        ) { callbacks.obterParagrafoAtual() }
         val previewText = textoDaAmostra(viewModel.textoEfetivo()?.paragrafos, inicio.coerceAtLeast(0))
             ?: VoiceCatalog.previewSampleText(voice)
         // UNDISPATCHED: o finally solta a segurada mesmo com o escopo já cancelado (giro de tela).
