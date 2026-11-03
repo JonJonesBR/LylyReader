@@ -17,6 +17,7 @@ import android.view.MenuInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.TextView
@@ -590,6 +591,65 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun toqueCurtoUnicoAgeNoParagrafoSemFoco() {
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { modeloDe(it).onParagrafoLongPress(1) }
+            esperarAte(scenario, "barra com 1 parágrafo") { a ->
+                barraDeSelecaoVisivel(a) && textoDaBarra(a) == plural(a, 1)
+            }
+
+            // O parágrafo 3 começa sem foco. Antes, o 1º toque só pegava o foco
+            // e o clique vinha no 2º (rb-42).
+            scenario.onActivity { a ->
+                val tv3 = (lista(a).findViewHolderForAdapterPosition(3) as ParagrafoAdapter.VHLeitura).tv
+                assertFalse(tv3.isFocused)
+            }
+
+            // Um toque só, curto: já amplia a seleção até o parágrafo 3.
+            val t0 = 10_000L
+            evento(scenario, 3, MotionEvent.ACTION_DOWN, t0, t0)
+            evento(scenario, 3, MotionEvent.ACTION_UP, t0, t0 + 50L)
+            esperarAte(scenario, "um toque curto já amplia até o parágrafo 3") { a ->
+                textoDaBarra(a) == plural(a, 3)
+            }
+
+            // Segundo toque, agora com foco: também gera o performClick, que não pode disparar de novo.
+            // O 3 era o fim, então tocar nele encolhe a seleção para o início. Se o clique duplicasse, ficaria em 3.
+            val t1 = t0 + 5_000L
+            evento(scenario, 3, MotionEvent.ACTION_DOWN, t1, t1)
+            evento(scenario, 3, MotionEvent.ACTION_UP, t1, t1 + 50L)
+            esperarAte(scenario, "segundo toque encolhe a seleção para 1") { a ->
+                textoDaBarra(a) == plural(a, 1)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            scenario.onActivity { assertEquals(plural(it, 1), textoDaBarra(it)) }
+
+            // Arraste curto no parágrafo 4, acima do slop: não é toque, então a seleção não muda.
+            val t2 = t1 + 5_000L
+            val slop = ViewConfiguration.get(app).scaledTouchSlop.toFloat()
+            evento(scenario, 4, MotionEvent.ACTION_DOWN, t2, t2)
+            evento(scenario, 4, MotionEvent.ACTION_MOVE, t2, t2 + 20L, dx = 3 * slop)
+            evento(scenario, 4, MotionEvent.ACTION_UP, t2, t2 + 50L, dx = 3 * slop)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { assertEquals(plural(it, 1), textoDaBarra(it)) }
+
+            // Fora de qualquer toque, o clique de acessibilidade (TalkBack, Switch) lê dali, sem toque.
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+            scenario.onActivity { a ->
+                val tv4 = (lista(a).findViewHolderForAdapterPosition(4) as ParagrafoAdapter.VHLeitura).tv
+                tv4.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, null)
+            }
+            esperarAte(scenario, "clique de acessibilidade amplia até o parágrafo 4") { a ->
+                textoDaBarra(a) == plural(a, 4)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Dois capítulos: a primeira metade dos parágrafos no primeiro (0 a 4 nos 10 de sempre), o resto no segundo. */
@@ -706,18 +766,19 @@ class ReaderActivitySmokeTest {
             .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
             .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
 
-    /** Manda um toque à lista sobre o item [pos]: [acao] (DOWN, UP ou CANCEL) com os tempos dados. */
+    /** Manda um toque à lista sobre o item [pos]: [acao] (DOWN, UP ou CANCEL), com os tempos dados e o x + [dx]. */
     private fun evento(
         scenario: ActivityScenario<ReaderActivity>,
         pos: Int,
         acao: Int,
         downTime: Long,
         eventTime: Long,
+        dx: Float = 0f,
     ) {
         scenario.onActivity { a ->
             val rv = lista(a)
             val item = requireNotNull(rv.findViewHolderForAdapterPosition(pos)).itemView
-            val x = item.left + item.width / 2f
+            val x = item.left + item.width / 2f + dx
             val y = item.top + item.height / 2f
             val ev = MotionEvent.obtain(downTime, eventTime, acao, x, y, 0)
             rv.dispatchTouchEvent(ev)

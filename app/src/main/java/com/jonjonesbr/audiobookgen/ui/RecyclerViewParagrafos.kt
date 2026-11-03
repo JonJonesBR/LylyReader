@@ -50,6 +50,10 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     val textoEmUso: Boolean
         get() = segurarRepinturaDeSincronia(toqueEmAndamento, selecoesAbertas, textoComSelecaoFocada())
 
+    /** Seleção de texto agora: menu aberto, ou texto já marcado com foco (antes de o menu abrir). Usada no toque. */
+    val selecaoDeTextoAberta: Boolean
+        get() = selecoesAbertas > 0 || textoComSelecaoFocada()
+
     private fun textoComSelecaoFocada(): Boolean = (findFocus() as? TextView)?.hasSelection() == true
 
     fun abriuSelecao() {

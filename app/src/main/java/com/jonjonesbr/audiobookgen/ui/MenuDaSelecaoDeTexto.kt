@@ -5,9 +5,12 @@ import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.R
+import kotlin.math.hypot
 
 // IDs dos itens de menu no ActionMode de seleção de texto — nomeados (1001/1002 eram débito aceito no baseline
 // do detekt; 1003 a 1005 são os itens de antes, 1006 é o Gerar áudio do rb-30).
@@ -116,19 +119,91 @@ internal class MenuDaSelecaoDeTexto(
 }
 
 /**
- * Avisa o início (ACTION_DOWN) e o fim (ACTION_UP) de cada toque, e devolve false para o Editor seguir como antes:
- * o clique continua no performClick. A duração do toque separa o toque curto do toque longo que falhou (rb-38).
+ * Toque curto e clique de um parágrafo (rb-42). Quem decide é o toque: o primeiro toque curto lê dali, mesmo sem o
+ * foco. No Android, um TextView focável que ainda não tem foco só pega o foco no UP (requestFocus) e não roda o
+ * performClick. Por isso o clique não decide nada sozinho: ele só vale quando não veio de um toque recente
+ * (TalkBack, Switch, Enter ou D-pad). O toque é postado: o UP ainda termina dentro do TextView (foco, Editor, menu
+ * que fecha), e a lista não pode mudar no meio do despacho do toque. O listener devolve false: o Editor e o
+ * toque longo seguem como antes.
  */
-// Só observa DOWN e UP e devolve false: o clique continua no performClick.
-@SuppressLint("ClickableViewAccessibility")
-internal fun TextView.observarToque(aoDescer: () -> Unit, aoSoltar: (duracaoMs: Long) -> Unit) {
-    setOnTouchListener { _, ev ->
+internal class ToqueNoParagrafo(
+    private val tv: TextView,
+    private val selecaoAberta: () -> Boolean,
+    private val aoToque: () -> Unit,
+) : View.OnTouchListener, View.OnClickListener {
+
+    private val slop = ViewConfiguration.get(tv.context).scaledTouchSlop.toFloat()
+    private var x0 = 0f
+    private var y0 = 0f
+    // Maior afastamento do ponto do DOWN durante o gesto: acima do slop, é arraste e não toque.
+    private var deslocamento = 0f
+    // Falso depois de um segundo dedo ou de um CANCEL: o gesto não vale como toque.
+    private var gestoValido = false
+    // Havia seleção aberta no DOWN: o toque só fecha a seleção e não lê.
+    private var selecaoNoDown = false
+    // Verdadeiro do UP até o post que o desarma: o performClick desse toque cai nessa janela e é ignorado.
+    // A janela vale pela ordem da fila, e não pelo relógio: um quadro atrasado não a deixa vencer (rb-42).
+    private var cliqueDoToquePendente = false
+
+    // Devolve false: o clique de acessibilidade é o onClick, e o Editor vê o toque como antes.
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouch(v: View, ev: MotionEvent): Boolean {
         when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> aoDescer()
-            MotionEvent.ACTION_UP -> aoSoltar(ev.eventTime - ev.downTime)
+            MotionEvent.ACTION_DOWN -> {
+                gestoValido = true
+                x0 = ev.x
+                y0 = ev.y
+                deslocamento = 0f
+                selecaoNoDown = selecaoAberta() || tv.hasSelection()
+            }
+            MotionEvent.ACTION_MOVE -> deslocamento = maxOf(deslocamento, afastamento(ev))
+            MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_CANCEL -> gestoValido = false
+            MotionEvent.ACTION_UP -> soltou(ev)
         }
-        false
+        return false
     }
+
+    /** Clique do performClick (toque) ou de acessibilidade. Se o UP acabou de decidir o toque, o clique é ignorado. */
+    override fun onClick(v: View) {
+        if (cliqueDoToquePendente) {
+            cliqueDoToquePendente = false
+        } else {
+            aoToque()
+        }
+    }
+
+    // hypot do kotlin.math só recebe Double: a distância do ponto do DOWN volta em Float.
+    private fun afastamento(ev: MotionEvent): Float =
+        hypot((ev.x - x0).toDouble(), (ev.y - y0).toDouble()).toFloat()
+
+    private fun soltou(ev: MotionEvent) {
+        deslocamento = maxOf(deslocamento, afastamento(ev))
+        // hasSelection no UP pega o duplo toque rápido: o Editor já selecionou a palavra no 2º DOWN.
+        // Esse UP não pode ler de novo.
+        val selecao = selecaoNoDown || tv.hasSelection()
+        val curto = gestoValido && ehToqueCurto(
+            duracaoMs = ev.eventTime - ev.downTime,
+            deslocamentoPx = deslocamento,
+            slopPx = slop,
+            limiteDoToqueLongoMs = ViewConfiguration.getLongPressTimeout().toLong(),
+            selecaoAberta = selecao,
+        )
+        if (curto) gestoValido = false
+        // Todo UP arma a janela. O performClick deste toque, se houver, entra na fila antes do post de dentro, então
+        // o desarme só roda depois dele. O toque curto é postado: o isAttachedToWindow barra a view reciclada.
+        cliqueDoToquePendente = true
+        tv.post {
+            if (curto && tv.isAttachedToWindow) aoToque()
+            tv.post { cliqueDoToquePendente = false }
+        }
+    }
+}
+
+/** Liga o toque curto e o clique de um parágrafo (rb-42). Uma vez por item, no init do ViewHolder. */
+internal fun TextView.ligarToqueNoParagrafo(selecaoAberta: () -> Boolean, aoToque: () -> Unit) {
+    val toque = ToqueNoParagrafo(this, selecaoAberta, aoToque)
+    setOnTouchListener(toque)
+    setOnClickListener(toque)
 }
 
 /**

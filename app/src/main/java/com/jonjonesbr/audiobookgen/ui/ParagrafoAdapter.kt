@@ -14,7 +14,6 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
-import android.os.SystemClock
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextWatcher
@@ -24,7 +23,6 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
@@ -125,12 +123,6 @@ class ParagrafoAdapter(
     }
     // Repinturas de sincronia seguradas enquanto há dedo na lista ou seleção aberta (rb-38).
     private val repinturas = RepinturasPendentes()
-    // Duração do último toque (DOWN até UP): separa o toque curto do toque longo que falhou em selecionar.
-    private var duracaoDoToqueMs = 0L
-    // Instante do UP desse toque: passada a janela do toque, a duração guardada não vale mais para um clique.
-    private var instanteDoUp = 0L
-    // Marcado no ACTION_DOWN, quando o menu já estava aberto: o clique que vem depois só fecha a seleção.
-    private var toqueSoFechaSelecao = false
 
     init {
         // Depois de a lista de parágrafos e as repinturas existirem: aplica o que ficou seguro ao soltar o dedo.
@@ -294,23 +286,11 @@ class ParagrafoAdapter(
             // Menu e clique são ligados uma vez por item, e não a cada bind: o narrado é repintado ~20x/s.
             tv.customSelectionActionModeCallback =
                 MenuDaSelecaoDeTexto(tv, { bindingAdapterPosition }, comAudio, acoesDoMenu)
-            tv.observarToque(
-                aoDescer = { toqueSoFechaSelecao = recyclerView.selecoesAbertas > 0 },
-                aoSoltar = { duracao ->
-                    duracaoDoToqueMs = duracao
-                    instanteDoUp = SystemClock.uptimeMillis()
-                },
-            )
-            tv.setOnClickListener {
-                // Só toque curto vale como clique: o longo que não selecionou não pode virar "ler daqui" (rb-38).
-                // Com o menu da seleção aberto, o toque só fecha a seleção: não toca a guiada nem amplia.
-                val limite = ViewConfiguration.getLongPressTimeout().toLong()
-                val janela = ViewConfiguration.getDoubleTapTimeout().toLong()
-                val duracao = duracaoDoUltimoToque(duracaoDoToqueMs, SystemClock.uptimeMillis() - instanteDoUp, janela)
-                val vale = toqueValeComoClique(duracao, limite, toqueSoFechaSelecao)
-                duracaoDoToqueMs = 0L
-                toqueSoFechaSelecao = false
-                if (vale && bindingAdapterPosition != RecyclerView.NO_POSITION) onToque(bindingAdapterPosition)
+            // Toque curto lê dali já no 1º toque. Toque longo que não selecionou e toque que só fecha a seleção
+            // não leem (rb-38, rb-42).
+            tv.ligarToqueNoParagrafo(selecaoAberta = { recyclerView.selecaoDeTextoAberta }) {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) onToque(pos)
             }
         }
     }

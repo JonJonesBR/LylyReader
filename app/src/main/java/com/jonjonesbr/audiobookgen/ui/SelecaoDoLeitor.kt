@@ -61,16 +61,17 @@ internal fun segurarRepinturaDeSincronia(
     textoComSelecao: Boolean,
 ): Boolean = toqueEmAndamento || selecoesAbertas > 0 || textoComSelecao
 
-/** Só um toque curto vale como clique (ler daqui, ampliar). Um toque longo que falhou em selecionar não vale. */
-internal fun toqueValeComoClique(duracaoMs: Long, limiteDoToqueLongoMs: Long, fechavaSelecao: Boolean): Boolean =
-    !fechavaSelecao && duracaoMs < limiteDoToqueLongoMs
-
 /**
- * Duração do último toque, se o clique veio dele. Um clique que chega depois da janela do toque (Enter, D-pad, leitor
- * de tela) não herda a duração de um toque antigo: vale como toque curto (zero).
+ * Toque curto (rb-42): rápido, quase parado e sem seleção nativa aberta no DOWN nem criada pelo próprio toque.
+ * Só ele lê a partir do parágrafo, já no 1º toque. Toque longo, arraste ou toque que fecha a seleção não valem.
  */
-internal fun duracaoDoUltimoToque(duracaoMs: Long, desdeOUpMs: Long, janelaMs: Long): Long =
-    if (desdeOUpMs <= janelaMs) duracaoMs else 0L
+internal fun ehToqueCurto(
+    duracaoMs: Long,
+    deslocamentoPx: Float,
+    slopPx: Float,
+    limiteDoToqueLongoMs: Long,
+    selecaoAberta: Boolean,
+): Boolean = !selecaoAberta && duracaoMs < limiteDoToqueLongoMs && deslocamentoPx < slopPx
 
 /**
  * Repinturas de sincronia que esperam o toque ou o menu terminar (rb-38). Só na main thread: o adapter e a lista

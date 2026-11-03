@@ -134,29 +134,32 @@ class SelecaoDoLeitorTest {
         assertTrue(segurarRepinturaDeSincronia(toqueEmAndamento = false, selecoesAbertas = 0, textoComSelecao = true))
     }
 
+    /** Toque com slop de 8 px e limite de toque longo de 500 ms, como no Android padrão. */
+    private fun toqueCurto(duracaoMs: Long, deslocamentoPx: Float, selecaoAberta: Boolean = false): Boolean =
+        ehToqueCurto(duracaoMs, deslocamentoPx, slopPx = 8f, limiteDoToqueLongoMs = 500L, selecaoAberta = selecaoAberta)
+
     @Test
-    fun duracaoSoValeNaJanelaDoToque() {
-        assertEquals(800L, duracaoDoUltimoToque(duracaoMs = 800L, desdeOUpMs = 10L, janelaMs = 300L))
-        // Clique que chega depois da janela (Enter, D-pad) não herda a duração de um toque antigo.
-        assertEquals(0L, duracaoDoUltimoToque(duracaoMs = 800L, desdeOUpMs = 1_000L, janelaMs = 300L))
+    fun toqueCurtoRapidoEParadoVale() {
+        assertTrue(toqueCurto(duracaoMs = 120L, deslocamentoPx = 0f))
+        // Um dedo que treme um pouco, abaixo do slop, ainda é toque.
+        assertTrue(toqueCurto(duracaoMs = 120L, deslocamentoPx = 5f))
     }
 
     @Test
-    fun toqueCurtoValeComoClique() {
-        assertTrue(toqueValeComoClique(duracaoMs = 120L, limiteDoToqueLongoMs = 500L, fechavaSelecao = false))
-        // Toque de duração zero (TalkBack, duplo toque): vale.
-        assertTrue(toqueValeComoClique(duracaoMs = 0L, limiteDoToqueLongoMs = 500L, fechavaSelecao = false))
+    fun toqueNoLimiteOuLongoNaoVale() {
+        assertFalse(toqueCurto(duracaoMs = 500L, deslocamentoPx = 0f))
+        assertFalse(toqueCurto(duracaoMs = 900L, deslocamentoPx = 0f))
     }
 
     @Test
-    fun toqueNoLimiteOuLongoNaoValeComoClique() {
-        assertFalse(toqueValeComoClique(duracaoMs = 500L, limiteDoToqueLongoMs = 500L, fechavaSelecao = false))
-        assertFalse(toqueValeComoClique(duracaoMs = 900L, limiteDoToqueLongoMs = 500L, fechavaSelecao = false))
+    fun arrasteAlemDoSlopNaoVale() {
+        assertFalse(toqueCurto(duracaoMs = 120L, deslocamentoPx = 8f))
+        assertFalse(toqueCurto(duracaoMs = 120L, deslocamentoPx = 30f))
     }
 
     @Test
-    fun toqueQueFechaSelecaoNaoValeComoClique() {
-        assertFalse(toqueValeComoClique(duracaoMs = 50L, limiteDoToqueLongoMs = 500L, fechavaSelecao = true))
+    fun toqueComSelecaoAbertaNaoVale() {
+        assertFalse(toqueCurto(duracaoMs = 50L, deslocamentoPx = 0f, selecaoAberta = true))
     }
 
     @Test
