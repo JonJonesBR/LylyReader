@@ -1,16 +1,11 @@
 package com.jonjonesbr.audiobookgen.tts
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
-import android.content.pm.ServiceInfo
-import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -27,6 +22,9 @@ class PocketSynthService : Service() {
     private var engine: NativePocketTts? = null
     private var idleRelease: Runnable? = null
 
+    // Primeiro plano do processo (rb-36): entra na primeira síntese e sai 60 s depois da última.
+    private val motor = PrimeiroPlanoDoMotor(this, NOTIFICATION_ID)
+
     private val binder = object : IPocketSynthService.Stub() {
         override fun synthesize(
             text: String,
@@ -36,9 +34,9 @@ class PocketSynthService : Service() {
             temperature: Float,
             threads: Int
         ): String {
-            val shouldStartForeground = activeCalls.getAndIncrement() == 0
+            activeCalls.incrementAndGet()
+            motor.comecar()
             try {
-                if (shouldStartForeground) startSynthesisForeground()
                 synchronized(engineLock) {
                     val spec = PocketTtsModelManager.specForVoice(voiceId)
                         ?: return "voz Pocket não reconhecida: $voiceId"
@@ -75,8 +73,8 @@ class PocketSynthService : Service() {
                 Log.e(TAG, "Pocket synthesis failed (voice=$voiceId): ${error.message}", error)
                 return error.message ?: error.javaClass.simpleName
             } finally {
+                motor.terminar()
                 if (activeCalls.decrementAndGet() == 0) {
-                    stopForeground(STOP_FOREGROUND_REMOVE)
                     synchronized(engineLock) {
                         if (engine != null) scheduleIdleRelease()
                     }
@@ -90,10 +88,11 @@ class PocketSynthService : Service() {
     // Android 15+: limite de tempo do dataSync atingido. Sai do foreground sem parar o serviço
     // (continua ligado ao cliente); sem isto o sistema derruba o app.
     override fun onTimeout(startId: Int, fgsType: Int) {
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        motor.aoTimeout()
     }
 
     override fun onDestroy() {
+        motor.encerrar()
         idleRelease?.let(mainHandler::removeCallbacks)
         synchronized(engineLock) {
             engine?.close()
@@ -151,33 +150,8 @@ class PocketSynthService : Service() {
         }.also { mainHandler.postDelayed(it, IDLE_RELEASE_DELAY_MS) }
     }
 
-    private fun startSynthesisForeground() {
-        getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(
-                CHANNEL_ID,
-                getString(com.jonjonesbr.audiobookgen.R.string.notif_canal_preparo_voz, NOME_MOTOR),
-                NotificationManager.IMPORTANCE_MIN
-            )
-                .apply { setShowBadge(false) }
-        )
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(com.jonjonesbr.audiobookgen.R.drawable.ic_stat_lyly)
-            .setContentTitle(getString(com.jonjonesbr.audiobookgen.R.string.notif_preparando_voz_titulo))
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setSilent(true)
-            .setOngoing(true)
-            .build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
-    }
-
     private companion object {
         const val TAG = "PocketSynthService"
-        const val CHANNEL_ID = "lylyreader_pocket_synth"
-        const val NOME_MOTOR = "Pocket"
         const val NOTIFICATION_ID = 2003
         const val MIN_AUDIO_BYTES = 500L
         const val DEFAULT_LSD_STEPS = 1

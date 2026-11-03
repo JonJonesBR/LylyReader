@@ -17,8 +17,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <!-- SherpaSynthService (síntese kokoro no processo :sherpa) roda como foreground service só
-         enquanto sintetiza — achado real em device (2026-09-16): o gerenciador de processos do
+    <!-- SherpaSynthService (síntese kokoro no processo :sherpa) roda como foreground service
+         enquanto sintetiza, e sai 60 s depois da última síntese (rb-36: histerese, sem liga/desliga
+         a cada chamada) — achado real em device (2026-09-16): o gerenciador de processos do
          MIUI ("SmartPower") congela esse processo por não ter nenhuma superfície própria
          (notificação/activity), MESMO com o app principal em primeiro plano e BIND_ABOVE_CLIENT
          no bindService (tentado antes, não resolveu). -->

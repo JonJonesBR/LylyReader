@@ -139,7 +139,7 @@
     <string name="dialog_paralelismo_experimental_mensagem">Isso nunca foi testado num aparelho real. Pode fazer o processo de síntese do Supertonic travar no meio da leitura (o app em si não cai — você só precisaria tentar de novo naquele trecho). Só ative se quiser ajudar a testar isso.</string>
     <string name="btn_ativar_mesmo_assim">Ativar mesmo assim</string>
     <string name="notif_preparando_voz_titulo">Preparando a voz</string>
-    <string name="notif_canal_preparo_voz">Preparo de voz (%1$s)</string>
+    <string name="notif_canal_motor_voz">Motor de voz</string>
     <string name="dialog_downloading_title">Baixando</string>
     <string name="toast_download_cancelled">Download cancelado.</string>
     <string name="toast_download_voice_first">Selecione e baixe a voz primeiro para ouvir a amostra.</string>

@@ -138,7 +138,7 @@
     <string name="dialog_paralelismo_experimental_mensagem">This was never tested on a real device. It may cause the Supertonic synthesis process to crash mid-reading (the app itself won\'t crash — you\'d just need to retry that spot). Only enable it if you want to help test this.</string>
     <string name="btn_ativar_mesmo_assim">Enable anyway</string>
     <string name="notif_preparando_voz_titulo">Preparing the voice</string>
-    <string name="notif_canal_preparo_voz">Voice preparation (%1$s)</string>
+    <string name="notif_canal_motor_voz">Voice engine</string>
     <string name="dialog_downloading_title">Downloading</string>
     <string name="toast_download_cancelled">Download cancelled.</string>
     <string name="toast_download_voice_first">Select and download the voice first to hear the sample.</string>

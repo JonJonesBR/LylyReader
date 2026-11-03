@@ -1,17 +1,11 @@
 package com.jonjonesbr.audiobookgen.tts
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
-import android.content.pm.ServiceInfo
-import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.runBlocking
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Roda no processo isolado `:sherpa` (ver AndroidManifest).
@@ -27,8 +21,11 @@ import java.util.concurrent.atomic.AtomicInteger
  * processos em segundo plano do MIUI ("SmartPower", proprietário) congela este processo por não
  * ter nenhuma superfície própria (sem Activity, sem notificação) — mesmo com o app principal em
  * primeiro plano e `BIND_ABOVE_CLIENT` no bindService (tentado antes, confirmado insuficiente:
- * o mesmo congelamento se repetiu em teste real). `startForeground()`/`stopForeground()` giram
- * em torno da contagem de chamadas em voo — sem notificação nenhuma quando ocioso.
+ * o mesmo congelamento se repetiu em teste real).
+ *
+ * rb-36: o primeiro plano agora tem histerese. Entra na primeira síntese e sai 60 s depois da
+ * última, sem liga/desliga a cada chamada (a notificação ficava recriada e mudava de lugar na
+ * lista); canal e notificação são os do [PrimeiroPlanoDoMotor], compartilhados pelos três motores.
  */
 class SherpaSynthService : Service() {
 
@@ -39,15 +36,15 @@ class SherpaSynthService : Service() {
         KokoroTtsEngine(applicationContext, allowIsolatedProcessDelegation = false)
     }
 
-    // Contador de chamadas synthesize() em voo (até 2 concorrentes — SherpaProcessClient usa
-    // Semaphore(2)). 0 → 1 entra em foreground; volta a 0 → sai do foreground.
-    private val chamadasEmVoo = AtomicInteger(0)
+    // Primeiro plano do processo (rb-36). Até 2 sínteses concorrentes (SherpaProcessClient usa
+    // Semaphore(2)): o motor conta as chamadas em voo e só sai depois da última e da espera.
+    private val motor = PrimeiroPlanoDoMotor(this, NOTIF_ID)
 
     // Fronteira com nativo: exceção ampla intencional (mesmo motivo do KokoroTtsEngine).
     @Suppress("TooGenericExceptionCaught")
     private val binder = object : ISherpaSynthService.Stub() {
         override fun synthesize(text: String, voiceId: String, outPath: String): String {
-            if (chamadasEmVoo.getAndIncrement() == 0) iniciarForeground()
+            motor.comecar()
             try {
                 val out = File(outPath)
                 val result = runBlocking { engine.synthesize(text, voiceId, out) }
@@ -64,7 +61,7 @@ class SherpaSynthService : Service() {
                 Log.e(TAG, "Synthesis failed in isolated process (voice=$voiceId): ${t.message}", t)
                 return t.message ?: t.javaClass.simpleName
             } finally {
-                if (chamadasEmVoo.decrementAndGet() == 0) pararForeground()
+                motor.terminar()
             }
         }
     }
@@ -74,46 +71,17 @@ class SherpaSynthService : Service() {
     // Android 15+: limite de tempo do dataSync atingido. Sai do foreground sem parar o serviço
     // (continua ligado ao cliente); sem isto o sistema derruba o app.
     override fun onTimeout(startId: Int, fgsType: Int) {
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        motor.aoTimeout()
     }
 
-    private fun iniciarForeground() {
-        criarCanal()
-        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(com.jonjonesbr.audiobookgen.R.drawable.ic_stat_lyly)
-            .setContentTitle(getString(com.jonjonesbr.audiobookgen.R.string.notif_preparando_voz_titulo))
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setSilent(true)
-            .setOngoing(true)
-            .build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            startForeground(NOTIF_ID, notif)
-        }
-    }
-
-    private fun pararForeground() {
-        stopForeground(STOP_FOREGROUND_REMOVE)
-    }
-
-    private fun criarCanal() {
-        val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(
-            NotificationChannel(
-                CHANNEL_ID,
-                getString(com.jonjonesbr.audiobookgen.R.string.notif_canal_preparo_voz, NOME_MOTOR),
-                NotificationManager.IMPORTANCE_MIN
-            )
-                .apply { setShowBadge(false) }
-        )
+    override fun onDestroy() {
+        motor.encerrar()
+        super.onDestroy()
     }
 
     private companion object {
         const val TAG = "SherpaSynthSvc"
         const val TAMANHO_MIN_ARQUIVO_VALIDO = 500
-        const val CHANNEL_ID = "lylyreader_sherpa_synth"
-        const val NOME_MOTOR = "Kokoro"
         const val NOTIF_ID = 2001
     }
 }
