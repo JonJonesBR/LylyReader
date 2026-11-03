@@ -84,6 +84,9 @@ android {
             useSupportLibrary = true
         }
 
+        // rb-46: testes de interface no emulador (app/src/androidTest), rodados pelo workflow ui-tests.yml.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         ndk {
             abiFilters += arrayOf("arm64-v8a", "x86_64")
         }
@@ -277,6 +280,13 @@ dependencies {
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("androidx.work:work-testing:2.9.0") // mesma versão do work-runtime-ktx
     androidTestImplementation("androidx.room:room-testing:2.7.0")
+    // rb-46: testes de interface no emulador. Linha 1.6.x do androidx.test (a 1.7 não convive com o Kotlin 1.9.25).
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
 }
 
 // Analise estatica (guardrail p/ a refatoracao incremental em andamento). O baseline registra
