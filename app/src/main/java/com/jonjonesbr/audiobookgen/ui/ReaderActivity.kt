@@ -5,31 +5,24 @@ import com.jonjonesbr.audiobookgen.domain.RegraDaRolagemDoLeitor
 import com.jonjonesbr.audiobookgen.domain.RegraDeReconexaoGuiada
 import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
-import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.R
-import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.VoiceOption
-import com.jonjonesbr.audiobookgen.util.aplicarMargemInferiorComNavigationBar
-import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
-import com.jonjonesbr.audiobookgen.util.dpToPx
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.LinearLayout
 import android.widget.Toast
 import android.widget.SeekBar
 import android.widget.TextView
@@ -48,8 +41,6 @@ import java.io.File
 class ReaderActivity : BasePlayerActivity() {
 
     companion object {
-        /** Respiro entre o botão "Voltar à narração" e a barra da leitura guiada (que fica na base da tela). */
-        private const val MARGEM_FAB_VOLTAR_DP = 16
         const val EXTRA_CAMINHO = "extra_caminho"
         /** True só quando o leitor foi aberto via [android.app.Activity.startActivityForResult]
          *  (MainActivity.abrirLeitor/abrirLeitorComCaminho/abrirLeituraGuiadaDirect) — nesses
@@ -92,11 +83,7 @@ class ReaderActivity : BasePlayerActivity() {
          *  arquivo ORIGINAL pra MainActivity converter pelo pipeline tolerante (que não precisa de
          *  estrutura de capítulos) — o resultado pode sair sem divisão por capítulo. */
         const val ACAO_CONVERTER_SEM_ESTRUTURA = "converter_sem_estrutura"
-        private const val DURACAO_FADE_BANNER_MS = 300L
-        private const val DURACAO_PILL_LIMPEZA_MS = 5000L
         private const val LARGURA_MAXIMA_LEITURA_DP = 720
-        // Margem horizontal da lista de parágrafos por nível (0=estreita, 1=média, 2=larga).
-        val MARGEM_NIVEL_DP = intArrayOf(8, 20, 36)
     }
 
     private val viewModel: ReaderViewModel by viewModels()
@@ -106,32 +93,17 @@ class ReaderActivity : BasePlayerActivity() {
     private lateinit var btnVoltar: ImageButton
     private lateinit var tvTitulo: TextView
     private lateinit var btnOpcoes: ImageButton
-    private var dicaLeitorTentada = false
-    // Barra de capítulos e progresso: no ReaderCapitulosController. Aqui fica a view, para a dica e o erro.
-    private lateinit var barraCapitulo: View
-    private lateinit var layoutCarregando: View
-    private lateinit var tvCarregando: TextView
-    /** O resultado da limpeza aparece uma vez por abertura do leitor. */
-    private var pillDaLimpezaMostrada = false
-    private lateinit var layoutErro: LinearLayout
-    private lateinit var tvErro: TextView
     private lateinit var btnConverterAssim: Button
     private lateinit var btnTentarDeNovo: Button
     private lateinit var recyclerView: RecyclerViewParagrafos
-    // FAB único de conversão: texto/ícone mudam conforme há seleção ativa ou não
-    // (antes eram dois FABs separados, fabConverterPrincipal e fabConverterSelecao,
-    // sempre mutuamente exclusivos — unificados num só, ver atualizarFabs()).
+    // FAB único de conversão (ver TelaDoLeitor.kt e atualizarFabs()).
     private lateinit var fabConverterPrincipal: ExtendedFloatingActionButton
     // "Voltar à narração": no lugar do FAB de conversão, só no modo manual da guiada (ver atualizarFabs()).
     private lateinit var fabVoltarNarracao: ExtendedFloatingActionButton
 
-    // Status pill (banner de limpeza)
+    // Status pill (banner de limpeza): a view fica aqui; quem mostra é o ReaderTelaController.
     private lateinit var bannerOtimizado: android.view.ViewGroup
-    private lateinit var tvBannerInfo: TextView
 
-    // Barra de modo ativo
-    private lateinit var layoutBarraModo: android.view.ViewGroup
-    private lateinit var tvModoAtivo: TextView
     private lateinit var btnConcluirModo: Button
     private lateinit var btnBookmark: android.widget.ImageButton
 
@@ -160,8 +132,6 @@ class ReaderActivity : BasePlayerActivity() {
     private var ultimoTextoExibido: List<Paragrafo>? = null
     private var autoStartGuidedTriggered = false
     private var reconectandoGuided = false
-    private var margemNivelAplicado = -1
-    private var temaBarrasAplicado: TemaLeitura? = null
     private var continuarGuiadaTriggered = false
     // A fila "Ler tudo" já abriu o livro seguinte nesta tela: ela está fechando e não grava mais nada.
     private var livroTrocadoPelaFila = false
@@ -408,6 +378,33 @@ class ReaderActivity : BasePlayerActivity() {
         )
     }
 
+    // Tela do leitor (rb-8): carregando, erro, pílula da limpeza, barra de modo, FABs, tema, margem e dica.
+    // Lazy: abre no vincularViews, logo depois do recyclerView.
+    private val telaController: ReaderTelaController by lazy {
+        ReaderTelaController(
+            activity = this,
+            recyclerView = recyclerView,
+            somenteLeitura = somenteLeitura,
+            views = ReaderTelaController.Views(
+                barraCapitulo = findViewById(R.id.barraCapitulo),
+                layoutCarregando = findViewById(R.id.layoutCarregandoReader),
+                tvCarregando = findViewById(R.id.tvCarregandoReader),
+                layoutErro = findViewById(R.id.layoutReaderErro),
+                tvErro = findViewById(R.id.tvReaderErro),
+                btnConverterAssim = findViewById(R.id.btnConverterAssim),
+                fabConverter = findViewById(R.id.fabConverterPrincipal),
+                fabVoltarNarracao = findViewById(R.id.fabVoltarNarracao),
+                layoutGuidedPlayer = findViewById(R.id.layoutGuidedPlayer),
+                banner = findViewById(R.id.bannerTextoOtimizado),
+                tvBannerInfo = findViewById(R.id.tvBannerInfo),
+                layoutBarraModo = findViewById(R.id.layoutBarraModo),
+                tvModoAtivo = findViewById(R.id.tvModoAtivo),
+                btnOpcoes = findViewById(R.id.btnReaderOpcoes),
+                readerRoot = findViewById(R.id.readerRoot),
+            ),
+        )
+    }
+
     // Sleep Timer: a contagem vive em SleepTimerManager (sobrevive à Activity e aparece na
     // notificação). A Activity só dispara/observa.
 
@@ -629,11 +626,6 @@ class ReaderActivity : BasePlayerActivity() {
         btnVoltar            = findViewById(R.id.btnReaderVoltar)
         tvTitulo             = findViewById(R.id.tvReaderTitulo)
         btnOpcoes            = findViewById(R.id.btnReaderOpcoes)
-        barraCapitulo        = findViewById(R.id.barraCapitulo)
-        layoutCarregando     = findViewById(R.id.layoutCarregandoReader)
-        tvCarregando         = findViewById(R.id.tvCarregandoReader)
-        layoutErro           = findViewById(R.id.layoutReaderErro)
-        tvErro               = findViewById(R.id.tvReaderErro)
         btnConverterAssim    = findViewById(R.id.btnConverterAssim)
         btnTentarDeNovo      = findViewById(R.id.btnTentarDeNovo)
         recyclerView         = findViewById(R.id.recyclerViewParagrafos)
@@ -641,33 +633,10 @@ class ReaderActivity : BasePlayerActivity() {
         capitulosController.configurar()
         recyclerView.limitarLarguraEmTelaAmpla(LARGURA_MAXIMA_LEITURA_DP)
         fabConverterPrincipal = findViewById(R.id.fabConverterPrincipal)
-        // T6.1 (edge-to-edge): FAB e barra de leitura guiada são ancorados na base da tela —
-        // sem isso, ficam atrás da barra de gestos em telas sem botões de navegação físicos.
-        fabConverterPrincipal.aplicarMargemInferiorComNavigationBar()
         fabVoltarNarracao = findViewById(R.id.fabVoltarNarracao)
-        findViewById<View>(R.id.layoutGuidedPlayer).aplicarPaddingInferiorComNavigationBar()
-        // A barra guiada muda de altura (chips, modo manual): o "Voltar à narração" acompanha a borda de cima dela.
-        findViewById<View>(R.id.layoutGuidedPlayer).addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            posicionarFabVoltarNarracao()
-        }
-        // ux-5: o mini player fica por cima do FAB. O OnLayoutChangeListener não dispara quando ele vira GONE,
-        // por isso o listener é global.
-        findViewById<View?>(R.id.miniPlayerRoot)?.let { miniPlayer ->
-            miniPlayer.viewTreeObserver.addOnGlobalLayoutListener { posicionarFabAcimaDoMiniPlayer(miniPlayer) }
-        }
-        EspacoSobControles.manter(
-            recyclerView, listOf(findViewById(R.id.layoutGuidedPlayer), findViewById(R.id.miniPlayerRoot))
-        )
-        if (somenteLeitura) {
-            // "Ler sem áudio": sem FAB de conversão, sem barra da leitura guiada e sem "converter assim mesmo".
-            fabConverterPrincipal.visibility = View.GONE
-            findViewById<View>(R.id.layoutGuidedPlayer).visibility = View.GONE
-            btnConverterAssim.visibility = View.GONE
-        }
+        // Insets, listeners do FAB e da barra guiada e o "Ler sem áudio" (ver ReaderTelaController).
+        telaController.configurar()
         bannerOtimizado      = findViewById(R.id.bannerTextoOtimizado)
-        tvBannerInfo         = findViewById(R.id.tvBannerInfo)
-        layoutBarraModo      = findViewById(R.id.layoutBarraModo)
-        tvModoAtivo          = findViewById(R.id.tvModoAtivo)
         btnConcluirModo      = findViewById(R.id.btnConcluirModo)
 
         tvGuidedSoneca        = findViewById(R.id.tvGuidedSoneca)
@@ -760,72 +729,19 @@ class ReaderActivity : BasePlayerActivity() {
     }
 
     /**
-     * Visibilidade e conteúdo do FAB de conversão (único — ver [fabConverterPrincipal]).
-     * Escondido durante leitura guiada (pra não ficar clicável atrás da barra de leitura
-     * guiada, toques acidentais ao usar voz/velocidade); em modos especiais (edição/diff)
-     * some também, A MENOS que já haja seleção ativa (mesmo comportamento de antes da
-     * unificação dos dois FABs). Com seleção ativa, troca ícone/texto para refletir isso
-     * em vez de mostrar um segundo FAB no mesmo lugar.
+     * Visibilidade e conteúdo dos FABs. A regra está em [estadoDosFabs] (TelaDoLeitor.kt); aqui só se aplica.
+     * Sem manager ("Ler sem áudio") ela não mexe em nada. A barra guiada só é tocada com a guiada ativa.
      */
     private fun atualizarFabs() {
-        // Sem manager (modo "Ler sem áudio") o FAB de conversão fica escondido em vincularViews().
-        val manager = guidedPlayerManager ?: return
+        val manager = guidedPlayerManager
         val state = viewModel.uiState.value
-        val temCapitulos = capitulosSelecionados.isNotEmpty()
-        val temSelecaoAtiva = state.selecaoInicio != null || temCapitulos
-        val guiadaAtiva = manager.state.value.index >= 0
-
-        // Modo manual da guiada (quem lê rolou): o "Voltar à narração" ocupa o lugar do FAB, sem sobrepor a barra.
-        fabVoltarNarracao.visibility = if (guiadaAtiva && guidedReadingBarController?.scrollManual == true) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
-
-        // Só com trecho ou capítulos marcados: o livro inteiro e o capítulo atual ficam em ⋮ › Gerar audiobook
-        // (antes o botão ficava sempre sobre o texto, com outro nome, "Converter para áudio").
-        fabConverterPrincipal.visibility = if (temSelecaoAtiva && !guiadaAtiva) View.VISIBLE else View.GONE
-        fabConverterPrincipal.setIconResource(android.R.drawable.checkbox_on_background)
-        fabConverterPrincipal.text = if (temCapitulos) {
-            resources.getQuantityString(
-                R.plurals.fab_converter_capitulos,
-                capitulosSelecionados.size,
-                capitulosSelecionados.size
-            )
-        } else {
-            getString(R.string.fab_converter_selecao)
-        }
-    }
-
-    /**
-     * Mantém o "Voltar à narração" logo acima da barra da leitura guiada. O chip só aparece com a barra visível,
-     * então a folga vale sempre; a altura da barra já inclui a barra de gestos.
-     */
-    private fun posicionarFabVoltarNarracao() {
-        val barra = findViewById<View>(R.id.layoutGuidedPlayer)
-        val alvo = (if (barra.visibility == View.VISIBLE) barra.height else 0) + dpToPx(MARGEM_FAB_VOLTAR_DP)
-        val params = fabVoltarNarracao.layoutParams as ViewGroup.MarginLayoutParams
-        // Só mexe quando muda. Este método roda dentro do layout da barra: o requestLayout vai para o próximo
-        // ciclo, senão o ViewRootImpl adia a margem para outro frame (e pode avisar "requestLayout during layout").
-        if (params.bottomMargin != alvo) {
-            params.bottomMargin = alvo
-            fabVoltarNarracao.post { fabVoltarNarracao.requestLayout() }
-        }
-    }
-
-    /**
-     * Com o mini player visível, o FAB de conversão sobe pela altura útil dele (ux-5). A altura inclui a barra de
-     * gestos pelo padding, e a margem do FAB também a inclui, então o padding é descontado. Usa translationY: a
-     * margem é reescrita pelo listener de insets.
-     */
-    private fun posicionarFabAcimaDoMiniPlayer(miniPlayer: View) {
-        val alvo = if (miniPlayer.visibility == View.VISIBLE && miniPlayer.height > 0) {
-            -(miniPlayer.height - miniPlayer.paddingBottom).toFloat()
-        } else {
-            0f
-        }
-        // Só atribui quando muda: o listener roda a cada layout da janela.
-        if (fabConverterPrincipal.translationY != alvo) fabConverterPrincipal.translationY = alvo
+        val guiadaAtiva = manager != null && manager.state.value.index >= 0
+        val fabs = estadoDosFabs(
+            temManager = manager != null, guiadaAtiva = guiadaAtiva,
+            scrollManual = guiadaAtiva && guidedReadingBarController?.scrollManual == true,
+            temSelecao = state.selecaoInicio != null, capitulosMarcados = capitulosSelecionados.size,
+        ) ?: return
+        telaController.aplicarFabs(fabs)
     }
 
     // ── Observar ViewModel ────────────────────────────────────────────────────
@@ -847,19 +763,9 @@ class ReaderActivity : BasePlayerActivity() {
             return
         }
 
-        // Loading
-        mostrarCarregando(state.carregando, R.string.leitor_abrindo_livro)
-
-        // Erro
-        if (state.erro != null) {
-            layoutErro.visibility = View.VISIBLE
-            recyclerView.visibility = View.GONE
-            barraCapitulo.visibility = View.GONE
-            tvErro.text = state.erro
-            return
-        }
-
-        layoutErro.visibility = View.GONE
+        // Carregando, erro, pílula e modo: o cálculo é puro (TelaDoLeitor.kt); o controller só aplica.
+        val tela = calcularTelaDoLeitor(state, telaController.pilulaDaLimpezaMostrada)
+        if (telaController.aplicarCarregandoEErro(tela)) return
 
         val texto = viewModel.textoEfetivo()
         if (texto == null) return
@@ -871,14 +777,11 @@ class ReaderActivity : BasePlayerActivity() {
 
         capitulosController.atualizarBarra(texto)
 
-        // ── Pill de status (banner de limpeza) ────────────────────────────────
-        atualizarPillStatusLeitura(state, texto)
-
-        // ── Barra de modo ativo ────────────────────────────────────────────────
-        atualizarBarraModoAtivo(state)
+        // ── Pill de status (banner de limpeza) e barra de modo ativo ───────────
+        telaController.aplicarStatus(tela, texto)
 
         // ── Modo do adapter ────────────────────────────────────────────────────
-        val paragrafosExibidos = atualizarAdapterDeLeitura(state, texto)
+        val paragrafosExibidos = atualizarAdapterDeLeitura(state, texto, tela.modoAdapter)
 
         // ── Busca ──────────────────────────────────────────────────────────────
         buscaController.aplicar(state)
@@ -887,20 +790,8 @@ class ReaderActivity : BasePlayerActivity() {
         // e nunca quando a leitura guiada vai iniciar sozinha (ela faz seu próprio scroll).
         rolagemController.restaurarPosicaoSeNecessario(paragrafosExibidos)
         executarAcaoInicialSeNecessario()
-        if (!dicaLeitorTentada && !somenteLeitura) {
-            dicaLeitorTentada = true
-            // Uma dica por abertura: primeiro o menu ⋮, na seguinte a barra de capítulos.
-            btnOpcoes.post {
-                if (capitulosController.painelAberto) return@post
-                CoachMark.mostrarProxima(this, com.jonjonesbr.audiobookgen.domain.TelaDica.LEITOR) { dica ->
-                    when (dica) {
-                        com.jonjonesbr.audiobookgen.domain.Dica.LEITOR_GUIADA -> btnOpcoes
-                        com.jonjonesbr.audiobookgen.domain.Dica.LEITOR_CAPITULOS -> barraCapitulo
-                        else -> null
-                    }
-                }
-            }
-        }
+        // Uma dica por abertura: primeiro o menu ⋮, na seguinte a barra de capítulos.
+        telaController.tentarDica { capitulosController.painelAberto }
 
         // ── FABs ──────────────────────────────────────────────────────────────
         atualizarFabs()
@@ -910,11 +801,8 @@ class ReaderActivity : BasePlayerActivity() {
         // re-rolar para o mesmo índice causava flicker (#3).
         rolagemController.sincronizarComAudiobook(state)
 
-        // Aplica tema ao fundo
-        aplicarTemaFundo(state)
-
-        // Margem horizontal da lista de parágrafos (0=estreita, 1=média, 2=larga).
-        aplicarMargemParagrafos(state)
+        // Tema do fundo e margem horizontal da lista de parágrafos.
+        telaController.aplicarTemaEMargem(state)
 
         capitulosController.atualizarProgressoLeitura()
     }
@@ -924,22 +812,24 @@ class ReaderActivity : BasePlayerActivity() {
         // "Ler sem áudio" nunca inicia a guiada (nem o diálogo de início nem a leitura direta).
         if (somenteLeitura) return
         val controlador = guidedReadingBarController ?: return
-        // Espera a limpeza: a posição salva e os capítulos valem para o texto limpo. Começar no bruto tocava o
-        // parágrafo anterior ao marcado (o bruto tem lixo a mais antes), e o marcador ficava um à frente do áudio.
+        // A regra (espera a limpeza, reconexão, uma vez só) está em decidirInicioDaGuiada, em TelaDoLeitor.kt.
         val estado = viewModel.uiState.value
-        if (estado.textoLimpo == null && estado.limpandoTexto) return
-        // Não reabrir o diálogo ao reconectar a uma leitura em andamento (ex.: rotação da tela):
-        // a intent original ainda carrega EXTRA_AUTO_START_GUIDED e o flag da instância se perde.
-        if (intent.getBooleanExtra(EXTRA_AUTO_START_GUIDED, false) &&
-            !autoStartGuidedTriggered && !reconectandoGuided) {
+        val decisao = decidirInicioDaGuiada(
+            somenteLeitura = somenteLeitura, estado = estado,
+            pedidos = InicioDaGuiada(
+                abrirDialogo = intent.getBooleanExtra(EXTRA_AUTO_START_GUIDED, false),
+                continuar = intent.getBooleanExtra(EXTRA_CONTINUAR_GUIADA, false),
+            ),
+            jaResolvidos = InicioDaGuiada(autoStartGuidedTriggered, continuarGuiadaTriggered),
+            reconectando = reconectandoGuided,
+        )
+        if (decisao.abrirDialogo) {
             autoStartGuidedTriggered = true
             controlador.mostrarDialogPontoInicioLeituraGuiada()
         }
 
-        // "Continuar lendo": inicia a guiada direto na posição salva (sem diálogo). Pulado se
-        // estiver reconectando a uma leitura já em andamento (que já está tocando).
-        if (intent.getBooleanExtra(EXTRA_CONTINUAR_GUIADA, false) &&
-            !continuarGuiadaTriggered && !reconectandoGuided) {
+        // "Continuar lendo": inicia a guiada direto na posição salva (sem diálogo).
+        if (decisao.continuar) {
             continuarGuiadaTriggered = true
             val salvo = appPrefs.posicaoLeitura(caminhoArquivo, -1)
             // Primeiro livro da fila "Ler tudo": a mesma regra dos seguintes (um livro já lido até o fim recomeça).
@@ -980,69 +870,10 @@ class ReaderActivity : BasePlayerActivity() {
         startActivity(proximaIntent)
     }
 
-    /** Mostra ou esconde o aviso de carregamento com o que está acontecendo ([texto]). */
-    private fun mostrarCarregando(visivel: Boolean, texto: Int) {
-        layoutCarregando.visibility = if (visivel) View.VISIBLE else View.GONE
-        if (visivel) tvCarregando.setText(texto)
-    }
-
-    /** Extraído de [atualizarUI] (banner de limpeza). */
-    private fun atualizarPillStatusLeitura(state: ReaderUiState, texto: TextoExtraido) {
-        // ── Pill de status (banner de limpeza) ────────────────────────────────
-        when {
-            state.limpandoTexto -> {
-                mostrarCarregando(true, R.string.leitor_preparando_texto)
-                bannerOtimizado.visibility = View.GONE
-            }
-            state.textoLimpo != null -> {
-                mostrarCarregando(false, 0)
-                // O resultado da limpeza aparece uma vez, por alguns segundos, e só quando algo foi tirado
-                // (antes ficava sempre na tela, inclusive com "Otimização em andamento" ao abrir).
-                if (!pillDaLimpezaMostrada && state.relatorioLinhasRemovidas > 0) {
-                    pillDaLimpezaMostrada = true
-                    bannerOtimizado.alpha = 0f
-                    bannerOtimizado.visibility = View.VISIBLE
-                    bannerOtimizado.animate().alpha(1f).setDuration(DURACAO_FADE_BANNER_MS).start()
-                    bannerOtimizado.postDelayed({
-                        bannerOtimizado.animate().alpha(0f).setDuration(DURACAO_FADE_BANNER_MS)
-                            .withEndAction { bannerOtimizado.visibility = View.GONE }.start()
-                    }, DURACAO_PILL_LIMPEZA_MS)
-                }
-                tvBannerInfo.text = resources.getQuantityString(
-                    R.plurals.banner_info_trechos_capitulos_qtd,
-                    state.relatorioLinhasRemovidas,
-                    state.relatorioLinhasRemovidas,
-                    texto.capitulos.size
-                )
-            }
-            else -> {
-                bannerOtimizado.visibility = View.GONE
-            }
-        }
-    }
-
-    /** Extraído de [atualizarUI] (barra de modo ativo). */
-    private fun atualizarBarraModoAtivo(state: ReaderUiState) {
-        // ── Barra de modo ativo ────────────────────────────────────────────────
-        val emModoEspecial = state.modoEdicao || state.mostrandoAlteracoes
-        layoutBarraModo.visibility = if (emModoEspecial) View.VISIBLE else View.GONE
-        if (emModoEspecial) {
-            tvModoAtivo.text = if (state.modoEdicao)
-                getString(R.string.modo_edicao_label)
-            else
-                getString(R.string.modo_comparacao_label)
-        }
-    }
-
-    /** Extraído de [atualizarUI] (modo do adapter + atualização). */
-    private fun atualizarAdapterDeLeitura(state: ReaderUiState, texto: TextoExtraido): List<Paragrafo> {
-        // ── Modo do adapter ────────────────────────────────────────────────────
-        val modoAdapter = when {
-            state.modoEdicao          -> AdapterModo.EDICAO
-            state.mostrandoAlteracoes -> AdapterModo.ALTERACOES
-            else                      -> AdapterModo.LEITURA
-        }
-
+    /** Extraído de [atualizarUI] (modo do adapter + atualização). O modo vem do cálculo da tela ([modoAdapter]). */
+    private fun atualizarAdapterDeLeitura(
+        state: ReaderUiState, texto: TextoExtraido, modoAdapter: AdapterModo,
+    ): List<Paragrafo> {
         // Atualiza adapter
         val paragrafosExibidos = state.textoLimpo?.paragrafos ?: texto.paragrafos
         if (ultimoTextoExibido !== paragrafosExibidos) {
@@ -1077,25 +908,6 @@ class ReaderActivity : BasePlayerActivity() {
             ACAO_INICIAL_CAPITULOS -> capitulosController.mostrarPainel()
             ACAO_INICIAL_PERSONAGENS -> personagensController.abrirConfiguracaoVozesPersonagens()
             ACAO_INICIAL_PRONUNCIA -> vozController.abrirDicionarioPronuncia()
-        }
-    }
-
-    /** Extraído de [atualizarUI] (tema de fundo do leitor). */
-    private fun aplicarTemaFundo(state: ReaderUiState) {
-        if (temaBarrasAplicado == state.tema) return // roda a cada atualização da tela: só repinta quando muda
-        temaBarrasAplicado = state.tema
-        val paleta = paletaDoLeitor(state.tema)
-        findViewById<View>(R.id.readerRoot).setBackgroundColor(paleta.fundo)
-        aplicarPaletaNasBarrasDoLeitor(paleta)
-    }
-
-    /** Extraído de [atualizarUI] (margem horizontal da lista de parágrafos). */
-    private fun aplicarMargemParagrafos(state: ReaderUiState) {
-        if (margemNivelAplicado != state.margemNivel) {
-            margemNivelAplicado = state.margemNivel
-            val margemDp = MARGEM_NIVEL_DP.getOrElse(state.margemNivel) { MARGEM_NIVEL_DP[MARGEM_NIVEL_PADRAO] }
-            val margemPx = dpToPx(margemDp)
-            recyclerView.setPadding(margemPx, recyclerView.paddingTop, margemPx, recyclerView.paddingBottom)
         }
     }
 

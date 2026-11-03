@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.ColorDrawable
 import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
@@ -23,9 +24,11 @@ import com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro
 import com.jonjonesbr.audiobookgen.domain.Capitulo
 import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
+import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.util.PythonInicio
+import com.jonjonesbr.audiobookgen.util.dpToPx
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -315,6 +318,41 @@ class ReaderActivitySmokeTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             shadowOf(Looper.getMainLooper()).idle()
             assertEquals(PARAGRAFOS.lastIndex, AppPrefs(app).posicaoLeitura(arquivo.absolutePath, -1))
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun telaDoLerSemAudio() {
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            // A limpeza pode ainda mostrar o "Preparando" quando o adapter já enche com o texto bruto: espera a tela
+            // assentar antes de conferir o carregando e a pílula (um assert direto pegaria essa janela).
+            esperarAte(scenario, "carregando e pílula fora") { a ->
+                a.findViewById<View>(R.id.layoutCarregandoReader).visibility == View.GONE &&
+                    a.findViewById<View>(R.id.bannerTextoOtimizado).visibility == View.GONE
+            }
+            scenario.onActivity { a ->
+                assertEquals(View.GONE, a.findViewById<View>(R.id.layoutReaderErro).visibility)
+                assertEquals(View.GONE, a.findViewById<View>(R.id.layoutBarraModo).visibility)
+                assertEquals(View.GONE, a.findViewById<View>(R.id.fabConverterPrincipal).visibility)
+                assertEquals(View.GONE, a.findViewById<View>(R.id.fabVoltarNarracao).visibility)
+                assertEquals(View.GONE, a.findViewById<View>(R.id.layoutGuidedPlayer).visibility)
+                // O XML deixa o "Converter assim mesmo" VISIBLE: só o configurar() da tela o esconde.
+                assertEquals(View.GONE, a.findViewById<View>(R.id.btnConverterAssim).visibility)
+                assertEquals(View.VISIBLE, lista(a).visibility)
+                // Tema claro e margem média (nível padrão, 20dp).
+                val fundo = a.findViewById<View>(R.id.readerRoot).background as ColorDrawable
+                assertEquals(paletaDoLeitor(TemaLeitura.CLARO).fundo, fundo.color)
+                assertEquals(a.dpToPx(20), lista(a).paddingLeft)
+                assertEquals(a.dpToPx(20), lista(a).paddingRight)
+            }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
