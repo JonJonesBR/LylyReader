@@ -25,6 +25,13 @@ object RegraDeReconexaoGuiada {
     }
 
     /**
+     * A intent traz a fila "Ler tudo" e ela vale quando a tela não está sendo recriada com uma leitura guiada já
+     * ligada. Nesse caso vale a fila que o manager já andou (ver ReaderActivity.conectarLeituraGuiada).
+     */
+    fun usaFilaDaIntent(temFila: Boolean, recriada: Boolean, reconectando: Boolean): Boolean =
+        temFila && (!recriada || !reconectando)
+
+    /**
      * A tela recriada (giro/tema ao voltar) é de um livro que a fila já deixou para trás: a sessão está narrando
      * outro documento, que é um dos que a fila já passou. Nesse caso a tela deve seguir para o livro atual.
      */

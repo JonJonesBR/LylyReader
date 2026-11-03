@@ -10,6 +10,7 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.domain.Capitulo
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
+import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.PreRenderBridge
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
@@ -157,8 +158,12 @@ class ReaderVozController(
             Toast.makeText(activity, R.string.prerender_already, Toast.LENGTH_SHORT).show()
             return
         }
-        val texto = viewModel.textoEfetivo() ?: return
-        if (texto.paragrafos.isEmpty()) return
+        val texto = viewModel.textoEfetivo()
+        if (texto != null && texto.paragrafos.isNotEmpty()) abrirConfirmacaoDoPreparo(manager, texto)
+    }
+
+    /** Faixa do "Preparar capítulo" a partir do ponto de leitura, com o título e as unidades; pede confirmação. */
+    private fun abrirConfirmacaoDoPreparo(manager: GuidedPlayerManager, texto: TextoExtraido) {
         // Do trecho em leitura (ou visível) até o fim do capítulo dele; antes partia sempre do início do livro.
         val emLeitura = manager.state.value.index.takeIf { it >= 0 }
         val (inicio, fim) = faixaDoPreparo(

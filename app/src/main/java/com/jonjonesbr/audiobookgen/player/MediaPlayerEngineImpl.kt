@@ -117,7 +117,12 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
     }
 
     private fun tocando(player: MediaPlayer): Boolean =
-        try { player.isPlaying } catch (e: IllegalStateException) { false }
+        try {
+            player.isPlaying
+        } catch (e: IllegalStateException) {
+            Log.w("MediaPlayerEngine", "isPlaying em estado inválido", e)
+            false
+        }
 
     private fun aplicarParametros(player: MediaPlayer) {
         try {

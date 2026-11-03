@@ -49,6 +49,7 @@ internal data class TelaDoLeitor(
  * [pilulaJaMostrada]: a pílula da limpeza já apareceu nesta abertura do leitor (o controller guarda isso).
  * Pura: não lê o ViewModel; o texto efetivo é lido depois, na Activity, e entra no controller por aplicarStatus.
  */
+@Suppress("CyclomaticComplexMethod") // tabela de decisão: um ramo por estado da tela
 internal fun calcularTelaDoLeitor(state: ReaderUiState, pilulaJaMostrada: Boolean): TelaDoLeitor {
     val carregandoAoAbrir = if (state.carregando) CarregandoDoLeitor.ABRINDO else null
     val carregando = when {

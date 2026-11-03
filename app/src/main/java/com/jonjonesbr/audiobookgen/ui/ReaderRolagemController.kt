@@ -17,6 +17,7 @@ import com.jonjonesbr.audiobookgen.domain.RegraDaRolagemDoLeitor
  * O estado da barra guiada (rolagem manual, aguardando o auto scroll) continua no GuidedReadingBarController: aqui
  * ele só é lido por [Callbacks.obterBarraGuiada], a cada uso.
  */
+@Suppress("TooManyFunctions") // rolagem, teclas e posição salva são um assunto só
 class ReaderRolagemController(
     private val activity: AppCompatActivity,
     private val viewModel: ReaderViewModel,

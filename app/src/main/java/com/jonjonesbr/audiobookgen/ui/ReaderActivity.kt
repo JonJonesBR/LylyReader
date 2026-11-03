@@ -111,9 +111,9 @@ class ReaderActivity : BasePlayerActivity() {
     private var caminhoArquivo: String = ""
     private var arquivoTrechoTemp: File? = null
     private var preservarArquivoTrechoTemp = false
-    private var dialogAtivo: androidx.appcompat.app.AlertDialog? = null
     private val dialogos = DialogosAbertos(this)
-    private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
+    private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog =
+        dialogos.mostrar(this)
     // Marca de tempo de quando a tela ficou visível, para creditar minutos lidos nas
     // estatísticas ao sair (T4.5) — 0L quando a tela não está visível.
     private var telaVisivelDesdeMs = 0L
@@ -204,7 +204,10 @@ class ReaderActivity : BasePlayerActivity() {
         )
     }
 
-    /** Nulo no modo "Ler sem áudio" (não há manager para a barra conectar). Não acessar antes de o manager ser atribuído no onCreate. */
+    /**
+     * Nulo no modo "Ler sem áudio" (não há manager para a barra conectar). Não acessar antes de o manager ser
+     * atribuído no onCreate.
+     */
     private val guidedReadingBarController: GuidedReadingBarController? by lazy {
         guidedPlayerManager?.let { manager ->
             GuidedReadingBarController(
@@ -230,7 +233,8 @@ class ReaderActivity : BasePlayerActivity() {
                     mostrarDialogoSleepTimer = { sonecaController.mostrarDialogoSleepTimer() },
                     atualizarFabs = { atualizarFabs() },
                     fecharPlayerService = { playerService?.fecharPlayer() },
-                    // A barra da leitura guiada e o mini player do audiobook não aparecem juntos (ver ocultarMiniPlayerAudio).
+                    // A barra da leitura guiada e o mini player do audiobook não aparecem juntos
+                    // (ver ocultarMiniPlayerAudio).
                     mostrarMiniPlayer = { reavaliarMiniPlayer() },
                     esconderMiniPlayer = { reavaliarMiniPlayer() },
                     obterCaminhoArquivo = { caminhoArquivo },
@@ -432,20 +436,7 @@ class ReaderActivity : BasePlayerActivity() {
         configurarMiniPlayerBotoes()
 
         caminhoArquivo = intent.getStringExtra(EXTRA_CAMINHO) ?: run { finish(); return }
-        // Tela recriada (giro, tema) de um livro que a fila já deixou para trás: vai para o livro que está sendo narrado,
-        // antes de criar um manager para o livro velho. Sem isto, o manager da sessão ganharia os parágrafos do livro velho.
-        // Só a tela que estava ligada à sessão volta para ela: um livro aberto de propósito pela biblioteca fica.
-        if (savedInstanceState != null && !somenteLeitura) {
-            val sessao = GuidedPlaybackBridge.manager
-            if (sessao != null && savedInstanceState.getLong(STATE_TOKEN_SESSAO_GUIADA, -1L) == sessao.sessionToken &&
-                RegraDeReconexaoGuiada.leitorFicouParaTras(
-                    caminhoArquivo, sessao.caminhoArquivo, sessao.state.value.index, sessao.livrosDeixadosNaFila
-                )
-            ) {
-                abrirLeitorDoLivroDaFila(sessao)
-                return
-            }
-        }
+        if (redirecionarSeAFilaAvancou(savedInstanceState)) return
         // Livro da biblioteca: registra a abertura (ordena "recentes" e alimenta o cartão Continuar).
         lifecycleScope.launch {
             com.jonjonesbr.audiobookgen.data.BibliotecaStore.marcarAberto(applicationContext, caminhoArquivo)
@@ -459,6 +450,62 @@ class ReaderActivity : BasePlayerActivity() {
         // primeiro acesso (configurarGuidedPlayerBotoes()). Se ainda for nulo nesse
         // momento, o lazy fixa null e a barra guiada nunca se conecta ao manager deste livro.
         val pythonUseCase = PythonEngineUseCase(applicationContext)
+        conectarLeituraGuiada(savedInstanceState, tituloCompleto, pythonUseCase)
+
+        vincularViews()
+        configurarRecyclerView()
+        configurarBotoes()
+        guidedReadingBarController?.configurarGuidedPlayerBotoes()
+        rolagemController.configurar()
+        onBackPressedDispatcher.addCallback(this) { retornoController.voltar() }
+
+        configurarTitulo(tituloCompleto)
+
+        viewModel.carregarPreferencias(appPrefs)
+        // configurarRecyclerView() já rodou com o default (vertical) — carregarPreferencias()
+        // só agora carrega o valor salvo, então reaplica a orientação correta.
+        rolagemController.aplicarOrientacao(viewModel.uiState.value.rolagemHorizontal)
+
+        sincronizarMotor(pythonUseCase)
+
+        observarViewModel()
+        guidedReadingBarController?.observarGuidedPlayer()
+        if (!somenteLeitura) sonecaController.observarSleepTimer()
+        conversaoController.observar()
+
+        // NÃO usar `savedInstanceState == null` aqui: após morte de processo o Android
+        // recria a Activity com savedInstanceState preenchido (restaurado do disco), mas o
+        // ViewModel é uma instância NOVA (sem SavedStateHandle) — o texto do livro estaria
+        // vazio para sempre, sem erro nem loading, uma tela em branco. O que importa é se O
+        // VIEWMODEL já tem o texto carregado (sobrevive à rotação, não à morte de processo).
+        if (viewModel.uiState.value.texto == null) {
+            viewModel.carregarArquivo(caminhoArquivo)
+        }
+    }
+
+    /**
+     * Tela recriada de um livro que a fila já deixou para trás: vai para o livro narrado, antes de criar um manager
+     * para o velho. Devolve true quando abriu o livro da fila; o onCreate para aqui.
+     */
+    private fun redirecionarSeAFilaAvancou(savedInstanceState: Bundle?): Boolean {
+        if (savedInstanceState != null && !somenteLeitura) {
+            val sessao = GuidedPlaybackBridge.manager
+            if (sessao != null && savedInstanceState.getLong(STATE_TOKEN_SESSAO_GUIADA, -1L) == sessao.sessionToken &&
+                RegraDeReconexaoGuiada.leitorFicouParaTras(
+                    caminhoArquivo, sessao.caminhoArquivo, sessao.state.value.index, sessao.livrosDeixadosNaFila
+                )
+            ) {
+                abrirLeitorDoLivroDaFila(sessao)
+                return true
+            }
+        }
+        return false
+    }
+
+    /** Liga o manager deste livro (ou reconecta ao que já narra este documento). Fora do modo "Ler sem áudio". */
+    private fun conectarLeituraGuiada(
+        savedInstanceState: Bundle?, tituloCompleto: String, pythonUseCase: PythonEngineUseCase,
+    ) {
         // Modo "Ler sem áudio": nenhum manager é criado nem conectado (nem o bridge é tocado).
         if (!somenteLeitura) {
             // Reconecta ao manager em execução se já houver leitura guiada ativa para ESTE documento
@@ -487,21 +534,19 @@ class ReaderActivity : BasePlayerActivity() {
             if (GuidedPlaybackBridge.manager === manager) {
                 GuidedPlaybackBridge.activate(manager, tituloCompleto, caminhoArquivo)
             }
-            // Fila "Ler tudo": a intent traz os próximos livros. Girando com a guiada tocando, vale a fila que o manager
-            // já andou (a da intent original está desatualizada); abrindo de novo pela fila, vale a da intent.
+            // Fila "Ler tudo": a intent traz os próximos livros. Girando com a guiada tocando, vale a fila que o
+            // manager já andou (a da intent original está desatualizada); abrindo de novo pela fila, vale a da intent.
             val filaDaIntent = intent.getStringArrayListExtra(EXTRA_FILA_SEQUENCIA)
-            if (filaDaIntent != null && (savedInstanceState == null || !reconectandoGuided)) {
-                manager.filaSequencia = filaDaIntent.toList()
-            }
+            val usaFila = RegraDeReconexaoGuiada.usaFilaDaIntent(
+                temFila = filaDaIntent != null,
+                recriada = savedInstanceState != null,
+                reconectando = reconectandoGuided,
+            )
+            if (usaFila) filaDaIntent?.let { manager.filaSequencia = it.toList() }
         }
+    }
 
-        vincularViews()
-        configurarRecyclerView()
-        configurarBotoes()
-        guidedReadingBarController?.configurarGuidedPlayerBotoes()
-        rolagemController.configurar()
-        onBackPressedDispatcher.addCallback(this) { retornoController.voltar() }
-
+    private fun configurarTitulo(tituloCompleto: String) {
         tvTitulo.text = tituloCompleto
         tvTitulo.setOnLongClickListener {
             androidx.appcompat.app.AlertDialog.Builder(this)
@@ -511,32 +556,15 @@ class ReaderActivity : BasePlayerActivity() {
                 .exibir()
             true
         }
+    }
 
-        viewModel.carregarPreferencias(appPrefs)
-        // configurarRecyclerView() já rodou com o default (vertical) — carregarPreferencias()
-        // só agora carrega o valor salvo, então reaplica a orientação correta.
-        rolagemController.aplicarOrientacao(viewModel.uiState.value.rolagemHorizontal)
-
+    private fun sincronizarMotor(pythonUseCase: PythonEngineUseCase) {
         // Bug #4 fix: sincroniza motor TTS, chave e pausas para o GuidedPlayerManager
         val motorInit = appPrefs.motorTts
         val chaveInit = SecurePreferences.getGeminiKeys(this)
         val pausaMsInit = appPrefs.pausaMs
         lifecycleScope.launch {
             pythonUseCase.sincronizarConfiguracoes(motorInit, chaveInit, pausaMsInit, caminhoDoLivro = caminhoArquivo)
-        }
-
-        observarViewModel()
-        guidedReadingBarController?.observarGuidedPlayer()
-        if (!somenteLeitura) sonecaController.observarSleepTimer()
-        conversaoController.observar()
-
-        // NÃO usar `savedInstanceState == null` aqui: após morte de processo o Android
-        // recria a Activity com savedInstanceState preenchido (restaurado do disco), mas o
-        // ViewModel é uma instância NOVA (sem SavedStateHandle) — o texto do livro estaria
-        // vazio para sempre, sem erro nem loading, uma tela em branco. O que importa é se O
-        // VIEWMODEL já tem o texto carregado (sobrevive à rotação, não à morte de processo).
-        if (viewModel.uiState.value.texto == null) {
-            viewModel.carregarArquivo(caminhoArquivo)
         }
     }
 
@@ -560,17 +588,18 @@ class ReaderActivity : BasePlayerActivity() {
         super.onStop()
         registrarMinutosLidos()
         if (::adapter.isInitialized) retornoController.aplicarEdicoesPendentes()
-        dialogAtivo?.dismiss()
-        dialogAtivo = null
         viewModel.salvarPreferencias(appPrefs)
         // Salva a posição de leitura para retomar depois: o parágrafo da leitura guiada, ativa ou recém-encerrada sem
         // rolagem manual depois (o marcador fica abaixo do topo da tela); senão o primeiro parágrafo visível.
-        // Livro já trocado pela fila: o manager gravou a posição final do livro concluído; esta tela não grava por cima.
+        // Livro já trocado pela fila: o manager gravou a posição final do livro concluído;
+        // esta tela não grava por cima.
         if (!livroTrocadoPelaFila && ::recyclerView.isInitialized && caminhoArquivo.isNotEmpty()) {
             rolagemController.paragrafoParaSalvar()
                 ?.let {
                     // Total de parágrafos: dá a porcentagem lida (progresso = scroll / total) na biblioteca.
-                    appPrefs.salvarPosicaoLeitura(caminhoArquivo, it, if (::adapter.isInitialized) adapter.itemCount else 0)
+                    appPrefs.salvarPosicaoLeitura(
+                        caminhoArquivo, it, if (::adapter.isInitialized) adapter.itemCount else 0
+                    )
                 }
         }
     }
@@ -765,9 +794,7 @@ class ReaderActivity : BasePlayerActivity() {
 
         // Carregando, erro, pílula e modo: o cálculo é puro (TelaDoLeitor.kt); o controller só aplica.
         val tela = calcularTelaDoLeitor(state, telaController.pilulaDaLimpezaMostrada)
-        if (telaController.aplicarCarregandoEErro(tela)) return
-
-        val texto = viewModel.textoEfetivo()
+        val texto = if (telaController.aplicarCarregandoEErro(tela)) null else viewModel.textoEfetivo()
         if (texto == null) return
 
         processarAutoStartLeituraGuiada(texto)
@@ -842,7 +869,9 @@ class ReaderActivity : BasePlayerActivity() {
         }
     }
 
-    /** A guiada (fila "Ler tudo") narra outro livro: a tela deste livro cede o lugar ao livro que está sendo narrado. */
+    /**
+     * A guiada (fila "Ler tudo") narra outro livro: a tela deste livro cede o lugar ao livro que está sendo narrado.
+     */
     private fun guiadaEmOutroLivro(): Boolean {
         val caminhoDaGuiada = guidedPlayerManager?.caminhoArquivo ?: return false
         return caminhoDaGuiada.isNotEmpty() && caminhoDaGuiada != caminhoArquivo
@@ -910,8 +939,6 @@ class ReaderActivity : BasePlayerActivity() {
             ACAO_INICIAL_PRONUNCIA -> vozController.abrirDicionarioPronuncia()
         }
     }
-
-    // ── Bottom Sheet de Aparência ─────────────────────────────────────────────
 
     // Clonar pela lista de vozes do leitor: a voz nova já fica escolhida.
     // Inicializador de campo: registra lançadores no construtor, por isso não vai para lazy (só delega por lambda).

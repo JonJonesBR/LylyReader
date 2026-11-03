@@ -77,4 +77,20 @@ class RegraDeReconexaoGuiadaTest {
     @Test fun sessaoSemCaminhoNaoFicaParaTras() {
         assertFalse(RegraDeReconexaoGuiada.leitorFicouParaTras("/a", "", 3, setOf("/a")))
     }
+
+    @Test fun semFilaNaIntentNaoUsaAFila() {
+        assertFalse(RegraDeReconexaoGuiada.usaFilaDaIntent(temFila = false, recriada = false, reconectando = false))
+    }
+
+    @Test fun primeiraAberturaUsaAFilaDaIntent() {
+        assertTrue(RegraDeReconexaoGuiada.usaFilaDaIntent(temFila = true, recriada = false, reconectando = true))
+    }
+
+    @Test fun recriadaReconectandoMantemAFilaDoManager() {
+        assertFalse(RegraDeReconexaoGuiada.usaFilaDaIntent(temFila = true, recriada = true, reconectando = true))
+    }
+
+    @Test fun recriadaSemReconexaoUsaAFilaDaIntent() {
+        assertTrue(RegraDeReconexaoGuiada.usaFilaDaIntent(temFila = true, recriada = true, reconectando = false))
+    }
 }

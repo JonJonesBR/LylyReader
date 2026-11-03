@@ -41,6 +41,7 @@ private const val PROGRESSO_MAX = 100
  * ("Ouvir") — extraído de [ReaderActivity] pra reduzir o tamanho do arquivo (rb-4). Padrão do projeto:
  * activity + viewModel + callbacks no construtor, sem acessar campos da Activity.
  */
+@Suppress("TooManyFunctions") // exportação, conversão e audiobook do leitor: um assunto só
 class ReaderConversaoController(
     private val activity: AppCompatActivity,
     private val viewModel: ReaderViewModel,
@@ -71,6 +72,7 @@ class ReaderConversaoController(
     private var refazerConversao: (() -> Unit)? = null
 
     /** Exporta o texto limpo do leitor para o arquivo escolhido. */
+    @Suppress("TooGenericExceptionCaught") // escrita no arquivo do usuário (SD, nuvem) falha de muitos jeitos
     fun exportarTextoLimpo(uri: Uri) {
         val texto = viewModel.textoEfetivo()?.paragrafos
             ?.joinToString("\n\n") { it.texto } ?: return
@@ -149,12 +151,14 @@ class ReaderConversaoController(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught") // escrita do arquivo temporário falha de muitos jeitos e vira aviso
     fun baixarCapitulo() {
         val texto = viewModel.textoEfetivo() ?: return
         refazerConversao = ::baixarCapitulo
         val capAtivo = viewModel.uiState.value.capituloAtivo
-        val cap = texto.capitulos.getOrNull(capAtivo) ?: return
-        val trechoTexto = textoDoCapitulo(texto, capAtivo) ?: return
+        val cap = texto.capitulos.getOrNull(capAtivo)
+        val trechoTexto = cap?.let { textoDoCapitulo(texto, capAtivo) }
+        if (cap == null || trechoTexto == null) return
 
         val nomeSemExt = File(caminhoArquivo).nameWithoutExtension
         val nomeCapitulo = "${nomeSemExt} - ${cap.titulo}"
@@ -207,6 +211,7 @@ class ReaderConversaoController(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught") // escrita do arquivo temporário falha de muitos jeitos e vira aviso
     private fun baixarLivroCompleto() {
         val texto = viewModel.textoEfetivo() ?: return
         refazerConversao = ::baixarLivroCompleto

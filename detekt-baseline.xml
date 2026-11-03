@@ -59,7 +59,6 @@
     <ID>EmptyFunctionBlock:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ParagrafoAdapter.kt$ParagrafoAdapter.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:PassosDialog.kt$PassosDialog.&lt;no name provided&gt;${}</ID>
-    <ID>EmptyFunctionBlock:ReaderActivity.kt$ReaderActivity.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ReaderAparenciaController.kt$ReaderAparenciaController.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ReaderRetornoController.kt$ReaderRetornoController.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:SettingsActivity.kt$SettingsActivity.&lt;no name provided&gt;${}</ID>
@@ -87,7 +86,6 @@
     <ID>LongMethod:PiperVitsModelManager.kt$PiperVitsModelManager$suspend fun download(context: Context, packId: String, onProgress: ProgressoDownload)</ID>
     <ID>LongMethod:PocketTtsModelManager.kt$PocketTtsModelManager$@Suppress("TooGenericExceptionCaught") suspend fun download(context: Context, packId: String, onProgress: ProgressoDownload)</ID>
     <ID>LongMethod:PronunciationDialog.kt$PronunciationDialog$fun show( activity: AppCompatActivity, palavra: String, caminhoDoLivro: String? = null, escopoInicial: EscopoPronuncia = if (caminhoDoLivro != null) EscopoPronuncia.LIVRO else EscopoPronuncia.TODOS, onOuvir: ((String) -&gt; Unit)? = null, onConcluido: () -&gt; Unit = {} )</ID>
-    <ID>LongMethod:ReaderActivity.kt$ReaderActivity$override fun onCreate(savedInstanceState: Bundle?)</ID>
     <ID>LongMethod:SettingsActivity.kt$SettingsActivity$private fun configurarListeners()</ID>
     <ID>LongMethod:SettingsActivity.kt$SettingsActivity$private fun vincularViews()</ID>
     <ID>LongMethod:SpeakerAttribution.kt$OfflineSpeakerAttributor$fun analyze( paragraphs: List&lt;String&gt;, maxCharacterSpeakers: Int = MAX_CHARACTER_SPEAKERS, aiOverrides: Map&lt;Pair&lt;Int, Int&gt;, String&gt; = emptyMap(), edits: SpeakerEdits = SpeakerEdits.EMPTY ): SpeakerAttributionResult</ID>
@@ -320,7 +318,6 @@
     <ID>MagicNumber:PronunciationDialog.kt$PronunciationDialog$12f</ID>
     <ID>MagicNumber:PronunciationDialog.kt$PronunciationDialog$20</ID>
     <ID>MagicNumber:PronunciationDialog.kt$PronunciationDialog$8</ID>
-    <ID>MagicNumber:ReaderActivity.kt$ReaderActivity$100</ID>
     <ID>MagicNumber:ReaderPersonagensController.kt$ReaderPersonagensController$100</ID>
     <ID>MagicNumber:ReaderPersonagensController.kt$ReaderPersonagensController$1024</ID>
     <ID>MagicNumber:ReaderPersonagensController.kt$ReaderPersonagensController$12f</ID>
@@ -782,11 +779,6 @@
     <ID>MaxLineLength:QueueAdapter.kt$QueueAdapter$com.jonjonesbr.audiobookgen.data.ERRO_FILA_INTERROMPIDA -&gt; ctx.getString(R.string.queue_erro_interrompida)</ID>
     <ID>MaxLineLength:QueueAdapter.kt$QueueAdapter$else -&gt; if (erroItem.startsWith("Conversao interrompida")) ctx.getString(R.string.queue_erro_interrompida) else erroItem</ID>
     <ID>MaxLineLength:QueueManager.kt$QueueManager$/** Carrega a fila persistida se a memória estiver vazia: mexer na fila antes disso e persistir apagaria a que está salva. */</ID>
-    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$/** Nulo no modo "Ler sem áudio" (não há manager para a barra conectar). Não acessar antes de o manager ser atribuído no onCreate. */</ID>
-    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$appPrefs.salvarPosicaoLeitura(caminhoArquivo, it, if (::adapter.isInitialized) adapter.itemCount else 0)</ID>
-    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$iniciarDownloadBackground(arquivoTemp.absolutePath, nomeCapitulo, speakerMapPath = speakerMapPath, caminhoDoLivro = caminhoArquivo)</ID>
-    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog</ID>
-    <ID>MaxLineLength:ReaderActivity.kt$ReaderActivity$setTextColor(com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface))</ID>
     <ID>MaxLineLength:ReaderAparenciaController.kt$ReaderAparenciaController$private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog</ID>
     <ID>MaxLineLength:ReaderMarcacoesController.kt$ReaderMarcacoesController$private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog</ID>
     <ID>MaxLineLength:ReaderPersonagensController.kt$ReaderPersonagensController$.</ID>
@@ -965,7 +957,6 @@
     <ID>ReturnCount:PronunciationBookStore.kt$PronunciationBookStore$fun migrarIdentidade(antigo: String, novo: String): Boolean</ID>
     <ID>ReturnCount:PronunciationBookStore.kt$PronunciationBookStore$fun save(caminho: String, dicionario: PronunciationDictionary): Boolean</ID>
     <ID>ReturnCount:PythonEngineUseCase.kt$PythonEngineUseCase$private fun trocasDoRelatorio(json: String): List&lt;TrocaNormalizador&gt;</ID>
-    <ID>ReturnCount:ReaderActivity.kt$ReaderActivity$private fun prepararCapituloAtual()</ID>
     <ID>ReturnCount:ReaderPersonagensController.kt$ReaderPersonagensController$private fun confirmarAnaliseComIa()</ID>
     <ID>ReturnCount:SettingsActivity.kt$SettingsActivity$private fun lerJsonDeUri(uri: Uri): Pair&lt;JSONObject?, Exception?&gt;</ID>
     <ID>ReturnCount:SpeakerAi.kt$SpeakerAiPlanner$fun parseResponse(raw: String): Map&lt;Pair&lt;Int, Int&gt;, String&gt;</ID>
@@ -1061,7 +1052,6 @@
     <ID>TooGenericExceptionCaught:PocketTtsModelManager.kt$PocketTtsModelManager$error: Exception</ID>
     <ID>TooGenericExceptionCaught:PronunciationAiFlow.kt$PronunciationAiFlow$e: Exception</ID>
     <ID>TooGenericExceptionCaught:PythonEngineUseCase.kt$PythonEngineUseCase$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ReaderActivity.kt$ReaderActivity$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ReaderPersonagensController.kt$ReaderPersonagensController$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ReaderRetornoController.kt$ReaderRetornoController$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ReaderViewModel.kt$ReaderViewModel$e: Exception</ID>
@@ -1125,7 +1115,6 @@
     <ID>UnusedPrivateMember:GuidedReadingBarController.kt$GuidedReadingBarController$private fun mostrarDialogoPassos()</ID>
     <ID>UnusedPrivateMember:MeusLivrosActivity.kt$MeusLivrosActivity$private fun caminhoDe(livro: LivroBiblioteca)</ID>
     <ID>UnusedPrivateProperty:ConversoesActivity.kt$ConversoesActivity.Companion$private const val TAG = "ConversoesActivity"</ID>
-    <ID>UseCheckOrError:ReaderActivity.kt$ReaderActivity$throw IllegalStateException("Output stream unavailable")</ID>
     <ID>UseRequire:CacheDeListaTest.kt$CacheDeListaTest$throw IllegalArgumentException("JSON inválido")</ID>
     <ID>VariableNaming:DocumentRepository.kt$DocumentRepository$private val TAG = "DocumentRepository"</ID>
     <ID>VariableNaming:GuidedPlayerManager.kt$GuidedPlayerManager$private val TAG = "GuidedPlayerManager"</ID>
