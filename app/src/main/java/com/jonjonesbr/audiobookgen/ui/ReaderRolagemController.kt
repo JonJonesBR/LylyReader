@@ -173,6 +173,23 @@ class ReaderRolagemController(
         )
     }
 
+    /**
+     * Primeiro parágrafo visível na tela, sem olhar a leitura guiada (ao contrário de [paragrafoAtualVisivel]).
+     * Nulo se não há texto ou nenhum item visível.
+     */
+    fun primeiroParagrafoNaTela(): Int? {
+        if (viewModel.uiState.value.texto == null) return null
+        val primeiro = (recyclerView.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: -1
+        return primeiro.takeIf { it >= 0 }
+    }
+
+    /**
+     * Parágrafo da tela para amostra e compartilhar (rb-34b): se a pessoa rolou para longe da narração,
+     * o primeiro visível na tela; senão, o parágrafo de referência de [paragrafoAtualVisivel].
+     */
+    fun paragrafoDaTela(rolouParaLonge: Boolean): Int? =
+        if (rolouParaLonge) primeiroParagrafoNaTela() else paragrafoAtualVisivel()
+
     /** A lista chegou ao fim (não rola mais para baixo, ou para a frente na rolagem horizontal) e há texto. */
     fun fimDoLivroNaTela(): Boolean {
         val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return false
