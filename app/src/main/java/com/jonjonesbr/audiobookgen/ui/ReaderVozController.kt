@@ -76,6 +76,8 @@ class ReaderVozController(
     data class Callbacks(
         val obterCaminhoArquivo: () -> String,
         val obterGuidedPlayerManager: () -> GuidedPlayerManager?,
+        /** Primeiro parágrafo visível na tela; usado pela amostra de voz (rb-31). */
+        val obterParagrafoAtual: () -> Int?,
     )
 
     private val caminhoArquivo: String get() = callbacks.obterCaminhoArquivo()

@@ -198,6 +198,7 @@ class ReaderActivity : BasePlayerActivity() {
             callbacks = ReaderVozController.Callbacks(
                 obterCaminhoArquivo = { caminhoArquivo },
                 obterGuidedPlayerManager = { guidedPlayerManager },
+                obterParagrafoAtual = { rolagemController.paragrafoAtualVisivel() },
             ),
         )
     }
