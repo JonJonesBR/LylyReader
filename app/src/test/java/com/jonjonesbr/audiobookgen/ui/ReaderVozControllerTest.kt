@@ -44,13 +44,35 @@ class ReaderVozControllerTest {
 
     @Test
     fun amostraJuntaTresParagrafos() {
-        assertEquals("a b c", textoDaAmostra(comTextos("a", "b", "c", "d", "e")))
+        assertEquals("a b c", textoDaAmostra(comTextos("a", "b", "c", "d", "e"), inicio = 0))
+    }
+
+    @Test
+    fun comecaNoTrechoAtual() {
+        assertEquals("c d e", textoDaAmostra(comTextos("a", "b", "c", "d", "e"), inicio = 2))
+    }
+
+    @Test
+    fun puloParagrafosEmBrancoAoComecar() {
+        assertEquals("c d e", textoDaAmostra(comTextos("a", " ", "c", "", "d", "e"), inicio = 1))
+    }
+
+    @Test
+    fun inicioNoFimDaListaJuntaSoOUltimo() {
+        assertEquals("e", textoDaAmostra(comTextos("a", "b", "c", "d", "e"), inicio = 4))
+    }
+
+    @Test
+    fun inicioForaDaListaVaiParaOsLimites() {
+        assertEquals("e", textoDaAmostra(comTextos("a", "b", "c", "d", "e"), inicio = 99))
+        assertEquals("a b c", textoDaAmostra(comTextos("a", "b", "c", "d", "e"), inicio = -3))
     }
 
     @Test
     fun amostraVaziaDaNulo() {
-        assertNull(textoDaAmostra(null))
-        assertNull(textoDaAmostra(emptyList()))
-        assertNull(textoDaAmostra(comTextos("  ", " ")))
+        assertNull(textoDaAmostra(null, inicio = 0))
+        assertNull(textoDaAmostra(emptyList(), inicio = 0))
+        assertNull(textoDaAmostra(comTextos("  ", " "), inicio = 0))
+        assertNull(textoDaAmostra(comTextos("a", "  "), inicio = 1))
     }
 }

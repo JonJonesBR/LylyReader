@@ -16,7 +16,7 @@ internal fun paragrafoParaCompartilhar(
     indiceGuiada: Int?,
     indiceNaTela: () -> Int?,
 ): Paragrafo? {
-    val index = indiceGuiada?.takeIf { it >= 0 } ?: indiceNaTela() ?: -1
+    val index = indiceDoTrechoAtual(indiceGuiada, indiceNaTela)
     val paragrafo = if (index in 0 until (paragrafos?.size ?: 0)) paragrafos?.get(index) else null
     return paragrafo?.takeIf { it.texto.trim().isNotEmpty() }
 }

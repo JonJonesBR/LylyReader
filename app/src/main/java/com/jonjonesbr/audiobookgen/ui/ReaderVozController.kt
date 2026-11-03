@@ -42,9 +42,22 @@ internal fun faixaDoPreparo(
     return inicio to fim
 }
 
-/** Amostra da voz: junta os primeiros [quantos] parágrafos; nulo quando não há texto útil (usa-se o texto padrão). */
-internal fun textoDaAmostra(paragrafos: List<Paragrafo>?, quantos: Int = PARAGRAFOS_PREVIEW): String? =
-    paragrafos?.take(quantos)?.joinToString(" ") { it.texto }?.takeIf { it.isNotBlank() }
+/**
+ * Amostra da voz: junta [quantos] parágrafos com texto, a partir de [inicio] (rb-31: o trecho atual, não o começo do
+ * livro). O início é limitado à lista. Nulo quando não há texto útil (usa-se o texto padrão).
+ */
+internal fun textoDaAmostra(paragrafos: List<Paragrafo>?, inicio: Int, quantos: Int = PARAGRAFOS_PREVIEW): String? {
+    val lista = paragrafos ?: return null
+    if (lista.isEmpty()) return null
+    val partida = inicio.coerceIn(0, lista.lastIndex)
+    return lista.asSequence()
+        .drop(partida)
+        .map { it.texto }
+        .filter { it.isNotBlank() }
+        .take(quantos)
+        .joinToString(" ")
+        .takeIf { it.isNotBlank() }
+}
 
 /**
  * Voz e pronúncia do leitor: escolha de voz (e a voz recém-clonada), amostra, "Ouvir pronúncia" e dicionário de
@@ -157,7 +170,9 @@ class ReaderVozController(
         val ritmo = appPrefs.ritmo
         val chave = SecurePreferences.getGeminiKeys(activity)
         audiobookViewModel.prepararConfiguracoesPython(voice.engine, chave, appPrefs.pausaMs, caminhoArquivo)
-        val previewText = textoDaAmostra(viewModel.textoEfetivo()?.paragrafos)
+        // Começa no trecho que a pessoa está vendo ou ouvindo, não no começo do livro (rb-31).
+        val inicio = indiceDoTrechoAtual(guidedPlayerManager?.state?.value?.index) { callbacks.obterParagrafoAtual() }
+        val previewText = textoDaAmostra(viewModel.textoEfetivo()?.paragrafos, inicio.coerceAtLeast(0))
             ?: VoiceCatalog.previewSampleText(voice)
         // UNDISPATCHED: o finally solta a segurada mesmo com o escopo já cancelado (giro de tela).
         activity.lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
