@@ -112,6 +112,8 @@ class GuidedReadingService : Service() {
     private var mediaSession: MediaSessionCompat? = null
     // Título que a MediaSession já mostra: a fila troca de livro sem trocar de sessão, e o título precisa acompanhar.
     private var tituloNaSessao: String? = null
+    // Horário fixo da notificação: com o horário da atualização, ela trocava de lugar com a do preparo (rb-33).
+    private val inicioDaNotificacao = System.currentTimeMillis()
 
     // Foco de áudio da narração. Sem ele, ligações, GPS e outros apps tocavam por cima da voz, em volume cheio.
     // Perda temporária (ligação) pausa e retoma sozinha ao voltar; perda definitiva (outro app de mídia) só pausa.
@@ -510,6 +512,8 @@ class GuidedReadingService : Service() {
             )
             .setOngoing(isPlaying)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setWhen(inicioDaNotificacao)
+            .setShowWhen(false)
             .build()
     }
 }

@@ -199,6 +199,8 @@ class ReaderRetornoController(
                 activity, callbacks.obterCaminhoArquivo(), callbacks.onClonarVoz, callbacks.onPerfilDoLivroMudou
             )
         }
+        view.findViewById<android.widget.TextView>(R.id.tvAcaoPrepararCapitulo).text =
+            rotuloDoPreparo(activity, activity.getString(R.string.prerender_confirm_title))
         view.item(R.id.itemAcaoPrepararCapitulo, dialog) { callbacks.onPrepararCapitulo() }
         view.item(R.id.itemAcaoVozesPersonagens, dialog) { callbacks.onConfigurarVozesPersonagens() }
         view.item(R.id.itemAcaoPronuncia, dialog) { callbacks.onAbrirPronuncia() }

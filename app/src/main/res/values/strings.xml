@@ -865,7 +865,8 @@
     <string name="prerender_confirm_listen">Prepare and listen</string>
     <string name="prerender_confirm_lento">With this voice, preparing only moves on while the reading is paused, so it doesn\'t slow it down.</string>
     <string name="prerender_started">Preparing the chapter in the background.</string>
-    <string name="prerender_already">A chapter is already being prepared.</string>
+    <string name="prerender_cancel_action">Cancel preloading (%1$d of %2$d)</string>
+    <string name="prerender_cancelled">Preloading cancelled.</string>
     <string name="prerender_nothing">Nothing to prepare here.</string>
     <string name="prerender_channel">Chapter preparation</string>
     <string name="prerender_notif_title">Preparing: %1$s</string>

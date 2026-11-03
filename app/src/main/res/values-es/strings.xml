@@ -856,7 +856,8 @@
     <string name="prerender_confirm_listen">Preparar y escuchar</string>
     <string name="prerender_confirm_lento">Con esta voz, la preparación solo avanza con la lectura en pausa, para no retrasarla.</string>
     <string name="prerender_started">Preparando el capítulo en segundo plano.</string>
-    <string name="prerender_already">Ya se está preparando un capítulo.</string>
+    <string name="prerender_cancel_action">Cancelar precarga (%1$d de %2$d)</string>
+    <string name="prerender_cancelled">Precarga cancelada.</string>
     <string name="prerender_nothing">No hay nada que preparar aquí.</string>
     <string name="prerender_channel">Preparación de capítulos</string>
     <string name="prerender_notif_title">Preparando: %1$s</string>

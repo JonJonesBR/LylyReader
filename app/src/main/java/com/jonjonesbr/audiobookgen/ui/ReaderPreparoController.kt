@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.content.Context
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -7,6 +8,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.PreRenderBridge
+import com.jonjonesbr.audiobookgen.service.PreRenderState
 import java.io.File
 
 /** Como a guiada começa ao escolher "Preparar e ouvir" (rb-25). */
@@ -25,6 +27,19 @@ internal fun inicioDaEscuta(
     indiceGuiada >= 0 && pausada -> InicioDaEscuta.RETOMAR
     indiceGuiada >= 0 && (tocando || carregando) -> InicioDaEscuta.JA_TOCANDO
     else -> InicioDaEscuta.TOCAR
+}
+
+/** Preparo em curso: não terminou (nem concluído, cancelado ou com erro). Função pura, para o teste (rb-33). */
+internal fun preparoEmCurso(estado: PreRenderState?): PreRenderState? = estado?.takeIf { !it.terminou }
+
+/**
+ * Texto do item "Pré-carregar" (⋮ e diálogo da guiada). Com preparo em curso vira
+ * "Cancelar pré-carregamento (N de M)", que cancela pelo mesmo caminho da notificação (rb-33).
+ * Sem preparo, devolve [normal].
+ */
+internal fun rotuloDoPreparo(context: Context, normal: String): String {
+    val emCurso = preparoEmCurso(PreRenderBridge.state.value) ?: return normal
+    return context.getString(R.string.prerender_cancel_action, emCurso.feitos, emCurso.total)
 }
 
 /**
@@ -53,14 +68,19 @@ class ReaderPreparoController(
     private val dialogos = DialogosAbertos(activity)
     private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
 
-    /** Abre o pré-carregamento do capítulo atual: sem guiada, ou com outro preparo em curso, não faz nada. */
+    /**
+     * Abre o pré-carregamento do capítulo atual. Com um preparo em curso, o mesmo item cancela (rb-33): é o
+     * [PreRenderBridge.cancelar] que a notificação também usa. Sem guiada, não faz nada.
+     */
     fun abrir() {
-        val manager = guidedPlayerManager ?: return
-        val andamento = PreRenderBridge.state.value
-        if (andamento != null && !andamento.terminou) {
-            Toast.makeText(activity, R.string.prerender_already, Toast.LENGTH_SHORT).show()
+        val cancelar = PreRenderBridge.cancelar
+        if (cancelar != null && preparoEmCurso(PreRenderBridge.state.value) != null) {
+            cancelar()
+            // Sem isso, quem toca não vê nada: o diálogo fecha e a notificação some (inclusive para o TalkBack).
+            Toast.makeText(activity, R.string.prerender_cancelled, Toast.LENGTH_SHORT).show()
             return
         }
+        val manager = guidedPlayerManager ?: return
         val texto = viewModel.textoEfetivo()
         if (texto != null && texto.paragrafos.isNotEmpty()) abrirConfirmacao(manager, texto)
     }

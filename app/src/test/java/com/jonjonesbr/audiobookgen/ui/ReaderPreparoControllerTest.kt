@@ -1,9 +1,29 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import com.jonjonesbr.audiobookgen.service.PreRenderState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class ReaderPreparoControllerTest {
+
+    @Test
+    fun semEstadoNaoHaPreparoEmCurso() {
+        assertNull(preparoEmCurso(null))
+    }
+
+    @Test
+    fun preparoAindaSemTerminarEstaEmCurso() {
+        assertNotNull(preparoEmCurso(PreRenderState(feitos = 3, total = 10, titulo = "Cap")))
+    }
+
+    @Test
+    fun preparoTerminadoOuCanceladoNaoEstaEmCurso() {
+        assertNull(preparoEmCurso(PreRenderState(10, 10, "Cap", concluido = true)))
+        assertNull(preparoEmCurso(PreRenderState(3, 10, "Cap", cancelado = true)))
+        assertNull(preparoEmCurso(PreRenderState(3, 10, "Cap", erro = "falha")))
+    }
 
     @Test
     fun semLeituraToca() {

@@ -41,6 +41,9 @@ class PreRenderService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var observeJob: Job? = null
+    // Horário fixo da notificação (o início do preparo). Com o horário da atualização ela subia para o topo
+    // a cada parágrafo e trocava de lugar com a da leitura guiada; o botão Cancelar "fugia" do dedo (rb-33).
+    private var inicioDoPreparo = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -49,6 +52,7 @@ class PreRenderService : Service() {
             PreRenderBridge.cancelar?.invoke()
             return START_NOT_STICKY
         }
+        inicioDoPreparo = System.currentTimeMillis()
         criarCanal()
         val inicial = PreRenderBridge.state.value
         iniciarEmPrimeiroPlano(montar(inicial))
@@ -110,6 +114,9 @@ class PreRenderService : Service() {
             .setProgress(100, ((estado?.fracao ?: 0f) * 100).toInt(), estado == null || estado.total <= 0)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setWhen(inicioDoPreparo)
+            .setShowWhen(false)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentIntent(abrir)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, getString(android.R.string.cancel), cancelar)
             .build()

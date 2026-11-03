@@ -121,7 +121,7 @@ object GuidedVoiceOptionsDialog {
             conteudo.addView(com.google.android.material.button.MaterialButton(
                 activity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
             ).apply {
-                setText(R.string.guided_options_preload_botao)
+                setText(rotuloDoPreparo(activity, activity.getString(R.string.guided_options_preload_botao)))
                 setOnClickListener {
                     dialogo.dismiss()
                     prepararCapitulo()
