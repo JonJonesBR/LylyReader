@@ -63,7 +63,7 @@ class ReaderVozControllerTest {
     }
 
     @Test
-    fun inicioForaDaListaVaiParaOsLimites() {
+    fun amostraInicioForaDaListaVaiParaOsLimites() {
         assertEquals("e", textoDaAmostra(comTextos("a", "b", "c", "d", "e"), inicio = 99))
         assertEquals("a b c", textoDaAmostra(comTextos("a", "b", "c", "d", "e"), inicio = -3))
     }
