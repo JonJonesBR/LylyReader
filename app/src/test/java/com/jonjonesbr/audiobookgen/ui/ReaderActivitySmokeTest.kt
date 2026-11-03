@@ -8,6 +8,8 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
 import android.os.Looper
+import android.text.Selection
+import android.text.Spannable
 import android.view.ActionMode
 import android.view.KeyEvent
 import android.view.Menu
@@ -534,7 +536,8 @@ class ReaderActivitySmokeTest {
             // "Capítulo" selecionado no parágrafo 0, com o menu da seleção aberto (como o toque longo faria).
             scenario.onActivity { a ->
                 val tv = lista(a).findViewHolderForAdapterPosition(0)!!.itemView as TextView
-                tv.setSelection(0, 5)
+                // TextView com textIsSelectable guarda o texto como Spannable (setTextIsSelectable usa BufferType.SPANNABLE).
+                Selection.setSelection(tv.text as Spannable, 0, 5)
                 val cb = tv.customSelectionActionModeCallback
                 val menu = PopupMenu(a, tv).menu
                 cb.onCreateActionMode(ModoFalso(cb, menu), menu)
