@@ -14,16 +14,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.BlacklistStore
 import com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro
 import com.jonjonesbr.audiobookgen.domain.Capitulo
+import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.util.PythonInicio
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -32,6 +35,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowDialog
 import java.io.File
 import java.lang.reflect.Modifier
 import java.time.Duration
@@ -227,6 +231,45 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun barraDeCapituloNavegaEAbrePainel() {
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+
+            // (a) Começa no capítulo 1 de 2: a seta anterior fica apagada e desligada.
+            esperarAte(scenario, "rótulo do capítulo 1 na barra") { a ->
+                rotuloDaBarra(a) == rotuloDoCapitulo(a, 1, "Capítulo 1")
+            }
+            scenario.onActivity { a ->
+                val anterior = a.findViewById<View>(R.id.btnCapituloAnterior)
+                assertEquals(0.3f, anterior.alpha, 0.001f)
+                assertFalse(anterior.isEnabled)
+            }
+
+            // (b) Próximo: vai ao capítulo 2 (a partir do parágrafo 5). A barra mostra 2 de 2 e o progresso aparece.
+            // "Pelo menos o 5" e não "igual a 5": a lista pode acomodar um pouco diferente conforme o tamanho da tela.
+            scenario.onActivity { it.findViewById<View>(R.id.btnCapituloProximo).performClick() }
+            esperarAte(scenario, "primeiro visível no capítulo 2, rótulo 2 de 2 e progresso visível") { a ->
+                primeiroVisivel(a) >= 5 &&
+                    rotuloDaBarra(a) == rotuloDoCapitulo(a, 2, "Capítulo 2") &&
+                    a.findViewById<View>(R.id.tvProgressoLeitura).visibility == View.VISIBLE
+            }
+
+            // (c) Toque na área do capítulo: o painel de capítulos abre num BottomSheetDialog.
+            scenario.onActivity { it.findViewById<View>(R.id.areaCapituloAtual).performClick() }
+            val painel = ShadowDialog.getLatestDialog()
+            assertTrue("Painel de capítulos não abriu", painel is BottomSheetDialog && painel.isShowing)
+            painel?.dismiss()
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Dois capítulos: parágrafos 0 a 4 no primeiro, 5 a 9 no segundo. */
@@ -291,6 +334,14 @@ class ReaderActivitySmokeTest {
     }
 
     private fun lista(a: ReaderActivity): RecyclerView = a.findViewById(R.id.recyclerViewParagrafos)
+
+    /** Texto da barra de capítulo (vazio enquanto ela não tem rótulo). */
+    private fun rotuloDaBarra(a: ReaderActivity): String =
+        a.findViewById<TextView>(R.id.tvCapituloAtual).text.toString()
+
+    /** Rótulo que a barra monta para o capítulo [numero] de 2 (a mesma conta de atualizarBarra). */
+    private fun rotuloDoCapitulo(a: ReaderActivity, numero: Int, titulo: String): String =
+        a.getString(R.string.capitulo_barra, numero, 2, NavegacaoCapitulos.tituloLimpo(titulo))
 
     private fun primeiroVisivel(a: ReaderActivity): Int =
         (lista(a).layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
