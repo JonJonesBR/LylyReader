@@ -32,6 +32,7 @@ import com.jonjonesbr.audiobookgen.util.dpToPx
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -346,6 +347,7 @@ class ReaderActivitySmokeTest {
             scenario.onActivity { a ->
                 assertEquals(View.GONE, a.findViewById<View>(R.id.layoutReaderErro).visibility)
                 assertEquals(View.GONE, a.findViewById<View>(R.id.layoutBarraModo).visibility)
+                assertEquals(View.GONE, a.findViewById<View>(R.id.layoutBarraSelecao).visibility)
                 assertEquals(View.GONE, a.findViewById<View>(R.id.fabConverterPrincipal).visibility)
                 assertEquals(View.GONE, a.findViewById<View>(R.id.fabVoltarNarracao).visibility)
                 assertEquals(View.GONE, a.findViewById<View>(R.id.layoutGuidedPlayer).visibility)
@@ -425,6 +427,45 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun barraDeSelecaoApareceECancela() {
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+
+            // (a) "Selecionar vários parágrafos" no menu: a seleção começa no parágrafo 1 e a barra aparece.
+            scenario.onActivity { modeloDe(it).onParagrafoLongPress(1) }
+            esperarAte(scenario, "barra com 1 parágrafo") { a ->
+                barraDeSelecaoVisivel(a) && textoDaBarra(a) == plural(a, 1)
+            }
+
+            // (b) Toque em outro parágrafo amplia a seleção: a barra passa a contar 3.
+            scenario.onActivity { modeloDe(it).onParagrafoToque(3) }
+            esperarAte(scenario, "barra com 3 parágrafos") { a -> textoDaBarra(a) == plural(a, 3) }
+
+            // (c) Cancelar: a barra some e a seleção sai do ViewModel.
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoCancelar).performClick() }
+            esperarAte(scenario, "barra escondida e sem seleção") { a ->
+                !barraDeSelecaoVisivel(a) && modeloDe(a).uiState.value.selecaoInicio == null
+            }
+
+            // (d) Voltar com a seleção ativa só limpa a seleção: o leitor continua aberto.
+            scenario.onActivity { modeloDe(it).onParagrafoLongPress(1) }
+            esperarAte(scenario, "barra de novo") { a -> barraDeSelecaoVisivel(a) }
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            scenario.onActivity { a ->
+                assertNull(modeloDe(a).uiState.value.selecaoInicio)
+                assertFalse(a.isFinishing)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Dois capítulos: parágrafos 0 a 4 no primeiro, 5 a 9 no segundo. */
@@ -489,6 +530,19 @@ class ReaderActivitySmokeTest {
     }
 
     private fun lista(a: ReaderActivity): RecyclerView = a.findViewById(R.id.recyclerViewParagrafos)
+
+    /** O mesmo ViewModel da tela (o da Activity, pelo dono), para simular o menu e os toques. */
+    private fun modeloDe(a: ReaderActivity): ReaderViewModel = ViewModelProvider(a)[ReaderViewModel::class.java]
+
+    /** Barra "N parágrafos selecionados" (rb-30), visível ou não. */
+    private fun barraDeSelecaoVisivel(a: ReaderActivity): Boolean =
+        a.findViewById<View>(R.id.layoutBarraSelecao).visibility == View.VISIBLE
+
+    private fun textoDaBarra(a: ReaderActivity): String =
+        a.findViewById<TextView>(R.id.tvSelecaoParagrafos).text.toString()
+
+    private fun plural(a: ReaderActivity, quantos: Int): String =
+        a.resources.getQuantityString(R.plurals.barra_selecao_paragrafos, quantos, quantos)
 
     /** Texto da barra de capítulo (vazio enquanto ela não tem rótulo). */
     private fun rotuloDaBarra(a: ReaderActivity): String =

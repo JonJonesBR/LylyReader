@@ -284,6 +284,51 @@
 
         </LinearLayout>
 
+        <!-- ── Barra de seleção de vários parágrafos (rb-30): N selecionados, Cancelar, Gerar áudio ── -->
+        <LinearLayout
+            android:id="@+id/layoutBarraSelecao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="8dp"
+            android:background="?attr/colorSurfaceVariant"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvSelecaoParagrafos"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:maxLines="2"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:accessibilityLiveRegion="polite"/>
+
+            <Button
+                android:id="@+id/btnSelecaoCancelar"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/btn_cancelar"
+                android:textSize="13sp"/>
+
+            <Button
+                android:id="@+id/btnSelecaoGerar"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/selecao_gerar_audio"
+                android:textSize="13sp"
+                app:icon="@drawable/ic_gerar_audio"/>
+
+        </LinearLayout>
+
         <!-- ── Loading ───────────────────────────────────────────────── -->
         <!-- Carregando: diz o que está acontecendo (abrindo o livro / preparando o texto para a narração) -->
         <LinearLayout

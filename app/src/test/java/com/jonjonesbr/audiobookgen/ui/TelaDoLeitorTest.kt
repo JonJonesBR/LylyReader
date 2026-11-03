@@ -81,15 +81,26 @@ class TelaDoLeitorTest {
     }
 
     @Test
-    fun fabConverterComSelecaoSemGuiada() {
-        // Com seleção e sem guiada, o rótulo é "seleção" (capitulosNoRotulo = 0).
-        val selecao = FabsDoLeitor(voltarNarracao = false, converter = true, capitulosNoRotulo = 0)
-        assertEquals(selecao, fabs(temSelecao = true))
-        // Com capítulos marcados, o rótulo leva a contagem.
+    fun fabConverterSoComCapitulosMarcados() {
+        // Com capítulos marcados e sem seleção, o FAB aparece com a contagem (rb-30).
         val doisCapitulos = FabsDoLeitor(voltarNarracao = false, converter = true, capitulosNoRotulo = 2)
         assertEquals(doisCapitulos, fabs(capitulosMarcados = 2))
-        // Com a guiada ativa, o FAB de conversão some mesmo com seleção.
-        assertEquals(semFabs(), fabs(guiadaAtiva = true, temSelecao = true))
+        // O rótulo leva a contagem mesmo quando o FAB está escondido; por isso o esperado aqui não é semFabs().
+        val ocultoComDois = FabsDoLeitor(voltarNarracao = false, converter = false, capitulosNoRotulo = 2)
+        // Com seleção de texto, o FAB some: a seleção tem o próprio menu e a própria barra.
+        assertEquals(ocultoComDois, fabs(temSelecao = true, capitulosMarcados = 2))
+        assertEquals(semFabs(), fabs(temSelecao = true))
+        // Com a guiada ativa (tocando ou pausada), o FAB não aparece.
+        assertEquals(ocultoComDois, fabs(guiadaAtiva = true, capitulosMarcados = 2))
+    }
+
+    @Test
+    fun paragrafosSelecionadosSoNaLeitura() {
+        val selecao = ReaderUiState(selecaoInicio = 2, selecaoFim = 5)
+        assertEquals(4, calcularTelaDoLeitor(selecao, pilulaJaMostrada = false).paragrafosSelecionados)
+        val emEdicao = ReaderUiState(modoEdicao = true, selecaoInicio = 2, selecaoFim = 5)
+        assertEquals(0, calcularTelaDoLeitor(emEdicao, pilulaJaMostrada = false).paragrafosSelecionados)
+        assertEquals(0, calcularTelaDoLeitor(ReaderUiState(), pilulaJaMostrada = false).paragrafosSelecionados)
     }
 
     @Test

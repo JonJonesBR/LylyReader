@@ -58,6 +58,8 @@ class ReaderRetornoController(
         val onGerarCapitulosMarcados: () -> Unit = {},
         /** Pré-carregar capítulo (rb-25); some no Ler sem áudio com o grupo de voz. */
         val onPrepararCapitulo: () -> Unit = {},
+        /** Checagem de conectividade antes de converter (rb-30): só chama [prosseguir] quando pode seguir. */
+        val verificarConectividade: (prosseguir: () -> Unit) -> Unit = { it() },
     )
 
     fun retornarComSelecao() {
@@ -79,9 +81,7 @@ class ReaderRetornoController(
             state.selecaoInicio != null -> {
                 val inicio = state.selecaoInicio
                 val fim = state.selecaoFim ?: inicio
-                texto.paragrafos
-                    .subList(inicio, (fim + 1).coerceAtMost(texto.paragrafos.size))
-                    .joinToString("\n\n") { it.texto }
+                textoDosParagrafos(texto.paragrafos, inicio, fim) ?: return
             }
             // Sem seleção nenhuma = FAB no estado "Converter para áudio" (livro inteiro),
             // não "Converter seleção" — era aqui que o clique não fazia nada.
@@ -89,6 +89,38 @@ class ReaderRetornoController(
         }
 
         salvarTextoTemporario(trechoTexto, ReaderActivity.ACAO_CONVERTER)
+    }
+
+    /** FAB de conversão (só com capítulos marcados, ver estadoDosFabs): passa pela checagem de conectividade. */
+    fun gerarAudioDaSelecao() {
+        callbacks.verificarConectividade { retornarComSelecao() }
+    }
+
+    /**
+     * Botão "Gerar áudio" da barra de seleção de vários parágrafos (rb-30): o trecho dos parágrafos marcados.
+     * Ignora os capítulos marcados. O texto é lido só ao prosseguir, depois da checagem.
+     */
+    fun gerarAudioDosParagrafos() {
+        callbacks.verificarConectividade { converterParagrafosSelecionados() }
+    }
+
+    private fun converterParagrafosSelecionados() {
+        aplicarEdicoesPendentes()
+        val state = viewModel.uiState.value
+        val texto = viewModel.textoEfetivo()
+        val inicio = state.selecaoInicio
+        val trecho = if (texto != null && inicio != null) {
+            textoDosParagrafos(texto.paragrafos, inicio, state.selecaoFim ?: inicio)
+        } else {
+            null
+        }
+        if (trecho != null) salvarTextoTemporario(trecho, ReaderActivity.ACAO_CONVERTER)
+    }
+
+    /** "Gerar áudio" do menu da seleção de texto (rb-30): o trecho marcado dentro do parágrafo, pela checagem. */
+    fun gerarAudioDoTrecho(trecho: String) {
+        if (trecho.isBlank()) return
+        callbacks.verificarConectividade { salvarTextoTemporario(trecho, ReaderActivity.ACAO_CONVERTER) }
     }
 
     /**
@@ -115,13 +147,14 @@ class ReaderRetornoController(
     }
 
     /**
-     * Botão voltar (gesto e seta ←). Com modo edição ou tela de diferenças ativo, só sai desse modo, igual ao
-     * "Concluir" da barra. Fora deles, com edições, pergunta antes de fechar; sem edições, fecha direto.
+     * Botão voltar (gesto e seta ←). Com modo edição, diferenças ou seleção de parágrafos ativos, só sai
+     * desse modo (ou limpa a seleção), igual ao "Concluir" da barra. Fora deles, com edições, pergunta antes
+     * de sair; sem edições, fecha direto.
      */
     fun voltar() {
         if (salvandoEdicoes) return
         val state = viewModel.uiState.value
-        if (state.modoEdicao || state.mostrandoAlteracoes) {
+        if (state.modoEdicao || state.mostrandoAlteracoes || state.selecaoInicio != null) {
             concluirModoEspecial()
             return
         }
@@ -134,13 +167,19 @@ class ReaderRetornoController(
         perguntarAntesDeSair(texto)
     }
 
-    /** "Concluir" da barra de modo: sai da edição (aplicando as alterações pendentes) ou da tela de diferenças. */
+    /**
+     * "Concluir" da barra de modo: sai da edição (aplicando as alterações pendentes) ou da tela de diferenças. Sem
+     * nenhum dos dois, o voltar chega aqui para limpar a seleção de parágrafos.
+     */
     fun concluirModoEspecial() {
-        if (viewModel.uiState.value.modoEdicao) {
-            aplicarEdicoesPendentes()
-            viewModel.desativarModoEdicao()
-        } else {
-            viewModel.toggleMostrarAlteracoes()
+        val state = viewModel.uiState.value
+        when {
+            state.modoEdicao -> {
+                aplicarEdicoesPendentes()
+                viewModel.desativarModoEdicao()
+            }
+            state.mostrandoAlteracoes -> viewModel.toggleMostrarAlteracoes()
+            else -> viewModel.limparSelecao()
         }
     }
 

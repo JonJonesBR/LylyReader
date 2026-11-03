@@ -40,6 +40,7 @@ class ReaderTelaController(
         val fabConverter: ExtendedFloatingActionButton, val fabVoltarNarracao: ExtendedFloatingActionButton,
         val layoutGuidedPlayer: View, val banner: View, val tvBannerInfo: TextView,
         val layoutBarraModo: View, val tvModoAtivo: TextView, val btnOpcoes: View, val readerRoot: View,
+        val barraSelecao: View, val tvSelecao: TextView,
     )
 
     /** O resultado da limpeza aparece uma vez por abertura do leitor. */
@@ -49,6 +50,8 @@ class ReaderTelaController(
     private var dicaTentada = false
     private var margemNivelAplicado = -1
     private var temaAplicado: TemaLeitura? = null
+    // Última contagem mostrada na barra de seleção: o aplicarStatus roda ~20x/s e um setText repetido pede layout.
+    private var selecionadosNaBarra = -1
 
     /**
      * Chamado uma vez, no vincularViews, depois do recyclerView. Mesma ordem de efeitos de antes: insets, listeners do
@@ -138,6 +141,21 @@ class ReaderTelaController(
                 }
             )
         }
+        aplicarBarraDeSelecao(tela.paragrafosSelecionados)
+    }
+
+    /**
+     * Barra "N parágrafos selecionados · Cancelar · Gerar áudio" (rb-30). Só mexe quando a contagem muda.
+     * Aparece com a guiada parada, tocando ou pausada: fica no topo, então não disputa lugar com a barra da guiada.
+     */
+    private fun aplicarBarraDeSelecao(quantos: Int) {
+        if (quantos == selecionadosNaBarra) return
+        selecionadosNaBarra = quantos
+        views.barraSelecao.visibility = if (quantos > 0) View.VISIBLE else View.GONE
+        if (quantos > 0) {
+            views.tvSelecao.text =
+                activity.resources.getQuantityString(R.plurals.barra_selecao_paragrafos, quantos, quantos)
+        }
     }
 
     /** Visibilidade e rótulo dos FABs (a regra está em [estadoDosFabs]). */
@@ -146,11 +164,8 @@ class ReaderTelaController(
         views.fabConverter.visibility = if (fabs.converter) View.VISIBLE else View.GONE
         views.fabConverter.setIconResource(R.drawable.ic_gerar_audio)
         val capitulos = fabs.capitulosNoRotulo
-        views.fabConverter.text = if (capitulos > 0) {
+        views.fabConverter.text =
             activity.resources.getQuantityString(R.plurals.fab_converter_capitulos, capitulos, capitulos)
-        } else {
-            activity.getString(R.string.fab_converter_selecao)
-        }
     }
 
     /**

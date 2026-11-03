@@ -68,14 +68,6 @@ private val COR_BARRA_SYNC = mapOf(
 )
 private const val LARGURA_BARRA_SYNC_DP = 4f
 
-// IDs dos itens de menu no ActionMode de seleção de texto — nomeados (1001/1002 eram débito
-// aceito no baseline do detekt; 1003/1004 são os itens novos).
-private const val MENU_ITEM_EXCLUIR_OCORRENCIAS = 1001
-private const val MENU_ITEM_SELECIONAR_PARAGRAFO = 1002
-private const val MENU_ITEM_DESTACAR = 1003
-private const val MENU_ITEM_DEFINIR = 1004
-private const val MENU_ITEM_PRONUNCIA = 1005
-
 /**
  * Adapter do RecyclerView de parágrafos da leitura (modos leitura/edição/comparação de
  * alterações). Extraído de ReaderActivity (Fase 1) — segue o mesmo padrão de arquivo dedicado já
@@ -83,6 +75,7 @@ private const val MENU_ITEM_PRONUNCIA = 1005
  * da Activity (getString, Toast, viewModel, o RecyclerView para o Snackbar) viraram parâmetros
  * de construtor.
  */
+@Suppress("LongParameterList") // callbacks do adapter, só lambdas: a contagem cresceu com o menu da seleção (rb-30)
 class ParagrafoAdapter(
     private val activity: AppCompatActivity,
     private val recyclerView: RecyclerView,
@@ -93,8 +86,10 @@ class ParagrafoAdapter(
     private val onDestacarTrecho: (Int, Int, Int) -> Unit,
     // Dicionário de pronúncia — palavra selecionada
     private val onDefinirPronuncia: (String) -> Unit = {},
-    // "Ler sem áudio": sem a opção de pronúncia (que toca o texto) no menu de seleção
-    private val mostrarPronuncia: Boolean = true,
+    // "Gerar áudio" do trecho marcado no menu da seleção (rb-30)
+    private val onGerarAudioDoTrecho: (String) -> Unit = {},
+    // "Ler sem áudio": sem Gerar áudio, Selecionar vários e Pronúncia (que toca o texto) no menu da seleção
+    private val comAudio: Boolean = true,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     init {
@@ -118,6 +113,33 @@ class ParagrafoAdapter(
     private var alinhamento: AlinhamentoTexto = AlinhamentoTexto.ESQUERDA
     var modo: AdapterModo = AdapterModo.LEITURA
         private set
+
+    // Menu da seleção nativa (ver VHLeitura.init). Contador e não booleano: ao trocar a seleção de um parágrafo
+    // para outro, a ordem entre fechar o antigo e abrir o novo não é garantida.
+    private var menusDeSelecaoAbertos = 0
+    // Marcado no ACTION_DOWN, quando o menu já estava aberto: o clique que vem depois só fecha a seleção.
+    private var toqueSoFechaSelecao = false
+
+    private val acoesDoMenu = AcoesDaSelecaoDeTexto(
+        gerarAudio = onGerarAudioDoTrecho,
+        selecionarVarios = { posicao ->
+            onLongPress(posicao)
+            com.google.android.material.snackbar.Snackbar.make(
+                recyclerView,
+                activity.getString(R.string.snackbar_selecao_paragrafo),
+                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+            ).show()
+        },
+        destacar = onDestacarTrecho,
+        pronuncia = onDefinirPronuncia,
+        definir = { activity.definirPalavra(it) },
+        excluirOcorrencias = { trecho ->
+            viewModel.excluirOcorrencias(trecho)
+            Toast.makeText(activity, activity.getString(R.string.toast_blacklist_added), Toast.LENGTH_SHORT).show()
+        },
+        aoAbrir = { menusDeSelecaoAbertos++ },
+        aoFechar = { menusDeSelecaoAbertos = (menusDeSelecaoAbertos - 1).coerceAtLeast(0) },
+    )
 
     /**
      * Rolagem horizontal: cada item é uma PaginaDoParagrafo. Muda só por ReaderRolagemController.aplicarOrientacao,
@@ -232,6 +254,21 @@ class ParagrafoAdapter(
     inner class VHLeitura(itemView: View, val tv: TextView) : RecyclerView.ViewHolder(itemView) {
         /** Texto para o qual a seleção já foi (re)armada; evita reiniciá-la a cada repintura do progresso. */
         var textoArmado: String? = null
+
+        init {
+            // Menu e clique são ligados uma vez por item, e não a cada bind: o narrado é repintado ~20x/s.
+            tv.customSelectionActionModeCallback =
+                MenuDaSelecaoDeTexto(tv, { bindingAdapterPosition }, comAudio, acoesDoMenu)
+            tv.aoComecarToque { toqueSoFechaSelecao = menusDeSelecaoAbertos > 0 }
+            tv.setOnClickListener {
+                // Com o menu da seleção aberto, o toque só fecha a seleção: não toca a guiada nem amplia.
+                if (toqueSoFechaSelecao) {
+                    toqueSoFechaSelecao = false
+                } else if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
+                    onToque(bindingAdapterPosition)
+                }
+            }
+        }
     }
     inner class VHEdicao(val et: EditText) : RecyclerView.ViewHolder(et)
 
@@ -340,88 +377,6 @@ class ParagrafoAdapter(
             tv.text = par.texto
             tv.pintarFundoParagrafo(corFundo, estaNoSync, tema)
         }
-
-        tv.customSelectionActionModeCallback = object : android.view.ActionMode.Callback {
-            override fun onCreateActionMode(mode: android.view.ActionMode, menu: android.view.Menu): Boolean {
-                // À vista: Destacar e Pronúncia. Copiar, Compartilhar e Ler em voz alta vêm do sistema, depois.
-                val item1 = menu.add(0, MENU_ITEM_DESTACAR, 0, R.string.menu_destacar_trecho)
-                item1.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
-
-                if (mostrarPronuncia) {
-                    val item2 = menu.add(0, MENU_ITEM_PRONUNCIA, 0, R.string.menu_pronuncia)
-                    item2.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_IF_ROOM)
-                }
-
-                // No ⋮. Apagar frase é destrutiva, por isso fica por último.
-                val item3 = menu.add(0, MENU_ITEM_SELECIONAR_PARAGRAFO, 0, R.string.menu_selecionar_paragrafo)
-                item3.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_NEVER)
-
-                val item4 = menu.add(0, MENU_ITEM_DEFINIR, 0, R.string.menu_definir_palavra)
-                item4.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_NEVER)
-
-                val item5 = menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
-                item5.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_NEVER)
-                return true
-            }
-
-            override fun onPrepareActionMode(mode: android.view.ActionMode, menu: android.view.Menu): Boolean {
-                return false
-            }
-
-            override fun onActionItemClicked(mode: android.view.ActionMode, item: android.view.MenuItem): Boolean {
-                val start = tv.selectionStart
-                val end = tv.selectionEnd
-                if (start < 0 || end <= start) return false
-                val selectedText = tv.text.subSequence(start, end).toString().trim()
-                var tratado = false
-                when (item.itemId) {
-                    MENU_ITEM_EXCLUIR_OCORRENCIAS -> {
-                        if (selectedText.isNotEmpty()) {
-                            viewModel.excluirOcorrencias(selectedText)
-                            Toast.makeText(
-                                activity,
-                                activity.getString(R.string.toast_blacklist_added),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                        mode.finish()
-                        tratado = true
-                    }
-                    MENU_ITEM_SELECIONAR_PARAGRAFO -> {
-                        onLongPress(position)
-                        com.google.android.material.snackbar.Snackbar
-                            .make(
-                                recyclerView,
-                                activity.getString(R.string.snackbar_selecao_paragrafo),
-                                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-                            )
-                            .show()
-                        mode.finish()
-                        tratado = true
-                    }
-                    MENU_ITEM_DESTACAR -> {
-                        onDestacarTrecho(position, start, end)
-                        mode.finish()
-                        tratado = true
-                    }
-                    MENU_ITEM_DEFINIR -> {
-                        if (selectedText.isNotEmpty()) activity.definirPalavra(selectedText)
-                        mode.finish()
-                        tratado = true
-                    }
-                    MENU_ITEM_PRONUNCIA -> {
-                        if (selectedText.isNotEmpty()) onDefinirPronuncia(selectedText)
-                        mode.finish()
-                        tratado = true
-                    }
-                }
-                return tratado
-            }
-
-            override fun onDestroyActionMode(mode: android.view.ActionMode) {}
-        }
-
-        tv.setOnClickListener    { onToque(position) }
     }
 
     private fun bindEdicao(holder: VHEdicao, par: Paragrafo?, position: Int, corTexto: Int) {

@@ -369,6 +369,9 @@ class ReaderActivity : BasePlayerActivity() {
                     guidedPlayerManager?.recarregarPerfilDoLivro()
                     guidedReadingBarController?.atualizarRotulosDoPerfil()
                 },
+                verificarConectividade = { prosseguir ->
+                    conversaoController.verificarConectividadeAntesDeConverter(prosseguir)
+                },
             ),
         )
     }
@@ -431,6 +434,8 @@ class ReaderActivity : BasePlayerActivity() {
                 tvModoAtivo = findViewById(R.id.tvModoAtivo),
                 btnOpcoes = findViewById(R.id.btnReaderOpcoes),
                 readerRoot = findViewById(R.id.readerRoot),
+                barraSelecao = findViewById(R.id.layoutBarraSelecao),
+                tvSelecao = findViewById(R.id.tvSelecaoParagrafos),
             ),
         )
     }
@@ -717,7 +722,8 @@ class ReaderActivity : BasePlayerActivity() {
             onDefinirPronuncia = { palavra ->
                 vozController.abrirPronunciaDaPalavra(palavra)
             },
-            mostrarPronuncia = !somenteLeitura,
+            onGerarAudioDoTrecho = { trecho -> retornoController.gerarAudioDoTrecho(trecho) },
+            comAudio = !somenteLeitura,
         )
         rolagemController.aplicarOrientacao(viewModel.uiState.value.rolagemHorizontal)
         // O destaque de progresso da leitura guiada repinta o parágrafo atual ~20x/s
@@ -744,10 +750,11 @@ class ReaderActivity : BasePlayerActivity() {
         bannerOtimizado.marcarComoBotao()
         bannerOtimizado.setOnClickListener { retornoController.mostrarBottomSheetAcoes() }
 
-        // FAB de conversão: converter livro inteiro OU seleção, dependendo do estado atual
-        fabConverterPrincipal.setOnClickListener {
-            conversaoController.verificarConectividadeAntesDeConverter { retornoController.retornarComSelecao() }
-        }
+        // FAB de conversão: só com capítulos marcados (ver estadoDosFabs)
+        fabConverterPrincipal.setOnClickListener { retornoController.gerarAudioDaSelecao() }
+        // Barra de seleção de vários parágrafos (rb-30): gera o trecho marcado, ou só cancela a seleção
+        findViewById<View>(R.id.btnSelecaoGerar).setOnClickListener { retornoController.gerarAudioDosParagrafos() }
+        findViewById<View>(R.id.btnSelecaoCancelar).setOnClickListener { viewModel.limparSelecao() }
         fabVoltarNarracao.setOnClickListener { guidedReadingBarController?.voltarAoAcompanhamento() }
 
         // Barra de modo: botão Concluir (mesma saída do modo que o botão voltar)

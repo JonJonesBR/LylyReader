@@ -43,6 +43,11 @@ internal data class TelaDoLeitor(
     val rotuloModo: RotuloDoModo?,
     /** modoEdicao -> EDICAO; mostrandoAlteracoes -> ALTERACOES; senão LEITURA. */
     val modoAdapter: AdapterModo,
+    /**
+     * LEITURA e `selecaoInicio` não nulo -> quantos parágrafos a seleção cobre; senão 0.
+     * A barra de seleção do topo (rb-30) aparece com a guiada parada, tocando ou pausada.
+     */
+    val paragrafosSelecionados: Int,
 )
 
 /**
@@ -82,19 +87,24 @@ internal fun calcularTelaDoLeitor(state: ReaderUiState, pilulaJaMostrada: Boolea
         linhasRemovidas = state.relatorioLinhasRemovidas,
         rotuloModo = rotuloModo,
         modoAdapter = modoAdapter,
+        paragrafosSelecionados = if (modoAdapter == AdapterModo.LEITURA) {
+            paragrafosNaSelecao(state.selecaoInicio, state.selecaoFim)
+        } else {
+            0
+        },
     )
 }
 
-/** Estado dos FABs do leitor. [capitulosNoRotulo] = 0 quer dizer que o rótulo é "seleção". */
+/** Estado dos FABs do leitor. [capitulosNoRotulo] é a contagem de capítulos marcados (o FAB só existe com eles). */
 internal data class FabsDoLeitor(val voltarNarracao: Boolean, val converter: Boolean, val capitulosNoRotulo: Int)
 
 /**
- * Visibilidade e conteúdo dos FABs do leitor. O FAB de conversão é único: escondido durante a leitura guiada
- * (pra não ficar clicável atrás da barra de leitura guiada, toques acidentais ao usar voz/velocidade); em modos
- * especiais (edição/diff) some também, A MENOS que já haja seleção ativa. Com seleção ativa, troca ícone/texto
- * para refletir isso em vez de mostrar um segundo FAB no mesmo lugar.
- * Só com trecho ou capítulos marcados: o livro inteiro e o capítulo atual ficam em ⋮ › Gerar audiobook (antes o botão
- * ficava sempre sobre o texto, com outro nome, 'Converter para áudio').
+ * Visibilidade e conteúdo dos FABs do leitor. O FAB de conversão é só dos capítulos marcados (rb-30): a seleção
+ * de texto e de parágrafos tem o próprio menu e a própria barra. Com trecho selecionado o FAB some, para não haver
+ * dois botões de gerar áudio na tela.
+ * Escondido durante a leitura guiada, tocando ou pausada: a barra da guiada ocupa a mesma âncora na base da tela, com
+ * elevação maior, e o FAB ficaria atrás dela. Some também em modos especiais (edição/diff).
+ * O livro inteiro e o capítulo atual ficam em ⋮ › Gerar audiobook (antes o botão ficava sempre sobre o texto).
  * "Voltar à narração" ocupa o lugar do FAB de conversão só no modo manual da guiada (quem lê rolou).
  *
  * Nulo sem manager ("Ler sem áudio"): não mexe nos FABs. Nesse modo o controller já os escondeu.
@@ -109,7 +119,7 @@ internal fun estadoDosFabs(
     if (!temManager) return null
     return FabsDoLeitor(
         voltarNarracao = guiadaAtiva && scrollManual,
-        converter = (temSelecao || capitulosMarcados > 0) && !guiadaAtiva,
+        converter = capitulosMarcados > 0 && !temSelecao && !guiadaAtiva,
         capitulosNoRotulo = capitulosMarcados,
     )
 }
