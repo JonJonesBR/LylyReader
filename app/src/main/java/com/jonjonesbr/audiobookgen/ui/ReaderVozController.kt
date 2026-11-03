@@ -3,7 +3,6 @@ package com.jonjonesbr.audiobookgen.ui
 import android.content.Intent
 import android.media.AudioManager
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.jonjonesbr.audiobookgen.R
@@ -47,8 +46,7 @@ internal fun faixaDoPreparo(
  * livro). O início é limitado à lista. Nulo quando não há texto útil (usa-se o texto padrão).
  */
 internal fun textoDaAmostra(paragrafos: List<Paragrafo>?, inicio: Int, quantos: Int = PARAGRAFOS_PREVIEW): String? {
-    val lista = paragrafos ?: return null
-    if (lista.isEmpty()) return null
+    val lista = paragrafos?.takeIf { it.isNotEmpty() } ?: return null
     val partida = inicio.coerceIn(0, lista.lastIndex)
     return lista.asSequence()
         .drop(partida)
@@ -85,9 +83,6 @@ class ReaderVozController(
     private val guidedPlayerManager: GuidedPlayerManager? get() = callbacks.obterGuidedPlayerManager()
     // Lido só dentro dos métodos (não no construtor): o construtor pode rodar antes de a Activity estar pronta.
     private val appPrefs by lazy { AppPrefs(activity) }
-
-    private val dialogos = DialogosAbertos(activity)
-    private fun AlertDialog.Builder.exibir(): AlertDialog = dialogos.mostrar(this)
 
     /** Segura a leitura guiada enquanto a pessoa ouve. Só guarda lambdas: a regra fica em [PausaParaOuvir]. */
     private val pausaParaOuvir = PausaParaOuvir(
