@@ -173,4 +173,20 @@ class TelaDoLeitorTest {
         assertEquals(36, margemDosParagrafosDp(2))
         assertEquals(20, margemDosParagrafosDp(7))
     }
+
+    @Test
+    fun minutosLidosZeroSemInicioRegistrado() {
+        assertEquals(0, minutosLidos(0L, 10_000_000L))
+    }
+
+    @Test
+    fun minutosLidosNaoContaMinutoIncompleto() {
+        assertEquals(0, minutosLidos(1_000L, 1_000L + 59_000L))
+    }
+
+    @Test
+    fun minutosLidosContaMinutoCompletoEDescartaSobra() {
+        assertEquals(1, minutosLidos(1_000L, 1_000L + 61_000L))
+        assertEquals(2, minutosLidos(1_000L, 1_000L + 125_000L))
+    }
 }

@@ -155,3 +155,14 @@ internal fun decidirInicioDaGuiada(
 /** Margem horizontal da lista de parágrafos, em dp, para o nível salvo (nível fora da faixa usa o padrão). */
 internal fun margemDosParagrafosDp(nivel: Int): Int =
     MARGEM_NIVEL_DP.getOrElse(nivel) { MARGEM_NIVEL_DP[MARGEM_NIVEL_PADRAO] }
+
+private const val MS_POR_MINUTO = 60_000L
+
+/**
+ * Minutos inteiros que a tela do leitor ficou visível, desde [desdeMs] até [agoraMs]. Zero quando não há início
+ * registrado. Simplificação deliberada: conta a tela visível mesmo com a leitura guiada tocando, por isso um
+ * mesmo intervalo também entra em "minutos ouvidos" (GuidedPlayerManager). É engajamento aproximado, não uma
+ * partição exata do tempo da pessoa.
+ */
+internal fun minutosLidos(desdeMs: Long, agoraMs: Long): Int =
+    if (desdeMs <= 0L) 0 else ((agoraMs - desdeMs) / MS_POR_MINUTO).toInt()

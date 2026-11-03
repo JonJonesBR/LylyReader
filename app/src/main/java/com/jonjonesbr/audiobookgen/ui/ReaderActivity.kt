@@ -50,7 +50,6 @@ class ReaderActivity : BasePlayerActivity() {
          *  mesma ação pendente em vez de perdê-la em silêncio. Ver [ReaderRetornoController]. */
         const val EXTRA_ABERTO_PARA_RESULTADO = "extra_aberto_para_resultado"
         const val EXTRA_TRECHO_PATH = "extra_trecho_path"
-        private const val MS_POR_MINUTO = 60_000L
         const val EXTRA_TRECHO_NOME = "extra_trecho_nome"
         const val EXTRA_ACAO_RETORNO = "extra_acao_retorno"
         const val EXTRA_AUTO_START_GUIDED = "extra_auto_start_guided"
@@ -666,18 +665,10 @@ class ReaderActivity : BasePlayerActivity() {
     // Com a barra da leitura guiada na tela, o mini player do audiobook some (antes os dois apareciam juntos).
     override fun ocultarMiniPlayerAudio(): Boolean = (guidedPlayerManager?.state?.value?.index ?: -1) >= 0
 
-    // Simplificação deliberada: conta o tempo com a tela do leitor visível como "minutos
-    // lidos", mesmo quando a leitura guiada (TTS) está tocando ao mesmo tempo — nesse caso o
-    // mesmo intervalo também soma em "minutos ouvidos" (GuidedPlayerManager). É uma medida
-    // aproximada de engajamento, não uma partição exata do tempo do usuário.
+    // Minutos da tela visível (ver minutosLidos, em TelaDoLeitor.kt).
     private fun registrarMinutosLidos() {
-        val desde = telaVisivelDesdeMs
-        telaVisivelDesdeMs = 0L
-        if (desde <= 0L) return
-        val minutos = ((System.currentTimeMillis() - desde) / MS_POR_MINUTO).toInt()
-        if (minutos > 0) {
-            com.jonjonesbr.audiobookgen.data.StatsStore.registrarMinutosLidos(this, minutos)
-        }
+        val minutos = minutosLidos(telaVisivelDesdeMs, System.currentTimeMillis()).also { telaVisivelDesdeMs = 0L }
+        if (minutos > 0) com.jonjonesbr.audiobookgen.data.StatsStore.registrarMinutosLidos(this, minutos)
     }
 
     // ── Views ─────────────────────────────────────────────────────────────────
