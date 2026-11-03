@@ -435,11 +435,15 @@ class GuidedReadingBarController(
         val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
         val tv = recyclerView.findViewHolderForAdapterPosition(index)?.itemView as? TextView
 
-        // Mesmo caminho pra "view da posição ainda não existe" E "rolagem horizontal
-        // (paginada)" — esta não tem scroll fino equivalente ao vertical (baseado na posição Y
-        // do texto dentro do parágrafo), só pula pra página do parágrafo atual.
+        // Mesmo caminho pra "view da posição ainda não existe" E "rolagem horizontal (paginada)". Na horizontal, com
+        // a página do parágrafo parada na tela, o acompanhamento rola dentro dela (rb-26a), como o vertical. Durante o
+        // snap, ou sem essa página, só pula pra página do parágrafo atual.
         if (tv == null || lm.orientation == LinearLayoutManager.HORIZONTAL) {
-            if (!aguardandoAutoScroll) {
+            val pagina = recyclerView.paginaParadaNaTela()
+            if (pagina != null && recyclerView.getChildAdapterPosition(pagina) == index) {
+                aguardandoAutoScroll = false
+                pagina.acompanharDestaque(progressPct)
+            } else if (!aguardandoAutoScroll) {
                 aguardandoAutoScroll = true
                 val primeiroVisivel = lm.findFirstVisibleItemPosition()
                 val alvoDistante = primeiroVisivel == RecyclerView.NO_POSITION ||

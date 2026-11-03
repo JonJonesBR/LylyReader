@@ -40,6 +40,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowDialog
 import java.io.File
 import java.lang.reflect.Modifier
@@ -62,6 +63,10 @@ class ReaderActivitySmokeTest {
         const val TEMPO_LIMITE_MS = 10_000L
         /** Índices dos parágrafos 8 e 9 do livro: os dois únicos com "estrangeiro". */
         val INDICES_ESTRANGEIRO = listOf(7, 8)
+
+        /** Parágrafo que não cabe na altura de uma página (rolagem horizontal, rb-26a). */
+        val PARAGRAFO_LONGO: String = "Capítulo um, parágrafo 2, longo. " +
+            (1..80).joinToString(" ") { "Frase $it do parágrafo que não cabe numa página só." }
 
         val PARAGRAFOS: List<String> = listOf(
             "Capítulo um, parágrafo 1. A chuva começou cedo naquela manhã e ninguém na vila " +
@@ -357,12 +362,75 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun rolagemHorizontalRolaDentroDoParagrafoLongo() {
+        // Parágrafo 1 longo; os demais são os de sempre. Só este teste usa o texto longo.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            // (a) Horizontal, com a primeira página na tela. O parágrafo curto não rola por dentro.
+            esperarAte(scenario, "rolagem horizontal com a primeira página na tela") { a ->
+                val lm = lista(a).layoutManager as? LinearLayoutManager
+                lm?.orientation == LinearLayoutManager.HORIZONTAL && paginaEm(lista(a), 0) != null
+            }
+            scenario.onActivity { a -> assertFalse(paginaEm(lista(a), 0)!!.canScrollVertically(1)) }
+
+            // (b) Vai ao parágrafo longo: a página dele fica inteira na tela.
+            scenario.onActivity { lista(it).scrollToPosition(1) }
+            esperarAte(scenario, "página do parágrafo longo inteira na tela") { a ->
+                val lm = lista(a).layoutManager as LinearLayoutManager
+                lm.findFirstCompletelyVisibleItemPosition() == 1 && paginaEm(lista(a), 1) != null
+            }
+
+            // (c) A página tem a altura da área da lista, o texto passa dela e dá para rolar por dentro.
+            scenario.onActivity { a ->
+                val rv = lista(a)
+                val pagina = paginaEm(rv, 1)!!
+                assertEquals(rv.height - rv.paddingTop - rv.paddingBottom, pagina.height)
+                assertTrue("parágrafo longo deveria passar da página", pagina.texto.height > pagina.height)
+                assertTrue(pagina.canScrollVertically(1))
+                pagina.scrollTo(0, pagina.texto.height)
+            }
+
+            // (d) Rolou até o fim: o fim do parágrafo está visível e não dá para rolar mais.
+            esperarAte(scenario, "fim do parágrafo longo visível") { a ->
+                val p = paginaEm(lista(a), 1)
+                p != null && !p.canScrollVertically(1) && p.scrollY + p.height >= p.texto.bottom
+            }
+
+            // (e) A barra da leitura guiada aparece: a página encolhe junto com a lista, sem corte residual.
+            var alturaAntes = 0
+            scenario.onActivity { a ->
+                alturaAntes = paginaEm(lista(a), 1)!!.height
+                val barra = a.findViewById<View>(R.id.layoutGuidedPlayer)
+                barra.minimumHeight = lista(a).height / 3
+                barra.visibility = View.VISIBLE
+            }
+            esperarAte(scenario, "página ajustada à área com a barra da guiada") { a ->
+                val rv = lista(a)
+                val p = paginaEm(rv, 1)
+                p != null && p.height < alturaAntes && p.height == rv.height - rv.paddingTop - rv.paddingBottom
+            }
+
+            // (f) A barra some: a página volta à altura de antes.
+            scenario.onActivity { it.findViewById<View>(R.id.layoutGuidedPlayer).visibility = View.GONE }
+            esperarAte(scenario, "página volta à altura de antes") { a -> paginaEm(lista(a), 1)?.height == alturaAntes }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Dois capítulos: parágrafos 0 a 4 no primeiro, 5 a 9 no segundo. */
-    private fun livroDeTeste(): TextoExtraido {
+    private fun livroDeTeste(textos: List<String> = PARAGRAFOS): TextoExtraido {
         var offset = 0
-        val paragrafos = PARAGRAFOS.mapIndexed { indice, texto ->
+        val paragrafos = textos.mapIndexed { indice, texto ->
             Paragrafo(texto = texto, charOffset = offset, indiceCapitulo = if (indice < 5) 0 else 1)
                 .also { offset += texto.length + 2 }
         }
@@ -380,11 +448,11 @@ class ReaderActivitySmokeTest {
      * Cada teste grava o livro numa pasta própria (UUID no caminho). O caminho entra na chave do cache e na trava do
      * ExtractTextUseCase, que são estáticas: se dois testes usassem o mesmo caminho, um herdaria o estado do outro.
      */
-    private fun gravarLivroNoCache(texto: TextoExtraido): File {
+    private fun gravarLivroNoCache(texto: TextoExtraido, textos: List<String> = PARAGRAFOS): File {
         // O arquivo precisa existir antes da chave: a chave leva tamanho e data de modificação.
         val f = File(app.filesDir, "fumaca/${UUID.randomUUID()}/$NOME.txt")
         f.parentFile?.mkdirs()
-        f.writeText(PARAGRAFOS.joinToString("\n\n"))
+        f.writeText(textos.joinToString("\n\n"))
         val bruto = requireNotNull(CacheDeTextoDoLivro.chaveBruto(app, f.absolutePath)) { "Arquivo do teste ausente" }
         val limpo = CacheDeTextoDoLivro.chaveLimpo(
             bruto,
@@ -443,9 +511,13 @@ class ReaderActivitySmokeTest {
         return pos in lm.findFirstVisibleItemPosition()..lm.findLastVisibleItemPosition()
     }
 
-    /** No ParagrafoAdapter o item é o próprio TextView (VHLeitura). */
+    /** Texto do parágrafo na rolagem vertical, em que o item é o próprio TextView (na horizontal, ver paginaEm). */
     private fun textoEm(rv: RecyclerView, pos: Int): String? =
         (rv.findViewHolderForAdapterPosition(pos)?.itemView as? TextView)?.text?.toString()
+
+    /** Página do parágrafo na rolagem horizontal (rb-26a); nulo na vertical. */
+    private fun paginaEm(rv: RecyclerView, pos: Int): PaginaDoParagrafo? =
+        rv.findViewHolderForAdapterPosition(pos)?.itemView as? PaginaDoParagrafo
 
     /**
      * Espera a tela chegar à condição, deixando a main looper andar (a extração e o cache rodam em IO e voltam pela

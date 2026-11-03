@@ -119,6 +119,13 @@ class ParagrafoAdapter(
     var modo: AdapterModo = AdapterModo.LEITURA
         private set
 
+    /**
+     * Rolagem horizontal: cada item é uma PaginaDoParagrafo. Muda só por ReaderRolagemController.aplicarOrientacao,
+     * antes de trocar o layoutManager (a troca recicla todas as views e os itens voltam com o tipo novo), por isso
+     * sem notify.
+     */
+    var paginado: Boolean = false
+
     // Carregados uma única vez (não a cada bind) — fontes opcionais da leitura.
     private val typefaceSerifado: android.graphics.Typeface? by lazy {
         runCatching {
@@ -216,32 +223,37 @@ class ParagrafoAdapter(
     }
 
     override fun getItemViewType(position: Int) = when (modo) {
-        AdapterModo.LEITURA    -> 0
-        AdapterModo.EDICAO     -> 1
-        AdapterModo.ALTERACOES -> 2
+        AdapterModo.LEITURA    -> if (paginado) TIPO_LEITURA_PAGINA else TIPO_LEITURA
+        AdapterModo.EDICAO     -> TIPO_EDICAO
+        AdapterModo.ALTERACOES -> if (paginado) TIPO_ALTERACOES_PAGINA else TIPO_ALTERACOES
     }
 
-    inner class VHLeitura(val tv: TextView) : RecyclerView.ViewHolder(tv) {
+    /** Na vertical o itemView é o próprio tv; na horizontal é a PaginaDoParagrafo com o tv dentro. */
+    inner class VHLeitura(itemView: View, val tv: TextView) : RecyclerView.ViewHolder(itemView) {
         /** Texto para o qual a seleção já foi (re)armada; evita reiniciá-la a cada repintura do progresso. */
         var textoArmado: String? = null
     }
     inner class VHEdicao(val et: EditText) : RecyclerView.ViewHolder(et)
-    inner class VHAlteracoes(val tv: TextView) : RecyclerView.ViewHolder(tv)
+
+    /** Na vertical o itemView é o próprio tv; na horizontal é a PaginaDoParagrafo com o tv dentro. */
+    inner class VHAlteracoes(itemView: View, val tv: TextView) : RecyclerView.ViewHolder(itemView)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            1 -> {
+            TIPO_EDICAO -> {
                 val et = inflater.inflate(R.layout.item_paragrafo_edit, parent, false) as EditText
                 VHEdicao(et)
             }
-            2 -> {
+            TIPO_ALTERACOES -> {
                 val tv = inflater.inflate(R.layout.item_paragrafo, parent, false) as TextView
-                VHAlteracoes(tv)
+                VHAlteracoes(tv, tv)
             }
+            TIPO_ALTERACOES_PAGINA -> PaginaDoParagrafo.inflar(inflater, parent).let { VHAlteracoes(it, it.texto) }
+            TIPO_LEITURA_PAGINA -> PaginaDoParagrafo.inflar(inflater, parent).let { VHLeitura(it, it.texto) }
             else -> {
                 val tv = inflater.inflate(R.layout.item_paragrafo, parent, false) as TextView
-                VHLeitura(tv)
+                VHLeitura(tv, tv)
             }
         }
     }
@@ -270,6 +282,8 @@ class ParagrafoAdapter(
     private fun bindLeitura(holder: VHLeitura, par: Paragrafo?, position: Int, corTexto: Int) {
         par ?: return
         val tv = holder.tv
+        // Rolagem horizontal: a página volta ao topo só ao mostrar outro parágrafo (ver PaginaDoParagrafo).
+        (holder.itemView as? PaginaDoParagrafo)?.mostrar(position)
 
         // Há uma seleção em andamento neste item (ex.: o usuário está escolhendo uma palavra): não
         // reaplica o texto — cada atualização do progresso da leitura guiada rebindava o item e
@@ -441,6 +455,7 @@ class ParagrafoAdapter(
 
     private fun bindAlteracoes(holder: VHAlteracoes, par: Paragrafo?, position: Int, corTexto: Int) {
         val tv = holder.tv
+        (holder.itemView as? PaginaDoParagrafo)?.mostrar(position)
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
         tv.setBackgroundColor(Color.TRANSPARENT)
@@ -475,6 +490,13 @@ class ParagrafoAdapter(
     companion object {
         private const val FONTE_PADRAO_SP = 16f
         private const val ESPACAMENTO_PADRAO = 1.5f
+
+        // Tipos de view do adapter. Os de página são a rolagem horizontal (rb-26a): o item é uma PaginaDoParagrafo.
+        private const val TIPO_LEITURA = 0
+        private const val TIPO_EDICAO = 1
+        private const val TIPO_ALTERACOES = 2
+        private const val TIPO_LEITURA_PAGINA = 3
+        private const val TIPO_ALTERACOES_PAGINA = 4
     }
 }
 
