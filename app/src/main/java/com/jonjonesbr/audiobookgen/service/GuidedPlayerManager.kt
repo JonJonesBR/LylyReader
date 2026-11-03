@@ -1652,7 +1652,8 @@ class GuidedPlayerManager(
                     }
                     val caminho = withContext(Dispatchers.IO) { sintetizador.synthesize(texto, vozUnidade, ritmo) }
                     if (caminho == null) {
-                        // A leitura passou deste trecho (ou cancelou o produtor que o preparo esperava): não é falha.
+                        // A leitura passou deste trecho: não é falha. Se o produtor que o preparo esperava
+                        // foi cancelado, o TtsChunkCache já deu ao preparo uma tentativa própria (rb-25b).
                         val ficouParaALeitura = PreparoAFrente.ficouParaALeitura(
                             paragrafosDasUnidades[cursor], _state.value.index
                         )
@@ -1668,6 +1669,14 @@ class GuidedPlayerManager(
                                 }
                                 return@launch
                             }
+                        } else {
+                            // Não conta como falha (a leitura cuida do trecho), mas deixa rastro: sem ele, uma falha
+                            // real de P ou P+1 some sem log.
+                            Log.w(
+                                TAG,
+                                "Preparo: trecho do parágrafo ${paragrafosDasUnidades[cursor]} não sintetizado " +
+                                    "perto da leitura (motor=$motorDaUnidade, motivo=${sintetizador.ultimoErro()})"
+                            )
                         }
                     } else {
                         falhasSeguidas = 0

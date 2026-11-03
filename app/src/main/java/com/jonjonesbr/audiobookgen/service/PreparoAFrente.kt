@@ -20,6 +20,8 @@ internal object PreparoAFrente {
     /**
      * Verdadeiro quando o parágrafo da unidade já está na faixa que a leitura ao vivo cobre: o em leitura, ou até
      * [janela] parágrafos depois. Sem leitura (índice -1), nada ficou para trás: o preparo segue normalmente.
+     * Janela negativa ([JANELA_SEM_LEITURA]) cobre só os parágrafos anteriores ao em leitura: o próprio em leitura
+     * e os seguintes não ficam para trás.
      */
     fun ficouParaALeitura(
         paragrafoDaUnidade: Int,

@@ -232,6 +232,40 @@ class TtsChunkCacheTest {
         assertEquals(resultA, resultB)
         assertTrue(TtsChunkCache.arquivoValido(final))
     }
+
+    @Test
+    fun esperaComProdutorCanceladoTentaUmaVezComoProdutor() = kotlinx.coroutines.runBlocking {
+        // Preparo cancelado no meio da síntese: quem esperava o mesmo trecho não pode receber nulo e parar.
+        val context = contextComCacheDir()
+        val started = CompletableDeferred<Unit>()
+        val calls = AtomicInteger()
+        val final = TtsChunkCache.file(context, "kokoro-pf-dora", 100, "preparo cancelado")
+
+        val produtor = async {
+            TtsChunkCache.getOrSynthesize(context, "kokoro-pf-dora", 100, "preparo cancelado") {
+                calls.incrementAndGet()
+                started.complete(Unit)
+                CompletableDeferred<Unit>().await()  // nunca termina: o preparo é cancelado
+                true
+            }
+        }
+        started.await()
+        val espera = async {
+            TtsChunkCache.getOrSynthesize(context, "kokoro-pf-dora", 100, "preparo cancelado") {
+                calls.incrementAndGet()
+                escreverWavValido(it)
+                true
+            }
+        }
+        yield()
+        produtor.cancel()
+        produtor.join()
+
+        assertEquals(final, espera.await())
+        assertEquals(2, calls.get())
+        assertTrue(TtsChunkCache.arquivoValido(final))
+    }
+
     @Test
     fun cacheInvalidoEhRegeneradoEAudioParcialNaoEhPublicado() = runTest {
         val context = contextComCacheDir()

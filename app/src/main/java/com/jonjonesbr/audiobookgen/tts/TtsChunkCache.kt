@@ -3,6 +3,8 @@ package com.jonjonesbr.audiobookgen.tts
 import android.content.Context
 import com.jonjonesbr.audiobookgen.domain.versaoEfetivaSupertonic
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileInputStream
@@ -131,6 +133,11 @@ object TtsChunkCache {
     /**
      * Chamadas simultâneas para a mesma chave aguardam um único produtor. O áudio é gerado
      * em temporário no mesmo diretório e só é publicado após validação por rename atômico.
+     *
+     * Quem espera e recebe nulo (o produtor foi cancelado ou falhou, p.ex. um preparo cancelado pela
+     * notificação ou pela troca de voz) tenta UMA vez como produtor, se ainda estiver ativo: o cancelamento
+     * de outro chamador não derruba a leitura que esperava o mesmo trecho. Se outro chamador já tiver assumido
+     * a chave nessa nova tentativa, espera por ele, sem tentar de novo. Não há laço: no máximo duas tentativas.
      */
     suspend fun getOrSynthesize(
         context: Context,
@@ -138,6 +145,18 @@ object TtsChunkCache {
         speedPct: Int,
         text: String,
         acabamento: AcabamentoAudio.Modo = AcabamentoAudio.Modo.NENHUM,
+        synthesize: suspend (File) -> Boolean
+    ): File? = obterOuSintetizar(
+        context, voice, speedPct, text, acabamento, podeRetentar = true, synthesize = synthesize
+    )
+
+    private suspend fun obterOuSintetizar(
+        context: Context,
+        voice: String,
+        speedPct: Int,
+        text: String,
+        acabamento: AcabamentoAudio.Modo,
+        podeRetentar: Boolean,
         synthesize: suspend (File) -> Boolean
     ): File? {
         // O acabamento muda o arquivo guardado (bordas e volume): não reaproveita o áudio cru, nem o contrário.
@@ -150,7 +169,14 @@ object TtsChunkCache {
         val key = target.absolutePath
         val pending = CompletableDeferred<File?>()
         val active = sintetizacoesEmAndamento.putIfAbsent(key, pending)
-        if (active != null) return active.await()?.takeIf(::arquivoValido)
+        if (active != null) {
+            val publicado = active.await()?.takeIf(::arquivoValido)
+            // Produtor sem resultado com quem espera ainda ativo: tenta uma vez como produtor (ver KDoc).
+            if (publicado != null || !podeRetentar || !currentCoroutineContext().isActive) return publicado
+            return obterOuSintetizar(
+                context, voice, speedPct, text, acabamento, podeRetentar = false, synthesize = synthesize
+            )
+        }
 
         var published: File? = null
         var temporary: File? = null
