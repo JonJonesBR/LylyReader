@@ -144,7 +144,7 @@ class ReaderTelaController(
     internal fun aplicarFabs(fabs: FabsDoLeitor) {
         views.fabVoltarNarracao.visibility = if (fabs.voltarNarracao) View.VISIBLE else View.GONE
         views.fabConverter.visibility = if (fabs.converter) View.VISIBLE else View.GONE
-        views.fabConverter.setIconResource(android.R.drawable.checkbox_on_background)
+        views.fabConverter.setIconResource(R.drawable.ic_gerar_audio)
         val capitulos = fabs.capitulosNoRotulo
         views.fabConverter.text = if (capitulos > 0) {
             activity.resources.getQuantityString(R.plurals.fab_converter_capitulos, capitulos, capitulos)

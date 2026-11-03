@@ -385,7 +385,9 @@
         android:layout_marginBottom="24dp"
         android:text="@string/fab_converter_principal"
         android:textSize="14sp"
-        app:icon="@android:drawable/ic_btn_speak_now"
+        android:maxLines="2"
+        app:icon="@drawable/ic_gerar_audio"
+        app:iconTint="?attr/colorOnPrimaryContainer"
         android:visibility="gone"/>
 
     <!-- ── "Voltar à narração" (modo manual da leitura guiada): mesma ancoragem do FAB de conversão, mas acima da

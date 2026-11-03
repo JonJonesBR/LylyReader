@@ -216,7 +216,7 @@
 
     <!-- Reader Activity -->
     <string name="btn_converter_assim_mesmo">Converter assim mesmo</string>
-    <string name="fab_converter_selecao">✓ Gerar audiobook da seleção</string>
+    <string name="fab_converter_selecao">Gerar áudio da seleção</string>
     <string name="toast_save_selection_error">Não foi possível salvar a seleção. Verifique o armazenamento e tente novamente.</string>
 
     <!-- Queue Activity -->
@@ -474,7 +474,7 @@
     <string name="help_reader_step1">Toque em qualquer parágrafo para começar a leitura guiada e ouvir enquanto lê</string>
     <string name="help_reader_step2">Use as setas ‹ › da barra do capítulo para ir ao anterior ou ao próximo; toque no nome do capítulo para ver a lista e marcar capítulos para converter</string>
     <string name="help_reader_step3">Pressione um parágrafo para iniciar a seleção de trecho</string>
-    <string name="help_reader_step4">Toque em \"Gerar audiobook da seleção\" para gerar só o trecho escolhido; para o livro inteiro ou o capítulo atual, use ⋮ › Gerar audiobook</string>
+    <string name="help_reader_step4">Toque em \"Gerar áudio da seleção\" para gerar só o trecho escolhido; para o livro inteiro ou o capítulo atual, use ⋮ › Gerar audiobook</string>
     <string name="help_library_title">Sua biblioteca de audiobooks</string>
     <string name="help_library_step1">Os audiobooks gerados aparecem automaticamente na aba Audiobooks</string>
     <string name="help_library_step2">Toque em um item para reproduzir</string>
