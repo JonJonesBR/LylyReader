@@ -20,6 +20,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 private const val PARAGRAFOS_PREVIEW = 3
+/** Teto de caracteres da amostra de voz (rb-40): a prévia fica curta mesmo com parágrafos longos. */
+private const val MAX_CARACTERES_AMOSTRA = 300
+/** Pontuação que fecha uma frase para cortar a amostra (rb-40). */
+private const val PONTUACAO_FIM_DE_FRASE = ".!?…"
 private const val PREPARO_PARAGRAFOS_SEM_CAPITULO = 120
 /** Teto da espera da prévia (rb-24): cobre o caso de a geração nunca baixar (síntese com exceção). */
 private const val ESPERA_MAXIMA_DA_PREVIA_MS = 180_000L
@@ -42,19 +46,60 @@ internal fun faixaDoPreparo(
 }
 
 /**
- * Amostra da voz: junta [quantos] parágrafos com texto, a partir de [inicio] (rb-31: o trecho atual, não o começo do
- * livro). O início é limitado à lista. Nulo quando não há texto útil (usa-se o texto padrão).
+ * Amostra da voz: junta até [quantos] parágrafos com texto, a partir de [inicio] (rb-31: o trecho atual, não o
+ * começo do livro), e para em [maxCaracteres] (rb-40: prévia curta, que não dura minutos num romance). O início é
+ * limitado à lista. Nulo quando não há texto útil (usa-se o texto padrão).
  */
-internal fun textoDaAmostra(paragrafos: List<Paragrafo>?, inicio: Int, quantos: Int = PARAGRAFOS_PREVIEW): String? {
-    val lista = paragrafos?.takeIf { it.isNotEmpty() } ?: return null
+internal fun textoDaAmostra(
+    paragrafos: List<Paragrafo>?,
+    inicio: Int,
+    quantos: Int = PARAGRAFOS_PREVIEW,
+    maxCaracteres: Int = MAX_CARACTERES_AMOSTRA,
+): String? {
+    val lista = paragrafos.orEmpty()
+    if (lista.isEmpty()) return null
     val partida = inicio.coerceIn(0, lista.lastIndex)
-    return lista.asSequence()
+    val textos = lista.asSequence()
         .drop(partida)
-        .map { it.texto }
-        .filter { it.isNotBlank() }
+        .map { it.texto.trim() }
+        .filter { it.isNotEmpty() }
         .take(quantos)
-        .joinToString(" ")
-        .takeIf { it.isNotBlank() }
+        .toList()
+    return juntarAteOLimite(textos, maxCaracteres).takeIf { it.isNotBlank() }
+}
+
+/**
+ * Junta os [textos] inteiros enquanto cabem em [maxCaracteres]. O primeiro que não cabe entra cortado no fim de
+ * frase (ver [cortarNoFimDeFrase]), então um parágrafo que cabe inteiro sempre vai inteiro.
+ */
+private fun juntarAteOLimite(textos: List<String>, maxCaracteres: Int): String {
+    var junto = ""
+    for (texto in textos) {
+        val candidato = if (junto.isEmpty()) texto else "$junto $texto"
+        if (candidato.length > maxCaracteres) return cortarNoFimDeFrase(candidato, maxCaracteres)
+        junto = candidato
+    }
+    return junto
+}
+
+/**
+ * Corta [texto] em no máximo [maxCaracteres] caracteres, no último fim de frase que cabe (ponto, interrogação,
+ * exclamação, reticências ou travessão fechando uma fala). Sem fim de frase, corta no último espaço e termina com
+ * reticências. Texto que já cabe volta inteiro.
+ */
+internal fun cortarNoFimDeFrase(texto: String, maxCaracteres: Int): String {
+    if (texto.length <= maxCaracteres) return texto
+    val janela = texto.substring(0, maxCaracteres)
+    // Travessão só conta quando gruda na palavra anterior ("assim—"); o que abre uma fala vem depois de espaço.
+    val fim = janela.indices.lastOrNull { i ->
+        i > 0 && (janela[i] in PONTUACAO_FIM_DE_FRASE || (janela[i] == '—' && !janela[i - 1].isWhitespace()))
+    }
+    val espaco = janela.lastIndexOf(' ')
+    return when {
+        fim != null -> janela.substring(0, fim + 1)
+        espaco > 0 -> janela.substring(0, espaco).trimEnd() + "…"
+        else -> janela.dropLast(1) + "…"
+    }
 }
 
 /**

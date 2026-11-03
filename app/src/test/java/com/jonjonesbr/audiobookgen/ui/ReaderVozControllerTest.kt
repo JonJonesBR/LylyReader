@@ -75,4 +75,41 @@ class ReaderVozControllerTest {
         assertNull(textoDaAmostra(comTextos("  ", " "), inicio = 0))
         assertNull(textoDaAmostra(comTextos("a", "  "), inicio = 1))
     }
+
+    // ── amostra curta (rb-40) ─────────────────────────────────────────────────
+
+    @Test
+    fun paragrafoCurtoVaiInteiro() {
+        assertEquals("Capitulo primeiro", textoDaAmostra(comTextos("Capitulo primeiro"), inicio = 0))
+        val exato = "a".repeat(300)
+        assertEquals(exato, textoDaAmostra(comTextos(exato), inicio = 0))
+    }
+
+    @Test
+    fun paragrafoLongoCortaNoFimDaFrase() {
+        val s1 = "Esta e a primeira frase."
+        val s2 = " Esta e a segunda frase, um pouco mais comprida."
+        // O texto passa de 300: o corte cai no último ponto que cabe, antes das palavras longas.
+        val s3 = " " + "b".repeat(240) + "."
+        assertEquals(
+            "Esta e a primeira frase. Esta e a segunda frase, um pouco mais comprida.",
+            textoDaAmostra(comTextos(s1 + s2 + s3), inicio = 0),
+        )
+    }
+
+    @Test
+    fun semFimDeFraseCortaNoEspacoComReticencias() {
+        val longo = "abc ".repeat(100)
+        assertEquals("abc ".repeat(74) + "abc…", textoDaAmostra(comTextos(longo), inicio = 0))
+    }
+
+    @Test
+    fun juntaParagrafosAteOLimite() {
+        assertEquals("Um. Dois. Tres.", textoDaAmostra(comTextos("Um.", "Dois.", "Tres."), inicio = 0))
+        // O terceiro parágrafo não cabe: a amostra fica com os dois primeiros, cortados no ponto final.
+        val p1 = "Primeiro paragrafo."
+        val p2 = "b".repeat(150) + "."
+        val p3 = "c".repeat(200) + "."
+        assertEquals(p1 + " " + p2, textoDaAmostra(comTextos(p1, p2, p3), inicio = 0))
+    }
 }
