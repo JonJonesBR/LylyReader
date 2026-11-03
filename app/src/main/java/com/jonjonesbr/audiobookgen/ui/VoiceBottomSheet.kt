@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
@@ -27,7 +28,6 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
 
     companion object {
         private const val PREVIEW_ICON_IDLE = "▶"
-        private const val PREVIEW_ICON_LOADING = "⏳"
         private const val MAX_HEIGHT_DP = 720
         // Valores de android.speech.tts.Voice.QUALITY_HIGH e QUALITY_NORMAL
         private const val QUALIDADE_ALTA = 400
@@ -284,7 +284,9 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val name: TextView = itemView.findViewById(R.id.tvVoiceName)
             val meta: TextView = itemView.findViewById(R.id.tvVoiceMeta)
+            val previewContainer: View = itemView.findViewById(R.id.flVoicePreview)
             val preview: Button = itemView.findViewById(R.id.btnVoicePreview)
+            val previewCarregando: ProgressBar = itemView.findViewById(R.id.pbVoicePreview)
         }
 
         override fun getItemViewType(position: Int): Int = when (items[position]) {
@@ -512,11 +514,15 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                 dismiss()
             }
             val canPreview = onVoicePreview != null || arguments?.getBoolean(ARG_HAS_PREVIEW) == true
-            holder.preview.visibility = if (canPreview) View.VISIBLE else View.GONE
+            // O container some inteiro sem prévia, para não deixar vão à direita da linha.
+            holder.previewContainer.visibility = if (canPreview) View.VISIBLE else View.GONE
             // Reseta o botão ao estado padrão sempre que a view é (re)vinculada — evita que um
-            // botão fique preso em "⏳" depois de reciclado pelo scroll do RecyclerView.
+            // botão fique preso com o indicador de progresso depois de reciclado pelo
+            // scroll do RecyclerView.
+            holder.preview.visibility = View.VISIBLE
             holder.preview.isEnabled = true
             holder.preview.text = PREVIEW_ICON_IDLE
+            holder.previewCarregando.visibility = View.GONE
             holder.preview.setOnClickListener {
                 // Voz com clipe embarcado (assets/previas/) toca sem o pacote baixado.
                 val temClipeEmbarcado = com.jonjonesbr.audiobookgen.util.VoiceCatalog.previewAssetName(voice.id) != null
@@ -530,14 +536,18 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                 } else {
+                    // Enquanto a amostra é preparada, o indicador de progresso ocupa o lugar do ▶.
                     holder.preview.isEnabled = false
-                    holder.preview.text = PREVIEW_ICON_LOADING
+                    holder.preview.visibility = View.INVISIBLE
+                    holder.previewCarregando.visibility = View.VISIBLE
                     // O voiceId como tag identifica a voz que este clique pediu — se a view
                     // já tiver sido reciclada pra outra voz quando o callback disparar, o
                     // reset abaixo é ignorado (evita mexer no item errado).
                     holder.itemView.tag = voice.id
                     val onFinished = {
                         if (holder.itemView.tag == voice.id) {
+                            holder.previewCarregando.visibility = View.GONE
+                            holder.preview.visibility = View.VISIBLE
                             holder.preview.isEnabled = true
                             holder.preview.text = PREVIEW_ICON_IDLE
                         }

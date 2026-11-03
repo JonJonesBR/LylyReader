@@ -42,13 +42,30 @@
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/btnVoicePreview"
+    <FrameLayout
+        android:id="@+id/flVoicePreview"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_marginStart="4dp"
-        android:text="▶"
-        android:textSize="14sp"
-        android:contentDescription="@string/preview_voz_btn_desc"
-        android:backgroundTint="@android:color/transparent"/>
+        android:layout_marginStart="4dp">
+
+        <Button
+            android:id="@+id/btnVoicePreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="▶"
+            android:textSize="14sp"
+            android:contentDescription="@string/preview_voz_btn_desc"
+            android:backgroundTint="@android:color/transparent"/>
+
+        <!-- Aparece no lugar do ▶ enquanto a amostra é preparada (o emoji não se vê com o botão desabilitado). -->
+        <ProgressBar
+            android:id="@+id/pbVoicePreview"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:contentDescription="@string/preview_voz_carregando_desc"
+            android:visibility="gone"/>
+    </FrameLayout>
 </LinearLayout>
