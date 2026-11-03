@@ -164,6 +164,9 @@ android {
     }
 
     testOptions {
+        // rb-46: cada teste de interface roda no seu próprio processo de instrumentação (o orquestrador). Sem
+        // clearPackageData: as capturas e o cache continuam no lugar depois de cada teste.
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
         unitTests {
             // rb-1: o teste de fumaça do Leitor (Robolectric) infla layouts e lê recursos do app.
             isIncludeAndroidResources = true
@@ -287,6 +290,8 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
+    androidTestUtil("androidx.test:orchestrator:1.5.1")
+    androidTestUtil("androidx.test.services:test-services:1.5.0")
 }
 
 // Analise estatica (guardrail p/ a refatoracao incremental em andamento). O baseline registra

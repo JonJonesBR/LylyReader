@@ -1,0 +1,63 @@
+package com.jonjonesbr.audiobookgen.ui.apoio
+
+import android.content.Context
+import com.jonjonesbr.audiobookgen.tts.SilentWav
+import com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.util.concurrent.CopyOnWriteArrayList
+
+/**
+ * Voz de mentira para os testes de interface (rb-46): não usa motor nenhum. Cada trecho vira um WAV de silêncio em
+ * cacheDir/voz_falsa/, com duração de [msPorCaractere] por caractere (entre [minMs] e [maxMs]; com 0 a duração é
+ * sempre [minMs]). Os textos pedidos ficam em [textosPedidos], para o teste conferir o que a leitura guiada mandou
+ * sintetizar.
+ *
+ * Entra no app pela costura [TtsSynthesizer.substitutoParaTestes], que a [RegrasDoLeitor] preenche.
+ */
+class VozFalsa(
+    context: Context,
+    private val msPorCaractere: Double,
+    private val minMs: Int,
+    private val maxMs: Int
+) : TtsSynthesizer {
+
+    private val pasta: File = File(context.cacheDir, "voz_falsa").apply { mkdirs() }
+
+    /** Textos pedidos a [synthesize], na ordem em que chegaram. */
+    val textosPedidos: MutableList<String> = CopyOnWriteArrayList()
+
+    override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
+        textosPedidos += texto
+        val ms = (texto.length * msPorCaractere).toInt().coerceIn(minMs, maxMs)
+        return withContext(Dispatchers.IO) {
+            val arquivo = File(pasta, "${Integer.toHexString(texto.hashCode())}_$ms.wav")
+            gravarSeFaltar(arquivo, ms)
+            arquivo.absolutePath
+        }
+    }
+
+    /**
+     * Grava o silêncio de [ms] em [arquivo] de forma atômica: escreve num temporário e renomeia. Assim um
+     * MediaPlayer nunca abre o arquivo pela metade, mesmo que dois pedidos do mesmo trecho cheguem juntos. Se o
+     * arquivo já estiver completo (mesmo tamanho), não grava de novo.
+     */
+    private fun gravarSeFaltar(arquivo: File, ms: Int) {
+        val bytes = SilentWav.bytes(ms)
+        if (arquivo.length() == bytes.size.toLong()) return
+        val temporario = File(pasta, "${arquivo.name}.${Thread.currentThread().id}.tmp")
+        temporario.writeBytes(bytes)
+        temporario.renameTo(arquivo)
+    }
+
+    companion object {
+        /** Curta: cerca de 1,5 s por trecho, qualquer que seja o tamanho do texto. */
+        fun curta(context: Context): VozFalsa =
+            VozFalsa(context, msPorCaractere = 0.0, minMs = 1_500, maxMs = 1_500)
+
+        /** Longa: 30 s fixos por trecho, para o teste ver a guiada tocando e pausando sem avançar. */
+        fun longa(context: Context): VozFalsa =
+            VozFalsa(context, msPorCaractere = 0.0, minMs = 30_000, maxMs = 30_000)
+    }
+}

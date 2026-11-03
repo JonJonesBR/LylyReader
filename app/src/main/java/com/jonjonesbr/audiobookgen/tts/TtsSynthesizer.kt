@@ -28,6 +28,12 @@ interface TtsSynthesizer {
 
     companion object {
         /**
+         * Costura só dos testes instrumentados (rb-46): eles põem aqui uma voz falsa, que [para] devolve no lugar da
+         * voz real. Nulo no app, então nada muda para o usuário.
+         */
+        @Volatile internal var substitutoParaTestes: ((motorEfetivo: String) -> TtsSynthesizer)? = null
+
+        /**
          * Escolhe a implementação certa para [motorEfetivo] ("onnx", "android" ou o motor Python).
          * Com [caminhoDoLivro], o dicionário é o global mais o do livro (o do livro vence); sem ele, só o global.
          * O dicionário do livro é lido a cada trecho, então uma edição feita no meio da leitura vale logo.
@@ -38,7 +44,7 @@ interface TtsSynthesizer {
             pythonUseCase: PythonEngineUseCase,
             caminhoDoLivro: String? = null,
             onnxEngine: () -> OnnxTtsEngine
-        ): TtsSynthesizer = PronunciationSynthesizer(
+        ): TtsSynthesizer = substitutoParaTestes?.invoke(motorEfetivo) ?: PronunciationSynthesizer(
             when (MotorTts.deId(motorEfetivo)) {
                 MotorTts.ONNX -> OnnxTtsSynthesizer(context, onnxEngine)
                 MotorTts.KOKORO -> KokoroTtsSynthesizer(context)
