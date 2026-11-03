@@ -168,7 +168,7 @@ class ReaderActivity : BasePlayerActivity() {
     private val appPrefs by lazy { com.jonjonesbr.audiobookgen.data.AppPrefs(this) }
 
     // Barra de capítulos, progresso de leitura e painel de capítulos (rb-7). Lazy: só é montado no vincularViews.
-    private val capitulosController by lazy {
+    private val capitulosController: ReaderCapitulosController by lazy {
         ReaderCapitulosController(
             activity = this,
             viewModel = viewModel,
@@ -196,7 +196,7 @@ class ReaderActivity : BasePlayerActivity() {
     }
 
     // Rolagem, teclas, posição salva e acompanhamento do audiobook (rb-6). Lazy: abre no configurarRecyclerView.
-    private val rolagemController by lazy {
+    private val rolagemController: ReaderRolagemController by lazy {
         ReaderRolagemController(
             activity = this, viewModel = viewModel, recyclerView = recyclerView,
             callbacks = ReaderRolagemController.Callbacks(
@@ -214,14 +214,14 @@ class ReaderActivity : BasePlayerActivity() {
         )
     }
 
-    private val aparenciaController by lazy {
+    private val aparenciaController: ReaderAparenciaController by lazy {
         ReaderAparenciaController(this, viewModel) { horizontal ->
             rolagemController.aplicarOrientacao(horizontal)
         }
     }
 
     // Voz e pronúncia do leitor (rb-14). Lazy: só é montado no primeiro uso; o manager entra só pelas lambdas.
-    private val vozController by lazy {
+    private val vozController: ReaderVozController by lazy {
         ReaderVozController(
             activity = this,
             viewModel = viewModel,
@@ -271,7 +271,7 @@ class ReaderActivity : BasePlayerActivity() {
             )
         }
     }
-    private val marcacoesController by lazy {
+    private val marcacoesController: ReaderMarcacoesController by lazy {
         ReaderMarcacoesController(
             activity = this,
             viewModel = viewModel,
@@ -297,7 +297,7 @@ class ReaderActivity : BasePlayerActivity() {
         )
     }
 
-    private val sonecaController by lazy {
+    private val sonecaController: ReaderSonecaController by lazy {
         ReaderSonecaController(
             activity = this,
             callbacks = ReaderSonecaController.Callbacks(
@@ -318,7 +318,7 @@ class ReaderActivity : BasePlayerActivity() {
         )
     }
 
-    private val personagensController by lazy {
+    private val personagensController: ReaderPersonagensController by lazy {
         ReaderPersonagensController(
             activity = this,
             viewModel = viewModel,
@@ -373,7 +373,7 @@ class ReaderActivity : BasePlayerActivity() {
         )
     }
     
-    private val conversaoController by lazy {
+    private val conversaoController: ReaderConversaoController by lazy {
         ReaderConversaoController(
             activity = this,
             viewModel = viewModel,
@@ -390,7 +390,7 @@ class ReaderActivity : BasePlayerActivity() {
     }
 
     // Busca no texto: as views vêm do layout já inflado (vincularViews roda antes de configurarBotoes).
-    private val buscaController by lazy {
+    private val buscaController: ReaderBuscaController by lazy {
         ReaderBuscaController(
             activity = this,
             viewModel = viewModel,
