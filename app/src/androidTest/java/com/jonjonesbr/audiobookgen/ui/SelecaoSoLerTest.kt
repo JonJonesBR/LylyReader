@@ -175,8 +175,8 @@ class SelecaoSoLerTest {
 
     /**
      * C03: só ler, arrastar a alça do fim da seleção amplia a seleção até uma palavra mais adiante. O laço de
-     * tentativas (alça a 16, 12 e 8 dp, com folga de 0,4 e de 0 linha) fica em [arrastarAlcaFinalAte]; o arraste é
-     * relativo (rb-48), como o de uma pessoa. Cada tentativa vai para as capturas, e a falha lista todas.
+     * tentativas (alça a 16, 12 e 8 dp, com folga de 0,8, de 0,4 e de 1,2 linha) fica em [arrastarAlcaFinalAte]; o
+     * arraste é relativo (rb-48), como o de uma pessoa. Cada tentativa vai para as capturas, e a falha lista todas.
      */
     @Test
     fun c03_arrastarAlcaAmplia() {

@@ -585,14 +585,18 @@ class ReaderActivitySmokeTest {
                 fundoDoParagrafo(lista(a), 2) is LayerDrawable && tvEm(lista(a), 2)?.text is Spannable
             }
 
+            // Tudo num único onActivity: em chamadas separadas, o Robolectric roda o layout pendente antes do DOWN,
+            // e a repintura chega antes do toque (o caso que este teste não quer).
             var antes: CharSequence? = null
-            scenario.onActivity { a ->
-                antes = requireNotNull(tvEm(lista(a), 2)).text
-                // Repintura emitida antes do DOWN: fica pendente até o layout, que roda depois do toque.
-                lista(a).adapter?.notifyItemChanged(2)
-            }
             val t0 = 10_000L
-            evento(scenario, 2, MotionEvent.ACTION_DOWN, t0, t0)
+            scenario.onActivity { a ->
+                val rv = lista(a)
+                antes = requireNotNull(tvEm(rv, 2)).text
+                // Repintura emitida antes do DOWN: fica pendente até o layout, que roda depois do toque.
+                rv.adapter?.notifyItemChanged(2)
+                assertTrue("A repintura deveria estar pendente antes do toque", rv.hasPendingAdapterUpdates())
+                despacharToque(rv, 2, MotionEvent.ACTION_DOWN, t0, t0)
+            }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
             scenario.onActivity { a -> assertSame(antes, tvEm(lista(a), 2)?.text) }
 
@@ -824,15 +828,27 @@ class ReaderActivitySmokeTest {
         eventTime: Long,
         dx: Float = 0f,
     ) {
-        scenario.onActivity { a ->
-            val rv = lista(a)
-            val item = requireNotNull(rv.findViewHolderForAdapterPosition(pos)).itemView
-            val x = item.left + item.width / 2f + dx
-            val y = item.top + item.height / 2f
-            val ev = MotionEvent.obtain(downTime, eventTime, acao, x, y, 0)
-            rv.dispatchTouchEvent(ev)
-            ev.recycle()
-        }
+        scenario.onActivity { a -> despacharToque(lista(a), pos, acao, downTime, eventTime, dx) }
+    }
+
+    /**
+     * Despacha só o evento na [rv] sobre o item [pos], sem abrir onActivity: quem chama já está dentro de um (o teste
+     * que precisa de repintura e toque na mesma volta, rb-53). O x é o centro do item + [dx].
+     */
+    private fun despacharToque(
+        rv: RecyclerView,
+        pos: Int,
+        acao: Int,
+        downTime: Long,
+        eventTime: Long,
+        dx: Float = 0f,
+    ) {
+        val item = requireNotNull(rv.findViewHolderForAdapterPosition(pos)).itemView
+        val x = item.left + item.width / 2f + dx
+        val y = item.top + item.height / 2f
+        val ev = MotionEvent.obtain(downTime, eventTime, acao, x, y, 0)
+        rv.dispatchTouchEvent(ev)
+        ev.recycle()
     }
 
     /** Fundo do parágrafo na rolagem vertical: com a barra de sincronia, é um LayerDrawable (pintarFundoParagrafo). */

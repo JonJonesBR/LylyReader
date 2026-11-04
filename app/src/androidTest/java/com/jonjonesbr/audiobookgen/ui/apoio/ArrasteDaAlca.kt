@@ -29,15 +29,18 @@ data class ResultadoDoArraste(val depois: Selecao?, val tentativas: List<String>
 /** Distâncias abaixo da linha do fim (em dp) em que a alça é pega, na ordem das tentativas (rb-46 U4). */
 private val DESLOCAMENTOS_DA_ALCA_DP = listOf(16f, 12f, 8f)
 
-/** Folgas extras do arraste, em fração da altura da linha, somadas ao deslocamento vertical (a 1ª funciona). */
-private val FOLGAS_EXTRAS_DA_LINHA = listOf(0.4f, 0f)
+/**
+ * Folgas extras do arraste, em fração da altura da linha, somadas ao deslocamento vertical. A primeira (0,8) vai além
+ * da linha, como uma pessoa faz: 0,4 ficava no limite da folga de troca de linha do Editor (rb-53).
+ */
+private val FOLGAS_EXTRAS_DA_LINHA = listOf(0.8f, 0.4f, 1.2f)
 
 /**
  * Arrasta a alça do fim da seleção do parágrafo [indiceParagrafo] até a palavra [palavraAlvo], com o dedo
  * andando o quanto a alça tem de andar (rb-48). Soltar o dedo direto no alvo não funciona, porque o Android mantém
- * a distância entre o dedo e a ponta da alça: por isso o dedo desce o deslocamento vertical até o alvo mais 0,4
- * linha (a folga), que é o que troca de linha. Tenta a alça a 16, 12 e 8 dp abaixo da linha, e cada uma com a folga
- * de 0,4 e de 0 linha, nessa ordem (a primeira é a que funciona). Para no primeiro arraste que amplia a seleção
+ * a distância entre o dedo e a ponta da alça: por isso o dedo desce o deslocamento vertical até o alvo mais a folga
+ * (0,8 linha na primeira tentativa), que é o que troca de linha. Tenta a alça a 16, 12 e 8 dp abaixo da linha, e cada
+ * uma com a folga de 0,8, de 0,4 e de 1,2 linha, nessa ordem. Para no primeiro arraste que amplia a seleção
  * (início e fim de [antes] são a referência).
  *
  * Antes de cada tentativa, [reselecionar] refaz a seleção se a anterior mudou (ela pode ter virado outra). [regras]
