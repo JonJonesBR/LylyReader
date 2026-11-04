@@ -9,7 +9,7 @@ import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.data.RecentReadingsStore
 import com.jonjonesbr.audiobookgen.util.rotuloVelocidade
 import com.jonjonesbr.audiobookgen.util.valePerguntarPorCapitulo
-import android.text.Layout
+import android.os.Build
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ProgressBar
@@ -74,7 +74,8 @@ class GuidedReadingBarController(
         val mostrarMiniPlayer: () -> Unit,
         val esconderMiniPlayer: () -> Unit,
         val obterCaminhoArquivo: () -> String,
-        /** A fila "Ler tudo" passou a narrar outro livro: esta tela segue para ele (ver ReaderActivity.abrirLeitorDoLivroDaFila). */
+        /** A fila "Ler tudo" passou a narrar outro livro: esta tela segue para ele (ver
+         * ReaderActivity.abrirLeitorDoLivroDaFila). */
         val aoMudarDeLivroNaFila: () -> Unit = {},
         /** "Pré-carregar capítulo" das opções do player. */
         val prepararCapitulo: () -> Unit = {},
@@ -92,6 +93,11 @@ class GuidedReadingBarController(
         private set
     var aguardandoAutoScroll = false
     var ultimoIndiceGuided = -1
+    /**
+     * Parágrafo em que o acompanhamento já avaliou a rolagem com a view pronta (rb-65); enquanto a guiada seguir nele,
+     * a lista só desce. -1 libera uma subida.
+     */
+    private var indiceAcompanhado = -1
     private var ultimoEstadoUi: GuidedState? = null
     var ultimoScrollSyncStandard = -1
     var recenteRegistrado = false
@@ -138,9 +144,9 @@ class GuidedReadingBarController(
         } else {
             0
         }
-        // O salto só vale no próximo layout. Até lá, um progresso não pode achar o alvo sem view e trocar o
-        // offset por 0 (manterDestaqueVisivel). A flag fica ligada até o próximo parágrafo, o fim de uma rolagem
-        // ou, na vertical, o primeiro destaque com a view pronta.
+        // O salto só vale no próximo layout. Até lá, um progresso que não ache a view do alvo refaz o salto
+        // (manterDestaqueVisivel). A flag fica ligada até o próximo parágrafo, o fim de uma rolagem ou, na vertical,
+        // o primeiro destaque com a view pronta.
         aguardandoAutoScroll = true
         lm.scrollToPositionWithOffset(indice, margem)
     }
@@ -148,6 +154,16 @@ class GuidedReadingBarController(
     fun playGuidedFrom(indice: Int) {
         callbacks.fecharPlayerService()
         desligarRolagemManual()
+        // rb-65: o toque ou o capítulo pode cair no parágrafo que já está sendo narrado; então a lista pode subir até
+        // ele.
+        indiceAcompanhado = -1
+        // rb-65 (c): tirar o foco do parágrafo tocado. No P+, em modo de toque, View.clearFocus não reatribui o foco
+        // (refocus = sAlwaysAssignFocus || !isInTouchMode, e o targetSdk é 36). No 26/27 ele chamaria
+        // rootViewRequestFocus, e o foco iria para outro parágrafo (rb-59). Fora do modo de toque (teclado, D-pad), o
+        // foco é de quem navega. Com seleção aberta, o foco fica, para não derrubar o menu de texto.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && recyclerView.isInTouchMode) {
+            (recyclerView.findFocus() as? TextView)?.takeIf { !it.hasSelection() }?.clearFocus()
+        }
         guidedPlayerManager.play(indice)
     }
 
@@ -249,6 +265,8 @@ class GuidedReadingBarController(
             activity.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Ao voltar para a tela, refaz a barra inteira na primeira emissão.
                 ultimoEstadoUi = null
+                // A tela voltou: uma correção para cima é permitida de novo (rb-65).
+                indiceAcompanhado = -1
                 guidedPlayerManager.state.collect { guidedState ->
                     // A fila já passou a narrar outro livro (com a tela apagada, isto só roda ao voltar): esta tela
                     // segue para ele. Vem antes do bloco de fim (-1), que também cobre "a fila acabou fora da tela".
@@ -352,6 +370,7 @@ class GuidedReadingBarController(
             viewModel.setParagrafoSyncAtual(-1)
             viewModel.retomarSync()
             ultimoIndiceGuided = -1
+            indiceAcompanhado = -1
             ultimoScrollSyncStandard = -1
             // Guiada encerrada: a próxima começa acompanhando de novo.
             desligarRolagemManual()
@@ -359,6 +378,9 @@ class GuidedReadingBarController(
             return
         }
 
+        // play() recomeçou o parágrafo (troca de voz, trecho que falhou, índice perdido): no mesmo índice, uma subida
+        // volta a ser permitida (rb-65). Dentro de um parágrafo, isLoading só fica true no começo de um play().
+        if (guidedState.isLoading && estadoAnterior?.isLoading != true) indiceAcompanhado = -1
         val mudouIndice = guidedState.index != ultimoIndiceGuided
         // Não desliga o modo manual aqui: quem rolou para adiante não é puxado de volta a cada parágrafo.
         if (mudouIndice) {
@@ -435,6 +457,9 @@ class GuidedReadingBarController(
     private fun manterDestaqueVisivel(index: Int, progressPct: Float) {
         val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
         val tv = recyclerView.findViewHolderForAdapterPosition(index)?.itemView as? TextView
+        // rb-65: no mesmo parágrafo já acompanhado a lista só desce. Subir (rb-62) só no primeiro acompanhamento depois
+        // de o parágrafo mudar (troca de voz, ⏮, toque, capítulo): play() zera indiceAcompanhado.
+        val podeSubir = index != indiceAcompanhado
 
         // Mesmo caminho pra "view da posição ainda não existe" E "rolagem horizontal (paginada)". Na horizontal, com
         // a página do parágrafo parada na tela, o acompanhamento rola dentro dela (rb-26a), como o vertical. Durante o
@@ -443,47 +468,59 @@ class GuidedReadingBarController(
             val pagina = recyclerView.paginaParadaNaTela()
             if (pagina != null && recyclerView.getChildAdapterPosition(pagina) == index) {
                 aguardandoAutoScroll = false
-                pagina.acompanharDestaque(progressPct)
+                if (pagina.acompanharDestaque(progressPct, podeSubir)) indiceAcompanhado = index
             } else if (!aguardandoAutoScroll) {
                 aguardandoAutoScroll = true
                 val primeiroVisivel = lm.findFirstVisibleItemPosition()
                 val alvoDistante = primeiroVisivel == RecyclerView.NO_POSITION ||
                     Math.abs(index - primeiroVisivel) > SALTO_DISTANTE_LIMIAR
-                if (alvoDistante) {
-                    // Alvo longe da posição visível (reabertura do app reconectando à guiada,
-                    // ou capítulo escolhido distante do início) — salto instantâneo em vez de
-                    // smoothScrollToPosition, que animaria a rolagem por todos os itens no meio.
-                    lm.scrollToPositionWithOffset(index, 0)
-                    aguardandoAutoScroll = false
+                val vertical = lm.orientation == LinearLayoutManager.VERTICAL
+                if (vertical || alvoDistante) {
+                    // Salto instantâneo, sem smoothScrollToPosition (que animaria por todos os itens do meio). Na
+                    // vertical, a 1ª linha do parágrafo vai para os 42% (a mesma conta de voltarAoAcompanhamento).
+                    // O SNAP_TO_END passava do início, e o acompanhamento voltava a subir (rb-65). Na horizontal
+                    // distante, offset 0.
+                    lm.scrollToPositionWithOffset(
+                        index,
+                        if (vertical) (recyclerView.height * RegraDaPaginaDoParagrafo.PROPORCAO_ALVO).toInt() else 0,
+                    )
                 } else {
                     lm.smoothScrollToPosition(recyclerView, null, index)
                 }
+                // Alvo distante (reabertura do app reconectando à guiada, ou capítulo escolhido longe do início): a
+                // flag cai e a nova tentativa vem a cada tique. Perto, a flag fica ligada até a view aparecer
+                // (vertical) ou a animação acabar (horizontal).
+                aguardandoAutoScroll = !alvoDistante
             }
             return
         }
 
         aguardandoAutoScroll = false
-        val layout = tv.layout
-        val textLen = tv.text.length
-        val viewport = recyclerView.height
-        if (layout != null && textLen > 0 && viewport > 0) {
-            rolarParaDestaque(tv, layout, textLen, viewport, progressPct)
-        }
+        rolarParaDestaque(tv, index, progressPct, podeSubir)
     }
 
-    private fun rolarParaDestaque(tv: TextView, layout: Layout, textLen: Int, viewport: Int, progressPct: Float) {
+    /**
+     * Rola a lista (vertical) para a linha em leitura. Marca o parágrafo em [indiceAcompanhado] quando avaliou a regra.
+     * Enquanto a animação de rolagem (SETTLING) está em curso, não marca: o próximo tique tenta de novo.
+     */
+    private fun rolarParaDestaque(tv: TextView, index: Int, progressPct: Float, podeSubir: Boolean) {
+        val layout = tv.layout
+        val textLen = tv.text.length
+        if (layout == null || textLen == 0 || recyclerView.height <= 0) return
         val offset = (textLen * progressPct).toInt().coerceIn(0, textLen - 1)
         val line = layout.getLineForOffset(offset)
         val highlightY = tv.top + tv.totalPaddingTop + layout.getLineBottom(line)
 
-        // Mesma regra da página horizontal (rb-26a). Linha acima do topo (o ⏮ volta a um parágrafo que começa
-        // fora da tela) ou abaixo da área salta direto para o destaque; dentro da área, rola em passos.
-        val passo = RegraDaPaginaDoParagrafo.passoParaDestaque(highlightY, viewport)
-        if (passo == 0) return
+        // Mesmo parágrafo: só desce (rb-65). Sobe só no primeiro acompanhamento de um parágrafo novo (rb-62).
+        // Linha acima do topo (o ⏮ volta a um parágrafo que começa fora da tela) ou abaixo da área salta direto para
+        // o destaque; dentro da área, rola em passos.
+        val passo = RegraDaPaginaDoParagrafo.passoComHisterese(highlightY, recyclerView.height, podeSubir)
         // Animação de rolagem (smoothScroll) ainda em curso: espera o fim em vez de brigar com ela. O próximo
         // progresso recalcula o passo. A rolagem do dedo não chega aqui (só roda sem modo manual).
-        if (recyclerView.scrollState == RecyclerView.SCROLL_STATE_SETTLING) return
+        val emAnimacao = passo != 0 && recyclerView.scrollState == RecyclerView.SCROLL_STATE_SETTLING
+        if (emAnimacao) return
         // scrollBy por código não liga o modo manual: é só o acompanhamento.
-        recyclerView.scrollBy(0, passo)
+        if (passo != 0) recyclerView.scrollBy(0, passo)
+        indiceAcompanhado = index
     }
 }

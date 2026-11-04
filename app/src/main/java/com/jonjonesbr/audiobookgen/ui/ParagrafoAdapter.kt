@@ -285,10 +285,10 @@ class ParagrafoAdapter(
                 // Atualização só de progresso/sync (leitura guiada, 20fps):
                 // repinta apenas o parágrafo atual e o anterior — repintar a lista
                 // inteira a cada tick era a causa do flicker (#3).
-                // Sem parágrafo de sync (p. ex. depois de rolar com o dedo, que zera o sync) não há
-                // nada a repintar: o fallback antigo repintava a LISTA INTEIRA a cada tick, e cada
-                // repintura reinicia o estado de seleção dos TextViews — a causa de não conseguir
-                // selecionar palavras depois de rolar.
+                // Sem parágrafo de sync (guiada encerrada ou sync do audiobook desligado; rolar com o dedo não zera o
+                // sync, só liga o modo manual da guiada) não há nada a repintar: o fallback antigo repintava a LISTA
+                // INTEIRA a cada tick, e cada repintura reinicia o estado de seleção dos TextViews — a causa de não
+                // conseguir selecionar palavras depois de rolar.
                 // Com dedo na lista ou seleção aberta, a repintura espera (ver RecyclerViewParagrafos.textoEmUso).
                 val alvos = linkedSetOf(syncAntigo, syncAtual).filter { it in paragrafos.indices }
                 repinturas.pedir(alvos, segurar = recyclerView.textoEmUso).forEach { notifyItemChanged(it) }

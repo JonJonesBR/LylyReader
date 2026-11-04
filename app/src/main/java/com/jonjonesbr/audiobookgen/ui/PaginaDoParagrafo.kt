@@ -50,8 +50,8 @@ class PaginaDoParagrafo @JvmOverloads constructor(
     private var ultimaRolagemMs: Long? = null
 
     /**
-     * Confere a lista quando a rolagem da página para (rb-60b): na horizontal, o fling dentro da página não leva a lista
-     * a IDLE, então a reabertura do trecho guardado precisa desta conferência. Só faz algo com trecho guardado.
+     * Confere a lista quando a rolagem da página para (rb-60b): na horizontal, o fling dentro da página não leva a
+     * lista a IDLE, então a reabertura do trecho guardado precisa desta conferência. Só faz algo com trecho guardado.
      */
     private val conferirAoParar = Runnable {
         (parent as? RecyclerViewParagrafos)?.takeIf { it.guardada.ativa }?.liberarDepois()
@@ -156,16 +156,20 @@ class PaginaDoParagrafo @JvmOverloads constructor(
     /**
      * Rola a página para a linha em leitura da guiada ([progressPct] é o progresso dentro do parágrafo), com a mesma
      * regra do acompanhamento vertical. Chamado a cada tick; o scrollBy já limita o alcance.
+     *
+     * [podeSubir] vem do controller (rb-65): falso enquanto o parágrafo é o mesmo já acompanhado, e então a página só
+     * desce. Devolve true quando avaliou a regra (o controller marca o parágrafo); false sem layout ou sem área.
      */
-    fun acompanharDestaque(progressPct: Float) {
-        val layout = texto.layout ?: return
+    fun acompanharDestaque(progressPct: Float, podeSubir: Boolean): Boolean {
+        val layout = texto.layout
         val tamanho = texto.text.length
         val alturaVisivel = height - paddingTop - paddingBottom
-        if (tamanho == 0 || alturaVisivel <= 0) return
+        if (layout == null || tamanho == 0 || alturaVisivel <= 0) return false
         val offset = (tamanho * progressPct).toInt().coerceIn(0, tamanho - 1)
         val fimDaLinha = texto.top + texto.totalPaddingTop + layout.getLineBottom(layout.getLineForOffset(offset))
-        val passo = RegraDaPaginaDoParagrafo.passoParaDestaque(fimDaLinha - scrollY, alturaVisivel)
+        val passo = RegraDaPaginaDoParagrafo.passoComHisterese(fimDaLinha - scrollY, alturaVisivel, podeSubir)
         if (passo != 0) scrollBy(0, passo)
+        return true
     }
 
     /** Rola uma tela para cima (-1) ou para baixo (1), com animação. Não usa pageScroll, que mexe no foco. */

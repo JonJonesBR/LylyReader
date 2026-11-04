@@ -40,10 +40,13 @@ import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
+import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
+import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
 import com.jonjonesbr.audiobookgen.util.PythonInicio
 import com.jonjonesbr.audiobookgen.util.dpToPx
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -1707,6 +1710,109 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun progressoQueVoltaNoMesmoParagrafoNaoSobeALista() {
+        // rb-65: no mesmo parágrafo a lista só desce. Um progresso que volta (a frase seguinte do modo oração, um
+        // getCurrentPosition antigo) fazia o acompanhamento subir e descer a lista; com a histerese, ela só anda para
+        // a frente.
+        val textos = PARAGRAFOS.toMutableList().apply { this[2] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).salvarPosicaoLeitura(livro.absolutePath, 2, textos.size)
+        // Voz falsa que espera para sempre: a guiada fica parada no parágrafo narrado, e só o progresso se move.
+        val vozQueEspera = object : TtsSynthesizer {
+            override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
+                awaitCancellation()
+            }
+        }
+        TtsSynthesizer.substitutoParaTestes = { vozQueEspera }
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_CONTINUAR_GUIADA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "guiada no parágrafo 3 com a lista parada") { a ->
+                (GuidedPlaybackBridge.manager?.state?.value?.index == 2) &&
+                    lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE
+            }
+            // Leva o progresso a 0.6 e deixa a lista assentar: cada tique rola só uma parte da distância.
+            val tops = mutableListOf<Int>()
+            var anterior = Int.MIN_VALUE
+            var parado = 0
+            for (tique in 0 until 60) {
+                val topo = emitirProgresso(scenario, 0.6f)
+                parado = if (topo == anterior) parado + 1 else 0
+                anterior = topo
+                tops.add(topo)
+                if (parado >= 2) break
+            }
+            // Pré-condição: com 0.3, a primeira linha do parágrafo 3 fica acima do topo (base <= 0). Sem a histerese,
+            // o acompanhamento (rb-62) subiria a lista até ela, e este teste pegaria isso.
+            scenario.onActivity { a ->
+                val tv = checkNotNull(tvEm(lista(a), 2)) { "parágrafo 3 fora da lista" }
+                assertTrue("A base da linha em 0.3 deveria ficar acima do topo", baseDaLinhaEm(tv, 0.3f) <= 0)
+            }
+            // Vai e volta entre 0.3 e 0.6 (quatro voltas). A lista só pode descer: o topo do parágrafo nunca cresce.
+            for (pct in listOf(0.3f, 0.6f, 0.3f, 0.6f, 0.3f)) {
+                tops.add(emitirProgresso(scenario, pct))
+            }
+            assertTrue(
+                "A lista subiu com o progresso que voltou: topos $tops",
+                tops.zipWithNext().all { (antes, depois) -> depois <= antes },
+            )
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun trocaDeVozRecomecaOParagrafoESobeALista() {
+        // rb-65: a troca de voz (e um trecho que falhou) recomeça o parágrafo que está sendo narrado, no mesmo índice.
+        // A histerese não pode segurar a subida: o recomeço (progresso 0) traz a 1ª linha de volta para a lista.
+        val textos = PARAGRAFOS.toMutableList().apply { this[2] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).salvarPosicaoLeitura(livro.absolutePath, 2, textos.size)
+        // Voz falsa que espera para sempre: a guiada fica parada no parágrafo narrado, e só o progresso se move.
+        val vozQueEspera = object : TtsSynthesizer {
+            override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
+                awaitCancellation()
+            }
+        }
+        TtsSynthesizer.substitutoParaTestes = { vozQueEspera }
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_CONTINUAR_GUIADA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "guiada no parágrafo 3 com a lista parada") { a ->
+                (GuidedPlaybackBridge.manager?.state?.value?.index == 2) &&
+                    lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE
+            }
+            // Narração assentada a 0.6: o acompanhamento desce até a linha em leitura.
+            emitirProgresso(scenario, 0.6f)
+            // Pré-condição: a 1ª linha do parágrafo 3 já saiu por cima da lista (como depois de uma rolagem).
+            scenario.onActivity { a ->
+                val altura = checkNotNull(tvEm(lista(a), 2)) { "parágrafo 3 fora da lista" }.height
+                (lista(a).layoutManager as LinearLayoutManager).scrollToPositionWithOffset(2, -(altura - 100))
+            }
+            esperarAte(scenario, "parágrafo 3 com a primeira linha cortada por cima") { a ->
+                val tv = tvEm(lista(a), 2)
+                tv != null && pePrimeiraLinha(tv) < 0
+            }
+            // A troca de voz recomeça o parágrafo 3: progresso 0, mesmo índice, isLoading de novo.
+            scenario.onActivity { _ ->
+                fluxoDoGuiada().value = GuidedState(index = 2, isPlaying = false, isLoading = true, progressPct = 0f)
+            }
+            esperarAte(scenario, "primeira linha do parágrafo 3 de volta à lista") { a ->
+                val tv = tvEm(lista(a), 2)
+                tv != null && pePrimeiraLinha(tv) > 0
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Parágrafos num capítulo só, com offsets seguidos (como o extrator faz). */
@@ -1981,6 +2087,37 @@ class ReaderActivitySmokeTest {
 
     /** Base da primeira linha do parágrafo, medida a partir do topo da lista (rb-62). Sem layout, conta 0. */
     private fun pePrimeiraLinha(tv: TextView): Int = tv.top + tv.totalPaddingTop + (tv.layout?.getLineBottom(0) ?: 0)
+
+    /** Base da linha do progresso [pct] dentro do parágrafo, medida a partir do topo da lista (rb-65). */
+    private fun baseDaLinhaEm(tv: TextView, pct: Float): Int {
+        val layout = checkNotNull(tv.layout) { "parágrafo sem layout" }
+        val tamanho = tv.text.length
+        val offset = (tamanho * pct).toInt().coerceIn(0, tamanho - 1)
+        return tv.top + tv.totalPaddingTop + layout.getLineBottom(layout.getLineForOffset(offset))
+    }
+
+    /** StateFlow de estado do manager da guiada (rb-65): o teste emite o progresso como o polling faria. */
+    @Suppress("UNCHECKED_CAST")
+    private fun fluxoDoGuiada(): MutableStateFlow<GuidedState> {
+        val campo = GuidedPlayerManager::class.java.getDeclaredField("_state")
+        campo.isAccessible = true
+        return campo.get(checkNotNull(GuidedPlaybackBridge.manager)) as MutableStateFlow<GuidedState>
+    }
+
+    /**
+     * Põe [pct] como progresso do parágrafo 3 da guiada e deixa o tique do acompanhamento rodar (rb-65). Devolve o topo
+     * do parágrafo na lista depois do tique.
+     */
+    private fun emitirProgresso(scenario: ActivityScenario<ReaderActivity>, pct: Float): Int {
+        scenario.onActivity { _ ->
+            val fluxo = fluxoDoGuiada()
+            fluxo.value = fluxo.value.copy(progressPct = pct)
+        }
+        esperarAte(scenario, "tique do progresso $pct") { a -> !lista(a).isLayoutRequested }
+        var topo = 0
+        scenario.onActivity { a -> topo = checkNotNull(tvEm(lista(a), 2)) { "parágrafo 3 fora da lista" }.top }
+        return topo
+    }
 
     /** Página do parágrafo na rolagem horizontal (rb-26a); nulo na vertical. */
     private fun paginaEm(rv: RecyclerView, pos: Int): PaginaDoParagrafo? =

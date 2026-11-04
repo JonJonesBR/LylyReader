@@ -69,4 +69,40 @@ class RegraDaPaginaDoParagrafoTest {
         assertFalse(RegraDaPaginaDoParagrafo.rolandoSozinha(1_048L, 1_000L))
         assertFalse(RegraDaPaginaDoParagrafo.rolandoSozinha(2_000L, 1_000L))
     }
+
+    @Test
+    fun mesmoParagrafoLinhaAcimaDoTopoNaoSobe() {
+        // rb-65: a linha que volta para cima no mesmo parágrafo não puxa a lista para cima.
+        assertEquals(0, RegraDaPaginaDoParagrafo.passoComHisterese(-200, altura, false))
+        assertEquals(0, RegraDaPaginaDoParagrafo.passoComHisterese(0, altura, false))
+    }
+
+    @Test
+    fun paragrafoNovoLinhaAcimaDoTopoSobe() {
+        // rb-62: no primeiro acompanhamento de um parágrafo novo, a linha acima do topo sobe direto.
+        assertEquals(-620, RegraDaPaginaDoParagrafo.passoComHisterese(-200, altura, true))
+    }
+
+    @Test
+    fun abaixoDaAreaDesceSempre() {
+        assertEquals(1080, RegraDaPaginaDoParagrafo.passoComHisterese(1500, altura, false))
+        assertEquals(1080, RegraDaPaginaDoParagrafo.passoComHisterese(1500, altura, true))
+    }
+
+    @Test
+    fun dentroDaAreaPassoIgualNosDoisCasos() {
+        assertEquals(90, RegraDaPaginaDoParagrafo.passoComHisterese(920, altura, false))
+        assertEquals(90, RegraDaPaginaDoParagrafo.passoComHisterese(920, altura, true))
+    }
+
+    @Test
+    fun pertoDoAlvoNaoRolaNosDoisCasos() {
+        assertEquals(0, RegraDaPaginaDoParagrafo.passoComHisterese(300, altura, false))
+        assertEquals(0, RegraDaPaginaDoParagrafo.passoComHisterese(300, altura, true))
+    }
+
+    @Test
+    fun alturaZeroNaoRolaComHisterese() {
+        assertEquals(0, RegraDaPaginaDoParagrafo.passoComHisterese(900, 0, false))
+    }
 }

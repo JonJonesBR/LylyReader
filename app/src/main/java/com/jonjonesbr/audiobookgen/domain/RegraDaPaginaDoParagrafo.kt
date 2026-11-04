@@ -5,6 +5,9 @@ package com.jonjonesbr.audiobookgen.domain
  * Quanto rolar para manter a linha em leitura perto da altura de destaque. O acompanhamento vertical
  * (GuidedReadingBarController) e o horizontal (PaginaDoParagrafo) usam a mesma regra, para as duas orientações
  * andarem igual. Sem Android.
+ *
+ * rb-65: dentro do mesmo parágrafo a lista só desce; subir (rb-62) só no primeiro acompanhamento depois de o
+ * parágrafo mudar. Ver [passoComHisterese].
  */
 object RegraDaPaginaDoParagrafo {
 
@@ -44,5 +47,15 @@ object RegraDaPaginaDoParagrafo {
             distancia > LIMIAR_PX -> maxOf(1, (distancia * PROPORCAO_PASSO).toInt())
             else -> 0
         }
+    }
+
+    /**
+     * rb-65: dentro do mesmo parágrafo o acompanhamento só desce; subir (rb-62) só no primeiro acompanhamento depois de
+     * o parágrafo mudar ([podeSubir]). Sem isso, um progresso que volta (a frase seguinte do modo oração, um
+     * getCurrentPosition antigo) faz a lista subir e descer. Descer segue igual à [passoParaDestaque].
+     */
+    fun passoComHisterese(fimDaLinha: Int, alturaVisivel: Int, podeSubir: Boolean): Int {
+        val passo = passoParaDestaque(fimDaLinha, alturaVisivel)
+        return if (podeSubir) passo else passo.coerceAtLeast(0)
     }
 }
