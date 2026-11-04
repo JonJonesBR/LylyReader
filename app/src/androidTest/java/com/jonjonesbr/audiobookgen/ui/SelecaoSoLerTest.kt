@@ -1,7 +1,10 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
+import android.graphics.PointF
 import android.graphics.Rect
+import android.os.SystemClock
 import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -143,6 +146,115 @@ class SelecaoSoLerTest {
         return atual
     }
 
+    /** Espera até 2 s o início da seleção do parágrafo 0 ficar menor que [inicioAntes]; nulo se ele não andar. */
+    private fun esperarInicioMenorQue(scenario: ActivityScenario<ReaderActivity>, inicioAntes: Int): Selecao? {
+        val fim = System.currentTimeMillis() + TEMPO_PARA_SELECAO_MUDAR_MS
+        var atual = selecaoAtual(scenario)
+        while (atual == null || atual.inicio >= inicioAntes) {
+            if (System.currentTimeMillis() >= fim) return null
+            Thread.sleep(PAUSA_ENTRE_LEITURAS_MS)
+            atual = selecaoAtual(scenario)
+        }
+        return atual
+    }
+
+    /**
+     * Diagnóstico (rb-46diag), só na 1ª tentativa do C03: posições da alça e do fim, o TextView do parágrafo 0
+     * na tela e as janelas que o UiAutomation enxerga.
+     */
+    private fun anotarDiagnosticoAntesDoArraste(
+        scenario: ActivityScenario<ReaderActivity>,
+        alca: PointF,
+        fim: PointF,
+    ) {
+        Capturas.anotar("c03", "alca=(${alca.x.toInt()},${alca.y.toInt()}) fim=(${fim.x.toInt()},${fim.y.toInt()})")
+        var textView = ""
+        scenario.onActivity { a ->
+            val tv = Gestos.textoDoParagrafo(a, 0)
+            val posicao = IntArray(2)
+            tv.getLocationOnScreen(posicao)
+            textView = "textview0 location=(${posicao[0]},${posicao[1]}) paddingTop=${tv.totalPaddingTop} " +
+                "scrollY=${tv.scrollY} altura=${tv.height}"
+        }
+        Capturas.anotar("c03", textView)
+        anotarJanelasDaTela()
+    }
+
+    /**
+     * Anota as janelas que o UiAutomation enxerga (tipo, camada, título e retângulo na tela). Liga
+     * FLAG_RETRIEVE_INTERACTIVE_WINDOWS só durante a leitura e devolve a flag como estava, porque a UiAutomation é
+     * compartilhada pelos testes seguintes do processo. Se a flag ou a leitura falharem, só anota o erro.
+     */
+    private fun anotarJanelasDaTela() {
+        val automacao = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val flagsAntes = runCatching { automacao.serviceInfo?.flags }.getOrNull()
+        runCatching {
+            val info = automacao.serviceInfo
+            if (info != null) {
+                info.flags = info.flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+                automacao.serviceInfo = info
+            }
+        }.onFailure { Capturas.anotar("c03", "flag de janelas não configurada: ${it.message}") }
+        try {
+            runCatching {
+                val janelas = automacao.windows.orEmpty()
+                Capturas.anotar("c03", "janelas=${janelas.size}")
+                janelas.forEach { janela ->
+                    val retangulo = Rect()
+                    janela.getBoundsInScreen(retangulo)
+                    Capturas.anotar(
+                        "c03",
+                        "janela tipo=${janela.type} layer=${janela.layer} titulo=${janela.title} " +
+                            "bounds=${retangulo.toShortString()}"
+                    )
+                }
+            }.onFailure { Capturas.anotar("c03", "janelas indisponíveis: ${it.message}") }
+        } finally {
+            if (flagsAntes != null) {
+                runCatching {
+                    automacao.serviceInfo?.let { info ->
+                        info.flags = flagsAntes
+                        automacao.serviceInfo = info
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Diagnóstico (rb-46diag), só na 1ª tentativa do C03: anota a seleção em cada passo marcado do arraste, com o
+     * tempo desde o início do arraste (ms), para comparar com as tentativas sem captura.
+     */
+    private fun observarPassoDoArraste(
+        scenario: ActivityScenario<ReaderActivity>,
+        inicioDoArraste: Long,
+        passo: Int,
+        x: Float,
+        y: Float,
+    ) {
+        if (passo !in PASSOS_ANOTADOS) return
+        val decorrido = SystemClock.uptimeMillis() - inicioDoArraste
+        val selecao = selecaoAtual(scenario)
+        Capturas.anotar(
+            "c03-passo",
+            "passo=$passo ms=$decorrido dedo=(${x.toInt()},${y.toInt()}) selecao=${selecao ?: "nenhuma"}"
+        )
+        if (passo == PASSO_DA_CAPTURA_DO_MEIO) Capturas.capturar("07a_soler_alca_meio")
+    }
+
+    /**
+     * Diagnóstico (rb-46diag), só na 1ª tentativa do C03: anota a seleção e o tempo desde o início do arraste, e
+     * captura a tela antes de soltar.
+     */
+    private fun observarAntesDeSoltar(scenario: ActivityScenario<ReaderActivity>, inicioDoArraste: Long) {
+        val decorrido = SystemClock.uptimeMillis() - inicioDoArraste
+        Capturas.anotar(
+            "c03-passo",
+            "antes_de_soltar ms=$decorrido selecao=${selecaoAtual(scenario) ?: "nenhuma"}"
+        )
+        Capturas.capturar("07b_soler_alca_antes_de_soltar")
+    }
+
     private fun visibilidade(a: ReaderActivity, id: Int): Int = a.findViewById<View>(id).visibility
 
     /** C02: só ler, o toque longo seleciona a palavra e a barra mostra só Destacar e Definir. */
@@ -205,7 +317,10 @@ class SelecaoSoLerTest {
         var depois: Selecao? = null
         var sucesso: String? = null
         val combinacoes = DESLOCAMENTOS_DA_ALCA_DP.flatMap { abaixo -> FOLGAS_EXTRAS_DA_LINHA.map { abaixo to it } }
-        for ((abaixoDp, folga) in combinacoes) {
+        for ((indice, combinacao) in combinacoes.withIndex()) {
+            val (abaixoDp, folga) = combinacao
+            // Diagnóstico (rb-46diag): só a primeira tentativa (12 dp, folga 0) anota cada passo e tira capturas.
+            val diagnostico = indice == 0
             // Uma tentativa que falhou pode ter mudado a seleção (antes virava 'c'): se não é a inicial, reselecionar.
             val atual = selecaoAtual(scenario)
             if (atual == null || atual.inicio != antes.inicio || atual.fim != antes.fim) {
@@ -220,10 +335,24 @@ class SelecaoSoLerTest {
             val dy = alvo.y - fim.y
             val extra = folga * altura
             regras.fecharDialogosDoSistema()
-            Gestos.arrastar(alca.x, alca.y, alca.x + dx, alca.y + dy + extra)
+            if (diagnostico) anotarDiagnosticoAntesDoArraste(scenario, alca, fim)
+            val inicioDoArraste = SystemClock.uptimeMillis()
+            val observarPasso: (Int, Float, Float) -> Unit = { passo, x, y ->
+                observarPassoDoArraste(scenario, inicioDoArraste, passo, x, y)
+            }
+            val antesDeSoltar: () -> Unit = { observarAntesDeSoltar(scenario, inicioDoArraste) }
+            Gestos.arrastar(
+                alca.x,
+                alca.y,
+                alca.x + dx,
+                alca.y + dy + extra,
+                aoMover = if (diagnostico) observarPasso else null,
+                antesDeSoltar = if (diagnostico) antesDeSoltar else null,
+            )
+            val duracaoDoGesto = SystemClock.uptimeMillis() - inicioDoArraste
             val achado = esperarFimMaiorQue(scenario, antes.fim)
             val descricao = "abaixo=${abaixoDp}dp folga=$folga dx=${dx.toInt()} dy=${dy.toInt()} " +
-                "extra=${extra.toInt()}px seleção=${achado ?: selecaoAtual(scenario)}"
+                "extra=${extra.toInt()}px gesto=${duracaoDoGesto}ms seleção=${achado ?: selecaoAtual(scenario)}"
             tentativas += descricao
             Capturas.anotar("c03", "tentativa: $descricao")
             if (achado != null) {
@@ -246,6 +375,42 @@ class SelecaoSoLerTest {
             "deu certo em [$sucesso] depois=[${resultado.inicio},${resultado.fim}] texto='${resultado.texto}'"
         )
         Capturas.capturar("07_soler_alca_depois")
+    }
+
+    /**
+     * C03b (rb-46diag): arrasta a alça INICIAL da seleção de 'chuva' para a esquerda, na mesma linha (dy = 0), até
+     * o 'A' anterior. Separa dois casos: se a injeção de toque não pega alça nenhuma, o início não anda; se só a
+     * troca de linha da alça final falha, esta alça (mesma linha) tem de andar. Anota as medidas e captura a tela
+     * antes de conferir.
+     */
+    @Test
+    fun c03b_arrastarAlcaInicialParaEsquerda() {
+        val scenario = abrirSoLer()
+        selecionarPalavra(scenario, PALAVRA)
+        val antes = checkNotNull(selecaoAtual(scenario)) { "Sem seleção antes do arraste" }
+        regras.fecharDialogosDoSistema()
+        val alca = Gestos.pontoDaAlcaInicial(scenario, 0)
+        val inicio = Gestos.pontoDoInicioDaSelecao(scenario, 0)
+        // O meio do 'A' (offset 26) fica a uma letra e um espaço à esquerda do início de 'chuva' (offset 28), na
+        // mesma linha. Com o meio da letra, o alvo não cai na fronteira entre 'A' e o espaço.
+        val alvo = Gestos.pontoDoMeioDaPrimeiraLetra(scenario, 0, PALAVRA_ANTERIOR)
+        val dx = alvo.x - inicio.x
+        Capturas.anotar("c03b", "antes=[${antes.inicio},${antes.fim}] texto='${antes.texto}'")
+        Capturas.anotar(
+            "c03b",
+            "alca=(${alca.x.toInt()},${alca.y.toInt()}) inicio=(${inicio.x.toInt()},${inicio.y.toInt()}) " +
+                "alvo=(${alvo.x.toInt()},${alvo.y.toInt()}) dx=${dx.toInt()} dy=0"
+        )
+        regras.fecharDialogosDoSistema()
+        Gestos.arrastar(alca.x, alca.y, alca.x + dx, alca.y)
+        val depois = esperarInicioMenorQue(scenario, antes.inicio)
+        Capturas.anotar("c03b", "depois=${depois ?: selecaoAtual(scenario)}")
+        Capturas.capturar("09_soler_alca_inicial")
+        assertTrue(
+            "O início da seleção deveria ficar antes de ${antes.inicio} (entrar '$PALAVRA_ANTERIOR'), " +
+                "veio ${depois ?: selecaoAtual(scenario)}",
+            depois != null && depois.inicio < antes.inicio
+        )
     }
 
     /**
@@ -333,6 +498,15 @@ class SelecaoSoLerTest {
 
         /** Palavra mais adiante no mesmo parágrafo, usada como alvo do arraste da alça. */
         const val PALAVRA_ADIANTE = "manhã"
+
+        /** Palavra logo antes de 'chuva' (com o espaço, para achar só o 'A' do início do parágrafo 0). */
+        const val PALAVRA_ANTERIOR = "A "
+
+        /** Passos do arraste da primeira tentativa do C03 em que a seleção é anotada (diagnóstico rb-46diag). */
+        val PASSOS_ANOTADOS = setOf(1, 5, 10, 15, 20)
+
+        /** Passo do arraste em que a tela é capturada no meio do gesto (diagnóstico rb-46diag). */
+        const val PASSO_DA_CAPTURA_DO_MEIO = 10
 
         /** Distâncias abaixo da linha do fim (em dp) em que a alça é arrastada, na ordem das tentativas. */
         val DESLOCAMENTOS_DA_ALCA_DP = listOf(12f, 8f, 16f)
