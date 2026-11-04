@@ -1362,7 +1362,19 @@ class ReaderActivitySmokeTest {
                 antes = lista(a).computeVerticalScrollOffset()
                 lista(a).smoothScrollBy(0, 1)
             }
-            esperarAte(scenario, "lista parada e alças de volta sem toque") { a ->
+            esperarAte(scenario, "lista parada depois do 1 px") { a ->
+                lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE
+            }
+            // A conferência roda no IDLE (OnScrollListener do SelecaoSemMenu, por post). No Robolectric a rolagem
+            // de 1 px pode não passar por SETTLING até IDLE; então a conferência é disparada aqui, como o fim da
+            // rolagem faria.
+            scenario.onActivity { listaDoLeitor(it).liberarDepois() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            esperarAte(
+                scenario,
+                "lista parada e alças de volta sem toque",
+                { a -> diagnosticoDaReabertura(a) },
+            ) { a ->
                 lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE && !listaDoLeitor(a).guardada.ativa &&
                     tvEm(lista(a), 1)?.hasSelection() == true
             }
@@ -1801,9 +1813,22 @@ class ReaderActivitySmokeTest {
                 val tv = tvEm(lista(a), 2)
                 tv != null && pePrimeiraLinha(tv) < 0
             }
-            // A troca de voz recomeça o parágrafo 3: progresso 0, mesmo índice, isLoading de novo.
+            // A narração tocava (sem carregamento) antes da troca. Sem esse estado, o recomeço chegaria com
+            // isLoading já true: o acompanhamento trataria a emissão como progresso (soProgresso), e o
+            // indiceAcompanhado não zeraria (GuidedReadingBarController.atualizarGuidedPlayerUI). No app, a troca
+            // sempre vem depois de tocar.
+            scenario.onActivity { _ ->
+                fluxoDoGuiada().value = GuidedState(index = 2, isPlaying = true, isLoading = false, progressPct = 0.6f)
+            }
+            // A troca de voz recomeça o parágrafo 3: progresso 0, mesmo índice, isLoading de novo (transição que
+            // zera o indiceAcompanhado; a 1ª linha sobe nesse tique).
             scenario.onActivity { _ ->
                 fluxoDoGuiada().value = GuidedState(index = 2, isPlaying = false, isLoading = true, progressPct = 0f)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            // Narração retomada no mesmo índice, com progresso baixo.
+            scenario.onActivity { _ ->
+                fluxoDoGuiada().value = GuidedState(index = 2, isPlaying = true, isLoading = false, progressPct = 0.01f)
             }
             esperarAte(scenario, "primeira linha do parágrafo 3 de volta à lista") { a ->
                 val tv = tvEm(lista(a), 2)
@@ -2191,11 +2216,13 @@ class ReaderActivitySmokeTest {
 
     /**
      * Espera a tela chegar à condição, deixando a main looper andar (a extração e o cache rodam em IO e voltam pela
-     * looper). Falha logo se o Leitor mostrar erro, e ao estourar o tempo limite.
+     * looper). Falha logo se o Leitor mostrar erro, e ao estourar o tempo limite. [diagnostico], se houver, roda na
+     * thread principal só ao estourar, e o texto dele vai na mensagem da falha.
      */
     private fun esperarAte(
         scenario: ActivityScenario<ReaderActivity>,
         descricao: String,
+        diagnostico: ((ReaderActivity) -> String)? = null,
         condicao: (ReaderActivity) -> Boolean
     ) {
         val fim = System.nanoTime() + TEMPO_LIMITE_MS * 1_000_000L
@@ -2215,8 +2242,71 @@ class ReaderActivitySmokeTest {
             if (pronto) return
             Thread.sleep(10)
         }
-        fail("Tempo esgotado: $descricao. ${diagnosticoDoCache(appDaTela)}")
+        var extra = ""
+        if (diagnostico != null) scenario.onActivity { a -> extra = " " + diagnostico(a) }
+        fail("Tempo esgotado: $descricao. ${diagnosticoDoCache(appDaTela)}$extra")
     }
+
+    /**
+     * Insumos da decisão de reabrir o trecho guardado sozinho (rb-60b), lidos na thread principal. Replica a conta de
+     * SelecaoSemMenu.decidir com os mesmos símbolos internos: `outroTextoEmUso` e a área da lista são privados lá,
+     * então estão copiados aqui (mesma regra). O limite da barra vem de limiteDaAreaNaTela (72 dp), como o teste mede.
+     */
+    private fun diagnosticoDaReabertura(a: ReaderActivity): String = runCatching {
+        val rv = listaDoLeitor(a)
+        val guardada = rv.guardada
+        val foco = rv.rootView.findFocus()
+        val focoComSelecao = (foco as? TextView)?.hasSelection() == true
+        val focoFora = foco != null && !foco.estaDentroDe(rv)
+        val outroTextoEmUso = rv.selecoesAbertas > 0 || focoComSelecao || focoFora
+        val seguindo = (rv.layoutManager as? LeitorLayoutManager)?.seguindoLeitura?.invoke() == true
+        val barraVisivel = barraDaSelecaoTextoVisivel(a)
+        val limite = if (barraVisivel) limiteDaAreaNaTela(a) else null
+        val telaAtiva = a.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        val partes = mutableListOf(
+            "scrollState=${rv.scrollState}",
+            "toqueEmAndamento=${rv.toqueEmAndamento}",
+            "selecoesAbertas=${rv.selecoesAbertas}",
+            "textoComSelecaoViva=${rv.textoComSelecaoViva != null}",
+            "foco=${foco?.javaClass?.simpleName}(dentroDaLista=${foco?.estaDentroDe(rv)}, comSelecao=$focoComSelecao)",
+            "outroTextoEmUso=$outroTextoEmUso",
+            "guardada.ativa=${guardada.ativa} posicao=${guardada.posicao}" +
+                " inicio=${guardada.inicio} fim=${guardada.fim}",
+            "seguindoLeitura=$seguindo",
+            "telaAtiva=$telaAtiva",
+            "barraVisivel=$barraVisivel limiteDaBarra=$limite",
+            "faixaParaReabrirSozinho=${rv.faixaParaReabrirSozinho(limite, telaAtiva)}",
+        )
+        val tv = tvEm(rv, guardada.posicao)
+        val layout = tv?.layout
+        if (tv != null && layout != null && guardada.ativa) {
+            val posTv = IntArray(2).also { tv.getLocationOnScreen(it) }
+            val posLista = IntArray(2).also { rv.getLocationOnScreen(it) }
+            val base = posTv[1] + tv.totalPaddingTop - tv.scrollY
+            val linhaIni = layout.getLineForOffset(guardada.inicio)
+            val linhaFim = layout.getLineForOffset(guardada.fim)
+            val trecho = LinhaNaTela(base + layout.getLineTop(linhaIni), base + layout.getLineBottom(linhaFim))
+            val linhaDoFim = LinhaNaTela(
+                base + layout.getLineTop(linhaFim) - (if (linhaFim == 0) tv.extendedPaddingTop else 0),
+                base + layout.getLineBottom(linhaFim) +
+                    (if (linhaFim == layout.lineCount - 1) tv.extendedPaddingBottom else 0),
+            )
+            val areaDaLista = LinhaNaTela(posLista[1] + rv.paddingTop, posLista[1] + rv.height - rv.paddingBottom)
+            val fundoDoPai = (rv.parent as? View)?.let { p ->
+                IntArray(2).also { p.getLocationOnScreen(it) }[1] + p.height
+            } ?: Int.MAX_VALUE
+            val guiada = a.findViewById<View>(R.id.layoutGuidedPlayer)?.takeIf { it.isShown }
+                ?.let { IntArray(2).also { p -> it.getLocationOnScreen(p) }[1] }
+            val area = areaUtilParaReabrir(areaDaLista, fundoDoPai, limite, guiada)
+            partes += "trechoNaTela=${trecho.topo}..${trecho.fundo}"
+            partes += "linhaDoFim=${linhaDoFim.topo}..${linhaDoFim.fundo}"
+            partes += "areaUtil=${area.topo}..${area.fundo} areaDaLista=${areaDaLista.topo}..${areaDaLista.fundo}"
+            partes += "trechoInteiroNaTela=${
+                trechoInteiroNaArea(trecho, area) && trechoInteiroNaArea(linhaDoFim, areaDaLista)
+            }"
+        }
+        partes.joinToString("; ", "[diagnóstico da reabertura] ", ".")
+    }.getOrElse { "[diagnóstico da reabertura indisponível: $it]" }
 
     /**
      * Estado do cache e do arquivo agora, comparado com o que o @Before gravou, e os cacheDir dos dois Applications (o
