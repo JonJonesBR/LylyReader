@@ -27,7 +27,6 @@ import android.content.Context
 import android.util.Log
 import com.jonjonesbr.audiobookgen.player.AudioPlayerEngine
 import com.jonjonesbr.audiobookgen.player.MediaPlayerEngineImpl
-import com.jonjonesbr.audiobookgen.player.ExoPlayerEngineImpl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -442,13 +441,7 @@ class GuidedPlayerManager(
 
     private fun initializeEngine() {
         playerEngine?.release()
-        val engineChoice = appPrefs.playerEngine
-        Log.d(TAG, "Initializing player engine: $engineChoice")
-        playerEngine = if (engineChoice == "exoplayer") {
-            ExoPlayerEngineImpl(context)
-        } else {
-            MediaPlayerEngineImpl(context)
-        }
+        playerEngine = MediaPlayerEngineImpl(context)
         fixarTimbre(timbreAtual())
         // Motor novo a cada parágrafo: herda o volume do fade da soneca em curso (o motor novo começaria em 1.0).
         if (GuidedPlaybackBridge.manager === this) playerEngine?.setVolume(SleepTimerManager.volumeFactor.value)

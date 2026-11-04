@@ -77,7 +77,6 @@ class GuidedPlayerManagerTest {
         every { Log.e(any(), any(), any()) } returns 0
 
         mockkConstructor(AppPrefs::class)
-        every { anyConstructed<AppPrefs>().playerEngine } returns "media_player"
         every { anyConstructed<AppPrefs>().guidedSpeedMult } returns 1.0f
 
         val errorSlot = slot<(String) -> Unit>()

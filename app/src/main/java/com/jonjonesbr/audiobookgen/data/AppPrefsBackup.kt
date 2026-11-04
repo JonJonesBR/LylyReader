@@ -31,7 +31,6 @@ object AppPrefsBackup {
             put("ia_personalizada_modelo", appPrefs.iaPersonalizadaModelo)
             put("pronuncias_json", appPrefs.pronunciasJson)
             // pasta_destino fica de fora: é uma permissão de pasta (SAF) que só vale neste aparelho e nesta instalação.
-            put("player_engine", appPrefs.playerEngine)
             put("guided_speed_mult", appPrefs.guidedSpeedMult.toDouble())
             put("onboarding_done", appPrefs.onboardingDone)
             put("voice_download_onboarding_done", appPrefs.voiceDownloadOnboardingDone)
@@ -81,9 +80,7 @@ object AppPrefsBackup {
         if (json.has("pronuncias_json")) {
             appPrefs.pronunciasJson = json.optString("pronuncias_json", appPrefs.pronunciasJson)
         }
-        if (json.has("player_engine")) {
-            appPrefs.playerEngine = json.optString("player_engine", appPrefs.playerEngine)
-        }
+        // player_engine (backups antigos): o ExoPlayer saiu da guiada (rb-13), a chave é ignorada.
         if (json.has("guided_speed_mult")) {
             appPrefs.guidedSpeedMult = json.optDouble(
                 "guided_speed_mult",

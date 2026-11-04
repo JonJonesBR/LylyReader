@@ -997,7 +997,6 @@
     <ID>SwallowedException:CodificadorDeDadosDeTrabalho.kt$CodificadorDeDadosDeTrabalho$e: Exception</ID>
     <ID>SwallowedException:ConferirTrocasDialog.kt$ConferirTrocasDialog$e: Exception</ID>
     <ID>SwallowedException:ConversaoPausadaStore.kt$ConversaoPausadaStore$e: Exception</ID>
-    <ID>SwallowedException:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$e: Exception</ID>
     <ID>SwallowedException:MediaPlayerEngineImpl.kt$MediaPlayerEngineImpl$e: Exception</ID>
     <ID>SwallowedException:MeusLivrosActivity.kt$MeusLivrosActivity$e: Exception</ID>
     <ID>SwallowedException:PacotesVozOfflineCard.kt$PacotesVozOfflineCard$e: kotlinx.coroutines.CancellationException</ID>
@@ -1027,7 +1026,6 @@
     <ID>TooGenericExceptionCaught:ConversionWorker.kt$ConversionWorker$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocumentRepository.kt$DocumentRepository$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ElevenLabsSynthBridge.kt$ElevenLabsSynthBridge$t: Throwable</ID>
-    <ID>TooGenericExceptionCaught:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ExtractTextUseCase.kt$ExtractTextUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:FilaDeConversao.kt$FilaDeConversao$e: Exception</ID>
     <ID>TooGenericExceptionCaught:GuidedPlayerManager.kt$GuidedPlayerManager$e: Exception</ID>
@@ -1084,7 +1082,6 @@
     <ID>TooManyFunctions:DownloadCentral.kt$DownloadCentral</ID>
     <ID>TooManyFunctions:DownloadCentralActivity.kt$DownloadCentralActivity : BasePlayerActivity</ID>
     <ID>TooManyFunctions:ErrorLogsActivity.kt$ErrorLogsActivity : AppCompatActivity</ID>
-    <ID>TooManyFunctions:ExoPlayerEngineImpl.kt$ExoPlayerEngineImpl : AudioPlayerEngine</ID>
     <ID>TooManyFunctions:GuidedPlayerManager.kt$GuidedPlayerManager</ID>
     <ID>TooManyFunctions:GuidedReadingBarController.kt$GuidedReadingBarController</ID>
     <ID>TooManyFunctions:GuidedReadingService.kt$GuidedReadingService : Service</ID>

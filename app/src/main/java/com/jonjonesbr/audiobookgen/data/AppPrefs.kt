@@ -258,10 +258,6 @@ class AppPrefs(context: Context) {
         get() = p.getString("pasta_destino", null)
         set(v) = p.edit().putString("pasta_destino", v).apply()
 
-    var playerEngine: String
-        get() = p.getString("player_engine", "media_player") ?: "media_player"
-        set(v) = p.edit().putString("player_engine", v).apply()
-
     var guidedSpeedMult: Float
         get() = p.getFloat("guided_speed_mult", 1.0f)
         set(v) = p.edit().putFloat("guided_speed_mult", v).apply()
