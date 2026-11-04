@@ -174,19 +174,26 @@ class ReaderConversaoController(
         val textosDoLivro = texto.paragrafos.map { it.texto }
         val speakerMapPath = callbacks.caminhoMapaDePersonagens(textosDoLivro)
         val arquivoTemp = File(activity.cacheDir, "download_chapter_${System.currentTimeMillis()}.txt")
-        try {
-            arquivoTemp.writeText(trechoTexto, Charsets.UTF_8)
-            iniciarDownloadBackground(
-                arquivoTemp.absolutePath,
-                nomeCapitulo,
-                speakerMapPath = speakerMapPath,
-                caminhoDoLivro = caminhoArquivo
-            )
-        } catch (e: Exception) {
-            Log.w("ReaderActivity", "Erro ao preparar download de capítulo", e)
-            activity.mostrarErro(
-                activity.getString(R.string.toast_erro_preparar_download, activity.getString(mensagemDeErro(e)))
-            )
+        // A escrita vai para IO: livro grande pode travar a tela (rb-19). Os diálogos voltam à main.
+        activity.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) { arquivoTemp.writeText(trechoTexto, Charsets.UTF_8) }
+                iniciarDownloadBackground(
+                    arquivoTemp.absolutePath,
+                    nomeCapitulo,
+                    speakerMapPath = speakerMapPath,
+                    caminhoDoLivro = caminhoArquivo
+                )
+            } catch (e: CancellationException) {
+                // Tela destruída antes do download: o temporário não fica no cache (o download nem começou).
+                arquivoTemp.delete()
+                throw e
+            } catch (e: Exception) {
+                Log.w("ReaderActivity", "Erro ao preparar download de capítulo", e)
+                activity.mostrarErro(
+                    activity.getString(R.string.toast_erro_preparar_download, activity.getString(mensagemDeErro(e)))
+                )
+            }
         }
     }
 
@@ -232,13 +239,17 @@ class ReaderConversaoController(
             val speakerMapPath = callbacks.caminhoMapaDePersonagens(textosDoLivro)
             val arquivoTemp = File(activity.cacheDir, "download_book_${System.currentTimeMillis()}.txt")
             try {
-                arquivoTemp.writeText(trechoTexto, Charsets.UTF_8)
+                withContext(Dispatchers.IO) { arquivoTemp.writeText(trechoTexto, Charsets.UTF_8) }
                 iniciarDownloadBackground(
                     arquivoTemp.absolutePath,
                     nomeSemExt,
                     livroOrigemCaminho = caminhoArquivo,
                     speakerMapPath = speakerMapPath
                 )
+            } catch (e: CancellationException) {
+                // Tela destruída antes do download: o temporário não fica no cache (o download nem começou).
+                arquivoTemp.delete()
+                throw e
             } catch (e: Exception) {
                 Log.w("ReaderActivity", "Erro ao preparar download de livro completo", e)
                 activity.mostrarErro(
