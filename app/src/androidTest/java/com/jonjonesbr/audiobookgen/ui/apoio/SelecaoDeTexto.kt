@@ -77,6 +77,9 @@ private const val MARGEM_DO_ARRASTE_DP = 16f
 /** Menor segmento do arraste, em frações da área útil: não encurta abaixo de um oitavo dela (rb-46 U4). */
 private const val FRACAO_MINIMA_DO_SEGMENTO = 8
 
+/** Fração da área útil que o arraste de [garantirPalavraVisivel] anda: um terço (rb-46 U4). */
+private const val FRACAO_PADRAO_DO_ARRASTE = 1f / 3f
+
 /** Em quantos pontos a faixa livre do arraste é procurada na área útil (rb-46 U4). */
 private const val PASSOS_DA_BUSCA_DE_FAIXA = 40
 
@@ -90,22 +93,25 @@ private data class SegmentoDoArraste(val yInicio: Int, val yFim: Int, val motivo
 private const val TEMPO_PARA_SNACKBAR_SUMIR_MS = 4_000L
 
 /**
+ * Área da lista na tela, em pixels, para os arrastes: o retângulo visível da lista, a faixa entre o topo e o fundo
+ * úteis (fora das barras da seleção e da guiada) e a densidade do aparelho, para converter dp em pixels.
+ */
+private class AreaDaLista(val listaRect: Rect, val topoUtil: Int, val fundoUtil: Int, val densidade: Float)
+
+/**
  * Medida, na thread principal, de onde a palavra está e do que a cobre. Com [problemas] vazio, o toque é seguro.
  * [precisaSubir]: a palavra está embaixo da área útil (o dedo sobe); senão está em cima (o dedo desce).
  * [obstaculoTemporario]: um Snackbar cobre o ponto, e ele some sozinho (não se arrasta a lista por isso).
+ * [area]: a área da lista no momento da medida.
  * [listaParada]: a lista está com o RecyclerView em repouso (SCROLL_STATE_IDLE).
- * [densidade]: densidade do aparelho, para converter dp do arraste em pixels.
  */
 private class MedidaDeVisibilidade(
     val ponto: PointF?,
     val problemas: List<String>,
     val precisaSubir: Boolean,
     val obstaculoTemporario: Boolean,
-    val listaRect: Rect,
-    val topoUtil: Int,
-    val fundoUtil: Int,
+    val area: AreaDaLista,
     val listaParada: Boolean,
-    val densidade: Float,
     val relato: String,
 )
 
@@ -180,21 +186,32 @@ private fun retanguloVisivel(view: View?): Rect? {
     return if (view.getGlobalVisibleRect(rect)) rect else null
 }
 
-/** A conta da medida, na thread principal. Ver [garantirPalavraVisivel] para as regras. */
-private fun medirNaTela(a: ReaderActivity, indiceParagrafo: Int, palavra: String): MedidaDeVisibilidade {
+/**
+ * Área da lista para os arrastes, na thread principal: o retângulo visível da lista, e o topo e o fundo úteis
+ * (abaixo das barras da seleção e acima da barra da guiada). Usada pela medida de visibilidade e pela rolagem
+ * à mão.
+ */
+private fun areaDaLista(a: ReaderActivity): AreaDaLista {
     val lista = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos)
     val listaRect = retanguloVisivel(lista) ?: Rect()
     val guia = retanguloVisivel(a.findViewById<View>(R.id.layoutGuidedPlayer))
     val barraDeTexto = retanguloVisivel(a.findViewById<View>(R.id.barraSelecaoTexto))
     val barraDeVarios = retanguloVisivel(a.findViewById<View>(R.id.layoutBarraSelecao))
+    val topoUtil = maxOf(listaRect.top, barraDeTexto?.bottom ?: 0, barraDeVarios?.bottom ?: 0)
+    val fundoUtil = minOf(listaRect.bottom, guia?.top ?: listaRect.bottom)
+    return AreaDaLista(listaRect, topoUtil, fundoUtil, lista.resources.displayMetrics.density)
+}
+
+/** A conta da medida, na thread principal. Ver [garantirPalavraVisivel] para as regras. */
+private fun medirNaTela(a: ReaderActivity, indiceParagrafo: Int, palavra: String): MedidaDeVisibilidade {
+    val lista = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos)
+    val area = areaDaLista(a)
+    val guia = retanguloVisivel(a.findViewById<View>(R.id.layoutGuidedPlayer))
     val botaoVoltar = retanguloVisivel(a.findViewById<View>(R.id.fabVoltarNarracao))
     val textoDoSnackbar: View? = a.findViewById(com.google.android.material.R.id.snackbar_text)
     val snackbar = textoDoSnackbar?.let { retanguloVisivel(it.parent as? View ?: it) }
 
-    val topoUtil = maxOf(listaRect.top, barraDeTexto?.bottom ?: 0, barraDeVarios?.bottom ?: 0)
-    val fundoUtil = minOf(listaRect.bottom, guia?.top ?: listaRect.bottom)
-    val densidade = lista.resources.displayMetrics.density
-    val folga = FOLGA_DA_AREA_OCUPADA_DP * densidade
+    val folga = FOLGA_DA_AREA_OCUPADA_DP * area.densidade
 
     val problemas = mutableListOf<String>()
     var precisaSubir = false
@@ -208,17 +225,17 @@ private fun medirNaTela(a: ReaderActivity, indiceParagrafo: Int, palavra: String
         precisaSubir = primeiro == RecyclerView.NO_POSITION || indiceParagrafo > primeiro
         problemas += "sem View do parágrafo (fora da lista)"
     } else {
-        if (listaRect.isEmpty) {
+        if (area.listaRect.isEmpty) {
             problemas += "lista fora da tela"
-        } else if (ponto.y < topoUtil + folga) {
-            problemas += "acima da área útil (topo $topoUtil, folga ${folga.toInt()}px)"
-        } else if (ponto.y > fundoUtil - folga) {
-            problemas += "embaixo da barra da guiada (fundo útil $fundoUtil)"
+        } else if (ponto.y < area.topoUtil + folga) {
+            problemas += "acima da área útil (topo ${area.topoUtil}, folga ${folga.toInt()}px)"
+        } else if (ponto.y > area.fundoUtil - folga) {
+            problemas += "embaixo da barra da guiada (fundo útil ${area.fundoUtil})"
             precisaSubir = true
         }
         if (botaoVoltar?.contains(ponto.x.toInt(), ponto.y.toInt()) == true) {
             problemas += "coberta pelo botão Voltar à narração"
-            precisaSubir = ponto.y > listaRect.centerY()
+            precisaSubir = ponto.y > area.listaRect.centerY()
         }
         if (snackbar?.contains(ponto.x.toInt(), ponto.y.toInt()) == true) {
             problemas += "coberta pelo Snackbar"
@@ -226,7 +243,7 @@ private fun medirNaTela(a: ReaderActivity, indiceParagrafo: Int, palavra: String
         }
     }
     val relato = "ponto=${ponto?.let { "(${it.x.toInt()},${it.y.toInt()})" } ?: "nenhum"} " +
-        "lista=${listaRect.toShortString()} topoUtil=$topoUtil fundoUtil=$fundoUtil " +
+        "lista=${area.listaRect.toShortString()} topoUtil=${area.topoUtil} fundoUtil=${area.fundoUtil} " +
         "guia=${guia?.toShortString()} voltar=${botaoVoltar?.toShortString()} " +
         "snackbar=${snackbar?.toShortString()} problemas=$problemas"
     return MedidaDeVisibilidade(
@@ -234,11 +251,8 @@ private fun medirNaTela(a: ReaderActivity, indiceParagrafo: Int, palavra: String
         problemas = problemas,
         precisaSubir = precisaSubir,
         obstaculoTemporario = obstaculoTemporario,
-        listaRect = listaRect,
-        topoUtil = topoUtil,
-        fundoUtil = fundoUtil,
+        area = area,
         listaParada = lista.scrollState == RecyclerView.SCROLL_STATE_IDLE,
-        densidade = densidade,
         relato = relato,
     )
 }
@@ -287,22 +301,59 @@ private fun pontoParado(antes: MedidaDeVisibilidade, depois: MedidaDeVisibilidad
 
 /**
  * Arrasta a lista com um dedo, andando um terço da área útil no sentido que leva a palavra para dentro da área: o
- * dedo sobe quando [MedidaDeVisibilidade.precisaSubir], senão desce. O dedo cai na margem esquerda da lista (rb-46
- * U4). Se o segmento cruzar uma janela flutuante, ele é deslocado ([escolherSegmento]). Anota em medidas.txt as
- * janelas e o segmento escolhido. Falha se não houver área útil.
+ * dedo sobe quando [MedidaDeVisibilidade.precisaSubir], senão desce. Usa o mesmo núcleo de [rolarListaComODedo].
  */
 private fun arrastarLista(medida: MedidaDeVisibilidade, cenario: String) {
-    val altura = medida.fundoUtil - medida.topoUtil
-    check(altura > 0) { "Sem área útil para arrastar a lista: ${medida.relato}" }
-    val x = medida.listaRect.left + MARGEM_DO_ARRASTE_DP * medida.densidade
-    val folga = FOLGA_DA_AREA_OCUPADA_DP * medida.densidade
-    val obstaculos = obstaculosDoArraste(medida, cenario)
-    val segmento = escolherSegmento(medida, x, folga, obstaculos)
+    arrastarAreaComODedo(medida.area, medida.precisaSubir, FRACAO_PADRAO_DO_ARRASTE, cenario)
+}
+
+/**
+ * Rola a lista com um dedo de verdade, sem procurar palavra (rb-54, rb-55): arrasta [fracaoDaAreaUtil] da área útil
+ * (de 0 a 1), centrada nela. Com [paraBaixoNoTexto], o dedo sobe e o texto anda para baixo. O dedo cai na margem
+ * esquerda e desvia das janelas flutuantes, como o arraste de [garantirPalavraVisivel]. Espera a lista parar e
+ * anota em medidas.txt se ela rolou ou não. Falha se a fração não for válida ou a lista não tiver área útil.
+ */
+fun rolarListaComODedo(
+    scenario: ActivityScenario<ReaderActivity>,
+    fracaoDaAreaUtil: Float,
+    paraBaixoNoTexto: Boolean,
+    cenario: String,
+) {
+    require(fracaoDaAreaUtil > 0f && fracaoDaAreaUtil <= 1f) { "Fração da rolagem fora de (0, 1]: $fracaoDaAreaUtil" }
+    var area: AreaDaLista? = null
+    scenario.onActivity { a -> area = areaDaLista(a) }
+    val antes = primeiraViewDaLista(scenario)
+    val areaDaRolagem = checkNotNull(area) { "Sem área da lista para rolar" }
+    arrastarAreaComODedo(areaDaRolagem, paraBaixoNoTexto, fracaoDaAreaUtil, cenario)
+    esperarListaParada(scenario)
+    val depois = primeiraViewDaLista(scenario)
+    val rolou = if (antes == depois) "não rolou" else "rolou"
+    val sentido = if (paraBaixoNoTexto) "para baixo no texto" else "para cima no texto"
+    val percentual = (fracaoDaAreaUtil * 100).toInt()
+    Capturas.anotar(
+        cenario,
+        "rolagem à mão $sentido de $percentual% da área útil: antes [$antes], depois [$depois], $rolou"
+    )
+}
+
+/**
+ * Núcleo dos arrastes da lista: um segmento vertical de [fracao] da área útil, centrado nela, em x fixo na margem
+ * esquerda da lista (rb-46 U4). O dedo sobe quando [dedoSobe] (o texto anda para baixo), senão desce. Se o segmento
+ * cruzar uma janela flutuante, ele é deslocado ([escolherSegmento]). Anota em medidas.txt as janelas e o segmento
+ * escolhido. Falha se não houver área útil.
+ */
+private fun arrastarAreaComODedo(area: AreaDaLista, dedoSobe: Boolean, fracao: Float, cenario: String) {
+    val altura = area.fundoUtil - area.topoUtil
+    check(altura > 0) { "Sem área útil para arrastar a lista: topo ${area.topoUtil}, fundo ${area.fundoUtil}" }
+    val x = area.listaRect.left + MARGEM_DO_ARRASTE_DP * area.densidade
+    val folga = FOLGA_DA_AREA_OCUPADA_DP * area.densidade
+    val obstaculos = obstaculosDoArraste(area.listaRect, cenario)
+    val segmento = escolherSegmento(area, fracao, x, folga, obstaculos)
     Capturas.anotar(
         cenario,
         "segmento do arraste: x=${x.toInt()} de y=${segmento.yInicio} a y=${segmento.yFim} (${segmento.motivo})"
     )
-    val (y0, y1) = if (medida.precisaSubir) {
+    val (y0, y1) = if (dedoSobe) {
         segmento.yFim to segmento.yInicio
     } else {
         segmento.yInicio to segmento.yFim
@@ -315,7 +366,7 @@ private fun arrastarLista(medida: MedidaDeVisibilidade, cenario: String) {
  * navegação) e a janela do próprio Leitor, que cobre a lista inteira. Anota em medidas.txt todas as janelas, com o
  * que foi considerado obstáculo.
  */
-private fun obstaculosDoArraste(medida: MedidaDeVisibilidade, cenario: String): List<ObstaculoDoArraste> {
+private fun obstaculosDoArraste(listaRect: Rect, cenario: String): List<ObstaculoDoArraste> {
     val obstaculos = mutableListOf<ObstaculoDoArraste>()
     JanelasDaTela.ler { Capturas.anotar(cenario, "janelas: $it") }.forEach { janela ->
         val retangulo = Rect()
@@ -323,8 +374,8 @@ private fun obstaculosDoArraste(medida: MedidaDeVisibilidade, cenario: String): 
         val ignorada = when {
             janela.type == AccessibilityWindowInfo.TYPE_SYSTEM -> "sistema"
             retangulo.isEmpty -> "vazia"
-            retangulo.contains(medida.listaRect) -> "cobre a lista"
-            cobreAListaComFolga(retangulo, medida.listaRect) -> "cobre a lista, com 1 px de diferença"
+            retangulo.contains(listaRect) -> "cobre a lista"
+            cobreAListaComFolga(retangulo, listaRect) -> "cobre a lista, com 1 px de diferença"
             else -> null
         }
         val descricao = "tipo=${janela.type} titulo=${janela.title} bounds=${retangulo.toShortString()}"
@@ -344,21 +395,22 @@ private fun cobreAListaComFolga(janela: Rect, lista: Rect): Boolean {
 }
 
 /**
- * Escolhe o segmento vertical do arraste, em [x] fixo. Começa no padrão: um terço da área útil, centrado nela. Se
+ * Escolhe o segmento vertical do arraste, em [x] fixo. Começa no padrão: [fracao] da área útil, centrado nela. Se
  * ele cruzar um obstáculo, procura a faixa livre mais perto do centro, com o mesmo tamanho; se não houver, encurta
  * o segmento (até um oitavo da área útil) e procura de novo. Sem faixa livre nenhuma, fica com o padrão e diz isso
  * no motivo: o arraste segue mesmo assim (rb-46 U4).
  */
 private fun escolherSegmento(
-    medida: MedidaDeVisibilidade,
+    area: AreaDaLista,
+    fracao: Float,
     x: Float,
     folga: Float,
     obstaculos: List<ObstaculoDoArraste>,
 ): SegmentoDoArraste {
-    val altura = medida.fundoUtil - medida.topoUtil
-    val centro = (medida.topoUtil + medida.fundoUtil) / 2
-    val comprimento = 2 * (altura / 6)
-    val minimo = altura / FRACAO_MINIMA_DO_SEGMENTO
+    val altura = area.fundoUtil - area.topoUtil
+    val centro = (area.topoUtil + area.fundoUtil) / 2
+    val comprimento = (altura * fracao).toInt()
+    val minimo = minOf(altura / FRACAO_MINIMA_DO_SEGMENTO, comprimento)
     val tamanhos = listOf(comprimento, comprimento * 3 / 4, comprimento / 2, minimo).distinct()
     val passo = (altura / PASSOS_DA_BUSCA_DE_FAIXA).coerceAtLeast(1)
     val inicioPadrao = centro - comprimento / 2
@@ -366,7 +418,7 @@ private fun escolherSegmento(
         return SegmentoDoArraste(inicioPadrao, inicioPadrao + comprimento, "padrão, sem janela por cima")
     }
     for (tamanho in tamanhos) {
-        val inicios = (medida.topoUtil..(medida.fundoUtil - tamanho) step passo)
+        val inicios = (area.topoUtil..(area.fundoUtil - tamanho) step passo)
             .sortedBy { abs(it + tamanho / 2 - centro) }
         val livre = inicios.firstOrNull { inicio ->
             obstaculos.none { cruza(inicio, inicio + tamanho, x, folga, it) }
