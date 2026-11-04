@@ -33,7 +33,7 @@ import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -54,6 +54,7 @@ class LivroActivity : BasePlayerActivity() {
         activity = this,
         onVoiceSelected = ::aoEscolherVoz,
         onVoicePreview = ::ouvirAmostra,
+        onVoiceStop = { audiobookViewModel.pararPreview() },
         obterVozAtualId = { vozDoLivro().first },
         onCloneVoiceRequested = { cloneVoiceFlow.iniciar() }
     )
@@ -415,19 +416,22 @@ class LivroActivity : BasePlayerActivity() {
         VoiceCatalog.findAny(vozId)?.let(::gravarVozDoLivro)
     }
 
-    private fun ouvirAmostra(voz: VoiceOption, aoTerminar: () -> Unit) {
+    /** Amostra da lista de vozes: a linha acompanha a fase até a prévia acabar, parar ou o teto (rb-29). */
+    private fun ouvirAmostra(voz: VoiceOption, aoMudar: (FaseDaAmostra) -> Unit) {
         audiobookViewModel.pararPreview()
         if (voz.engine == "elevenlabs" && SecurePreferences.getElevenLabsKey(this).isNullOrBlank()) {
             Toast.makeText(this, R.string.toast_elevenlabs_configure_key, Toast.LENGTH_LONG).show()
-            aoTerminar()
+            aoMudar(FaseDaAmostra.PARADA)
             return
         }
         val chave = SecurePreferences.getGeminiKeys(this)
         audiobookViewModel.prepararConfiguracoesPython(voz.engine, chave, appPrefs.pausaMs)
-        lifecycleScope.launch {
-            audiobookViewModel.gerarAmostra(voz.id, appPrefs.ritmo, voz.engine, chave, VoiceCatalog.previewSampleText(voz))
-            audiobookViewModel.uiState.first { !it.amostraGerando }
-            aoTerminar()
+        lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            val pedido = audiobookViewModel.gerarAmostra(
+                voz.id, appPrefs.ritmo, voz.engine, chave, VoiceCatalog.previewSampleText(voz)
+            )
+            if (pedido == null) aoMudar(FaseDaAmostra.PARADA)
+            else audiobookViewModel.acompanharAmostra(pedido, aoMudar)
         }
     }
 

@@ -219,10 +219,11 @@ class ReaderVozController(
     }
 
     /**
-     * Amostra da voz escolhida na lista de vozes: gera um trecho do livro e avisa quando termina. A guiada pausa
-     * enquanto a amostra é gerada e toca, e retoma depois (rb-24). Sem chave do ElevenLabs não toca nada: não segura.
+     * Amostra da voz escolhida na lista de vozes: gera um trecho do livro e avisa a fase (rb-29) até acabar. A guiada
+     * pausa enquanto a amostra é gerada e toca, e retoma depois (rb-24). Sem chave do ElevenLabs não toca nada: não
+     * segura.
      */
-    fun ouvirAmostra(voice: VoiceOption, onFinished: () -> Unit) {
+    fun ouvirAmostra(voice: VoiceOption, aoMudar: (FaseDaAmostra) -> Unit) {
         if (voice.engine == "elevenlabs" &&
             SecurePreferences.getElevenLabsKey(activity).isNullOrBlank()
         ) {
@@ -232,7 +233,7 @@ class ReaderVozController(
                 R.string.toast_elevenlabs_configure_key,
                 Toast.LENGTH_LONG
             ).show()
-            onFinished()
+            aoMudar(FaseDaAmostra.PARADA)
             return
         }
         val segura = pausaParaOuvir.segurar()
@@ -251,14 +252,21 @@ class ReaderVozController(
         // UNDISPATCHED: o finally solta a segurada mesmo com o escopo já cancelado (giro de tela).
         activity.lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
-                audiobookViewModel.gerarAmostra(voice.id, ritmo, voice.engine, chave, previewText)
-                audiobookViewModel.uiState.first { !it.amostraGerando }
-                onFinished()
-                aguardarFimDaPrevia()
+                val pedido = audiobookViewModel.gerarAmostra(voice.id, ritmo, voice.engine, chave, previewText)
+                if (pedido == null) aoMudar(FaseDaAmostra.PARADA)
+                else audiobookViewModel.acompanharAmostra(pedido, aoMudar, ESPERA_MAXIMA_DA_PREVIA_MS)
             } finally {
                 segura.soltar()
             }
         }
+    }
+
+    /**
+     * Para a amostra em curso: o ■ da lista e o sheet fechar com voz ativa (rb-29). A segurada solta no finally da
+     * amostra, e a guiada retoma pela regra de [PausaParaOuvir].
+     */
+    fun pararAmostra() {
+        audiobookViewModel.pararPreview()
     }
 
     /**

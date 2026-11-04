@@ -17,7 +17,9 @@ import kotlinx.coroutines.withContext
 class VoiceSelectionDelegate(
     private val activity: AppCompatActivity,
     private val onVoiceSelected: (VoiceOption) -> Unit,
-    private val onVoicePreview: (VoiceOption, onFinished: () -> Unit) -> Unit,
+    private val onVoicePreview: (VoiceOption, aoMudar: (FaseDaAmostra) -> Unit) -> Unit,
+    /** Para a amostra em curso (o ■ da lista e o sheet fechar com voz ativa), rb-29. */
+    private val onVoiceStop: () -> Unit,
     private val obterVozAtualId: () -> String,
     private val restorable: Boolean = true,
     private val onCloneVoiceRequested: (() -> Unit)? = null,
@@ -39,15 +41,17 @@ class VoiceSelectionDelegate(
                     VoiceBottomSheet.ACTION_PREVIEW -> VoiceBottomSheet
                         .voiceFromBundle(result.getBundle(VoiceBottomSheet.RESULT_VOICE))
                         ?.let { voice ->
-                            onVoicePreview(voice) {
+                            onVoicePreview(voice) { fase ->
                                 activity.supportFragmentManager.setFragmentResult(
-                                    VoiceBottomSheet.PREVIEW_FINISHED_KEY,
+                                    VoiceBottomSheet.PREVIEW_STATE_KEY,
                                     Bundle().apply {
                                         putString(VoiceBottomSheet.RESULT_VOICE, voice.id)
+                                        putString(VoiceBottomSheet.RESULT_FASE, fase.name)
                                     }
                                 )
                             }
                         }
+                    VoiceBottomSheet.ACTION_STOP_PREVIEW -> onVoiceStop()
                 }
             }
         }
@@ -88,6 +92,7 @@ class VoiceSelectionDelegate(
                         }
                     },
                     onVoicePreview = onVoicePreview,
+                    onVoiceStop = onVoiceStop,
                     onAndroidVoiceRequested = { abrirFluxoVozAndroid() },
                     onCloneVoiceRequested = onCloneVoiceRequested,
                     restorable = restorable
@@ -137,6 +142,7 @@ class VoiceSelectionDelegate(
                         }
                     },
                     onVoicePreview = onVoicePreview,
+                    onVoiceStop = onVoiceStop,
                     restorable = restorable
                 )
             }.show(fm, "voice_bottom_sheet_android")

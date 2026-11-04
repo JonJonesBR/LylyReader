@@ -440,6 +440,7 @@
     <string name="vozes_titulo">Selecionar voz</string>
     <string name="preview_voz_btn_desc">Ouvir amostra da voz</string>
     <string name="preview_voz_carregando_desc">Preparando amostra da voz</string>
+    <string name="preview_voz_parar_desc">Parar amostra da voz</string>
     <string name="hint_filtrar_vozes">Filtrar vozes...</string>
     <string name="voice_recommended_for_language">Para o idioma do app: %1$s</string>
     <string name="voice_no_recommended_for_language">Ainda não há vozes identificadas especificamente para %1$s. Estas são as opções disponíveis:</string>

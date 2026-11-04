@@ -97,7 +97,8 @@ object ConfigLivroDialog {
         VoiceSelectionDelegate(
             activity = activity,
             onVoiceSelected = aoEscolherVoz,
-            onVoicePreview = { _, onFinished -> onFinished() },
+            onVoicePreview = { _, aoMudar -> aoMudar(FaseDaAmostra.PARADA) },
+            onVoiceStop = {},
             obterVozAtualId = { efetivo.voz },
             restorable = false,
             onCloneVoiceRequested = { onClonarVoz(aoEscolherVoz) }

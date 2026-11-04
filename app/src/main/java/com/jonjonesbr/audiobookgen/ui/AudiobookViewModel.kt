@@ -41,8 +41,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** Motivo pelo qual [AudiobookViewModel.retomarConversaoPausada] não pôde retomar. */
 enum class RetomadaFalha { SEM_JOB, JA_HA_CONVERSAO, ARQUIVO_AUSENTE, FALHA_AO_INICIAR }
@@ -99,6 +101,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
     companion object {
         /** Pausa padrão entre blocos da conversão (ms) — default do AppPrefs.pausaMs. */
         private const val PAUSA_MS_PADRAO = 600
+        /** Teto da espera da amostra de voz (rb-29): a linha da lista volta a ▶ mesmo que algo não baixe. */
+        const val ESPERA_MAXIMA_DA_AMOSTRA_MS = 180_000L
     }
 
     private var pausaMsAtual: Int = PAUSA_MS_PADRAO
@@ -108,10 +112,11 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
     val uiState: StateFlow<AudiobookUiState> = _uiState.asStateFlow()
 
     /**
-     * Sobe a cada [pararPreview]. Uma amostra ou pronúncia que ainda está sendo gerada quando isso acontece não toca
-     * depois, por cima da leitura guiada (rb-24). Só na main thread.
+     * Sobe a cada [pararPreview] e é também o número do pedido (rb-29): quem acompanha uma amostra compara com o
+     * pedido dele. Uma amostra ou pronúncia que ainda está sendo gerada quando isso acontece não toca depois,
+     * por cima da leitura guiada (rb-24). Só na main thread: as leituras são síncronas (`.value`).
      */
-    private var geracaoDaAmostra = 0
+    private val geracaoDaAmostra = MutableStateFlow(0)
 
     /**
      * Job da amostra ou pronúncia em geração. [pararPreview] o cancela, para a síntese cancelada não seguir
@@ -220,16 +225,20 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch { pythonEngine.sincronizarConfiguracoes(motor, chaveEfetiva, pausaMs, caminhoDoLivro = caminhoDoLivro) }
     }
 
-    fun gerarAmostra(voz: String, ritmo: Int, motor: String, chaveGemini: String, texto: String = "") {
-        if (_uiState.value.amostraGerando) return
+    /**
+     * Gera e toca a amostra. Devolve o número do pedido (para [acompanharAmostra]), ou nulo quando já há uma amostra
+     * sendo gerada e este pedido não foi aceito (rb-29).
+     */
+    fun gerarAmostra(voz: String, ritmo: Int, motor: String, chaveGemini: String, texto: String = ""): Int? {
+        if (_uiState.value.amostraGerando) return null
         _uiState.update { it.copy(amostraGerando = true, statusMessage = getApplication<Application>().getString(R.string.status_gerando_amostra)) }
-        val geracao = geracaoDaAmostra
+        val geracao = geracaoDaAmostra.value
 
         jobDaAmostra = viewModelScope.launch {
             when (val resultado = amostraVoz.gerar(voz, ritmo, motor, chaveGemini, texto)) {
                 is ResultadoAmostra.Pronta -> {
                     // Pedido cancelado por pararPreview (outra voz, outro ouvir): não toca nem mexe no "gerando".
-                    if (geracao != geracaoDaAmostra) return@launch
+                    if (geracao != geracaoDaAmostra.value) return@launch
                     // A prévia começa antes de soltar "gerando": não existe instante com os dois falsos (rb-24).
                     iniciarPreview(resultado.caminho)
                     _uiState.update {
@@ -237,10 +246,51 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                 }
                 is ResultadoAmostra.Falha -> {
-                    if (geracao != geracaoDaAmostra) return@launch
+                    if (geracao != geracaoDaAmostra.value) return@launch
                     _uiState.update { it.copy(amostraGerando = false, statusMessage = resultado.mensagem) }
                 }
             }
+        }
+        return geracao
+    }
+
+    /**
+     * Acompanha o pedido [pedido] até a amostra acabar, parar ou o teto [tetoMs] estourar (rb-29). A cada mudança
+     * avisa [aoMudar] com a fase do pedido. A fase é recalculada do valor atual (não dos valores emitidos): assim um
+     * aviso fora de ordem não troca a fase de outro pedido. Ao sair, avisa PARADA se ainda não avisou.
+     */
+    suspend fun acompanharAmostra(
+        pedido: Int,
+        aoMudar: (FaseDaAmostra) -> Unit,
+        tetoMs: Long = ESPERA_MAXIMA_DA_AMOSTRA_MS,
+    ) {
+        var ultima = FaseDaAmostra.PARADA
+        try {
+            val terminou = withTimeoutOrNull(tetoMs) {
+                combine(geracaoDaAmostra, _uiState, playerUseCase.tocando) { _, _, _ ->
+                    faseDoPedido(
+                        pedido,
+                        geracaoDaAmostra.value,
+                        _uiState.value.amostraGerando,
+                        playerUseCase.tocando.value,
+                    )
+                }
+                    .distinctUntilChanged()
+                    .transformWhile { fase ->
+                        emit(fase)
+                        fase != FaseDaAmostra.PARADA
+                    }
+                    .collect {
+                        ultima = it
+                        aoMudar(it)
+                    }
+                true
+            }
+            // Estourou o teto (nulo) com o pedido ainda vigente: cancela a geração e para o player, para que o ▶
+            // não prometa um áudio que nunca vai tocar por cima da leitura guiada.
+            if (terminou == null && geracaoDaAmostra.value == pedido) pararPreview()
+        } finally {
+            if (ultima != FaseDaAmostra.PARADA) aoMudar(FaseDaAmostra.PARADA)
         }
     }
 
@@ -753,7 +803,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
     fun ouvirTexto(voz: String, ritmo: Int, motor: String, texto: String, caminhoDoLivro: String? = null) {
         if (_uiState.value.amostraGerando || texto.isBlank()) return
         _uiState.update { it.copy(amostraGerando = true, statusMessage = getApplication<Application>().getString(R.string.status_gerando_amostra)) }
-        val geracao = geracaoDaAmostra
+        val geracao = geracaoDaAmostra.value
         jobDaAmostra = viewModelScope.launch {
             val app = getApplication<android.app.Application>()
             val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motor)
@@ -763,7 +813,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
                 }.synthesize(texto, voz, ritmo)
             }
             // Pedido cancelado por pararPreview: não toca nem mexe no "gerando" (rb-24).
-            if (geracao != geracaoDaAmostra) return@launch
+            if (geracao != geracaoDaAmostra.value) return@launch
             if (caminho != null) {
                 // A prévia começa antes de soltar "gerando": não existe instante com os dois falsos (rb-24).
                 iniciarPreview(caminho)
@@ -781,7 +831,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
      * que ainda volta não toca (rb-24).
      */
     fun pararPreview() {
-        geracaoDaAmostra++
+        geracaoDaAmostra.value++
         jobDaAmostra?.cancel()
         jobDaAmostra = null
         _uiState.update {

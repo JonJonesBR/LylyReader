@@ -431,6 +431,7 @@
     <string name="vozes_titulo">Select voice</string>
     <string name="preview_voz_btn_desc">Voice preview</string>
     <string name="preview_voz_carregando_desc">Preparing voice sample</string>
+    <string name="preview_voz_parar_desc">Stop voice sample</string>
     <string name="hint_filtrar_vozes">Filter voices...</string>
     <string name="voice_recommended_for_language">For your app language: %1$s</string>
     <string name="voice_no_recommended_for_language">No voices are specifically tagged for %1$s yet. Available alternatives:</string>

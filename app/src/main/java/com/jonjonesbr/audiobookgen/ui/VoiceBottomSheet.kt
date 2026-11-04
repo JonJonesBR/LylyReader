@@ -28,6 +28,9 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
 
     companion object {
         private const val PREVIEW_ICON_IDLE = "▶"
+        private const val PREVIEW_ICON_STOP = "■"
+        /** Payload do notifyItemChanged que redesenha só a amostra da linha (rb-29). */
+        private const val PAYLOAD_AMOSTRA = "amostra"
         private const val MAX_HEIGHT_DP = 720
         // Valores de android.speech.tts.Voice.QUALITY_HIGH e QUALITY_NORMAL
         private const val QUALIDADE_ALTA = 400
@@ -35,7 +38,9 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         private const val TYPE_SECTION = 0
         private const val TYPE_VOICE = 1
         internal const val RESULT_KEY = "voice_bottom_sheet_result"
-        internal const val PREVIEW_FINISHED_KEY = "voice_bottom_sheet_preview_finished"
+        /** Fase da amostra vinda do Leitor/LivroActivity pelo fragment result (rb-29). */
+        internal const val PREVIEW_STATE_KEY = "voice_bottom_sheet_preview_state"
+        internal const val RESULT_FASE = "fase"
         internal const val ARG_HAS_PREVIEW = "voice_sheet_has_preview"
         private const val ARG_VOICES = "voice_sheet_voices"
         private const val ARG_SELECTED_VOICE = "voice_sheet_selected_voice"
@@ -48,6 +53,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         internal const val RESULT_ACTION = "action"
         internal const val ACTION_SELECT = "select"
         internal const val ACTION_PREVIEW = "preview"
+        internal const val ACTION_STOP_PREVIEW = "stop_preview"
         internal const val ACTION_ANDROID = "android_voices"
         internal const val ACTION_CLONE = "clone_voice"
         internal const val RESULT_VOICE = "voice"
@@ -87,10 +93,14 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
     private var voices: List<VoiceOption> = emptyList()
     private var selectedVoiceId: String? = null
     private var onVoiceSelected: ((VoiceOption) -> Unit)? = null
-    // onFinished deve ser chamado pelo caller quando a amostra terminar de gerar/tocar, pra
-    // reverter o botão ▶ — sem isso o clique não dava nenhum feedback visual de que algo
-    // estava acontecendo.
-    private var onVoicePreview: ((VoiceOption, onFinished: () -> Unit) -> Unit)? = null
+    // aoMudar deve ser chamado pelo caller com a fase da amostra (rb-29): GERANDO, TOCANDO e, no fim (sozinha,
+    // pelo ■ ou por falha), PARADA. É o que troca o ▶ / círculo / ■ da linha.
+    private var onVoicePreview: ((VoiceOption, aoMudar: (FaseDaAmostra) -> Unit) -> Unit)? = null
+    /** Para a amostra em curso: o ■ da linha ou o sheet fechar com uma voz ativa (rb-29). */
+    private var onVoiceStop: (() -> Unit)? = null
+    /** Única amostra da lista (a prévia é só uma por vez). Só o clique deste sheet inicia uma voz. */
+    private var amostra = AmostraNaLista()
+    private var adapterDasVozes: VoiceAdapter? = null
     private var onAndroidVoiceRequested: (() -> Unit)? = null
     private var onCloneVoiceRequested: (() -> Unit)? = null
 
@@ -98,7 +108,8 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         voices: List<VoiceOption>,
         selectedVoiceId: String?,
         onVoiceSelected: (VoiceOption) -> Unit,
-        onVoicePreview: ((VoiceOption, onFinished: () -> Unit) -> Unit)? = null,
+        onVoicePreview: ((VoiceOption, aoMudar: (FaseDaAmostra) -> Unit) -> Unit)? = null,
+        onVoiceStop: (() -> Unit)? = null,
         onAndroidVoiceRequested: (() -> Unit)? = null,
         onCloneVoiceRequested: (() -> Unit)? = null,
         restorable: Boolean = true
@@ -107,6 +118,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         this.selectedVoiceId = selectedVoiceId
         this.onVoiceSelected = onVoiceSelected
         this.onVoicePreview = onVoicePreview
+        this.onVoiceStop = onVoiceStop
         this.onAndroidVoiceRequested = onAndroidVoiceRequested
         this.onCloneVoiceRequested = onCloneVoiceRequested
         arguments = Bundle().apply {
@@ -132,7 +144,6 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
 
     private var filtroVozes = ""
     private var outrasVozesExpandidas = false
-    private val callbacksPreviewPorVoz = mutableMapOf<String, () -> Unit>()
 
     override fun onSaveInstanceState(outState: Bundle) {
         view?.findViewById<EditText>(R.id.etFiltroVozes)?.let { filtroVozes = it.text.toString() }
@@ -212,8 +223,12 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                 })
             }
         }
-        parentFragmentManager.setFragmentResultListener(PREVIEW_FINISHED_KEY, viewLifecycleOwner) { _, result ->
-            result.getString(RESULT_VOICE)?.let { voiceId -> callbacksPreviewPorVoz.remove(voiceId)?.invoke() }
+        parentFragmentManager.setFragmentResultListener(PREVIEW_STATE_KEY, viewLifecycleOwner) { _, result ->
+            val voiceId = result.getString(RESULT_VOICE) ?: return@setFragmentResultListener
+            // values() e não valueOf: o texto vem do Bundle, e um valor desconhecido não pode derrubar o app.
+            val fase = FaseDaAmostra.values().firstOrNull { it.name == result.getString(RESULT_FASE) }
+                ?: return@setFragmentResultListener
+            aplicarFase(voiceId, fase)
         }
         val idiomaDaTela = resources.configuration.locales[0] ?: Locale.getDefault()
         val grupos = com.jonjonesbr.audiobookgen.util.VoiceCatalog.agruparPorIdiomaPreferido(
@@ -226,6 +241,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         val adapter = VoiceAdapter(grupos, outrasVozesExpandidas) { expanded ->
             outrasVozesExpandidas = expanded
         }
+        adapterDasVozes = adapter
         view.findViewById<RecyclerView>(R.id.rvVozes).apply {
             layoutManager = LinearLayoutManager(requireContext())
             this.adapter = adapter
@@ -240,6 +256,34 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             adapter.submitFilter(query)
         }
         adapter.submitFilter(filtroVozes)
+    }
+
+    override fun onDestroyView() {
+        // Fechar a lista para a amostra (rb-29): dismiss, escolha de voz e giro de tela passam por aqui.
+        pedirParada()
+        super.onDestroyView()
+        adapterDasVozes = null
+    }
+
+    /** Aplica um aviso da prévia à voz ativa. Pode chegar depois de a lista fechar: aí não há o que mudar. */
+    private fun aplicarFase(vozId: String, fase: FaseDaAmostra) {
+        if (view == null) return
+        val antes = amostra
+        amostra = amostra.aoReceber(vozId, fase)
+        if (amostra != antes) adapterDasVozes?.atualizarAmostra(antes.vozId, amostra.vozId)
+    }
+
+    /** O ■ ou o toque no círculo: para a amostra ativa e já limpa a linha, sem esperar o aviso da prévia. */
+    private fun pedirParada() {
+        val id = amostra.vozId ?: return
+        amostra = AmostraNaLista()
+        adapterDasVozes?.atualizarAmostra(id)
+        if (onVoicePreview != null) onVoiceStop?.invoke()
+        else if (arguments?.getBoolean(ARG_HAS_PREVIEW) == true) {
+            parentFragmentManager.setFragmentResult(RESULT_KEY, Bundle().apply {
+                putString(RESULT_ACTION, ACTION_STOP_PREVIEW)
+            })
+        }
     }
 
     private fun nomeDoIdioma(tag: String?): String {
@@ -307,6 +351,62 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             when (val row = items[position]) {
                 is VoiceRow.Section -> bindSection(holder as SectionVH, row)
                 is VoiceRow.Voice -> bindVoice(holder as VH, row)
+            }
+        }
+
+        // Com o payload de amostra, redesenha só o botão da linha: sem piscar a lista nem perder a rolagem (rb-29).
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
+            val row = items[position]
+            if (holder is VH && row is VoiceRow.Voice && payloads.contains(PAYLOAD_AMOSTRA)) {
+                bindAmostra(holder, row.option)
+            } else {
+                onBindViewHolder(holder, position)
+            }
+        }
+
+        /** Redesenha só as linhas das vozes dadas (rb-29). Id nulo ou fora da lista é ignorado. */
+        fun atualizarAmostra(vararg ids: String?) {
+            for (id in ids) {
+                if (id == null) continue
+                val posicao = items.indexOfFirst { it is VoiceRow.Voice && it.option.id == id }
+                if (posicao >= 0) notifyItemChanged(posicao, PAYLOAD_AMOSTRA)
+            }
+        }
+
+        /**
+         * Desenha a fase da amostra na linha (rb-29): ▶ parada; círculo girando (o toque cancela a geração);
+         * ■ tocando (o toque para). Na geração o botão fica invisível, para o toque cair no container.
+         */
+        private fun bindAmostra(holder: VH, voice: VoiceOption) {
+            val fase = amostra.faseDa(voice.id)
+            if (fase == FaseDaAmostra.PARADA) {
+                holder.preview.visibility = View.VISIBLE
+                holder.preview.isEnabled = true
+                holder.preview.text = PREVIEW_ICON_IDLE
+                holder.preview.contentDescription = getString(R.string.preview_voz_btn_desc)
+                holder.previewCarregando.visibility = View.GONE
+                holder.previewContainer.setOnClickListener(null)
+                holder.previewContainer.isClickable = false
+                holder.previewContainer.contentDescription = null
+                return
+            }
+            if (fase == FaseDaAmostra.GERANDO) {
+                holder.preview.visibility = View.INVISIBLE
+                holder.previewCarregando.visibility = View.VISIBLE
+                // Com o botão invisível, o toque cai no container: ele é que cancela a geração.
+                holder.previewContainer.setOnClickListener { pedirParada() }
+                holder.previewContainer.isClickable = true
+                holder.previewContainer.contentDescription = getString(R.string.preview_voz_parar_desc)
+            } else {
+                // Tocando: o ■ é o alvo do toque. O container fica como na parada, sem nó duplicado para o TalkBack.
+                holder.preview.visibility = View.VISIBLE
+                holder.preview.isEnabled = true
+                holder.preview.text = PREVIEW_ICON_STOP
+                holder.preview.contentDescription = getString(R.string.preview_voz_parar_desc)
+                holder.previewCarregando.visibility = View.GONE
+                holder.previewContainer.setOnClickListener(null)
+                holder.previewContainer.isClickable = false
+                holder.previewContainer.contentDescription = null
             }
         }
 
@@ -516,14 +616,14 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             val canPreview = onVoicePreview != null || arguments?.getBoolean(ARG_HAS_PREVIEW) == true
             // O container some inteiro sem prévia, para não deixar vão à direita da linha.
             holder.previewContainer.visibility = if (canPreview) View.VISIBLE else View.GONE
-            // Reseta o botão ao estado padrão sempre que a view é (re)vinculada — evita que um
-            // botão fique preso com o indicador de progresso depois de reciclado pelo
-            // scroll do RecyclerView.
-            holder.preview.visibility = View.VISIBLE
-            holder.preview.isEnabled = true
-            holder.preview.text = PREVIEW_ICON_IDLE
-            holder.previewCarregando.visibility = View.GONE
+            // Estado da amostra desta voz (ou o padrão): a linha reciclada sempre mostra a verdade.
+            bindAmostra(holder, voice)
             holder.preview.setOnClickListener {
+                // Com a amostra desta voz em curso, o botão é o ■ (ou cancela a geração): para, sem iniciar outra.
+                if (amostra.faseDa(voice.id) != FaseDaAmostra.PARADA) {
+                    pedirParada()
+                    return@setOnClickListener
+                }
                 // Voz com clipe embarcado (assets/previas/) toca sem o pacote baixado.
                 val temClipeEmbarcado = com.jonjonesbr.audiobookgen.util.VoiceCatalog.previewAssetName(voice.id) != null
                 val precisaBaixarAntes = ((voice.engine == "onnx" || voice.engine == "kokoro" || voice.engine == "pocket") &&
@@ -536,25 +636,13 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                 } else {
-                    // Enquanto a amostra é preparada, o indicador de progresso ocupa o lugar do ▶.
-                    holder.preview.isEnabled = false
-                    holder.preview.visibility = View.INVISIBLE
-                    holder.previewCarregando.visibility = View.VISIBLE
-                    // O voiceId como tag identifica a voz que este clique pediu — se a view
-                    // já tiver sido reciclada pra outra voz quando o callback disparar, o
-                    // reset abaixo é ignorado (evita mexer no item errado).
-                    holder.itemView.tag = voice.id
-                    val onFinished = {
-                        if (holder.itemView.tag == voice.id) {
-                            holder.previewCarregando.visibility = View.GONE
-                            holder.preview.visibility = View.VISIBLE
-                            holder.preview.isEnabled = true
-                            holder.preview.text = PREVIEW_ICON_IDLE
-                        }
-                    }
-                    if (onVoicePreview != null) onVoicePreview?.invoke(voice, onFinished)
+                    // A linha muda já (círculo) e só depois chama o host: ele pode responder PARADA na hora
+                    // (ElevenLabs sem chave), e esse aviso precisa encontrar a voz já ativa.
+                    val antes = amostra
+                    amostra = amostra.aoTocar(voice.id)
+                    atualizarAmostra(antes.vozId, voice.id)
+                    if (onVoicePreview != null) onVoicePreview?.invoke(voice) { fase -> aplicarFase(voice.id, fase) }
                     else {
-                        callbacksPreviewPorVoz[voice.id] = onFinished
                         parentFragmentManager.setFragmentResult(RESULT_KEY, Bundle().apply {
                             putString(RESULT_ACTION, ACTION_PREVIEW)
                             putBundle(RESULT_VOICE, voiceToBundle(voice))

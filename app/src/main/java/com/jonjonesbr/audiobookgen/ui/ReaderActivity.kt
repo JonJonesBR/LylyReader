@@ -984,7 +984,8 @@ class ReaderActivity : BasePlayerActivity() {
     private val voiceSelectionDelegate: VoiceSelectionDelegate = VoiceSelectionDelegate(
         activity = this,
         onVoiceSelected = { vozController.selecionarVoz(it) },
-        onVoicePreview = { voice, onFinished -> vozController.ouvirAmostra(voice, onFinished) },
+        onVoicePreview = { voice, aoMudar -> vozController.ouvirAmostra(voice, aoMudar) },
+        onVoiceStop = { vozController.pararAmostra() },
         obterVozAtualId = { appPrefs.vozSelecionada.orEmpty() },
         onCloneVoiceRequested = { cloneVoiceFlow.iniciar() },
     )
