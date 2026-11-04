@@ -1369,6 +1369,65 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun anteriorNaGuiadaMostraOInicioDoParagrafoCortadoPorCima() {
+        // rb-62: o ⏮ volta a um parágrafo cuja primeira linha já está acima do topo da lista. O acompanhamento tem de
+        // subir até a linha narrada (como a horizontal faz), e não ficar parado porque a linha está fora da tela.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = false
+        // Continuar lendo a partir do parágrafo 2 (posição salva).
+        AppPrefs(app).salvarPosicaoLeitura(livro.absolutePath, 2, textos.size)
+        // Voz falsa que espera para sempre: a guiada fica parada no parágrafo narrado, sem avançar.
+        val vozQueEspera = object : TtsSynthesizer {
+            override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
+                awaitCancellation()
+            }
+        }
+        TtsSynthesizer.substitutoParaTestes = { vozQueEspera }
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_CONTINUAR_GUIADA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            // A guiada começou no 2 e a lista assentou (sem rolagem animada em curso).
+            esperarAte(scenario, "guiada no parágrafo 2 com a lista parada") { a ->
+                (GuidedPlaybackBridge.manager?.state?.value?.index == 2) &&
+                    lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE
+            }
+            // Mostra o parágrafo 1 (longo) desde o topo, para medir a altura dele.
+            scenario.onActivity { lista(it).scrollToPosition(1) }
+            esperarAte(scenario, "parágrafo 1 montado") { a -> tvEm(lista(a), 1) != null }
+            var altura1 = 0
+            scenario.onActivity { altura1 = tvEm(lista(it), 1)!!.height }
+            // Pré-condição: o parágrafo 1 começa acima do topo, com só os últimos 100 px na tela. A base da primeira
+            // linha dele fica acima de 0, ou seja, já saiu da lista.
+            scenario.onActivity {
+                (lista(it).layoutManager as LinearLayoutManager).scrollToPositionWithOffset(1, -(altura1 - 100))
+            }
+            esperarAte(scenario, "parágrafo 1 com a primeira linha cortada por cima") { a ->
+                val tv = tvEm(lista(a), 1)
+                tv != null && tv.top < 0 && pePrimeiraLinha(tv) < 0
+            }
+            // O ⏮ da barra da guiada volta para o parágrafo 1.
+            scenario.onActivity { it.findViewById<View>(R.id.btnGuidedPrev).performClick() }
+            esperarAte(scenario, "guiada voltou para o parágrafo 1") { _ ->
+                GuidedPlaybackBridge.manager?.state?.value?.index == 1
+            }
+            // Depois: a primeira linha do parágrafo 1 volta para dentro da lista (abaixo do topo, no limite da altura).
+            esperarAte(scenario, "primeira linha do parágrafo 1 de volta à lista") { a ->
+                val rv = lista(a)
+                val tv = tvEm(rv, 1)
+                tv != null && pePrimeiraLinha(tv) > 0 && pePrimeiraLinha(tv) <= rv.height
+            }
+            scenario.onActivity { _ ->
+                assertEquals(1, GuidedPlaybackBridge.manager!!.state.value.index)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Parágrafos num capítulo só, com offsets seguidos (como o extrator faz). */
@@ -1558,6 +1617,9 @@ class ReaderActivitySmokeTest {
     /** TextView do parágrafo na rolagem vertical (o item é o próprio TextView); nulo se ele não está na tela. */
     private fun tvEm(rv: RecyclerView, pos: Int): TextView? =
         rv.findViewHolderForAdapterPosition(pos)?.itemView as? TextView
+
+    /** Base da primeira linha do parágrafo, medida a partir do topo da lista (rb-62). Sem layout, conta 0. */
+    private fun pePrimeiraLinha(tv: TextView): Int = tv.top + tv.totalPaddingTop + (tv.layout?.getLineBottom(0) ?: 0)
 
     /** Página do parágrafo na rolagem horizontal (rb-26a); nulo na vertical. */
     private fun paginaEm(rv: RecyclerView, pos: Int): PaginaDoParagrafo? =

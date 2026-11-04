@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.ui
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
 import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
+import com.jonjonesbr.audiobookgen.domain.RegraDaPaginaDoParagrafo
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.data.RecentReadingsStore
@@ -23,9 +24,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
 
-private const val HIGHLIGHT_TARGET_RATIO = 0.42f
-private const val SCROLL_TRIGGER_THRESHOLD_PX = 6f
-private const val SCROLL_STEP_RATIO = 0.18f
 // Distância (em itens) a partir da qual o salto para o parágrafo/página alvo é instantâneo
 // em vez de animado — acima disso, smoothScrollToPosition percorreria visualmente dezenas/
 // centenas de itens (reabrir o app com a guiada longe do início, ou escolher um capítulo
@@ -136,7 +134,7 @@ class GuidedReadingBarController(
         // Salto direto, como a navegação por capítulos. Na vertical, o parágrafo fica na altura da linha de
         // destaque; o acompanhamento fino retoma com o próximo progresso.
         val margem = if (lm.orientation == LinearLayoutManager.VERTICAL) {
-            (recyclerView.height * HIGHLIGHT_TARGET_RATIO).toInt()
+            (recyclerView.height * RegraDaPaginaDoParagrafo.PROPORCAO_ALVO).toInt()
         } else {
             0
         }
@@ -478,11 +476,14 @@ class GuidedReadingBarController(
         val line = layout.getLineForOffset(offset)
         val highlightY = tv.top + tv.totalPaddingTop + layout.getLineBottom(line)
 
-        val alvo = viewport * HIGHLIGHT_TARGET_RATIO
-        val delta = highlightY - alvo
-        if (delta > SCROLL_TRIGGER_THRESHOLD_PX) {
-            val passo = Math.max(1, (delta * SCROLL_STEP_RATIO).toInt())
-            recyclerView.scrollBy(0, passo)
-        }
+        // Mesma regra da página horizontal (rb-26a). Linha acima do topo (o ⏮ volta a um parágrafo que começa
+        // fora da tela) ou abaixo da área salta direto para o destaque; dentro da área, rola em passos.
+        val passo = RegraDaPaginaDoParagrafo.passoParaDestaque(highlightY, viewport)
+        if (passo == 0) return
+        // Animação de rolagem (smoothScroll) ainda em curso: espera o fim em vez de brigar com ela. O próximo
+        // progresso recalcula o passo. A rolagem do dedo não chega aqui (só roda sem modo manual).
+        if (recyclerView.scrollState == RecyclerView.SCROLL_STATE_SETTLING) return
+        // scrollBy por código não liga o modo manual: é só o acompanhamento.
+        recyclerView.scrollBy(0, passo)
     }
 }

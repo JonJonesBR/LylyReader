@@ -38,4 +38,16 @@ class RegraDaPaginaDoParagrafoTest {
     fun linhaAcimaDoTopoVoltaDireto() {
         assertEquals(-620, RegraDaPaginaDoParagrafo.passoParaDestaque(-200, altura))
     }
+
+    @Test
+    fun baseDaLinhaNoTopoExatoVoltaDireto() {
+        // A base da linha em 0 já está fora da área (acima do topo): salta direto para 42%.
+        assertEquals(-420, RegraDaPaginaDoParagrafo.passoParaDestaque(0, altura))
+    }
+
+    @Test
+    fun baseDaLinhaNaBordaDeBaixoRolaEmPasso() {
+        // Exatamente na borda da área ainda conta como dentro: rola em passo, não salta.
+        assertEquals(104, RegraDaPaginaDoParagrafo.passoParaDestaque(1000, altura))
+    }
 }

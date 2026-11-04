@@ -1,10 +1,10 @@
 package com.jonjonesbr.audiobookgen.domain
 
 /**
- * Regra pura do acompanhamento da leitura guiada dentro de uma página de parágrafo longo (rolagem horizontal, rb-26a).
- * Quanto rolar para manter a linha em leitura perto da altura de destaque. Os valores são os mesmos do acompanhamento
- * vertical (GuidedReadingBarController), para as duas orientações andarem igual. Sem Android: a View que usa esta regra
- * é a PaginaDoParagrafo.
+ * Regra pura do acompanhamento da leitura guiada (vertical e página de parágrafo longo na horizontal, rb-26a/rb-62).
+ * Quanto rolar para manter a linha em leitura perto da altura de destaque. O acompanhamento vertical
+ * (GuidedReadingBarController) e o horizontal (PaginaDoParagrafo) usam a mesma regra, para as duas orientações
+ * andarem igual. Sem Android.
  */
 object RegraDaPaginaDoParagrafo {
 
@@ -19,8 +19,9 @@ object RegraDaPaginaDoParagrafo {
 
     /**
      * Quanto rolar a página (em pixels, com sinal) para a linha em leitura chegar à altura de destaque.
-     * [fimDaLinha] é a base da linha medida a partir do topo visível da página. Fora da área visível (a tela apagada
-     * voltou, "Voltar à narração", recomeço do parágrafo) o salto é direto. Dentro dela, a rolagem é em passos.
+     * [fimDaLinha] é a base da linha medida a partir do topo da área visível (lista ou página). Fora da área
+     * (a tela apagada voltou, "Voltar à narração", recomeço do parágrafo) o salto é direto.
+     * Dentro dela, a rolagem é em passos.
      */
     fun passoParaDestaque(fimDaLinha: Int, alturaVisivel: Int): Int {
         val distancia = fimDaLinha - (alturaVisivel * PROPORCAO_ALVO).toInt()

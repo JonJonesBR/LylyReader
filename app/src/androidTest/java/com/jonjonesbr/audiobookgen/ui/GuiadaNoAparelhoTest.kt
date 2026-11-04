@@ -1,5 +1,9 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.view.View
+import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
@@ -12,6 +16,7 @@ import com.jonjonesbr.audiobookgen.ui.apoio.RegrasDoLeitor
 import com.jonjonesbr.audiobookgen.ui.apoio.VozFalsa
 import com.jonjonesbr.audiobookgen.ui.apoio.abrirLeitorComGuiada
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -100,6 +105,74 @@ class GuiadaNoAparelhoTest {
         )
         Capturas.capturar("04_guiada_avancou")
     }
+
+    /**
+     * C17 (rb-62): com a guiada no parágrafo 2 e o parágrafo 1 mais alto que a tela, o ⏮ volta ao 1 e a lista sobe até
+     * a linha dele. Antes, com a primeira linha do 1 acima do topo, a lista não se movia até a próxima narração.
+     */
+    @Test
+    fun c17_anteriorNaGuiadaSobeAteALinhaDoParagrafoAnterior() {
+        val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+        regras.usarVoz(VozFalsa.muitoLonga(contexto))
+        val textos = LivroNoAparelho.PARAGRAFOS.toMutableList().apply { this[1] = LivroNoAparelho.PARAGRAFO_LONGO }
+
+        val scenario = abrirLeitorComGuiada(regras, contexto, textos = textos, posicaoInicial = 2)
+        esperarAte(scenario, "leitura guiada no parágrafo 2 com a lista parada") { a ->
+            GuidedPlaybackBridge.manager?.state?.value?.index == 2 &&
+                lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE
+        }
+        // Parágrafo 2 a 42% da lista (a altura de destaque do acompanhamento). Com o parágrafo 1 acima e mais alto
+        // que a tela, a primeira linha dele sai pelo topo, como depois de a leitura ter vindo do 1 para o 2.
+        scenario.onActivity { a ->
+            val rv = lista(a)
+            (rv.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(2, (rv.height * 0.42f).toInt())
+        }
+        // Pré-condição: o parágrafo 1 está na lista, com a base da primeira linha acima do topo.
+        esperarAte(scenario, "parágrafo 1 na lista com a primeira linha acima do topo") { a ->
+            baseDaPrimeiraLinha(a, 1)?.let { it < 0 } ?: false
+        }
+
+        val (x, y) = Gestos.centroDaView(scenario, R.id.btnGuidedPrev, "botão anterior da leitura guiada")
+        regras.fecharDialogosDoSistema()
+        Gestos.toqueCurto(x.toFloat(), y.toFloat())
+        esperarAte(scenario, "leitura guiada voltou ao parágrafo 1") { _ ->
+            GuidedPlaybackBridge.manager?.state?.value?.index == 1
+        }
+        Thread.sleep(500)
+
+        // Medido na tela: a base da primeira linha do parágrafo 1 tem de estar entre o topo da lista e o topo da barra.
+        var base = -1
+        var topoDaLista = 0
+        var topoDaBarra = 0
+        var indice = -1
+        scenario.onActivity { a ->
+            val posLista = IntArray(2).also { lista(a).getLocationOnScreen(it) }
+            val posBarra = IntArray(2).also { a.findViewById<View>(R.id.layoutGuidedPlayer).getLocationOnScreen(it) }
+            topoDaLista = posLista[1]
+            topoDaBarra = posBarra[1]
+            base = baseDaPrimeiraLinha(a, 1)?.let { it + posLista[1] } ?: -1
+            indice = GuidedPlaybackBridge.manager?.state?.value?.index ?: -1
+        }
+        Capturas.anotar(
+            "c17-anterior",
+            "index=$indice base=$base topoDaLista=$topoDaLista topoDaBarra=$topoDaBarra"
+        )
+        Capturas.capturar("33_c17_anterior_sobe_ate_a_linha")
+        assertTrue(
+            "a primeira linha do parágrafo 1 deveria estar entre o topo da lista ($topoDaLista) e a barra " +
+                "($topoDaBarra), mas a base está em $base",
+            indice == 1 && base > topoDaLista && base <= topoDaBarra
+        )
+    }
+
+    /** Base da primeira linha do parágrafo [indice], relativa ao topo da lista; nula se ele não está na lista. */
+    private fun baseDaPrimeiraLinha(a: ReaderActivity, indice: Int): Int? {
+        val tv = lista(a).findViewHolderForAdapterPosition(indice)?.itemView as? TextView ?: return null
+        val layout = tv.layout ?: return null
+        return tv.top + tv.totalPaddingTop + layout.getLineBottom(0)
+    }
+
+    private fun lista(a: ReaderActivity): RecyclerView = a.findViewById(R.id.recyclerViewParagrafos)
 
     /**
      * Se algum texto pedido à voz começa pelo parágrafo 0: a guiada mandou sintetizá-lo, e não só pulou para o 1.

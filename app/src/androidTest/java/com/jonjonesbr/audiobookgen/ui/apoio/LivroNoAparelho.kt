@@ -53,6 +53,13 @@ object LivroNoAparelho {
             "letra miúda e apressada."
     )
 
+    /**
+     * Parágrafo mais alto que a área da lista (rb-62, C17): o ⏮ volta a ele com a primeira linha já acima do topo.
+     * Ponto de partida: o parágrafo 1 dos textos de sempre, trocado por este.
+     */
+    val PARAGRAFO_LONGO: String = "Capítulo um, parágrafo 2, longo. " +
+        (1..50).joinToString(" ") { "Frase $it do parágrafo que não cabe numa página só." }
+
     /** Dois capítulos: a primeira metade dos parágrafos no primeiro, o resto no segundo. */
     fun livroDeTeste(textos: List<String> = PARAGRAFOS): TextoExtraido {
         val metade = textos.size / 2
