@@ -397,6 +397,7 @@ class SettingsActivity : BasePlayerActivity() {
 
     private fun configurarListeners() {
         configurarCreditosVoz()
+        configurarAvisoDeLicenca()
         configurarLinhas()
         // Tema — salva e aplica (recria as Activities com o novo modo)
         findViewById<android.view.View>(R.id.rowTema).marcarComoBotao()
@@ -953,6 +954,13 @@ class SettingsActivity : BasePlayerActivity() {
                 creditos.joinToString("\n\n")
             )
         }
+    }
+
+    /** Licença do app (GPL §0 e §5(d)): o toque abre o aviso legal com o texto completo. */
+    private fun configurarAvisoDeLicenca() {
+        val tvLicenca = findViewById<TextView>(R.id.tvSobreLicenca)
+        tvLicenca.marcarComoLink()
+        tvLicenca.setOnClickListener { mostrarAvisoDeLicenca(this, dialogos) }
     }
 
     private fun carregarInfoLogsErro() {

@@ -2154,13 +2154,20 @@
                         android:lineSpacingExtra="3dp"
                         android:layout_marginBottom="12dp"/>
 
-                    <!-- Licença do próprio app (GPL-3.0 ou posterior); o texto completo está no LICENSE do repositório. -->
+                    <!-- Licença do próprio app (GPL-3.0 ou posterior). Toque abre o aviso legal e o texto completo
+                         (assets/licencas/GPL-3.0.txt), exigidos pela GPL §0 e §5(d). -->
                     <TextView
+                        android:id="@+id/tvSobreLicenca"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
                         android:text="@string/sobre_licenca"
-                        android:textColor="@color/color_on_surface_muted"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="12sp"
+                        android:clickable="true"
+                        android:focusable="true"
                         android:layout_marginBottom="12dp"/>
 
                     <View

@@ -305,7 +305,13 @@
         <item>Pocket TTS 3.3 — paquetes ONNX públicos sin clonación y presets fijos (CC BY 4.0). Copyright (c) Kyutai Labs. Runtime C++ PocketTTS.cpp (MIT), SentencePiece (Apache-2.0) y dr_libs (Unlicense).</item>
     </string-array>
     <string name="desc_sobre_app">Lee tus libros en voz alta y los convierte en audiolibros, con voces que funcionan en el propio dispositivo o por internet.</string>
-    <string name="sobre_licenca">Software libre · GNU GPL v3 o posterior</string>
+    <string name="sobre_licenca">Software libre · GNU GPL v3 o posterior · ver aviso</string>
+    <string name="licenca_titulo">Licencia</string>
+    <string name="licenca_aviso_mensagem">LylyReader — Copyright (C) 2026 JonJonesBR\n\nEste programa es software libre: puede redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General GNU, publicada por la Free Software Foundation, en la versión 3 de la licencia o (a su elección) en cualquier versión posterior.\n\nSe distribuye con la esperanza de que sea útil, pero SIN NINGUNA GARANTÍA, ni siquiera la garantía implícita de COMERCIALIZACIÓN o IDONEIDAD PARA UN PROPÓSITO PARTICULAR.\n\nCódigo fuente: https://github.com/JonJonesBR/LylyReader\n\nLos modelos de voz y las bibliotecas de terceros tienen licencias propias (ver los créditos y THIRD_PARTY_LICENSES.md en el repositorio).</string>
+    <string name="licenca_ver_texto">Ver licencia</string>
+    <string name="licenca_fechar">Cerrar</string>
+    <string name="licenca_texto_titulo">Texto de la GPL-3.0</string>
+    <string name="licenca_erro_leitura">No se pudo abrir el texto de la licencia. Léelo en %1$s</string>
     <string name="label_formatos_suportados">Formatos compatibles</string>
     <string name="formatos_suportados">EPUB · PDF · TXT · MD · DOC · DOCX · MOBI</string>
     <string name="hint_gemini_key">AIza...</string>

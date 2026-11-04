@@ -300,7 +300,13 @@
         <item>Pocket TTS 3.3 — public no-voice-cloning ONNX packs and fixed presets (CC BY 4.0). Copyright (c) Kyutai Labs. C++ runtime PocketTTS.cpp (MIT), SentencePiece (Apache-2.0), and dr_libs (Unlicense).</item>
     </string-array>
     <string name="desc_sobre_app">Reads your books aloud and turns them into audiobooks, with voices that work on the device itself or over the internet.</string>
-    <string name="sobre_licenca">Free software · GNU GPL v3 or later</string>
+    <string name="sobre_licenca">Free software · GNU GPL v3 or later · see notice</string>
+    <string name="licenca_titulo">License</string>
+    <string name="licenca_aviso_mensagem">LylyReader — Copyright (C) 2026 JonJonesBR\n\nThis program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.\n\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\nSource code: https://github.com/JonJonesBR/LylyReader\n\nThe voice models and third-party libraries have their own licenses (see the credits and THIRD_PARTY_LICENSES.md in the repository).</string>
+    <string name="licenca_ver_texto">View license</string>
+    <string name="licenca_fechar">Close</string>
+    <string name="licenca_texto_titulo">GPL-3.0 text</string>
+    <string name="licenca_erro_leitura">Could not open the license text. Read it at %1$s</string>
     <string name="label_formatos_suportados">Supported formats</string>
     <string name="formatos_suportados">EPUB · PDF · TXT · MD · DOC · DOCX · MOBI</string>
     <string name="hint_gemini_key">AIza...</string>
