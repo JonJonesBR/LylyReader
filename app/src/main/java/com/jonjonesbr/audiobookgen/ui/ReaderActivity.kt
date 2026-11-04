@@ -823,8 +823,6 @@ class ReaderActivity : BasePlayerActivity() {
         val texto = if (telaController.aplicarCarregandoEErro(tela)) null else viewModel.textoEfetivo()
         if (texto == null) return
 
-        processarAutoStartLeituraGuiada(texto)
-
         // Mostra conteúdo
         recyclerView.visibility = View.VISIBLE
 
@@ -835,6 +833,8 @@ class ReaderActivity : BasePlayerActivity() {
 
         // ── Modo do adapter ────────────────────────────────────────────────────
         val paragrafosExibidos = atualizarAdapterDeLeitura(state, texto, tela.modoAdapter)
+
+        processarAutoStartLeituraGuiada(texto)
 
         // ── Busca ──────────────────────────────────────────────────────────────
         buscaController.aplicar(state)
@@ -862,8 +862,8 @@ class ReaderActivity : BasePlayerActivity() {
 
     /** Extraído de [atualizarUI] (ações disparadas pelas intents de leitura guiada). */
     private fun processarAutoStartLeituraGuiada(texto: TextoExtraido) {
-        // "Ler sem áudio" nunca inicia a guiada (nem o diálogo de início nem a leitura direta).
-        if (somenteLeitura) return
+        // "Ler sem áudio" nunca inicia; e só com os parágrafos deste texto já no manager (rb-15).
+        if (somenteLeitura || !paragrafosProntosParaGuiada(ultimoTextoExibido, texto)) return
         val controlador = guidedReadingBarController ?: return
         // A regra (espera a limpeza, reconexão, uma vez só) está em decidirInicioDaGuiada, em TelaDoLeitor.kt.
         val estado = viewModel.uiState.value

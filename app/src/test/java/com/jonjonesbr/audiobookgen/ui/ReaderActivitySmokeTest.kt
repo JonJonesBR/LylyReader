@@ -39,8 +39,11 @@ import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
+import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
+import com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
 import com.jonjonesbr.audiobookgen.util.PythonInicio
 import com.jonjonesbr.audiobookgen.util.dpToPx
+import kotlinx.coroutines.awaitCancellation
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -148,6 +151,9 @@ class ReaderActivitySmokeTest {
     fun tearDown() {
         PythonInicio.iniciar = iniciarPythonOriginal
         Thread.setDefaultUncaughtExceptionHandler(handlerOriginal)
+        // A costura e a ponte da guiada são estáticas: não podem vazar para o próximo teste (rb-15).
+        TtsSynthesizer.substitutoParaTestes = null
+        GuidedPlaybackBridge.manager?.let { it.release(); GuidedPlaybackBridge.deactivate(it) }
         zerarFabricaDeViewModel()
     }
 
@@ -1207,7 +1213,68 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun autoInicioComUmCapituloTocaNoTextoLimpo() {
+        // rb-15: com 0 ou 1 capítulo a guiada começa sozinha, e tem de usar os parágrafos limpos, não os brutos.
+        val textosLimpos = listOf(
+            "Primeira frase do livro.",
+            "Segunda frase do livro.",
+            "Terceira frase da história.",
+            "Quarta frase do texto.",
+            "Quinta frase do capítulo.",
+            "Sexta frase final.",
+        )
+        // O bruto tem três linhas de lixo antes do texto limpo. O capítulo começa na 6ª linha do bruto.
+        val textosDoBruto = listOf("Capa da edição.", "Sumário.", "Ficha técnica.") + textosLimpos
+        val limpo = TextoExtraido(
+            capitulos = listOf(Capitulo("Capítulo 1", 2, 5)),
+            paragrafos = paragrafosSeguidos(textosLimpos),
+            totalChars = textosLimpos.sumOf { it.length + 2 },
+        )
+        val bruto = TextoExtraido(
+            capitulos = listOf(Capitulo("Capítulo 1", 5, 8)),
+            paragrafos = paragrafosSeguidos(textosDoBruto),
+            totalChars = textosDoBruto.sumOf { it.length + 2 },
+        )
+        val livro = gravarLivroNoCache(bruto, textosDoBruto, textoLimpo = limpo)
+
+        // Voz falsa: guarda o texto pedido e espera para sempre, então ninguém chega ao MediaPlayer.
+        val pedidos = CopyOnWriteArrayList<String>()
+        val vozQueEspera = object : TtsSynthesizer {
+            override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
+                pedidos.add(texto)
+                awaitCancellation()
+            }
+        }
+        TtsSynthesizer.substitutoParaTestes = { vozQueEspera }
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_AUTO_START_GUIDED, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "guiada começou") {
+                (GuidedPlaybackBridge.manager?.state?.value?.index ?: -1) >= 0
+            }
+            // O início é o capítulo no texto limpo (índice 2), não o índice do bruto.
+            assertEquals(2, GuidedPlaybackBridge.manager!!.state.value.index)
+            assertEquals(livro.absolutePath, GuidedPlaybackBridge.caminhoArquivo)
+            // O marcador não pode sair do lugar depois de a limpeza entregar o texto.
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            assertEquals(2, GuidedPlaybackBridge.manager!!.state.value.index)
+            if (pedidos.isNotEmpty()) assertTrue(limpo.paragrafos[2].texto.contains(pedidos.first()))
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
+
+    /** Parágrafos num capítulo só, com offsets seguidos (como o extrator faz). */
+    private fun paragrafosSeguidos(textos: List<String>): List<Paragrafo> {
+        var offset = 0
+        return textos.map { texto ->
+            Paragrafo(texto = texto, charOffset = offset, indiceCapitulo = 0).also { offset += texto.length + 2 }
+        }
+    }
 
     /** Dois capítulos: a primeira metade dos parágrafos no primeiro (0 a 4 nos 10 de sempre), o resto no segundo. */
     private fun livroDeTeste(textos: List<String> = PARAGRAFOS): TextoExtraido {
@@ -1234,7 +1301,12 @@ class ReaderActivitySmokeTest {
      * Cada teste grava o livro numa pasta própria (UUID no caminho). O caminho entra na chave do cache e na trava do
      * ExtractTextUseCase, que são estáticas: se dois testes usassem o mesmo caminho, um herdaria o estado do outro.
      */
-    private fun gravarLivroNoCache(texto: TextoExtraido, textos: List<String> = PARAGRAFOS, removidas: Int = 0): File {
+    private fun gravarLivroNoCache(
+        texto: TextoExtraido,
+        textos: List<String> = PARAGRAFOS,
+        removidas: Int = 0,
+        textoLimpo: TextoExtraido = texto,
+    ): File {
         // O arquivo precisa existir antes da chave: a chave leva tamanho e data de modificação.
         val f = File(app.filesDir, "fumaca/${UUID.randomUUID()}/$NOME.txt")
         f.parentFile?.mkdirs()
@@ -1251,7 +1323,7 @@ class ReaderActivitySmokeTest {
         tamanhoInicial = f.length()
         modificadoInicial = f.lastModified()
         CacheDeTextoDoLivro.gravar(app, bruto, texto)
-        CacheDeTextoDoLivro.gravar(app, limpo, texto, removidas = removidas)
+        CacheDeTextoDoLivro.gravar(app, limpo, textoLimpo, removidas = removidas)
         assertEquals(texto, CacheDeTextoDoLivro.ler(app, bruto))
         return f
     }

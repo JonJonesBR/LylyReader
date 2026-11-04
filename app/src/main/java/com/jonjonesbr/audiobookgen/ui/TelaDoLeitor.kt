@@ -1,7 +1,9 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
+import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
+import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 
 // Cálculo puro do estado da tela do leitor (rb-8): sem nada de Android, testado na JVM.
 // A aplicação nas views é do ReaderTelaController.
@@ -151,6 +153,14 @@ internal fun decidirInicioDaGuiada(
         continuar = pedidos.continuar && !jaResolvidos.continuar && !reconectando,
     )
 }
+
+/**
+ * O início automático só vale quando a lista entregue ao manager (`setParagraphs`) é a do texto em vigor. Antes disso,
+ * `play()` lê outra lista (marcador deslocado) ou uma lista vazia (não começa). A comparação é por identidade porque
+ * roda a cada tick de progresso. Se as listas não forem a mesma, a próxima emissão do estado tenta de novo (rb-15).
+ */
+internal fun paragrafosProntosParaGuiada(entregues: List<Paragrafo>?, texto: TextoExtraido): Boolean =
+    entregues != null && entregues === texto.paragrafos
 
 /** Margem horizontal da lista de parágrafos, em dp, para o nível salvo (nível fora da faixa usa o padrão). */
 internal fun margemDosParagrafosDp(nivel: Int): Int =
