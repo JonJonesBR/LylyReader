@@ -654,34 +654,25 @@ private fun TextView.aplicarTextoComSyncEDestaques(
     progressPct: Float,
     destaquesDoParagrafo: List<IntRange>
 ) {
-    val corDestaqueSync = when (tema) {
-        TemaLeitura.CLARO  -> Color.parseColor("#BBA6FF")
-        TemaLeitura.ESCURO -> Color.parseColor("#6A4CA0")
-        TemaLeitura.SEPIA  -> Color.parseColor("#D8B880")
-        TemaLeitura.OLED   -> Color.parseColor("#6A4CA0")
-    }
     val spannable = android.text.SpannableString(texto)
-    spannable.setSpan(
-        android.text.style.BackgroundColorSpan(corFundo),
-        0, texto.length,
-        android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-    )
 
     var prog = (texto.length * progressPct).toInt().coerceIn(0, texto.length)
     while (prog < texto.length && !texto[prog].isWhitespace()) {
         prog++
     }
     if (prog > 0) {
+        // Trecho já lido em cor translúcida (rb-56): a seleção nativa aparece por baixo do span.
         spannable.setSpan(
-            android.text.style.BackgroundColorSpan(corDestaqueSync),
+            android.text.style.BackgroundColorSpan(corDoTrechoLido(tema)),
             0, prog,
             android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         )
     }
     spannable.aplicarDestaques(destaquesDoParagrafo, texto.length)
     text = spannable
-    // O destaque de sincronia está nos spans do texto; o fundo da view fica transparente, com a barra do narrado.
-    pintarFundoParagrafo(Color.TRANSPARENT, narrado = true, tema = tema)
+    // A cor do parágrafo narrado vai para o fundo da view (e não para um span no texto todo): o fundo fica embaixo
+    // do desenho da seleção, que assim aparece em todo o parágrafo. A barra do narrado vem junto.
+    pintarFundoParagrafo(corFundo, narrado = true, tema = tema)
 }
 
 /**
