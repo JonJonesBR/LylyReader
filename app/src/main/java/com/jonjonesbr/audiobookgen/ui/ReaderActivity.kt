@@ -776,7 +776,7 @@ class ReaderActivity : BasePlayerActivity() {
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         // Só as teclas de rolagem vão ao controller: as outras nunca tocam na lista (ver RegraDaRolagemDoLeitor).
-        if (event.action != KeyEvent.ACTION_DOWN || currentFocus is EditText ||
+        if (event.action != KeyEvent.ACTION_DOWN || !::recyclerView.isInitialized || currentFocus is EditText ||
             !RegraDaRolagemDoLeitor.teclaDeRolagem(event.keyCode)) return super.dispatchKeyEvent(event)
         return rolagemController.tratarTecla(event) { super.dispatchKeyEvent(it) }
     }
