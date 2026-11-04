@@ -47,10 +47,10 @@ internal fun acaoDoComando(action: String?): ComandoLeituraGuiada? = when (actio
 }
 
 /**
- * Ações que a sessão de mídia da leitura guiada anuncia. Sem ACTION_SEEK_TO: a leitura avança por trechos
- * sintetizados e não tem duração total, então não há o que buscar. Junto com a duração declarada como
- * desconhecida (ver [metadataDaSessaoGuiada]), é o que deve tirar a barra 00:00/00:00 da notificação (rb-41).
- * O AOSP esconde a barra quando a duração é <= 0; os SystemUI de fabricante podem ter outro comportamento.
+ * Ações que a sessão de mídia da leitura guiada anuncia. Sem ACTION_SEEK_TO (decisão do rb-41): nos motores
+ * locais o trecho é uma oração de 2 a 8 s, e arrastar a barra não serve para quase nada. Além disso há corrida
+ * com o trecho que acaba (o seek cairia no player seguinte ou num já terminado), e no vão entre orações não há
+ * o que buscar. Sem a ação, o sistema desenha a barra só de leitura, com o progresso do trecho.
  */
 internal fun acoesDaSessaoGuiada(): Long =
     PlaybackStateCompat.ACTION_PLAY or
@@ -60,29 +60,39 @@ internal fun acoesDaSessaoGuiada(): Long =
         PlaybackStateCompat.ACTION_STOP
 
 /**
- * Estado da sessão: posição desconhecida (PLAYBACK_POSITION_UNKNOWN), porque a leitura guiada não informa tempo
- * decorrido.
+ * Estado da sessão. Com [trecho], leva a posição do trecho que está no player, o instante ([agoraMs],
+ * elapsedRealtime) em que ela foi lida e a velocidade efetiva: o sistema anima a barra sozinho, sem tique.
+ * Pausado, a velocidade é 0 e a barra fica parada. Sem trecho, a posição é desconhecida (início da sessão,
+ * antes do 1º trecho). PLAYING com velocidade 0 é válido entre orações: o ícone segue "pausar" e a barra
+ * fica parada no fim do trecho.
  */
-internal fun estadoDaSessaoDaGuiada(tocando: Boolean): PlaybackStateCompat =
-    PlaybackStateCompat.Builder()
-        .setActions(acoesDaSessaoGuiada())
-        .setState(
-            if (tocando) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED,
-            PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
-            1f
-        )
-        .build()
+internal fun estadoDaSessaoDaGuiada(
+    tocando: Boolean,
+    trecho: TrechoNaSessao? = null,
+    agoraMs: Long = 0L
+): PlaybackStateCompat {
+    val estado = if (tocando) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+    val builder = PlaybackStateCompat.Builder().setActions(acoesDaSessaoGuiada())
+    return if (trecho == null) {
+        builder.setState(estado, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, if (tocando) 1f else 0f).build()
+    } else {
+        builder.setState(estado, trecho.posicaoMs, if (tocando) trecho.velocidade else 0f, agoraMs).build()
+    }
+}
 
 /**
- * Metadados da sessão. A duração é declarada como -1: a documentação de METADATA_KEY_DURATION diz que
- * duração negativa é desconhecida (o mesmo que o MediaSessionConnector do ExoPlayer publica para conteúdo
- * sem duração). A leitura guiada não tem duração total para informar.
+ * Metadados da sessão. A duração é a do trecho que está tocando (rb-41): a barra da notificação, no SystemUI do
+ * fabricante, mostra esse progresso. Sem trecho, a duração é -1 (desconhecida), como no início da sessão.
  */
-internal fun metadataDaSessaoGuiada(titulo: String, nomeApp: String): MediaMetadataCompat =
+internal fun metadataDaSessaoGuiada(
+    titulo: String,
+    nomeApp: String,
+    duracaoMs: Long = DURACAO_DESCONHECIDA
+): MediaMetadataCompat =
     MediaMetadataCompat.Builder()
         .putString(MediaMetadataCompat.METADATA_KEY_TITLE, titulo)
         .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, nomeApp)
-        .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, DURACAO_DESCONHECIDA)
+        .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duracaoMs)
         .build()
 
 /** Duração informada à sessão quando o livro não tem tempo total (negativo = desconhecida). */
@@ -154,6 +164,9 @@ class GuidedReadingService : Service() {
     private var mediaSession: MediaSessionCompat? = null
     // Título que a MediaSession já mostra: a fila troca de livro sem trocar de sessão, e o título precisa acompanhar.
     private var tituloNaSessao: String? = null
+    // Duração do trecho que a MediaSession já mostra (rb-41): muda a cada trecho, então também precisa ser
+    // acompanhada.
+    private var duracaoNaSessao: Long? = null
     // Horário fixo da notificação: com o horário da atualização, ela trocava de lugar com a do preparo (rb-33).
     private val inicioDaNotificacao = System.currentTimeMillis()
 
@@ -388,8 +401,15 @@ class GuidedReadingService : Service() {
         val manager = GuidedPlaybackBridge.manager ?: return
         val token = manager.sessionToken
         tokenObservado = token
-        atualizarMetadados(manager.trackName)
+        // Sessão nova (outro manager): zera o que a MediaSession mostrava, para a 1ª publicação mandar tudo
+        // de novo.
+        tituloNaSessao = null
+        duracaoNaSessao = null
+        atualizarMetadados(manager.trackName, manager.trechoNaSessao.value?.duracaoMs ?: DURACAO_DESCONHECIDA)
         observeJob = scope.launch {
+            // Trecho que começa, para, retoma ou troca de velocidade: a MediaSession é publicada só nesses eventos,
+            // nunca no tique. Filho deste job: morre com ele no pararServico() e numa nova observação.
+            launch { manager.trechoNaSessao.collect { publicarSessao(manager) } }
             // O estado é publicado a cada ~50 ms (progresso do parágrafo); a notificação e a MediaSession só
             // mostram parágrafo e play/pausa, então só se refazem quando um desses muda (a soneca tem coletor
             // próprio). Antes eram ~20 notify() por segundo: bateria, main thread e notificações descartadas.
@@ -408,21 +428,37 @@ class GuidedReadingService : Service() {
                         pararServico()
                     }
                 } else {
-                    // A fila "Ler tudo" trocou de livro na mesma sessão: a tela de bloqueio e o Bluetooth seguem o título novo.
-                    val titulo = GuidedPlaybackBridge.trackName(manager.trackName)
-                    if (titulo != tituloNaSessao) atualizarMetadados(titulo)
                     if (isPlaying) garantirFocoDeAudio(manager)
-                    atualizarEstadoMediaSession(isPlaying)
+                    // Depois do foco: se ele negou e pausou, a sessão já sai como PAUSED.
+                    publicarSessao(manager)
                     notificar(construirNotificacao(index, isPlaying))
                 }
             }
         }
     }
 
+    /**
+     * Publica na MediaSession o título, a duração do trecho e o estado (posição e velocidade). Chamada só nos
+     * eventos do manager. Os metadados vêm antes do estado: a barra nova não pode aparecer com a duração velha.
+     */
+    private fun publicarSessao(manager: GuidedPlayerManager) {
+        val st = manager.state.value
+        if (st.index < 0) return
+        val trecho = manager.trechoNaSessao.value
+        // A fila "Ler tudo" trocou de livro na mesma sessão: a tela de bloqueio e o Bluetooth seguem o título novo.
+        val titulo = GuidedPlaybackBridge.trackName(manager.trackName)
+        val duracao = trecho?.duracaoMs ?: DURACAO_DESCONHECIDA
+        // Título e duração só são reenviados quando mudam (a duração muda a cada trecho).
+        if (titulo != tituloNaSessao || duracao != duracaoNaSessao) atualizarMetadados(titulo, duracao)
+        // O instante é o da leitura da posição (no manager), não o desta chamada: o coletor pode chegar depois.
+        mediaSession?.setPlaybackState(estadoDaSessaoDaGuiada(st.isPlaying, trecho, trecho?.instanteMs ?: 0L))
+    }
+
     /** Título do livro na tela de bloqueio, no relógio e no carro (Bluetooth); antes ficava sem nome. */
-    private fun atualizarMetadados(titulo: String) {
+    private fun atualizarMetadados(titulo: String, duracaoMs: Long) {
         tituloNaSessao = titulo
-        mediaSession?.setMetadata(metadataDaSessaoGuiada(titulo, getString(R.string.app_name)))
+        duracaoNaSessao = duracaoMs
+        mediaSession?.setMetadata(metadataDaSessaoGuiada(titulo, getString(R.string.app_name), duracaoMs))
     }
 
     private fun startForegroundCompat() {
@@ -443,6 +479,7 @@ class GuidedReadingService : Service() {
         observeJob = null
         tokenObservado = null
         tituloNaSessao = null
+        duracaoNaSessao = null
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -457,10 +494,6 @@ class GuidedReadingService : Service() {
             setShowBadge(false)
         }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-    }
-
-    private fun atualizarEstadoMediaSession(isPlaying: Boolean) {
-        mediaSession?.setPlaybackState(estadoDaSessaoDaGuiada(isPlaying))
     }
 
     private fun notificar(notification: Notification) {

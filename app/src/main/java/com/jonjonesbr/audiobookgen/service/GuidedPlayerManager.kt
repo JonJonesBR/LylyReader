@@ -24,6 +24,7 @@ import com.jonjonesbr.audiobookgen.domain.VoiceAssignedSegment
 import com.jonjonesbr.audiobookgen.util.TtsErrorMapper
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import com.jonjonesbr.audiobookgen.player.AudioPlayerEngine
 import com.jonjonesbr.audiobookgen.player.MediaPlayerEngineImpl
@@ -156,7 +157,15 @@ class GuidedPlayerManager(
         try { playerEngine?.setPlaybackSpeed(currentBaseSpeed * mult) } catch (e: Exception) {
             Log.w(TAG, "Falha ao aplicar velocidade guiada", e)
         }
+        velocidadeDoTrechoMudou()
         salvarPrefsDoLivro()
+    }
+
+    /** A velocidade mudou ao vivo: a barra da sessão só anda na velocidade nova a partir de agora (rb-41). */
+    private fun velocidadeDoTrechoMudou() {
+        // Mesma conta do setPlaybackSpeed acima (sem o fator de fala, como o motor já faz).
+        velocidadeDoTrecho = currentBaseSpeed * speedMultiplier
+        if (playerEngine?.isPlaying() == true) publicarTrecho(tocando = true)
     }
 
     /** Registra a voz escolhida pelo usuário para o livro em leitura (perfil por documento). */
@@ -185,6 +194,7 @@ class GuidedPlayerManager(
             try { playerEngine?.setPlaybackSpeed(currentBaseSpeed * speedMultiplier) } catch (e: Exception) {
                 Log.w(TAG, "Falha ao aplicar velocidade guiada", e)
             }
+            velocidadeDoTrechoMudou()
         }
     }
 
@@ -254,6 +264,39 @@ class GuidedPlayerManager(
 
     private val _state = MutableStateFlow(GuidedState(-1, isPlaying = false, isLoading = false))
     val state: StateFlow<GuidedState> = _state.asStateFlow()
+
+    // Trecho do player para a barra da notificação (rb-41). Não vai no GuidedState: esse emite a cada tique e a
+    // sessão só precisa saber quando o trecho começa, para, troca de velocidade ou termina.
+    private val _trechoNaSessao = MutableStateFlow<TrechoNaSessao?>(null)
+    internal val trechoNaSessao: StateFlow<TrechoNaSessao?> = _trechoNaSessao.asStateFlow()
+    private var eventosDoTrecho = 0L
+    // Velocidade efetiva passada ao play() do trecho atual (a que a barra anima).
+    private var velocidadeDoTrecho = 1f
+
+    /** Publica a leitura atual do player na sessão de mídia. Só nos eventos, nunca no tique de 50 ms. */
+    private fun publicarTrecho(tocando: Boolean = playerEngine?.isPlaying() == true, terminou: Boolean = false) {
+        val engine = playerEngine ?: return
+        // Trecho com erro: o motor já está em Error e cada leitura posta MEDIA_ERROR de novo, que chamaria o
+        // listener de erro outra vez (laço na main thread). Congela o trecho anterior com velocidade 0, sem ler.
+        val leitura = if (trechoFalhou) {
+            LeituraDoPlayer(duracaoMs = 0, posicaoMs = 0, tocando = false, velocidade = 0f)
+        } else {
+            LeituraDoPlayer(engine.getDuration(), engine.getCurrentPosition(), tocando, velocidadeDoTrecho, terminou)
+        }
+        _trechoNaSessao.value = trechoLido(
+            leitura,
+            _trechoNaSessao.value,
+            ++eventosDoTrecho,
+            SystemClock.elapsedRealtime()
+        )
+    }
+
+    /** Toca um trecho e publica o início dele na sessão. Falha do player já foi publicada pelo listener de erro. */
+    private fun tocarTrecho(audioFile: File, velocidade: Float) {
+        velocidadeDoTrecho = velocidade
+        playerEngine?.play(audioFile, velocidade)
+        if (!trechoFalhou) publicarTrecho(tocando = true)
+    }
 
     // ── Fila "Ler tudo" ─────────────────────────────────────────────────────────
     // A fila mora no manager (e não na ReaderActivity): ele sobrevive à tela, narra livro após livro com o mesmo
@@ -440,12 +483,16 @@ class GuidedPlayerManager(
     }
 
     private fun initializeEngine() {
+        // Congela a barra na posição real antes de trocar o motor (o player antigo ainda responde aqui).
+        publicarTrecho(tocando = false)
         playerEngine?.release()
         playerEngine = MediaPlayerEngineImpl(context)
         fixarTimbre(timbreAtual())
         // Motor novo a cada parágrafo: herda o volume do fade da soneca em curso (o motor novo começaria em 1.0).
         if (GuidedPlaybackBridge.manager === this) playerEngine?.setVolume(SleepTimerManager.volumeFactor.value)
         playerEngine?.setCompletionListener {
+            // O trecho acabou: a barra fica no fim, inclusive na pausa entre frases e na síntese da próxima.
+            publicarTrecho(tocando = false, terminou = true)
             // Modo oração: o fim do áudio da oração acorda o loop para tocar a próxima
             // (em vez de avançar o parágrafo, que só acontece com a sequência completa).
             val completarOracao = oracaoCompletada
@@ -460,6 +507,7 @@ class GuidedPlayerManager(
             CrashLogWriter.log(null, "GuidedPlayerManager.playerError", message = erroCru)
             trechoFalhou = true
             stopProgressPolling()
+            publicarTrecho(tocando = false)
             // O texto cru do player fica só no log; a barra mostra uma mensagem traduzida.
             _state.update {
                 it.copy(
@@ -777,7 +825,7 @@ class GuidedPlayerManager(
                             partesParaTomDasFalas(paragraphText), 0, paragraphText.length, paragraphText.length
                         )
                         trechoFalhou = false
-                        playerEngine?.play(audioFile, speedVal * speedMultiplier * fatorFala)
+                        tocarTrecho(audioFile, speedVal * speedMultiplier * fatorFala)
                         // Erro ao começar o trecho: o estado já mostra o erro; não sobrescreve com "tocando".
                         if (trechoFalhou) return@launch
                         // currentIndex, não o argumento: se o texto foi trocado (bruto → limpo) durante a síntese,
@@ -916,7 +964,7 @@ class GuidedPlayerManager(
                 oracaoCompletada = CompletableDeferred()
                 aplicarTimbreDoTrecho(null, 0, 0, 1) // vozes de personagem: só o timbre do livro
                 trechoFalhou = false
-                playerEngine?.play(audioFile, speedVal * speedMultiplier)
+                tocarTrecho(audioFile, speedVal * speedMultiplier)
                 if (trechoFalhou) return
                 if (position == 0) {
                     currentBaseSpeed = speedVal
@@ -1098,7 +1146,7 @@ class GuidedPlayerManager(
                     partesDasFalas, oracao.charsAcumulados, oracao.texto.length, totalDasOracoes
                 )
                 trechoFalhou = false
-                playerEngine?.play(audioFile, speedVal * speedMultiplier * fatorFala)
+                tocarTrecho(audioFile, speedVal * speedMultiplier * fatorFala)
                 if (trechoFalhou) return
                 if (posicao == 0) {
                     currentBaseSpeed = speedVal
@@ -1205,9 +1253,11 @@ class GuidedPlayerManager(
         // "pausado sem áudio", e o próximo "tocar" não retomaria o som.
         if (pausadoPeloUsuario) return
         stopProgressPolling()
-        pausadoSemAudio = playerEngine?.isPlaying() != true
+        // Trecho com erro não toca: não pergunta ao motor (ver publicarTrecho).
+        pausadoSemAudio = trechoFalhou || playerEngine?.isPlaying() != true
         pausadoPeloUsuario = true
         playerEngine?.pause()
+        publicarTrecho(tocando = false)
         _state.update { it.copy(isPlaying = false, error = null) }
     }
 
@@ -1238,6 +1288,7 @@ class GuidedPlayerManager(
             pausadoPeloUsuario = false
             pausadoSemAudio = false
             if (!estavaSemAudio) playerEngine?.resume()
+            publicarTrecho(tocando = !estavaSemAudio)
             AudioPlayerService.fecharSeAberto()
             _state.update { it.copy(isPlaying = true, error = null) }
             startProgressPolling()
@@ -1268,6 +1319,7 @@ class GuidedPlayerManager(
         segundaOracaoProximoParagrafo = null
         modoOracoes = false
         oracaoCompletada = null
+        publicarTrecho(tocando = false)
         playerEngine?.stop()
     }
 
@@ -1280,6 +1332,8 @@ class GuidedPlayerManager(
         trocaDeLivroJob?.cancel()
         trocaDeLivroJob = null
         interromperAudio()
+        // Sessão encerrada: a próxima começa sem a duração deste trecho.
+        _trechoNaSessao.value = null
         currentIndex = -1
         if (GuidedPlaybackBridge.manager === this) {
             GuidedPlaybackBridge.deactivate(this)

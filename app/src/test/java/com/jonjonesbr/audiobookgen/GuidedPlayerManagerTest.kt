@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen
 
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.StatsStore
@@ -64,12 +65,16 @@ class GuidedPlayerManagerTest {
     private lateinit var lastErrorListener: (String) -> Unit
     private lateinit var lastCompletionListener: () -> Unit
     private val textoTrechoNaoTocou = "Não foi possível tocar este trecho."
+    // Relógio (elapsedRealtime) da leitura do trecho: o teste move o tempo para checar o instante publicado.
+    private var relogioMs = 0L
 
     @Before
     fun setUp() {
         testDispatcher = StandardTestDispatcher()
         Dispatchers.setMain(testDispatcher)
 
+        mockkStatic(SystemClock::class)
+        every { SystemClock.elapsedRealtime() } answers { relogioMs }
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0
         every { Log.w(any(), any<String>()) } returns 0
@@ -903,5 +908,119 @@ class GuidedPlayerManagerTest {
 
         assertEquals(-1, manager.state.value.index)
         assertFalse(manager.state.value.livroConcluido)
+    }
+
+    // --- rb-41: o trecho do player vai para a sessão de mídia só nos eventos (pausa, retomada, parada) ---
+
+    /** Trecho de 8 s do motor, parado em 3 s, tocando; é o cenário dos testes da barra. */
+    private fun prepararTrechoDe8s(manager: GuidedPlayerManager) {
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(0)
+        every { anyConstructed<MediaPlayerEngineImpl>().isPlaying() } returns true
+        every { anyConstructed<MediaPlayerEngineImpl>().getDuration() } returns 8000
+        every { anyConstructed<MediaPlayerEngineImpl>().getCurrentPosition() } returns 3000
+    }
+
+    @Test
+    fun pausaPublicaOTrechoParado() {
+        val manager = createManager()
+        prepararTrechoDe8s(manager)
+
+        manager.pause()
+
+        val trecho = manager.trechoNaSessao.value
+        assertEquals(8000L, trecho?.duracaoMs)
+        assertEquals(3000L, trecho?.posicaoMs)
+        assertEquals(0f, trecho?.velocidade ?: -1f, 0f)
+    }
+
+    @Test
+    fun retomarPublicaOTrechoTocando() {
+        val manager = createManager()
+        prepararTrechoDe8s(manager)
+        manager.pause()
+
+        manager.resume()
+
+        val trecho = manager.trechoNaSessao.value
+        assertEquals(8000L, trecho?.duracaoMs)
+        assertEquals(3000L, trecho?.posicaoMs)
+        assertEquals(1f, trecho?.velocidade ?: -1f, 0f)
+    }
+
+    @Test
+    fun pausaNoVaoNaoVoltaABarraAoComeco() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(0)
+        // Tocando, com o trecho em 3 s; depois o motor responde parado e na posição 0.
+        every { anyConstructed<MediaPlayerEngineImpl>().getDuration() } returns 8000
+        every { anyConstructed<MediaPlayerEngineImpl>().getCurrentPosition() } returns 3000
+        every { anyConstructed<MediaPlayerEngineImpl>().isPlaying() } returns false
+        manager.resume() // motor ainda sem som: o trecho sai como tocando, em 3 s
+        manager.pause() // pausa sem áudio: o pause() do motor é chamado, mas a pausa fica marcada como sem áudio
+        every { anyConstructed<MediaPlayerEngineImpl>().getCurrentPosition() } returns 0
+
+        manager.resume()
+
+        // Sem áudio, retomar não chama o motor (que reiniciaria a unidade anterior) e a barra não volta ao começo.
+        verify(exactly = 1) { anyConstructed<MediaPlayerEngineImpl>().resume() }
+        assertEquals(3000L, manager.trechoNaSessao.value?.posicaoMs)
+        assertEquals(0f, manager.trechoNaSessao.value?.velocidade ?: -1f, 0f)
+    }
+
+    @Test
+    fun pararZeraOTrecho() {
+        val manager = createManager()
+        prepararTrechoDe8s(manager)
+        manager.pause()
+        assertEquals(8000L, manager.trechoNaSessao.value?.duracaoMs)
+
+        manager.stop()
+
+        assertNull(manager.trechoNaSessao.value)
+    }
+
+    @Test
+    fun instanteDoTrechoEOMomentoEmQueASPosicaoFoiLida() {
+        val manager = createManager()
+        prepararTrechoDe8s(manager)
+        relogioMs = 5_000L
+
+        manager.pause()
+        assertEquals(5_000L, manager.trechoNaSessao.value?.instanteMs)
+
+        relogioMs = 9_000L
+        manager.resume()
+        assertEquals(9_000L, manager.trechoNaSessao.value?.instanteMs)
+    }
+
+    // O motor em Error posta MEDIA_ERROR a cada leitura, e o listener de erro voltaria a ler: o laço nunca parava.
+    @Test
+    fun erroDoPlayerNaoLeOMotorNemNaPausaSeguinte() {
+        val manager = createManager()
+        prepararTrechoDe8s(manager)
+
+        lastErrorListener("Falha simulada de reprodução")
+        verify(exactly = 0) { anyConstructed<MediaPlayerEngineImpl>().getDuration() }
+        verify(exactly = 0) { anyConstructed<MediaPlayerEngineImpl>().getCurrentPosition() }
+
+        manager.pause()
+        verify(exactly = 0) { anyConstructed<MediaPlayerEngineImpl>().getDuration() }
+        verify(exactly = 0) { anyConstructed<MediaPlayerEngineImpl>().getCurrentPosition() }
+    }
+
+    @Test
+    fun erroCongelaOTrechoAnteriorComVelocidadeZero() {
+        val manager = createManager()
+        prepararTrechoDe8s(manager)
+        manager.resume() // publica o trecho tocando: 8 s, parado em 3 s, na velocidade 1x
+
+        lastErrorListener("Falha simulada de reprodução")
+
+        val trecho = manager.trechoNaSessao.value
+        assertEquals(8000L, trecho?.duracaoMs)
+        assertEquals(3000L, trecho?.posicaoMs)
+        assertEquals(0f, trecho?.velocidade ?: -1f, 0f)
     }
 }
