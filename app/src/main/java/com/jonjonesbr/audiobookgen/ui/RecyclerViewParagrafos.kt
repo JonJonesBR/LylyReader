@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import android.content.Context
+import android.graphics.Rect
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -21,6 +22,8 @@ import androidx.recyclerview.widget.RecyclerView
  * - rearmar a seleção de texto de cada parágrafo quando a view é anexada à janela (rb-38, ver [rearmarSelecao]).
  * - rodar, depois do toque, a descida que a barra da seleção pede quando cobre o trecho marcado (rb-48, ver
  *   [depoisDoToque]). A descida é translação, não rolagem: não dispara os listeners de rolagem.
+ * - ignorar o pedido de mostrar trecho de um parágrafo em foco, no modo de toque, sem seleção (rb-55, ver
+ *   [pedidoDeMostrarTrechoVale]); mesmo mecanismo da `PaginaDoParagrafo.requestChildRectangleOnScreen`.
  */
 class RecyclerViewParagrafos @JvmOverloads constructor(
     context: Context,
@@ -113,6 +116,17 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     // ali daria IllegalStateException.
     private fun liberarDepois() {
         post { if (!textoEmUso) aoLiberarTexto?.invoke() }
+    }
+
+    /**
+     * Pedido de "mostrar este trecho" de um filho (rb-55). Só o parágrafo de leitura entra na regra: edição e
+     * comparação sempre passam. Limites aceitos: fora do modo de toque (D-pad) o setText ainda pode puxar a lista, e
+     * um ACTION_SHOW_ON_SCREEN do TalkBack sobre o parágrafo em foco é ignorado.
+     */
+    override fun requestChildRectangleOnScreen(child: View, rect: Rect, immediate: Boolean): Boolean {
+        val tv = (getChildViewHolder(child) as? ParagrafoAdapter.VHLeitura)?.tv
+        if (tv != null && !pedidoDeMostrarTrechoVale(child.isInTouchMode, tv.isFocused, tv.hasSelection())) return false
+        return super.requestChildRectangleOnScreen(child, rect, immediate)
     }
 
     override fun onChildAttachedToWindow(child: View) {

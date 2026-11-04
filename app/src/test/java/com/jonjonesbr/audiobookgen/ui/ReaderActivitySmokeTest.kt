@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
@@ -47,6 +48,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -699,6 +701,68 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun paragrafoComFocoNaoPuxaAListaNaRolagemManual() {
+        // rb-55: com o dedo, o parágrafo tocado tem foco. O setText da guiada não pode puxar a lista de volta a ele.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            // O modo de toque é do ViewRootImpl: sem ele, o pedido não é ignorado. Se o Robolectric não entrar nele
+            // mesmo forçando, o teste é pulado (Assume), e a regra fica coberta pelos testes da JVM.
+            var noModoDeToque = false
+            scenario.onActivity { a -> noModoDeToque = lista(a).isInTouchMode }
+            if (!noModoDeToque) {
+                scenario.onActivity { a -> entrarNoModoDeToque(a) }
+                scenario.onActivity { a -> noModoDeToque = lista(a).isInTouchMode }
+            }
+            assumeTrue("Robolectric não entrou no modo de toque", noModoDeToque)
+
+            // O foco antes de rolar: é ele que faz o LayoutManager mostrar o parágrafo 3 inteiro.
+            scenario.onActivity { a ->
+                (lista(a).layoutManager as LinearLayoutManager).scrollToPositionWithOffset(3, 0)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> tvEm(lista(a), 3)!!.requestFocus() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            // Meia altura do parágrafo para cima: a 1ª linha dele sai por cima, com o foco ainda nele.
+            scenario.onActivity { a -> lista(a).scrollBy(0, tvEm(lista(a), 3)!!.height / 2) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            var topoAntes = 0
+            scenario.onActivity { a ->
+                val tv3 = tvEm(lista(a), 3)!!
+                topoAntes = tv3.top
+                assertTrue("o parágrafo 3 deveria estar cortado por cima", topoAntes < 0)
+                assertTrue(tv3.isFocused)
+            }
+
+            // (a) Pedido direto de mostrar o topo do parágrafo, sem seleção: a lista não rola. É a prova deste teste.
+            scenario.onActivity { a -> tvEm(lista(a), 3)!!.requestRectangleOnScreen(Rect(0, 0, 1, 1), true) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> assertEquals(topoAntes, tvEm(lista(a), 3)!!.top) }
+
+            // (b) Ponta a ponta: a sincronia repinta o parágrafo 3 com setText. Depende de o Robolectric despachar o
+            // onPreDraw; por isso a prova certa é a (a).
+            scenario.onActivity { a ->
+                modeloDe(a).setParagrafoSyncAtual(3)
+                modeloDe(a).setProgressPct(0.5f)
+            }
+            esperarAte(scenario, "sincronia no parágrafo 3") { a -> fundoDoParagrafo(lista(a), 3) is LayerDrawable }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            scenario.onActivity { a -> assertEquals(topoAntes, tvEm(lista(a), 3)!!.top) }
+
+            // (c) Com seleção, o pedido das alças vale: a lista rola para mostrar o topo do trecho.
+            scenario.onActivity { a ->
+                val tv3 = tvEm(lista(a), 3)!!
+                Selection.setSelection(tv3.text as Spannable, 0, 5)
+                tv3.requestRectangleOnScreen(Rect(0, 0, 1, 1), true)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> assertTrue(tvEm(lista(a), 3)!!.top > topoAntes) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Dois capítulos: a primeira metade dos parágrafos no primeiro (0 a 4 nos 10 de sempre), o resto no segundo. */
@@ -770,6 +834,22 @@ class ReaderActivitySmokeTest {
 
     /** O mesmo ViewModel da tela (o da Activity, pelo dono), para simular o menu e os toques. */
     private fun modeloDe(a: ReaderActivity): ReaderViewModel = ViewModelProvider(a)[ReaderViewModel::class.java]
+
+    /**
+     * Põe a janela do Leitor no modo de toque (rb-55). O Robolectric não entra nele sozinho, e o
+     * InstrumentationRegistry não está no classpath da JVM: o pedido vai à ViewRootImpl por reflexão (a API é oculta).
+     * Sem a API, não faz nada.
+     */
+    private fun entrarNoModoDeToque(a: ReaderActivity) {
+        runCatching {
+            val raiz = View::class.java.getDeclaredMethod("getViewRootImpl")
+                .apply { isAccessible = true }
+                .invoke(a.window.decorView)
+            raiz.javaClass.getDeclaredMethod("ensureTouchMode", Boolean::class.javaPrimitiveType)
+                .apply { isAccessible = true }
+                .invoke(raiz, true)
+        }
+    }
 
     /** Barra "N parágrafos selecionados" (rb-30), visível ou não. */
     private fun barraDeSelecaoVisivel(a: ReaderActivity): Boolean =

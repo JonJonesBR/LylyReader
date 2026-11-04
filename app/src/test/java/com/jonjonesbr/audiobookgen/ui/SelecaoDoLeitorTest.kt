@@ -231,4 +231,22 @@ class SelecaoDoLeitorTest {
     fun itemReaproveitadoComOutroTextoRefazOTexto() {
         assertFalse(manterTextoNoBind(textoJaNaTela = false, sobODedo = true, selecaoAtiva = false))
     }
+
+    @Test
+    fun pedidoDoSetTextDeParagrafoEmFocoNoToqueSemSelecaoNaoVale() {
+        // rb-55: é a única combinação que não vale, a repintura da guiada no parágrafo tocado.
+        assertFalse(pedidoDeMostrarTrechoVale(modoDeToque = true, comFoco = true, comSelecao = false))
+    }
+
+    @Test
+    fun pedidoValeNasOutrasSeteCombinacoes() {
+        // Fora do toque, sem foco ou com seleção (alças), o pedido segue o caminho de sempre.
+        assertTrue(pedidoDeMostrarTrechoVale(modoDeToque = false, comFoco = true, comSelecao = false))
+        assertTrue(pedidoDeMostrarTrechoVale(modoDeToque = false, comFoco = false, comSelecao = false))
+        assertTrue(pedidoDeMostrarTrechoVale(modoDeToque = false, comFoco = true, comSelecao = true))
+        assertTrue(pedidoDeMostrarTrechoVale(modoDeToque = true, comFoco = false, comSelecao = false))
+        assertTrue(pedidoDeMostrarTrechoVale(modoDeToque = true, comFoco = true, comSelecao = true))
+        assertTrue(pedidoDeMostrarTrechoVale(modoDeToque = true, comFoco = false, comSelecao = true))
+        assertTrue(pedidoDeMostrarTrechoVale(modoDeToque = false, comFoco = false, comSelecao = true))
+    }
 }

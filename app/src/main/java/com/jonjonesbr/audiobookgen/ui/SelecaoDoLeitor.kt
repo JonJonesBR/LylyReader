@@ -37,6 +37,15 @@ internal fun paragrafosNaSelecao(selecaoInicio: Int?, selecaoFim: Int?): Int {
     return abs((selecaoFim ?: inicio) - inicio) + 1
 }
 
+/**
+ * Se a lista deve atender o pedido "mostrar este trecho" de um parágrafo em foco (rb-55). Com o dedo (modo de
+ * toque), o parágrafo tocado tem foco e não há seleção, o pedido é o setText da leitura guiada, que puxaria a lista
+ * de volta ao parágrafo; então é ignorado. Com seleção, o pedido vem das alças e vale. Fora do modo de toque
+ * (teclado, D-pad) o foco precisa continuar mostrando o que ele pega, e também vale.
+ */
+internal fun pedidoDeMostrarTrechoVale(modoDeToque: Boolean, comFoco: Boolean, comSelecao: Boolean): Boolean =
+    !(modoDeToque && comFoco && !comSelecao)
+
 // Regras da barra própria da seleção e das repinturas seguradas durante o toque (rb-38).
 
 /** Ações da barra do Leitor que aparece enquanto há seleção nativa de texto, na ordem em que aparecem. */
