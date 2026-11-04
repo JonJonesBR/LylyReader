@@ -249,4 +249,52 @@ class SelecaoDoLeitorTest {
         assertTrue(pedidoDeMostrarTrechoVale(modoDeToque = true, comFoco = false, comSelecao = true))
         assertTrue(pedidoDeMostrarTrechoVale(modoDeToque = false, comFoco = false, comSelecao = true))
     }
+
+    // rb-54: a barra da seleção de texto sem o modo do sistema. As 16 combinações, por ramo da decisão.
+
+    @Test
+    fun menuAbertoDeixaABarraParaOModo() {
+        // Com o menu do sistema aberto, nenhum outro caso mexe na barra: as 8 combinações dão NADA.
+        for (viva in listOf(false, true)) for (movimento in listOf(false, true)) for (espera in listOf(false, true)) {
+            val passo = passoDaBarraDaSelecao(
+                menuAberto = true, selecaoViva = viva, emMovimento = movimento, jaEsperou = espera,
+            )
+            assertEquals(PassoDaBarraDaSelecao.NADA, passo)
+        }
+    }
+
+    @Test
+    fun semSelecaoVivaEscondeMesmoNoArraste() {
+        // Seleção sem dono some na hora, com ou sem movimento e com ou sem espera: 4 combinações, ESCONDER.
+        for (movimento in listOf(false, true)) for (espera in listOf(false, true)) {
+            val passo = passoDaBarraDaSelecao(
+                menuAberto = false, selecaoViva = false, emMovimento = movimento, jaEsperou = espera,
+            )
+            assertEquals(PassoDaBarraDaSelecao.ESCONDER, passo)
+        }
+    }
+
+    @Test
+    fun emMovimentoNaoMexeNaBarraComSelecaoViva() {
+        // Com a lista ou o dedo em movimento, a conferência espera o fim: 2 combinações, NADA.
+        for (espera in listOf(false, true)) {
+            assertEquals(
+                PassoDaBarraDaSelecao.NADA,
+                passoDaBarraDaSelecao(menuAberto = false, selecaoViva = true, emMovimento = true, jaEsperou = espera),
+            )
+        }
+    }
+
+    @Test
+    fun selecaoVivaSemMenuEsperaDepoisMostra() {
+        // Viva, sem menu e parada: a 1ª conferência espera a janela do duplo toque; a 2ª mostra a barra sem menu.
+        assertEquals(
+            PassoDaBarraDaSelecao.ESPERAR,
+            passoDaBarraDaSelecao(menuAberto = false, selecaoViva = true, emMovimento = false, jaEsperou = false),
+        )
+        assertEquals(
+            PassoDaBarraDaSelecao.MOSTRAR_SEM_MENU,
+            passoDaBarraDaSelecao(menuAberto = false, selecaoViva = true, emMovimento = false, jaEsperou = true),
+        )
+    }
 }

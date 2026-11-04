@@ -98,6 +98,30 @@ internal fun ehToqueCurto(
     selecaoAberta: Boolean,
 ): Boolean = !selecaoAberta && duracaoMs < limiteDoToqueLongoMs && deslocamentoPx < slopPx
 
+/** O que a barra da seleção de texto faz agora, sem o modo do sistema (rb-54). */
+internal enum class PassoDaBarraDaSelecao { NADA, ESPERAR, MOSTRAR_SEM_MENU, ESCONDER }
+
+/**
+ * Decide o passo da barra da seleção de texto (rb-54). Seleção viva é a do parágrafo com foco e com seleção.
+ * - Com o menu do sistema aberto, a barra é dele: NADA.
+ * - Sem seleção viva, a barra some, mesmo no meio do arraste (como o fechar do menu já fazia).
+ * - Com a lista ou o dedo em movimento, NADA: a conferência volta no fim do toque ou da rolagem.
+ * - Viva e sem menu, espera a janela do duplo toque: o Editor pode reabrir o modo sozinho nesse intervalo.
+ * - Se o menu não voltou, a barra aparece sem menu (as ações dela desfazem a seleção).
+ */
+internal fun passoDaBarraDaSelecao(
+    menuAberto: Boolean,
+    selecaoViva: Boolean,
+    emMovimento: Boolean,
+    jaEsperou: Boolean,
+): PassoDaBarraDaSelecao = when {
+    menuAberto -> PassoDaBarraDaSelecao.NADA
+    !selecaoViva -> PassoDaBarraDaSelecao.ESCONDER
+    emMovimento -> PassoDaBarraDaSelecao.NADA
+    !jaEsperou -> PassoDaBarraDaSelecao.ESPERAR
+    else -> PassoDaBarraDaSelecao.MOSTRAR_SEM_MENU
+}
+
 /**
  * Repinturas de sincronia que esperam o toque ou o menu terminar (rb-38). Só na main thread: o adapter e a lista
  * chamam daí. Guarda cada índice uma vez, na ordem em que chegou.

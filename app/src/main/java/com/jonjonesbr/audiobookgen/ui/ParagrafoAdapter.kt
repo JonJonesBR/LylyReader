@@ -118,9 +118,15 @@ class ParagrafoAdapter(
 
     // Menu da seleção nativa aberto agora (rb-38): a barra do Leitor executa a ação por ele.
     private var menuAberto: MenuDaSelecaoDeTexto? = null
-    private val barraDaSelecao = BarraDaSelecaoDeTexto(barraSelecaoTexto, recyclerView, comAudio) { acao ->
-        menuAberto?.executarPelaBarra(acao)
-    }
+    // Último menu que abriu a barra: outro menu é outro parágrafo, e a barra começa uma sessão nova (rb-54).
+    private var ultimoMenuAberto: MenuDaSelecaoDeTexto? = null
+    private val barraDaSelecao: BarraDaSelecaoDeTexto =
+        BarraDaSelecaoDeTexto(barraSelecaoTexto, recyclerView, comAudio) { acao ->
+            val menu = menuAberto
+            if (menu != null) menu.executarPelaBarra(acao) else selecaoSemMenu.agirPelaBarra(acao)
+        }
+    // Barra da seleção viva quando o menu do sistema não está aberto (rb-54).
+    private val selecaoSemMenu: SelecaoSemMenu = SelecaoSemMenu(activity, recyclerView, barraDaSelecao)
     // Repinturas de sincronia seguradas enquanto há dedo na lista ou seleção aberta (rb-38).
     private val repinturas = RepinturasPendentes()
 
@@ -129,6 +135,7 @@ class ParagrafoAdapter(
         recyclerView.aoLiberarTexto = {
             repinturas.liberar().filter { it in paragrafos.indices }.forEach { notifyItemChanged(it) }
         }
+        recyclerView.aoConferirSelecao = { selecaoSemMenu.conferir() }
     }
 
     private val acoesDoMenu = AcoesDaSelecaoDeTexto(
@@ -151,13 +158,19 @@ class ParagrafoAdapter(
         aoAbrir = { menu ->
             menuAberto = menu
             recyclerView.abriuSelecao()
-            barraDaSelecao.mostrar(linhaDaSelecao = { menu.linhaDoInicioDaSelecaoNaTela() })
+            // Outro parágrafo (outro menu) é sessão nova da barra: a descida se ajusta ao trecho novo.
+            val outraSelecao = menu !== ultimoMenuAberto
+            ultimoMenuAberto = menu
+            barraDaSelecao.mostrar(
+                outraSelecao = outraSelecao,
+                linhaDaSelecao = { menu.linhaDoInicioDaSelecaoNaTela() },
+            )
         },
         aoFechar = { menu ->
             if (menuAberto === menu) menuAberto = null
+            // Não esconde a barra aqui: o fechouSelecao agenda a conferência, que a esconde ou a mantém se a seleção
+            // continua viva sem o menu (rb-54).
             recyclerView.fechouSelecao()
-            // Por post: o fechar pode vir de dentro de um layout, e a barra confere se mais algum menu ficou aberto.
-            recyclerView.post { if (recyclerView.selecoesAbertas == 0) barraDaSelecao.esconder() }
         },
     )
 
@@ -292,6 +305,11 @@ class ParagrafoAdapter(
                 val pos = bindingAdapterPosition
                 if (pos != RecyclerView.NO_POSITION) onToque(pos)
             }
+            // Seleção sem foco é órfã (rb-54): desfaz quando o parágrafo perde o foco, se o menu não está aberto. Por
+            // post, porque o Editor pode fechar o modo dentro da troca de foco. Com o menu aberto, a seleção é dele.
+            tv.setOnFocusChangeListener { _, temFoco ->
+                if (!temFoco) tv.post { if (!tv.isFocused && tv.desfazerSelecaoSemMenu()) recyclerView.liberarDepois() }
+            }
         }
     }
     inner class VHEdicao(val et: EditText) : RecyclerView.ViewHolder(et)
@@ -363,7 +381,8 @@ class ParagrafoAdapter(
         // Há uma seleção em andamento neste item (ex.: o usuário está escolhendo uma palavra): não
         // reaplica o texto — cada atualização do progresso da leitura guiada rebindava o item e
         // cancelava a seleção. Só o fundo e a fonte são atualizados.
-        val selecaoAtiva = tv.hasSelection() && tv.text.toString() == par.texto
+        // Seleção sem foco é órfã (rb-54): não conta, e o setText abaixo a desfaz.
+        val selecaoAtiva = tv.hasSelection() && tv.isFocused && tv.text.toString() == par.texto
         // rb-53: a repintura de sincronia que chega com o dedo já sobre o parágrafo fica para depois do toque.
         if (segurarTextoDoBind(holder, par, position, selecaoAtiva)) return
         if (!selecaoAtiva) {

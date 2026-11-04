@@ -24,6 +24,9 @@ internal class BarraDaSelecaoDeTexto(
     // Verdadeiro só entre o mostrar que abriu a barra e a primeira descida dela: a sessão nova pode voltar ao lugar.
     private var sessaoNova = false
 
+    /** Se a barra está na tela agora (rb-54: a barra sem o modo do sistema confere isto para o Voltar). */
+    val visivel: Boolean get() = barra.visibility == View.VISIBLE
+
     init {
         val visiveis = acoesDaBarraDeSelecao(comAudio)
         BOTOES.forEach { (acao, idDoBotao) ->
@@ -40,13 +43,16 @@ internal class BarraDaSelecaoDeTexto(
      *
      * [linhaDaSelecao] diz onde está a linha do início da seleção na tela. A descida espera o toque terminar
      * (rb-48) e a barra ser medida: a altura da barra só existe depois do layout.
+     *
+     * [outraSelecao] diz que a seleção mudou de parágrafo (outro menu): mesmo com a barra já visível, é sessão nova,
+     * e a descida pode voltar ao lugar.
      */
-    fun mostrar(linhaDaSelecao: () -> LinhaNaTela?) {
+    fun mostrar(outraSelecao: Boolean = false, linhaDaSelecao: () -> LinhaNaTela?) {
         // A pílula fica na coluna do topo, fora da área da lista. Achá-la pela raiz evita passar mais uma view
         // ao ParagrafoAdapter.
         barra.rootView.findViewById<View>(R.id.bannerTextoOtimizado)?.visibility = View.GONE
         // Antes de mostrar: depois disso a barra já está visível e não dá para saber se é sessão nova (rb-48).
-        sessaoNova = barra.visibility != View.VISIBLE
+        sessaoNova = outraSelecao || barra.visibility != View.VISIBLE
         barra.visibility = View.VISIBLE
         lista.depoisDoToque { barra.doOnLayout { descerSePreciso(linhaDaSelecao) } }
     }
@@ -61,8 +67,11 @@ internal class BarraDaSelecaoDeTexto(
 
     // Quem chama já garante que a barra está medida. Só mexe na translação: nada de rolagem nem de layout.
     private fun descerSePreciso(linhaDaSelecao: () -> LinhaNaTela?) {
-        // Sai se a seleção fechou antes deste momento (o post de fechar pode ter chegado primeiro).
-        if (barra.visibility != View.VISIBLE || lista.selecoesAbertas == 0) return
+        // Sai se a seleção fechou antes deste momento (o post de fechar pode ter chegado primeiro). Com a barra sem o
+        // modo do sistema (rb-54), a seleção viva também conta: a descida vale para ela. Só a seleção do Leitor
+        // conta aqui (regra restrita, não a larga): a barra não desce por causa de seleção da edição.
+        if (barra.visibility != View.VISIBLE) return
+        if (lista.selecoesAbertas == 0 && lista.textoComSelecaoViva() == null) return
         val linha = linhaDaSelecao() ?: return
         // Uma volta animada em curso (barra reaberta logo depois de fechar) cede ao cálculo a partir do ponto atual.
         lista.animate().cancel()

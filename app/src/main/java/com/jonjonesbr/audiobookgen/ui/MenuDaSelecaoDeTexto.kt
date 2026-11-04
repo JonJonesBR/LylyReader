@@ -1,6 +1,8 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import android.annotation.SuppressLint
+import android.text.Selection
+import android.text.Spannable
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
@@ -50,6 +52,9 @@ internal class MenuDaSelecaoDeTexto(
     /** Modo aberto agora. A barra do Leitor (rb-38) executa a ação por ele, como faria o item do menu. */
     private var modoAberto: ActionMode? = null
 
+    /** Se o menu do sistema está aberto agora. Sem ele, a seleção do TextView não tem quem a feche (rb-54). */
+    val aberto: Boolean get() = modoAberto != null
+
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
         modoAberto = mode
         acoes.aoAbrir(this)
@@ -95,6 +100,8 @@ internal class MenuDaSelecaoDeTexto(
         val sel = trechoSelecionado(tv.selectionStart, tv.selectionEnd, tv.text)
         val acao = sel?.let { executar(id, it, posicao()) } ?: return false
         mode?.finish()
+        // Com o modo, o Editor já desfez a seleção ao fechar. Sem o modo (barra própria, rb-54), é aqui que ela sai.
+        tv.desfazerSelecao()
         acao()
         return true
     }
@@ -130,6 +137,25 @@ internal class MenuDaSelecaoDeTexto(
             else -> null
         }
     }
+}
+
+/**
+ * Desfaz a seleção do TextView, com o cursor onde ela terminava: o mesmo que o Editor faz ao fechar o modo (rb-54).
+ * Função de topo pelo mesmo motivo das outras: não empurrar a classe do menu acima do limite de funções do detekt.
+ */
+internal fun TextView.desfazerSelecao() {
+    val texto = text as? Spannable ?: return
+    Selection.setSelection(texto, selectionEnd.coerceIn(0, texto.length))
+}
+
+/**
+ * Desfaz a seleção que ficou sem dono: sem foco, sem menu aberto (rb-54). Devolve se desfez. Com o menu aberto, a
+ * seleção é do menu, e ele mesmo a fecha.
+ */
+internal fun TextView.desfazerSelecaoSemMenu(): Boolean {
+    if (!hasSelection() || (customSelectionActionModeCallback as? MenuDaSelecaoDeTexto)?.aberto == true) return false
+    desfazerSelecao()
+    return true
 }
 
 /**

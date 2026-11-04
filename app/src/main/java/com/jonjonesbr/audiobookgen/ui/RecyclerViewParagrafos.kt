@@ -40,6 +40,9 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     /** Chamado (por post) quando o texto deixa de estar em uso: o adapter aplica as repinturas seguradas. */
     var aoLiberarTexto: (() -> Unit)? = null
 
+    /** Chamado (por post, antes de [aoLiberarTexto]) para conferir a seleção viva e mostrar ou esconder a barra. */
+    var aoConferirSelecao: (() -> Unit)? = null
+
     /** Há dedo na lista, do ACTION_DOWN até o UP ou o CANCEL. */
     var toqueEmAndamento = false
         private set
@@ -62,17 +65,33 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
 
     /**
      * Verdadeiro enquanto há toque, menu de seleção ou texto selecionado com foco: as repinturas de sincronia
-     * esperam.
+     * esperam. A regra é larga (rb-54): vale para qualquer TextView com foco, inclusive o campo da edição e o texto
+     * da comparação de alterações, cuja seleção também não pode ser trocada sob o dedo.
      * O texto selecionado cobre o intervalo entre o UP do toque longo e a abertura do menu (o Editor a abre depois).
      */
     val textoEmUso: Boolean
-        get() = segurarRepinturaDeSincronia(toqueEmAndamento, selecoesAbertas, textoComSelecaoFocada())
+        get() = segurarRepinturaDeSincronia(toqueEmAndamento, selecoesAbertas, focoComSelecao)
 
-    /** Seleção de texto agora: menu aberto, ou texto já marcado com foco (antes de o menu abrir). Usada no toque. */
+    /**
+     * Seleção de texto agora, com a regra larga de [textoEmUso]: menu aberto, ou texto já marcado com foco (antes de
+     * o menu abrir). Usada no toque. Quem decide a barra da seleção usa [textoComSelecaoViva], que é mais restrita.
+     */
     val selecaoDeTextoAberta: Boolean
-        get() = selecoesAbertas > 0 || textoComSelecaoFocada()
+        get() = selecoesAbertas > 0 || focoComSelecao
 
-    private fun textoComSelecaoFocada(): Boolean = (findFocus() as? TextView)?.hasSelection() == true
+    /** Algum TextView com foco tem texto selecionado. Seleção sem foco não conta: o foco que sai a desfaz. */
+    private val focoComSelecao: Boolean
+        get() = (findFocus() as? TextView)?.hasSelection() == true
+
+    /**
+     * Seleção viva da barra (rb-54): o TextView de leitura com foco e com seleção. Seleção sem foco não conta: o
+     * foco que sai a desfaz (ver ParagrafoAdapter.VHLeitura). Só o parágrafo de leitura entra, o que liga o
+     * [MenuDaSelecaoDeTexto]: a edição e a comparação de alterações usam o menu do sistema, e a barra do
+     * Leitor não é delas. Nulo sem seleção viva.
+     */
+    internal fun textoComSelecaoViva(): TextView? = (findFocus() as? TextView)?.takeIf {
+        it.hasSelection() && it.customSelectionActionModeCallback is MenuDaSelecaoDeTexto
+    }
 
     /**
      * Roda [acao] quando o toque em andamento terminar (rb-48). Sem toque, roda já. Assim a lista não muda de
@@ -112,10 +131,15 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
         return tratado
     }
 
-    // Por post: o fim do toque e o fechar da seleção vêm de dentro do layout ou do próprio toque, e repintar
-    // ali daria IllegalStateException.
-    private fun liberarDepois() {
-        post { if (!textoEmUso) aoLiberarTexto?.invoke() }
+    /**
+     * Porta única de "confira a seleção viva e solte as repinturas" (rb-38, rb-54). Por post: o fim do toque e o
+     * fechar da seleção vêm de dentro do layout ou do próprio toque, e repintar ali daria IllegalStateException.
+     */
+    internal fun liberarDepois() {
+        post {
+            aoConferirSelecao?.invoke()
+            if (!textoEmUso) aoLiberarTexto?.invoke()
+        }
     }
 
     /**

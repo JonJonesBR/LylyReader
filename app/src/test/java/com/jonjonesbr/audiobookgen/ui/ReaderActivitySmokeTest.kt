@@ -763,6 +763,96 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun selecaoSemDonoSomeERepinturaSai() {
+        // rb-54: seleção sem foco é órfã e some; nada fica preso (repintura de sincronia, textoEmUso).
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+
+            // R1: o foco que sai do parágrafo 1 desfaz a seleção dele, sem menu.
+            scenario.onActivity { a -> selecionarComFoco(lista(a), 1, 0, 5) }
+            scenario.onActivity { a -> tvEm(lista(a), 3)!!.requestFocus() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> assertFalse(tvEm(lista(a), 1)!!.hasSelection()) }
+
+            // R2: seleção sem foco no parágrafo 1 (órfã) não sobrevive ao rebind.
+            scenario.onActivity { a ->
+                Selection.setSelection(tvEm(lista(a), 1)!!.text as Spannable, 0, 5)
+                lista(a).adapter?.notifyItemChanged(1)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> assertFalse(tvEm(lista(a), 1)!!.hasSelection()) }
+
+            // R4: a seleção com foco segura a sincronia; quando o foco sai, a sincronia é aplicada e nada fica preso.
+            scenario.onActivity { a -> selecionarComFoco(lista(a), 2, 0, 5) }
+            scenario.onActivity { a ->
+                modeloDe(a).setParagrafoSyncAtual(2)
+                modeloDe(a).setProgressPct(0.5f)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a ->
+                assertFalse(fundoDoParagrafo(lista(a), 2) is LayerDrawable)
+                assertTrue(listaDoLeitor(a).textoEmUso)
+            }
+            scenario.onActivity { a -> tvEm(lista(a), 0)!!.requestFocus() }
+            esperarAte(scenario, "sincronia aplicada e nada preso depois de soltar a seleção") { a ->
+                val rv = listaDoLeitor(a)
+                fundoDoParagrafo(rv, 2) is LayerDrawable && !rv.textoEmUso && tvEm(rv, 2)?.hasSelection() != true
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun barraVoltaComASelecaoVivaSemOModo() {
+        // rb-54: o Editor para o modo do sistema preservando a seleção, e a barra segue a seleção viva.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            val esperaDoDuploToque = Duration.ofMillis(ViewConfiguration.getDoubleTapTimeout().toLong() + 200L)
+
+            // R3: o modo fecha com a seleção no parágrafo 2: a barra continua, sem o menu, e a seleção fica.
+            var modo: ModoFalso? = null
+            scenario.onActivity { a -> modo = abrirModoFalso(a, selecionarComFoco(lista(a), 2, 0, 5)) }
+            esperarAte(scenario, "barra própria com o modo aberto") { a -> barraDaSelecaoTextoVisivel(a) }
+            scenario.onActivity { modo!!.finish() }
+            shadowOf(Looper.getMainLooper()).idleFor(esperaDoDuploToque)
+            scenario.onActivity { a ->
+                assertTrue(barraDaSelecaoTextoVisivel(a))
+                assertEquals(0, listaDoLeitor(a).selecoesAbertas)
+                assertTrue(tvEm(lista(a), 2)!!.hasSelection())
+            }
+
+            // Destacar pela barra, sem o modo: abre o diálogo, desfaz a seleção e esconde a barra.
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "destacar sem o modo esconde a barra e desfaz a seleção") { a ->
+                !barraDaSelecaoTextoVisivel(a) && tvEm(lista(a), 2)?.hasSelection() != true &&
+                    lista(a).translationY == 0f
+            }
+            scenario.onActivity { assertTrue(ShadowDialog.getLatestDialog()?.isShowing == true) }
+
+            // Voltar com a seleção viva e sem o modo: desfaz a seleção, e o Leitor continua aberto.
+            scenario.onActivity { a ->
+                ShadowDialog.getLatestDialog()?.dismiss()
+                modo = abrirModoFalso(a, selecionarComFoco(lista(a), 1, 0, 5))
+                modo!!.finish()
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(esperaDoDuploToque)
+            scenario.onActivity { a -> assertTrue(barraDaSelecaoTextoVisivel(a)) }
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a ->
+                assertFalse(a.isFinishing)
+                assertFalse(tvEm(lista(a), 1)!!.hasSelection())
+                assertFalse(barraDaSelecaoTextoVisivel(a))
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Dois capítulos: a primeira metade dos parágrafos no primeiro (0 a 4 nos 10 de sempre), o resto no segundo. */
@@ -831,6 +921,9 @@ class ReaderActivitySmokeTest {
     }
 
     private fun lista(a: ReaderActivity): RecyclerView = a.findViewById(R.id.recyclerViewParagrafos)
+
+    // A lista tipada: textoEmUso e selecoesAbertas só existem em RecyclerViewParagrafos (rb-54).
+    private fun listaDoLeitor(a: ReaderActivity): RecyclerViewParagrafos = a.findViewById(R.id.recyclerViewParagrafos)
 
     /** O mesmo ViewModel da tela (o da Activity, pelo dono), para simular o menu e os toques. */
     private fun modeloDe(a: ReaderActivity): ReaderViewModel = ViewModelProvider(a)[ReaderViewModel::class.java]
@@ -944,6 +1037,21 @@ class ReaderActivitySmokeTest {
         a.findViewById<View>(R.id.barraSelecaoTexto).visibility == View.VISIBLE
 
     private fun botaoVisivel(a: ReaderActivity, id: Int): Boolean = a.findViewById<View>(id).visibility == View.VISIBLE
+
+    /** Põe o foco no parágrafo [pos] e a seleção [ini, fim) nele, como o toque longo (rb-54). Devolve o TextView. */
+    private fun selecionarComFoco(rv: RecyclerView, pos: Int, ini: Int, fim: Int): TextView {
+        val tv = requireNotNull(tvEm(rv, pos))
+        tv.requestFocus()
+        Selection.setSelection(tv.text as Spannable, ini, fim)
+        return tv
+    }
+
+    /** Abre o menu da seleção do [tv] com um ActionMode de mentira (rb-54): o callback dele é o que abre a barra. */
+    private fun abrirModoFalso(a: ReaderActivity, tv: TextView): ModoFalso {
+        val cb = tv.customSelectionActionModeCallback
+        val menu = PopupMenu(a, tv).menu
+        return ModoFalso(cb, menu).also { cb.onCreateActionMode(it, menu) }
+    }
 
     /**
      * Espera a tela chegar à condição, deixando a main looper andar (a extração e o cache rodam em IO e voltam pela
