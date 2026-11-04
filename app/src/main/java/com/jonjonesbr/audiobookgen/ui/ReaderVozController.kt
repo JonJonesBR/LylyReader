@@ -24,6 +24,11 @@ private const val PARAGRAFOS_PREVIEW = 3
 private const val MAX_CARACTERES_AMOSTRA = 300
 /** Pontuação que fecha uma frase para cortar a amostra (rb-40). */
 private const val PONTUACAO_FIM_DE_FRASE = ".!?…"
+/** Abreviações (pt e es) cujo ponto não fecha frase: "Dr. Silva" não corta a amostra (rb-47). Sem caixa. */
+private val ABREVIACOES_SEM_FIM_DE_FRASE = setOf(
+    "sr", "sra", "dr", "dra", "prof", "profa", "p", "pág", "cap", "nº", "av", "st",
+    "mr", "mrs", "ms", "ud", "uds",
+)
 private const val PREPARO_PARAGRAFOS_SEM_CAPITULO = 120
 /** Teto da espera da prévia (rb-24): cobre o caso de a geração nunca baixar (síntese com exceção). */
 private const val ESPERA_MAXIMA_DA_PREVIA_MS = 180_000L
@@ -85,21 +90,40 @@ private fun juntarAteOLimite(textos: List<String>, maxCaracteres: Int): String {
 /**
  * Corta [texto] em no máximo [maxCaracteres] caracteres, no último fim de frase que cabe (ponto, interrogação,
  * exclamação, reticências ou travessão fechando uma fala). Sem fim de frase, corta no último espaço e termina com
- * reticências. Texto que já cabe volta inteiro.
+ * reticências. Texto que já cabe volta inteiro. Ponto de abreviação ou entre dígitos não conta (rb-47).
  */
 internal fun cortarNoFimDeFrase(texto: String, maxCaracteres: Int): String {
     if (texto.length <= maxCaracteres) return texto
     val janela = texto.substring(0, maxCaracteres)
-    // Travessão só conta quando gruda na palavra anterior ("assim—"); o que abre uma fala vem depois de espaço.
-    val fim = janela.indices.lastOrNull { i ->
-        i > 0 && (janela[i] in PONTUACAO_FIM_DE_FRASE || (janela[i] == '—' && !janela[i - 1].isWhitespace()))
-    }
+    val fim = janela.indices.lastOrNull { i -> i > 0 && fechaFrase(texto, i) }
     val espaco = janela.lastIndexOf(' ')
     return when {
         fim != null -> janela.substring(0, fim + 1)
         espaco > 0 -> janela.substring(0, espaco).trimEnd() + "…"
         else -> janela.dropLast(1) + "…"
     }
+}
+
+/**
+ * Diz se o caractere de índice [i] de [texto] fecha uma frase (ver [cortarNoFimDeFrase]). Travessão só conta quando
+ * gruda na palavra anterior ("assim—"); o que abre uma fala vem depois de espaço. [i] precisa ser maior que zero.
+ */
+private fun fechaFrase(texto: String, i: Int): Boolean = when {
+    texto[i] == '.' -> !pontoDeAbreviacaoOuNumero(texto, i)
+    texto[i] in PONTUACAO_FIM_DE_FRASE -> true
+    texto[i] == '—' -> !texto[i - 1].isWhitespace()
+    else -> false
+}
+
+/**
+ * Ponto entre dígitos ("3.5", "1.000") ou ponto que fecha uma abreviação conhecida ("Dr.", "pág."). Reticências
+ * não entram: antes do ponto não há letra, logo a palavra é vazia e não é abreviação. [i] é maior que zero.
+ */
+private fun pontoDeAbreviacaoOuNumero(texto: String, i: Int): Boolean {
+    if (texto[i - 1].isDigit() && texto.getOrNull(i + 1)?.isDigit() == true) return true
+    var inicio = i
+    while (inicio > 0 && texto[inicio - 1].isLetter()) inicio--
+    return texto.substring(inicio, i).lowercase() in ABREVIACOES_SEM_FIM_DE_FRASE
 }
 
 /**

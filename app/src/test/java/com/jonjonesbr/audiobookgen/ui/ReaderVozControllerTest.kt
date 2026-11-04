@@ -112,4 +112,37 @@ class ReaderVozControllerTest {
         val p3 = "c".repeat(200) + "."
         assertEquals(p1 + " " + p2, textoDaAmostra(comTextos(p1, p2, p3), inicio = 0))
     }
+
+    // ── corte no fim de frase (rb-47) ──────────────────────────────────────
+
+    @Test
+    fun abreviacaoNaoFechaFrase() {
+        // O corte de 12 caracteres cairia em "Dr.": o ponto não conta, então vai no espaço.
+        assertEquals("O Dr. Silva…", cortarNoFimDeFrase("O Dr. Silva chegou. Depois disso.", 12))
+        // Com janela maior, o ponto de "chegou." é o fim de frase, e o de "Dr." não corta antes.
+        assertEquals("O Dr. Silva chegou.", cortarNoFimDeFrase("O Dr. Silva chegou. Depois disso.", 25))
+    }
+
+    @Test
+    fun abreviacaoSemDiferencaDeCaixa() {
+        assertEquals("O sr. Lima…", cortarNoFimDeFrase("O sr. Lima chegou. Fim", 15))
+    }
+
+    @Test
+    fun pontoEntreDigitosNaoFechaFrase() {
+        assertEquals("Use 3.5 litros…", cortarNoFimDeFrase("Use 3.5 litros de agua, nao mais que isso.", 15))
+        assertEquals("Custa 1.000…", cortarNoFimDeFrase("Custa 1.000 reais e nao e pouco dinheiro", 12))
+    }
+
+    @Test
+    fun reticenciasFechamFrase() {
+        assertEquals("Parei…", cortarNoFimDeFrase("Parei… e fui embora", 9))
+        assertEquals("Parei...", cortarNoFimDeFrase("Parei... e fui embora", 9))
+    }
+
+    @Test
+    fun interrogacaoEExclamacaoFechamFrase() {
+        assertEquals("Voce viu?", cortarNoFimDeFrase("Voce viu? Sim! Depois disso tudo mudou muito.", 12))
+        assertEquals("Sim!", cortarNoFimDeFrase("Sim! Nao e assim que se faz", 5))
+    }
 }
