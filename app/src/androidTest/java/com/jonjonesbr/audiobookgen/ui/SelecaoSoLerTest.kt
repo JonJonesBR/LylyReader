@@ -4,12 +4,14 @@ import android.content.Intent
 import android.graphics.PointF
 import android.graphics.Rect
 import android.os.SystemClock
+import android.text.Spannable
 import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.ui.apoio.Capturas
 import com.jonjonesbr.audiobookgen.ui.apoio.DiagnosticoDoArraste
@@ -21,9 +23,11 @@ import com.jonjonesbr.audiobookgen.ui.apoio.arrastarAlcaFinalAte
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarInicioMenorQue
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarLinhaAbaixoDaBarra
+import com.jonjonesbr.audiobookgen.ui.apoio.rolarListaComODedo
 import com.jonjonesbr.audiobookgen.ui.apoio.selecaoAtual
 import com.jonjonesbr.audiobookgen.ui.apoio.selecionarPalavra
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Rule
@@ -136,6 +140,38 @@ class SelecaoSoLerTest {
 
     private fun visibilidade(a: ReaderActivity, id: Int): Int = a.findViewById<View>(id).visibility
 
+    /** Se o parágrafo [indice] tem view na lista agora (rb-58: o parágrafo saiu ou voltou à tela). */
+    private fun paragrafoNaTela(scenario: ActivityScenario<ReaderActivity>, indice: Int): Boolean {
+        var naTela = false
+        scenario.onActivity { a ->
+            val lista = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos)
+            naTela = (0 until lista.childCount).any {
+                lista.getChildViewHolder(lista.getChildAt(it))?.bindingAdapterPosition == indice
+            }
+        }
+        return naTela
+    }
+
+    /** Quantos spans do trecho guardado (rb-58) há no parágrafo [indice] de [a]. Sem onActivity aninhado. */
+    private fun spansDoTrechoNaTela(a: ReaderActivity, indice: Int): Int {
+        val lista = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos)
+        val tv = (lista.findViewHolderForAdapterPosition(indice) as? ParagrafoAdapter.VHLeitura)?.tv
+        val texto = tv?.text as? Spannable ?: return 0
+        return texto.getSpans(0, texto.length, SpanDoTrechoGuardado::class.java).size
+    }
+
+    /** Spans do trecho guardado (rb-58) no TextView do parágrafo [indice], como pares (início, fim). */
+    private fun faixasDoTrechoGuardado(scenario: ActivityScenario<ReaderActivity>, indice: Int): List<Pair<Int, Int>> {
+        var faixas: List<Pair<Int, Int>> = emptyList()
+        scenario.onActivity { a ->
+            val texto = Gestos.textoDoParagrafo(a, indice).text as? Spannable ?: return@onActivity
+            faixas = texto.getSpans(0, texto.length, SpanDoTrechoGuardado::class.java).map {
+                texto.getSpanStart(it) to texto.getSpanEnd(it)
+            }
+        }
+        return faixas
+    }
+
     /** C02: só ler, o toque longo seleciona a palavra e a barra mostra só Destacar e Definir. */
     @Test
     fun c02_toqueLongoSelecionaPalavra() {
@@ -171,6 +207,62 @@ class SelecaoSoLerTest {
                 assertEquals("Botão '$nome' na barra do Só ler", esperado, visibilidade(a, id))
             }
         }
+    }
+
+    /**
+     * C16 (rb-58): no Só ler, seleciona uma palavra do parágrafo 0 e rola com o dedo até ele sair da tela. A barra
+     * fica acesa com Destacar e Definir, agindo sobre o trecho guardado. Rolando de volta, o trecho aparece pintado
+     * na faixa da palavra. Voltar limpa o trecho, a barra some e o Leitor segue aberto.
+     */
+    @Test
+    fun c16_trechoGuardadoAoSairDaTelaEVoltar() {
+        val scenario = abrirSoLer()
+        selecionarPalavra(scenario, regras, 0, PALAVRA, cenario = "c16")
+        val selecao = checkNotNull(selecaoAtual(scenario, 0)) { "Sem seleção depois do toque longo em '$PALAVRA'" }
+        regras.fecharDialogosDoSistema()
+
+        var rolagens = 0
+        while (paragrafoNaTela(scenario, 0) && rolagens < MAXIMO_DE_ROLAGENS_C16) {
+            rolarListaComODedo(scenario, FRACAO_DA_ROLAGEM_C16, paraBaixoNoTexto = true, cenario = "c16")
+            rolagens++
+        }
+        assertFalse("O parágrafo 0 não saiu da tela em $rolagens rolagens", paragrafoNaTela(scenario, 0))
+        Thread.sleep(PAUSA_DEPOIS_DA_ROLAGEM_C16_MS)
+        regras.fecharDialogosDoSistema()
+        Capturas.capturar("29_c16_guardado_fora_da_tela")
+        scenario.onActivity { a ->
+            assertEquals(
+                "A barra deveria ficar acesa com o trecho guardado",
+                View.VISIBLE,
+                visibilidade(a, R.id.barraSelecaoTexto),
+            )
+            assertEquals("Destacar na barra do Só ler", View.VISIBLE, visibilidade(a, R.id.btnSelecaoTextoDestacar))
+            assertEquals("Definir na barra do Só ler", View.VISIBLE, visibilidade(a, R.id.btnSelecaoTextoDefinir))
+        }
+
+        rolagens = 0
+        while (!paragrafoNaTela(scenario, 0) && rolagens < MAXIMO_DE_ROLAGENS_C16) {
+            rolarListaComODedo(scenario, FRACAO_DA_ROLAGEM_C16, paraBaixoNoTexto = false, cenario = "c16")
+            rolagens++
+        }
+        assertTrue("O parágrafo 0 não voltou à tela em $rolagens rolagens", paragrafoNaTela(scenario, 0))
+        Thread.sleep(PAUSA_DEPOIS_DA_ROLAGEM_C16_MS)
+        regras.fecharDialogosDoSistema()
+        val faixas = faixasDoTrechoGuardado(scenario, 0)
+        Capturas.anotar("c16", "faixas do trecho guardado=$faixas seleção=[${selecao.inicio},${selecao.fim}]")
+        Capturas.capturar("30_c16_guardado_de_volta")
+        assertEquals(
+            "O trecho guardado deveria aparecer pintado na faixa de '$PALAVRA' ao voltar",
+            listOf(selecao.inicio to selecao.fim),
+            faixas,
+        )
+
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressBack()
+        esperarAte(scenario, "Voltar limpa o trecho guardado e esconde a barra") { a ->
+            visibilidade(a, R.id.barraSelecaoTexto) != View.VISIBLE && spansDoTrechoNaTela(a, 0) == 0
+        }
+        Capturas.capturar("31_c16_voltar_limpa")
+        scenario.onActivity { a -> assertFalse("O Voltar não deveria fechar o Leitor", a.isFinishing) }
     }
 
     /**
@@ -342,6 +434,11 @@ class SelecaoSoLerTest {
 
     private companion object {
         const val PALAVRA = "chuva"
+
+        /** C16 (rb-58): um terço da área útil por rolagem, no máximo de rolagens, e a pausa para a lista parar. */
+        const val FRACAO_DA_ROLAGEM_C16 = 0.33f
+        const val MAXIMO_DE_ROLAGENS_C16 = 12
+        const val PAUSA_DEPOIS_DA_ROLAGEM_C16_MS = 400L
 
         /** Palavra mais adiante no mesmo parágrafo, usada como alvo do arraste da alça. */
         const val PALAVRA_ADIANTE = "manhã"

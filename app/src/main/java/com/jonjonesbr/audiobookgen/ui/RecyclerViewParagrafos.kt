@@ -6,9 +6,11 @@ import android.os.Bundle
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import kotlin.math.hypot
 
 /**
  * Lista de parágrafos do leitor. Existe para três coisas:
@@ -24,6 +26,8 @@ import androidx.recyclerview.widget.RecyclerView
  *   [depoisDoToque]). A descida é translação, não rolagem: não dispara os listeners de rolagem.
  * - ignorar o pedido de mostrar trecho de um parágrafo em foco, no modo de toque, sem seleção (rb-55, ver
  *   [pedidoDeMostrarTrechoVale]); mesmo mecanismo da `PaginaDoParagrafo.requestChildRectangleOnScreen`.
+ * - guardar o trecho selecionado quando o parágrafo sai da tela (rb-58, ver [guardada]), e limpá-lo com um toque
+ *   curto (ver [toqueLimpaGuardada]).
  */
 class RecyclerViewParagrafos @JvmOverloads constructor(
     context: Context,
@@ -53,6 +57,22 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     /** Filho da lista que estava sob o dedo no ACTION_DOWN (rb-53). Nulo sem toque. */
     private var filhoSobODedo: View? = null
 
+    /** Trecho guardado quando o parágrafo selecionado sai da tela (rb-58). Só a barra e o toque olham para ele. */
+    internal val guardada: SelecaoGuardada = SelecaoGuardada()
+
+    /** Onde o dedo desceu no ACTION_DOWN, para saber se o toque foi curto (rb-58). */
+    private var descidaX = 0f
+    private var descidaY = 0f
+
+    /** Havia trecho guardado no ACTION_DOWN (rb-58). */
+    private var guardadaNoDown = false
+
+    /**
+     * Toque curto que terminou com trecho guardado: a conferência da barra limpa o trecho e consome esta marca (rb-58).
+     * Por ser curto, não lê o parágrafo (ver [selecaoDeTextoAberta]).
+     */
+    internal var toqueLimpaGuardada: Boolean = false
+
     /**
      * Se [v] é o item que o dedo tocou, enquanto o toque dura (rb-53). O adapter não reescreve o texto desse item
      * nesse meio-tempo: trocar o texto sob o dedo faz o Editor perder a posição do toque longo.
@@ -74,10 +94,11 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
 
     /**
      * Seleção de texto agora, com a regra larga de [textoEmUso]: menu aberto, ou texto já marcado com foco (antes de
-     * o menu abrir). Usada no toque. Quem decide a barra da seleção usa [textoComSelecaoViva], que é mais restrita.
+     * o menu abrir). Com trecho guardado (rb-58) também: o toque que o limpa não pode ler o parágrafo. Usada no toque.
+     * Quem decide a barra da seleção usa [textoComSelecaoViva], que é mais restrita.
      */
     val selecaoDeTextoAberta: Boolean
-        get() = selecoesAbertas > 0 || focoComSelecao
+        get() = selecoesAbertas > 0 || focoComSelecao || guardada.ativa
 
     /** Algum TextView com foco tem texto selecionado. Seleção sem foco não conta: o foco que sai a desfaz. */
     private val focoComSelecao: Boolean
@@ -89,9 +110,10 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
      * [MenuDaSelecaoDeTexto]: a edição e a comparação de alterações usam o menu do sistema, e a barra do
      * Leitor não é delas. Nulo sem seleção viva.
      */
-    internal fun textoComSelecaoViva(): TextView? = (findFocus() as? TextView)?.takeIf {
-        it.hasSelection() && it.customSelectionActionModeCallback is MenuDaSelecaoDeTexto
-    }
+    internal val textoComSelecaoViva: TextView?
+        get() = (findFocus() as? TextView)?.takeIf {
+            it.hasSelection() && it.customSelectionActionModeCallback is MenuDaSelecaoDeTexto
+        }
 
     /**
      * Roda [acao] quando o toque em andamento terminar (rb-48). Sem toque, roda já. Assim a lista não muda de
@@ -115,10 +137,21 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
             toqueEmAndamento = true
             filhoSobODedo = findChildViewUnder(ev.x, ev.y)
+            descidaX = ev.x
+            descidaY = ev.y
+            guardadaNoDown = guardada.ativa
         }
         val tratado = super.dispatchTouchEvent(ev)
         val fimDoToque = ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL
         if (toqueEmAndamento && fimDoToque) {
+            // Seleção aberta agora (duplo toque, toque longo) não conta: ela substitui o trecho na conferência.
+            toqueLimpaGuardada = guardadaNoDown && ev.actionMasked == MotionEvent.ACTION_UP && ehToqueCurto(
+                duracaoMs = ev.eventTime - ev.downTime,
+                deslocamentoPx = hypot((ev.x - descidaX).toDouble(), (ev.y - descidaY).toDouble()).toFloat(),
+                slopPx = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
+                limiteDoToqueLongoMs = ViewConfiguration.getLongPressTimeout().toLong(),
+                selecaoAberta = selecoesAbertas > 0 || focoComSelecao,
+            )
             toqueEmAndamento = false
             filhoSobODedo = null
             liberarDepois()
@@ -153,6 +186,15 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
         return super.requestChildRectangleOnScreen(child, rect, immediate)
     }
 
+    /**
+     * Antes de o RecyclerView tirar o filho da tela. O unFocus que vem depois desfaria a seleção do parágrafo com foco
+     * (rb-58): por isso o trecho é guardado aqui, na hora.
+     */
+    override fun onChildDetachedFromWindow(child: View) {
+        guardarTrechoAoSair(child)
+        super.onChildDetachedFromWindow(child)
+    }
+
     override fun onChildAttachedToWindow(child: View) {
         super.onChildAttachedToWindow(child)
         (getChildViewHolder(child) as? ParagrafoAdapter.VHLeitura)?.tv?.rearmarSelecao()
@@ -166,4 +208,21 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
         }
         return super.performAccessibilityAction(action, arguments)
     }
+}
+
+/**
+ * Guarda o trecho marcado no parágrafo com foco quando ele sai da tela (rb-58). Função de topo: a classe da lista já
+ * está no limite de funções do detekt. Pinta logo o span marcador, porque a view pode voltar do cache sem bind.
+ * Holder invalidado (notifyDataSetChanged, lista nova) não guarda: o trecho seria de outro texto. Isso já sai do
+ * próprio `bindingAdapterPosition`, que devolve NO_POSITION para holder invalidado ou removido (o `isInvalid` do
+ * ViewHolder é package-private, por isso não é checado aqui).
+ */
+internal fun RecyclerViewParagrafos.guardarTrechoAoSair(child: View) {
+    val holder = getChildViewHolder(child) as? ParagrafoAdapter.VHLeitura ?: return
+    val tv = holder.tv
+    val trecho = trechoSelecionado(tv.selectionStart, tv.selectionEnd, tv.text)
+    val posicao = holder.bindingAdapterPosition
+    if (trecho == null || posicao == RecyclerView.NO_POSITION || !guardarAoSairDaTela(true, tv.isFocused, true)) return
+    guardada.guardar(posicao, trecho, tv.text.toString())
+    tv.pintarTrechoGuardado(guardada.trechoNoParagrafo(posicao, tv.text.toString()))
 }

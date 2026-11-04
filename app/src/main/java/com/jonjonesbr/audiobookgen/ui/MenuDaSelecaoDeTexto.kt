@@ -10,7 +10,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.R
 import kotlin.math.hypot
 
@@ -124,18 +123,35 @@ internal class MenuDaSelecaoDeTexto(
 
     /** A ação do item tocado, ou nulo quando ela não se aplica ao trecho (sem texto ou sem parágrafo). */
     private fun executar(id: Int, sel: TrechoSelecionado, pos: Int): (() -> Unit)? {
-        val texto = sel.texto
-        val comTexto = texto.isNotEmpty()
-        val comParagrafo = pos != RecyclerView.NO_POSITION
-        return when (id) {
-            MENU_ITEM_GERAR_AUDIO -> if (comTexto) ({ acoes.gerarAudio(texto) }) else null
-            MENU_ITEM_SELECIONAR_PARAGRAFO -> if (comParagrafo) ({ acoes.selecionarVarios(pos) }) else null
-            MENU_ITEM_DESTACAR -> if (comParagrafo) ({ acoes.destacar(pos, sel.inicio, sel.fim) }) else null
-            MENU_ITEM_PRONUNCIA -> if (comTexto) ({ acoes.pronuncia(texto) }) else null
-            MENU_ITEM_DEFINIR -> if (comTexto) ({ acoes.definir(texto) }) else null
-            MENU_ITEM_EXCLUIR_OCORRENCIAS -> if (comTexto) ({ acoes.excluirOcorrencias(texto) }) else null
+        val acao = AcaoDaBarraDeSelecao.entries.firstOrNull { idDoItem(it) == id }
+        return when {
+            id == MENU_ITEM_EXCLUIR_OCORRENCIAS ->
+                sel.texto.takeIf { it.isNotEmpty() }?.let { texto -> ({ acoes.excluirOcorrencias(texto) }) }
+            acao != null -> acoes.acaoDaBarra(acao, sel, pos)
             else -> null
         }
+    }
+}
+
+/**
+ * Ação da barra sobre o trecho marcado no parágrafo [pos] (rb-58). A mesma para a seleção com o menu do sistema e para
+ * o trecho guardado, que pode estar com o parágrafo fora da tela. Nulo quando a ação não se aplica ao trecho (sem
+ * texto, ou sem parágrafo). Função de topo pelo mesmo motivo das outras: não empurrar o menu acima do limite do detekt.
+ */
+internal fun AcoesDaSelecaoDeTexto.acaoDaBarra(
+    acao: AcaoDaBarraDeSelecao,
+    trecho: TrechoSelecionado,
+    pos: Int,
+): (() -> Unit)? {
+    val texto = trecho.texto
+    val comTexto = texto.isNotEmpty()
+    val comParagrafo = pos >= 0
+    return when (acao) {
+        AcaoDaBarraDeSelecao.GERAR_AUDIO -> if (comTexto) ({ gerarAudio(texto) }) else null
+        AcaoDaBarraDeSelecao.DESTACAR -> if (comParagrafo) ({ destacar(pos, trecho.inicio, trecho.fim) }) else null
+        AcaoDaBarraDeSelecao.PRONUNCIA -> if (comTexto) ({ pronuncia(texto) }) else null
+        AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS -> if (comParagrafo) ({ selecionarVarios(pos) }) else null
+        AcaoDaBarraDeSelecao.DEFINIR -> if (comTexto) ({ definir(texto) }) else null
     }
 }
 

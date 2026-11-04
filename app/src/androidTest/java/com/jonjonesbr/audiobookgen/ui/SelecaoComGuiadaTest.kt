@@ -594,9 +594,10 @@ class SelecaoComGuiadaTest {
     }
 
     /**
-     * C14b (rb-54): com a seleção aberta no parágrafo 2 e a guiada pausada, rola a lista até o parágrafo 2 sair da
-     * tela e depois de volta. Nos dois momentos não pode sobrar seleção sem foco, e um parágrafo com foco e
-     * seleção tem a barra da seleção visível.
+     * C14b (rb-54, rb-58): com a seleção aberta no parágrafo 2 e a guiada pausada, rola a lista até o parágrafo 2
+     * sair da tela e depois de volta. Nos dois momentos não pode sobrar seleção sem foco, e um parágrafo com foco e
+     * seleção tem a barra da seleção visível. Fora da tela, o trecho fica guardado (rb-58): a seleção nativa sai,
+     * e a barra segue acesa para agir sobre o trecho.
      */
     @Test
     fun c14b_rolarAteSairDaTelaEVoltarSemSelecaoOrfa() {
@@ -622,6 +623,11 @@ class SelecaoComGuiadaTest {
         Capturas.anotar("c14b", "parágrafo 2 fora da tela depois de $rolagens rolagens: ${descreverFoto(fotoFora)}")
         Capturas.capturar("25_rolagem_ate_sair_da_tela")
         conferirSelecaoSemOrfas(fotoFora, "com o parágrafo 2 fora da tela")
+        assertTrue(
+            "Com o parágrafo 2 fora da tela, a barra deveria ficar acesa com o trecho guardado: " +
+                descreverFoto(fotoFora),
+            fotoFora.barraVisivel
+        )
 
         rolagens = 0
         while (!paragrafoNaTela(scenario, 2) && rolagens < MAXIMO_DE_ROLAGENS) {

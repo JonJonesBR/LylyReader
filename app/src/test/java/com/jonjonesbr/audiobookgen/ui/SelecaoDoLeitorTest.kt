@@ -297,4 +297,72 @@ class SelecaoDoLeitorTest {
             passoDaBarraDaSelecao(menuAberto = false, selecaoViva = true, emMovimento = false, jaEsperou = true),
         )
     }
+
+    // rb-58: com trecho guardado (o parágrafo saiu da tela), a barra fica e age sobre ele, sem seleção viva.
+
+    @Test
+    fun trechoGuardadoSemSelecaoVivaMantemABarra() {
+        // Sem seleção viva e com trecho guardado: MOSTRAR_GUARDADA, em qualquer movimento ou espera.
+        for (movimento in listOf(false, true)) for (espera in listOf(false, true)) {
+            assertEquals(
+                PassoDaBarraDaSelecao.MOSTRAR_GUARDADA,
+                passoDaBarraDaSelecao(
+                    menuAberto = false,
+                    selecaoViva = false,
+                    emMovimento = movimento,
+                    jaEsperou = espera,
+                    guardada = true,
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun menuAbertoGanhaDoTrechoGuardado() {
+        // O menu do sistema continua sendo da seleção: com ele aberto, o trecho guardado não mexe na barra.
+        for (viva in listOf(false, true)) for (movimento in listOf(false, true)) for (espera in listOf(false, true)) {
+            assertEquals(
+                PassoDaBarraDaSelecao.NADA,
+                passoDaBarraDaSelecao(
+                    menuAberto = true, selecaoViva = viva, emMovimento = movimento, jaEsperou = espera, guardada = true,
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun selecaoVivaNaoSeMisturaComTrechoGuardado() {
+        // Seleção viva segue a regra de sempre, com ou sem trecho guardado (a conferência já limpou o guardado).
+        for (guardada in listOf(false, true)) {
+            assertEquals(
+                PassoDaBarraDaSelecao.ESPERAR,
+                passoDaBarraDaSelecao(
+                    menuAberto = false, selecaoViva = true, emMovimento = false, jaEsperou = false, guardada = guardada,
+                ),
+            )
+            assertEquals(
+                PassoDaBarraDaSelecao.MOSTRAR_SEM_MENU,
+                passoDaBarraDaSelecao(
+                    menuAberto = false, selecaoViva = true, emMovimento = false, jaEsperou = true, guardada = guardada,
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun semTrechoGuardadoSemSelecaoContinuaEscondendo() {
+        // Sem trecho guardado, a conta é a de antes: ESCONDER, nos 4 casos de movimento e espera.
+        for (movimento in listOf(false, true)) for (espera in listOf(false, true)) {
+            assertEquals(
+                PassoDaBarraDaSelecao.ESCONDER,
+                passoDaBarraDaSelecao(
+                    menuAberto = false,
+                    selecaoViva = false,
+                    emMovimento = movimento,
+                    jaEsperou = espera,
+                    guardada = false,
+                ),
+            )
+        }
+    }
 }

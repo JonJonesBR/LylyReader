@@ -15,9 +15,11 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
+import android.text.Spannable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextWatcher
+import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.StrikethroughSpan
 import android.util.TypedValue
@@ -126,8 +128,11 @@ class ParagrafoAdapter(
             val menu = menuAberto
             if (menu != null) menu.executarPelaBarra(acao) else selecaoSemMenu.agirPelaBarra(acao)
         }
-    // Barra da seleção viva quando o menu do sistema não está aberto (rb-54).
-    private val selecaoSemMenu: SelecaoSemMenu = SelecaoSemMenu(activity, recyclerView, barraDaSelecao)
+    // A barra própria, para ver se o foco foi para um dos botões dela (rb-57).
+    private val barraDeTexto: View = barraSelecaoTexto
+    // Barra da seleção viva quando o menu do sistema não está aberto (rb-54). Recebe as ações pela lambda: o
+    // acoesDoMenu é declarado depois, e só é lido quando a barra age.
+    private val selecaoSemMenu: SelecaoSemMenu = SelecaoSemMenu(activity, recyclerView, barraDaSelecao) { acoesDoMenu }
     // Repinturas de sincronia seguradas enquanto há dedo na lista ou seleção aberta (rb-38).
     private val repinturas = RepinturasPendentes()
 
@@ -139,7 +144,7 @@ class ParagrafoAdapter(
         recyclerView.aoConferirSelecao = { selecaoSemMenu.conferir() }
     }
 
-    private val acoesDoMenu = AcoesDaSelecaoDeTexto(
+    private val acoesDoMenu: AcoesDaSelecaoDeTexto = AcoesDaSelecaoDeTexto(
         gerarAudio = onGerarAudioDoTrecho,
         selecionarVarios = { posicao ->
             onLongPress(posicao)
@@ -159,6 +164,8 @@ class ParagrafoAdapter(
         aoAbrir = { menu ->
             menuAberto = menu
             recyclerView.abriuSelecao()
+            // Seleção nova substitui o trecho guardado (rb-58).
+            if (recyclerView.guardada.ativa) selecaoSemMenu.limparGuardada()
             // Outro parágrafo (outro menu) é sessão nova da barra: a descida se ajusta ao trecho novo.
             val outraSelecao = menu !== ultimoMenuAberto
             ultimoMenuAberto = menu
@@ -261,6 +268,9 @@ class ParagrafoAdapter(
             mudouLista -> {
                 repinturas.descartar()
                 notifyDataSetChanged()
+                // Lista nova: o trecho guardado era de outro texto (rb-58). Depois do notify, por causa do detach.
+                recyclerView.guardada.limpar()
+                recyclerView.liberarDepois()
             }
             mudouAparencia -> {
                 repinturas.descartar()
@@ -309,7 +319,13 @@ class ParagrafoAdapter(
             // Seleção sem foco é órfã (rb-54): desfaz quando o parágrafo perde o foco, se o menu não está aberto. Por
             // post, porque o Editor pode fechar o modo dentro da troca de foco. Com o menu aberto, a seleção é dele.
             tv.setOnFocusChangeListener { _, temFoco ->
-                if (!temFoco) tv.post { if (!tv.isFocused && tv.desfazerSelecaoSemMenu()) recyclerView.liberarDepois() }
+                if (!temFoco) tv.post {
+                    // Foco indo para um botão da barra (teclado, D-pad, rb-57): a seleção fica para o clique.
+                    val novoFoco = tv.rootView.findFocus()
+                    val foiParaABarra = novoFoco != null && (novoFoco.estaDentroDe(barraDeTexto) ||
+                        novoFoco.estaDentroDe(tv.rootView.findViewById<View>(R.id.layoutBarraSelecao)))
+                    if (!tv.isFocused && !foiParaABarra && tv.desfazerSelecaoSemMenu()) recyclerView.liberarDepois()
+                }
             }
         }
     }
@@ -437,6 +453,9 @@ class ParagrafoAdapter(
             tv.text = par.texto
             tv.pintarFundoParagrafo(corFundo, estaNoSync, tema)
         }
+        // rb-58: o trecho guardado volta pintado depois do setText dos ramos acima, que tiram os spans antigos. Com a
+        // seleção do usuário o texto não foi trocado, e os spans ficam como estão.
+        if (!selecaoAtiva) tv.pintarTrechoGuardado(recyclerView.guardada.trechoNoParagrafo(position, par.texto))
     }
 
     private fun bindEdicao(holder: VHEdicao, par: Paragrafo?, position: Int, corTexto: Int) {
@@ -698,4 +717,27 @@ private fun TextView.pintarFundoParagrafo(corFundo: Int, narrado: Boolean, tema:
     // Reforço: a View já propaga a direção ao background, mas a camada nova recebe a direção já agora.
     camadas.setLayoutDirection(layoutDirection)
     background = camadas
+}
+
+/** Se a view é [pai] ou está dentro dele. Para ver se o foco foi para a barra da seleção (rb-57). */
+internal fun View.estaDentroDe(pai: View?): Boolean =
+    pai != null && generateSequence(this) { it.parent as? View }.any { it === pai }
+
+/** Marcador do trecho guardado (rb-58): um BackgroundColorSpan à parte, para tirar só ele sem mexer no resto. */
+internal class SpanDoTrechoGuardado(cor: Int) : BackgroundColorSpan(cor)
+
+/**
+ * Pinta o trecho guardado do parágrafo, ou tira o marcador com nulo (rb-58). Só mexe nos spans do texto: não troca o
+ * texto e não toca no justificado (ver as armadilhas do Leitor). Função de topo, como as outras da view do parágrafo.
+ */
+internal fun TextView.pintarTrechoGuardado(trecho: IntRange?) {
+    val texto = text as? Spannable ?: return
+    val marcados = texto.getSpans(0, texto.length, SpanDoTrechoGuardado::class.java)
+    if (trecho == null && marcados.isEmpty()) return
+    marcados.forEach { texto.removeSpan(it) }
+    if (trecho != null) {
+        val marcador = SpanDoTrechoGuardado(highlightColor)
+        texto.setSpan(marcador, trecho.first, trecho.last + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+    invalidate()
 }

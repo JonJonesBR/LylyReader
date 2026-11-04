@@ -870,6 +870,213 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    fun trechoGuardadoFicaComABarraQuandoOParagrafoSaiDaTela() {
+        // rb-58 (R1, R2): o parágrafo selecionado sai da tela e o trecho fica guardado, com a barra. Voltando, pinta.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+            scenario.onActivity { a ->
+                val guardada = listaDoLeitor(a).guardada
+                assertEquals(1, guardada.posicao)
+                assertEquals(0, guardada.inicio)
+                assertEquals(5, guardada.fim)
+                assertTrue(barraDaSelecaoTextoVisivel(a))
+            }
+            // Nenhum TextView da tela fica com seleção nativa: a seleção saiu junto com o parágrafo.
+            esperarAte(scenario, "sem seleção nativa na tela") { a ->
+                (0 until lista(a).childCount).none { (lista(a).getChildAt(it) as? TextView)?.hasSelection() == true }
+            }
+
+            // R2: rolar de volta mostra o trecho pintado, e ele sobrevive a uma repintura do item.
+            scenario.onActivity { lista(it).scrollToPosition(0) }
+            esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
+                tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
+            }
+            scenario.onActivity { a ->
+                val tv = tvEm(lista(a), 1)!!
+                val span = spansDoTrecho(tv).single()
+                assertEquals(0, (tv.text as Spannable).getSpanStart(span))
+                assertEquals(5, (tv.text as Spannable).getSpanEnd(span))
+                assertTrue(barraDaSelecaoTextoVisivel(a))
+            }
+            scenario.onActivity { lista(it).adapter?.notifyItemChanged(1) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> assertEquals(1, spansDoTrecho(tvEm(lista(a), 1)!!).size) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun destacarPelaBarraUsaOTrechoGuardadoEEsconde() {
+        // rb-58 (R3): a ação da barra age sobre o trecho guardado; depois dela, a barra some e nada fica pintado.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "destacar esconde a barra e limpa o trecho") { a ->
+                !barraDaSelecaoTextoVisivel(a) && !listaDoLeitor(a).guardada.ativa && lista(a).translationY == 0f
+            }
+            scenario.onActivity { a ->
+                assertTrue(ShadowDialog.getLatestDialog()?.isShowing == true)
+                val lista = lista(a)
+                assertTrue(
+                    (0 until lista.childCount).none { spansDoTrecho(lista.getChildAt(it) as TextView).isNotEmpty() },
+                )
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun focoNoBotaoDaBarraNaoDesfazASelecao() {
+        // rb-57: com teclado ou D-pad, o foco que vai do parágrafo selecionado para um botão da barra não desfaz a
+        // seleção: o clique ainda acha o trecho.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { a ->
+                selecionarComFoco(lista(a), 1, 0, 5)
+                listaDoLeitor(a).liberarDepois()
+            }
+            esperarAte(scenario, "barra sem menu com a seleção viva") { a -> barraDaSelecaoTextoVisivel(a) }
+
+            // D-pad: sai do modo de toque, e o foco vai para o botão Destacar da barra.
+            scenario.onActivity { a ->
+                definirModoDeToque(a, toque = false)
+                val botao = a.findViewById<View>(R.id.btnSelecaoTextoDestacar)
+                botao.requestFocus()
+                // Sem o foco no botão, o teste não prova nada (o modo de toque é por reflexão).
+                assumeTrue("botão não pegou foco (modo de toque)", botao.isFocused)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a ->
+                assertTrue(tvEm(lista(a), 1)!!.hasSelection())
+                assertTrue(barraDaSelecaoTextoVisivel(a))
+            }
+            // Com o foco no botão, o clique ainda acha o trecho: abre o Destacar e a seleção sai.
+            scenario.onActivity { a -> a.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "destacar abre e a seleção sai") { a ->
+                ShadowDialog.getLatestDialog()?.isShowing == true && tvEm(lista(a), 1)?.hasSelection() == false
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun focoNoBotaoDaBarraVoltaDesfazASelecaoSemSairDoLeitor() {
+        // rb-57: com o foco num botão da barra, o Voltar desfaz a seleção viva e não sai do Leitor.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { a ->
+                selecionarComFoco(lista(a), 1, 0, 5)
+                listaDoLeitor(a).liberarDepois()
+            }
+            esperarAte(scenario, "barra sem menu com a seleção viva") { a -> barraDaSelecaoTextoVisivel(a) }
+
+            scenario.onActivity { a ->
+                definirModoDeToque(a, toque = false)
+                val botao = a.findViewById<View>(R.id.btnSelecaoTextoDestacar)
+                botao.requestFocus()
+                assumeTrue("botão não pegou foco (modo de toque)", botao.isFocused)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> a.onBackPressedDispatcher.onBackPressed() }
+            esperarAte(scenario, "voltar desfaz a seleção e esconde a barra") { a ->
+                tvEm(lista(a), 1)?.hasSelection() == false && !barraDaSelecaoTextoVisivel(a)
+            }
+            scenario.onActivity { a -> assertFalse(a.isFinishing) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun voltarLimpaOTrechoGuardadoEOLeitorFica() {
+        // rb-58 (R4): Voltar com o trecho guardado limpa o trecho e não fecha o Leitor.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            esperarAte(scenario, "voltar limpa o trecho e esconde a barra") { a ->
+                !listaDoLeitor(a).guardada.ativa && !barraDaSelecaoTextoVisivel(a)
+            }
+            scenario.onActivity { a -> assertFalse(a.isFinishing) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun toqueCurtoLimpaOTrechoGuardadoSemLerOParagrafo() {
+        // rb-58 (R5): um toque curto limpa o trecho guardado, sem ler dali nem mexer na seleção da ViewModel.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+            // Seleção de vários parágrafos aberta num parágrafo inteiro na tela (k). Um toque que lesse ampliaria a
+            // seleção até o alvo, que é outro parágrafo inteiro na tela: é isso que o teste confere.
+            var k = -1
+            var alvo = -1
+            scenario.onActivity { a ->
+                val inteiros = paragrafosInteirosNaTela(lista(a))
+                assertTrue("dois parágrafos inteiros na tela", inteiros.size >= 2)
+                k = inteiros[0]
+                alvo = inteiros[1]
+                modeloDe(a).onParagrafoLongPress(k)
+            }
+            var inicioAntes: Int? = null
+            var fimAntes: Int? = null
+            var sincAntes = -1
+            scenario.onActivity { a ->
+                inicioAntes = modeloDe(a).uiState.value.selecaoInicio
+                fimAntes = modeloDe(a).uiState.value.selecaoFim
+                sincAntes = modeloDe(a).uiState.value.paragrafoSyncAtual
+            }
+            assertEquals(k, inicioAntes)
+            assertEquals(k, fimAntes)
+
+            evento(scenario, alvo, MotionEvent.ACTION_DOWN, 1_000L, 1_000L)
+            evento(scenario, alvo, MotionEvent.ACTION_UP, 1_000L, 1_050L)
+            esperarAte(scenario, "toque curto limpa o trecho e esconde a barra") { a ->
+                !listaDoLeitor(a).guardada.ativa && !barraDaSelecaoTextoVisivel(a)
+            }
+            scenario.onActivity { a ->
+                assertEquals(inicioAntes, modeloDe(a).uiState.value.selecaoInicio)
+                assertEquals(fimAntes, modeloDe(a).uiState.value.selecaoFim)
+                assertEquals(sincAntes, modeloDe(a).uiState.value.paragrafoSyncAtual)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun listaNovaLimpaOTrechoGuardadoEEscondeABarra() {
+        // rb-58 (R6): trocar a lista (aqui, o modo de edição) limpa o trecho guardado e esconde a barra.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+
+            scenario.onActivity { modeloDe(it).ativarModoEdicao() }
+            esperarAte(scenario, "modo de edição limpa o trecho e esconde a barra") { a ->
+                !listaDoLeitor(a).guardada.ativa && !barraDaSelecaoTextoVisivel(a)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────
 
     /** Dois capítulos: a primeira metade dos parágrafos no primeiro (0 a 4 nos 10 de sempre), o resto no segundo. */
@@ -950,15 +1157,58 @@ class ReaderActivitySmokeTest {
      * InstrumentationRegistry não está no classpath da JVM: o pedido vai à ViewRootImpl por reflexão (a API é oculta).
      * Sem a API, não faz nada.
      */
-    private fun entrarNoModoDeToque(a: ReaderActivity) {
+    private fun entrarNoModoDeToque(a: ReaderActivity) = definirModoDeToque(a, toque = true)
+
+    /** Liga ou desliga o modo de toque da janela (rb-57 sai dele, para o foco ir pelo D-pad). Por reflexão. */
+    private fun definirModoDeToque(a: ReaderActivity, toque: Boolean) {
         runCatching {
             val raiz = View::class.java.getDeclaredMethod("getViewRootImpl")
                 .apply { isAccessible = true }
                 .invoke(a.window.decorView)
             raiz.javaClass.getDeclaredMethod("ensureTouchMode", Boolean::class.javaPrimitiveType)
                 .apply { isAccessible = true }
-                .invoke(raiz, true)
+                .invoke(raiz, toque)
         }
+    }
+
+    /**
+     * Seleciona [pos] (0 a 5) com foco e rola a lista até ele sair da tela (rb-58): o trecho fica guardado, e a barra
+     * segue acesa sem o menu do sistema.
+     */
+    private fun guardarTrechoDoParagrafo(scenario: ActivityScenario<ReaderActivity>, pos: Int) {
+        // O UP do toque longo dispara a conferência (liberarDepois); aqui ela é disparada à mão.
+        scenario.onActivity { a ->
+            selecionarComFoco(lista(a), pos, 0, 5)
+            listaDoLeitor(a).liberarDepois()
+        }
+        esperarAte(scenario, "barra sem menu com a seleção viva") { a -> barraDaSelecaoTextoVisivel(a) }
+        scenario.onActivity { a -> rolarAteSair(lista(a), pos) }
+        esperarAte(scenario, "trecho guardado com a barra acesa") { a ->
+            barraDaSelecaoTextoVisivel(a) && listaDoLeitor(a).guardada.ativa
+        }
+    }
+
+    /** Rola a lista para baixo até nenhum filho ligado mostrar a posição [pos] (o parágrafo saiu da tela). */
+    private fun rolarAteSair(rv: RecyclerView, pos: Int) {
+        var vezes = 0
+        while (estaNaTela(rv, pos) && vezes++ < 50) rv.scrollBy(0, 300)
+    }
+
+    private fun estaNaTela(rv: RecyclerView, pos: Int): Boolean =
+        (0 until rv.childCount).any { rv.getChildViewHolder(rv.getChildAt(it))?.bindingAdapterPosition == pos }
+
+    /** Posições dos parágrafos inteiros na lista (topo e base dentro da área da lista), em ordem. */
+    private fun paragrafosInteirosNaTela(rv: RecyclerView): List<Int> =
+        (0 until rv.childCount).mapNotNull { i ->
+            val filho = rv.getChildAt(i)
+            val pos = rv.getChildViewHolder(filho)?.bindingAdapterPosition ?: return@mapNotNull null
+            pos.takeIf { filho.top >= 0 && filho.bottom <= rv.height }
+        }.sorted()
+
+    /** Spans do trecho guardado (rb-58) no TextView. Texto que não é Spannable não tem nenhum. */
+    private fun spansDoTrecho(tv: TextView): Array<SpanDoTrechoGuardado> {
+        val texto = tv.text as? Spannable ?: return emptyArray()
+        return texto.getSpans(0, texto.length, SpanDoTrechoGuardado::class.java)
     }
 
     /** Barra "N parágrafos selecionados" (rb-30), visível ou não. */

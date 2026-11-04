@@ -71,7 +71,7 @@ internal class BarraDaSelecaoDeTexto(
         // modo do sistema (rb-54), a seleção viva também conta: a descida vale para ela. Só a seleção do Leitor
         // conta aqui (regra restrita, não a larga): a barra não desce por causa de seleção da edição.
         if (barra.visibility != View.VISIBLE) return
-        if (lista.selecoesAbertas == 0 && lista.textoComSelecaoViva() == null) return
+        if (lista.selecoesAbertas == 0 && lista.textoComSelecaoViva == null) return
         val linha = linhaDaSelecao() ?: return
         // Uma volta animada em curso (barra reaberta logo depois de fechar) cede ao cálculo a partir do ponto atual.
         lista.animate().cancel()
