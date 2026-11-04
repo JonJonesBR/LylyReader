@@ -5,6 +5,7 @@ import android.graphics.Rect
 import android.text.Selection
 import android.text.Spannable
 import android.view.View
+import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -70,6 +71,21 @@ private const val MEDIDAS_DE_VISIBILIDADE_MAXIMAS = 6
 /** Espera, depois de um arraste, antes de medir de novo (a barra da guiada e a seleção se acomodam). */
 private const val PAUSA_APOS_ARRASTE_MS = 300L
 
+/** Margem esquerda da lista, em dp, onde o dedo cai para arrastar: fora do texto e dos menus (rb-46 U4). */
+private const val MARGEM_DO_ARRASTE_DP = 16f
+
+/** Menor segmento do arraste, em frações da área útil: não encurta abaixo de um oitavo dela (rb-46 U4). */
+private const val FRACAO_MINIMA_DO_SEGMENTO = 8
+
+/** Em quantos pontos a faixa livre do arraste é procurada na área útil (rb-46 U4). */
+private const val PASSOS_DA_BUSCA_DE_FAIXA = 40
+
+/** Janela que o dedo pode bater no arraste: o retângulo na tela e a descrição para medidas.txt (rb-46 U4). */
+private class ObstaculoDoArraste(val retangulo: Rect, val descricao: String)
+
+/** Segmento vertical do arraste, em coordenadas de tela, e o motivo da escolha para medidas.txt (rb-46 U4). */
+private data class SegmentoDoArraste(val yInicio: Int, val yFim: Int, val motivo: String)
+
 /** Até quanto esperar o Snackbar sair da tela (ele some sozinho, LENGTH_SHORT). */
 private const val TEMPO_PARA_SNACKBAR_SUMIR_MS = 4_000L
 
@@ -78,6 +94,7 @@ private const val TEMPO_PARA_SNACKBAR_SUMIR_MS = 4_000L
  * [precisaSubir]: a palavra está embaixo da área útil (o dedo sobe); senão está em cima (o dedo desce).
  * [obstaculoTemporario]: um Snackbar cobre o ponto, e ele some sozinho (não se arrasta a lista por isso).
  * [listaParada]: a lista está com o RecyclerView em repouso (SCROLL_STATE_IDLE).
+ * [densidade]: densidade do aparelho, para converter dp do arraste em pixels.
  */
 private class MedidaDeVisibilidade(
     val ponto: PointF?,
@@ -88,6 +105,7 @@ private class MedidaDeVisibilidade(
     val topoUtil: Int,
     val fundoUtil: Int,
     val listaParada: Boolean,
+    val densidade: Float,
     val relato: String,
 )
 
@@ -130,9 +148,13 @@ fun garantirPalavraVisivel(
             continue
         }
         if (arrastes == ARRASTES_DA_LISTA_MAXIMOS) break
-        arrastarLista(pronta)
+        val antes = primeiraViewDaLista(scenario)
+        arrastarLista(pronta, cenario)
         arrastes++
         esperarListaParada(scenario)
+        val depois = primeiraViewDaLista(scenario)
+        val rolou = if (antes == depois) "não rolou" else "rolou"
+        Capturas.anotar(cenario, "arraste $arrastes da lista: antes [$antes], depois [$depois], $rolou")
     }
     throw AssertionError(
         "A palavra '$palavra' do parágrafo $indiceParagrafo não ficou em lugar seguro para o toque depois de " +
@@ -216,6 +238,7 @@ private fun medirNaTela(a: ReaderActivity, indiceParagrafo: Int, palavra: String
         topoUtil = topoUtil,
         fundoUtil = fundoUtil,
         listaParada = lista.scrollState == RecyclerView.SCROLL_STATE_IDLE,
+        densidade = densidade,
         relato = relato,
     )
 }
@@ -263,21 +286,117 @@ private fun pontoParado(antes: MedidaDeVisibilidade, depois: MedidaDeVisibilidad
 }
 
 /**
- * Arrasta a lista com um dedo, no meio da área útil, andando um terço dela no sentido que leva a palavra para dentro
- * da área: o dedo sobe quando [MedidaDeVisibilidade.precisaSubir], senão desce. Falha se não houver área útil.
+ * Arrasta a lista com um dedo, andando um terço da área útil no sentido que leva a palavra para dentro da área: o
+ * dedo sobe quando [MedidaDeVisibilidade.precisaSubir], senão desce. O dedo cai na margem esquerda da lista (rb-46
+ * U4). Se o segmento cruzar uma janela flutuante, ele é deslocado ([escolherSegmento]). Anota em medidas.txt as
+ * janelas e o segmento escolhido. Falha se não houver área útil.
  */
-private fun arrastarLista(medida: MedidaDeVisibilidade) {
+private fun arrastarLista(medida: MedidaDeVisibilidade, cenario: String) {
     val altura = medida.fundoUtil - medida.topoUtil
     check(altura > 0) { "Sem área útil para arrastar a lista: ${medida.relato}" }
-    val centro = (medida.topoUtil + medida.fundoUtil) / 2
-    val meioTerco = altura / 6
-    val x = medida.listaRect.centerX().toFloat()
+    val x = medida.listaRect.left + MARGEM_DO_ARRASTE_DP * medida.densidade
+    val folga = FOLGA_DA_AREA_OCUPADA_DP * medida.densidade
+    val obstaculos = obstaculosDoArraste(medida, cenario)
+    val segmento = escolherSegmento(medida, x, folga, obstaculos)
+    Capturas.anotar(
+        cenario,
+        "segmento do arraste: x=${x.toInt()} de y=${segmento.yInicio} a y=${segmento.yFim} (${segmento.motivo})"
+    )
     val (y0, y1) = if (medida.precisaSubir) {
-        (centro + meioTerco) to (centro - meioTerco)
+        segmento.yFim to segmento.yInicio
     } else {
-        (centro - meioTerco) to (centro + meioTerco)
+        segmento.yInicio to segmento.yFim
     }
     Gestos.arrastar(x, y0.toFloat(), x, y1.toFloat())
+}
+
+/**
+ * Janelas da tela que podem cobrir o dedo, lidas pelo UiAutomation. Não contam: as do sistema (barra de status e de
+ * navegação) e a janela do próprio Leitor, que cobre a lista inteira. Anota em medidas.txt todas as janelas, com o
+ * que foi considerado obstáculo.
+ */
+private fun obstaculosDoArraste(medida: MedidaDeVisibilidade, cenario: String): List<ObstaculoDoArraste> {
+    val obstaculos = mutableListOf<ObstaculoDoArraste>()
+    JanelasDaTela.ler { Capturas.anotar(cenario, "janelas: $it") }.forEach { janela ->
+        val retangulo = Rect()
+        janela.getBoundsInScreen(retangulo)
+        val ignorada = when {
+            janela.type == AccessibilityWindowInfo.TYPE_SYSTEM -> "sistema"
+            retangulo.isEmpty -> "vazia"
+            retangulo.contains(medida.listaRect) -> "cobre a lista"
+            cobreAListaComFolga(retangulo, medida.listaRect) -> "cobre a lista, com 1 px de diferença"
+            else -> null
+        }
+        val descricao = "tipo=${janela.type} titulo=${janela.title} bounds=${retangulo.toShortString()}"
+        if (ignorada == null) obstaculos += ObstaculoDoArraste(retangulo, descricao)
+        Capturas.anotar(cenario, "janela ${ignorada?.let { "ignorada ($it)" } ?: "obstáculo"}: $descricao")
+    }
+    return obstaculos
+}
+
+/**
+ * Se a janela é a do próprio Leitor mesmo com os bounds um pouco diferentes da lista (insets e recortes podem dar
+ * 1 px): quase do tamanho da lista e cobrindo o centro dela. Um menu flutuante não cobre a lista desse jeito.
+ */
+private fun cobreAListaComFolga(janela: Rect, lista: Rect): Boolean {
+    return janela.width() >= lista.width() * 9 / 10 && janela.height() >= lista.height() * 9 / 10 &&
+        janela.contains(lista.centerX(), lista.centerY())
+}
+
+/**
+ * Escolhe o segmento vertical do arraste, em [x] fixo. Começa no padrão: um terço da área útil, centrado nela. Se
+ * ele cruzar um obstáculo, procura a faixa livre mais perto do centro, com o mesmo tamanho; se não houver, encurta
+ * o segmento (até um oitavo da área útil) e procura de novo. Sem faixa livre nenhuma, fica com o padrão e diz isso
+ * no motivo: o arraste segue mesmo assim (rb-46 U4).
+ */
+private fun escolherSegmento(
+    medida: MedidaDeVisibilidade,
+    x: Float,
+    folga: Float,
+    obstaculos: List<ObstaculoDoArraste>,
+): SegmentoDoArraste {
+    val altura = medida.fundoUtil - medida.topoUtil
+    val centro = (medida.topoUtil + medida.fundoUtil) / 2
+    val comprimento = 2 * (altura / 6)
+    val minimo = altura / FRACAO_MINIMA_DO_SEGMENTO
+    val tamanhos = listOf(comprimento, comprimento * 3 / 4, comprimento / 2, minimo).distinct()
+    val passo = (altura / PASSOS_DA_BUSCA_DE_FAIXA).coerceAtLeast(1)
+    val inicioPadrao = centro - comprimento / 2
+    if (obstaculos.none { cruza(inicioPadrao, inicioPadrao + comprimento, x, folga, it) }) {
+        return SegmentoDoArraste(inicioPadrao, inicioPadrao + comprimento, "padrão, sem janela por cima")
+    }
+    for (tamanho in tamanhos) {
+        val inicios = (medida.topoUtil..(medida.fundoUtil - tamanho) step passo)
+            .sortedBy { abs(it + tamanho / 2 - centro) }
+        val livre = inicios.firstOrNull { inicio ->
+            obstaculos.none { cruza(inicio, inicio + tamanho, x, folga, it) }
+        }
+        if (livre != null) {
+            return SegmentoDoArraste(livre, livre + tamanho, "desviado de janela, comprimento $tamanho")
+        }
+    }
+    return SegmentoDoArraste(inicioPadrao, inicioPadrao + comprimento, "sem faixa livre; padrão mesmo assim")
+}
+
+/** Se o segmento vertical de [yInicio] a [yFim], em [x], encosta em [obstaculo] (com a [folga] em volta). */
+private fun cruza(yInicio: Int, yFim: Int, x: Float, folga: Float, obstaculo: ObstaculoDoArraste): Boolean {
+    val r = obstaculo.retangulo
+    return x >= r.left - folga && x <= r.right + folga &&
+        minOf(yInicio, yFim) <= r.bottom + folga && maxOf(yInicio, yFim) >= r.top - folga
+}
+
+/**
+ * Posição e topo da 1ª View visível da lista, lidos na thread principal, em texto para medidas.txt. Com a lista
+ * rolada, a posição ou o topo mudam (rb-46 U4).
+ */
+private fun primeiraViewDaLista(scenario: ActivityScenario<ReaderActivity>): String {
+    var texto = ""
+    scenario.onActivity { a ->
+        val lm = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos).layoutManager as LinearLayoutManager
+        val posicao = lm.findFirstVisibleItemPosition()
+        texto = "posição=$posicao topo=${lm.findViewByPosition(posicao)?.top}"
+    }
+    return texto
 }
 
 /** Espera a lista voltar ao repouso depois de um arraste, e uma pausa para a barra se acomodar. */

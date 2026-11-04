@@ -1,6 +1,5 @@
 package com.jonjonesbr.audiobookgen.ui
 
-import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
 import android.graphics.PointF
 import android.graphics.Rect
@@ -15,6 +14,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.ui.apoio.Capturas
 import com.jonjonesbr.audiobookgen.ui.apoio.DiagnosticoDoArraste
 import com.jonjonesbr.audiobookgen.ui.apoio.Gestos
+import com.jonjonesbr.audiobookgen.ui.apoio.JanelasDaTela
 import com.jonjonesbr.audiobookgen.ui.apoio.LivroNoAparelho
 import com.jonjonesbr.audiobookgen.ui.apoio.RegrasDoLeitor
 import com.jonjonesbr.audiobookgen.ui.apoio.arrastarAlcaFinalAte
@@ -87,38 +87,16 @@ class SelecaoSoLerTest {
      * compartilhada pelos testes seguintes do processo. Se a flag ou a leitura falharem, só anota o erro.
      */
     private fun anotarJanelasDaTela() {
-        val automacao = InstrumentationRegistry.getInstrumentation().uiAutomation
-        val flagsAntes = runCatching { automacao.serviceInfo?.flags }.getOrNull()
-        runCatching {
-            val info = automacao.serviceInfo
-            if (info != null) {
-                info.flags = info.flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-                automacao.serviceInfo = info
-            }
-        }.onFailure { Capturas.anotar("c03", "flag de janelas não configurada: ${it.message}") }
-        try {
-            runCatching {
-                val janelas = automacao.windows.orEmpty()
-                Capturas.anotar("c03", "janelas=${janelas.size}")
-                janelas.forEach { janela ->
-                    val retangulo = Rect()
-                    janela.getBoundsInScreen(retangulo)
-                    Capturas.anotar(
-                        "c03",
-                        "janela tipo=${janela.type} layer=${janela.layer} titulo=${janela.title} " +
-                            "bounds=${retangulo.toShortString()}"
-                    )
-                }
-            }.onFailure { Capturas.anotar("c03", "janelas indisponíveis: ${it.message}") }
-        } finally {
-            if (flagsAntes != null) {
-                runCatching {
-                    automacao.serviceInfo?.let { info ->
-                        info.flags = flagsAntes
-                        automacao.serviceInfo = info
-                    }
-                }
-            }
+        val janelas = JanelasDaTela.ler { Capturas.anotar("c03", it) }
+        Capturas.anotar("c03", "janelas=${janelas.size}")
+        janelas.forEach { janela ->
+            val retangulo = Rect()
+            janela.getBoundsInScreen(retangulo)
+            Capturas.anotar(
+                "c03",
+                "janela tipo=${janela.type} layer=${janela.layer} titulo=${janela.title} " +
+                    "bounds=${retangulo.toShortString()}"
+            )
         }
     }
 
