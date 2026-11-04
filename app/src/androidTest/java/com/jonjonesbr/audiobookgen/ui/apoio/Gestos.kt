@@ -5,6 +5,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.view.InputDevice
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewConfiguration
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -120,17 +121,24 @@ object Gestos {
     ): PointF {
         var ponto: PointF? = null
         scenario.onActivity { a ->
-            val tv = textoDoParagrafo(a, indiceParagrafo)
-            val inicio = tv.text.toString().indexOf(palavra)
-            check(inicio >= 0) { "A palavra '$palavra' não está no parágrafo $indiceParagrafo" }
-            val offset = inicio + palavra.length / 2
-            val layout = tv.layout ?: error("Parágrafo $indiceParagrafo sem layout")
-            val linha = layout.getLineForOffset(offset)
-            val x = layout.getPrimaryHorizontal(offset)
-            val y = (layout.getLineTop(linha) + layout.getLineBottom(linha)) / 2f
-            ponto = naTela(tv, x, y)
+            ponto = pontoDaPalavraNoTexto(textoDoParagrafo(a, indiceParagrafo), indiceParagrafo, palavra)
         }
         return checkNotNull(ponto) { "Sem ponto para a palavra '$palavra'" }
+    }
+
+    /**
+     * Mesma conta de [pontoDaPalavra], mas direto no TextView, para quem já está na thread principal (rb-46 U4: a
+     * visibilidade mede o ponto e o obstáculo no mesmo instante). Falha se a palavra não estiver no parágrafo.
+     */
+    fun pontoDaPalavraNoTexto(tv: TextView, indiceParagrafo: Int, palavra: String): PointF {
+        val inicio = tv.text.toString().indexOf(palavra)
+        check(inicio >= 0) { "A palavra '$palavra' não está no parágrafo $indiceParagrafo" }
+        val offset = inicio + palavra.length / 2
+        val layout = tv.layout ?: error("Parágrafo $indiceParagrafo sem layout")
+        val linha = layout.getLineForOffset(offset)
+        val x = layout.getPrimaryHorizontal(offset)
+        val y = (layout.getLineTop(linha) + layout.getLineBottom(linha)) / 2f
+        return naTela(tv, x, y)
     }
 
     /**
@@ -265,6 +273,24 @@ object Gestos {
             altura = (layout.getLineBottom(linha) - layout.getLineTop(linha)).toFloat()
         }
         return checkNotNull(altura) { "Sem altura de linha para o parágrafo $indiceParagrafo" }
+    }
+
+    /**
+     * Centro, em pixels de tela, da view [id] do Leitor (ex.: um botão). Lê na thread principal. Falha, com [nome] na
+     * mensagem, se a view não estiver visível na tela.
+     */
+    fun centroDaView(scenario: ActivityScenario<ReaderActivity>, id: Int, nome: String): Pair<Int, Int> {
+        var centro: Pair<Int, Int>? = null
+        var visivel = false
+        scenario.onActivity { a ->
+            val view = a.findViewById<View>(id)
+            val posicao = IntArray(2)
+            view.getLocationOnScreen(posicao)
+            centro = Pair(posicao[0] + view.width / 2, posicao[1] + view.height / 2)
+            visivel = view.isShown
+        }
+        check(visivel) { "O $nome não está visível na tela" }
+        return checkNotNull(centro) { "$nome sem posição na tela" }
     }
 
     /**

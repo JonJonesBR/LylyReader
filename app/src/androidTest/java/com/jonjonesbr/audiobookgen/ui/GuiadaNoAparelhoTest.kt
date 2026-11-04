@@ -1,21 +1,17 @@
 package com.jonjonesbr.audiobookgen.ui
 
-import android.content.Context
-import android.content.Intent
-import android.view.View
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.jonjonesbr.audiobookgen.R
-import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.ui.apoio.Capturas
+import com.jonjonesbr.audiobookgen.ui.apoio.Gestos
 import com.jonjonesbr.audiobookgen.ui.apoio.LivroNoAparelho
 import com.jonjonesbr.audiobookgen.ui.apoio.RegrasDoLeitor
 import com.jonjonesbr.audiobookgen.ui.apoio.VozFalsa
+import com.jonjonesbr.audiobookgen.ui.apoio.abrirLeitorComGuiada
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,31 +27,6 @@ class GuiadaNoAparelhoTest {
     @get:Rule
     val regras = RegrasDoLeitor()
 
-    /** Abre o livro de teste com a posição salva no começo e a guiada pedida ("Continuar lendo"). */
-    private fun abrirLeitorComGuiada(contexto: Context): ActivityScenario<ReaderActivity> {
-        val arquivo = LivroNoAparelho.gravarLivroNoCache()
-        AppPrefs(contexto).salvarPosicaoLeitura(arquivo.absolutePath, 0, LivroNoAparelho.PARAGRAFOS.size)
-        val intent = Intent(contexto, ReaderActivity::class.java)
-            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
-            .putExtra(ReaderActivity.EXTRA_CONTINUAR_GUIADA, true)
-        return regras.abrir(intent)
-    }
-
-    /** Centro do botão de tocar/pausar na tela, lido na thread principal (a View não pode ser lida fora dela). */
-    private fun centroDoBotaoPlayPause(scenario: ActivityScenario<ReaderActivity>): Pair<Int, Int> {
-        var centro: Pair<Int, Int>? = null
-        var visivel = false
-        scenario.onActivity { a ->
-            val botao = a.findViewById<View>(R.id.btnGuidedPlayPause)
-            val posicao = IntArray(2)
-            botao.getLocationOnScreen(posicao)
-            centro = Pair(posicao[0] + botao.width / 2, posicao[1] + botao.height / 2)
-            visivel = botao.isShown
-        }
-        assertTrue("O botão de tocar/pausar da leitura guiada não está visível", visivel)
-        return checkNotNull(centro) { "Botão de tocar/pausar sem posição na tela" }
-    }
-
     /**
      * (a) A guiada toca o parágrafo 0 com a voz longa (30 s) e, com um toque no botão, pausa.
      */
@@ -65,7 +36,7 @@ class GuiadaNoAparelhoTest {
         val contexto = instrumentacao.targetContext
         regras.usarVoz(VozFalsa.longa(contexto))
 
-        val scenario = abrirLeitorComGuiada(contexto)
+        val scenario = abrirLeitorComGuiada(regras, contexto)
         esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
             GuidedPlaybackBridge.manager?.state?.value?.let { it.isPlaying && it.index == 0 } == true
         }
@@ -77,7 +48,7 @@ class GuiadaNoAparelhoTest {
         )
         Capturas.capturar("02_guiada_tocando")
 
-        val (x, y) = centroDoBotaoPlayPause(scenario)
+        val (x, y) = Gestos.centroDaView(scenario, R.id.btnGuidedPlayPause, "botão de tocar/pausar da leitura guiada")
         regras.fecharDialogosDoSistema()
         UiDevice.getInstance(instrumentacao).click(x, y)
 
@@ -103,7 +74,7 @@ class GuiadaNoAparelhoTest {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
         regras.usarVoz(VozFalsa.curta(contexto))
 
-        val scenario = abrirLeitorComGuiada(contexto)
+        val scenario = abrirLeitorComGuiada(regras, contexto)
         // Uma espera só. Com a voz curta, o parágrafo 0 pode acabar antes de o teste começar a olhar (a abertura é
         // lenta), então não se exige vê-lo tocando. A prova de que ele tocou é a voz ter recebido o texto dele
         // (pediuParagrafo0): o prefetch só pede os seguintes, então, se a guiada começasse no 1, esse texto nunca
