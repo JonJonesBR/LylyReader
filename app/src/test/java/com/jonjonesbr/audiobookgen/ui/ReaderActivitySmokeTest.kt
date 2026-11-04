@@ -346,6 +346,82 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    fun painelDeCapitulosReabreAoGirarComOsMarcados() {
+        // rb-18: girar a tela com o painel aberto reabre o painel, com os capítulos marcados ainda marcados.
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { modeloDe(it).capitulosSelecionados.add(1) }
+            // Vai ao capítulo 2 antes de girar: o painel reaberto precisa manter o capítulo atual, não o 1.
+            scenario.onActivity { it.findViewById<View>(R.id.btnCapituloProximo).performClick() }
+            esperarAte(scenario, "barra no capítulo 2") { a ->
+                primeiroVisivel(a) >= 5 && rotuloDaBarra(a) == rotuloDoCapitulo(a, 2, "Capítulo 2")
+            }
+            scenario.onActivity { it.findViewById<View>(R.id.areaCapituloAtual).performClick() }
+            val antes = requireNotNull(ShadowDialog.getLatestDialog() as? BottomSheetDialog) {
+                "Painel de capítulos não abriu"
+            }
+            assertTrue("Painel de capítulos não abriu", antes.isShowing)
+
+            scenario.recreate()
+            esperarAte(scenario, "painel reaberto depois de girar") { _ ->
+                val painel = ShadowDialog.getLatestDialog()
+                painel !== antes && painel is BottomSheetDialog && painel.isShowing
+            }
+            val painel = requireNotNull(ShadowDialog.getLatestDialog() as? BottomSheetDialog)
+            val rvCapitulos = painel.findViewById<RecyclerView>(R.id.rvCapitulosToc)
+            assertEquals(2, rvCapitulos?.adapter?.itemCount)
+            assertEquals(
+                "Capítulo atual do painel reaberto não é o 2",
+                1,
+                (rvCapitulos?.adapter as? CapituloTocAdapter)?.posicaoDoAtual()
+            )
+            assertEquals(
+                View.VISIBLE,
+                requireNotNull(painel.findViewById<View>(R.id.linhaCapitulosConverter)).visibility
+            )
+            scenario.onActivity { a -> assertEquals(setOf(1), modeloDe(a).capitulosSelecionados) }
+            painel.dismiss()
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun painelFechadoPeloUsuarioNaoReabreAoGirar() {
+        // rb-18: o painel que o usuário fechou não volta depois de girar a tela.
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { it.findViewById<View>(R.id.areaCapituloAtual).performClick() }
+            val painel = requireNotNull(ShadowDialog.getLatestDialog() as? BottomSheetDialog) {
+                "Painel de capítulos não abriu"
+            }
+            painel.dismiss()
+
+            scenario.recreate()
+            esperarAte(scenario, "tela recriada com os parágrafos") { a ->
+                val p = primeiroVisivel(a)
+                p >= 0 && textoEm(lista(a), p) != null
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            val ultimo = ShadowDialog.getLatestDialog()
+            assertFalse(
+                "Painel fechado pelo usuário reabriu depois de girar",
+                ultimo is BottomSheetDialog && ultimo.isShowing
+            )
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun pilulaDaLimpezaNaoVoltaAoGirar() {
         // rb-18: a pílula aparece uma vez por abertura; girar a tela não a traz de volta.
         arquivo = gravarLivroNoCache(livroDeTeste(), removidas = 3)

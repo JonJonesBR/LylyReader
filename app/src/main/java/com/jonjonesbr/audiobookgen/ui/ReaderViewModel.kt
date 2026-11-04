@@ -36,6 +36,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * Estado do painel de capítulos guardado na troca de configuração (rb-18). [primeiroCapitulo] é o índice, na lista
+ * completa, do primeiro capítulo visível do painel; [capituloAtual] é o que estava em negrito e marcado como lido.
+ */
+data class PainelCapitulosAoGirar(val primeiroCapitulo: Int, val capituloAtual: Int)
+
 class ReaderViewModel(app: Application) : AndroidViewModel(app) {
 
     private val extractUseCase = ExtractTextUseCase(app)
@@ -54,6 +60,10 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
 
     // A pílula da limpeza aparece uma vez por abertura do leitor. Também fica aqui, para não voltar ao girar.
     var pilulaDaLimpezaMostrada = false
+
+    // Painel de capítulos aberto quando a tela girou (rb-18): a Activity nova o reabre no mesmo estado.
+    // Nulo = não reabrir (o usuário fechou o painel, ou a tela saiu). Só o ReaderCapitulosController mexe nele.
+    var painelCapitulosAoGirar: PainelCapitulosAoGirar? = null
 
     // ── Extração ──────────────────────────────────────────────────────────────
 

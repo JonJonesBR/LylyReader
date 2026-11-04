@@ -54,6 +54,9 @@ class CapituloTocAdapter(
     /** Posição do capítulo atual na lista mostrada (-1 se a busca o escondeu). */
     fun posicaoDoAtual(): Int = visiveis.indexOf(atual)
 
+    /** Índice, na lista completa de capítulos, do que está na [posicao] da lista mostrada (0 se não há item). */
+    fun capituloNaPosicao(posicao: Int): Int = visiveis.getOrNull(posicao) ?: 0
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_capitulo_toc, parent, false)

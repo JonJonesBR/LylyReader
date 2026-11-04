@@ -92,13 +92,39 @@ class ReaderCapitulosController(
     // para não deixar a janela vazada (WindowLeaked). Mesmo padrão do ReaderMarcacoesController.
     private var folhaAberta: BottomSheetDialog? = null
 
+    /** Capítulo atual com que o painel aberto foi montado (o negrito e as marcas de lido). */
+    private var capituloDoPainelAberto = -1
+
     init {
         activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
-                folhaAberta?.takeIf { it.isShowing }?.dismiss()
+                val folha = folhaAberta?.takeIf { it.isShowing }
+                // Girar a tela com o painel aberto: a Activity nova o reabre (rb-18), no mesmo estado.
+                // Saída não reabre.
+                // Sem folha aberta numa troca de tela, a marca que já existia (ainda não consumida) fica como está.
+                if (!activity.isChangingConfigurations) {
+                    viewModel.painelCapitulosAoGirar = null
+                } else if (folha != null) {
+                    viewModel.painelCapitulosAoGirar = PainelCapitulosAoGirar(
+                        primeiroCapitulo = capituloDoPrimeiroVisivel(folha),
+                        capituloAtual = capituloDoPainelAberto,
+                    )
+                }
+                folha?.dismiss()
                 folhaAberta = null
             }
         })
+    }
+
+    /**
+     * Índice, na lista completa, do primeiro capítulo visível do painel (0 se a lista ainda não tem layout).
+     * A posição visível é da lista filtrada pela busca; por isso passa pelo adapter.
+     */
+    private fun capituloDoPrimeiroVisivel(folha: BottomSheetDialog): Int {
+        val lista = folha.findViewById<RecyclerView>(R.id.rvCapitulosToc)
+        val posicao = ((lista?.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: -1)
+            .coerceAtLeast(0)
+        return (lista?.adapter as? CapituloTocAdapter)?.capituloNaPosicao(posicao) ?: 0
     }
 
     private val appPrefs by lazy { AppPrefs(activity) }
@@ -149,6 +175,12 @@ class ReaderCapitulosController(
             views.proximo.alpha = if (atual < capitulos.lastIndex) 1f else ALFA_SETA_DESABILITADA
             // "Converter este capítulo" e a lista de capítulos usam o capítulo da posição de leitura.
             if (viewModel.uiState.value.capituloAtivo != atual) viewModel.navegarParaCapitulo(atual)
+        }
+        // Girou a tela com o painel aberto: reabre uma vez, no mesmo capítulo atual e na mesma rolagem de antes.
+        // A barra ainda pode estar no capítulo 0 (antes do layout); por isso o capítulo guardado manda.
+        viewModel.painelCapitulosAoGirar?.let { painel ->
+            viewModel.painelCapitulosAoGirar = null
+            mostrarPainel(rolagemInicial = painel.primeiroCapitulo, capituloInicial = painel.capituloAtual)
         }
     }
 
@@ -224,8 +256,12 @@ class ReaderCapitulosController(
 
     // ── Painel de capítulos (T3.4 — sumário navegável) ────────────────────
 
-    /** Abre o sumário de capítulos, já no capítulo atual. Sem capítulos, não faz nada. */
-    fun mostrarPainel() {
+    /**
+     * Abre o sumário de capítulos, já no capítulo atual. Sem capítulos, não faz nada. [rolagemInicial] (índice na
+     * lista completa) e [capituloInicial] vêm do painel de antes de girar a tela (rb-18); sem eles, abre no
+     * capítulo atual da barra.
+     */
+    fun mostrarPainel(rolagemInicial: Int? = null, capituloInicial: Int? = null) {
         val texto = viewModel.textoEfetivo() ?: return
         if (texto.capitulos.isEmpty()) return
         // Quem abriu o painel já descobriu a barra de capítulos: a dica dela não aparece depois.
@@ -239,9 +275,9 @@ class ReaderCapitulosController(
         folhaAberta = dialog
         dialog.setOnDismissListener { painelAberto = false }
 
-        val atual = capituloInicialDoPainel(
-            capituloNaBarra, texto.capitulos.size, viewModel.uiState.value.capituloAtivo
-        )
+        val atual = capituloInicial?.takeIf { it in texto.capitulos.indices }
+            ?: capituloInicialDoPainel(capituloNaBarra, texto.capitulos.size, viewModel.uiState.value.capituloAtivo)
+        capituloDoPainelAberto = atual
         // Marcar capítulos para converter (o que os chips faziam); não existe no "Ler sem áudio".
         val selecionados = if (somenteLeitura) null else capitulosSelecionados
         val marcarTodos = view.findViewById<TextView>(R.id.tvCapitulosMarcarTodos)
@@ -272,9 +308,10 @@ class ReaderCapitulosController(
             layoutManager = LinearLayoutManager(activity)
             this.adapter = adapter
         }
-        // Abre já no capítulo atual, com alguns acima dele à vista.
-        (lista.layoutManager as LinearLayoutManager)
-            .scrollToPositionWithOffset((adapter.posicaoDoAtual() - CAPITULOS_ACIMA_DO_ATUAL).coerceAtLeast(0), 0)
+        // Abre já no capítulo atual, com alguns acima dele à vista (ou na rolagem de antes de girar a tela).
+        (lista.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(
+            rolagemInicial ?: (adapter.posicaoDoAtual() - CAPITULOS_ACIMA_DO_ATUAL).coerceAtLeast(0), 0
+        )
         if (texto.capitulos.size > MIN_CAPITULOS_PARA_BUSCA) {
             view.findViewById<android.widget.EditText>(R.id.etBuscaCapitulos).apply {
                 visibility = View.VISIBLE
