@@ -47,6 +47,48 @@ internal fun acaoDoComando(action: String?): ComandoLeituraGuiada? = when (actio
 }
 
 /**
+ * Ações que a sessão de mídia da leitura guiada anuncia. Sem ACTION_SEEK_TO: a leitura avança por trechos
+ * sintetizados e não tem duração total, então não há o que buscar. Junto com a duração declarada como
+ * desconhecida (ver [metadataDaSessaoGuiada]), é o que deve tirar a barra 00:00/00:00 da notificação (rb-41).
+ * O AOSP esconde a barra quando a duração é <= 0; os SystemUI de fabricante podem ter outro comportamento.
+ */
+internal fun acoesDaSessaoGuiada(): Long =
+    PlaybackStateCompat.ACTION_PLAY or
+        PlaybackStateCompat.ACTION_PAUSE or
+        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+        PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+        PlaybackStateCompat.ACTION_STOP
+
+/**
+ * Estado da sessão: posição desconhecida (PLAYBACK_POSITION_UNKNOWN), porque a leitura guiada não informa tempo
+ * decorrido.
+ */
+internal fun estadoDaSessaoDaGuiada(tocando: Boolean): PlaybackStateCompat =
+    PlaybackStateCompat.Builder()
+        .setActions(acoesDaSessaoGuiada())
+        .setState(
+            if (tocando) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED,
+            PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
+            1f
+        )
+        .build()
+
+/**
+ * Metadados da sessão. A duração é declarada como -1: a documentação de METADATA_KEY_DURATION diz que
+ * duração negativa é desconhecida (o mesmo que o MediaSessionConnector do ExoPlayer publica para conteúdo
+ * sem duração). A leitura guiada não tem duração total para informar.
+ */
+internal fun metadataDaSessaoGuiada(titulo: String, nomeApp: String): MediaMetadataCompat =
+    MediaMetadataCompat.Builder()
+        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, titulo)
+        .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, nomeApp)
+        .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, DURACAO_DESCONHECIDA)
+        .build()
+
+/** Duração informada à sessão quando o livro não tem tempo total (negativo = desconhecida). */
+private const val DURACAO_DESCONHECIDA = -1L
+
+/**
  * Foreground service da leitura guiada.
  *
  * Não reproduz áudio diretamente — o [GuidedPlayerManager] (na ReaderActivity) continua
@@ -380,12 +422,7 @@ class GuidedReadingService : Service() {
     /** Título do livro na tela de bloqueio, no relógio e no carro (Bluetooth); antes ficava sem nome. */
     private fun atualizarMetadados(titulo: String) {
         tituloNaSessao = titulo
-        mediaSession?.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, titulo)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, getString(R.string.app_name))
-                .build()
-        )
+        mediaSession?.setMetadata(metadataDaSessaoGuiada(titulo, getString(R.string.app_name)))
     }
 
     private fun startForegroundCompat() {
@@ -423,19 +460,7 @@ class GuidedReadingService : Service() {
     }
 
     private fun atualizarEstadoMediaSession(isPlaying: Boolean) {
-        val state = if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
-        mediaSession?.setPlaybackState(
-            PlaybackStateCompat.Builder()
-                .setActions(
-                    PlaybackStateCompat.ACTION_PLAY or
-                    PlaybackStateCompat.ACTION_PAUSE or
-                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                    PlaybackStateCompat.ACTION_STOP
-                )
-                .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f)
-                .build()
-        )
+        mediaSession?.setPlaybackState(estadoDaSessaoDaGuiada(isPlaying))
     }
 
     private fun notificar(notification: Notification) {
