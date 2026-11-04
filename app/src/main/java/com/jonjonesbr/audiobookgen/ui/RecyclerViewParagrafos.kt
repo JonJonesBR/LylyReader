@@ -27,7 +27,8 @@ import kotlin.math.hypot
  * - ignorar o pedido de mostrar trecho de um parágrafo em foco, no modo de toque, sem seleção (rb-55, ver
  *   [pedidoDeMostrarTrechoVale]); mesmo mecanismo da `PaginaDoParagrafo.requestChildRectangleOnScreen`.
  * - guardar o trecho selecionado quando o parágrafo sai da tela (rb-58, ver [guardada]), e limpá-lo com um toque
- *   curto (ver [toqueLimpaGuardada]).
+ *   curto (ver [toqueLimpaGuardada]). Um toque curto dentro do trecho traz a seleção de volta (rb-60, ver
+ *   [toqueReabreGuardada]).
  */
 class RecyclerViewParagrafos @JvmOverloads constructor(
     context: Context,
@@ -68,10 +69,22 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     private var guardadaNoDown = false
 
     /**
+     * A lista e a página sob o dedo estavam paradas no ACTION_DOWN (rb-60): um toque que para um fling, na lista ou
+     * dentro da página horizontal, não reabre o trecho.
+     */
+    private var listaParadaNoDown = false
+
+    /**
      * Toque curto que terminou com trecho guardado: a conferência da barra limpa o trecho e consome esta marca (rb-58).
      * Por ser curto, não lê o parágrafo (ver [selecaoDeTextoAberta]).
      */
     internal var toqueLimpaGuardada: Boolean = false
+
+    /**
+     * Toque curto dentro do trecho guardado (rb-60): a conferência tira o trecho e pede a seleção nativa dele de volta.
+     * Guarda o próprio trecho, para a conferência não ter de medir o toque de novo.
+     */
+    internal var toqueReabreGuardada: IntRange? = null
 
     /**
      * Se [v] é o item que o dedo tocou, enquanto o toque dura (rb-53). O adapter não reescreve o texto desse item
@@ -140,18 +153,30 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
             descidaX = ev.x
             descidaY = ev.y
             guardadaNoDown = guardada.ativa
+            // Antes do super: a lista ainda não reagiu ao toque (o que para um fling muda o estado). A página
+            // horizontal sob o dedo também conta: o fling dentro dela rola sem a lista sair de IDLE (rb-60).
+            val paginaRolando = (filhoSobODedo as? PaginaDoParagrafo)?.rolandoSozinha == true
+            listaParadaNoDown = scrollState == RecyclerView.SCROLL_STATE_IDLE && !paginaRolando
         }
         val tratado = super.dispatchTouchEvent(ev)
         val fimDoToque = ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL
         if (toqueEmAndamento && fimDoToque) {
             // Seleção aberta agora (duplo toque, toque longo) não conta: ela substitui o trecho na conferência.
-            toqueLimpaGuardada = guardadaNoDown && ev.actionMasked == MotionEvent.ACTION_UP && ehToqueCurto(
+            val curtoNoGuardado = guardadaNoDown && ev.actionMasked == MotionEvent.ACTION_UP && ehToqueCurto(
                 duracaoMs = ev.eventTime - ev.downTime,
                 deslocamentoPx = hypot((ev.x - descidaX).toDouble(), (ev.y - descidaY).toDouble()).toFloat(),
                 slopPx = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
                 limiteDoToqueLongoMs = ViewConfiguration.getLongPressTimeout().toLong(),
                 selecaoAberta = selecoesAbertas > 0 || focoComSelecao,
             )
+            // Dentro do trecho, o toque reabre a seleção (rb-60); fora, limpa o trecho (rb-58).
+            val faixa = if (curtoNoGuardado) {
+                faixaDoToqueNoGuardado(filhoSobODedo, descidaX, descidaY, listaParadaNoDown)
+            } else {
+                null
+            }
+            toqueReabreGuardada = faixa
+            toqueLimpaGuardada = curtoNoGuardado && faixa == null
             toqueEmAndamento = false
             filhoSobODedo = null
             liberarDepois()
@@ -225,4 +250,33 @@ internal fun RecyclerViewParagrafos.guardarTrechoAoSair(child: View) {
     if (trecho == null || posicao == RecyclerView.NO_POSITION || !guardarAoSairDaTela(true, tv.isFocused, true)) return
     guardada.guardar(posicao, trecho, tv.text.toString())
     tv.pintarTrechoGuardado(guardada.trechoNoParagrafo(posicao, tv.text.toString()))
+}
+
+/**
+ * Faixa do trecho guardado que um toque curto tocou (rb-60), ou nulo. O TextView é o do item sob o dedo no DOWN (na
+ * página horizontal, o TextView dentro dela). O offset sai do ponto do DOWN em coordenadas do TextView: o offsetRect
+ * desconta a posição e a rolagem de cada pai, a página horizontal inclusive. Função de topo, pelo limite de funções.
+ */
+internal fun RecyclerViewParagrafos.faixaDoToqueNoGuardado(
+    filho: View?,
+    x: Float,
+    y: Float,
+    listaParada: Boolean,
+): IntRange? {
+    // Filho que já saiu desta lista no meio do toque não é medido (getChildViewHolder e offsetRect lançariam).
+    val holder = filho?.takeIf { it.parent === this }?.let { getChildViewHolder(it) } as? ParagrafoAdapter.VHLeitura
+        ?: return null
+    val tv = holder.tv
+    // Lista que rolava no DOWN não mede: quem para o fling é a lista, e o toque nem reabre (ver toqueReabreTrecho).
+    val offset = if (listaParada && tv.isAttachedToWindow) offsetDoToqueNoTexto(tv, x, y) else -1
+    return toqueReabreTrecho(holder.bindingAdapterPosition, offset, listaParada, guardada, tv.text.toString())
+}
+
+/**
+ * Offset do caractere sob o ponto ([x], [y]) da lista, medido no [tv] (rb-60). Sem linhas no layout, devolve -1.
+ */
+private fun RecyclerViewParagrafos.offsetDoToqueNoTexto(tv: TextView, x: Float, y: Float): Int {
+    val ponto = Rect(x.toInt(), y.toInt(), x.toInt(), y.toInt())
+    offsetRectIntoDescendantCoords(tv, ponto)
+    return tv.getOffsetForPosition(ponto.left.toFloat(), ponto.top.toFloat())
 }

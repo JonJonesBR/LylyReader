@@ -84,6 +84,55 @@ class SelecaoGuardadaTest {
     }
 
     @Test
+    fun toqueDentroDoTrechoReabreOTrecho() {
+        // rb-60: o toque no caractere dentro do trecho (0 até 8), com a lista parada, devolve o trecho.
+        val guardada = SelecaoGuardada()
+        guardada.guardar(2, TrechoSelecionado(0, 8, "Capítulo"), texto)
+        assertEquals(0 until 8, toqueReabreTrecho(2, 0, true, guardada, texto))
+        assertEquals(0 until 8, toqueReabreTrecho(2, 3, true, guardada, texto))
+        assertEquals(0 until 8, toqueReabreTrecho(2, 7, true, guardada, texto))
+    }
+
+    @Test
+    fun toqueForaDoTrechoNaoReabre() {
+        // Sem trecho guardado, nada reabre. Com o trecho 0 até 8, o offset 8 é a fronteira final (vale, ver abaixo) e
+        // o 9 já está fora.
+        val guardada = SelecaoGuardada()
+        assertNull(toqueReabreTrecho(2, 3, true, guardada, texto))
+        guardada.guardar(2, TrechoSelecionado(0, 8, "Capítulo"), texto)
+        assertNull(toqueReabreTrecho(2, 9, true, guardada, texto))
+        assertNull(toqueReabreTrecho(2, 20, true, guardada, texto))
+        assertNull(toqueReabreTrecho(2, -1, true, guardada, texto))
+    }
+
+    @Test
+    fun fronteiraFinalDoTrechoReabre() {
+        // Metade direita da última letra (8 é o fim exclusivo) devolve a fronteira 8: conta, para a margem ser
+        // simétrica. Sem a lista parada no DOWN, não reabre.
+        val guardada = SelecaoGuardada()
+        guardada.guardar(2, TrechoSelecionado(0, 8, "Capítulo"), texto)
+        assertEquals(0 until 8, toqueReabreTrecho(2, 8, true, guardada, texto))
+        assertNull(toqueReabreTrecho(2, 8, false, guardada, texto))
+    }
+
+    @Test
+    fun toqueEmOutroParagrafoOuComOTextoMudadoNaoReabre() {
+        val guardada = SelecaoGuardada()
+        guardada.guardar(2, TrechoSelecionado(0, 8, "Capítulo"), texto)
+        assertNull(toqueReabreTrecho(3, 3, true, guardada, texto))
+        assertNull(toqueReabreTrecho(2, 3, true, guardada, "Outro parágrafo inteiro."))
+        assertNull(toqueReabreTrecho(-1, 3, true, guardada, texto))
+    }
+
+    @Test
+    fun listaRolandoNoDownNaoReabre() {
+        // Quem para um fling é a lista: o toque com a lista em movimento no DOWN não reabre o trecho.
+        val guardada = SelecaoGuardada()
+        guardada.guardar(2, TrechoSelecionado(0, 8, "Capítulo"), texto)
+        assertNull(toqueReabreTrecho(2, 3, false, guardada, texto))
+    }
+
+    @Test
     fun guardarAoSairSoQuandoLeituraComFocoETrecho() {
         // Os 8 casos: só o parágrafo de leitura, com foco e com trecho marcado, guarda.
         for (leitura in listOf(false, true)) for (foco in listOf(false, true)) for (trecho in listOf(false, true)) {

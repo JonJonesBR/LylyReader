@@ -18,6 +18,19 @@ object RegraDaPaginaDoParagrafo {
     const val PROPORCAO_PASSO = 0.18f
 
     /**
+     * Até quando uma rolagem conta como "a página está rolando sozinha" (rb-60): cerca de três quadros. Um fling
+     * ou o acompanhamento rolam a cada quadro; parado, a página deixa de rolar depois deste intervalo.
+     */
+    const val LIMIAR_ROLAGEM_MS = 48L
+
+    /**
+     * Se a página rolou há menos de [LIMIAR_ROLAGEM_MS] (rb-60): um toque que cai nela nesse momento para um fling
+     * em andamento, então não é toque de texto. Sem rolagem registrada ([ultimaRolagemMs] nulo), não rola.
+     */
+    fun rolandoSozinha(agoraMs: Long, ultimaRolagemMs: Long?): Boolean =
+        ultimaRolagemMs != null && agoraMs - ultimaRolagemMs < LIMIAR_ROLAGEM_MS
+
+    /**
      * Quanto rolar a página (em pixels, com sinal) para a linha em leitura chegar à altura de destaque.
      * [fimDaLinha] é a base da linha medida a partir do topo da área visível (lista ou página). Fora da área
      * (a tela apagada voltou, "Voltar à narração", recomeço do parágrafo) o salto é direto.

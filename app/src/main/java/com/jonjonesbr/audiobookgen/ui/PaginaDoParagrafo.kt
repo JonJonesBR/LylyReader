@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Rect
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -45,6 +46,16 @@ class PaginaDoParagrafo @JvmOverloads constructor(
     /** Texto que a página mostra agora: o mesmo parágrafo com texto novo (limpeza, Retirar) também volta ao topo. */
     private var textoMostrado: String? = null
 
+    /** Último instante (uptime) em que a página mudou de rolagem (rb-60). Nulo enquanto nunca rolou. */
+    private var ultimaRolagemMs: Long? = null
+
+    /**
+     * A página está rolando agora, ou parou há pouco (rb-60): um toque nela nesse momento para um fling, e não é
+     * toque de texto. Ver [RegraDaPaginaDoParagrafo.rolandoSozinha].
+     */
+    val rolandoSozinha: Boolean
+        get() = RegraDaPaginaDoParagrafo.rolandoSozinha(SystemClock.uptimeMillis(), ultimaRolagemMs)
+
     // Não dá para pôr isto no XML (nestedScrollingEnabled="false"): o construtor do View lê o atributo antes de a
     // NestedScrollView montar o mChildHelper, e o setter sobrescrito cairia num NPE. Aqui o super já terminou.
     init {
@@ -53,6 +64,8 @@ class PaginaDoParagrafo @JvmOverloads constructor(
         // tratarTecla compara o deslocamento antes e depois, e a seta não ligava o modo manual. O rolarUmaTela
         // (smoothScrollBy) continua animado: esta opção só vale para a rolagem de tecla e de foco.
         isSmoothScrollingEnabled = false
+        // Marca a rolagem da página, inclusive a do fling e a do acompanhamento (rb-60, ver rolandoSozinha).
+        setOnScrollChangeListener { _, _, _, _, _ -> ultimaRolagemMs = SystemClock.uptimeMillis() }
     }
 
     override fun onFinishInflate() {

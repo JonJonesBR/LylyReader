@@ -1,6 +1,8 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.os.Bundle
 import android.view.ViewConfiguration
+import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
  *
  * Com o parágrafo selecionado fora da tela, o trecho fica guardado (rb-58, ver [SelecaoGuardada]): a barra fica e
  * age sobre ele, e quem o limpa é Voltar, um toque curto, uma ação da barra, uma seleção nova ou uma lista nova.
+ * Um toque curto dentro do trecho guardado traz a seleção de volta, com as alças (rb-60).
  *
  * O Voltar também fica aqui: com a seleção viva e sem o modo, ele desfaz a seleção e não sai do Leitor. O callback é
  * criado e registrado só quando é preciso, para ficar acima do callback da Activity (o último registrado tem
@@ -89,8 +92,9 @@ internal class SelecaoSemMenu(
     }
 
     private fun decidir(jaEsperou: Boolean) {
+        limparPelaSelecaoOuPeloToque(lista.textoComSelecaoViva)
+        // Relida depois da limpeza: o trecho reaberto pelo toque (rb-60) pode ter virado a seleção viva agora.
         val viva = lista.textoComSelecaoViva
-        limparPelaSelecaoOuPeloToque(viva)
         val passo = passoDaBarraDaSelecao(
             menuAberto = lista.selecoesAbertas > 0,
             selecaoViva = viva != null,
@@ -118,13 +122,36 @@ internal class SelecaoSemMenu(
     }
 
     /**
-     * Seleção nova substitui o trecho guardado, e o toque curto que o limpa (rb-58) tem a marca, consumida aqui. Sem
-     * nenhuma das duas, não mexe em nada.
+     * Seleção nova substitui o trecho guardado, e o toque curto que o limpa (rb-58) tem a marca, consumida aqui. Toque
+     * curto dentro do trecho (rb-60) tira o trecho e pede a seleção de volta. Sem nenhuma marca, não mexe em nada.
      */
     private fun limparPelaSelecaoOuPeloToque(viva: TextView?) {
-        if (viva == null && !lista.toqueLimpaGuardada) return
+        val faixa = lista.toqueReabreGuardada
+        if (viva == null && faixa == null && !lista.toqueLimpaGuardada) return
         lista.toqueLimpaGuardada = false
-        if (lista.guardada.ativa) limparGuardada()
+        lista.toqueReabreGuardada = null
+        when {
+            faixa != null && viva == null && lista.guardada.ativa -> reabrirTrechoGuardado(faixa)
+            lista.guardada.ativa -> limparGuardada()
+        }
+    }
+
+    /**
+     * Toque curto dentro do trecho guardado (rb-60): tira o trecho e pede ao TextView do parágrafo a seleção nativa de
+     * [faixa], como o TalkBack faz (ACTION_SET_SELECTION, provado pela sonda do C17 no emulador).
+     * O foco vai antes. Se o modo do sistema não abrir, a seleção fica viva com foco, e a conferência põe a barra
+     * sem o menu (rb-54).
+     */
+    private fun reabrirTrechoGuardado(faixa: IntRange) {
+        val tv = (lista.findViewHolderForAdapterPosition(lista.guardada.posicao) as? ParagrafoAdapter.VHLeitura)?.tv
+        limparGuardada()
+        if (tv == null) return
+        tv.requestFocus()
+        val argumentos = Bundle().apply {
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, faixa.first)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, faixa.last + 1)
+        }
+        tv.performAccessibilityAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, argumentos)
     }
 
     private fun esconderBarra() {

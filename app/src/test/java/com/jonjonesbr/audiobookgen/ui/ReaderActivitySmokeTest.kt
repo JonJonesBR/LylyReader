@@ -1300,6 +1300,94 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    fun toqueCurtoNoTrechoGuardadoReabreASelecao() {
+        // rb-60: um toque curto dentro do trecho guardado traz a seleção de volta, no mesmo trecho, com foco e com a
+        // barra. O guardado sai (ele virou seleção viva).
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+            scenario.onActivity { lista(it).scrollToPosition(0) }
+            esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
+                tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
+            }
+            var ponto = 0f to 0f
+            scenario.onActivity { a -> ponto = pontoNoCaractere(tvEm(lista(a), 1)!!, 1) }
+            scenario.onActivity { a -> toqueNaLista(lista(a), ponto, MotionEvent.ACTION_DOWN, 1_000L, 1_000L) }
+            scenario.onActivity { a -> toqueNaLista(lista(a), ponto, MotionEvent.ACTION_UP, 1_000L, 1_050L) }
+            esperarAte(scenario, "toque no trecho tira o guardado e reabre a seleção com a barra") { a ->
+                !listaDoLeitor(a).guardada.ativa && barraDaSelecaoTextoVisivel(a)
+            }
+            scenario.onActivity { a ->
+                val tv = tvEm(lista(a), 1)!!
+                assertTrue("O parágrafo deveria ter o foco depois do toque", tv.isFocused)
+                assertEquals("A seleção reaberta deveria ser o trecho guardado", 0, tv.selectionStart)
+                assertEquals("A seleção reaberta deveria ser o trecho guardado", 5, tv.selectionEnd)
+                assertEquals(0, spansDoTrecho(tv).size)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun toqueNoTrechoComAListaRolandoLimpaOGuardadoSemReabrir() {
+        // rb-60: com a lista ainda rolando no DOWN (fling), o toque é da lista: limpa o trecho como antes do rb-60.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+            scenario.onActivity { lista(it).scrollToPosition(0) }
+            esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
+                tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
+            }
+            var ponto = 0f to 0f
+            scenario.onActivity { a -> ponto = pontoNoCaractere(tvEm(lista(a), 1)!!, 1) }
+            // Fling e DOWN no mesmo despacho: sem deixar a lista andar entre os dois.
+            scenario.onActivity { a ->
+                lista(a).fling(0, 8_000)
+                assertEquals(
+                    "O fling deveria deixar a lista em SETTLING antes do toque",
+                    RecyclerView.SCROLL_STATE_SETTLING,
+                    lista(a).scrollState,
+                )
+                toqueNaLista(lista(a), ponto, MotionEvent.ACTION_DOWN, 1_000L, 1_000L)
+            }
+            scenario.onActivity { a -> toqueNaLista(lista(a), ponto, MotionEvent.ACTION_UP, 1_000L, 1_050L) }
+            esperarAte(scenario, "toque com a lista rolando limpa o trecho e esconde a barra") { a ->
+                !listaDoLeitor(a).guardada.ativa && !barraDaSelecaoTextoVisivel(a)
+            }
+            scenario.onActivity { a -> assertFalse(tvEm(lista(a), 1)?.hasSelection() == true) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun toqueNoMesmoParagrafoForaDoTrechoLimpaOGuardado() {
+        // rb-60: o toque fora do trecho, no mesmo parágrafo, continua limpando (rb-58 R5) e não reabre a seleção.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+            scenario.onActivity { lista(it).scrollToPosition(0) }
+            esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
+                tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
+            }
+            var ponto = 0f to 0f
+            scenario.onActivity { a -> ponto = pontoNoCaractere(tvEm(lista(a), 1)!!, 10) }
+            scenario.onActivity { a -> toqueNaLista(lista(a), ponto, MotionEvent.ACTION_DOWN, 1_000L, 1_000L) }
+            scenario.onActivity { a -> toqueNaLista(lista(a), ponto, MotionEvent.ACTION_UP, 1_000L, 1_050L) }
+            esperarAte(scenario, "toque fora do trecho limpa o guardado e esconde a barra") { a ->
+                !listaDoLeitor(a).guardada.ativa && !barraDaSelecaoTextoVisivel(a)
+            }
+            scenario.onActivity { a -> assertFalse(tvEm(lista(a), 1)?.hasSelection() == true) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun listaNovaLimpaOTrechoGuardadoEEscondeABarra() {
         // rb-58 (R6): trocar a lista (aqui, o modo de edição) limpa o trecho guardado e esconde a barra.
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
@@ -1550,6 +1638,25 @@ class ReaderActivitySmokeTest {
         esperarAte(scenario, "trecho guardado com a barra acesa") { a ->
             barraDaSelecaoTextoVisivel(a) && listaDoLeitor(a).guardada.ativa
         }
+    }
+
+    /**
+     * Ponto (x, y), em coordenadas da lista, do meio do caractere [offset] do parágrafo, na primeira linha (rb-60). O
+     * TextView é o item da rolagem vertical, então o layout dele já vale nas coordenadas da lista.
+     */
+    private fun pontoNoCaractere(tv: TextView, offset: Int): Pair<Float, Float> {
+        val layout = requireNotNull(tv.layout) { "Parágrafo sem layout" }
+        val x = tv.left + tv.totalPaddingLeft +
+            (layout.getPrimaryHorizontal(offset) + layout.getPrimaryHorizontal(offset + 1)) / 2f
+        val y = tv.top + tv.totalPaddingTop + (layout.getLineTop(0) + layout.getLineBottom(0)) / 2f
+        return x to y
+    }
+
+    /** Manda um toque (DOWN ou UP) em [ponto] à lista, em coordenadas da lista (rb-60). */
+    private fun toqueNaLista(rv: RecyclerView, ponto: Pair<Float, Float>, acao: Int, downTime: Long, eventTime: Long) {
+        val ev = MotionEvent.obtain(downTime, eventTime, acao, ponto.first, ponto.second, 0)
+        rv.dispatchTouchEvent(ev)
+        ev.recycle()
     }
 
     /** Rola a lista para baixo até nenhum filho ligado mostrar a posição [pos] (o parágrafo saiu da tela). */

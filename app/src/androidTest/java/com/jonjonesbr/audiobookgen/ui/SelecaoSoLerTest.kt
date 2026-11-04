@@ -23,8 +23,10 @@ import com.jonjonesbr.audiobookgen.ui.apoio.LivroNoAparelho
 import com.jonjonesbr.audiobookgen.ui.apoio.RegrasDoLeitor
 import com.jonjonesbr.audiobookgen.ui.apoio.arrastarAlcaFinalAte
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
+import com.jonjonesbr.audiobookgen.ui.apoio.esperarFimMaiorQue
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarInicioMenorQue
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarLinhaAbaixoDaBarra
+import com.jonjonesbr.audiobookgen.ui.apoio.garantirPalavraVisivel
 import com.jonjonesbr.audiobookgen.ui.apoio.limparSelecaoAberta
 import com.jonjonesbr.audiobookgen.ui.apoio.rolarListaComODedo
 import com.jonjonesbr.audiobookgen.ui.apoio.selecaoAtual
@@ -269,6 +271,97 @@ class SelecaoSoLerTest {
     }
 
     /**
+     * C18 (rb-60): só ler, a seleção é ampliada com a alça, o parágrafo sai da tela e volta, e o trecho aparece
+     * guardado. Um toque real dentro do trecho pintado traz a seleção de volta, igual ao trecho, com as alças: arrastar
+     * a alça do fim até [PALAVRA_MAIS_UMA] tem de crescer a seleção, o que prova as alças. Os toques são reais; as
+     * conferências leem as Views na thread principal.
+     */
+    @Test
+    fun c18_toqueNoTrechoGuardadoTrazASelecaoDeVolta() {
+        val scenario = abrirSoLer()
+        selecionarPalavra(scenario, regras, 0, PALAVRA, cenario = "c18")
+        val antes = checkNotNull(selecaoAtual(scenario, 0)) { "Sem seleção antes do arraste" }
+        regras.fecharDialogosDoSistema()
+        val resultado = arrastarAlcaFinalAte(
+            scenario = scenario,
+            indiceParagrafo = 0,
+            palavraAlvo = PALAVRA_ADIANTE,
+            antes = antes,
+            regras = regras,
+            reselecionar = { selecionarPalavra(scenario, regras, 0, PALAVRA, cenario = "c18") },
+            anotar = { Capturas.anotar("c18", it) },
+        )
+        val ampliada = checkNotNull(resultado.depois) {
+            "Arrastar a alça não ampliou a seleção até '$PALAVRA_ADIANTE': tentativas: " +
+                resultado.tentativas.joinToString("; ")
+        }
+        Capturas.anotar("c18", "ampliada=[${ampliada.inicio},${ampliada.fim}] texto='${ampliada.texto}'")
+
+        var rolagens = 0
+        while (paragrafoNaTela(scenario, 0) && rolagens < MAXIMO_DE_ROLAGENS_C16) {
+            rolarListaComODedo(scenario, FRACAO_DA_ROLAGEM_C16, paraBaixoNoTexto = true, cenario = "c18")
+            rolagens++
+        }
+        assertFalse("O parágrafo 0 não saiu da tela em $rolagens rolagens", paragrafoNaTela(scenario, 0))
+        Thread.sleep(PAUSA_DEPOIS_DA_ROLAGEM_C16_MS)
+        regras.fecharDialogosDoSistema()
+
+        rolagens = 0
+        while (!paragrafoNaTela(scenario, 0) && rolagens < MAXIMO_DE_ROLAGENS_C16) {
+            rolarListaComODedo(scenario, FRACAO_DA_ROLAGEM_C16, paraBaixoNoTexto = false, cenario = "c18")
+            rolagens++
+        }
+        assertTrue("O parágrafo 0 não voltou à tela em $rolagens rolagens", paragrafoNaTela(scenario, 0))
+        Thread.sleep(PAUSA_DEPOIS_DA_ROLAGEM_C16_MS)
+        regras.fecharDialogosDoSistema()
+        val faixas = faixasDoTrechoGuardado(scenario, 0)
+        Capturas.anotar("c18", "faixas do trecho guardado=$faixas ampliada=[${ampliada.inicio},${ampliada.fim}]")
+        assertEquals(
+            "O trecho guardado deveria aparecer pintado na faixa ampliada ao voltar",
+            listOf(ampliada.inicio to ampliada.fim),
+            faixas,
+        )
+        Capturas.capturar("36_c18_guardado_de_volta")
+
+        // Toque real dentro do trecho pintado (no meio da palavra 'chuva', que está no trecho). O ponto passa por
+        // garantirPalavraVisivel: a rolagem de volta deixou o parágrafo 0 parcialmente embaixo da barra da seleção,
+        // e o ponto antigo (pontoDaPalavra) caiu no botão Define. Se for preciso arrastar a lista pela margem, esse
+        // arraste não é toque curto, então não limpa o trecho guardado.
+        val dentro = garantirPalavraVisivel(scenario, 0, PALAVRA, "c18")
+        Capturas.anotar("c18", "toque em (${dentro.x.toInt()},${dentro.y.toInt()})")
+        Capturas.capturar("37_c18_antes_do_toque")
+        regras.fecharDialogosDoSistema()
+        Gestos.toqueCurto(dentro.x, dentro.y)
+        esperarAte(scenario, "toque no trecho tira o guardado e reabre a seleção com a barra") { a ->
+            val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+            lista.guardada.ativa.not() && visibilidade(a, R.id.barraSelecaoTexto) == View.VISIBLE
+        }
+        Thread.sleep(PAUSA_DEPOIS_DA_ROLAGEM_C16_MS)
+        regras.fecharDialogosDoSistema()
+        val reaberta = checkNotNull(selecaoAtual(scenario, 0)) { "O toque no trecho guardado não reabriu a seleção" }
+        Capturas.anotar("c18", "reaberta=[${reaberta.inicio},${reaberta.fim}] texto='${reaberta.texto}'")
+        Capturas.capturar("37_c18_toque_reabre")
+        assertEquals("A seleção reaberta deveria começar no trecho guardado", ampliada.inicio, reaberta.inicio)
+        assertEquals("A seleção reaberta deveria acabar no trecho guardado", ampliada.fim, reaberta.fim)
+
+        // Prova das alças: a alça do fim, pega como o C03 pega, arrasta até 'ninguém' e a seleção tem de crescer.
+        val alca = Gestos.pontoDaAlcaFinal(scenario, 0, 16f)
+        val fim = Gestos.pontoDoFimDaSelecao(scenario, 0)
+        val alvo = Gestos.pontoDaPalavra(scenario, 0, PALAVRA_MAIS_UMA)
+        val altura = Gestos.alturaDaLinha(scenario, 0)
+        regras.fecharDialogosDoSistema()
+        Gestos.arrastar(alca.x, alca.y, alca.x + (alvo.x - fim.x), alca.y + (alvo.y - fim.y) + 0.8f * altura)
+        val depois = esperarFimMaiorQue(scenario, 0, reaberta.fim)
+        Capturas.anotar("c18", "alça do fim: fim antes=${reaberta.fim} depois=${depois ?: selecaoAtual(scenario, 0)}")
+        Capturas.capturar("38_c18_alca_depois")
+        assertTrue(
+            "A alça do fim deveria ampliar a seleção até '$PALAVRA_MAIS_UMA': fim antes=${reaberta.fim}, " +
+                "depois=${depois ?: selecaoAtual(scenario, 0)}",
+            depois != null,
+        )
+    }
+
+    /**
      * C03: só ler, arrastar a alça do fim da seleção amplia a seleção até uma palavra mais adiante. O laço de
      * tentativas (alça a 16, 12 e 8 dp, com folga de 0,8, de 0,4 e de 1,2 linha) fica em [arrastarAlcaFinalAte]; o
      * arraste é relativo (rb-48), como o de uma pessoa. Cada tentativa vai para as capturas, e a falha lista todas.
@@ -476,7 +569,7 @@ class SelecaoSoLerTest {
         var estado = ""
         scenario.onActivity { a ->
             val tv = Gestos.textoDoParagrafo(a, 0)
-            val lista = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos) as RecyclerViewParagrafos
+            val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
             estado = "hasSelection=${tv.hasSelection()} selectionStart=${tv.selectionStart} " +
                 "selectionEnd=${tv.selectionEnd} isFocused=${tv.isFocused} " +
                 "barraVisivel=${visibilidade(a, R.id.barraSelecaoTexto) == View.VISIBLE} " +
@@ -591,6 +684,9 @@ class SelecaoSoLerTest {
 
         /** Palavra mais adiante no mesmo parágrafo, usada como alvo do arraste da alça. */
         const val PALAVRA_ADIANTE = "manhã"
+
+        /** C18 (rb-60): alvo do arraste da alça do fim depois do toque que reabriu a seleção (duas palavras depois). */
+        const val PALAVRA_MAIS_UMA = "ninguém"
 
         /** C17 (rb-60): espera, em ms, para a seleção da acessibilidade e a lista assentarem antes de ler. */
         const val ESPERA_DA_SONDA_MS = 800L

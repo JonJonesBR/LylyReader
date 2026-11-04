@@ -74,3 +74,23 @@ internal class SelecaoGuardada {
  */
 internal fun guardarAoSairDaTela(modoLeitura: Boolean, comFoco: Boolean, temTrecho: Boolean): Boolean =
     modoLeitura && comFoco && temTrecho
+
+/**
+ * Se um toque curto que caiu no offset [offsetTocado] do parágrafo [posicaoDoItem] reabre o trecho guardado (rb-60).
+ * Vale só com o trecho ainda guardado no mesmo parágrafo e com o mesmo texto, com a lista e a página parada no
+ * DOWN (o toque que para um fling é da lista ou da página, não do texto) e com o offset dentro do trecho. O fim
+ * conta: o `getOffsetForPosition` devolve a fronteira mais próxima, então um toque na metade direita da última letra
+ * cai no fim do trecho.
+ * Devolve o trecho, ou nulo.
+ */
+internal fun toqueReabreTrecho(
+    posicaoDoItem: Int,
+    offsetTocado: Int,
+    listaParadaNoDown: Boolean,
+    guardada: SelecaoGuardada,
+    textoAtual: String,
+): IntRange? {
+    val trecho = guardada.trechoNoParagrafo(posicaoDoItem, textoAtual) ?: return null
+    // Fronteiras do trecho, inclusive a final (ver o KDoc).
+    return trecho.takeIf { listaParadaNoDown && offsetTocado in it.first..it.last + 1 }
+}
