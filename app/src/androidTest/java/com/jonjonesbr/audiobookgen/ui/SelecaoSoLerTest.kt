@@ -3,9 +3,11 @@ package com.jonjonesbr.audiobookgen.ui
 import android.content.Intent
 import android.graphics.PointF
 import android.graphics.Rect
+import android.os.Bundle
 import android.os.SystemClock
 import android.text.Spannable
 import android.view.View
+import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
@@ -23,6 +25,7 @@ import com.jonjonesbr.audiobookgen.ui.apoio.arrastarAlcaFinalAte
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarInicioMenorQue
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarLinhaAbaixoDaBarra
+import com.jonjonesbr.audiobookgen.ui.apoio.limparSelecaoAberta
 import com.jonjonesbr.audiobookgen.ui.apoio.rolarListaComODedo
 import com.jonjonesbr.audiobookgen.ui.apoio.selecaoAtual
 import com.jonjonesbr.audiobookgen.ui.apoio.selecionarPalavra
@@ -353,6 +356,152 @@ class SelecaoSoLerTest {
     }
 
     /**
+     * C17 (rb-60, sonda): só ler, sem TalkBack. Pede a seleção do parágrafo 0 pela acessibilidade
+     * (ACTION_SET_SELECTION, o que o TalkBack faz) e anota se ela abre o modo de seleção nativo com alças e a barra
+     * do Leitor. Diagnóstico: não falha pelo resultado da sonda, só se a preparação falhar. A variante 1 pede foco
+     * antes; a variante 2 limpa a seleção, tira o foco por código e repete sem foco. Tudo vai para medidas.txt, com
+     * a marca [c17].
+     */
+    @Test
+    fun c17_sondaSelecaoPorAcessibilidade() {
+        val scenario = abrirSoLer()
+        regras.fecharDialogosDoSistema()
+        sondarSelecaoPorAcessibilidade(
+            scenario,
+            pedirFoco = true,
+            capturaDaSonda = "34_sonda_acessibilidade",
+            capturaDaAlca = "35_sonda_alca",
+        )
+
+        // Variante 2: a seleção da variante 1 sai por código (a limpeza é preparação), e o foco também. O
+        // limparSelecaoAberta só toca no TextView se houver seleção, e a variante 1 pode não ter deixado nenhuma.
+        runCatching { limparSelecaoAberta(scenario, 0) }
+            .onFailure { Capturas.anotar("c17", "limpeza entre variantes falhou: $it") }
+        runCatching { tirarFocoDoParagrafo(scenario, 0) }
+            .onFailure { Capturas.anotar("c17", "tirar foco entre variantes falhou: $it") }
+        regras.fecharDialogosDoSistema()
+        sondarSelecaoPorAcessibilidade(
+            scenario,
+            pedirFoco = false,
+            capturaDaSonda = "36_sonda_sem_foco",
+            capturaDaAlca = "37_sonda_sem_foco_alca",
+        )
+    }
+
+    /**
+     * Uma rodada da sonda do C17: pede a seleção do parágrafo 0 pela acessibilidade (com [requestFocus] antes se
+     * [pedirFoco]), espera e anota o estado, as janelas e a captura. Se houver seleção, tenta arrastar a alça final
+     * até [PALAVRA_ADIANTE] e anota se a seleção cresceu (prova de alças reais).
+     */
+    private fun sondarSelecaoPorAcessibilidade(
+        scenario: ActivityScenario<ReaderActivity>,
+        pedirFoco: Boolean,
+        capturaDaSonda: String,
+        capturaDaAlca: String,
+    ) {
+        val rotulo = if (pedirFoco) "variante=1 com foco" else "variante=2 sem foco"
+        val focoAntes = focoDoParagrafo(scenario, 0)
+        val retorno = pedirSelecaoPelaAcessibilidade(scenario, pedirFoco)
+        Capturas.anotar("c17", "$rotulo isFocused antes=$focoAntes retorno=$retorno")
+        Thread.sleep(ESPERA_DA_SONDA_MS)
+        Capturas.anotar("c17", "$rotulo estado ${estadoDaSonda(scenario)}")
+        anotarJanelasDaSonda(rotulo)
+        Capturas.capturar(capturaDaSonda)
+
+        val antes = selecaoAtual(scenario, 0)
+        if (antes == null) {
+            Capturas.anotar("c17", "$rotulo sem seleção: arraste não tentado")
+            return
+        }
+        regras.fecharDialogosDoSistema()
+        runCatching {
+            val resultado = arrastarAlcaFinalAte(
+                scenario = scenario,
+                indiceParagrafo = 0,
+                palavraAlvo = PALAVRA_ADIANTE,
+                antes = antes,
+                regras = regras,
+                reselecionar = { pedirSelecaoPelaAcessibilidade(scenario, pedirFoco) },
+                anotar = { Capturas.anotar("c17", "$rotulo $it") },
+            )
+            val depois = resultado.depois
+            Capturas.anotar(
+                "c17",
+                "$rotulo alcaCresceu=${depois != null} antes=[${antes.inicio},${antes.fim}] " +
+                    "depois=${depois ?: selecaoAtual(scenario, 0)}",
+            )
+        }.onFailure { Capturas.anotar("c17", "$rotulo arraste lançou: $it") }
+        Capturas.capturar(capturaDaAlca)
+    }
+
+    /**
+     * Pede a seleção do parágrafo 0 pela acessibilidade, no intervalo fixo de 5 a 20. Devolve o retorno do
+     * performAccessibilityAction, ou a exceção, como texto (a sonda não falha por ela).
+     */
+    private fun pedirSelecaoPelaAcessibilidade(scenario: ActivityScenario<ReaderActivity>, pedirFoco: Boolean): String {
+        var retorno = "nenhum"
+        scenario.onActivity { a ->
+            retorno = runCatching {
+                val tv = Gestos.textoDoParagrafo(a, 0)
+                if (pedirFoco) tv.requestFocus()
+                val argumentos = Bundle().apply {
+                    putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 5)
+                    putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, 20)
+                }
+                tv.performAccessibilityAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, argumentos).toString()
+            }.getOrElse { "excecao=$it" }
+        }
+        return retorno
+    }
+
+    /** Tira o foco do parágrafo [indice] por código, na thread principal (preparação da variante sem foco). */
+    private fun tirarFocoDoParagrafo(scenario: ActivityScenario<ReaderActivity>, indice: Int) {
+        scenario.onActivity { a -> Gestos.textoDoParagrafo(a, indice).clearFocus() }
+    }
+
+    /**
+     * Valor de isFocused do parágrafo [indice], lido na thread principal. Uma falha vira texto, e a sonda não falha.
+     */
+    private fun focoDoParagrafo(scenario: ActivityScenario<ReaderActivity>, indice: Int): String {
+        var foco = "nenhum"
+        scenario.onActivity { a ->
+            foco = runCatching { Gestos.textoDoParagrafo(a, indice).isFocused.toString() }
+                .getOrElse { "excecao=$it" }
+        }
+        return foco
+    }
+
+    /** Estado do parágrafo 0 e da barra depois da sonda, lido na thread principal. */
+    private fun estadoDaSonda(scenario: ActivityScenario<ReaderActivity>): String {
+        var estado = ""
+        scenario.onActivity { a ->
+            val tv = Gestos.textoDoParagrafo(a, 0)
+            val lista = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos) as RecyclerViewParagrafos
+            estado = "hasSelection=${tv.hasSelection()} selectionStart=${tv.selectionStart} " +
+                "selectionEnd=${tv.selectionEnd} isFocused=${tv.isFocused} " +
+                "barraVisivel=${visibilidade(a, R.id.barraSelecaoTexto) == View.VISIBLE} " +
+                "selecoesAbertas=${lista.selecoesAbertas}"
+        }
+        return estado
+    }
+
+    /** Anota as janelas da tela na sonda, com a contagem das que têm 'Popup' no título (alças e menu flutuante). */
+    private fun anotarJanelasDaSonda(rotulo: String) {
+        val janelas = JanelasDaTela.ler { Capturas.anotar("c17", "$rotulo erro de janelas: $it") }
+        val popups = janelas.count { it.title?.contains("Popup") == true }
+        Capturas.anotar("c17", "$rotulo janelas=${janelas.size} popups=$popups")
+        janelas.forEach { janela ->
+            val retangulo = Rect()
+            janela.getBoundsInScreen(retangulo)
+            Capturas.anotar(
+                "c17",
+                "$rotulo janela tipo=${janela.type} layer=${janela.layer} titulo=${janela.title} " +
+                    "bounds=${retangulo.toShortString()}",
+            )
+        }
+    }
+
+    /**
      * C04: só ler com a fonte 1.3 e a pílula da limpeza (3 linhas removidas). A barra cabe na tela, sem corte nem
      * reticências, e a pílula não cobre a barra. Todas as medidas vão para medidas.txt; a falha lista cada problema.
      */
@@ -442,6 +591,9 @@ class SelecaoSoLerTest {
 
         /** Palavra mais adiante no mesmo parágrafo, usada como alvo do arraste da alça. */
         const val PALAVRA_ADIANTE = "manhã"
+
+        /** C17 (rb-60): espera, em ms, para a seleção da acessibilidade e a lista assentarem antes de ler. */
+        const val ESPERA_DA_SONDA_MS = 800L
 
         /** Palavra logo antes de 'chuva' (com o espaço, para achar só o 'A' do início do parágrafo 0). */
         const val PALAVRA_ANTERIOR = "A "
