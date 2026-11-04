@@ -540,6 +540,7 @@
     <string name="barra_selecao_texto_pronuncia">Pronunciar</string>
     <string name="selecao_gerar_audio">Generar audio</string>
     <string name="menu_definir_palavra">Definir</string>
+    <string name="definir_consulta">significado de %1$s</string>
     <string name="toast_definir_indisponivel">No se encontró app de diccionario ni navegador</string>
     <string name="toast_blacklist_added">Término añadido a la lista</string>
 

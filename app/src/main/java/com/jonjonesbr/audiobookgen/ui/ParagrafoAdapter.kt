@@ -10,6 +10,7 @@ import com.jonjonesbr.audiobookgen.domain.espacoLetrasEm
 import com.jonjonesbr.audiobookgen.domain.espacoParagrafosDp
 import com.jonjonesbr.audiobookgen.domain.espacoParagrafosEdicaoDp
 import com.jonjonesbr.audiobookgen.util.posicaoResultadoBusca
+import com.jonjonesbr.audiobookgen.util.urlDeBuscaDoSignificado
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -566,29 +567,30 @@ private fun TextView.aplicarTipografiaLeitor(
 }
 
 /**
- * "Definir" (T3.6): tenta abrir um app de dicionário instalado via ACTION_PROCESS_TEXT
- * (mesma ação usada pela seleção de texto nativa do Android); se nenhum app resolver,
- * cai para busca no navegador. Zero dependências novas. Função de topo pelo mesmo motivo
- * das outras — não empurrar ParagrafoAdapter acima do limite de funções do detekt.
+ * "Definir" (T3.6): abre direto a busca na web pelo significado do termo ("significado de X"), sem o seletor de
+ * apps. ACTION_PROCESS_TEXT saiu (rb-44): sem app de dicionário, o seletor mostrava apps de IA. Tenta a busca do
+ * sistema (ACTION_WEB_SEARCH); sem quem trate, abre o Google no navegador; se também falhar, avisa.
+ * Sem resolveActivity (no Android 11+ depende de <queries>): o try/catch de ActivityNotFoundException cobre o caso.
+ * Função de topo pelo mesmo motivo das outras — não empurrar ParagrafoAdapter acima do limite de funções do detekt.
  */
 private fun AppCompatActivity.definirPalavra(texto: String) {
-    val intentDicionario = android.content.Intent(android.content.Intent.ACTION_PROCESS_TEXT).apply {
-        type = "text/plain"
-        putExtra(android.content.Intent.EXTRA_PROCESS_TEXT, texto)
-        putExtra(android.content.Intent.EXTRA_PROCESS_TEXT_READONLY, true)
-    }
-    if (intentDicionario.resolveActivity(packageManager) != null) {
-        startActivity(intentDicionario)
-        return
-    }
+    val consulta = getString(R.string.definir_consulta, texto)
     val intentBusca = android.content.Intent(android.content.Intent.ACTION_WEB_SEARCH).apply {
-        putExtra(android.app.SearchManager.QUERY, texto)
+        putExtra(android.app.SearchManager.QUERY, consulta)
     }
-    if (intentBusca.resolveActivity(packageManager) != null) {
-        startActivity(intentBusca)
-    } else {
-        Toast.makeText(this, R.string.toast_definir_indisponivel, Toast.LENGTH_SHORT).show()
+    val intentNavegador = android.content.Intent(
+        android.content.Intent.ACTION_VIEW,
+        android.net.Uri.parse(urlDeBuscaDoSignificado(consulta)),
+    )
+    for (intent in listOf(intentBusca, intentNavegador)) {
+        try {
+            startActivity(intent)
+            return
+        } catch (_: android.content.ActivityNotFoundException) {
+            // Nenhum app trata esta intenção: tenta a próxima.
+        }
     }
+    Toast.makeText(this, R.string.toast_definir_indisponivel, Toast.LENGTH_SHORT).show()
 }
 
 /** Cor do destaque persistente (T3.5) — amarelo translúcido, legível sobre os 4 temas. */
