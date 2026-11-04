@@ -340,6 +340,53 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    fun pilulaDaLimpezaNaoVoltaAoGirar() {
+        // rb-18: a pílula aparece uma vez por abertura; girar a tela não a traz de volta.
+        arquivo = gravarLivroNoCache(livroDeTeste(), removidas = 3)
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "pílula da limpeza visível") { a -> pilulaVisivel(a) }
+
+            scenario.recreate()
+            esperarAte(scenario, "tela recriada com os parágrafos") { a ->
+                val p = primeiroVisivel(a)
+                p >= 0 && textoEm(lista(a), p) != null
+            }
+            scenario.onActivity { a -> assertFalse("A pílula voltou depois de girar", pilulaVisivel(a)) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun capitulosMarcadosFicamAoGirar() {
+        // rb-18: a seleção de capítulos vive no ViewModel; o FAB de conversão depende dela.
+        // Fora do "Ler sem áudio", porque lá não há marcação de capítulos nem FAB de conversão.
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { modeloDe(it).capitulosSelecionados.add(1) }
+
+            scenario.recreate()
+            esperarAte(scenario, "tela recriada com os parágrafos") { a ->
+                val p = primeiroVisivel(a)
+                p >= 0 && textoEm(lista(a), p) != null
+            }
+            scenario.onActivity { a ->
+                assertEquals(setOf(1), modeloDe(a).capitulosSelecionados)
+                assertEquals(View.VISIBLE, a.findViewById<View>(R.id.fabConverterPrincipal).visibility)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun pageDownRolaUmaTela() {
         val intent = Intent(app, ReaderActivity::class.java)
             .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
@@ -1131,7 +1178,7 @@ class ReaderActivitySmokeTest {
      * Cada teste grava o livro numa pasta própria (UUID no caminho). O caminho entra na chave do cache e na trava do
      * ExtractTextUseCase, que são estáticas: se dois testes usassem o mesmo caminho, um herdaria o estado do outro.
      */
-    private fun gravarLivroNoCache(texto: TextoExtraido, textos: List<String> = PARAGRAFOS): File {
+    private fun gravarLivroNoCache(texto: TextoExtraido, textos: List<String> = PARAGRAFOS, removidas: Int = 0): File {
         // O arquivo precisa existir antes da chave: a chave leva tamanho e data de modificação.
         val f = File(app.filesDir, "fumaca/${UUID.randomUUID()}/$NOME.txt")
         f.parentFile?.mkdirs()
@@ -1148,7 +1195,7 @@ class ReaderActivitySmokeTest {
         tamanhoInicial = f.length()
         modificadoInicial = f.lastModified()
         CacheDeTextoDoLivro.gravar(app, bruto, texto)
-        CacheDeTextoDoLivro.gravar(app, limpo, texto, removidas = 0)
+        CacheDeTextoDoLivro.gravar(app, limpo, texto, removidas = removidas)
         assertEquals(texto, CacheDeTextoDoLivro.ler(app, bruto))
         return f
     }
@@ -1255,6 +1302,10 @@ class ReaderActivitySmokeTest {
     /** Rótulo que a barra monta para o capítulo [numero] de 2 (a mesma conta de atualizarBarra). */
     private fun rotuloDoCapitulo(a: ReaderActivity, numero: Int, titulo: String): String =
         a.getString(R.string.capitulo_barra, numero, 2, NavegacaoCapitulos.tituloLimpo(titulo))
+
+    /** A pílula da limpeza está na tela agora (visível, não só no XML). */
+    private fun pilulaVisivel(a: ReaderActivity): Boolean =
+        a.findViewById<View>(R.id.bannerTextoOtimizado).visibility == View.VISIBLE
 
     private fun primeiroVisivel(a: ReaderActivity): Int =
         (lista(a).layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()

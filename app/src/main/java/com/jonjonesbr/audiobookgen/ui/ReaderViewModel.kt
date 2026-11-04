@@ -49,6 +49,12 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
     // Job de scroll sync
     private var syncJob: Job? = null
 
+    // Capítulos marcados para converter (FAB e painel). Fica aqui para sobreviver à rotação da tela.
+    val capitulosSelecionados: MutableSet<Int> = linkedSetOf()
+
+    // A pílula da limpeza aparece uma vez por abertura do leitor. Também fica aqui, para não voltar ao girar.
+    var pilulaDaLimpezaMostrada = false
+
     // ── Extração ──────────────────────────────────────────────────────────────
 
     fun carregarArquivo(caminho: String) {
