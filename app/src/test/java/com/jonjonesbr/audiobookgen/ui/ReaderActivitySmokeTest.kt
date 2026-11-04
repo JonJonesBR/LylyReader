@@ -313,6 +313,33 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    fun painelDeCapitulosNaoVazaAoGirar() {
+        // rb-18: o painel aberto fecha junto com a Activity; a folha antiga não fica como janela vazada.
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { it.findViewById<View>(R.id.areaCapituloAtual).performClick() }
+            val painel = requireNotNull(ShadowDialog.getLatestDialog() as? BottomSheetDialog) {
+                "Painel de capítulos não abriu"
+            }
+            assertTrue("Painel de capítulos não abriu", painel.isShowing)
+
+            scenario.recreate()
+            esperarAte(scenario, "tela recriada com os parágrafos") { a ->
+                val p = primeiroVisivel(a)
+                p >= 0 && textoEm(lista(a), p) != null
+            }
+            assertFalse("Painel antigo ficou aberto depois de girar (janela vazada)", painel.isShowing)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun pageDownRolaUmaTela() {
         val intent = Intent(app, ReaderActivity::class.java)
             .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)

@@ -4,6 +4,8 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -85,6 +87,19 @@ class ReaderCapitulosController(
     private var capituloNaBarra = -1
     private var textoDaBarra: String? = null
     private var progressoIndiceAplicado = -1
+
+    // A folha (BottomSheetDialog) não passa pelo DialogosAbertos: ela é fechada junto com a Activity (rotação, saída),
+    // para não deixar a janela vazada (WindowLeaked). Mesmo padrão do ReaderMarcacoesController.
+    private var folhaAberta: BottomSheetDialog? = null
+
+    init {
+        activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                folhaAberta?.takeIf { it.isShowing }?.dismiss()
+                folhaAberta = null
+            }
+        })
+    }
 
     private val appPrefs by lazy { AppPrefs(activity) }
 
@@ -221,6 +236,7 @@ class ReaderCapitulosController(
         dialog.setContentView(view)
         dialog.abrirExpandida()
         painelAberto = true
+        folhaAberta = dialog
         dialog.setOnDismissListener { painelAberto = false }
 
         val atual = capituloInicialDoPainel(
