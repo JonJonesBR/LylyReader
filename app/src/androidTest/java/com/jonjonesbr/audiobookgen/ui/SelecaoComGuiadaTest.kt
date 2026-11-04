@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.graphics.Rect
 import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -26,18 +27,19 @@ import com.jonjonesbr.audiobookgen.ui.apoio.selecionarPalavra
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Seleção de texto com a leitura guiada no emulador (rb-46 U4, cenários C05 a C15; C14 e C14b são do rb-54 e C15 do
- * rb-55). A voz é a muito longa (240 s por trecho), então a guiada fica parada no parágrafo 0 enquanto o teste age
- * (um cenário leva ~45 s). Os toques e os arrastes são reais (ver [Gestos]); o estado da guiada vem de
- * [GuidedPlaybackBridge]; as Views são lidas na
- * thread principal. Antes de cada toque num parágrafo, [garantirPalavraVisivel] confere que a palavra não está
- * embaixo da barra da guiada (nem do Snackbar) e arrasta a lista se preciso. As asserções são as do comportamento
- * pedido: se um cenário falhar por bug do app, a falha fica como está (a correção é item próprio).
+ * Seleção de texto com a leitura guiada no emulador (rb-46 U4, cenários C05 a C15; C14 e C14b são do rb-54, C15 do
+ * rb-55 e C04b do rb-61). A voz é a muito longa (240 s por trecho), então a guiada fica parada no parágrafo 0
+ * enquanto o teste age (um cenário leva ~45 s). Os toques e os arrastes são reais (ver [Gestos]); o estado da guiada
+ * vem de [GuidedPlaybackBridge]; as Views são lidas na thread principal. Antes de cada toque num parágrafo,
+ * [garantirPalavraVisivel] confere que a palavra não está embaixo da barra da guiada (nem do Snackbar) e arrasta a
+ * lista se preciso. As asserções são as do comportamento pedido: se um cenário falhar por bug do app, a falha fica
+ * como está (a correção é item próprio).
  */
 @RunWith(AndroidJUnit4::class)
 class SelecaoComGuiadaTest {
@@ -426,6 +428,97 @@ class SelecaoComGuiadaTest {
     }
 
     /**
+     * C04b (rb-61): com a guiada tocando e a fonte 1.3, a barra da seleção mostra as cinco ações com áudio (Gerar
+     * áudio, Destacar, Pronúncia, Definir e Vários parágrafos). Cada botão tem de caber inteiro na tela, sem
+     * reticências, em no máximo duas linhas e sem quebrar palavra no meio. Todas as medidas vão para medidas.txt; a
+     * falha lista cada problema.
+     */
+    @Test
+    fun c04b_barraComAudioTemCincoBotoesComFonteMaior() {
+        regras.comandoDoShell("settings put system font_scale 1.3")
+        val fonteAplicada = regras.comandoDoShell("settings get system font_scale").trim()
+        val scenario = abrirTocando()
+        selecionarPalavra(scenario, regras, 0, PALAVRA_PARAGRAFO_0, "c04b")
+        val selecao = checkNotNull(selecaoAtual(scenario, 0)) {
+            "Sem seleção depois do toque longo em '$PALAVRA_PARAGRAFO_0' com a guiada tocando"
+        }
+        regras.fecharDialogosDoSistema()
+        esperarAte(scenario, "barra da seleção com os cinco botões medidos") { a ->
+            a.findViewById<View>(R.id.barraSelecaoTexto).visibility == View.VISIBLE &&
+                BOTOES_COM_AUDIO.all { (_, id) -> a.findViewById<View>(id).width > 0 }
+        }
+
+        val medidas = mutableListOf<String>()
+        val problemas = mutableListOf<String>()
+        scenario.onActivity { a ->
+            val largura = a.resources.displayMetrics.widthPixels
+            val densidade = a.resources.displayMetrics.density
+            val larguraEmDp = (largura / densidade).toInt()
+            medidas += "fonte=$fonteAplicada tela=${largura}px ($larguraEmDp dp) densidade=$densidade"
+            medidas += "seleção=[${selecao.inicio},${selecao.fim}] texto='${selecao.texto}'"
+            val barra = a.findViewById<View>(R.id.barraSelecaoTexto)
+            val rBarra = Rect()
+            barra.getGlobalVisibleRect(rBarra)
+            medidas += "barra=${rBarra.toShortString()} visivel=${barra.visibility == View.VISIBLE}"
+            if (barra.visibility != View.VISIBLE) problemas += "a barra da seleção não está visível"
+
+            BOTOES_COM_AUDIO.forEach { (nome, id) ->
+                val botao = a.findViewById<TextView>(id)
+                if (botao.visibility != View.VISIBLE) {
+                    problemas += "'$nome' escondido na barra com áudio"
+                    return@forEach
+                }
+                val rBotao = Rect()
+                if (!botao.getGlobalVisibleRect(rBotao)) {
+                    problemas += "'$nome' sem área visível na tela"
+                    return@forEach
+                }
+                medidas += "$nome rect=${rBotao.toShortString()} largura=${botao.width}px " +
+                    "visivelNaLargura=${rBotao.width()}px altura=${botao.height}px " +
+                    "visivelNaAltura=${rBotao.height()}px"
+                if (rBotao.width() != botao.width) {
+                    problemas += "'$nome' cortado: ${rBotao.width()} de ${botao.width}px visíveis"
+                }
+                if (rBotao.height() != botao.height) {
+                    problemas += "'$nome' cortado na altura: ${rBotao.height()} de ${botao.height}px visíveis"
+                }
+                if (rBotao.left < 0 || rBotao.right > largura) {
+                    problemas += "'$nome' fora da tela: ${rBotao.toShortString()} (tela ${largura}px)"
+                }
+                val layout = botao.layout
+                if (layout == null) {
+                    problemas += "'$nome' sem layout"
+                    return@forEach
+                }
+                val texto = layout.text
+                val reticencias = (0 until layout.lineCount).sumOf { layout.getEllipsisCount(it) }
+                medidas += "$nome linhas=${layout.lineCount} reticencias=$reticencias"
+                if (reticencias > 0) problemas += "'$nome' com reticências ($reticencias caracteres cortados)"
+                if (layout.lineCount > MAXIMO_DE_LINHAS_DO_BOTAO) {
+                    problemas += "'$nome' em ${layout.lineCount} linhas (máximo $MAXIMO_DE_LINHAS_DO_BOTAO)"
+                }
+                // Linha que começa ou termina no meio de uma palavra é corte, mesmo que caiba nas duas linhas.
+                (0 until layout.lineCount).forEach { linha ->
+                    val inicioDaLinha = layout.getLineStart(linha)
+                    val fimDaLinha = layout.getLineEnd(linha)
+                    val cortaPalavra = (inicioDaLinha > 0 && texto[inicioDaLinha - 1] != ' ') ||
+                        (fimDaLinha < texto.length && texto[fimDaLinha - 1] != ' ' && texto[fimDaLinha] != ' ')
+                    if (cortaPalavra) {
+                        val trecho = texto.substring(inicioDaLinha, fimDaLinha)
+                        problemas += "'$nome' quebra palavra na linha $linha: '$trecho'"
+                    }
+                }
+            }
+        }
+        medidas.forEach { Capturas.anotar("c04b", it) }
+        Capturas.capturar("32_guiada_barra_cinco_botoes")
+        regras.fecharDialogosDoSistema()
+        if (problemas.isNotEmpty()) {
+            fail("Barra da seleção com áudio, fonte $fonteAplicada:\n" + problemas.joinToString("\n"))
+        }
+    }
+
+    /**
      * Um parágrafo visível: o índice, se tem foco e a seleção dele (nula se não tem). Lido na thread principal.
      */
     private data class ParagrafoVisivel(val indice: Int, val temFoco: Boolean, val selecao: Selecao?)
@@ -725,6 +818,18 @@ class SelecaoComGuiadaTest {
     }
 
     private companion object {
+        /** Até quantas linhas um rótulo da barra pode ocupar (rb-43, rb-61). */
+        const val MAXIMO_DE_LINHAS_DO_BOTAO = 2
+
+        /** Os cinco botões da barra com áudio (rb-61), com o nome que aparece nas mensagens de falha. */
+        val BOTOES_COM_AUDIO = listOf(
+            "Gerar áudio" to R.id.btnSelecaoTextoGerar,
+            "Destacar" to R.id.btnSelecaoTextoDestacar,
+            "Pronúncia" to R.id.btnSelecaoTextoPronuncia,
+            "Definir" to R.id.btnSelecaoTextoDefinir,
+            "Vários parágrafos" to R.id.btnSelecaoTextoVarios,
+        )
+
         /** Nome do botão de tocar/pausar nas mensagens de falha. */
         const val BOTAO_DE_TOCAR_PAUSAR = "botão de tocar/pausar da leitura guiada"
 

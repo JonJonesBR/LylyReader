@@ -101,12 +101,13 @@ class SelecaoDoLeitorTest {
     }
 
     @Test
-    fun barraComAudioTemQuatroAcoesEmOrdem() {
+    fun barraComAudioTemCincoAcoesEmOrdem() {
         assertEquals(
             listOf(
                 AcaoDaBarraDeSelecao.GERAR_AUDIO,
                 AcaoDaBarraDeSelecao.DESTACAR,
                 AcaoDaBarraDeSelecao.PRONUNCIA,
+                AcaoDaBarraDeSelecao.DEFINIR,
                 AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS,
             ),
             acoesDaBarraDeSelecao(comAudio = true),
@@ -122,21 +123,9 @@ class SelecaoDoLeitorTest {
     }
 
     @Test
-    fun menuComAudioSoGuardaDefinir() {
-        assertEquals(listOf(AcaoDaBarraDeSelecao.DEFINIR), acoesDaSelecaoSoNoMenu(comAudio = true))
-    }
-
-    @Test
-    fun menuSoLerNaoGuardaAcaoNenhuma() {
-        assertTrue(acoesDaSelecaoSoNoMenu(comAudio = false).isEmpty())
-    }
-
-    @Test
-    fun menuENaBarraNaoRepeteAcao() {
-        for (comAudio in listOf(true, false)) {
-            val repetidas = acoesDaSelecaoSoNoMenu(comAudio).intersect(acoesDaBarraDeSelecao(comAudio).toSet())
-            assertTrue("Repetidas com comAudio=$comAudio: $repetidas", repetidas.isEmpty())
-        }
+    fun comAudioTodasAsAcoesEstaoNaBarra() {
+        // rb-61: nada da seleção fica só no ⋮ do sistema (Definir estava lá e o usuário não o achava).
+        assertEquals(AcaoDaBarraDeSelecao.entries.toSet(), acoesDaBarraDeSelecao(comAudio = true).toSet())
     }
 
     @Test

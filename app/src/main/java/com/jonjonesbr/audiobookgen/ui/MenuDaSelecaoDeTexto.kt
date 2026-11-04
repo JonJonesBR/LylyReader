@@ -37,14 +37,13 @@ internal data class AcoesDaSelecaoDeTexto(
 
 /**
  * Menu da seleção nativa de um parágrafo (rb-30). Os itens de ação ficam na barra própria do Leitor (rb-38),
- * que abre junto com este menu (com áudio: Gerar áudio, Destacar, Pronúncia e Vários parágrafos; no Só ler:
- * Destacar e Definir). Aqui o ⋮ só ganha o que a barra não tem: Definir com áudio e Apagar frase (rb-49).
+ * que abre junto com este menu (com áudio: Gerar áudio, Destacar, Pronúncia, Definir e Vários parágrafos; no Só ler:
+ * Destacar e Definir). Aqui o ⋮ só ganha o que a barra não tem: Apagar frase (rb-49, rb-61).
  * Copiar, Compartilhar, Traduzir e Selecionar tudo são os do sistema, e vêm depois destes itens.
  */
 internal class MenuDaSelecaoDeTexto(
     private val tv: TextView,
     private val posicao: () -> Int,
-    private val comAudio: Boolean,
     private val acoes: AcoesDaSelecaoDeTexto,
 ) : ActionMode.Callback {
 
@@ -57,10 +56,6 @@ internal class MenuDaSelecaoDeTexto(
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
         modoAberto = mode
         acoes.aoAbrir(this)
-        // Só o que a barra não mostra (rb-49): com áudio, Definir; no Só ler, nada. Tudo no ⋮.
-        acoesDaSelecaoSoNoMenu(comAudio).forEach { acao ->
-            menu.add(0, idDoItem(acao), 0, tituloDoItem(acao)).setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
-        }
         // No ⋮. Apagar frase é destrutiva, por isso fica por último.
         menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
@@ -111,14 +106,6 @@ internal class MenuDaSelecaoDeTexto(
         AcaoDaBarraDeSelecao.PRONUNCIA -> MENU_ITEM_PRONUNCIA
         AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS -> MENU_ITEM_SELECIONAR_PARAGRAFO
         AcaoDaBarraDeSelecao.DEFINIR -> MENU_ITEM_DEFINIR
-    }
-
-    private fun tituloDoItem(acao: AcaoDaBarraDeSelecao): Int = when (acao) {
-        AcaoDaBarraDeSelecao.GERAR_AUDIO -> R.string.selecao_gerar_audio
-        AcaoDaBarraDeSelecao.DESTACAR -> R.string.menu_destacar_trecho
-        AcaoDaBarraDeSelecao.PRONUNCIA -> R.string.menu_pronuncia
-        AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS -> R.string.menu_selecionar_varios_paragrafos
-        AcaoDaBarraDeSelecao.DEFINIR -> R.string.menu_definir_palavra
     }
 
     /** A ação do item tocado, ou nulo quando ela não se aplica ao trecho (sem texto ou sem parágrafo). */

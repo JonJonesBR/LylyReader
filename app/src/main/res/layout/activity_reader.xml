@@ -291,6 +291,7 @@
             android:layout_height="wrap_content"
             android:minHeight="48dp"
             android:orientation="horizontal"
+            android:baselineAligned="false"
             android:gravity="center_vertical"
             android:paddingStart="16dp"
             android:paddingEnd="8dp"
@@ -427,7 +428,8 @@
 
             <!-- ── Barra das ações da seleção de texto (rb-38): aparece com o menu da seleção aberto. ──
                  Cabe na largura da tela (rb-43): cada ação divide a largura, com o ícone em cima e o rótulo
-                 embaixo. -->
+                 embaixo.
+                 Sem alinhar pela linha de base: o rótulo de 2 linhas deslocava o botão para fora da barra (rb-61). -->
             <LinearLayout
                 android:id="@+id/barraSelecaoTexto"
                 android:layout_width="match_parent"
@@ -437,6 +439,7 @@
                 android:elevation="4dp"
                 android:clickable="true"
                 android:orientation="horizontal"
+                android:baselineAligned="false"
                 android:paddingStart="4dp"
                 android:paddingEnd="4dp"
                 android:visibility="gone">
@@ -500,6 +503,25 @@
                     app:iconPadding="0dp"/>
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSelecaoTextoDefinir"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:minHeight="56dp"
+                    android:minLines="2"
+                    android:maxLines="2"
+                    android:paddingStart="2dp"
+                    android:paddingEnd="2dp"
+                    android:text="@string/menu_definir_palavra"
+                    android:textSize="11sp"
+                    app:icon="@drawable/ic_buscar"
+                    app:iconGravity="textTop"
+                    app:iconSize="24dp"
+                    app:iconPadding="0dp"/>
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSelecaoTextoVarios"
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="0dp"
@@ -515,25 +537,6 @@
                     android:text="@string/barra_selecao_texto_varios"
                     android:textSize="11sp"
                     app:icon="@drawable/ic_mais"
-                    app:iconGravity="textTop"
-                    app:iconSize="24dp"
-                    app:iconPadding="0dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSelecaoTextoDefinir"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minWidth="0dp"
-                    android:minHeight="56dp"
-                    android:minLines="2"
-                    android:maxLines="2"
-                    android:paddingStart="2dp"
-                    android:paddingEnd="2dp"
-                    android:text="@string/menu_definir_palavra"
-                    android:textSize="11sp"
-                    app:icon="@drawable/ic_buscar"
                     app:iconGravity="textTop"
                     app:iconSize="24dp"
                     app:iconPadding="0dp"/>

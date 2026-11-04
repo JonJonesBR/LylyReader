@@ -101,8 +101,8 @@ internal class BarraDaSelecaoDeTexto(
             AcaoDaBarraDeSelecao.GERAR_AUDIO to R.id.btnSelecaoTextoGerar,
             AcaoDaBarraDeSelecao.DESTACAR to R.id.btnSelecaoTextoDestacar,
             AcaoDaBarraDeSelecao.PRONUNCIA to R.id.btnSelecaoTextoPronuncia,
-            AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS to R.id.btnSelecaoTextoVarios,
             AcaoDaBarraDeSelecao.DEFINIR to R.id.btnSelecaoTextoDefinir,
+            AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS to R.id.btnSelecaoTextoVarios,
         )
 
         // Espaço que o menu flutuante da seleção ocupa acima dela: 48 dp do menu e 8 dp de margem em cima e

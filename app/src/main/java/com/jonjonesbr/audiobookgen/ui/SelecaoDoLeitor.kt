@@ -49,23 +49,19 @@ internal fun pedidoDeMostrarTrechoVale(modoDeToque: Boolean, comFoco: Boolean, c
 // Regras da barra própria da seleção e das repinturas seguradas durante o toque (rb-38).
 
 /** Ações da barra do Leitor que aparece enquanto há seleção nativa de texto, na ordem em que aparecem. */
-internal enum class AcaoDaBarraDeSelecao { GERAR_AUDIO, DESTACAR, PRONUNCIA, VARIOS_PARAGRAFOS, DEFINIR }
+internal enum class AcaoDaBarraDeSelecao { GERAR_AUDIO, DESTACAR, PRONUNCIA, DEFINIR, VARIOS_PARAGRAFOS }
 
-/** Com áudio: as ações de geração e a pronúncia. Só ler: Destacar e Definir (sem o que toca o texto). */
+/**
+ * Com áudio: as cinco ações, na ordem da barra. Definir fica na barra e não no ⋮ do sistema (rb-61): o usuário não o
+ * achava lá. Só ler: Destacar e Definir (sem o que toca o texto).
+ */
 internal fun acoesDaBarraDeSelecao(comAudio: Boolean): List<AcaoDaBarraDeSelecao> =
     if (comAudio) {
         listOf(AcaoDaBarraDeSelecao.GERAR_AUDIO, AcaoDaBarraDeSelecao.DESTACAR,
-            AcaoDaBarraDeSelecao.PRONUNCIA, AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS)
+            AcaoDaBarraDeSelecao.PRONUNCIA, AcaoDaBarraDeSelecao.DEFINIR, AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS)
     } else {
         listOf(AcaoDaBarraDeSelecao.DESTACAR, AcaoDaBarraDeSelecao.DEFINIR)
     }
-
-/**
- * Ações da seleção que vão ao ⋮ do menu do sistema por não estarem na barra (rb-49). Com áudio, a barra não tem
- * Definir: ele fica no menu. Sem áudio, a barra já tem Destacar e Definir, e não sobra nada.
- */
-internal fun acoesDaSelecaoSoNoMenu(comAudio: Boolean): List<AcaoDaBarraDeSelecao> =
-    if (comAudio) AcaoDaBarraDeSelecao.entries.filter { it !in acoesDaBarraDeSelecao(true) } else emptyList()
 
 /**
  * A repintura de sincronia espera enquanto há dedo na lista, menu aberto ou texto selecionado com foco: trocar a view

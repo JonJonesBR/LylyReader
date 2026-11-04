@@ -314,7 +314,7 @@ class ParagrafoAdapter(
         init {
             // Menu e clique são ligados uma vez por item, e não a cada bind: o narrado é repintado ~20x/s.
             tv.customSelectionActionModeCallback =
-                MenuDaSelecaoDeTexto(tv, { bindingAdapterPosition }, comAudio, acoesDoMenu)
+                MenuDaSelecaoDeTexto(tv, { bindingAdapterPosition }, acoesDoMenu)
             // Toque curto lê dali já no 1º toque. Toque longo que não selecionou e toque que só fecha a seleção
             // não leem (rb-38, rb-42).
             tv.ligarToqueNoParagrafo(selecaoAberta = { recyclerView.selecaoDeTextoAberta }) {
