@@ -1,9 +1,12 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** rb-8: cálculo puro da tela do leitor (carregando, erro, pílula, modo, FABs e início da guiada). */
@@ -188,5 +191,27 @@ class TelaDoLeitorTest {
     fun minutosLidosContaMinutoCompletoEDescartaSobra() {
         assertEquals(1, minutosLidos(1_000L, 1_000L + 61_000L))
         assertEquals(2, minutosLidos(1_000L, 1_000L + 125_000L))
+    }
+
+    private val textoComDoisParagrafos = TextoExtraido(
+        capitulos = emptyList(),
+        paragrafos = listOf(Paragrafo("Primeiro.", 0, 0), Paragrafo("Segundo.", 9, 0)),
+        totalChars = 18,
+    )
+
+    @Test
+    fun guiadaEsperaOsParagrafosNoManager() {
+        assertFalse(paragrafosProntosParaGuiada(null, textoComDoisParagrafos))
+    }
+
+    @Test
+    fun listaDiferenteNaoServe() {
+        // Mesmo conteúdo em outra instância não serve: a comparação é por identidade (rb-15).
+        assertFalse(paragrafosProntosParaGuiada(textoComDoisParagrafos.paragrafos.toList(), textoComDoisParagrafos))
+    }
+
+    @Test
+    fun mesmaListaLibera() {
+        assertTrue(paragrafosProntosParaGuiada(textoComDoisParagrafos.paragrafos, textoComDoisParagrafos))
     }
 }
