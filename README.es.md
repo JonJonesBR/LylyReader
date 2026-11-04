@@ -9,7 +9,7 @@ Lee este README en [English](README.md) o [Português](README.pt-BR.md).
 [![Descargar APK](https://img.shields.io/github/v/release/JonJonesBR/LylyReader?label=Descargar%20APK&style=for-the-badge&color=4F46E5)](https://github.com/JonJonesBR/LylyReader/releases/latest)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JonJonesBR/LylyReader/releases)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Android-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](app/src/main/java/com/jonjonesbr/audiobookgen)
-[![Licencia](https://img.shields.io/badge/Licencia-MIT-blue?style=for-the-badge)](LICENSE)
+[![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0--or--later-blue?style=for-the-badge)](LICENSE)
 
 </div>
 
@@ -196,4 +196,18 @@ Los detalles completos de atribución de los recursos y modelos incluidos están
 
 ## Licencia
 
-MIT. Consulta [LICENSE](LICENSE).
+```
+LylyReader — Copyright (C) 2026 JonJonesBR
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+```
+
+LylyReader es software libre bajo la [GNU GPL v3 o posterior](LICENSE): cualquier persona puede usarlo, estudiarlo, modificarlo y compartirlo. Quien distribuya la aplicación o una versión modificada debe mantener la misma licencia y publicar el código. Las versiones publicadas antes de este cambio siguen disponibles bajo MIT. Los modelos de voz y las bibliotecas de terceros mantienen sus propias licencias (consulta [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)).

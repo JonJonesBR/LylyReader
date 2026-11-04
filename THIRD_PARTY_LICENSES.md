@@ -1,5 +1,7 @@
 # Licenças de terceiros
 
+O código do LylyReader é GPL-3.0-or-later (ver `LICENSE`); este arquivo lista os componentes de terceiros do app.
+
 Este arquivo lista assets/bibliotecas de terceiros embutidos no app que exigem
 atribuição de licença, além do que já consta em `LICENSE` (licença do próprio projeto).
 
@@ -83,8 +85,20 @@ Cada pacote mantém sua própria licença; confira antes de redistribuir:
 
 ## Dependências Python (empacotadas via Chaquopy)
 
-`edge-tts` (LGPL-3.0), `aiohttp`, `httpx`, `mutagen`, `Pillow`, `pypdf`, `python-docx`, `ebooklib`,
-`beautifulsoup4`, `numpy`, `olefile`, `mobi` — cada uma sob sua própria licença de código aberto.
+- `edge-tts` 7.3.1 — LGPL-3.0
+- `aiohttp` — Apache-2.0 AND MIT
+- `httpx` 0.28.1 — BSD-3-Clause
+- `mutagen` 1.48.1 — GPL-2.0-or-later
+- `Pillow` — MIT-CMU
+- `pypdf` 6.21.2 — BSD-3-Clause
+- `python-docx` 1.2.0 — MIT
+- `ebooklib` 0.20 — AGPL-3.0-or-later
+- `beautifulsoup4` 4.15.0 — MIT
+- `numpy` — BSD-3-Clause (e outras permissivas)
+- `olefile` 0.47 — BSD
+- `mobi` 0.4.1 — GPL-3.0-only
+
+Por incluir componentes GPL-3.0 (`mobi`), GPL-2.0-or-later (`mutagen`) e AGPL-3.0-or-later (`ebooklib`), combinados conforme a seção 13 da GPL-3.0, o APK é distribuído sob a GPL-3.0 (ver `LICENSE`).
 
 ## Serviços online opcionais
 

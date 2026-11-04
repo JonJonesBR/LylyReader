@@ -305,6 +305,7 @@
         <item>Pocket TTS 3.3 — paquetes ONNX públicos sin clonación y presets fijos (CC BY 4.0). Copyright (c) Kyutai Labs. Runtime C++ PocketTTS.cpp (MIT), SentencePiece (Apache-2.0) y dr_libs (Unlicense).</item>
     </string-array>
     <string name="desc_sobre_app">Lee tus libros en voz alta y los convierte en audiolibros, con voces que funcionan en el propio dispositivo o por internet.</string>
+    <string name="sobre_licenca">Software libre · GNU GPL v3 o posterior</string>
     <string name="label_formatos_suportados">Formatos compatibles</string>
     <string name="formatos_suportados">EPUB · PDF · TXT · MD · DOC · DOCX · MOBI</string>
     <string name="hint_gemini_key">AIza...</string>

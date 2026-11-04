@@ -2154,6 +2154,15 @@
                         android:lineSpacingExtra="3dp"
                         android:layout_marginBottom="12dp"/>
 
+                    <!-- Licença do próprio app (GPL-3.0 ou posterior); o texto completo está no LICENSE do repositório. -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sobre_licenca"
+                        android:textColor="@color/color_on_surface_muted"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="12dp"/>
+
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"

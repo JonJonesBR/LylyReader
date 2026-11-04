@@ -33,4 +33,4 @@ Dica: não rode o Gradle dentro de uma pasta sincronizada (Google Drive, OneDriv
 Mudanças em `app/build.gradle.kts` (empacotamento, Chaquopy), no schema do banco (`app/schemas`) e nos processos nativos de TTS exigem cuidado extra; explique bem o motivo no PR.
 
 ## Licença
-Ao contribuir, você concorda que sua contribuição será licenciada sob a [MIT](LICENSE).
+Ao contribuir, você concorda que sua contribuição será licenciada sob a [GPL-3.0 ou posterior](LICENSE).
