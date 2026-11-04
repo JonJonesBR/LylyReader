@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.ui
 import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
@@ -105,6 +106,7 @@ class ReaderRolagemController(
             sentido != null -> rolarPagina(sentido) || padrao(event)
             // Setas: a lista só rola se o foco for para um filho fora da tela. Conta só se o deslocamento mudou.
             RegraDaRolagemDoLeitor.ehSetaVertical(keyCode) -> {
+                if (rolarSetaNaPagina(event)) return true
                 val antes = deslocamentoAtual()
                 val tratada = padrao(event)
                 if (deslocamentoAtual() != antes) rolagemPeloLeitor()
@@ -242,6 +244,31 @@ class ReaderRolagemController(
         // Rolar suspende a rolagem automática do audiobook por um tempo; antes desligava o acompanhamento de vez
         // (o destaque parava até reabrir o leitor).
         rolagemAudiobookSuspensaAte = SystemClock.uptimeMillis() + RegraDaRolagemDoLeitor.PAUSA_ROLAGEM_MANUAL_MS
+    }
+
+    /**
+     * Seta vertical com a página parada, o TextView dela focado e o texto ainda rolável (rb-26c): a página rola,
+     * e a seta não chega ao ArrowKeyMovementMethod do TextView, que só moveria um cursor invisível. Com Shift ou
+     * seleção aberta, a seta continua indo ao TextView, que estende a seleção. Conta como rolagem de quem lê só se
+     * a página de fato rolou (o arrowScroll pode só mover o foco). Falso se a seta não rolou a página.
+     */
+    private fun rolarSetaNaPagina(event: KeyEvent): Boolean {
+        val sentido = RegraDaRolagemDoLeitor.sentidoDaSeta(event.keyCode)
+        val pagina = recyclerView.paginaParadaNaTela()
+        if (pagina == null || sentido == null || !RegraDaRolagemDoLeitor.setaRolaAPagina(
+                shift = event.isShiftPressed,
+                temSelecao = pagina.texto.hasSelection(),
+                textoFocado = pagina.texto.isFocused,
+                podeRolar = pagina.canScrollVertically(sentido),
+            )
+        ) {
+            return false
+        }
+        val antes = pagina.scrollY
+        pagina.arrowScroll(if (sentido > 0) View.FOCUS_DOWN else View.FOCUS_UP)
+        val rolou = pagina.scrollY != antes
+        if (rolou) rolagemPeloLeitor()
+        return rolou
     }
 
     /** Rola uma tela para trás (-1) ou para frente (1), no eixo da lista. Falso se a lista já está no limite. */

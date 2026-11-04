@@ -142,6 +142,11 @@ class ParagrafoAdapter(
             repinturas.liberar().filter { it in paragrafos.indices }.forEach { notifyItemChanged(it) }
         }
         recyclerView.aoConferirSelecao = { selecaoSemMenu.conferir() }
+        // Página que volta ao pool zera a posição e o rolamento (rb-26c). Sem sobrescrever onViewRecycled aqui,
+        // que estouraria o limite de funções do detekt.
+        recyclerView.addRecyclerListener { holder ->
+            (holder.itemView as? PaginaDoParagrafo)?.mostrar(RecyclerView.NO_POSITION, null)
+        }
     }
 
     private val acoesDoMenu: AcoesDaSelecaoDeTexto = AcoesDaSelecaoDeTexto(
@@ -392,8 +397,8 @@ class ParagrafoAdapter(
     private fun bindLeitura(holder: VHLeitura, par: Paragrafo?, position: Int, corTexto: Int) {
         par ?: return
         val tv = holder.tv
-        // Rolagem horizontal: a página volta ao topo só ao mostrar outro parágrafo (ver PaginaDoParagrafo).
-        (holder.itemView as? PaginaDoParagrafo)?.mostrar(position)
+        // Rolagem horizontal: a página volta ao topo ao mostrar outro parágrafo ou texto (ver PaginaDoParagrafo).
+        (holder.itemView as? PaginaDoParagrafo)?.mostrar(position, par.texto)
 
         // Há uma seleção em andamento neste item (ex.: o usuário está escolhendo uma palavra): não
         // reaplica o texto — cada atualização do progresso da leitura guiada rebindava o item e
@@ -489,17 +494,17 @@ class ParagrafoAdapter(
 
     private fun bindAlteracoes(holder: VHAlteracoes, par: Paragrafo?, position: Int, corTexto: Int) {
         val tv = holder.tv
-        (holder.itemView as? PaginaDoParagrafo)?.mostrar(position)
+        // Em modo ALTERACOES, `paragrafos` = parágrafos limpos, `paragrafosOriginais` = originais
+        // Exibe todos os parágrafos originais: removidos = tachado vermelho, mantidos = cor normal
+        val parOriginal = paragrafosOriginais.getOrNull(position)
+        (holder.itemView as? PaginaDoParagrafo)?.mostrar(position, parOriginal?.texto ?: par?.texto ?: "")
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
         tv.setBackgroundColor(Color.TRANSPARENT)
         tv.aplicarTipografiaLeitor(tipografia, typefaceSerifado, typefaceDislexia, alinhamento)
 
-        // Em modo ALTERACOES, `paragrafos` = parágrafos limpos, `paragrafosOriginais` = originais
-        // Exibe todos os parágrafos originais: removidos = tachado vermelho, mantidos = cor normal
         val conjuntoLimpos = textosLimpos
             ?: paragrafos.mapTo(HashSet<String>()) { it.texto }.also { textosLimpos = it }
-        val parOriginal = paragrafosOriginais.getOrNull(position)
 
         if (parOriginal != null && parOriginal.texto !in conjuntoLimpos) {
             // Parágrafo removido - tachado em vermelho escuro

@@ -136,4 +136,37 @@ class RegraDaRolagemDoLeitorTest {
         assertTrue(RegraDaRolagemDoLeitor.ehSetaVertical(KeyEvent.KEYCODE_DPAD_DOWN))
         assertFalse(RegraDaRolagemDoLeitor.ehSetaVertical(KeyEvent.KEYCODE_DPAD_LEFT))
     }
+
+    @Test
+    fun sentidoDaSetaVemDaTecla() {
+        assertEquals(1, RegraDaRolagemDoLeitor.sentidoDaSeta(KeyEvent.KEYCODE_DPAD_DOWN))
+        assertEquals(-1, RegraDaRolagemDoLeitor.sentidoDaSeta(KeyEvent.KEYCODE_DPAD_UP))
+        assertNull(RegraDaRolagemDoLeitor.sentidoDaSeta(KeyEvent.KEYCODE_DPAD_LEFT))
+        assertNull(RegraDaRolagemDoLeitor.sentidoDaSeta(KeyEvent.KEYCODE_PAGE_DOWN))
+    }
+
+    @Test
+    fun setaRolaAPaginaSoComTextoFocadoSemSelecao() {
+        assertTrue(setaNaPagina(shift = false, selecao = false, focado = true, rola = true))
+    }
+
+    @Test
+    fun setaNaoRolaAPaginaComShiftOuSelecao() {
+        assertFalse(setaNaPagina(shift = true, selecao = false, focado = true, rola = true))
+        assertFalse(setaNaPagina(shift = false, selecao = true, focado = true, rola = true))
+    }
+
+    @Test
+    fun setaNaoRolaAPaginaSemFocoOuSemTextoParaRolar() {
+        assertFalse(setaNaPagina(shift = false, selecao = false, focado = false, rola = true))
+        assertFalse(setaNaPagina(shift = false, selecao = false, focado = true, rola = false))
+    }
+
+    private fun setaNaPagina(shift: Boolean, selecao: Boolean, focado: Boolean, rola: Boolean): Boolean =
+        RegraDaRolagemDoLeitor.setaRolaAPagina(
+            shift = shift,
+            temSelecao = selecao,
+            textoFocado = focado,
+            podeRolar = rola,
+        )
 }
