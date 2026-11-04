@@ -542,6 +542,9 @@ class ReaderActivitySmokeTest {
                 val cb = tv.customSelectionActionModeCallback
                 val menu = PopupMenu(a, tv).menu
                 cb.onCreateActionMode(ModoFalso(cb, menu), menu)
+                // rb-49: sem áudio, o ⋮ só tem Apagar frase; Destacar e Definir já estão na barra.
+                assertEquals(1, menu.size())
+                assertEquals(a.getString(R.string.btn_excluir_ocorrencias), menu.getItem(0).title.toString())
             }
             esperarAte(scenario, "barra própria da seleção aparece") { a -> barraDaSelecaoTextoVisivel(a) }
             // rb-48: o parágrafo 0 começa a 12 dp do topo, sob a barra; a lista desce por translação para a linha sair dela.

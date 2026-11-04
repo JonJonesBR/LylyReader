@@ -122,6 +122,24 @@ class SelecaoDoLeitorTest {
     }
 
     @Test
+    fun menuComAudioSoGuardaDefinir() {
+        assertEquals(listOf(AcaoDaBarraDeSelecao.DEFINIR), acoesDaSelecaoSoNoMenu(comAudio = true))
+    }
+
+    @Test
+    fun menuSoLerNaoGuardaAcaoNenhuma() {
+        assertTrue(acoesDaSelecaoSoNoMenu(comAudio = false).isEmpty())
+    }
+
+    @Test
+    fun menuENaBarraNaoRepeteAcao() {
+        for (comAudio in listOf(true, false)) {
+            val repetidas = acoesDaSelecaoSoNoMenu(comAudio).intersect(acoesDaBarraDeSelecao(comAudio).toSet())
+            assertTrue("Repetidas com comAudio=$comAudio: $repetidas", repetidas.isEmpty())
+        }
+    }
+
+    @Test
     fun repinturaSeguraComToqueOuMenuAberto() {
         assertTrue(segurarRepinturaDeSincronia(toqueEmAndamento = true, selecoesAbertas = 0, textoComSelecao = false))
         assertTrue(segurarRepinturaDeSincronia(toqueEmAndamento = false, selecoesAbertas = 1, textoComSelecao = false))

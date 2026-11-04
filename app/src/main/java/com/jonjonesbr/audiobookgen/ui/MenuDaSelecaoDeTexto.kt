@@ -12,8 +12,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.R
 import kotlin.math.hypot
 
-// IDs dos itens de menu no ActionMode de seleção de texto — nomeados (1001/1002 eram débito aceito no baseline
-// do detekt; 1003 a 1005 são os itens de antes, 1006 é o Gerar áudio do rb-30).
+// IDs dos itens de menu no ActionMode de seleção de texto, nomeados. Os de ação da barra do Leitor (rb-38) não
+// aparecem no menu do sistema (rb-49), mas o executarPelaBarra os chama pelo id, por isso as constantes ficam.
 private const val MENU_ITEM_EXCLUIR_OCORRENCIAS = 1001
 private const val MENU_ITEM_SELECIONAR_PARAGRAFO = 1002
 private const val MENU_ITEM_DESTACAR = 1003
@@ -35,9 +35,10 @@ internal data class AcoesDaSelecaoDeTexto(
 )
 
 /**
- * Menu da seleção nativa de um parágrafo (rb-30): a porta única de entrada para gerar áudio. "Gerar áudio" vem
- * primeiro e leva o trecho marcado dentro do parágrafo; "Selecionar vários parágrafos" entra no modo de parágrafos.
- * "Compartilhar" e "Copiar" são os do sistema, que vêm depois destes itens (ordem 0).
+ * Menu da seleção nativa de um parágrafo (rb-30). Os itens de ação ficam na barra própria do Leitor (rb-38),
+ * que abre junto com este menu (com áudio: Gerar áudio, Destacar, Pronúncia e Vários parágrafos; no Só ler:
+ * Destacar e Definir). Aqui o ⋮ só ganha o que a barra não tem: Definir com áudio e Apagar frase (rb-49).
+ * Copiar, Compartilhar, Traduzir e Selecionar tudo são os do sistema, e vêm depois destes itens.
  */
 internal class MenuDaSelecaoDeTexto(
     private val tv: TextView,
@@ -52,21 +53,11 @@ internal class MenuDaSelecaoDeTexto(
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
         modoAberto = mode
         acoes.aoAbrir(this)
-        if (comAudio) {
-            menu.add(0, MENU_ITEM_GERAR_AUDIO, 0, R.string.selecao_gerar_audio)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            menu.add(0, MENU_ITEM_SELECIONAR_PARAGRAFO, 0, R.string.menu_selecionar_varios_paragrafos)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
-        }
-        menu.add(0, MENU_ITEM_DESTACAR, 0, R.string.menu_destacar_trecho)
-            .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
-        if (comAudio) {
-            menu.add(0, MENU_ITEM_PRONUNCIA, 0, R.string.menu_pronuncia)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+        // Só o que a barra não mostra (rb-49): com áudio, Definir; no Só ler, nada. Tudo no ⋮.
+        acoesDaSelecaoSoNoMenu(comAudio).forEach { acao ->
+            menu.add(0, idDoItem(acao), 0, tituloDoItem(acao)).setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         }
         // No ⋮. Apagar frase é destrutiva, por isso fica por último.
-        menu.add(0, MENU_ITEM_DEFINIR, 0, R.string.menu_definir_palavra)
-            .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         return true
@@ -114,6 +105,14 @@ internal class MenuDaSelecaoDeTexto(
         AcaoDaBarraDeSelecao.PRONUNCIA -> MENU_ITEM_PRONUNCIA
         AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS -> MENU_ITEM_SELECIONAR_PARAGRAFO
         AcaoDaBarraDeSelecao.DEFINIR -> MENU_ITEM_DEFINIR
+    }
+
+    private fun tituloDoItem(acao: AcaoDaBarraDeSelecao): Int = when (acao) {
+        AcaoDaBarraDeSelecao.GERAR_AUDIO -> R.string.selecao_gerar_audio
+        AcaoDaBarraDeSelecao.DESTACAR -> R.string.menu_destacar_trecho
+        AcaoDaBarraDeSelecao.PRONUNCIA -> R.string.menu_pronuncia
+        AcaoDaBarraDeSelecao.VARIOS_PARAGRAFOS -> R.string.menu_selecionar_varios_paragrafos
+        AcaoDaBarraDeSelecao.DEFINIR -> R.string.menu_definir_palavra
     }
 
     /** A ação do item tocado, ou nulo quando ela não se aplica ao trecho (sem texto ou sem parágrafo). */

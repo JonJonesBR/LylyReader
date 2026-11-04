@@ -52,6 +52,13 @@ internal fun acoesDaBarraDeSelecao(comAudio: Boolean): List<AcaoDaBarraDeSelecao
     }
 
 /**
+ * Ações da seleção que vão ao ⋮ do menu do sistema por não estarem na barra (rb-49). Com áudio, a barra não tem
+ * Definir: ele fica no menu. Sem áudio, a barra já tem Destacar e Definir, e não sobra nada.
+ */
+internal fun acoesDaSelecaoSoNoMenu(comAudio: Boolean): List<AcaoDaBarraDeSelecao> =
+    if (comAudio) AcaoDaBarraDeSelecao.entries.filter { it !in acoesDaBarraDeSelecao(true) } else emptyList()
+
+/**
  * A repintura de sincronia espera enquanto há dedo na lista, menu aberto ou texto selecionado com foco: trocar a view
  * cancela o toque, e trocar o texto sob uma seleção recém-feita a desloca.
  */
