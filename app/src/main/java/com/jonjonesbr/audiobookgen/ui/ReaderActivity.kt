@@ -115,7 +115,8 @@ class ReaderActivity : BasePlayerActivity() {
     // Marca de tempo de quando a tela ficou visível, para creditar minutos lidos nas
     // estatísticas ao sair (T4.5) — 0L quando a tela não está visível.
     private var telaVisivelDesdeMs = 0L
-    private val capitulosSelecionados = linkedSetOf<Int>()
+    // Os capítulos marcados ficam no ViewModel (sobrevivem à rotação); aqui só o atalho de leitura.
+    private val capitulosSelecionados: MutableSet<Int> get() = viewModel.capitulosSelecionados
     private val exportarTextoLimpo = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/plain")
     ) { uri -> if (uri != null) conversaoController.exportarTextoLimpo(uri) }
@@ -417,6 +418,7 @@ class ReaderActivity : BasePlayerActivity() {
             activity = this,
             recyclerView = recyclerView,
             somenteLeitura = somenteLeitura,
+            aoMostrarPilula = { viewModel.pilulaDaLimpezaMostrada = true },
             views = ReaderTelaController.Views(
                 barraCapitulo = findViewById(R.id.barraCapitulo),
                 layoutCarregando = findViewById(R.id.layoutCarregandoReader),
@@ -817,7 +819,7 @@ class ReaderActivity : BasePlayerActivity() {
         }
 
         // Carregando, erro, pílula e modo: o cálculo é puro (TelaDoLeitor.kt); o controller só aplica.
-        val tela = calcularTelaDoLeitor(state, telaController.pilulaDaLimpezaMostrada)
+        val tela = calcularTelaDoLeitor(state, viewModel.pilulaDaLimpezaMostrada)
         val texto = if (telaController.aplicarCarregandoEErro(tela)) null else viewModel.textoEfetivo()
         if (texto == null) return
 

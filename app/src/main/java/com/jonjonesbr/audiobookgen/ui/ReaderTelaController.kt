@@ -23,7 +23,8 @@ private const val DURACAO_PILL_LIMPEZA_MS = 5000L
 
 /**
  * Aplica na tela do leitor o estado calculado em TelaDoLeitor.kt: carregando e erro, pílula da limpeza, barra de modo,
- * FABs, tema e margem, e a dica. Por instância da Activity (a pílula, a dica, o tema e a margem zeram ao girar).
+ * FABs, tema e margem, e a dica. Por instância da Activity (a dica, o tema e a margem zeram ao girar). A pílula já
+ * mostrada fica no ViewModel ([aoMostrarPilula] a marca), para não voltar ao girar.
  * Não lê o ViewModel: o que a tela precisa chega por parâmetro ou por lambda.
  */
 class ReaderTelaController(
@@ -31,6 +32,7 @@ class ReaderTelaController(
     private val recyclerView: RecyclerView,
     private val views: Views,
     private val somenteLeitura: Boolean,
+    private val aoMostrarPilula: () -> Unit,
 ) {
 
     /** As views da tela do leitor, já encontradas pela Activity. */
@@ -43,9 +45,6 @@ class ReaderTelaController(
         val barraSelecao: View, val tvSelecao: TextView,
     )
 
-    /** O resultado da limpeza aparece uma vez por abertura do leitor. */
-    var pilulaDaLimpezaMostrada = false
-        private set
     // Uma dica por abertura do leitor.
     private var dicaTentada = false
     private var margemNivelAplicado = -1
@@ -113,7 +112,7 @@ class ReaderTelaController(
                 if (tela.pilula == PilulaDaLimpeza.ANIMAR) {
                     // O resultado da limpeza aparece uma vez, por alguns segundos, e só quando algo foi tirado
                     // (antes ficava sempre na tela, inclusive com "Otimização em andamento" ao abrir).
-                    pilulaDaLimpezaMostrada = true
+                    aoMostrarPilula()
                     views.banner.alpha = 0f
                     views.banner.visibility = View.VISIBLE
                     views.banner.animate().alpha(1f).setDuration(DURACAO_FADE_BANNER_MS).start()
