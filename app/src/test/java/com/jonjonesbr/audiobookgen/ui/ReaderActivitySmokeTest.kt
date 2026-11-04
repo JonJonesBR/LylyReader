@@ -533,6 +533,62 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun notifyNaPaginaMantemARolagemETextoNovoVoltaAoTopo() {
+        // rb-26c: um notify no mesmo parágrafo mantém a rolagem de quem lê; texto novo no mesmo lugar volta ao topo.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "página do parágrafo longo com o texto") { a ->
+                (lista(a).layoutManager as? LinearLayoutManager)?.orientation == LinearLayoutManager.HORIZONTAL &&
+                    paginaEm(lista(a), 1)?.texto?.text?.toString() == PARAGRAFO_LONGO
+            }
+            // Vai ao parágrafo longo de verdade, e não só pela vizinha na margem: a página 1 fica inteira na tela.
+            scenario.onActivity { lista(it).scrollToPosition(1) }
+            esperarAte(scenario, "página do parágrafo longo inteira na tela") { a ->
+                val lm = lista(a).layoutManager as LinearLayoutManager
+                lm.findFirstCompletelyVisibleItemPosition() == 1 && paginaEm(lista(a), 1) != null
+            }
+
+            // Rolagem de quem lê e um notify no mesmo parágrafo (Destacar, busca): a página continua onde estava.
+            scenario.onActivity { a ->
+                paginaEm(lista(a), 1)!!.scrollTo(0, 40)
+                (lista(a).adapter as ParagrafoAdapter).notifyItemChanged(1)
+                lista(a).requestLayout()
+            }
+            esperarAte(scenario, "notify repintado") { a -> !lista(a).isLayoutRequested }
+            scenario.onActivity { a -> assertEquals(40, paginaEm(lista(a), 1)!!.scrollY) }
+
+            // Texto novo no mesmo lugar (limpeza, Retirar, fim da edição): a página volta ao topo.
+            scenario.onActivity { a ->
+                val novos = textos.mapIndexed { i, t ->
+                    Paragrafo(if (i == 1) "$t Texto trocado." else t, charOffset = 0, indiceCapitulo = 0)
+                }
+                (lista(a).adapter as ParagrafoAdapter).atualizarEstado(
+                    paragrafos = novos,
+                    selecaoInicio = null,
+                    selecaoFim = null,
+                    syncAtual = -1,
+                    progressPct = 0f,
+                    tamanhoFonte = 16f,
+                    espacamento = 1.5f,
+                    tema = TemaLeitura.CLARO,
+                )
+            }
+            esperarAte(scenario, "texto novo na página") { a ->
+                paginaEm(lista(a), 1)?.texto?.text?.toString()?.endsWith("Texto trocado.") == true
+            }
+            scenario.onActivity { a -> assertEquals(0, paginaEm(lista(a), 1)!!.scrollY) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun barraDeSelecaoApareceECancela() {
         val intent = Intent(app, ReaderActivity::class.java)
             .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)

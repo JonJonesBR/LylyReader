@@ -25,8 +25,9 @@ import com.jonjonesbr.audiobookgen.domain.RegraDaPaginaDoParagrafo
  * Por que a rolagem não fica no próprio TextView: a leitura guiada repinta o parágrafo ~20 vezes por segundo
  * (setText), e cada setText zeraria a rolagem. Aqui a página rola e o texto só muda por dentro.
  *
- * A página volta ao topo só quando o adapter a põe com outro parágrafo ([mostrar]). Não há reset ao sair da tela:
- * um notify no mesmo parágrafo (Destacar, busca) mantém a rolagem de quem lê.
+ * A página volta ao topo só quando o adapter a põe com outro parágrafo ou outro texto ([mostrar]). Um notify no
+ * mesmo parágrafo e texto (Destacar, busca) mantém a rolagem de quem lê. Ao ir para o pool de reciclagem, a página
+ * recebe `mostrar(RecyclerView.NO_POSITION, null)`, para não reaparecer com a rolagem de outro parágrafo.
  *
  * Na rolagem vertical não há esta página: o item continua sendo o TextView (ver ParagrafoAdapter).
  */
@@ -41,10 +42,17 @@ class PaginaDoParagrafo @JvmOverloads constructor(
     /** Parágrafo que a página mostra agora (ver [mostrar]). */
     private var posicaoMostrada = RecyclerView.NO_POSITION
 
+    /** Texto que a página mostra agora: o mesmo parágrafo com texto novo (limpeza, Retirar) também volta ao topo. */
+    private var textoMostrado: String? = null
+
     // Não dá para pôr isto no XML (nestedScrollingEnabled="false"): o construtor do View lê o atributo antes de a
     // NestedScrollView montar o mChildHelper, e o setter sobrescrito cairia num NPE. Aqui o super já terminou.
     init {
         isNestedScrollingEnabled = false
+        // Setas e foco rolam a página sem animação (rb-26c). Com a animação, o scrollY ainda não mudou quando
+        // tratarTecla compara o deslocamento antes e depois, e a seta não ligava o modo manual. O rolarUmaTela
+        // (smoothScrollBy) continua animado: esta opção só vale para a rolagem de tecla e de foco.
+        isSmoothScrollingEnabled = false
     }
 
     override fun onFinishInflate() {
@@ -87,12 +95,18 @@ class PaginaDoParagrafo @JvmOverloads constructor(
     }
 
     /**
-     * Chamado pelo adapter a cada bind. A página volta ao topo só quando passa a mostrar outro parágrafo; um notify
-     * no mesmo parágrafo (Destacar, busca, troca de lista) repinta sem mexer na rolagem de quem lê.
+     * Chamado pelo adapter a cada bind, com o texto que o TextView vai mostrar. A página volta ao topo só quando
+     * passa a mostrar outro parágrafo ou outro texto; um notify no mesmo parágrafo (Destacar, busca, troca de lista)
+     * repinta sem mexer na rolagem de quem lê.
+     *
+     * Com `RecyclerView.NO_POSITION` e `null`, zera a página: é o que o RecyclerListener faz quando a view vai para o
+     * pool de reciclagem. Sem isto, a view voltaria com a posição antiga, e um bind no mesmo parágrafo mantinha a
+     * rolagem de outra exibição.
      */
-    fun mostrar(posicao: Int) {
-        if (posicao == posicaoMostrada) return
+    fun mostrar(posicao: Int, texto: String?) {
+        if (posicao == posicaoMostrada && texto == textoMostrado) return
         posicaoMostrada = posicao
+        textoMostrado = texto
         scrollTo(0, 0)
     }
 

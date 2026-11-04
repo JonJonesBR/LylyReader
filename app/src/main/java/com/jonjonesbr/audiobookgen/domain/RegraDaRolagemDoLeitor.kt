@@ -85,8 +85,24 @@ object RegraDaRolagemDoLeitor {
     }
 
     /** Setas para cima e para baixo: o foco pode levar a lista a rolar. */
-    fun ehSetaVertical(keyCode: Int): Boolean =
-        keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN
+    fun ehSetaVertical(keyCode: Int): Boolean = sentidoDaSeta(keyCode) != null
+
+    /** Sentido de uma seta vertical: 1 para baixo, -1 para cima. Nulo para as outras teclas. */
+    fun sentidoDaSeta(keyCode: Int): Int? = when (keyCode) {
+        KeyEvent.KEYCODE_DPAD_UP -> -1
+        KeyEvent.KEYCODE_DPAD_DOWN -> 1
+        else -> null
+    }
+
+    /**
+     * Seta vertical rola a página parada (rb-26c) só sem Shift e sem seleção aberta, com o TextView da página
+     * focado e com texto para rolar. Fora disso, a seta segue o caminho normal (o TextView estende a seleção,
+     * ou a lista muda o foco).
+     */
+    fun setaRolaAPagina(shift: Boolean, temSelecao: Boolean, textoFocado: Boolean, podeRolar: Boolean): Boolean {
+        if (shift || temSelecao) return false
+        return textoFocado && podeRolar
+    }
 
     /** Teclas que podem rolar a lista (páginas e setas verticais). As outras nunca chegam à lista. */
     fun teclaDeRolagem(keyCode: Int): Boolean = sentidoDaTecla(keyCode) != null || ehSetaVertical(keyCode)
