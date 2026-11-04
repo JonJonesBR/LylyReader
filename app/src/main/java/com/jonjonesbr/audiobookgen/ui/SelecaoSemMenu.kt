@@ -1,12 +1,15 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import android.os.Bundle
+import android.view.View
 import android.view.ViewConfiguration
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.RecyclerView
+import com.jonjonesbr.audiobookgen.R
 
 /**
  * Barra da seleção de texto quando não há o modo do sistema (rb-54). O menu da seleção pode fechar sem a seleção
@@ -20,7 +23,8 @@ import androidx.recyclerview.widget.RecyclerView
  *
  * Com o parágrafo selecionado fora da tela, o trecho fica guardado (rb-58, ver [SelecaoGuardada]): a barra fica e
  * age sobre ele, e quem o limpa é Voltar, um toque curto, uma ação da barra, uma seleção nova ou uma lista nova.
- * Um toque curto dentro do trecho guardado traz a seleção de volta, com as alças (rb-60).
+ * Um toque curto dentro do trecho guardado traz a seleção de volta, com as alças (rb-60). Sem toque, a seleção volta
+ * sozinha quando a lista para com o trecho inteiro na área útil (rb-60b, ver [faixaParaReabrirSozinho]).
  *
  * O Voltar também fica aqui: com a seleção viva e sem o modo, ele desfaz a seleção e não sai do Leitor. O callback é
  * criado e registrado só quando é preciso, para ficar acima do callback da Activity (o último registrado tem
@@ -93,6 +97,12 @@ internal class SelecaoSemMenu(
 
     private fun decidir(jaEsperou: Boolean) {
         limparPelaSelecaoOuPeloToque(lista.textoComSelecaoViva)
+        // rb-60b: o trecho guardado inteiro na área útil volta com as alças quando a lista para. Com a seleção viva, o
+        // passo abaixo dá ESPERAR, e o menu abre sozinho, como no toque.
+        lista.faixaParaReabrirSozinho(
+            barra.limiteDaSelecaoNaTela,
+            activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED),
+        )?.let { reabrirTrechoGuardado(it) }
         // Relida depois da limpeza: o trecho reaberto pelo toque (rb-60) pode ter virado a seleção viva agora.
         val viva = lista.textoComSelecaoViva
         val passo = passoDaBarraDaSelecao(
@@ -146,12 +156,19 @@ internal class SelecaoSemMenu(
         val tv = (lista.findViewHolderForAdapterPosition(lista.guardada.posicao) as? ParagrafoAdapter.VHLeitura)?.tv
         limparGuardada()
         if (tv == null) return
-        tv.requestFocus()
         val argumentos = Bundle().apply {
             putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, faixa.first)
             putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, faixa.last + 1)
         }
-        tv.performAccessibilityAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, argumentos)
+        // rb-60b: o foco e a seleção não podem rolar a lista até o parágrafo inteiro (ver focoSemRolar). Não regravar o
+        // trecho se a ação falhar: o post do limparGuardada tentaria de novo, num laço.
+        lista.focoSemRolar = true
+        try {
+            tv.requestFocus()
+            tv.performAccessibilityAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, argumentos)
+        } finally {
+            lista.focoSemRolar = false
+        }
     }
 
     private fun esconderBarra() {
@@ -201,3 +218,99 @@ internal class SelecaoSemMenu(
         const val FOLGA_DA_ESPERA_MS = 32L
     }
 }
+
+/**
+ * Faixa do trecho guardado que volta sozinha agora (rb-60b), ou nulo. Só lê: quem reabre é o [SelecaoSemMenu]. Com a
+ * tela ativa (RESUMED), o parágrafo do trecho na lista, o trecho ainda no texto e [reabrirSozinho] aprovando. A regra
+ * não rola nada: o trecho só volta se já estiver inteiro na área útil. Função de topo, pelo limite de funções da lista.
+ */
+internal fun RecyclerViewParagrafos.faixaParaReabrirSozinho(limiteDaBarra: Int?, telaAtiva: Boolean): IntRange? =
+    holderDoTrechoGuardado(telaAtiva)?.let { holder ->
+        guardada.trechoNoParagrafo(holder.bindingAdapterPosition, holder.tv.text.toString())?.takeIf {
+            reabrirSozinho(
+                rolagemParada = scrollState == RecyclerView.SCROLL_STATE_IDLE &&
+                    (holder.itemView as? PaginaDoParagrafo)?.rolandoSozinha != true,
+                dedoNaTela = toqueEmAndamento,
+                outroTextoEmUso = outroTextoEmUso(),
+                guiadaConduzRolagem = (layoutManager as? LeitorLayoutManager)?.seguindoLeitura?.invoke() == true,
+                trechoInteiroVisivel = trechoInteiroNaTela(holder, it, limiteDaBarra),
+            )
+        }
+    }
+
+/**
+ * O VH do trecho guardado, se ele pode ser medido agora (rb-60b): com a tela ativa, o item na lista e o TextView
+ * anexado e com layout. Filho que saiu da lista no meio não passa.
+ */
+private fun RecyclerViewParagrafos.holderDoTrechoGuardado(telaAtiva: Boolean): ParagrafoAdapter.VHLeitura? {
+    val holder = (if (telaAtiva && guardada.ativa) findViewHolderForAdapterPosition(guardada.posicao) else null)
+        as? ParagrafoAdapter.VHLeitura
+    return holder?.takeIf {
+        it.itemView.parent === this && it.tv.isAttachedToWindow && it.tv.isLaidOut && it.tv.layout != null
+    }
+}
+
+/**
+ * Outro texto em uso, que impede a reabertura (rb-60b): seleção aberta, texto selecionado com foco, ou foco fora da
+ * lista (a busca, um botão da barra). Sem foco, não há o que proteger.
+ */
+private fun RecyclerViewParagrafos.outroTextoEmUso(): Boolean {
+    val foco = rootView.findFocus()
+    val focoComSelecao = (foco as? TextView)?.hasSelection() == true
+    val focoFora = foco != null && !foco.estaDentroDe(this)
+    return selecoesAbertas > 0 || focoComSelecao || focoFora
+}
+
+/**
+ * Se o trecho [faixa] do [holder] está inteiro na área útil, em coordenadas da tela (rb-60b). Mede o que o
+ * `bringPointIntoView` do fim da seleção mediria: a linha do fim, dentro da lista e da página. Função de topo, pelo
+ * limite de funções da lista.
+ */
+private fun RecyclerViewParagrafos.trechoInteiroNaTela(
+    holder: ParagrafoAdapter.VHLeitura,
+    faixa: IntRange,
+    limiteDaBarra: Int?,
+): Boolean {
+    val tv = holder.tv
+    val layout = tv.layout ?: return false
+    val posTv = tv.posicaoNaTela()
+    val base = posTv[1] + tv.totalPaddingTop - tv.scrollY
+    val linhaIni = layout.getLineForOffset(faixa.first)
+    // O fim da seleção é o offset que o bringPointIntoView usa (selectionEnd, fim exclusivo).
+    val linhaFim = layout.getLineForOffset(faixa.last + 1)
+    val trechoNaTela = LinhaNaTela(base + layout.getLineTop(linhaIni), base + layout.getLineBottom(linhaFim))
+    // Retângulo da linha do fim como o getInterestingRect o monta: o pedido de rolagem da seleção usa esse.
+    val linhaDoFim = LinhaNaTela(
+        base + layout.getLineTop(linhaFim) - (if (linhaFim == 0) tv.extendedPaddingTop else 0),
+        base + layout.getLineBottom(linhaFim) +
+            (if (linhaFim == layout.lineCount - 1) tv.extendedPaddingBottom else 0),
+    )
+    val areaDaLista = areaDaListaNaTela(holder.itemView)
+    val fundoDoPai = (parent as? View)?.let { it.posicaoNaTela()[1] + it.height } ?: Int.MAX_VALUE
+    val topoDaGuiada = rootView.findViewById<View>(R.id.layoutGuidedPlayer)
+        ?.takeIf { it.isShown }?.posicaoNaTela()?.get(1)
+    val area = areaUtilParaReabrir(areaDaLista, fundoDoPai, limiteDaBarra, topoDaGuiada)
+    // Na horizontal, a página tem de estar inteira na lista (o snap deixa uma página parada, mas a borda pode cortar).
+    val posLista = posicaoNaTela()
+    val larguraInteira = posTv[0] >= posLista[0] && posTv[0] + tv.width <= posLista[0] + width
+    return larguraInteira && trechoInteiroNaArea(trechoNaTela, area) && trechoInteiroNaArea(linhaDoFim, areaDaLista)
+}
+
+/**
+ * Área da lista onde a linha pode aparecer (rb-60b): a área de conteúdo da lista. Na página horizontal, também a área
+ * de conteúdo da página, porque ela rola sozinha para mostrar a seleção.
+ */
+private fun RecyclerViewParagrafos.areaDaListaNaTela(item: View): LinhaNaTela {
+    val posLista = posicaoNaTela()
+    var topo = posLista[1] + paddingTop
+    var fundo = posLista[1] + height - paddingBottom
+    if (item is PaginaDoParagrafo) {
+        val posPagina = item.posicaoNaTela()
+        topo = maxOf(topo, posPagina[1] + item.paddingTop)
+        fundo = minOf(fundo, posPagina[1] + item.height - item.paddingBottom)
+    }
+    return LinhaNaTela(topo, fundo)
+}
+
+/** Posição da view na tela, em px (x, y). Já inclui a translação e a rolagem dos pais. */
+private fun View.posicaoNaTela(): IntArray = IntArray(2).also { getLocationOnScreen(it) }

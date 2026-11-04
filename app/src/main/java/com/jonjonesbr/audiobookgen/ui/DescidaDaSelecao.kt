@@ -3,7 +3,7 @@ package com.jonjonesbr.audiobookgen.ui
 // Regra pura da descida da lista quando a barra da seleção cobre o trecho marcado (rb-48): sem nada de Android,
 // testada na JVM. Quem aplica o valor é o BarraDaSelecaoDeTexto, no translationY da RecyclerViewParagrafos.
 
-/** Posição de uma linha de texto na tela, em px (coordenadas da tela, já com a translação da lista). */
+/** Posição de uma linha ou faixa de texto na tela, em px (coordenadas da tela, já com a translação da lista). */
 internal data class LinhaNaTela(val topo: Int, val fundo: Int)
 
 /**

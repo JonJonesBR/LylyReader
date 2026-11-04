@@ -1331,19 +1331,198 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
-    fun toqueNoTrechoComAListaRolandoLimpaOGuardadoSemReabrir() {
-        // rb-60: com a lista ainda rolando no DOWN (fling), o toque é da lista: limpa o trecho como antes do rb-60.
+    fun trechoGuardadoInteiroNaTelaVoltaSozinhoQuandoAListaPara() {
+        // rb-60b (1): o trecho guardado volta com o parágrafo inteiro na área útil, e a seleção nativa volta sem toque
+        // quando a lista para. A rolagem de 1 px que gera o IDLE não pode levar a lista além disso.
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
             esperarAte(scenario, "parágrafos na tela") { a ->
                 lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
             }
             guardarTrechoDoParagrafo(scenario, 1)
-            scenario.onActivity { lista(it).scrollToPosition(0) }
+            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 24) }
             esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
                 tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
             }
+            scenario.onActivity { a ->
+                val tv = tvEm(lista(a), 1)!!
+                val limite = limiteDaAreaNaTela(a)
+                assertTrue(
+                    "Pré-condição: a linha 0 (${linha0NaTela(tv)}) deveria ficar abaixo da barra ($limite)",
+                    linha0NaTela(tv) >= limite,
+                )
+            }
+            scenario.onActivity { a -> focarOutroParagrafoInteiro(a, 1) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> conferirFocoNaLista(a) }
+            var antes = 0
+            scenario.onActivity { a ->
+                antes = lista(a).computeVerticalScrollOffset()
+                lista(a).smoothScrollBy(0, 1)
+            }
+            esperarAte(scenario, "lista parada e alças de volta sem toque") { a ->
+                lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE && !listaDoLeitor(a).guardada.ativa &&
+                    tvEm(lista(a), 1)?.hasSelection() == true
+            }
+            scenario.onActivity { a ->
+                val tv = tvEm(lista(a), 1)!!
+                assertTrue("O parágrafo deveria ter o foco", tv.isFocused)
+                assertEquals("A seleção deveria ser o trecho guardado", 0, tv.selectionStart)
+                assertEquals("A seleção deveria ser o trecho guardado", 5, tv.selectionEnd)
+                assertEquals(0, spansDoTrecho(tv).size)
+                assertTrue(barraDaSelecaoTextoVisivel(a))
+                assertTrue(
+                    "A lista não deveria rolar além de 1 px (antes ${antes}, depois ${lista(a).computeVerticalScrollOffset()})",
+                    lista(a).computeVerticalScrollOffset() - antes <= 1,
+                )
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun trechoGuardadoSobABarraNaoVoltaSozinho() {
+        // rb-60b (2): com a primeira linha sob a barra, o trecho fica guardado e pintado quando a lista para.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = -24) }
+            esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
+                tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
+            }
+            scenario.onActivity { a ->
+                val tv = tvEm(lista(a), 1)!!
+                val limite = limiteDaAreaNaTela(a)
+                assertTrue(
+                    "Pré-condição: a linha 0 (${linha0NaTela(tv)}) deveria ficar sob a barra ($limite)",
+                    linha0NaTela(tv) < limite,
+                )
+            }
+            scenario.onActivity { a -> focarOutroParagrafoInteiro(a, 1) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> conferirFocoNaLista(a) }
+            scenario.onActivity { lista(it).smoothScrollBy(0, 1) }
+            esperarAte(scenario, "lista parada") { lista(it).scrollState == RecyclerView.SCROLL_STATE_IDLE }
+            scenario.onActivity { listaDoLeitor(it).liberarDepois() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            scenario.onActivity { a ->
+                assertTrue("Sob a barra, o trecho deveria continuar guardado", listaDoLeitor(a).guardada.ativa)
+                val tv = tvEm(lista(a), 1)!!
+                assertFalse("Sob a barra, a seleção não deveria voltar sozinha", tv.hasSelection())
+                assertEquals(1, spansDoTrecho(tv).size)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun comDedoNaTelaOTrechoNaoVoltaSozinho() {
+        // rb-60b (3): com o dedo na lista, a conferência não reabre. Ao levantar o dedo (CANCEL), a seleção volta.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 24) }
+            esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
+                tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
+            }
+            // O foco vai para o outro parágrafo inteiro, e o DOWN e o CANCEL vão para ele: o toque não muda o foco.
+            var outro = -1
+            scenario.onActivity { a -> outro = focarOutroParagrafoInteiro(a, 1) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> conferirFocoNaLista(a) }
+            // DOWN num outro parágrafo da tela, e a conferência rodando com o dedo ainda na lista.
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                despacharToque(rv, outro, MotionEvent.ACTION_DOWN, 1_000L, 1_000L)
+                rv.liberarDepois()
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            scenario.onActivity { a ->
+                assertTrue("Com o dedo na tela, o trecho deveria continuar guardado", listaDoLeitor(a).guardada.ativa)
+                assertFalse(tvEm(lista(a), 1)?.hasSelection() == true)
+            }
+            scenario.onActivity { a -> despacharToque(listaDoLeitor(a), outro, MotionEvent.ACTION_CANCEL, 1_000L, 1_300L) }
+            esperarAte(scenario, "sem o dedo, o trecho volta com as alças") { a ->
+                !listaDoLeitor(a).guardada.ativa && tvEm(lista(a), 1)?.hasSelection() == true
+            }
+            scenario.onActivity { a ->
+                val tv = tvEm(lista(a), 1)!!
+                assertEquals(0, tv.selectionStart)
+                assertEquals(5, tv.selectionEnd)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun trechoGuardadoComFocoForaDaListaNaoVoltaSozinho() {
+        // rb-60b (5): a mesma posição do caso 1, mas com o foco num botão fora da lista (busca, barra, teclado).
+        // Com o foco fora, a conferência não reabre: o trecho continua guardado e sem seleção, com a lista parada.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 24) }
+            esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
+                tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
+            }
+            scenario.onActivity { a ->
+                definirModoDeToque(a, toque = false)
+                a.findViewById<View>(R.id.btnReaderVoltar).requestFocus()
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a ->
+                assertEquals(
+                    "Pré-condição: o foco deveria estar no botão Voltar",
+                    R.id.btnReaderVoltar,
+                    a.currentFocus?.id,
+                )
+                assertTrue("Pré-condição: o trecho deveria continuar guardado", listaDoLeitor(a).guardada.ativa)
+            }
+            scenario.onActivity { lista(it).smoothScrollBy(0, 1) }
+            esperarAte(scenario, "lista parada") { lista(it).scrollState == RecyclerView.SCROLL_STATE_IDLE }
+            scenario.onActivity { listaDoLeitor(it).liberarDepois() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            scenario.onActivity { a ->
+                assertTrue(
+                    "Com o foco fora da lista, o trecho deveria continuar guardado",
+                    listaDoLeitor(a).guardada.ativa,
+                )
+                val tv = tvEm(lista(a), 1)!!
+                assertFalse("Com o foco fora da lista, a seleção não deveria voltar sozinha", tv.hasSelection())
+                assertEquals(1, spansDoTrecho(tv).size)
+                assertEquals(R.id.btnReaderVoltar, a.currentFocus?.id)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun toqueQueParaOFlingNaoLimpaOTrechoGuardado() {
+        // rb-60b (4): o toque que para um fling (lista rolando no DOWN) não limpa o trecho nem lê o parágrafo. Quando a
+        // lista para, com o trecho inteiro na área útil, a seleção volta sozinha (rb-60 e rb-60b).
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 24) }
+            esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
+                tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
+            }
+            scenario.onActivity { a -> focarOutroParagrafoInteiro(a, 1) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> conferirFocoNaLista(a) }
             var ponto = 0f to 0f
-            scenario.onActivity { a -> ponto = pontoNoCaractere(tvEm(lista(a), 1)!!, 1) }
+            var sincAntes = -1
+            scenario.onActivity { a ->
+                ponto = pontoNoCaractere(tvEm(lista(a), 1)!!, 1)
+                sincAntes = modeloDe(a).uiState.value.paragrafoSyncAtual
+            }
             // Fling e DOWN no mesmo despacho: sem deixar a lista andar entre os dois.
             scenario.onActivity { a ->
                 lista(a).fling(0, 8_000)
@@ -1355,10 +1534,21 @@ class ReaderActivitySmokeTest {
                 toqueNaLista(lista(a), ponto, MotionEvent.ACTION_DOWN, 1_000L, 1_000L)
             }
             scenario.onActivity { a -> toqueNaLista(lista(a), ponto, MotionEvent.ACTION_UP, 1_000L, 1_050L) }
-            esperarAte(scenario, "toque com a lista rolando limpa o trecho e esconde a barra") { a ->
-                !listaDoLeitor(a).guardada.ativa && !barraDaSelecaoTextoVisivel(a)
+            esperarAte(scenario, "o fim do fling devolve as alças do trecho") { a ->
+                !listaDoLeitor(a).guardada.ativa && lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE &&
+                    tvEm(lista(a), 1)?.hasSelection() == true
             }
-            scenario.onActivity { a -> assertFalse(tvEm(lista(a), 1)?.hasSelection() == true) }
+            scenario.onActivity { a ->
+                val tv = tvEm(lista(a), 1)!!
+                assertEquals(0, tv.selectionStart)
+                assertEquals(5, tv.selectionEnd)
+                assertTrue(barraDaSelecaoTextoVisivel(a))
+                assertEquals(
+                    "O toque que para o fling não deveria ler o parágrafo",
+                    sincAntes,
+                    modeloDe(a).uiState.value.paragrafoSyncAtual,
+                )
+            }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
@@ -1650,6 +1840,65 @@ class ReaderActivitySmokeTest {
             (layout.getPrimaryHorizontal(offset) + layout.getPrimaryHorizontal(offset + 1)) / 2f
         val y = tv.top + tv.totalPaddingTop + (layout.getLineTop(0) + layout.getLineBottom(0)) / 2f
         return x to y
+    }
+
+    /** Topo da primeira linha do parágrafo [tv] na tela, em px (rb-60b). */
+    private fun linha0NaTela(tv: TextView): Int {
+        val posicao = IntArray(2)
+        tv.getLocationOnScreen(posicao)
+        return posicao[1] + tv.totalPaddingTop - tv.scrollY
+    }
+
+    /**
+     * Limite de cima da área útil da seleção, na tela: a base da barra mais 72 dp, a mesma margem da descida (rb-60b).
+     * Os 72 dp são a soma dos dois espaços da BarraDaSelecaoDeTexto (menu flutuante e respiro).
+     */
+    private fun limiteDaAreaNaTela(a: ReaderActivity): Int {
+        val barra = a.findViewById<View>(R.id.barraSelecaoTexto)
+        val posicao = IntArray(2)
+        barra.getLocationOnScreen(posicao)
+        return posicao[1] + barra.height + a.dpToPx(72)
+    }
+
+    /**
+     * Rola a lista para o parágrafo 1 com o topo do item [folgaDp] dp acima do limite da área útil (rb-60b). Positiva,
+     * a primeira linha cai na área útil; negativa, fica sob a barra. Ajusta pelo topo do item, não pela linha.
+     */
+    private fun rolarParaParagrafoUmComFolga(a: ReaderActivity, folgaDp: Int) {
+        val rv = listaDoLeitor(a)
+        val posicaoLista = IntArray(2)
+        rv.getLocationOnScreen(posicaoLista)
+        val topoDoItemNaTela = limiteDaAreaNaTela(a) + (folgaDp * a.resources.displayMetrics.density).toInt()
+        (rv.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(
+            1,
+            topoDoItemNaTela - posicaoLista[1] - rv.paddingTop,
+        )
+    }
+
+    /**
+     * Dá o foco a outro parágrafo inteiro na tela, que não seja o [pos] (rb-60b). É o pulo do foco que o rb-59 viu
+     * no aparelho. No Robolectric, o foco do parágrafo reciclado cai no primeiro botão, fora da lista, e a
+     * conferência não reabre (outroTextoEmUso). Inteiro na tela, o pedido de foco não rola a lista. Devolve a
+     * posição.
+     */
+    private fun focarOutroParagrafoInteiro(a: ReaderActivity, pos: Int): Int {
+        val rv = lista(a)
+        // Dentro da área com padding da lista: o RecyclerView rola para trazer o filho com foco que cai no padding.
+        val outro = (0 until rv.childCount).map { rv.getChildAt(it) }
+            .filter { it.top >= rv.paddingTop && it.bottom <= rv.height - rv.paddingBottom }
+            .map { rv.getChildViewHolder(it).bindingAdapterPosition }
+            .first { it != pos }
+        requireNotNull(tvEm(rv, outro)) { "Parágrafo $outro sem TextView" }.requestFocus()
+        return outro
+    }
+
+    /** Pré-condição de [focarOutroParagrafoInteiro]: o foco tem de estar na lista, ou o teste não prova nada. */
+    private fun conferirFocoNaLista(a: ReaderActivity) {
+        val foco = a.currentFocus
+        assertTrue(
+            "Pré-condição: o foco deveria estar na lista, e está em $foco",
+            foco?.estaDentroDe(lista(a)) == true,
+        )
     }
 
     /** Manda um toque (DOWN ou UP) em [ponto] à lista, em coordenadas da lista (rb-60). */

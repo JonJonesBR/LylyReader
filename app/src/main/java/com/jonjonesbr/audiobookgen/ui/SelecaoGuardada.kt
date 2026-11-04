@@ -5,7 +5,8 @@ package com.jonjonesbr.audiobookgen.ui
 
 /**
  * Trecho que sai da tela junto com o parágrafo que o marcou. A barra da seleção continua e age sobre ele; quando o
- * parágrafo volta, o trecho aparece pintado. Não é a seleção nativa: ela não é restaurada, só o trecho.
+ * parágrafo volta, o trecho aparece pintado. Não é a seleção nativa: ela volta pelo toque dentro do trecho (rb-60) ou
+ * sozinha, quando a lista para com o trecho inteiro na área útil (rb-60b, ver [reabrirSozinho]).
  *
  * Só um trecho por vez. Quem limpa é quem chama: Voltar, toque curto, ação da barra, seleção nova ou lista nova.
  */
@@ -94,3 +95,38 @@ internal fun toqueReabreTrecho(
     // Fronteiras do trecho, inclusive a final (ver o KDoc).
     return trecho.takeIf { listaParadaNoDown && offsetTocado in it.first..it.last + 1 }
 }
+
+/**
+ * Se a seleção nativa do trecho guardado volta sozinha (rb-60b): a lista parou (IDLE e página parada), sem dedo na
+ * tela, sem outro texto em uso, sem a guiada conduzindo a rolagem e com o trecho inteiro na área útil. Cada condição
+ * é um bloqueio: basta uma falsa para o trecho ficar pintado, como antes, à espera do toque.
+ */
+internal fun reabrirSozinho(
+    rolagemParada: Boolean,
+    dedoNaTela: Boolean,
+    outroTextoEmUso: Boolean,
+    guiadaConduzRolagem: Boolean,
+    trechoInteiroVisivel: Boolean,
+): Boolean = rolagemParada && !dedoNaTela && !outroTextoEmUso && !guiadaConduzRolagem && trechoInteiroVisivel
+
+/**
+ * Área útil onde o trecho guardado pode ficar para voltar sozinho (rb-60b), em coordenadas da tela. O topo é o da
+ * lista, ou o limite da barra da seleção ([limiteDaBarra], nulo sem barra) se ela estiver mais abaixo. O fundo é o
+ * menor entre a lista, o corte do pai (que já inclui a descida) e o topo da guiada ([topoDaGuiada], nulo sem guiada).
+ */
+internal fun areaUtilParaReabrir(
+    areaDaLista: LinhaNaTela,
+    fundoDoPai: Int,
+    limiteDaBarra: Int?,
+    topoDaGuiada: Int?,
+): LinhaNaTela = LinhaNaTela(
+    topo = maxOf(areaDaLista.topo, limiteDaBarra ?: Int.MIN_VALUE),
+    fundo = minOf(areaDaLista.fundo, fundoDoPai, topoDaGuiada ?: Int.MAX_VALUE),
+)
+
+/**
+ * Se [trecho] cabe inteiro dentro de [area] (rb-60b). As bordas iguais contam: é o caso do trecho na posição exata da
+ * descida. Área vazia ou invertida não cabe nada.
+ */
+internal fun trechoInteiroNaArea(trecho: LinhaNaTela, area: LinhaNaTela): Boolean =
+    area.topo < area.fundo && trecho.topo >= area.topo && trecho.fundo <= area.fundo

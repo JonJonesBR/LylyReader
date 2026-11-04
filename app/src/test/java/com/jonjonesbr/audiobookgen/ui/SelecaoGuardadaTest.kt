@@ -140,4 +140,75 @@ class SelecaoGuardadaTest {
             assertEquals(esperado, guardarAoSairDaTela(leitura, foco, trecho))
         }
     }
+
+    // rb-60b: o trecho volta sozinho só com a lista parada, sem dedo, sem outro texto, sem guiada e com o trecho inteiro.
+    private fun reabrir(
+        rolagemParada: Boolean = true,
+        dedoNaTela: Boolean = false,
+        outroTextoEmUso: Boolean = false,
+        guiadaConduzRolagem: Boolean = false,
+        trechoInteiroVisivel: Boolean = true,
+    ): Boolean = reabrirSozinho(rolagemParada, dedoNaTela, outroTextoEmUso, guiadaConduzRolagem, trechoInteiroVisivel)
+
+    @Test
+    fun reabreSozinhoSoComTodasAsCondicoes() {
+        assertTrue(reabrir())
+    }
+
+    @Test
+    fun rolagemOuDedoOuOutroTextoOuGuiadaOuTrechoCortadoBloqueiam() {
+        assertFalse(reabrir(rolagemParada = false))
+        assertFalse(reabrir(dedoNaTela = true))
+        assertFalse(reabrir(outroTextoEmUso = true))
+        assertFalse(reabrir(guiadaConduzRolagem = true))
+        assertFalse(reabrir(trechoInteiroVisivel = false))
+    }
+
+    private val lista = LinhaNaTela(100, 900)
+
+    @Test
+    fun areaUtilSemBarraNemGuiadaSaoOsLimitesDaLista() {
+        assertEquals(LinhaNaTela(100, 900), areaUtilParaReabrir(lista, Int.MAX_VALUE, null, null))
+    }
+
+    @Test
+    fun barraMaisBaixaQueOTopoDaListaVenceOTopo() {
+        // Descida grande: a base da barra está em 400, então o topo útil é 400.
+        assertEquals(LinhaNaTela(400, 900), areaUtilParaReabrir(lista, Int.MAX_VALUE, 400, null))
+    }
+
+    @Test
+    fun barraMaisAltaQueOTopoDaListaPerde() {
+        assertEquals(LinhaNaTela(100, 900), areaUtilParaReabrir(lista, Int.MAX_VALUE, 50, null))
+    }
+
+    @Test
+    fun fundoEMenorEntreListaPaiEGuiada() {
+        assertEquals(LinhaNaTela(100, 700), areaUtilParaReabrir(lista, 700, null, null))
+        assertEquals(LinhaNaTela(100, 650), areaUtilParaReabrir(lista, 700, null, 650))
+        assertEquals(LinhaNaTela(100, 800), areaUtilParaReabrir(lista, 800, null, 950))
+    }
+
+    @Test
+    fun trechoInteiroDentroDaAreaCabe() {
+        assertTrue(trechoInteiroNaArea(LinhaNaTela(200, 300), LinhaNaTela(100, 900)))
+    }
+
+    @Test
+    fun bordasIguaisContamComoDentro() {
+        assertTrue(trechoInteiroNaArea(LinhaNaTela(100, 900), LinhaNaTela(100, 900)))
+    }
+
+    @Test
+    fun umPixoForaDaAreaNaoCabe() {
+        val area = LinhaNaTela(100, 900)
+        assertFalse(trechoInteiroNaArea(LinhaNaTela(99, 300), area))
+        assertFalse(trechoInteiroNaArea(LinhaNaTela(200, 901), area))
+    }
+
+    @Test
+    fun areaVaziaOuInvertidaNaoCabeNada() {
+        assertFalse(trechoInteiroNaArea(LinhaNaTela(200, 200), LinhaNaTela(300, 300)))
+        assertFalse(trechoInteiroNaArea(LinhaNaTela(200, 200), LinhaNaTela(900, 100)))
+    }
 }

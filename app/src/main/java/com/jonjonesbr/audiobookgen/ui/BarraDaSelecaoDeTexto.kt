@@ -27,6 +27,24 @@ internal class BarraDaSelecaoDeTexto(
     /** Se a barra está na tela agora (rb-54: a barra sem o modo do sistema confere isto para o Voltar). */
     val visivel: Boolean get() = barra.visibility == View.VISIBLE
 
+    /**
+     * Limite de cima da área útil, em coordenadas da tela (rb-60b): a base da barra mais a mesma margem da descida
+     * (rb-48). Um trecho que começa acima dele fica sob a barra. Nulo com a barra escondida.
+     */
+    val limiteDaSelecaoNaTela: Int?
+        get() {
+            if (!visivel) return null
+            val posBarra = IntArray(2)
+            barra.getLocationOnScreen(posBarra)
+            return posBarra[1] + barra.height + margemPx
+        }
+
+    // Espaço entre a base da barra e a linha da seleção: o do menu flutuante mais o respiro (rb-48). Usada pela
+    // descida e pelo limite da reabertura (rb-60b), para as duas terem a mesma margem.
+    private val margemPx: Int
+        get() = ((ESPACO_DO_MENU_FLUTUANTE_DP + MARGEM_ABAIXO_DA_BARRA_DP) * barra.resources.displayMetrics.density)
+            .roundToInt()
+
     init {
         val visiveis = acoesDaBarraDeSelecao(comAudio)
         BOTOES.forEach { (acao, idDoBotao) ->
@@ -81,8 +99,6 @@ internal class BarraDaSelecaoDeTexto(
         // A base da barra em coordenadas da tela, as mesmas da linha. O getGlobalVisibleRect é da janela e não serve.
         val fundoDaBarra = posBarra[1] + barra.height
         // O menu flutuante da seleção fica acima dela, por isso o espaço dele entra na margem (rb-48).
-        val espacoEmDp = ESPACO_DO_MENU_FLUTUANTE_DP + MARGEM_ABAIXO_DA_BARRA_DP
-        val margemPx = (espacoEmDp * barra.resources.displayMetrics.density).roundToInt()
         val necessario = quantoDescerParaMostrarSelecao(linha, fundoDaBarra, barra.height, margemPx, atual)
         // Dentro da mesma seleção a lista não sobe, para não pular ao trocar de seleção. Numa sessão nova,
         // o necessário vale, e a lista pode voltar ao lugar se a seleção não precisar de descida.

@@ -83,6 +83,7 @@ class ReaderRolagemController(
             if (horizontal) LinearLayoutManager.HORIZONTAL else LinearLayoutManager.VERTICAL,
             seguindoLeitura = { guiadaConduzRolagem() },
             toqueEmAndamento = { recyclerView.toqueEmAndamento },
+            focoSemRolar = { recyclerView.focoSemRolar },
         )
         if (horizontal) {
             pagerSnapHelper = PagerSnapHelper().apply {

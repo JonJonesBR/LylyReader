@@ -19,9 +19,11 @@ import androidx.recyclerview.widget.RecyclerView
 class LeitorLayoutManager(
     context: Context,
     orientation: Int,
-    private val seguindoLeitura: () -> Boolean,
+    internal val seguindoLeitura: () -> Boolean,
     // Com o dedo na lista, o foco ganho no toque longo não rola a lista (rb-38).
     private val toqueEmAndamento: () -> Boolean = { false },
+    // Foco dado pelo código que não pode rolar a lista (rb-60b, a reabertura do trecho guardado).
+    private val focoSemRolar: () -> Boolean = { false },
 ) : LinearLayoutManager(context, orientation, false) {
 
     override fun requestChildRectangleOnScreen(
@@ -40,5 +42,6 @@ class LeitorLayoutManager(
         state: RecyclerView.State,
         child: View,
         focused: View?
-    ): Boolean = seguindoLeitura() || toqueEmAndamento() || super.onRequestChildFocus(parent, state, child, focused)
+    ): Boolean = seguindoLeitura() || toqueEmAndamento() || focoSemRolar() ||
+        super.onRequestChildFocus(parent, state, child, focused)
 }

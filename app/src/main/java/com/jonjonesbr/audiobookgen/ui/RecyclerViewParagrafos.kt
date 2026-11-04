@@ -28,7 +28,10 @@ import kotlin.math.hypot
  *   [pedidoDeMostrarTrechoVale]); mesmo mecanismo da `PaginaDoParagrafo.requestChildRectangleOnScreen`.
  * - guardar o trecho selecionado quando o parágrafo sai da tela (rb-58, ver [guardada]), e limpá-lo com um toque
  *   curto (ver [toqueLimpaGuardada]). Um toque curto dentro do trecho traz a seleção de volta (rb-60, ver
- *   [toqueReabreGuardada]).
+ *   [toqueReabreGuardada]). Um toque que para um fling não limpa nem reabre: a conferência do IDLE que vem depois
+ *   decide (rb-60b, ver [faixaParaReabrirSozinho] em SelecaoSemMenu).
+ * - dar o foco do código sem rolar a lista, na janela de [focoSemRolar] (rb-60b): a reabertura do trecho pede o foco
+ *   para o TextView, e o foco não pode rolar a lista até o parágrafo inteiro.
  */
 class RecyclerViewParagrafos @JvmOverloads constructor(
     context: Context,
@@ -85,6 +88,9 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
      * Guarda o próprio trecho, para a conferência não ter de medir o toque de novo.
      */
     internal var toqueReabreGuardada: IntRange? = null
+
+    /** Janela em que o foco dado pelo código não rola a lista (rb-60b). Só a reabertura do trecho a liga. */
+    internal var focoSemRolar: Boolean = false
 
     /**
      * Se [v] é o item que o dedo tocou, enquanto o toque dura (rb-53). O adapter não reescreve o texto desse item
@@ -176,7 +182,8 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
                 null
             }
             toqueReabreGuardada = faixa
-            toqueLimpaGuardada = curtoNoGuardado && faixa == null
+            // Toque que para um fling (lista não parada no DOWN) não limpa: a conferência do IDLE decide (rb-60b).
+            toqueLimpaGuardada = curtoNoGuardado && faixa == null && listaParadaNoDown
             toqueEmAndamento = false
             filhoSobODedo = null
             liberarDepois()

@@ -50,6 +50,14 @@ class PaginaDoParagrafo @JvmOverloads constructor(
     private var ultimaRolagemMs: Long? = null
 
     /**
+     * Confere a lista quando a rolagem da página para (rb-60b): na horizontal, o fling dentro da página não leva a lista
+     * a IDLE, então a reabertura do trecho guardado precisa desta conferência. Só faz algo com trecho guardado.
+     */
+    private val conferirAoParar = Runnable {
+        (parent as? RecyclerViewParagrafos)?.takeIf { it.guardada.ativa }?.liberarDepois()
+    }
+
+    /**
      * A página está rolando agora, ou parou há pouco (rb-60): um toque nela nesse momento para um fling, e não é
      * toque de texto. Ver [RegraDaPaginaDoParagrafo.rolandoSozinha].
      */
@@ -65,7 +73,14 @@ class PaginaDoParagrafo @JvmOverloads constructor(
         // (smoothScrollBy) continua animado: esta opção só vale para a rolagem de tecla e de foco.
         isSmoothScrollingEnabled = false
         // Marca a rolagem da página, inclusive a do fling e a do acompanhamento (rb-60, ver rolandoSozinha).
-        setOnScrollChangeListener { _, _, _, _, _ -> ultimaRolagemMs = SystemClock.uptimeMillis() }
+        setOnScrollChangeListener { _, _, _, _, _ ->
+            ultimaRolagemMs = SystemClock.uptimeMillis()
+            // Só com trecho guardado: sem ele, a página não agenda nada (rb-60b).
+            if ((parent as? RecyclerViewParagrafos)?.guardada?.ativa == true) {
+                removeCallbacks(conferirAoParar)
+                postDelayed(conferirAoParar, RegraDaPaginaDoParagrafo.LIMIAR_ROLAGEM_MS + FOLGA_DA_PARADA_MS)
+            }
+        }
     }
 
     override fun onFinishInflate() {
@@ -161,6 +176,9 @@ class PaginaDoParagrafo @JvmOverloads constructor(
     companion object {
         fun inflar(inflater: LayoutInflater, parent: ViewGroup): PaginaDoParagrafo =
             inflater.inflate(R.layout.item_paragrafo_pagina, parent, false) as PaginaDoParagrafo
+
+        // Folga depois do limiar de rolagem, para a conferência cair com a página já parada (rb-60b).
+        private const val FOLGA_DA_PARADA_MS = 16L
 
         private val ACOES_DE_ROLAGEM: Set<Int> = setOf(
             AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
