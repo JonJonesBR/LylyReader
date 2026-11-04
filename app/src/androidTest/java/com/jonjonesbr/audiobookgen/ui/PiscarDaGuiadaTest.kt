@@ -24,9 +24,9 @@ import com.jonjonesbr.audiobookgen.ui.apoio.RegrasDoLeitor
 import com.jonjonesbr.audiobookgen.ui.apoio.VozFalsa
 import com.jonjonesbr.audiobookgen.ui.apoio.abrirLeitorComGuiada
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
-import com.jonjonesbr.audiobookgen.ui.apoio.garantirPalavraVisivel
 import com.jonjonesbr.audiobookgen.ui.apoio.rolarListaComODedo
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.math.abs
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Rule
@@ -60,8 +60,9 @@ class PiscarDaGuiadaTest {
     private val pacote: String get() = instrumentacao.targetContext.packageName
 
     /**
-     * C21 (rb-65): com a guiada tocando no 0, a lista rolada com o dedo para longe, e um toque curto no parágrafo 3
-     * (longo), a guiada tem de ir até ele sem a marcação piscar nem a lista ir e voltar.
+     * C21 (rb-65): com a guiada tocando no 0, a lista rolada com o dedo para longe, e um toque curto num parágrafo da
+     * tela (o alvo é escolhido depois da rolagem, ver [escolherAlvoDoToque]), a guiada tem de ir até ele sem a
+     * marcação piscar nem a lista ir e voltar.
      */
     @Test
     fun c21_toqueCurtoDepoisDeRolarComODedoNaoPisca() {
@@ -79,14 +80,14 @@ class PiscarDaGuiadaTest {
             paraBaixoNoTexto = false,
             cenario = "c21",
         )
-        val ponto = garantirPalavraVisivel(scenario, PARAGRAFO_C21, PALAVRA_LONGA, "c21")
+        val alvo = escolherAlvoDoToque(scenario, narrado = 0, cenario = "c21")
         regras.fecharDialogosDoSistema()
         Capturas.capturar("52_c21_inicio")
 
         val marco = SystemClock.uptimeMillis()
-        Gestos.toqueCurto(ponto.x, ponto.y)
-        esperarAte(scenario, "leitura guiada no parágrafo $PARAGRAFO_C21") { _ ->
-            estadoDaGuiada()?.index == PARAGRAFO_C21
+        Gestos.toqueCurto(alvo.x, alvo.y)
+        esperarAte(scenario, "leitura guiada no parágrafo ${alvo.indice}") { _ ->
+            estadoDaGuiada()?.index == alvo.indice
         }
         val amostras = observar(scenario, eventos, marco, "c21", "53_c21_meio", "54_c21_fim")
         conferirPiscar("c21", amostras, eventos, marco)
@@ -162,6 +163,118 @@ class PiscarDaGuiadaTest {
                     "(lista $ID_LISTA_DO_PAINEL ausente)"
             )
         }
+    }
+
+    /**
+     * Escolhe o alvo do toque curto do C21 (rb-65) depois da rolagem com o dedo: o primeiro parágrafo da lista, em
+     * ordem, que não seja o [narrado], com o TextView anexado e uma linha inteira na área útil. O toque cai no meio
+     * dessa linha, numa letra que não seja espaço. Só dá o alvo quando a leitura está estável (lista parada e
+     * ponto no mesmo lugar em duas leituras). Anota a escolha em medidas.txt com o [cenario].
+     */
+    private fun escolherAlvoDoToque(
+        scenario: ActivityScenario<ReaderActivity>,
+        narrado: Int,
+        cenario: String,
+    ): AlvoDoToque {
+        val fim = SystemClock.uptimeMillis() + TEMPO_PARA_ALVO_MS
+        var anterior = lerAlvo(scenario, narrado)
+        while (SystemClock.uptimeMillis() < fim) {
+            Thread.sleep(INTERVALO_DE_LEITURA_ALVO_MS)
+            val atual = lerAlvo(scenario, narrado)
+            val mesmoPonto = abs(anterior.x - atual.x) <= TOLERANCIA_DO_ALVO_PX &&
+                abs(anterior.y - atual.y) <= TOLERANCIA_DO_ALVO_PX
+            if (atual.indice >= 0 && atual.listaParada && anterior.indice == atual.indice && mesmoPonto) {
+                Capturas.anotar(cenario, "alvo do toque: ${atual.relato}")
+                return atual
+            }
+            anterior = atual
+        }
+        throw AssertionError(
+            "Sem alvo estável para o toque curto do C21 (lista parada e ponto fixo). " +
+                "Última leitura: ${anterior.relato}"
+        )
+    }
+
+    /** Lê o alvo do toque na thread principal (ver [alvoNaTela]). */
+    private fun lerAlvo(scenario: ActivityScenario<ReaderActivity>, narrado: Int): AlvoDoToque {
+        var leitura: AlvoDoToque? = null
+        scenario.onActivity { a -> leitura = alvoNaTela(a, narrado) }
+        return checkNotNull(leitura) { "Sem leitura do alvo do toque" }
+    }
+
+    /**
+     * Primeiro parágrafo na tela, em ordem, que não seja o [narrado], com TextView anexado e uma linha inteira na
+     * área útil. Sem nenhum, devolve índice -1 e o relato diz o que foi visto. Na thread principal.
+     */
+    private fun alvoNaTela(a: ReaderActivity, narrado: Int): AlvoDoToque {
+        val lista = lista(a)
+        val (topo, fundo) = areaUtilNaTela(a)
+        val vistos = mutableListOf<String>()
+        val filhos = (0 until lista.childCount).map { lista.getChildAt(it) }
+            .sortedBy { lista.getChildAdapterPosition(it) }
+        for (filho in filhos) {
+            val indice = lista.getChildAdapterPosition(filho)
+            val tv = filho as? TextView ?: continue
+            if (indice == narrado || indice == RecyclerView.NO_POSITION) continue
+            val layout = tv.layout ?: continue
+            if (!tv.isAttachedToWindow) continue
+            vistos += indice.toString()
+            val posicao = IntArray(2).also { tv.getLocationOnScreen(it) }
+            val origemX = posicao[0] + tv.totalPaddingLeft - tv.scrollX
+            val origemY = posicao[1] + tv.totalPaddingTop - tv.scrollY
+            val texto = tv.text.toString()
+            for (linha in 0 until layout.lineCount) {
+                val topoDaLinha = origemY + layout.getLineTop(linha)
+                val baseDaLinha = origemY + layout.getLineBottom(linha)
+                if (topoDaLinha < topo || baseDaLinha > fundo) continue
+                val letras = (layout.getLineStart(linha) until layout.getLineEnd(linha))
+                    .filter { !texto[it].isWhitespace() }
+                val offset = letras.getOrNull(letras.size / 2) ?: layout.getLineStart(linha)
+                val larguraDaLetra = if (offset < texto.length) {
+                    tv.paint.measureText(texto, offset, offset + 1)
+                } else {
+                    0f
+                }
+                val x = origemX + layout.getPrimaryHorizontal(offset) + larguraDaLetra / 2f
+                val y = (topoDaLinha + baseDaLinha) / 2f
+                return AlvoDoToque(
+                    indice = indice,
+                    x = x,
+                    y = y,
+                    listaParada = lista.scrollState == RecyclerView.SCROLL_STATE_IDLE,
+                    relato = "parágrafo $indice, linha $linha, ponto (${x.toInt()}, ${y.toInt()}), " +
+                        "área útil $topo..$fundo",
+                )
+            }
+        }
+        val visto = if (vistos.isEmpty()) "nenhum" else vistos.joinToString(", ")
+        return AlvoDoToque(
+            indice = -1,
+            x = 0f,
+            y = 0f,
+            listaParada = false,
+            relato = "nenhum parágrafo com linha inteira na área útil $topo..$fundo; vistos: $visto",
+        )
+    }
+
+    /**
+     * Topo e fundo da área útil da lista, na tela (rb-65): abaixo da barra de seleção e acima da barra da guiada. A
+     * mesma conta de SelecaoDeTexto, que é privada ao pacote de apoio.
+     */
+    private fun areaUtilNaTela(a: ReaderActivity): Pair<Int, Int> {
+        val listaRect = Rect().also { lista(a).getGlobalVisibleRect(it) }
+        val barraDeTexto = retanguloVisivel(a.findViewById<View>(R.id.barraSelecaoTexto))
+        val barraDeVarios = retanguloVisivel(a.findViewById<View>(R.id.layoutBarraSelecao))
+        val guia = retanguloVisivel(a.findViewById<View>(R.id.layoutGuidedPlayer))
+        val topo = maxOf(listaRect.top, barraDeTexto?.bottom ?: 0, barraDeVarios?.bottom ?: 0)
+        val fundo = minOf(listaRect.bottom, guia?.top ?: listaRect.bottom)
+        return topo to fundo
+    }
+
+    /** Retângulo visível de [view] na tela, ou nulo se ela não estiver visível. */
+    private fun retanguloVisivel(view: View): Rect? {
+        if (view.visibility != View.VISIBLE) return null
+        return Rect().takeIf { view.getGlobalVisibleRect(it) }
     }
 
     /** Título de cada linha do painel aberto, de cima para baixo (vazio se o painel não está na tela). */
@@ -321,10 +434,6 @@ class PiscarDaGuiadaTest {
     }
 
     private companion object {
-        /** Parágrafo longo (o 3, que o toque curto leva a guiada até), e a palavra que se toca nele. */
-        const val PARAGRAFO_C21 = 3
-        const val PALAVRA_LONGA = "Frase"
-
         /** Fração da área útil que o dedo anda para longe do parágrafo 0 antes do toque (C21). */
         const val FRACAO_DA_ROLAGEM_C21 = 0.9f
 
@@ -341,6 +450,11 @@ class PiscarDaGuiadaTest {
 
         /** Tempo, depois do gesto, em que o acompanhamento ainda pode se acomodar (fora das asserções). */
         const val ASSENTAMENTO_MS = 500L
+
+        /** Espera do alvo do toque (C21) até ficar estável: o prazo, o intervalo entre leituras e a tolerância. */
+        const val TEMPO_PARA_ALVO_MS = 3_000L
+        const val INTERVALO_DE_LEITURA_ALVO_MS = 150L
+        const val TOLERANCIA_DO_ALVO_PX = 2f
 
         /** Fração do item visível para contar como visível (acima) ou invisível (abaixo). */
         const val LIMITE_VISIVEL = 0.3f
@@ -361,6 +475,18 @@ class PiscarDaGuiadaTest {
         const val TEMPO_PAINEL_MS = 5_000L
     }
 }
+
+/**
+ * Alvo do toque curto do C21 (rb-65): o [indice] do parágrafo (-1 se nenhum servia), o ponto [x], [y] em pixels de
+ * tela, se a lista estava parada na leitura, e o [relato] para medidas.txt.
+ */
+private class AlvoDoToque(
+    val indice: Int,
+    val x: Float,
+    val y: Float,
+    val listaParada: Boolean,
+    val relato: String,
+)
 
 /** Uma amostra da tela, lida na thread principal. [tMs] é o uptime do instante da leitura. */
 private class Amostra(
