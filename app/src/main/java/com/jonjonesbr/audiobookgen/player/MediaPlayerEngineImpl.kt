@@ -18,11 +18,15 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
     private val agudos = AgudosNoEqualizador()
 
     override fun play(audioFile: File, speed: Float) {
+        // Player criado neste play: se a preparação falhar, o catch o libera (rb-12).
+        var criado: MediaPlayer? = null
         try {
             stop()
             currentSpeed = speed
 
-            val player = MediaPlayer().apply {
+            val player = MediaPlayer()
+            criado = player
+            player.apply {
                 // Mantém o CPU ativo com a tela apagada para a leitura guiada não parar (#4)
                 setWakeMode(context.applicationContext, android.os.PowerManager.PARTIAL_WAKE_LOCK)
                 setDataSource(audioFile.absolutePath)
@@ -46,6 +50,15 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
             aplicarParametros(player)
             if (!player.isPlaying) player.start()
         } catch (e: Exception) {
+            // Cada falha deixava um player nativo preso até o GC (rb-12). Libera-se antes de avisar o erro,
+            // para o listener já encontrar o motor vazio.
+            agudos.liberar()
+            mediaPlayer = null
+            criado?.let { p ->
+                runCatching { p.release() }.onFailure {
+                    Log.w("MediaPlayerEngine", "Falha ao liberar o player que não abriu", it)
+                }
+            }
             val errorMsg = "Error starting playback: ${e.message}"
             Log.e("MediaPlayerEngine", errorMsg, e)
             onErrorListener?.invoke(errorMsg)
@@ -83,18 +96,16 @@ class MediaPlayerEngineImpl(private val context: Context) : AudioPlayerEngine {
     }
 
     override fun stop() {
+        agudos.liberar()
+        // Tira a referência antes de parar: se o stop() lançar, o player ainda é liberado abaixo (rb-12).
+        val player = mediaPlayer ?: return
+        mediaPlayer = null
         try {
-            agudos.liberar()
-            mediaPlayer?.let {
-                if (it.isPlaying) {
-                    it.stop()
-                }
-                it.release()
-            }
-            mediaPlayer = null
+            if (player.isPlaying) player.stop()
         } catch (e: IllegalStateException) {
             Log.e("MediaPlayerEngine", "Error stopping", e)
         }
+        player.release()
     }
 
     override fun seekTo(positionMs: Int) {

@@ -13,14 +13,24 @@ import org.robolectric.shadows.ShadowMediaPlayer
  *
  * Não emula o efeito do aparelho em que PlaybackParams com velocidade > 0 equivale a start(). O motor é quem evita essa
  * chamada com o player pausado (ver setPlaybackSpeed em [MediaPlayerEngineImpl]); os testes conferem a chamada, não o som.
+ *
+ * [lancarNoIsPlaying] (rb-12): com a flag ligada, isPlaying lança IllegalStateException (teste do stop que falha).
  */
 @Implements(MediaPlayer::class)
 class ShadowMediaPlayerComParametros : ShadowMediaPlayer() {
 
     val parametros = mutableListOf<PlaybackParams>()
 
+    var lancarNoIsPlaying = false
+
     @Implementation
     fun setPlaybackParams(params: PlaybackParams) {
         parametros += params
+    }
+
+    @Implementation
+    public override fun isPlaying(): Boolean {
+        if (lancarNoIsPlaying) throw IllegalStateException("teste")
+        return super.isPlaying()
     }
 }

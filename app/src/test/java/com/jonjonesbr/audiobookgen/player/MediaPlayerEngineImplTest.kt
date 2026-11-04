@@ -172,8 +172,40 @@ class MediaPlayerEngineImplTest {
         assertEquals(1, erros.size)
         assertTrue(erros.single().startsWith("Error starting playback"))
         assertFalse(motor.isPlaying())
-        // Comportamento atual, não desejado: o MediaPlayer que falhou não é liberado (dúvida 1 do desenho rb-2).
-        assertTrue(ultimo().state != ShadowMediaPlayer.State.END)
+        // rb-12: o MediaPlayer que não abriu é liberado antes do erro sair pelo listener.
+        assertEquals(1, criados.size)
+        assertEquals(ShadowMediaPlayer.State.END, ultimo().state)
+    }
+
+    @Test
+    fun falhaDepoisDeUmTrechoBomNaoDeixaPlayerVivo() {
+        motor.play(arquivo, 1f)
+        motor.play(File(tmp.root, "nao_existe.wav"), 1f)
+        assertEquals(2, criados.size)
+        assertEquals(ShadowMediaPlayer.State.END, criados[0].state)
+        assertEquals(ShadowMediaPlayer.State.END, criados[1].state)
+        assertEquals(1, erros.size)
+        assertFalse(motor.isPlaying())
+        assertEquals(0, motor.getDuration())
+    }
+
+    @Test
+    fun depoisDaFalhaOProximoTrechoTocaNormal() {
+        motor.play(File(tmp.root, "nao_existe.wav"), 1f)
+        motor.play(arquivo, 1f)
+        assertEquals(ShadowMediaPlayer.State.END, criados[0].state)
+        assertTrue(motor.isPlaying())
+        assertEquals(1, erros.size)
+        assertEquals(DURACAO_MS, motor.getDuration())
+    }
+
+    @Test
+    fun stopLiberaOPlayerMesmoSeIsPlayingLancar() {
+        motor.play(arquivo, 1f)
+        ultimo().lancarNoIsPlaying = true
+        motor.stop()
+        assertEquals(ShadowMediaPlayer.State.END, criados[0].state)
+        assertFalse(motor.isPlaying())
     }
 
     @Test
