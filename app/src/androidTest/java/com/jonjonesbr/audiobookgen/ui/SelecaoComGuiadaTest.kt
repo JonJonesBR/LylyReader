@@ -27,12 +27,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Seleção de texto com a leitura guiada no emulador (rb-46 U4, cenários C05 a C11). A voz é a longa (30 s por
- * trecho), então a guiada fica parada no parágrafo 0 enquanto o teste age. Os toques e os arrastes são reais (ver
- * [Gestos]); o estado da guiada vem de [GuidedPlaybackBridge]; as Views são lidas na thread principal. Antes de cada
- * toque num parágrafo, [garantirPalavraVisivel] confere que a palavra não está embaixo da barra da guiada (nem do
- * Snackbar) e arrasta a lista se preciso. As asserções são as do comportamento pedido: se um cenário falhar por bug
- * do app, a falha fica como está (a correção é item próprio).
+ * Seleção de texto com a leitura guiada no emulador (rb-46 U4, cenários C05 a C11). A voz é a muito longa (240 s
+ * por trecho), então a guiada fica parada no parágrafo 0 enquanto o teste age (um cenário leva ~45 s). Os toques e
+ * os arrastes são reais (ver [Gestos]); o estado da guiada vem de [GuidedPlaybackBridge]; as Views são lidas na
+ * thread principal. Antes de cada toque num parágrafo, [garantirPalavraVisivel] confere que a palavra não está
+ * embaixo da barra da guiada (nem do Snackbar) e arrasta a lista se preciso. As asserções são as do comportamento
+ * pedido: se um cenário falhar por bug do app, a falha fica como está (a correção é item próprio).
  */
 @RunWith(AndroidJUnit4::class)
 class SelecaoComGuiadaTest {
@@ -51,12 +51,28 @@ class SelecaoComGuiadaTest {
         }
     }
 
-    /** Abre o Leitor já tocando o parágrafo 0 com a voz longa, e espera a guiada tocar. */
+    /**
+     * Confere que a guiada está tocando o parágrafo [indice] agora. Falha com o estado dela e o [momento] do
+     * cenário, para o erro dizer onde a leitura saiu do esperado.
+     */
+    private fun conferirGuiadaTocando(indice: Int, momento: String) {
+        val estado = estadoDaGuiada()
+        assertTrue(
+            "No $momento a guiada deveria estar tocando o parágrafo $indice, veio ${descreverGuiada(estado)}",
+            estado != null && estado.isPlaying && estado.index == indice
+        )
+    }
+
+    /**
+     * Abre o Leitor já tocando o parágrafo 0 com a voz muito longa, e espera a guiada tocar. Confere o início
+     * antes de o cenário agir.
+     */
     private fun abrirTocando(): ActivityScenario<ReaderActivity> {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
-        regras.usarVoz(VozFalsa.longa(contexto))
+        regras.usarVoz(VozFalsa.muitoLonga(contexto))
         val scenario = abrirLeitorComGuiada(regras, contexto)
         esperarGuiadaTocando(scenario, 0)
+        conferirGuiadaTocando(0, "início do cenário")
         regras.fecharDialogosDoSistema()
         return scenario
     }
@@ -111,7 +127,7 @@ class SelecaoComGuiadaTest {
         val scenario = abrirTocando()
         val indiceAntes = estadoDaGuiada()?.index
         garantirPalavraVisivel(scenario, 1, PALAVRA_PARAGRAFO_1, "c05")
-        selecionarPalavra(scenario, regras, 1, PALAVRA_PARAGRAFO_1)
+        selecionarPalavra(scenario, regras, 1, PALAVRA_PARAGRAFO_1, "c05")
         val selecao = checkNotNull(selecaoAtual(scenario, 1)) {
             "Sem seleção depois do toque longo em '$PALAVRA_PARAGRAFO_1' com a guiada tocando"
         }
@@ -138,8 +154,13 @@ class SelecaoComGuiadaTest {
     fun c06_arrastarAlcaComGuiadaTocandoAmplia() {
         val scenario = abrirTocando()
         val indiceAntes = estadoDaGuiada()?.index
-        selecionarPalavra(scenario, regras, 0, PALAVRA_PARAGRAFO_0)
+        selecionarPalavra(scenario, regras, 0, PALAVRA_PARAGRAFO_0, "c06")
         val antes = checkNotNull(selecaoAtual(scenario, 0)) { "Sem seleção antes do arraste" }
+        // Sem isto, o arraste pode sair da palavra errada (encolhe a seleção em vez de ampliar).
+        assertTrue(
+            "Antes do arraste a seleção deveria conter '$PALAVRA_PARAGRAFO_0', veio '${antes.texto}'",
+            antes.texto.contains(PALAVRA_PARAGRAFO_0)
+        )
         regras.fecharDialogosDoSistema()
         Capturas.anotar("c06", "antes=[${antes.inicio},${antes.fim}] texto='${antes.texto}'")
         Capturas.capturar("11_guiada_alca_antes")
@@ -150,7 +171,7 @@ class SelecaoComGuiadaTest {
             palavraAlvo = PALAVRA_ADIANTE_PARAGRAFO_0,
             antes = antes,
             regras = regras,
-            reselecionar = { selecionarPalavra(scenario, regras, 0, PALAVRA_PARAGRAFO_0) },
+            reselecionar = { selecionarPalavra(scenario, regras, 0, PALAVRA_PARAGRAFO_0, "c06") },
             anotar = { Capturas.anotar("c06", it) },
         )
         val ampliada = checkNotNull(resultado.depois) {
@@ -175,9 +196,10 @@ class SelecaoComGuiadaTest {
     @Test
     fun c07_pausadaSelecionaEArrastaSemTrocarDeParagrafo() {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
-        regras.usarVoz(VozFalsa.longa(contexto))
+        regras.usarVoz(VozFalsa.muitoLonga(contexto))
         val scenario = abrirLeitorComGuiada(regras, contexto)
         esperarGuiadaTocando(scenario, 0)
+        conferirGuiadaTocando(0, "início do cenário")
         regras.fecharDialogosDoSistema()
         pausarPeloBotao(scenario)
         val pausado = estadoDaGuiada()
@@ -185,7 +207,7 @@ class SelecaoComGuiadaTest {
         Capturas.capturar("13_guiada_pausada")
 
         garantirPalavraVisivel(scenario, 1, PALAVRA_PARAGRAFO_1, "c07")
-        selecionarPalavra(scenario, regras, 1, PALAVRA_PARAGRAFO_1)
+        selecionarPalavra(scenario, regras, 1, PALAVRA_PARAGRAFO_1, "c07")
         val antes = checkNotNull(selecaoAtual(scenario, 1)) {
             "Sem seleção depois do toque longo em '$PALAVRA_PARAGRAFO_1' com a guiada pausada"
         }
@@ -199,7 +221,7 @@ class SelecaoComGuiadaTest {
             palavraAlvo = PALAVRA_ADIANTE_PARAGRAFO_1,
             antes = antes,
             regras = regras,
-            reselecionar = { selecionarPalavra(scenario, regras, 1, PALAVRA_PARAGRAFO_1) },
+            reselecionar = { selecionarPalavra(scenario, regras, 1, PALAVRA_PARAGRAFO_1, "c07") },
             anotar = { Capturas.anotar("c07", it) },
         )
         val ampliada = checkNotNull(resultado.depois) {
@@ -303,7 +325,7 @@ class SelecaoComGuiadaTest {
         val scenario = abrirTocando()
         val indiceAntes = estadoDaGuiada()?.index
         garantirPalavraVisivel(scenario, 2, PALAVRA_PARAGRAFO_2, "c10")
-        selecionarPalavra(scenario, regras, 2, PALAVRA_PARAGRAFO_2)
+        selecionarPalavra(scenario, regras, 2, PALAVRA_PARAGRAFO_2, "c10")
         // Depois de abrir a seleção: a barra desce a lista (rb-48), então o ponto do 4 é medido só agora.
         val ponto = garantirPalavraVisivel(scenario, 4, PALAVRA_PARAGRAFO_4, "c10")
         regras.fecharDialogosDoSistema()
@@ -335,7 +357,7 @@ class SelecaoComGuiadaTest {
     fun c11_varios_paragrafosContagemECancelar() {
         val scenario = abrirTocando()
         garantirPalavraVisivel(scenario, 2, PALAVRA_PARAGRAFO_2, "c11")
-        selecionarPalavra(scenario, regras, 2, PALAVRA_PARAGRAFO_2)
+        selecionarPalavra(scenario, regras, 2, PALAVRA_PARAGRAFO_2, "c11")
         val (xVarios, yVarios) = Gestos.centroDaView(
             scenario,
             R.id.btnSelecaoTextoVarios,

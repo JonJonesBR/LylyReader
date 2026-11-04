@@ -2,6 +2,8 @@ package com.jonjonesbr.audiobookgen.ui.apoio
 
 import android.graphics.PointF
 import android.graphics.Rect
+import android.text.Selection
+import android.text.Spannable
 import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -9,6 +11,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.ui.ReaderActivity
+import org.junit.Assert.fail
+import kotlin.math.abs
 
 /** Início, fim e texto de uma seleção de um parágrafo. */
 data class Selecao(val inicio: Int, val fim: Int, val texto: String)
@@ -24,6 +28,18 @@ const val TEMPO_PARA_SELECAO_MUDAR_MS = 2_000L
 
 /** Intervalo entre duas leituras de seleção ou de medidas nas esperas de seleção. */
 const val PAUSA_ENTRE_LEITURAS_MS = 100L
+
+/** Até quanto esperar a lista parar e a palavra ficar no mesmo ponto antes de medir para o toque (rb-46 U4). */
+const val TEMPO_PARA_LISTA_PARAR_MS = 3_000L
+
+/** Intervalo entre as duas leituras que, iguais, dão a lista por parada (rb-46 U4). */
+private const val INTERVALO_DE_ESTABILIDADE_MS = 150L
+
+/** Quanto o ponto da palavra pode andar entre duas leituras e ainda contar como parado, em pixels. */
+private const val TOLERANCIA_DE_PONTO_PX = 2f
+
+/** Toques longos numa palavra antes de desistir: o primeiro e mais dois, cada um depois de limpar a seleção. */
+private const val TENTATIVAS_DE_SELECAO = 3
 
 /**
  * Garante que o parágrafo esteja na tela: se não estiver, rola a lista até ele ficar no topo (rolagem programática,
@@ -61,6 +77,7 @@ private const val TEMPO_PARA_SNACKBAR_SUMIR_MS = 4_000L
  * Medida, na thread principal, de onde a palavra está e do que a cobre. Com [problemas] vazio, o toque é seguro.
  * [precisaSubir]: a palavra está embaixo da área útil (o dedo sobe); senão está em cima (o dedo desce).
  * [obstaculoTemporario]: um Snackbar cobre o ponto, e ele some sozinho (não se arrasta a lista por isso).
+ * [listaParada]: a lista está com o RecyclerView em repouso (SCROLL_STATE_IDLE).
  */
 private class MedidaDeVisibilidade(
     val ponto: PointF?,
@@ -70,6 +87,7 @@ private class MedidaDeVisibilidade(
     val listaRect: Rect,
     val topoUtil: Int,
     val fundoUtil: Int,
+    val listaParada: Boolean,
     val relato: String,
 )
 
@@ -79,6 +97,9 @@ private class MedidaDeVisibilidade(
  * fundo da barra de seleção, se ela estiver visível), acima da barra da guiada com uma folga, fora do botão
  * "Voltar à narração" e fora de um Snackbar. Se não estiver, arrasta a lista com um dedo de verdade (até três
  * arrastes): o arraste passa por DRAGGING, então a guiada para de puxar a lista de volta ao parágrafo atual.
+ *
+ * Com o ponto em lugar seguro, espera a lista parar ([esperarMedidaEstavel]) antes de devolvê-lo: a guiada rola a
+ * lista para acompanhar o trecho, e um ponto medido no meio dessa rolagem cai uma linha abaixo (rb-46 U4).
  *
  * Cada medida vai para medidas.txt com o nome [cenario]. Se o parágrafo nem tem View (fora da lista), o arraste vai
  * para o lado dele. Falha com a medida da última tentativa se a palavra não couber em nenhum lugar seguro.
@@ -95,16 +116,21 @@ fun garantirPalavraVisivel(
     while (medidas < MEDIDAS_DE_VISIBILIDADE_MAXIMAS) {
         medidas++
         val medida = medirVisibilidade(scenario, indiceParagrafo, palavra)
-        ultima = medida
-        val ponto = medida.ponto
-        if (ponto != null && medida.problemas.isEmpty()) return ponto
-        Capturas.anotar(cenario, "visibilidade de '$palavra' (medida $medidas): ${medida.relato}")
-        if (medida.obstaculoTemporario) {
+        val pronta = if (medida.ponto != null && medida.problemas.isEmpty()) {
+            esperarMedidaEstavel(scenario, indiceParagrafo, palavra, cenario)
+        } else {
+            medida
+        }
+        ultima = pronta
+        val ponto = pronta.ponto
+        if (ponto != null && pronta.problemas.isEmpty()) return ponto
+        Capturas.anotar(cenario, "visibilidade de '$palavra' (medida $medidas): ${pronta.relato}")
+        if (pronta.obstaculoTemporario) {
             esperarSnackbarSumir(scenario)
             continue
         }
         if (arrastes == ARRASTES_DA_LISTA_MAXIMOS) break
-        arrastarLista(medida)
+        arrastarLista(pronta)
         arrastes++
         esperarListaParada(scenario)
     }
@@ -182,8 +208,58 @@ private fun medirNaTela(a: ReaderActivity, indiceParagrafo: Int, palavra: String
         "guia=${guia?.toShortString()} voltar=${botaoVoltar?.toShortString()} " +
         "snackbar=${snackbar?.toShortString()} problemas=$problemas"
     return MedidaDeVisibilidade(
-        ponto, problemas, precisaSubir, obstaculoTemporario, listaRect, topoUtil, fundoUtil, relato
+        ponto = ponto,
+        problemas = problemas,
+        precisaSubir = precisaSubir,
+        obstaculoTemporario = obstaculoTemporario,
+        listaRect = listaRect,
+        topoUtil = topoUtil,
+        fundoUtil = fundoUtil,
+        listaParada = lista.scrollState == RecyclerView.SCROLL_STATE_IDLE,
+        relato = relato,
     )
+}
+
+/**
+ * Lê a palavra a cada [INTERVALO_DE_ESTABILIDADE_MS] até duas leituras seguidas darem a lista parada e o ponto no
+ * mesmo lugar ([pontoParado]), ou até [TEMPO_PARA_LISTA_PARAR_MS]. Devolve a última leitura. No tempo-limite, anota
+ * e devolve a última mesmo assim: quem chama decide com o que sobrou.
+ */
+private fun esperarMedidaEstavel(
+    scenario: ActivityScenario<ReaderActivity>,
+    indiceParagrafo: Int,
+    palavra: String,
+    cenario: String,
+): MedidaDeVisibilidade {
+    val inicio = System.currentTimeMillis()
+    val fim = inicio + TEMPO_PARA_LISTA_PARAR_MS
+    var anterior = medirVisibilidade(scenario, indiceParagrafo, palavra)
+    var leituras = 1
+    while (System.currentTimeMillis() < fim) {
+        Thread.sleep(INTERVALO_DE_ESTABILIDADE_MS)
+        val atual = medirVisibilidade(scenario, indiceParagrafo, palavra)
+        leituras++
+        if (pontoParado(anterior, atual)) {
+            if (leituras > 2) {
+                val esperado = System.currentTimeMillis() - inicio
+                Capturas.anotar(cenario, "lista parou depois de $esperado ms: ${atual.relato}")
+            }
+            return atual
+        }
+        anterior = atual
+    }
+    Capturas.anotar(cenario, "lista não parou em $TEMPO_PARA_LISTA_PARAR_MS ms: ${anterior.relato}")
+    return anterior
+}
+
+/**
+ * Duas leituras contam como paradas se a lista está em repouso nas duas e a palavra não andou além da tolerância.
+ */
+private fun pontoParado(antes: MedidaDeVisibilidade, depois: MedidaDeVisibilidade): Boolean {
+    val a = antes.ponto ?: return false
+    val b = depois.ponto ?: return false
+    return antes.listaParada && depois.listaParada &&
+        abs(a.x - b.x) <= TOLERANCIA_DE_PONTO_PX && abs(a.y - b.y) <= TOLERANCIA_DE_PONTO_PX
 }
 
 /**
@@ -246,22 +322,82 @@ fun selecaoAtual(scenario: ActivityScenario<ReaderActivity>, indiceParagrafo: In
 /**
  * Toque longo numa palavra do parágrafo [indiceParagrafo] e espera a barra da seleção aparecer com a seleção no
  * TextView. [regras] fecha os diálogos do sistema antes do toque. Falha com a mensagem da espera se a seleção não
- * abrir. Depois espera a barra estabilizar (a descida da lista, rb-48): o resultado não importa aqui.
+ * abrir. Depois espera a barra estabilizar (a descida da lista, rb-48).
+ *
+ * Antes do toque, uma seleção já aberta é fechada por código ([limparSelecaoAberta]): com ela aberta, o toque
+ * longo cai no menu flutuante do sistema (rb-46 U4). Depois do toque, a seleção tem de conter [palavra]; se não
+ * contiver, limpa e tenta de novo, até [TENTATIVAS_DE_SELECAO] toques. Cada tentativa vai para medidas.txt com o
+ * nome [cenario]. Se nenhuma der a palavra, falha com a última seleção.
  */
 fun selecionarPalavra(
     scenario: ActivityScenario<ReaderActivity>,
     regras: RegrasDoLeitor,
     indiceParagrafo: Int,
     palavra: String,
+    cenario: String = "selecao",
 ) {
-    val ponto = Gestos.pontoDaPalavra(scenario, indiceParagrafo, palavra)
-    regras.fecharDialogosDoSistema()
-    Gestos.toqueLongo(ponto.x, ponto.y)
-    esperarAte(scenario, "barra da seleção aberta depois do toque longo em '$palavra'") { a ->
-        a.findViewById<View>(R.id.barraSelecaoTexto).visibility == View.VISIBLE &&
-            Gestos.textoDoParagrafo(a, indiceParagrafo).hasSelection()
+    limparSelecaoAberta(scenario, indiceParagrafo)
+    var ultima: Selecao? = null
+    repeat(TENTATIVAS_DE_SELECAO) { tentativa ->
+        if (tentativa > 0) {
+            val motivo = "seleção sem '$palavra' (última: ${ultima ?: "nenhuma"})"
+            Capturas.anotar(cenario, "$motivo: tentativa ${tentativa + 1} de $TENTATIVAS_DE_SELECAO")
+            limparSelecaoAberta(scenario, indiceParagrafo)
+        }
+        val ponto = pontoEstavelDaPalavra(scenario, indiceParagrafo, palavra, cenario)
+        regras.fecharDialogosDoSistema()
+        Gestos.toqueLongo(ponto.x, ponto.y)
+        esperarAte(scenario, "barra da seleção aberta depois do toque longo em '$palavra'") { a ->
+            a.findViewById<View>(R.id.barraSelecaoTexto).visibility == View.VISIBLE &&
+                Gestos.textoDoParagrafo(a, indiceParagrafo).hasSelection()
+        }
+        esperarLinhaAbaixoDaBarra(scenario, indiceParagrafo)
+        ultima = selecaoAtual(scenario, indiceParagrafo)
+        if (ultima?.texto?.contains(palavra) == true) return
     }
-    esperarLinhaAbaixoDaBarra(scenario, indiceParagrafo)
+    fail(
+        "A seleção do toque longo em '$palavra' não contém a palavra, em $TENTATIVAS_DE_SELECAO tentativas; " +
+            "última seleção: ${ultima ?: "nenhuma"}. Se a lista não parou, veja as anotações " +
+            "'lista não parou' em medidas.txt"
+    )
+}
+
+/**
+ * Fecha a seleção aberta do parágrafo [indiceParagrafo] por código: tira a seleção do TextView e o foco dele, o
+ * que encerra o menu da seleção, e a barra some (ParagrafoAdapter, no onDestroyActionMode). Não faz nada se não há
+ * seleção. É preparação do teste, não o comportamento testado. Espera a barra sumir e a lista voltar ao lugar
+ * (rb-48), para o próximo toque medir a tela já parada.
+ */
+fun limparSelecaoAberta(scenario: ActivityScenario<ReaderActivity>, indiceParagrafo: Int) {
+    if (selecaoAtual(scenario, indiceParagrafo) == null) return
+    scenario.onActivity { a ->
+        val tv = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos)
+            .findViewHolderForAdapterPosition(indiceParagrafo)?.itemView as? TextView
+        if (tv != null) {
+            (tv.text as? Spannable)?.let { Selection.removeSelection(it) }
+            tv.clearFocus()
+        }
+    }
+    esperarAte(scenario, "barra da seleção fechada e lista de volta ao lugar depois de limpar a seleção") { a ->
+        a.findViewById<View>(R.id.barraSelecaoTexto).visibility != View.VISIBLE &&
+            a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos).translationY == 0f
+    }
+}
+
+/**
+ * Ponto da palavra depois que a lista para (ver [esperarMedidaEstavel]). A guiada rola a lista para acompanhar o
+ * trecho, e o ponto medido durante a rolagem pode cair uma linha abaixo do alvo (rb-46 U4).
+ */
+private fun pontoEstavelDaPalavra(
+    scenario: ActivityScenario<ReaderActivity>,
+    indiceParagrafo: Int,
+    palavra: String,
+    cenario: String,
+): PointF {
+    val medida = esperarMedidaEstavel(scenario, indiceParagrafo, palavra, cenario)
+    return checkNotNull(medida.ponto) {
+        "Sem ponto para a palavra '$palavra' do parágrafo $indiceParagrafo: ${medida.relato}"
+    }
 }
 
 /**

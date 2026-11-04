@@ -14,13 +14,17 @@ import java.util.concurrent.CopyOnWriteArrayList
  * sempre [minMs]). Os textos pedidos ficam em [textosPedidos], para o teste conferir o que a leitura guiada mandou
  * sintetizar.
  *
+ * [taxaDeAmostragem] é a do WAV (padrão a do [SilentWav]). Com trechos de minutos, a taxa padrão estoura o Int de
+ * [SilentWav.bytes] (acima de ~89 s a 24 kHz): a voz muito longa usa 8 kHz.
+ *
  * Entra no app pela costura [TtsSynthesizer.substitutoParaTestes], que a [RegrasDoLeitor] preenche.
  */
 class VozFalsa(
     context: Context,
     private val msPorCaractere: Double,
     private val minMs: Int,
-    private val maxMs: Int
+    private val maxMs: Int,
+    private val taxaDeAmostragem: Int = SilentWav.SAMPLE_RATE,
 ) : TtsSynthesizer {
 
     private val pasta: File = File(context.cacheDir, "voz_falsa").apply { mkdirs() }
@@ -32,7 +36,8 @@ class VozFalsa(
         textosPedidos += texto
         val ms = (texto.length * msPorCaractere).toInt().coerceIn(minMs, maxMs)
         return withContext(Dispatchers.IO) {
-            val arquivo = File(pasta, "${Integer.toHexString(texto.hashCode())}_$ms.wav")
+            // A taxa entra no nome: a mesma pasta pode ter o mesmo trecho em duas taxas.
+            val arquivo = File(pasta, "${Integer.toHexString(texto.hashCode())}_${ms}_$taxaDeAmostragem.wav")
             gravarSeFaltar(arquivo, ms)
             arquivo.absolutePath
         }
@@ -44,7 +49,7 @@ class VozFalsa(
      * arquivo já estiver completo (mesmo tamanho), não grava de novo.
      */
     private fun gravarSeFaltar(arquivo: File, ms: Int) {
-        val bytes = SilentWav.bytes(ms)
+        val bytes = SilentWav.bytes(ms, taxaDeAmostragem)
         if (arquivo.length() == bytes.size.toLong()) return
         val temporario = File(pasta, "${arquivo.name}.${Thread.currentThread().id}.tmp")
         temporario.writeBytes(bytes)
@@ -59,5 +64,21 @@ class VozFalsa(
         /** Longa: 30 s fixos por trecho, para o teste ver a guiada tocando e pausando sem avançar. */
         fun longa(context: Context): VozFalsa =
             VozFalsa(context, msPorCaractere = 0.0, minMs = 30_000, maxMs = 30_000)
+
+        /**
+         * Muito longa: 240 s fixos por trecho (rb-46 U4). Cada cenário com a guiada parada leva ~45 s, e a voz de
+         * 30 s acabava antes de o cenário terminar. A 8 kHz, 240 s ainda cabem no Int de [SilentWav.bytes].
+         */
+        fun muitoLonga(context: Context): VozFalsa =
+            VozFalsa(
+                context,
+                msPorCaractere = 0.0,
+                minMs = 240_000,
+                maxMs = 240_000,
+                taxaDeAmostragem = TAXA_DA_VOZ_MUITO_LONGA,
+            )
+
+        /** Taxa do WAV da voz muito longa: 8 kHz, para 240 s não estourar o Int de [SilentWav.bytes]. */
+        private const val TAXA_DA_VOZ_MUITO_LONGA = 8_000
     }
 }
