@@ -340,6 +340,20 @@ class ParagrafoAdapter(
     }
 
 
+    /**
+     * rb-53: com o dedo sobre o item e o texto já na tela, a repintura não refaz o texto. A posição fica segurada e é
+     * repintada quando o toque termina (RecyclerViewParagrafos.aoLiberarTexto). Devolve se o bind parou aqui.
+     */
+    private fun segurarTextoDoBind(holder: VHLeitura, par: Paragrafo, position: Int, selecaoAtiva: Boolean): Boolean {
+        val manter = manterTextoNoBind(
+            textoJaNaTela = holder.textoArmado == par.texto,
+            sobODedo = recyclerView.sobODedo(holder.itemView),
+            selecaoAtiva = selecaoAtiva,
+        )
+        if (manter) repinturas.pedir(listOf(position), segurar = true)
+        return manter
+    }
+
     private fun bindLeitura(holder: VHLeitura, par: Paragrafo?, position: Int, corTexto: Int) {
         par ?: return
         val tv = holder.tv
@@ -350,6 +364,8 @@ class ParagrafoAdapter(
         // reaplica o texto — cada atualização do progresso da leitura guiada rebindava o item e
         // cancelava a seleção. Só o fundo e a fonte são atualizados.
         val selecaoAtiva = tv.hasSelection() && tv.text.toString() == par.texto
+        // rb-53: a repintura de sincronia que chega com o dedo já sobre o parágrafo fica para depois do toque.
+        if (segurarTextoDoBind(holder, par, position, selecaoAtiva)) return
         if (!selecaoAtiva) {
             // View reaproveitada pelo RecyclerView: sem reativar, a seleção de texto (textIsSelectable)
             // deixa de responder ao toque longo depois de rolar a lista. Alternar reinicia o estado.

@@ -210,4 +210,25 @@ class SelecaoDoLeitorTest {
         repinturas.descartar()
         assertEquals(emptyList<Int>(), repinturas.liberar())
     }
+
+    @Test
+    fun textoIgualComDedoESemSelecaoMantemOTexto() {
+        // rb-53: a repintura pendente não pode reescrever o texto sob o dedo.
+        assertTrue(manterTextoNoBind(textoJaNaTela = true, sobODedo = true, selecaoAtiva = false))
+    }
+
+    @Test
+    fun semDedoRefazOTexto() {
+        assertFalse(manterTextoNoBind(textoJaNaTela = true, sobODedo = false, selecaoAtiva = false))
+    }
+
+    @Test
+    fun comSelecaoFeitaSegueOCaminhoDela() {
+        assertFalse(manterTextoNoBind(textoJaNaTela = true, sobODedo = true, selecaoAtiva = true))
+    }
+
+    @Test
+    fun itemReaproveitadoComOutroTextoRefazOTexto() {
+        assertFalse(manterTextoNoBind(textoJaNaTela = false, sobODedo = true, selecaoAtiva = false))
+    }
 }

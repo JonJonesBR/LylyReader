@@ -44,6 +44,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -568,6 +569,44 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    fun repinturaQueChegaComODedoNoParagrafoNaoReescreveOTexto() {
+        // rb-53: a sincronia repinta o parágrafo que está sendo lido. Se a repintura chega com o dedo já sobre ele,
+        // o texto fica como está (o toque longo precisa da posição do texto) e a repintura sai quando o toque acaba.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { a ->
+                modeloDe(a).setParagrafoSyncAtual(2)
+                modeloDe(a).setProgressPct(0.5f)
+            }
+            // A barra de sincronia (LayerDrawable no fundo) mostra que a repintura já chegou ao parágrafo 2.
+            esperarAte(scenario, "parágrafo 2 com a sincronia e o progresso") { a ->
+                fundoDoParagrafo(lista(a), 2) is LayerDrawable && tvEm(lista(a), 2)?.text is Spannable
+            }
+
+            var antes: CharSequence? = null
+            scenario.onActivity { a ->
+                antes = requireNotNull(tvEm(lista(a), 2)).text
+                // Repintura emitida antes do DOWN: fica pendente até o layout, que roda depois do toque.
+                lista(a).adapter?.notifyItemChanged(2)
+            }
+            val t0 = 10_000L
+            evento(scenario, 2, MotionEvent.ACTION_DOWN, t0, t0)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> assertSame(antes, tvEm(lista(a), 2)?.text) }
+
+            // Dedo solto (CANCEL, como no outro teste de sincronia): a repintura adiada aplica o texto de novo.
+            evento(scenario, 2, MotionEvent.ACTION_CANCEL, t0, t0 + 50L)
+            esperarAte(scenario, "repintura adiada aplicada ao soltar o dedo") { a ->
+                val agora = tvEm(lista(a), 2)?.text
+                agora != null && agora !== antes
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun toqueLongoNaoAmpliaSelecaoDeParagrafos() {
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
             esperarAte(scenario, "parágrafos na tela") { a ->
@@ -762,6 +801,10 @@ class ReaderActivitySmokeTest {
     /** Texto do parágrafo na rolagem vertical, em que o item é o próprio TextView (na horizontal, ver paginaEm). */
     private fun textoEm(rv: RecyclerView, pos: Int): String? =
         (rv.findViewHolderForAdapterPosition(pos)?.itemView as? TextView)?.text?.toString()
+
+    /** TextView do parágrafo na rolagem vertical (o item é o próprio TextView); nulo se ele não está na tela. */
+    private fun tvEm(rv: RecyclerView, pos: Int): TextView? =
+        rv.findViewHolderForAdapterPosition(pos)?.itemView as? TextView
 
     /** Página do parágrafo na rolagem horizontal (rb-26a); nulo na vertical. */
     private fun paginaEm(rv: RecyclerView, pos: Int): PaginaDoParagrafo? =

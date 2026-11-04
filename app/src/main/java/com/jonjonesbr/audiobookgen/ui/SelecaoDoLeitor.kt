@@ -69,6 +69,15 @@ internal fun segurarRepinturaDeSincronia(
 ): Boolean = toqueEmAndamento || selecoesAbertas > 0 || textoComSelecao
 
 /**
+ * Se o bind de um item pode manter o texto que já está na tela (rb-53). Com o dedo sobre o parágrafo, a repintura
+ * pendente de sincronia reescreveria o texto, e o Editor perderia a posição do toque: o toque longo não selecionaria
+ * nada. Texto de outro parágrafo (item reaproveitado) sempre é refeito. Com seleção já feita, o bind segue o caminho
+ * dela, que só troca o fundo.
+ */
+internal fun manterTextoNoBind(textoJaNaTela: Boolean, sobODedo: Boolean, selecaoAtiva: Boolean): Boolean =
+    textoJaNaTela && sobODedo && !selecaoAtiva
+
+/**
  * Toque curto (rb-42): rápido, quase parado e sem seleção nativa aberta no DOWN nem criada pelo próprio toque.
  * Só ele lê a partir do parágrafo, já no 1º toque. Toque longo, arraste ou toque que fecha a seleção não valem.
  */

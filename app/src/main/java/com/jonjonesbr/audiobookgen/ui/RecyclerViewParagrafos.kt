@@ -44,6 +44,15 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     /** Ação da barra da seleção que espera o toque terminar (rb-48). Só guarda a última. */
     private var acaoDepoisDoToque: (() -> Unit)? = null
 
+    /** Filho da lista que estava sob o dedo no ACTION_DOWN (rb-53). Nulo sem toque. */
+    private var filhoSobODedo: View? = null
+
+    /**
+     * Se [v] é o item que o dedo tocou, enquanto o toque dura (rb-53). O adapter não reescreve o texto desse item
+     * nesse meio-tempo: trocar o texto sob o dedo faz o Editor perder a posição do toque longo.
+     */
+    fun sobODedo(v: View): Boolean = toqueEmAndamento && filhoSobODedo === v
+
     /** Quantos menus de seleção de texto estão abertos agora (o adapter conta). */
     var selecoesAbertas = 0
         private set
@@ -81,11 +90,15 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        if (ev.actionMasked == MotionEvent.ACTION_DOWN) toqueEmAndamento = true
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            toqueEmAndamento = true
+            filhoSobODedo = findChildViewUnder(ev.x, ev.y)
+        }
         val tratado = super.dispatchTouchEvent(ev)
         val fimDoToque = ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL
         if (toqueEmAndamento && fimDoToque) {
             toqueEmAndamento = false
+            filhoSobODedo = null
             liberarDepois()
             // Por post: o UP ainda termina dentro do Editor, e a descida não pode mexer na lista no meio desse
             // despacho.
