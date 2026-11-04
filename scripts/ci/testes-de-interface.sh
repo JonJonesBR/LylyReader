@@ -12,6 +12,11 @@ adb shell wm density 480
 
 adb logcat -c
 
+# Um ANR de outro app em segundo plano (ex.: "Pixel Launcher isn't responding") abria uma janela por cima da tela no
+# meio dos testes (rb-48). Os ANRs continuam no logcat; um ANR do nosso app ainda faz o teste falhar por tempo.
+adb shell settings put global hide_error_dialogs 1 || true
+adb shell settings put secure anr_show_background 0 || true
+
 ./gradlew :app:connectedDebugAndroidTest --stacktrace -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
   || echo falhou > ui-resultado.txt
 

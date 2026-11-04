@@ -104,19 +104,16 @@ class GuiadaNoAparelhoTest {
         regras.usarVoz(VozFalsa.curta(contexto))
 
         val scenario = abrirLeitorComGuiada(contexto)
-        // Prova de que o parágrafo 0 tocou: só aceita o índice 1 depois de ver index 0 com isPlaying. Antes do try:
-        // se a guiada nem começou, a falha é dela, não do avanço.
+        // Uma espera só. Com a voz curta, o parágrafo 0 pode acabar antes de o teste começar a olhar (a abertura é
+        // lenta), então não se exige vê-lo tocando. A prova de que ele tocou é a voz ter recebido o texto dele
+        // (pediuParagrafo0): o prefetch só pede os seguintes, então, se a guiada começasse no 1, esse texto nunca
+        // seria pedido. viuParagrafo0Tocando só registra o que o teste viu, para a mensagem de falha.
         var viuParagrafo0Tocando = false
-        esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
-            val s = GuidedPlaybackBridge.manager?.state?.value
-            if (s != null && s.isPlaying && s.index == 0) viuParagrafo0Tocando = true
-            viuParagrafo0Tocando
-        }
         try {
             esperarAte(scenario, "leitura guiada passando do parágrafo 0 para o 1") { _ ->
                 val s = GuidedPlaybackBridge.manager?.state?.value
                 if (s != null && s.isPlaying && s.index == 0) viuParagrafo0Tocando = true
-                (s?.index ?: -1) >= 1 && viuParagrafo0Tocando && pediuParagrafo0(regras.vozFalsa)
+                (s?.index ?: -1) >= 1 && pediuParagrafo0(regras.vozFalsa)
             }
         } catch (erro: AssertionError) {
             val mensagem = mensagemDeAvancoFalhou(erro.message, viuParagrafo0Tocando)

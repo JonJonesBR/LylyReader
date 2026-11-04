@@ -22,8 +22,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Seleção de texto no "Só ler" no emulador (rb-46 U3): o toque longo seleciona uma palavra, a alça do fim amplia a
- * seleção, e a barra de ações cabe na tela com a fonte maior. Os toques são reais (ver [Gestos]); as conferências
+ * Seleção de texto no "Só ler" no emulador (rb-46 U3): o toque longo seleciona uma palavra, a alça do fim amplia
+ * a seleção, e a barra de ações cabe na tela com a fonte maior. Os toques são reais (ver [Gestos]); as conferências
  * leem as Views na thread principal. Se um cenário falhar por bug real, a falha fica como está: o código de produção
  * não muda aqui.
  */
@@ -37,7 +37,10 @@ class SelecaoSoLerTest {
     /** Início, fim e texto de uma seleção no parágrafo 0. */
     private data class Selecao(val inicio: Int, val fim: Int, val texto: String)
 
-    /** Topo da linha do início da seleção e fundo da barra, em coordenadas da tela (rb-48); o retângulo da barra é para as medidas. */
+    /**
+     * Topo da linha do início da seleção e fundo da barra, em coordenadas da tela (rb-48). O retângulo da barra é só
+     * para as medidas.
+     */
     private data class LinhaEBarra(val topoDaLinha: Int, val fundoDaBarra: Int, val rectBarra: String)
 
     /** Abre o livro de teste no Só ler, com [removidas] linhas tiradas pela limpeza (pílula da limpeza). */
@@ -57,8 +60,8 @@ class SelecaoSoLerTest {
     }
 
     /**
-     * Toque longo na palavra do parágrafo 0 e espera a barra da seleção aparecer com a seleção no TextView. Falha com a
-     * mensagem da espera se a seleção não abrir.
+     * Toque longo na palavra do parágrafo 0 e espera a barra da seleção aparecer com a seleção no TextView. Falha com
+     * a mensagem da espera se a seleção não abrir.
      */
     private fun selecionarPalavra(scenario: ActivityScenario<ReaderActivity>, palavra: String) {
         val ponto = Gestos.pontoDaPalavra(scenario, 0, palavra)
@@ -73,8 +76,8 @@ class SelecaoSoLerTest {
     }
 
     /**
-     * Mede, na thread principal, a linha do início da seleção do parágrafo 0 e a base da barra, ambas em coordenadas
-     * da tela. Nulo sem seleção ou sem layout. Mesma conta de linhaDoInicioDaSelecaoNaTela (rb-48).
+     * Mede, na thread principal, a linha do início da seleção do parágrafo 0 e a base da barra, ambas em
+     * coordenadas da tela. Nulo sem seleção ou sem layout. Mesma conta de linhaDoInicioDaSelecaoNaTela (rb-48).
      */
     private fun medirLinhaEBarra(scenario: ActivityScenario<ReaderActivity>): LinhaEBarra? {
         var medida: LinhaEBarra? = null
@@ -180,8 +183,14 @@ class SelecaoSoLerTest {
     }
 
     /**
-     * C03: só ler, arrastar a alça do fim da seleção amplia a seleção até uma palavra mais adiante. Tenta a alça a
-     * 12 dp (heurística), depois a 8 dp e a 16 dp abaixo da linha, e anota qual deu certo.
+     * C03: só ler, arrastar a alça do fim da seleção amplia a seleção até uma palavra mais adiante. O arraste é
+     * relativo (rb-48), como o de uma pessoa: o dedo anda o quanto a alça tem de andar, do ponto da alça até o alvo
+     * deslocado pelo ponto do fim da seleção ([Gestos.pontoDoFimDaSelecao]). Soltar o dedo direto no alvo não
+     * funciona, porque o Android mantém a distância entre o dedo e a ponta da alça.
+     *
+     * Tenta a alça a 12, 8 e 16 dp abaixo da linha e, em cada uma, uma folga extra de 0 e de 0,4 linha somada ao
+     * deslocamento vertical. Para no primeiro arraste que amplia a seleção. Cada tentativa vai para as capturas, e a
+     * falha lista todas.
      */
     @Test
     fun c03_arrastarAlcaAmplia() {
@@ -191,36 +200,50 @@ class SelecaoSoLerTest {
         regras.fecharDialogosDoSistema()
         Capturas.anotar("c03", "antes=[${antes.inicio},${antes.fim}] texto='${antes.texto}'")
         Capturas.capturar("06_soler_alca_antes")
-        val alvo = Gestos.pontoDaPalavra(scenario, 0, PALAVRA_ADIANTE)
 
+        val tentativas = mutableListOf<String>()
         var depois: Selecao? = null
-        var abaixoQueDeu: Float? = null
-        for (abaixoDp in DESLOCAMENTOS_DA_ALCA_DP) {
-            if (selecaoAtual(scenario) == null) selecionarPalavra(scenario, PALAVRA)
+        var sucesso: String? = null
+        val combinacoes = DESLOCAMENTOS_DA_ALCA_DP.flatMap { abaixo -> FOLGAS_EXTRAS_DA_LINHA.map { abaixo to it } }
+        for ((abaixoDp, folga) in combinacoes) {
+            // Uma tentativa que falhou pode ter mudado a seleção (antes virava 'c'): se não é a inicial, reselecionar.
+            val atual = selecaoAtual(scenario)
+            if (atual == null || atual.inicio != antes.inicio || atual.fim != antes.fim) {
+                selecionarPalavra(scenario, PALAVRA)
+            }
+            // A lista pode ter descido (rb-48): alvo, alça e fim são medidos de novo em cada tentativa.
+            val alvo = Gestos.pontoDaPalavra(scenario, 0, PALAVRA_ADIANTE)
             val alca = Gestos.pontoDaAlcaFinal(scenario, 0, abaixoDp)
+            val fim = Gestos.pontoDoFimDaSelecao(scenario, 0)
+            val altura = Gestos.alturaDaLinha(scenario, 0)
+            val dx = alvo.x - fim.x
+            val dy = alvo.y - fim.y
+            val extra = folga * altura
             regras.fecharDialogosDoSistema()
-            Gestos.arrastar(alca.x, alca.y, alvo.x, alvo.y)
+            Gestos.arrastar(alca.x, alca.y, alca.x + dx, alca.y + dy + extra)
             val achado = esperarFimMaiorQue(scenario, antes.fim)
+            val descricao = "abaixo=${abaixoDp}dp folga=$folga dx=${dx.toInt()} dy=${dy.toInt()} " +
+                "extra=${extra.toInt()}px seleção=${achado ?: selecaoAtual(scenario)}"
+            tentativas += descricao
+            Capturas.anotar("c03", "tentativa: $descricao")
             if (achado != null) {
                 depois = achado
-                abaixoQueDeu = abaixoDp
+                sucesso = descricao
                 break
             }
         }
 
         val resultado = depois
-        val abaixo = abaixoQueDeu
-        if (resultado == null || abaixo == null) {
-            val mensagem = "Arrastar a alça não ampliou a seleção: fim antes=${antes.fim} texto='${antes.texto}', " +
-                "alvo '$PALAVRA_ADIANTE' em (${alvo.x}, ${alvo.y}), última seleção=${selecaoAtual(scenario)}, " +
-                "tentativas (dp abaixo da linha)=$DESLOCAMENTOS_DA_ALCA_DP"
-            Capturas.anotar("c03", mensagem)
+        if (resultado == null) {
+            val mensagem = "Arrastar a alça não ampliou a seleção: fim antes=${antes.fim} " +
+                "texto='${antes.texto}', alvo '$PALAVRA_ADIANTE', última seleção=${selecaoAtual(scenario)}, " +
+                "tentativas: " + tentativas.joinToString("; ")
             Capturas.capturar("07_soler_alca_depois")
             throw AssertionError(mensagem)
         }
         Capturas.anotar(
             "c03",
-            "alca_abaixo_dp=$abaixo depois=[${resultado.inicio},${resultado.fim}] texto='${resultado.texto}'"
+            "deu certo em [$sucesso] depois=[${resultado.inicio},${resultado.fim}] texto='${resultado.texto}'"
         )
         Capturas.capturar("07_soler_alca_depois")
     }
@@ -267,7 +290,8 @@ class SelecaoSoLerTest {
                     problemas += "'$nome' sem área visível na tela"
                 } else {
                     medidas += "$nome rect=${rBotao.toShortString()} largura=${botao.width}px " +
-                        "visivelNaTela=${rBotao.width()}px altura=${botao.height}px visivelNaAltura=${rBotao.height()}px"
+                        "visivelNaTela=${rBotao.width()}px altura=${botao.height}px " +
+                        "visivelNaAltura=${rBotao.height()}px"
                     if (rBotao.width() != botao.width) {
                         problemas += "'$nome' cortado: ${rBotao.width()} de ${botao.width}px visíveis"
                     }
@@ -312,6 +336,9 @@ class SelecaoSoLerTest {
 
         /** Distâncias abaixo da linha do fim (em dp) em que a alça é arrastada, na ordem das tentativas. */
         val DESLOCAMENTOS_DA_ALCA_DP = listOf(12f, 8f, 16f)
+
+        /** Folgas extras do arraste, em fração da altura da linha, somadas ao deslocamento vertical do dedo. */
+        val FOLGAS_EXTRAS_DA_LINHA = listOf(0f, 0.4f)
 
         /** Botões da barra da seleção, com o nome que aparece nas mensagens de falha. */
         val BOTOES_DA_BARRA = listOf(

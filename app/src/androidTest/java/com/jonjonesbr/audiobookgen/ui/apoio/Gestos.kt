@@ -119,6 +119,10 @@ object Gestos {
     /**
      * Onde fica a alça do fim da seleção do parágrafo [indiceParagrafo], em pixels de tela (heurística): 6 dp à
      * direita do fim da seleção e [abaixoDp] dp abaixo da base da linha do fim. Falha se nada estiver selecionado.
+     *
+     * Esse ponto é só onde o dedo pega a alça. O arraste do teste é relativo: o dedo anda o quanto a alça deve
+     * andar (ver [pontoDoFimDaSelecao]), porque o Android mantém a distância entre o dedo e a ponta da alça. Soltar
+     * o dedo direto no alvo põe a ponta uma linha acima.
      */
     fun pontoDaAlcaFinal(
         scenario: ActivityScenario<ReaderActivity>,
@@ -138,6 +142,43 @@ object Gestos {
             ponto = naTela(tv, x, y)
         }
         return checkNotNull(ponto) { "Sem ponto para a alça do parágrafo $indiceParagrafo" }
+    }
+
+    /**
+     * Ponto da ponta da seleção do parágrafo [indiceParagrafo], em pixels de tela: a posição horizontal do fim da
+     * seleção, no meio da linha onde ele está. É a referência do arraste relativo do C03: a distância entre o
+     * alvo e este ponto é quanto o dedo tem de andar. Falha se nada estiver selecionado.
+     */
+    fun pontoDoFimDaSelecao(scenario: ActivityScenario<ReaderActivity>, indiceParagrafo: Int): PointF {
+        var ponto: PointF? = null
+        scenario.onActivity { a ->
+            val tv = textoDoParagrafo(a, indiceParagrafo)
+            val layout = tv.layout ?: error("Parágrafo $indiceParagrafo sem layout")
+            val fim = tv.selectionEnd
+            check(fim >= 0) { "Nada selecionado no parágrafo $indiceParagrafo" }
+            val linha = layout.getLineForOffset(fim)
+            val x = layout.getPrimaryHorizontal(fim)
+            val y = (layout.getLineTop(linha) + layout.getLineBottom(linha)) / 2f
+            ponto = naTela(tv, x, y)
+        }
+        return checkNotNull(ponto) { "Sem ponto para o fim da seleção do parágrafo $indiceParagrafo" }
+    }
+
+    /**
+     * Altura, em pixels, da linha onde termina a seleção do parágrafo [indiceParagrafo]. Falha se nada estiver
+     * selecionado.
+     */
+    fun alturaDaLinha(scenario: ActivityScenario<ReaderActivity>, indiceParagrafo: Int): Float {
+        var altura: Float? = null
+        scenario.onActivity { a ->
+            val tv = textoDoParagrafo(a, indiceParagrafo)
+            val layout = tv.layout ?: error("Parágrafo $indiceParagrafo sem layout")
+            val fim = tv.selectionEnd
+            check(fim >= 0) { "Nada selecionado no parágrafo $indiceParagrafo" }
+            val linha = layout.getLineForOffset(fim)
+            altura = (layout.getLineBottom(linha) - layout.getLineTop(linha)).toFloat()
+        }
+        return checkNotNull(altura) { "Sem altura de linha para o parágrafo $indiceParagrafo" }
     }
 
     /**
