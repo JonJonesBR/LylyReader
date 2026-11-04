@@ -1153,6 +1153,33 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    fun voltarComFocoNaBarraELTrechoGuardadoLimpaTudoDeUmaVez() {
+        // rb-57 com rb-58: a seleção antiga (no TextView desanexado) e o trecho guardado saem juntos num Voltar, e a
+        // barra some. Antes, o Voltar só desfazia a seleção e o trecho ficava até um segundo Voltar.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            guardarTrechoDoParagrafo(scenario, 1)
+
+            scenario.onActivity { a ->
+                definirModoDeToque(a, toque = false)
+                val botao = a.findViewById<View>(R.id.btnSelecaoTextoDestacar)
+                botao.requestFocus()
+                assumeTrue("botão não pegou foco (modo de toque)", botao.isFocused)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            scenario.onActivity { a -> a.onBackPressedDispatcher.onBackPressed() }
+            esperarAte(scenario, "um voltar limpa a seleção e o trecho e esconde a barra") { a ->
+                !listaDoLeitor(a).guardada.ativa && !barraDaSelecaoTextoVisivel(a) &&
+                    listaDoLeitor(a).textoComSelecaoViva == null
+            }
+            scenario.onActivity { a -> assertFalse(a.isFinishing) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun toqueCurtoLimpaOTrechoGuardadoSemLerOParagrafo() {
         // rb-58 (R5): um toque curto limpa o trecho guardado, sem ler dali nem mexer na seleção da ViewModel.
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->

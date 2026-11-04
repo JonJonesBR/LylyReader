@@ -153,7 +153,9 @@ internal class SelecaoSemMenu(
                     when {
                         viva != null -> {
                             viva.desfazerSelecao()
-                            lista.liberarDepois()
+                            // Com o trecho guardado também (rb-57 com rb-58): um Voltar limpa tudo e a barra some.
+                            // limparGuardada já confere a barra (liberarDepois).
+                            if (lista.guardada.ativa) limparGuardada() else lista.liberarDepois()
                         }
                         // Trecho guardado (rb-58): o Voltar limpa o trecho e o Leitor fica aberto.
                         lista.guardada.ativa -> limparGuardada()
