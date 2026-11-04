@@ -1,5 +1,14 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.app.Instrumentation
+import android.app.Notification
+import android.app.NotificationManager
+import android.content.Context
+import android.media.MediaMetadata
+import android.media.session.MediaController
+import android.media.session.MediaSession
+import android.media.session.PlaybackState
+import android.os.SystemClock
 import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,7 +25,9 @@ import com.jonjonesbr.audiobookgen.ui.apoio.RegrasDoLeitor
 import com.jonjonesbr.audiobookgen.ui.apoio.VozFalsa
 import com.jonjonesbr.audiobookgen.ui.apoio.abrirLeitorComGuiada
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
+import kotlin.math.abs
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -165,6 +176,137 @@ class GuiadaNoAparelhoTest {
         )
     }
 
+    /**
+     * C20 (rb-41): a sessão de mídia da notificação da guiada informa a duração e a posição do trecho que está
+     * tocando. A sessão é achada pela notificação do próprio app (EXTRA_MEDIA_SESSION), como a barra do sistema
+     * faz. Com a voz muito longa (240 s por trecho): a duração tem de ser ~240 s, a posição estimada tem de andar
+     * enquanto toca e ficar parada depois da pausa (pelo botão real).
+     */
+    @Test
+    fun c20_notificacaoDaGuiadaInformaDuracaoEPosicaoDoTrecho() {
+        val instrumentacao = InstrumentationRegistry.getInstrumentation()
+        val contexto = instrumentacao.targetContext
+        regras.usarVoz(VozFalsa.muitoLonga(contexto))
+
+        val scenario = abrirLeitorComGuiada(regras, contexto)
+        esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
+            GuidedPlaybackBridge.manager?.state?.value?.let { it.isPlaying && it.index == 0 } == true
+        }
+        regras.fecharDialogosDoSistema()
+        val controlador = esperarControladorDaNotificacao(instrumentacao, contexto)
+
+        val tocando = esperarLeitura(instrumentacao, controlador, "a sessão tocando, com duração") { l ->
+            l.tocando && l.duracaoMs > 0 && l.velocidade > 0f && l.atualizadaEmMs > 0
+        }
+        Capturas.anotar("c20-tocando", "duracaoMs=${tocando.duracaoMs} $tocando")
+        assertTrue(
+            "A notificação deveria informar a duração do trecho (~${DURACAO_DO_TRECHO_MS / 1000} s), " +
+                "mas a sessão mostrou ${tocando.duracaoMs} ms. Leitura: $tocando",
+            abs(tocando.duracaoMs - DURACAO_DO_TRECHO_MS) <= TOLERANCIA_DURACAO_MS
+        )
+
+        val antes = lerSessao(instrumentacao, controlador)
+        Thread.sleep(INTERVALO_DE_POSICAO_MS)
+        val depois = lerSessao(instrumentacao, controlador)
+        val andou = depois.posicaoEstimadaMs - antes.posicaoEstimadaMs
+        val esperado = (INTERVALO_DE_POSICAO_MS * tocando.velocidade).toLong()
+        Capturas.anotar("c20-andou", "andouMs=$andou esperadoMs=$esperado antes=$antes depois=$depois")
+        assertTrue(
+            "Com a guiada tocando, a posição da notificação deveria andar ~$esperado ms em " +
+                "$INTERVALO_DE_POSICAO_MS ms, mas andou $andou ms. Antes: $antes. Depois: $depois",
+            andou >= esperado / 2
+        )
+
+        val (x, y) = Gestos.centroDaView(scenario, R.id.btnGuidedPlayPause, "botão de tocar/pausar da leitura guiada")
+        regras.fecharDialogosDoSistema()
+        UiDevice.getInstance(instrumentacao).click(x, y)
+        val pausada = esperarLeitura(instrumentacao, controlador, "a sessão da notificação pausada") { l ->
+            l.estado?.state == PlaybackState.STATE_PAUSED && l.velocidade == 0f
+        }
+        val paradaAntes = lerSessao(instrumentacao, controlador)
+        Thread.sleep(INTERVALO_DE_POSICAO_MS)
+        val paradaDepois = lerSessao(instrumentacao, controlador)
+        Capturas.anotar("c20-pausada", "antes=$paradaAntes depois=$paradaDepois")
+        assertTrue(
+            "Pausada pelo botão, a posição da notificação deveria ficar parada, mas foi de " +
+                "${paradaAntes.posicaoEstimadaMs} para ${paradaDepois.posicaoEstimadaMs} ms. " +
+                "Pausada: $pausada. Depois: $paradaDepois",
+            abs(paradaDepois.posicaoEstimadaMs - paradaAntes.posicaoEstimadaMs) <= TOLERANCIA_PAUSA_MS
+        )
+
+        // Registro visual: a aba de notificações mostra a barra de mídia. Fecha só se a aba abriu.
+        val dispositivo = UiDevice.getInstance(instrumentacao)
+        val abriuAba = dispositivo.openNotification()
+        try {
+            Thread.sleep(ESPERA_GAVETA_MS)
+            Capturas.capturar("51_c20_notificacao_guiada_pausada")
+        } finally {
+            if (abriuAba) dispositivo.pressBack()
+        }
+    }
+
+    /**
+     * Acha a sessão de mídia pela notificação do app (o extra EXTRA_MEDIA_SESSION do MediaStyle) e cria o
+     * controlador na thread principal. Falha dizendo o que se viu se nenhuma notificação trouxer a sessão.
+     */
+    private fun esperarControladorDaNotificacao(instrumentacao: Instrumentation, contexto: Context): MediaController {
+        val fim = System.currentTimeMillis() + TEMPO_NOTIFICACAO_MS
+        var token = tokenDaNotificacaoDeMidia(contexto)
+        while (token == null && System.currentTimeMillis() < fim) {
+            Thread.sleep(INTERVALO_DE_LEITURA_MS)
+            token = tokenDaNotificacaoDeMidia(contexto)
+        }
+        // throw, e não fail(): Assert.fail devolve Unit no Kotlin, e o elvis não compilaria com ele.
+        val sessao: MediaSession.Token = token ?: throw AssertionError(
+            "Nenhuma notificação do app trouxe a sessão de mídia (EXTRA_MEDIA_SESSION) em " +
+                "${TEMPO_NOTIFICACAO_MS / 1000} s. Notificações ativas: " +
+                contexto.getSystemService(NotificationManager::class.java).activeNotifications.size
+        )
+        var controlador: MediaController? = null
+        instrumentacao.runOnMainSync { controlador = MediaController(contexto, sessao) }
+        return checkNotNull(controlador) { "MediaController não criado na thread principal" }
+    }
+
+    /** Token da sessão de mídia que vem nos extras de alguma notificação ativa do app; nulo se não há. */
+    @Suppress("DEPRECATION")
+    private fun tokenDaNotificacaoDeMidia(contexto: Context): MediaSession.Token? =
+        contexto.getSystemService(NotificationManager::class.java).activeNotifications.asSequence()
+            .mapNotNull { it.notification.extras.getParcelable<MediaSession.Token>(Notification.EXTRA_MEDIA_SESSION) }
+            .firstOrNull()
+
+    /** Lê a sessão na thread principal (o controlador é do sistema, e o instante é o da leitura). */
+    private fun lerSessao(instrumentacao: Instrumentation, controlador: MediaController): LeituraDaSessao {
+        var leitura: LeituraDaSessao? = null
+        instrumentacao.runOnMainSync {
+            leitura = LeituraDaSessao(
+                estado = controlador.playbackState,
+                duracaoMs = controlador.metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: -1L,
+                agoraMs = SystemClock.elapsedRealtime(),
+            )
+        }
+        return checkNotNull(leitura) { "Sessão não lida na thread principal" }
+    }
+
+    /**
+     * Relê a sessão até [condicao] valer ou estourar [TEMPO_SESSAO_MS]. Falha com a última leitura, para a
+     * mensagem dizer o que a sessão mostrava.
+     */
+    private fun esperarLeitura(
+        instrumentacao: Instrumentation,
+        controlador: MediaController,
+        descricao: String,
+        condicao: (LeituraDaSessao) -> Boolean,
+    ): LeituraDaSessao {
+        val fim = System.currentTimeMillis() + TEMPO_SESSAO_MS
+        var ultima = lerSessao(instrumentacao, controlador)
+        while (!condicao(ultima) && System.currentTimeMillis() < fim) {
+            Thread.sleep(INTERVALO_DE_LEITURA_MS)
+            ultima = lerSessao(instrumentacao, controlador)
+        }
+        if (!condicao(ultima)) fail("Tempo esgotado esperando $descricao. Última leitura: $ultima")
+        return ultima
+    }
+
     /** Base da primeira linha do parágrafo [indice], relativa ao topo da lista; nula se ele não está na lista. */
     private fun baseDaPrimeiraLinha(a: ReaderActivity, indice: Int): Int? {
         val tv = lista(a).findViewHolderForAdapterPosition(indice)?.itemView as? TextView ?: return null
@@ -208,5 +350,46 @@ class GuiadaNoAparelhoTest {
     private companion object {
         /** Começo do parágrafo 0 que tem de aparecer num texto pedido à voz (basta para achar o trecho). */
         const val TAMANHO_DO_INICIO_DO_PARAGRAFO_0 = 20
+
+        /** Duração do trecho com a voz muito longa (240 s) e a folga aceita para o WAV e o player (rb-41, C20). */
+        const val DURACAO_DO_TRECHO_MS = 240_000L
+        const val TOLERANCIA_DURACAO_MS = 5_000L
+
+        /** Intervalo entre duas leituras da posição estimada, e a folga aceita com a guiada pausada. */
+        const val INTERVALO_DE_POSICAO_MS = 1_500L
+        const val TOLERANCIA_PAUSA_MS = 100L
+
+        /** Tempo para a notificação com a sessão aparecer, e para a sessão chegar ao estado pedido. */
+        const val TEMPO_NOTIFICACAO_MS = 15_000L
+        const val TEMPO_SESSAO_MS = 10_000L
+        const val INTERVALO_DE_LEITURA_MS = 100L
+
+        /** Espera, com a aba de notificações aberta, antes da captura de registro. */
+        const val ESPERA_GAVETA_MS = 800L
     }
+}
+
+/**
+ * Uma leitura da sessão de mídia da guiada: o estado (PlaybackState), a duração do trecho
+ * (METADATA_KEY_DURATION) e o instante (elapsedRealtime) em que foi lida.
+ */
+private class LeituraDaSessao(val estado: PlaybackState?, val duracaoMs: Long, val agoraMs: Long) {
+
+    val tocando: Boolean get() = estado?.state == PlaybackState.STATE_PLAYING
+
+    val velocidade: Float get() = estado?.playbackSpeed ?: 0f
+
+    /** Instante da última posição informada pela sessão (0 se ela não informou nenhuma). */
+    val atualizadaEmMs: Long get() = estado?.lastPositionUpdateTime ?: 0L
+
+    /**
+     * Posição agora, como a barra do sistema calcula: a última posição mais o tempo decorrido na velocidade dela.
+     * Com velocidade 0 (pausada), é a própria posição.
+     */
+    val posicaoEstimadaMs: Long
+        get() = estado?.let { it.position + ((agoraMs - it.lastPositionUpdateTime) * it.playbackSpeed).toLong() } ?: -1L
+
+    override fun toString(): String =
+        "estado=${estado?.state} posicao=${estado?.position} velocidade=${estado?.playbackSpeed} " +
+            "atualizadaEm=${estado?.lastPositionUpdateTime} duracaoMs=$duracaoMs"
 }
