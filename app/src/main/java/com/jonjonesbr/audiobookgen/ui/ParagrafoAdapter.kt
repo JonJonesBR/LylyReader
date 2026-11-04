@@ -79,7 +79,7 @@ private const val LARGURA_BARRA_SYNC_DP = 4f
 class ParagrafoAdapter(
     private val activity: AppCompatActivity,
     private val recyclerView: RecyclerViewParagrafos,
-    // Barra própria das ações da seleção de texto (HorizontalScrollView sobreposto ao topo da lista, rb-38).
+    // Barra própria das ações da seleção de texto (LinearLayout sobreposto ao topo da lista, rb-38).
     barraSelecaoTexto: View,
     private val viewModel: ReaderViewModel,
     private val onLongPress: (Int) -> Unit,
@@ -118,7 +118,7 @@ class ParagrafoAdapter(
 
     // Menu da seleção nativa aberto agora (rb-38): a barra do Leitor executa a ação por ele.
     private var menuAberto: MenuDaSelecaoDeTexto? = null
-    private val barraDaSelecao = BarraDaSelecaoDeTexto(barraSelecaoTexto, comAudio) { acao ->
+    private val barraDaSelecao = BarraDaSelecaoDeTexto(barraSelecaoTexto, recyclerView, comAudio) { acao ->
         menuAberto?.executarPelaBarra(acao)
     }
     // Repinturas de sincronia seguradas enquanto há dedo na lista ou seleção aberta (rb-38).
@@ -151,7 +151,7 @@ class ParagrafoAdapter(
         aoAbrir = { menu ->
             menuAberto = menu
             recyclerView.abriuSelecao()
-            barraDaSelecao.mostrar()
+            barraDaSelecao.mostrar(linhaDaSelecao = { menu.linhaDoInicioDaSelecaoNaTela() })
         },
         aoFechar = { menu ->
             if (menuAberto === menu) menuAberto = null

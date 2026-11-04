@@ -79,6 +79,21 @@ internal class MenuDaSelecaoDeTexto(
     /** Executa a ação da barra do Leitor, como se o item equivalente do menu tivesse sido tocado (rb-38). */
     fun executarPelaBarra(acao: AcaoDaBarraDeSelecao): Boolean = executarItem(idDoItem(acao), modoAberto)
 
+    /**
+     * Linha do início da seleção na tela, em px (rb-48): a barra desce a lista se essa linha ficar embaixo dela. Só
+     * lê. Nulo sem seleção no TextView, sem layout ou fora da janela. getLocationOnScreen já desconta a rolagem da
+     * página horizontal, e a translação da lista entra na conta.
+     */
+    fun linhaDoInicioDaSelecaoNaTela(): LinhaNaTela? {
+        val layout = tv.layout
+        if (!tv.hasSelection() || !tv.isAttachedToWindow || layout == null) return null
+        val linha = layout.getLineForOffset(minOf(tv.selectionStart, tv.selectionEnd))
+        val posTela = IntArray(2)
+        tv.getLocationOnScreen(posTela)
+        val base = posTela[1] + tv.totalPaddingTop - tv.scrollY
+        return LinhaNaTela(base + layout.getLineTop(linha), base + layout.getLineBottom(linha))
+    }
+
     override fun onDestroyActionMode(mode: ActionMode) {
         modoAberto = null
         acoes.aoFechar(this)

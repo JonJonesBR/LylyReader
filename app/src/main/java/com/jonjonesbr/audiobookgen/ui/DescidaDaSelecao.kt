@@ -1,0 +1,36 @@
+package com.jonjonesbr.audiobookgen.ui
+
+// Regra pura da descida da lista quando a barra da seleção cobre o trecho marcado (rb-48): sem nada de Android,
+// testada na JVM. Quem aplica o valor é o BarraDaSelecaoDeTexto, no translationY da RecyclerViewParagrafos.
+
+/** Posição de uma linha de texto na tela, em px (coordenadas da tela, já com a translação da lista). */
+internal data class LinhaNaTela(val topo: Int, val fundo: Int)
+
+/**
+ * Deslocamento total (o translationY) que a lista precisa ter para a linha da seleção ficar abaixo da barra, com a
+ * margem entre as duas. Quem chama soma ao espaço do menu flutuante da seleção (ver BarraDaSelecaoDeTexto).
+ *
+ * - [linha]: onde a linha do início da seleção está na tela agora, com o deslocamento atual já aplicado.
+ * - [fundoDaBarraNaTela]: a base da barra da seleção, em coordenadas da tela.
+ * - [alturaDaBarra]: a altura medida da barra; o limite do deslocamento depende dela (fonte grande, rb-48).
+ * - [margemPx]: espaço entre a base da barra e a linha, em px (inclui o do menu flutuante).
+ * - [deslocamentoAtual]: o translationY da lista agora. Negativo conta como 0.
+ *
+ * Devolve só o necessário, que pode ser menor que o atual (zero se a linha já está abaixo da barra). Quem decide
+ * se a lista pode subir é quem chama: dentro de uma mesma seleção ela não sobe, para não pular ao trocar de
+ * seleção, e uma seleção nova pode voltar ao lugar. O necessário fica entre 0 e a altura da barra, a margem e a
+ * altura da linha, para uma linha acima da área visível não empurrar a lista para longe demais.
+ */
+internal fun quantoDescerParaMostrarSelecao(
+    linha: LinhaNaTela,
+    fundoDaBarraNaTela: Int,
+    alturaDaBarra: Int,
+    margemPx: Int,
+    deslocamentoAtual: Int,
+): Int {
+    val atual = deslocamentoAtual.coerceAtLeast(0)
+    // Topo da linha se a lista estivesse sem nenhum deslocamento.
+    val topoSem = linha.topo - atual
+    val limite = alturaDaBarra + margemPx + (linha.fundo - linha.topo)
+    return (fundoDaBarraNaTela + margemPx - topoSem).coerceIn(0, limite)
+}

@@ -37,6 +37,9 @@ class SelecaoSoLerTest {
     /** Início, fim e texto de uma seleção no parágrafo 0. */
     private data class Selecao(val inicio: Int, val fim: Int, val texto: String)
 
+    /** Topo da linha do início da seleção e fundo da barra, em coordenadas da tela (rb-48); o retângulo da barra é para as medidas. */
+    private data class LinhaEBarra(val topoDaLinha: Int, val fundoDaBarra: Int, val rectBarra: String)
+
     /** Abre o livro de teste no Só ler, com [removidas] linhas tiradas pela limpeza (pílula da limpeza). */
     private fun abrirSoLer(removidas: Int = 0): ActivityScenario<ReaderActivity> {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
@@ -65,6 +68,50 @@ class SelecaoSoLerTest {
             a.findViewById<View>(R.id.barraSelecaoTexto).visibility == View.VISIBLE &&
                 Gestos.textoDoParagrafo(a, 0).hasSelection()
         }
+        // Só estabiliza: a descida da lista (rb-48) pode vir um quadro depois da barra. O resultado não importa aqui.
+        esperarLinhaAbaixoDaBarra(scenario)
+    }
+
+    /**
+     * Mede, na thread principal, a linha do início da seleção do parágrafo 0 e a base da barra, ambas em coordenadas
+     * da tela. Nulo sem seleção ou sem layout. Mesma conta de linhaDoInicioDaSelecaoNaTela (rb-48).
+     */
+    private fun medirLinhaEBarra(scenario: ActivityScenario<ReaderActivity>): LinhaEBarra? {
+        var medida: LinhaEBarra? = null
+        scenario.onActivity { a ->
+            val tv = Gestos.textoDoParagrafo(a, 0)
+            val layout = tv.layout
+            if (layout == null || !tv.hasSelection()) return@onActivity
+            val inicio = minOf(tv.selectionStart, tv.selectionEnd)
+            val posTv = IntArray(2)
+            tv.getLocationOnScreen(posTv)
+            val base = posTv[1] + tv.totalPaddingTop - tv.scrollY
+            val topo = base + layout.getLineTop(layout.getLineForOffset(inicio))
+            val barra = a.findViewById<View>(R.id.barraSelecaoTexto)
+            val posBarra = IntArray(2)
+            barra.getLocationOnScreen(posBarra)
+            val rectBarra = Rect()
+            barra.getGlobalVisibleRect(rectBarra)
+            medida = LinhaEBarra(topo, posBarra[1] + barra.height, rectBarra.toShortString())
+        }
+        return medida
+    }
+
+    /**
+     * Lê a linha e a barra a cada [PAUSA_ENTRE_LEITURAS_MS] até a linha ficar abaixo da barra ou o tempo acabar. Não
+     * falha: devolve a última medida, e quem chama decide o que fazer com ela.
+     */
+    private fun esperarLinhaAbaixoDaBarra(
+        scenario: ActivityScenario<ReaderActivity>,
+        timeoutMs: Long = 2_000L,
+    ): LinhaEBarra? {
+        val fim = System.currentTimeMillis() + timeoutMs
+        var medida = medirLinhaEBarra(scenario)
+        while ((medida == null || medida.topoDaLinha < medida.fundoDaBarra) && System.currentTimeMillis() < fim) {
+            Thread.sleep(PAUSA_ENTRE_LEITURAS_MS)
+            medida = medirLinhaEBarra(scenario)
+        }
+        return medida
     }
 
     /** Seleção atual do parágrafo 0, lida na thread principal; nulo se não há seleção. */
@@ -103,7 +150,18 @@ class SelecaoSoLerTest {
         val selecao = checkNotNull(selecaoAtual(scenario)) { "Sem seleção depois do toque longo em '$PALAVRA'" }
         regras.fecharDialogosDoSistema()
         Capturas.anotar("c02", "selecao=[${selecao.inicio},${selecao.fim}] texto='${selecao.texto}'")
+        // rb-48: a linha da palavra selecionada tem de ficar abaixo do fundo da barra (a lista desce se preciso).
+        val medida = esperarLinhaAbaixoDaBarra(scenario)
+        Capturas.anotar(
+            "c02",
+            "linha_topo=${medida?.topoDaLinha} barra_fundo=${medida?.fundoDaBarra} barra_rect=${medida?.rectBarra}"
+        )
         Capturas.capturar("05_soler_selecao")
+        assertTrue(
+            "A linha da seleção deveria ficar abaixo da barra: linha_topo=${medida?.topoDaLinha} " +
+                "barra_fundo=${medida?.fundoDaBarra}",
+            medida != null && medida.topoDaLinha >= medida.fundoDaBarra
+        )
         scenario.onActivity { a ->
             assertTrue(
                 "A seleção deveria conter '$PALAVRA', veio '${selecao.texto}'",
@@ -209,9 +267,12 @@ class SelecaoSoLerTest {
                     problemas += "'$nome' sem área visível na tela"
                 } else {
                     medidas += "$nome rect=${rBotao.toShortString()} largura=${botao.width}px " +
-                        "visivelNaTela=${rBotao.width()}px"
+                        "visivelNaTela=${rBotao.width()}px altura=${botao.height}px visivelNaAltura=${rBotao.height()}px"
                     if (rBotao.width() != botao.width) {
                         problemas += "'$nome' cortado: ${rBotao.width()} de ${botao.width}px visíveis"
+                    }
+                    if (rBotao.height() != botao.height) {
+                        problemas += "'$nome' cortado na altura: ${rBotao.height()} de ${botao.height}px visíveis"
                     }
                     if (rBotao.left < 0 || rBotao.right > largura) {
                         problemas += "'$nome' fora da tela: ${rBotao.toShortString()} (tela ${largura}px)"

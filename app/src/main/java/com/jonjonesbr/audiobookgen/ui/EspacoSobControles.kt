@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
+import kotlin.math.roundToInt
 
 /**
  * Mantém o fim de uma lista acima das barras que flutuam sobre a base dela (ex.: os controles da
@@ -22,7 +23,9 @@ object EspacoSobControles {
         val posBarra = IntArray(2)
         lista.viewTreeObserver.addOnGlobalLayoutListener {
             lista.getLocationInWindow(posLista)
-            val baseDaLista = posLista[1] + lista.height
+            // getLocationInWindow já inclui a translação da lista (rb-48: a barra da seleção a desce). Sem
+            // desfazê-la, o respiro cresceria a cada descida, pediria layout e mexeria no parágrafo em leitura.
+            val baseDaLista = posLista[1] - lista.translationY.roundToInt() + lista.height
             val coberto = barras.filter { it.isShown && it.height > 0 }.maxOfOrNull { barra ->
                 barra.getLocationInWindow(posBarra)
                 baseDaLista - posBarra[1]

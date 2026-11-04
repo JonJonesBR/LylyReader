@@ -544,6 +544,8 @@ class ReaderActivitySmokeTest {
                 cb.onCreateActionMode(ModoFalso(cb, menu), menu)
             }
             esperarAte(scenario, "barra própria da seleção aparece") { a -> barraDaSelecaoTextoVisivel(a) }
+            // rb-48: o parágrafo 0 começa a 12 dp do topo, sob a barra; a lista desce por translação para a linha sair dela.
+            esperarAte(scenario, "lista desce para a seleção sair de baixo da barra") { a -> lista(a).translationY > 0f }
             scenario.onActivity { a ->
                 // Só ler: sem o que toca o texto (áudio, pronúncia, vários parágrafos); Destacar e Definir ficam.
                 assertTrue(botaoVisivel(a, R.id.btnSelecaoTextoDestacar))
@@ -556,6 +558,7 @@ class ReaderActivitySmokeTest {
             // Destacar: o menu fecha, a barra some e o diálogo de destaque abre.
             scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
             esperarAte(scenario, "barra escondida depois de destacar") { a -> !barraDaSelecaoTextoVisivel(a) }
+            esperarAte(scenario, "lista volta ao lugar") { a -> lista(a).translationY == 0f }
             scenario.onActivity { assertTrue(ShadowDialog.getLatestDialog()?.isShowing == true) }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())

@@ -19,6 +19,8 @@ import androidx.recyclerview.widget.RecyclerView
  * - saber quando há um toque em andamento (do DOWN ao UP/CANCEL) ou um menu de seleção aberto (rb-38). Enquanto
  *   isso, [textoEmUso] é verdadeiro e o adapter segura as repinturas de sincronia, que trocariam a view sob o dedo.
  * - rearmar a seleção de texto de cada parágrafo quando a view é anexada à janela (rb-38, ver [rearmarSelecao]).
+ * - rodar, depois do toque, a descida que a barra da seleção pede quando cobre o trecho marcado (rb-48, ver
+ *   [depoisDoToque]). A descida é translação, não rolagem: não dispara os listeners de rolagem.
  */
 class RecyclerViewParagrafos @JvmOverloads constructor(
     context: Context,
@@ -39,12 +41,16 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     var toqueEmAndamento = false
         private set
 
+    /** Ação da barra da seleção que espera o toque terminar (rb-48). Só guarda a última. */
+    private var acaoDepoisDoToque: (() -> Unit)? = null
+
     /** Quantos menus de seleção de texto estão abertos agora (o adapter conta). */
     var selecoesAbertas = 0
         private set
 
     /**
-     * Verdadeiro enquanto há toque, menu de seleção ou texto selecionado com foco: as repinturas de sincronia esperam.
+     * Verdadeiro enquanto há toque, menu de seleção ou texto selecionado com foco: as repinturas de sincronia
+     * esperam.
      * O texto selecionado cobre o intervalo entre o UP do toque longo e a abertura do menu (o Editor a abre depois).
      */
     val textoEmUso: Boolean
@@ -55,6 +61,15 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
         get() = selecoesAbertas > 0 || textoComSelecaoFocada()
 
     private fun textoComSelecaoFocada(): Boolean = (findFocus() as? TextView)?.hasSelection() == true
+
+    /**
+     * Roda [acao] quando o toque em andamento terminar (rb-48). Sem toque, roda já. Assim a lista não muda de
+     * posição sob o dedo: o toque longo abre o menu com o dedo ainda na tela, e um arraste depois dele
+     * selecionaria as linhas erradas. Se mais de uma ação chegar no mesmo toque, vale a última.
+     */
+    fun depoisDoToque(acao: () -> Unit) {
+        if (toqueEmAndamento) acaoDepoisDoToque = acao else acao()
+    }
 
     fun abriuSelecao() {
         selecoesAbertas++
@@ -72,6 +87,11 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
         if (toqueEmAndamento && fimDoToque) {
             toqueEmAndamento = false
             liberarDepois()
+            // Por post: o UP ainda termina dentro do Editor, e a descida não pode mexer na lista no meio desse
+            // despacho.
+            val acao = acaoDepoisDoToque
+            acaoDepoisDoToque = null
+            if (acao != null) post { acao() }
         }
         return tratado
     }
