@@ -618,7 +618,8 @@ class ReaderActivity : BasePlayerActivity() {
         super.onStop()
         registrarMinutosLidos()
         if (::adapter.isInitialized) retornoController.aplicarEdicoesPendentes()
-        viewModel.salvarPreferencias(appPrefs)
+        // Sem leitor montado, o ViewModel só tem os padrões: não grava a Aparência por cima (rb-16).
+        if (::adapter.isInitialized) viewModel.salvarPreferencias(appPrefs)
         // Salva a posição de leitura para retomar depois: o parágrafo da leitura guiada, ativa ou recém-encerrada sem
         // rolagem manual depois (o marcador fica abaixo do topo da tela); senão o primeiro parágrafo visível.
         // Livro já trocado pela fila: o manager gravou a posição final do livro concluído;

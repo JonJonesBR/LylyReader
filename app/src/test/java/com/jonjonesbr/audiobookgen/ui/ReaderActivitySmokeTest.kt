@@ -216,6 +216,23 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    fun semLivroNaoApagaAAparenciaGravada() {
+        // Sair sem abrir o livro (rb-16) não pode gravar os padrões do ViewModel por cima da Aparência do usuário.
+        val prefs = AppPrefs(app)
+        prefs.readerFonte = 22f
+        prefs.readerMargemNivel = 2
+        prefs.readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(Intent(app, ReaderActivity::class.java)).use { scenario ->
+            scenario.moveToState(Lifecycle.State.DESTROYED)
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+        assertEquals(22f, prefs.readerFonte, 0f)
+        assertEquals(2, prefs.readerMargemNivel)
+        assertTrue(prefs.readerRolagemHorizontal)
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun buscaAchaContaENavega() {
         val intent = Intent(app, ReaderActivity::class.java)
             .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
