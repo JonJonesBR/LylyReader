@@ -41,9 +41,10 @@ import org.junit.runner.RunWith
  * Modo páginas do Leitor no emulador (rb-26b, passo 4): com a opção "Horizontal (páginas)" ligada, a lista continua
  * vertical e o que vira é a página virtual (ver [PaginacaoDoLeitor]). P1 confere o corte e a orientação; P2 e P3
  * viram a página com o arraste lateral e confere que o vertical não rola; P4 confere que a seleção e a alça não
- * viram a página; P5 é a leitura guiada virando sozinha e o botão "Voltar à narração"; P6 gira a tela; P7 confere
- * PAGE_DOWN; P9 e P10 são a seleção com a barra embaixo, no retrato e na paisagem (rb-26b, passo 3). Os toques são
- * reais (ver [Gestos]); as conferências leem as Views na thread principal.
+ * viram a página; P5 é a leitura guiada virando sozinha e o botão "Voltar à narração" no painel; P6 gira a tela; P7
+ * confere PAGE_DOWN; P8 põe a alça na linha de baixo da página, com a guiada pausada, e confere que a página não rola;
+ * P9 e P10 são a seleção com a barra embaixo, no retrato e na paisagem (rb-26b, passo 3). Os toques são reais (ver
+ * [Gestos]); as conferências leem as Views na thread principal.
  */
 @RunWith(AndroidJUnit4::class)
 class PaginasNoAparelhoTest {
@@ -438,11 +439,11 @@ class PaginasNoAparelhoTest {
                 GuidedPlaybackBridge.manager?.state?.value?.let { it.isPlaying && it.index == 0 } == true
             }
             regras.fecharDialogosDoSistema()
-            // Vira uma página à mão (modo manual, com o chip), como no S2: o texto para e a seleção é feita sobre ele.
+            // Vira uma página à mão (modo manual, com o botão do painel), como no S2: o texto para e a seleção é feita sobre ele.
             InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.pause() }
             arrastarLateral(scenario, paraFrente = true)
-            esperarAte(scenario, "chip 'Voltar à narração' visível depois do arraste", TEMPO_DE_VIRADA_MS) { a ->
-                a.findViewById<View>(R.id.fabVoltarNarracao).visibility == View.VISIBLE
+            esperarAte(scenario, "botão 'Voltar à narração' do painel visível depois do arraste", TEMPO_DE_VIRADA_MS) { a ->
+                a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
             }
             InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.resume() }
             esperarPaginaParada(scenario)
@@ -540,6 +541,112 @@ class PaginasNoAparelhoTest {
         }
     }
 
+    /**
+     * P8: com a guiada tocando no modo páginas, um arraste lateral vira a página (modo manual) e a guiada é pausada.
+     * Um toque longo numa palavra da linha inteira mais baixa que tenha duas palavras elegíveis e um arraste da alça
+     * do fim dessa seleção para a direita não rolam a página, e a 1ª linha do topo continua inteira, sem corte em
+     * cima (rb-26b, tela pequena).
+     */
+    @Test
+    fun p8_guiadaPausadaComAlcaNaUltimaLinhaNaoRolaAPagina() {
+        comPaginas {
+            val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+            // Voz longa (30 s por trecho): a guiada fica tocando parada no primeiro parágrafo durante o teste.
+            regras.usarVoz(VozFalsa.longa(contexto))
+            val scenario = abrirLeitorComGuiada(regras, contexto)
+            esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
+                GuidedPlaybackBridge.manager?.state?.value?.let { it.isPlaying && it.index == 0 } == true
+            }
+            regras.fecharDialogosDoSistema()
+            val antes = medirPagina(scenario)
+            arrastarLateral(scenario, paraFrente = true)
+            esperarAte(scenario, "a página virar com o arraste lateral", TEMPO_DE_VIRADA_MS) { a ->
+                offsetDaLista(a) > antes.offset
+            }
+            // Pausa a guiada, como o P5: com ela tocando, a medida do toque e do arraste sai instável.
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.pause() }
+            regras.fecharDialogosDoSistema()
+
+            val pagina = medirPagina(scenario)
+            // A linha mais baixa que tenha duas palavras elegíveis (o fim de um parágrafo pode ter só uma).
+            val linhasInteiras = linhasInteirasDeBaixoParaCima(pagina)
+            val escolhida = checkNotNull(
+                linhasInteiras.firstNotNullOfOrNull { linha ->
+                    duasPalavrasDaLinha(scenario, linha)?.let { Triple(linha, it.first, it.second) }
+                },
+            ) { "A página não tem linha inteira com duas palavras para o toque" }
+            val (ultima, palavraDoToque, palavraDoFim) = escolhida
+            if (!ultima.mesmaQue(linhasInteiras.firstOrNull())) {
+                Capturas.anotar(
+                    "p8",
+                    "a linha mais baixa não tinha duas palavras elegíveis; usei a linha ${ultima.numero} " +
+                        "do parágrafo ${ultima.paragrafo}",
+                )
+            }
+            Capturas.anotar(
+                "p8",
+                "virou: offset=${pagina.offset} topo=${pagina.topoVisivel()} ultima=$ultima " +
+                    "toque='$palavraDoToque' fim='$palavraDoFim'",
+            )
+            Capturas.capturar("90_p8_virou_e_pausou")
+
+            selecionarPalavra(scenario, regras, ultima.paragrafo, palavraDoToque, cenario = "p8")
+            regras.fecharDialogosDoSistema()
+            val selecao = checkNotNull(selecaoAtual(scenario, ultima.paragrafo)) {
+                "Sem seleção depois do toque longo em '$palavraDoToque'"
+            }
+            val depoisDaSelecao = medirPagina(scenario)
+            Capturas.anotar(
+                "p8",
+                "selecao=[${selecao.inicio},${selecao.fim}] offset ${pagina.offset} -> ${depoisDaSelecao.offset}",
+            )
+            Capturas.capturar("91_p8_selecao_na_ultima_linha")
+            assertEquals(
+                "Selecionar a palavra da última linha não deveria rolar a página",
+                pagina.offset,
+                depoisDaSelecao.offset,
+            )
+
+            val resultado = arrastarAlcaFinalAte(
+                scenario = scenario,
+                indiceParagrafo = ultima.paragrafo,
+                palavraAlvo = palavraDoFim,
+                antes = selecao,
+                regras = regras,
+                reselecionar = {
+                    selecionarPalavra(scenario, regras, ultima.paragrafo, palavraDoToque, cenario = "p8")
+                },
+                anotar = { Capturas.anotar("p8", it) },
+            )
+            val depois = resultado.depois ?: throw AssertionError(
+                "Arrastar a alça não ampliou a seleção até '$palavraDoFim'. " +
+                    "Tentativas: ${resultado.tentativas.joinToString("; ")}",
+            )
+            val depoisDoArraste = medirPagina(scenario)
+            Capturas.anotar(
+                "p8",
+                "alca: [${depois.inicio},${depois.fim}] texto='${depois.texto}' offset ${depoisDoArraste.offset}",
+            )
+            Capturas.capturar("92_p8_alca_na_ultima_linha")
+            assertTrue(
+                "A alça deveria ampliar a seleção até '$palavraDoFim', veio '${depois.texto}'",
+                depois.fim > selecao.fim,
+            )
+            assertEquals(
+                "Arrastar a alça da última linha não deveria rolar a página",
+                pagina.offset,
+                depoisDoArraste.offset,
+            )
+            val primeiraDoTopo = depoisDoArraste.topoVisivel()
+            assertTrue(
+                "A 1ª linha do topo deveria começar no paddingTop (${depoisDoArraste.topo}) ou depois, " +
+                    "veio $primeiraDoTopo",
+                primeiraDoTopo != null && primeiraDoTopo.topo >= depoisDoArraste.topo,
+            )
+            conferirSemLinhaCortada(depoisDoArraste, "p8")
+        }
+    }
+
     /** Liga a opção "Horizontal (páginas)" para o corpo, e a desliga no fim (mesmo se o teste falhar). */
     private fun comPaginas(corpo: () -> Unit) {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
@@ -623,6 +730,38 @@ class PaginasNoAparelhoTest {
             }
         }
         return linhas.sortedBy { it.topo }
+    }
+
+    /** As linhas inteiras da página (acima do corte e abaixo do topo), da mais baixa para a mais alta. */
+    private fun linhasInteirasDeBaixoParaCima(pagina: EstadoDaPagina): List<LinhaNaPagina> =
+        pagina.linhas
+            .filter { it.topo >= pagina.topo && it.base <= pagina.corte }
+            .sortedByDescending { it.base }
+
+    /**
+     * Duas palavras (de 4 letras ou mais) inteiras dentro da [linha], nessa ordem, cuja primeira ocorrência no
+     * parágrafo é a que está na linha. O toque e a alça do teste acham a palavra pela primeira ocorrência (ver
+     * [Gestos.pontoDaPalavra]), então uma palavra repetida antes na página não serve. Nulo se não há duas.
+     */
+    private fun duasPalavrasDaLinha(
+        scenario: ActivityScenario<ReaderActivity>,
+        linha: LinhaNaPagina,
+    ): Pair<String, String>? {
+        var achadas: Pair<String, String>? = null
+        scenario.onActivity { a ->
+            val tv = Gestos.textoDoParagrafo(a, linha.paragrafo)
+            val layout = checkNotNull(tv.layout) { "Parágrafo ${linha.paragrafo} sem layout" }
+            val texto = tv.text.toString()
+            val inicioDaLinha = layout.getLineStart(linha.numero)
+            val fimDaLinha = layout.getLineEnd(linha.numero)
+            val palavras = Regex("\\p{L}{4,}").findAll(texto, inicioDaLinha)
+                .takeWhile { it.range.first < fimDaLinha }
+                .filter { it.range.last < fimDaLinha && texto.indexOf(it.value) == it.range.first }
+                .map { it.value }
+                .toList()
+            achadas = palavras.takeIf { it.size >= 2 }?.let { it[0] to it[1] }
+        }
+        return achadas
     }
 
     /**

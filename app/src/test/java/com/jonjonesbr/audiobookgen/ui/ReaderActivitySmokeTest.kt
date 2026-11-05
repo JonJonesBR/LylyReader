@@ -2181,9 +2181,10 @@ class ReaderActivitySmokeTest {
                 val rv = listaDoLeitor(a)
                 val tv = checkNotNull(tvEm(rv, 1)) { "parágrafo 1 fora da lista" }
                 val antes = rv.computeVerticalScrollOffset()
-                // Um trecho bem abaixo da página: sem a trava, a lista rolaria até ele.
+                // Um trecho bem abaixo da página: sem a trava, a lista rolaria até ele. immediate=true, para que o
+                // super rolasse já (smoothScrollBy assíncrono deixaria o deslocamento antes da asserção).
                 val trecho = Rect(0, 2_000, tv.width, 2_040)
-                val pediu = rv.layoutManager!!.requestChildRectangleOnScreen(rv, tv, trecho, false, false)
+                val pediu = rv.layoutManager!!.requestChildRectangleOnScreen(rv, tv, trecho, true, false)
                 assertFalse("o pedido de mostrar trecho deveria ser ignorado", pediu)
                 assertEquals("a página não deveria rolar", antes, rv.computeVerticalScrollOffset())
             }
@@ -2256,6 +2257,16 @@ class ReaderActivitySmokeTest {
                 }
             }
             assertTrue("a virada deveria chegar ao fim do livro", chegouAoFim)
+            // Pré-condição: a última página começa com uma linha cruzando o topo. Sem isso, o teste passaria
+            // mesmo que o alinhamento rodasse no fim (que é o que esconderia a última linha).
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val altura = rv.height - rv.paddingBottom - rv.paddingTop
+                assertTrue(
+                    "a última página deveria começar no meio de uma linha para o teste discriminar",
+                    RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop, altura) != 0,
+                )
+            }
             scenario.onActivity { a -> listaDoLeitor(a).requestLayout() }
             esperarAte(scenario, "layout do fim do livro") { a -> !listaDoLeitor(a).isLayoutRequested }
             scenario.onActivity { a ->
