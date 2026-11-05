@@ -10,7 +10,6 @@ import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.marcarComoLink
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -23,8 +22,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +50,7 @@ class SettingsActivity : BasePlayerActivity() {
     }
     private val buffering: AjustesBufferingController by lazy { AjustesBufferingController(this) }
     private val qualidade: AjustesQualidadeController by lazy { AjustesQualidadeController(this) }
+    private val pausas: AjustesPausasController by lazy { AjustesPausasController(this, pythonEngine) }
     private val backup: AjustesBackupController by lazy {
         AjustesBackupController(this, pythonEngine, AjustesBackupController.Callbacks(
             lancarExportarConfig = { exportarConfigLauncher.launch(it) },
@@ -73,25 +71,7 @@ class SettingsActivity : BasePlayerActivity() {
     private lateinit var etElevenLabsKey: EditText
     private lateinit var btnSalvarChaveElevenLabs: Button
 
-    // Pausas
-    private lateinit var btnPausa0: Button
-    private lateinit var btnPausa300: Button
-    private lateinit var btnPausa600: Button
-    private lateinit var btnPausa900: Button
-    private lateinit var btnPausa1500: Button
-    private val botoesPausa get() = listOf(
-        btnPausa0 to 0, btnPausa300 to PAUSA_300_MS, btnPausa600 to PAUSA_600_MS,
-        btnPausa900 to PAUSA_900_MS, btnPausa1500 to PAUSA_1500_MS
-    )
-
     private val naturalidade by lazy { NaturalidadeVozUi(this) }
-
-    // Pausa entre frases na leitura guiada com kokoro
-    private lateinit var seekPausaFinalFrase: android.widget.SeekBar
-    private lateinit var tvPausaFinalFraseValor: TextView
-    private lateinit var chkPausasNaturais: android.widget.CompoundButton
-    private lateinit var divPausaFrase: View
-    private lateinit var blocoPausaFrase: View
 
     // Vozes Offline (card generalizado por pacote — V6 T2.2)
 
@@ -183,18 +163,6 @@ class SettingsActivity : BasePlayerActivity() {
         layoutElevenLabsKey    = findViewById(R.id.layoutElevenLabsKey)
         etElevenLabsKey        = findViewById(R.id.etElevenLabsKey)
         btnSalvarChaveElevenLabs = findViewById(R.id.btnSalvarChaveElevenLabs)
-
-        btnPausa0    = findViewById(R.id.btnPausa0)
-        btnPausa300  = findViewById(R.id.btnPausa300)
-        btnPausa600  = findViewById(R.id.btnPausa600)
-        btnPausa900  = findViewById(R.id.btnPausa900)
-        btnPausa1500 = findViewById(R.id.btnPausa1500)
-
-        seekPausaFinalFrase    = findViewById(R.id.seekPausaFinalFrase)
-        tvPausaFinalFraseValor = findViewById(R.id.tvPausaFinalFraseValor)
-        chkPausasNaturais      = findViewById(R.id.chkPausasNaturais)
-        divPausaFrase          = findViewById(R.id.divPausaFrase)
-        blocoPausaFrase        = findViewById(R.id.blocoPausaFrase)
 
         // Blacklist
         tvBlacklistInfo = findViewById(R.id.tvBlacklistInfo)
@@ -320,17 +288,9 @@ class SettingsActivity : BasePlayerActivity() {
         atualizarMotorAtual(motor)
         carregarTamanhosDoMotor()
 
-        // Pausas
-        atualizarBotoesPausa(com.jonjonesbr.audiobookgen.data.AppPrefs(this).pausaMs)
+        pausas.carregar()
 
         qualidade.carregar()
-
-        val pausaFrase = appPrefs.pausaFinalFraseMs.coerceIn(0, PAUSA_FINAL_FRASE_MS_MAX)
-        seekPausaFinalFrase.progress = pausaFrase
-        tvPausaFinalFraseValor.text = getString(R.string.settings_pausa_frase_value, pausaFrase)
-        ViewCompat.setStateDescription(seekPausaFinalFrase, tvPausaFinalFraseValor.text)
-        chkPausasNaturais.isChecked = appPrefs.pausasNaturais
-        atualizarPausaFixaVisivel()
 
         buffering.carregar()
 
@@ -380,10 +340,9 @@ class SettingsActivity : BasePlayerActivity() {
             false
         }
 
-        configurarListenersPausa()
+        pausas.configurar()
 
         qualidade.configurar()
-        configurarPausaFinalFraseSeekbar()
         buffering.configurar()
 
         armazenamento.configurar()
@@ -398,7 +357,7 @@ class SettingsActivity : BasePlayerActivity() {
         linha(R.id.rowPronuncias) { PronunciationDialog.showManager(this) }
         linha(R.id.rowBlacklist) { blacklistDialog.mostrarDialogoBlacklist() }
         linha(R.id.rowEstatisticas) { abrirEstatisticas() }
-        linha(R.id.rowPausasNaturais) { chkPausasNaturais.toggle() }
+        linha(R.id.rowPausasNaturais) { pausas.alternarPausasNaturais() }
         linha(R.id.rowPocketMaisRapido) { qualidade.alternarPocketMaisRapido() }
         linha(R.id.rowTimbre) { TimbreDialog.show(this, appPrefs) }
         linha(R.id.rowAutoRewind) { escolherAutoRewind() }
@@ -553,56 +512,6 @@ class SettingsActivity : BasePlayerActivity() {
     // de sincronizarConfiguracoes — a chave é lida direto de SecurePreferences na hora da síntese.
     private fun salvarElevenLabsKey(chave: String): SecurePreferences.SaveResult =
         SecurePreferences.setElevenLabsKey(this, chave)
-
-    // ── Pausa ────────────────────────────────────────────────────────────────
-
-    private fun salvarPausa(ms: Int) {
-        appPrefs.pausaMs = ms
-        atualizarBotoesPausa(ms)
-        lifecycleScope.launch {
-            pythonEngine.sincronizarConfiguracoes(
-                appPrefs.motorTts,
-                SecurePreferences.getGeminiKeys(this@SettingsActivity),
-                ms
-            )
-        }
-    }
-
-    private fun atualizarBotoesPausa(selecionado: Int) {
-        for ((btn, ms) in botoesPausa) {
-            val sel = ms == selecionado
-            val colorPrimary = ContextCompat.getColor(this, R.color.color_primary)
-            btn.setTextColor(if (sel) colorPrimary
-                else ContextCompat.getColor(this, R.color.color_on_surface_muted))
-            btn.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this,
-                if (sel) R.color.color_primary_surface else R.color.color_surface_variant))
-        }
-    }
-
-    // ── Pausa entre frases (kokoro) ─────────────────────────────────────────
-
-    /** Com as pausas naturais ligadas a pausa fixa não vale: o bloco some até elas serem desligadas. */
-    private fun atualizarPausaFixaVisivel() {
-        val visivel = if (appPrefs.pausasNaturais) View.GONE else View.VISIBLE
-        divPausaFrase.visibility = visivel
-        blocoPausaFrase.visibility = visivel
-    }
-
-    private fun configurarPausaFinalFraseSeekbar() {
-        chkPausasNaturais.setOnCheckedChangeListener { _, marcado ->
-            appPrefs.pausasNaturais = marcado
-            atualizarPausaFixaVisivel()
-        }
-        seekPausaFinalFrase.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
-                tvPausaFinalFraseValor.text = getString(R.string.settings_pausa_frase_value, progress)
-                ViewCompat.setStateDescription(sb, tvPausaFinalFraseValor.text)
-                appPrefs.pausaFinalFraseMs = progress
-            }
-            override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
-            override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
-        })
-    }
 
     /** Extraído de [configurarListeners] pra manter dentro do limite de linhas do detekt. */
     private fun configurarListenerSalvarChave() {
@@ -776,23 +685,9 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
-    private fun configurarListenersPausa() {
-        // Pausas
-        for ((btn, ms) in botoesPausa) {
-            btn.setOnClickListener { salvarPausa(ms) }
-        }
-    }
-
     companion object {
         /** Aba inicial (0 = Voz e leitura, 1 = Som, 2 = Dados, 3 = Ajuda). */
         const val EXTRA_ABA = "extra_aba"
         const val ABA_SOM = 1
-        // Teto do slider de pausa entre frases (kokoro) — 2s já é uma pausa dramática pra uma
-        // frase só; casa com o android:max="2000" do SeekBar (progresso = ms direto, sem offset).
-        private const val PAUSA_FINAL_FRASE_MS_MAX = 2000
-        private const val PAUSA_300_MS = 300
-        private const val PAUSA_600_MS = 600
-        private const val PAUSA_900_MS = 900
-        private const val PAUSA_1500_MS = 1500
     }
 }
