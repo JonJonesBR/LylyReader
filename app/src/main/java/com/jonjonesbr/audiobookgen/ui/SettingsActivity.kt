@@ -52,6 +52,7 @@ class SettingsActivity : BasePlayerActivity() {
         AjustesArmazenamentoController(this, pythonEngine)
     }
     private val buffering: AjustesBufferingController by lazy { AjustesBufferingController(this) }
+    private val qualidade: AjustesQualidadeController by lazy { AjustesQualidadeController(this) }
     private val backup: AjustesBackupController by lazy {
         AjustesBackupController(this, pythonEngine, AjustesBackupController.Callbacks(
             lancarExportarConfig = { exportarConfigLauncher.launch(it) },
@@ -83,14 +84,7 @@ class SettingsActivity : BasePlayerActivity() {
         btnPausa900 to PAUSA_900_MS, btnPausa1500 to PAUSA_1500_MS
     )
 
-    // Passos do Supertonic (qualidade x velocidade)
-    private lateinit var seekSupertonicSteps: android.widget.SeekBar
-    private lateinit var tvSupertonicStepsValor: TextView
-    // Passos do Pocket TTS (experimental)
-    private lateinit var seekPocketPassos: android.widget.SeekBar
     private val naturalidade by lazy { NaturalidadeVozUi(this) }
-    private lateinit var tvPocketPassosValor: TextView
-    private lateinit var swPocketMaisRapido: android.widget.CompoundButton
 
     // Pausa entre frases na leitura guiada com kokoro
     private lateinit var seekPausaFinalFrase: android.widget.SeekBar
@@ -195,12 +189,6 @@ class SettingsActivity : BasePlayerActivity() {
         btnPausa600  = findViewById(R.id.btnPausa600)
         btnPausa900  = findViewById(R.id.btnPausa900)
         btnPausa1500 = findViewById(R.id.btnPausa1500)
-
-        seekSupertonicSteps    = findViewById(R.id.seekSupertonicSteps)
-        tvSupertonicStepsValor = findViewById(R.id.tvSupertonicStepsValor)
-        seekPocketPassos       = findViewById(R.id.seekPocketPassos)
-        tvPocketPassosValor    = findViewById(R.id.tvPocketPassosValor)
-        swPocketMaisRapido    = findViewById(R.id.swPocketMaisRapido)
 
         seekPausaFinalFrase    = findViewById(R.id.seekPausaFinalFrase)
         tvPausaFinalFraseValor = findViewById(R.id.tvPausaFinalFraseValor)
@@ -335,16 +323,7 @@ class SettingsActivity : BasePlayerActivity() {
         // Pausas
         atualizarBotoesPausa(com.jonjonesbr.audiobookgen.data.AppPrefs(this).pausaMs)
 
-        val steps = appPrefs.supertonicSteps.coerceIn(STEPS_MIN, STEPS_MAX)
-        seekSupertonicSteps.progress = steps - STEPS_MIN
-        tvSupertonicStepsValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, steps, steps)
-        ViewCompat.setStateDescription(seekSupertonicSteps, tvSupertonicStepsValor.text)
-
-        val passosPocket = appPrefs.pocketPassos
-        seekPocketPassos.progress = passosPocket - com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_MIN
-        tvPocketPassosValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, passosPocket, passosPocket)
-        ViewCompat.setStateDescription(seekPocketPassos, tvPocketPassosValor.text)
-        swPocketMaisRapido.isChecked = appPrefs.pocketMaisRapido
+        qualidade.carregar()
 
         val pausaFrase = appPrefs.pausaFinalFraseMs.coerceIn(0, PAUSA_FINAL_FRASE_MS_MAX)
         seekPausaFinalFrase.progress = pausaFrase
@@ -403,9 +382,7 @@ class SettingsActivity : BasePlayerActivity() {
 
         configurarListenersPausa()
 
-        configurarSupertonicSeekbar()
-        configurarPocketPassosSeekbar()
-        configurarPocketMaisRapido()
+        qualidade.configurar()
         configurarPausaFinalFraseSeekbar()
         buffering.configurar()
 
@@ -422,7 +399,7 @@ class SettingsActivity : BasePlayerActivity() {
         linha(R.id.rowBlacklist) { blacklistDialog.mostrarDialogoBlacklist() }
         linha(R.id.rowEstatisticas) { abrirEstatisticas() }
         linha(R.id.rowPausasNaturais) { chkPausasNaturais.toggle() }
-        linha(R.id.rowPocketMaisRapido) { swPocketMaisRapido.toggle() }
+        linha(R.id.rowPocketMaisRapido) { qualidade.alternarPocketMaisRapido() }
         linha(R.id.rowTimbre) { TimbreDialog.show(this, appPrefs) }
         linha(R.id.rowAutoRewind) { escolherAutoRewind() }
         linha(R.id.rowPlayerConversao) { escolherPlayerConversao() }
@@ -599,67 +576,6 @@ class SettingsActivity : BasePlayerActivity() {
                 else ContextCompat.getColor(this, R.color.color_on_surface_muted))
             btn.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this,
                 if (sel) R.color.color_primary_surface else R.color.color_surface_variant))
-        }
-    }
-
-    // ── Supertonic Steps ────────────────────────────────────────────────────
-
-    private fun configurarPocketPassosSeekbar() {
-        seekPocketPassos.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
-                val passos = progress + com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_MIN
-                tvPocketPassosValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, passos, passos)
-                ViewCompat.setStateDescription(sb, tvPocketPassosValor.text)
-                if (fromUser) appPrefs.pocketPassos = passos
-            }
-            override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
-            override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
-        })
-    }
-
-    private fun configurarPocketMaisRapido() {
-        swPocketMaisRapido.setOnCheckedChangeListener { _, marcado -> appPrefs.pocketMaisRapido = marcado }
-    }
-
-    private fun configurarSupertonicSeekbar() {
-        seekSupertonicSteps.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
-                val steps = progress + STEPS_MIN
-                tvSupertonicStepsValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, steps, steps)
-                ViewCompat.setStateDescription(sb, tvSupertonicStepsValor.text)
-                appPrefs.supertonicSteps = steps
-            }
-            override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
-            override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
-        })
-        tvSupertonicStepsValor.setOnClickListener {
-            val current = seekSupertonicSteps.progress + STEPS_MIN
-            val input = android.widget.EditText(this).apply {
-                setText(current.toString())
-                inputType = android.text.InputType.TYPE_CLASS_NUMBER
-                selectAll()
-                setPadding(DIALOG_PADDING_H, DIALOG_PADDING_V, DIALOG_PADDING_H, DIALOG_PADDING_V)
-            }
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle(R.string.settings_supertonic_steps_title)
-                .setMessage(getString(R.string.dialog_valor_entre, STEPS_MIN, STEPS_MAX))
-                .setView(input)
-                .setPositiveButton(android.R.string.ok) { _, _ ->
-                    val texto = input.text.toString().trim()
-                    val valor = texto.toIntOrNull()
-                    if (valor != null && valor in STEPS_MIN..STEPS_MAX) {
-                        seekSupertonicSteps.progress = valor - STEPS_MIN
-                        tvSupertonicStepsValor.text = resources.getQuantityString(R.plurals.settings_steps_value_qtd, valor, valor)
-                        appPrefs.supertonicSteps = valor
-                    } else {
-                        android.widget.Toast.makeText(
-                            this, getString(R.string.toast_valor_invalido, STEPS_MIN, STEPS_MAX),
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .exibir()
         }
     }
 
@@ -871,15 +787,9 @@ class SettingsActivity : BasePlayerActivity() {
         /** Aba inicial (0 = Voz e leitura, 1 = Som, 2 = Dados, 3 = Ajuda). */
         const val EXTRA_ABA = "extra_aba"
         const val ABA_SOM = 1
-        private const val JSON_INDENT = 4
-        private const val STEPS_MIN = 2
-        // O mesmo teto do motor (OnnxTtsEngine limita a AppPrefs.SUPERTONIC_STEPS_MAX).
-        private const val STEPS_MAX = com.jonjonesbr.audiobookgen.data.AppPrefs.SUPERTONIC_STEPS_MAX
         // Teto do slider de pausa entre frases (kokoro) — 2s já é uma pausa dramática pra uma
         // frase só; casa com o android:max="2000" do SeekBar (progresso = ms direto, sem offset).
         private const val PAUSA_FINAL_FRASE_MS_MAX = 2000
-        private const val DIALOG_PADDING_H = 48
-        private const val DIALOG_PADDING_V = 24
         private const val PAUSA_300_MS = 300
         private const val PAUSA_600_MS = 600
         private const val PAUSA_900_MS = 900
