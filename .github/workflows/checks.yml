@@ -3,6 +3,10 @@ name: Checks
 # Conferência leve a cada mudança de código no main (e em pull requests): compila, roda os testes
 # unitários e, por enquanto só avisando, o detekt e o lint. Não gera APK, não publica nada e não usa
 # segredos. Gerar APK continua manual (android-ci.yml) e versões continuam no release.yml.
+#
+# Disparo manual com `gerar_baseline_detekt=true` regenera o detekt-baseline.xml e o publica como
+# artefato (rb-28), para baixar e commitar na raiz do repositório. Uso:
+#   gh workflow run checks.yml --ref <branch> -f gerar_baseline_detekt=true
 on:
   push:
     branches: [main]
@@ -23,6 +27,12 @@ on:
       - "gradle.properties"
       - "detekt-baseline.xml"
       - ".github/workflows/checks.yml"
+  workflow_dispatch:
+    inputs:
+      gerar_baseline_detekt:
+        description: "Gera o detekt-baseline.xml de novo e publica como artefato (rb-28)"
+        type: boolean
+        default: false
 
 # Vários envios seguidos: só o mais novo é conferido.
 concurrency:
@@ -150,6 +160,19 @@ jobs:
         # Achados antigos estão no detekt-baseline.xml. Tornar bloqueante depois de alguns runs verdes.
         continue-on-error: true
         run: ./gradlew :app:detekt --stacktrace
+
+      - name: Gera o baseline do detekt (manual, rb-28)
+        # Só no disparo manual com gerar_baseline_detekt=true. Regenera o detekt-baseline.xml na raiz, para publicar.
+        if: github.event_name == 'workflow_dispatch' && inputs.gerar_baseline_detekt
+        run: ./gradlew :app:detektBaseline --stacktrace
+
+      - name: Publica o baseline do detekt (manual, rb-28)
+        if: github.event_name == 'workflow_dispatch' && inputs.gerar_baseline_detekt
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: detekt-baseline
+          retention-days: 3
+          path: detekt-baseline.xml
 
       - name: Run lint (só avisa)
         continue-on-error: true
