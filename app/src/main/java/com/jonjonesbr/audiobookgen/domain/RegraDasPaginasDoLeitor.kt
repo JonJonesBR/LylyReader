@@ -1,5 +1,7 @@
 package com.jonjonesbr.audiobookgen.domain
 
+import kotlin.math.abs
+
 /**
  * Uma linha de texto já medida, em pixels, nas coordenadas da lista (rb-26b). [topo] e [base] são as bordas
  * verticais da linha: a lista de linhas vem em ordem crescente, e entre parágrafos há espaço vazio.
@@ -64,4 +66,27 @@ object RegraDasPaginasDoLeitor {
             inicioDaLinha < topo && podeSubir -> inicioDaLinha - topo
             else -> 0
         }
+
+    /**
+     * O cabeçalho do Leitor (toolbar, busca e capítulo) aparece? No modo páginas ele some quando quem lê virou a
+     * página e ainda não pediu de volta (rb-26b, passo 6). Fora das páginas, ou com busca aberta, ou com leitor de
+     * tela ligado (TalkBack), ele sempre aparece.
+     */
+    fun cabecalhoVisivel(
+        paginasAtivas: Boolean,
+        ocultoPeloLeitor: Boolean,
+        buscaAberta: Boolean,
+        leitorDeTela: Boolean,
+    ): Boolean =
+        !paginasAtivas || !ocultoPeloLeitor || buscaAberta || leitorDeTela
+
+    /**
+     * Sentido do deslize vertical sobre a página (rb-26b, passo 6): 1 para baixo (mostra o cabeçalho), -1 para cima
+     * (recolhe), 0 quando o gesto não conta. Conta só se passa de [limiarPx] e é mais vertical que horizontal.
+     */
+    fun deslizeVertical(dx: Float, dy: Float, limiarPx: Float): Int = when {
+        abs(dy) < limiarPx || abs(dy) <= abs(dx) -> 0
+        dy > 0f -> 1
+        else -> -1
+    }
 }

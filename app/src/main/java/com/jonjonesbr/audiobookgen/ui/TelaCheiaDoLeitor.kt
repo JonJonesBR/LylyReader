@@ -1,0 +1,108 @@
+package com.jonjonesbr.audiobookgen.ui
+
+import android.view.View
+import android.view.accessibility.AccessibilityManager
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.OrientationHelper
+import androidx.recyclerview.widget.RecyclerView
+import com.jonjonesbr.audiobookgen.domain.Dica
+import com.jonjonesbr.audiobookgen.domain.RegraDasPaginasDoLeitor
+import com.jonjonesbr.audiobookgen.util.dpToPx
+
+/** Distância do deslize para mostrar ou recolher o cabeçalho: a mesma do arraste que vira a página. */
+private const val LIMIAR_DO_DESLIZE_DP = 48
+
+/**
+ * Tela cheia no modo páginas do Leitor (rb-26b, passo 6): o cabeçalho (toolbar, busca e capítulo) some quando quem lê
+ * vira a página com o dedo, e volta com um deslize para baixo. Não se mexe nos filhos: só no contêiner
+ * `cabecalhoDoLeitor`. O painel da guiada não entra aqui.
+ *
+ * Quando o cabeçalho muda, a primeira linha da página fica no lugar (ver [manterAPrimeiraLinha]). Não se recolhe com a
+ * virada da guiada, com teclas ou com o TalkBack, nem com a busca aberta. Com o leitor de tela ligado ou fora das
+ * páginas, o cabeçalho sempre aparece. Sem animação: a regra é só de visibilidade.
+ */
+internal class TelaCheiaDoLeitor(
+    private val activity: AppCompatActivity,
+    private val lista: RecyclerViewParagrafos,
+    private val cabecalho: View,
+    private val busca: View,
+) {
+    // Começa visível: a pessoa só recolhe quando vira a página com o dedo.
+    private var ocultoPeloLeitor = false
+    private var dicaTentada = false
+    private val limiarPx = activity.dpToPx(LIMIAR_DO_DESLIZE_DP).toFloat()
+    private val acessibilidade: AccessibilityManager? = activity.getSystemService(AccessibilityManager::class.java)
+
+    /** Liga os avisos da lista (gesto engolido pela página e virada pelo dedo). Chamado uma vez, no configurar. */
+    fun ligar() {
+        lista.aoGestoDaPagina = { dx, dy -> aoDeslizar(dx, dy) }
+        lista.aoVirarPeloDedo = { pedir(ocultar = true) }
+    }
+
+    /**
+     * Aplica a regra de visibilidade do cabeçalho. Barata: roda a cada atualização da tela, e só mexe quando o valor
+     * muda. Fora das páginas (ou com busca aberta, ou com TalkBack), zera o oculto, para o cabeçalho não sumir sozinho
+     * quando a busca fecha ou quando se volta ao modo páginas.
+     */
+    fun aplicar(paginasAtivas: Boolean) {
+        val buscaAberta = busca.visibility == View.VISIBLE
+        val leitorDeTela = acessibilidade?.isTouchExplorationEnabled == true
+        if (!paginasAtivas || buscaAberta || leitorDeTela) ocultoPeloLeitor = false
+        val visivel = RegraDasPaginasDoLeitor.cabecalhoVisivel(
+            paginasAtivas, ocultoPeloLeitor, buscaAberta, leitorDeTela,
+        )
+        val alvo = if (visivel) View.VISIBLE else View.GONE
+        if (cabecalho.visibility == alvo) return
+        // Na troca de modo (Aparência, edição, comparação) o adapter refaz tudo: não se rola a lista nesse momento.
+        if (paginasAtivas) {
+            manterAPrimeiraLinha { cabecalho.visibility = alvo }
+        } else {
+            cabecalho.visibility = alvo
+        }
+        if (alvo == View.GONE) tentarDica()
+    }
+
+    /** Deslize sobre a página (gesto que a página engoliu). Não conta com seleção ou menu abertos. */
+    private fun aoDeslizar(dx: Float, dy: Float) {
+        if (lista.textoEmUso) return
+        when (RegraDasPaginasDoLeitor.deslizeVertical(dx, dy, limiarPx)) {
+            1 -> pedir(ocultar = false)
+            -1 -> pedir(ocultar = true)
+        }
+    }
+
+    private fun pedir(ocultar: Boolean) {
+        ocultoPeloLeitor = ocultar
+        aplicar(lista.paginacao?.ativa == true)
+    }
+
+    /**
+     * Muda a visibilidade mantendo a primeira linha da página. Com o cabeçalho sumindo ou voltando, a lista muda de
+     * altura, e o LinearLayoutManager ancora no foco (um parágrafo focado fica no lugar) ou no primeiro item, então o
+     * topo sairia do lugar. Guarda o primeiro item visível e o offset dele, e pede a mesma posição depois do layout.
+     * O pedido pendente tem prioridade sobre a âncora do foco.
+     */
+    private fun manterAPrimeiraLinha(mudar: () -> Unit) {
+        val lm = lista.layoutManager as? LinearLayoutManager
+        val pos = lm?.findFirstVisibleItemPosition() ?: RecyclerView.NO_POSITION
+        val item = lm?.findViewByPosition(pos)
+        if (lm == null || item == null) {
+            mudar()
+            return
+        }
+        val ajuste = OrientationHelper.createVerticalHelper(lm)
+        val offset = ajuste.getDecoratedStart(item) - ajuste.startAfterPadding
+        mudar()
+        lm.scrollToPositionWithOffset(pos, offset)
+    }
+
+    /** Dica da tela cheia, uma vez por abertura do Leitor. Por post, para medir a lista já com a altura nova. */
+    private fun tentarDica() {
+        if (dicaTentada) return
+        dicaTentada = true
+        lista.post {
+            if (cabecalho.visibility == View.GONE) CoachMark.tentar(activity, Dica.LEITOR_TELA_CHEIA, lista)
+        }
+    }
+}

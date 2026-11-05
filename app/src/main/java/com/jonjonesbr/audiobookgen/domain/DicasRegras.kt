@@ -12,7 +12,8 @@ enum class Dica(val id: String, val tela: TelaDica) {
     DOWNLOADS_VOZES("downloads_vozes", TelaDica.DOWNLOADS),
     LEITOR_GUIADA("leitor_guiada", TelaDica.LEITOR),
     LEITOR_CAPITULOS("leitor_capitulos", TelaDica.LEITOR),
-    LEITOR_VOZ_E_MOTOR("leitor_voz_e_motor", TelaDica.LEITOR)
+    LEITOR_VOZ_E_MOTOR("leitor_voz_e_motor", TelaDica.LEITOR),
+    LEITOR_TELA_CHEIA("leitor_tela_cheia", TelaDica.LEITOR)
 }
 
 object DicasRegras {

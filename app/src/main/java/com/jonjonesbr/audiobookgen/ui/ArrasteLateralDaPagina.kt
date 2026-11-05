@@ -15,6 +15,8 @@ import kotlin.math.max
  * completo chama [aoCompletar] (vira a página); qualquer outro gesto é engolido, e os filhos recebem ACTION_CANCEL.
  * Assim a lista não entra em arraste vertical no modo páginas. Seleção viva no toque, ou que nasce no meio dele, deixa
  * o gesto para o Editor.
+ * Um gesto de um dedo que a página engoliu chama [lista].aoGestoDaPagina ao terminar (rb-26b, passo 6): é o que a tela
+ * cheia do Leitor usa para mostrar ou recolher o cabeçalho. Dois dedos, toque curto e gesto do Editor não avisam.
  */
 internal class ArrasteLateralDaPagina(
     private val lista: RecyclerViewParagrafos,
@@ -36,6 +38,8 @@ internal class ArrasteLateralDaPagina(
     /** Parágrafo sob o dedo no DOWN, e se ele já tinha seleção ali (rb-26b). */
     private var tvNoDown: TextView? = null
     private var selecaoNoTvNoDown = false
+    /** Dois dedos no gesto: não é deslize da página, então não avisa a tela cheia (rb-26b, passo 6). */
+    private var doisDedos = false
     private var x0 = 0f
     private var y0 = 0f
     private var velocidade: VelocityTracker? = null
@@ -53,6 +57,7 @@ internal class ArrasteLateralDaPagina(
                 mover(ev, despachar)
             }
             MotionEvent.ACTION_POINTER_DOWN -> {
+                doisDedos = true
                 // Dois dedos não são arraste: o gesto termina sem ação.
                 if (estado == Estado.OBSERVANDO || estado == Estado.LATERAL || estado == Estado.DIAGONAL_PENDENTE) {
                     engolir(ev, despachar)
@@ -137,7 +142,17 @@ internal class ArrasteLateralDaPagina(
                 concluir(ev)
                 true
             }
-            Estado.ENGOLIDO, Estado.DIAGONAL_PENDENTE -> true
+            Estado.ENGOLIDO -> {
+                // Gesto de um dedo que a página engoliu: a tela cheia do Leitor decide pelo deslocamento
+                // (rb-26b, passo 6). Dois dedos não avisam.
+                if (!doisDedos) {
+                    val dx = ev.x - x0
+                    val dy = ev.y - y0
+                    lista.post { lista.aoGestoDaPagina?.invoke(dx, dy) }
+                }
+                true
+            }
+            Estado.DIAGONAL_PENDENTE -> true
             else -> despachar(ev)
         }
         encerrar()
@@ -160,6 +175,7 @@ internal class ArrasteLateralDaPagina(
 
     private fun encerrar() {
         estado = Estado.OCIOSO
+        doisDedos = false
         velocidade?.recycle()
         velocidade = null
         tvNoDown = null

@@ -37,6 +37,8 @@ import kotlin.math.hypot
  * - no modo páginas (rb-26b, ver [paginacao]), cortar a linha parcial de baixo, virar a página com o arraste lateral e
  *   com as ações de rolagem da acessibilidade. O pedido do Editor de ficar com o gesto (toque longo) tira o arraste
  *   lateral dele (ver [editorDonoDoGesto]).
+ * - avisar, no modo páginas, os gestos que a página engoliu ([aoGestoDaPagina]) e as viradas pelo dedo
+ *   ([aoVirarPeloDedo]), para a tela cheia do Leitor (rb-26b, passo 6, ver [TelaCheiaDoLeitor]).
  */
 // 12 funções, limite 10: o modo páginas (rb-26b) fica na própria lista (clip e pedido do Editor).
 @Suppress("TooManyFunctions")
@@ -60,6 +62,15 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
 
     /** Chamado (por post, depois de [aoLiberarTexto]) quando o texto é liberado: o modo páginas alinha (rb-26b). */
     internal var aoLiberarPagina: (() -> Unit)? = null
+
+    /**
+     * Fim de um gesto de um dedo que a página engoliu (rb-26b, passo 6): o deslocamento do DOWN ao UP, em px. Só
+     * dispara no modo páginas, e não para o gesto que o Editor pediu para si.
+     */
+    internal var aoGestoDaPagina: ((dx: Float, dy: Float) -> Unit)? = null
+
+    /** A página virou com o arraste lateral de quem lê (rb-26b, passo 6). Não dispara para tecla nem TalkBack. */
+    internal var aoVirarPeloDedo: (() -> Unit)? = null
 
     /**
      * Alvo da descida da barra da seleção (rb-48), sem a animação. Só a BarraDaSelecaoDeTexto escreve. O espaço depois

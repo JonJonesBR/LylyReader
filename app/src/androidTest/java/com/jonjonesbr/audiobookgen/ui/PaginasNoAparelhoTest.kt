@@ -43,7 +43,8 @@ import org.junit.runner.RunWith
  * viram a página com o arraste lateral e confere que o vertical não rola; P4 confere que a seleção e a alça não
  * viram a página; P5 é a leitura guiada virando sozinha e o botão "Voltar à narração" no painel; P6 gira a tela; P7
  * confere PAGE_DOWN; P8 põe a alça na linha de baixo da página, com a guiada pausada, e confere que a página não rola;
- * P9 e P10 são a seleção com a barra embaixo, no retrato e na paisagem (rb-26b, passo 3). Os toques são reais (ver
+ * P9 e P10 são a seleção com a barra embaixo, no retrato e na paisagem (rb-26b, passo 3); P12 é o cabeçalho que some
+ * ao virar a página e volta com um deslize para baixo (rb-26b, passo 6). Os toques são reais (ver
  * [Gestos]); as conferências leem as Views na thread principal.
  */
 @RunWith(AndroidJUnit4::class)
@@ -647,6 +648,71 @@ class PaginasNoAparelhoTest {
         }
     }
 
+    /**
+     * P12 (rb-26b, passo 6): no modo páginas, virar a página com o dedo recolhe o cabeçalho (toolbar, busca e
+     * capítulo), e um deslize para baixo o traz de volta. A 1ª linha da página é a mesma antes e depois de mostrar ou
+     * recolher o cabeçalho, e um deslize para cima não vira a página.
+     */
+    @Test
+    fun p12_cabecalhoSomeAoVirarEVoltaComDeslizeParaBaixo() {
+        comPaginas {
+            val scenario = abrirNoPaginado()
+            regras.fecharDialogosDoSistema()
+            scenario.onActivity { a -> assertEquals(View.VISIBLE, cabecalhoDo(a).visibility) }
+
+            val antes = medirPagina(scenario)
+            arrastarLateral(scenario, paraFrente = true)
+            esperarAte(scenario, "a página virar com o arraste lateral", TEMPO_DE_VIRADA_MS) { a ->
+                offsetDaLista(a) > antes.offset
+            }
+            esperarAte(scenario, "cabeçalho recolhido com a virada", TEMPO_DE_VIRADA_MS) { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
+            esperarPaginaParada(scenario)
+            val recolhido = medirPagina(scenario)
+            val topo = checkNotNull(recolhido.topoVisivel()) { "A página recolhida não tem linha no topo" }
+            Capturas.anotar("p12", "recolhido: topo=$topo")
+            Capturas.capturar("p12_recolhido")
+            conferirSemLinhaCortada(recolhido, "p12-recolhido")
+
+            rolarListaComODedo(
+                scenario,
+                fracaoDaAreaUtil = FRACAO_DO_ARRASTE_VERTICAL,
+                paraBaixoNoTexto = false,
+                cenario = "p12",
+            )
+            esperarAte(scenario, "cabeçalho voltou com o deslize para baixo", TEMPO_DE_VIRADA_MS) { a ->
+                cabecalhoDo(a).visibility == View.VISIBLE && !listaDoLeitor(a).isLayoutRequested
+            }
+            esperarPaginaParada(scenario)
+            val mostrado = medirPagina(scenario)
+            assertTrue(
+                "Mostrar o cabeçalho não deveria mudar a 1ª linha (era $topo, veio ${mostrado.topoVisivel()})",
+                topo.mesmaQue(mostrado.topoVisivel()),
+            )
+            conferirSemLinhaCortada(mostrado, "p12-mostrado")
+            Capturas.capturar("p12_mostrado")
+
+            rolarListaComODedo(
+                scenario,
+                fracaoDaAreaUtil = FRACAO_DO_ARRASTE_VERTICAL,
+                paraBaixoNoTexto = true,
+                cenario = "p12b",
+            )
+            esperarAte(scenario, "cabeçalho recolhido com o deslize para cima", TEMPO_DE_VIRADA_MS) { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
+            esperarPaginaParada(scenario)
+            val deNovo = medirPagina(scenario)
+            assertTrue(
+                "Recolher o cabeçalho não deveria mudar a 1ª linha (era $topo, veio ${deNovo.topoVisivel()})",
+                topo.mesmaQue(deNovo.topoVisivel()),
+            )
+            conferirSemLinhaCortada(deNovo, "p12-de-novo")
+            Capturas.capturar("p12_recolhido_de_novo")
+        }
+    }
+
     /** Liga a opção "Horizontal (páginas)" para o corpo, e a desliga no fim (mesmo se o teste falhar). */
     private fun comPaginas(corpo: () -> Unit) {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
@@ -689,6 +755,9 @@ class PaginasNoAparelhoTest {
 
     /** Deslocamento vertical da lista (o que o modo páginas muda ao virar), na thread principal. */
     private fun offsetDaLista(a: ReaderActivity): Int = listaDoLeitor(a).computeVerticalScrollOffset()
+
+    /** O cabeçalho do Leitor (toolbar, busca e capítulo), que a tela cheia recolhe ao virar (rb-26b, passo 6). */
+    private fun cabecalhoDo(a: ReaderActivity): View = a.findViewById(R.id.cabecalhoDoLeitor)
 
     /** Mede a página agora (lista, corte e linhas) numa passagem pela thread principal. */
     private fun medirPagina(scenario: ActivityScenario<ReaderActivity>): EstadoDaPagina {

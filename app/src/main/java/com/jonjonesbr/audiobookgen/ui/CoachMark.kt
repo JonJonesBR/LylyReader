@@ -37,7 +37,8 @@ object CoachMark {
         Dica.DOWNLOADS_VOZES to (R.string.dica_downloads_vozes_titulo to R.string.dica_downloads_vozes_texto),
         Dica.LEITOR_GUIADA to (R.string.dica_leitor_guiada_titulo to R.string.dica_leitor_guiada_texto),
         Dica.LEITOR_CAPITULOS to (R.string.dica_leitor_capitulos_titulo to R.string.dica_leitor_capitulos_texto),
-        Dica.LEITOR_VOZ_E_MOTOR to (R.string.dica_leitor_voz_titulo to R.string.dica_leitor_voz_texto)
+        Dica.LEITOR_VOZ_E_MOTOR to (R.string.dica_leitor_voz_titulo to R.string.dica_leitor_voz_texto),
+        Dica.LEITOR_TELA_CHEIA to (R.string.dica_leitor_tela_cheia_titulo to R.string.dica_leitor_tela_cheia_texto),
     )
 
     /** Mostra a próxima dica da [tela], se houver, apontando para a view que [alvoDe] devolver. */

@@ -46,7 +46,10 @@ internal class PaginacaoDoLeitor(
         podeVirar = { ativa },
         // Por post: a virada roda depois do UP, fora do despacho do toque. A conferência da seleção (rb-60b) vê a
         // página nova no liberarDepois que vem depois.
-        aoCompletar = { paraFrente -> lista.post { virarPeloLeitor(if (paraFrente) 1 else -1) } },
+        // Só o arraste avisa a tela cheia (rb-26b, passo 6): tecla, TalkBack e a guiada não recolhem o cabeçalho.
+        aoCompletar = { paraFrente ->
+            lista.post { if (virarPeloLeitor(if (paraFrente) 1 else -1)) lista.aoVirarPeloDedo?.invoke() }
+        },
     )
 
     init {

@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -175,5 +176,84 @@ class RegraDasPaginasDoLeitorTest {
     @Test
     fun `passo da guiada sem nada a fazer e zero`() {
         assertEquals(0, regra.passoDaGuiada(250, 290, 200, 400, podeSubir = true))
+    }
+
+    @Test
+    fun `cabecalho fora das paginas fica sempre visivel, mesmo oculto pelo leitor`() {
+        assertTrue(
+            regra.cabecalhoVisivel(
+                paginasAtivas = false,
+                ocultoPeloLeitor = true,
+                buscaAberta = false,
+                leitorDeTela = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `cabecalho oculto nas paginas some`() {
+        assertFalse(
+            regra.cabecalhoVisivel(
+                paginasAtivas = true,
+                ocultoPeloLeitor = true,
+                buscaAberta = false,
+                leitorDeTela = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `busca aberta mantem o cabecalho nas paginas`() {
+        assertTrue(
+            regra.cabecalhoVisivel(
+                paginasAtivas = true,
+                ocultoPeloLeitor = true,
+                buscaAberta = true,
+                leitorDeTela = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `leitor de tela mantem o cabecalho nas paginas`() {
+        assertTrue(
+            regra.cabecalhoVisivel(
+                paginasAtivas = true,
+                ocultoPeloLeitor = true,
+                buscaAberta = false,
+                leitorDeTela = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `nas paginas sem nada oculto o cabecalho fica visivel`() {
+        assertTrue(
+            regra.cabecalhoVisivel(
+                paginasAtivas = true,
+                ocultoPeloLeitor = false,
+                buscaAberta = false,
+                leitorDeTela = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `deslize vertical passa do limiar para baixo e para cima`() {
+        assertEquals(1, regra.deslizeVertical(0f, 200f, 100f))
+        assertEquals(-1, regra.deslizeVertical(0f, -200f, 100f))
+    }
+
+    @Test
+    fun `deslize vertical abaixo do limiar nao conta`() {
+        assertEquals(0, regra.deslizeVertical(0f, 99f, 100f))
+        assertEquals(1, regra.deslizeVertical(0f, 100f, 100f))
+    }
+
+    @Test
+    fun `deslize mais horizontal que vertical nao conta`() {
+        assertEquals(0, regra.deslizeVertical(300f, 200f, 100f))
+        assertEquals(0, regra.deslizeVertical(150f, 150f, 100f))
+        assertEquals(-1, regra.deslizeVertical(-50f, -150f, 100f))
     }
 }

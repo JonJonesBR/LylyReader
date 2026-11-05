@@ -14,228 +14,237 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- ── Toolbar (cores do tema de leitura: aplicarPaletaNasBarrasDoLeitor) ── -->
+        <!-- rb-26b (passo 6): toolbar, divisor, busca e capítulo ficam neste contêiner. No modo páginas ele some ao virar
+             a página com o dedo, e volta com um deslize para baixo. Só a TelaCheiaDoLeitor mexe na visibilidade dele. -->
         <LinearLayout
-            android:id="@+id/toolbarReader"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:paddingStart="4dp"
-            android:paddingEnd="8dp"
-            android:gravity="center_vertical"
-            android:background="@color/color_background">
-
-            <ImageButton
-                android:id="@+id/btnReaderVoltar"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_voltar"
-                app:tint="@color/color_on_surface_muted"
-                android:contentDescription="@string/cd_voltar"
-                android:tooltipText="@string/cd_voltar"/>
-
-            <TextView
-                android:id="@+id/tvReaderTitulo"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="@color/color_on_surface"/>
-
-            <!-- Botão de busca -->
-            <ImageButton
-                android:id="@+id/btnBuscarReader"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_buscar"
-                app:tint="@color/color_on_surface_dim"
-                android:contentDescription="@string/cd_buscar"
-                android:tooltipText="@string/cd_buscar"/>
-
-            <!-- Botão de bookmark: alterna marcado/desmarcado na posição atual (ícone reflete o estado) -->
-            <ImageButton
-                android:id="@+id/btnBookmarkReader"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_bookmark_border"
-                app:tint="@color/color_on_surface_dim"
-                android:contentDescription="@string/cd_bookmark"
-                android:tooltipText="@string/cd_bookmark"/>
-
-            <!-- Botão de mais opções (abre BottomSheet de ações) -->
-            <ImageButton
-                android:id="@+id/btnReaderOpcoes"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_mais"
-                app:tint="@color/color_on_surface_dim"
-                android:contentDescription="@string/cd_mais_opcoes"
-                android:tooltipText="@string/cd_mais_opcoes"/>
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/color_divider"/>
-
-        <!-- ── Search bar (inicialmente oculta) ───────────────────────── -->
-        <LinearLayout
-            android:id="@+id/layoutBuscaReader"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingEnd="4dp"
-            android:background="@color/color_surface_variant"
-            android:visibility="gone">
-
-            <EditText
-                android:id="@+id/etBuscaReader"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:hint="@string/busca_hint"
-                android:textSize="13sp"
-                android:inputType="text"
-                android:background="@android:color/transparent"
-                android:imeOptions="actionSearch"
-                android:maxLines="1"/>
-
-            <TextView
-                android:id="@+id/tvBuscaContador"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textColor="@color/color_on_surface_muted"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:visibility="gone"/>
-
-            <ImageButton
-                android:id="@+id/btnBuscaAnterior"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_busca_seta_cima"
-                app:tint="@color/color_on_surface_dim"
-                android:contentDescription="@string/cd_busca_anterior"/>
-
-            <ImageButton
-                android:id="@+id/btnBuscaProximo"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_busca_seta_baixo"
-                app:tint="@color/color_on_surface_dim"
-                android:contentDescription="@string/cd_busca_proximo"/>
-
-            <ImageButton
-                android:id="@+id/btnBuscaFechar"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_player_fechar"
-                android:padding="12dp"
-                app:tint="@color/color_on_surface_muted"
-                android:contentDescription="@string/cd_busca_fechar"/>
-
-        </LinearLayout>
-
-        <!-- ── Barra do capítulo atual: ‹ "3/42 · Título ▾" › + progresso ──
-             Tocar no título abre a lista de capítulos; as setas vão ao anterior/próximo. -->
-        <LinearLayout
-            android:id="@+id/barraCapitulo"
+            android:id="@+id/cabecalhoDoLeitor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="52dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:visibility="gone">
+            android:orientation="vertical">
 
-            <ImageButton
-                android:id="@+id/btnCapituloAnterior"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_capitulo_anterior"
-                app:tint="@color/color_on_surface_dim"
-                android:contentDescription="@string/cd_capitulo_anterior"
-                android:tooltipText="@string/cd_capitulo_anterior"/>
-
+            <!-- ── Toolbar (cores do tema de leitura: aplicarPaletaNasBarrasDoLeitor) ── -->
             <LinearLayout
-                android:id="@+id/areaCapituloAtual"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="48dp"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true">
+                android:id="@+id/toolbarReader"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:paddingStart="4dp"
+                android:paddingEnd="8dp"
+                android:gravity="center_vertical"
+                android:background="@color/color_background">
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                <ImageButton
+                    android:id="@+id/btnReaderVoltar"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_voltar"
+                    app:tint="@color/color_on_surface_muted"
+                    android:contentDescription="@string/cd_voltar"
+                    android:tooltipText="@string/cd_voltar"/>
 
-                    <TextView
-                        android:id="@+id/tvCapituloAtual"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/color_on_surface"
-                        tools:text="3/42 · O despertar"/>
-
-                    <ImageView
-                        android:id="@+id/ivAbrirCapitulos"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_marginStart="2dp"
-                        android:src="@drawable/ic_lista_capitulos"
-                        app:tint="@color/color_on_surface_dim"
-                        android:importantForAccessibility="no"/>
-                </LinearLayout>
-
-                <!-- Progresso rico: % lido + tempo restante no capítulo -->
                 <TextView
-                    android:id="@+id/tvProgressoLeitura"
+                    android:id="@+id/tvReaderTitulo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/color_on_surface"/>
+
+                <!-- Botão de busca -->
+                <ImageButton
+                    android:id="@+id/btnBuscarReader"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_buscar"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_buscar"
+                    android:tooltipText="@string/cd_buscar"/>
+
+                <!-- Botão de bookmark: alterna marcado/desmarcado na posição atual (ícone reflete o estado) -->
+                <ImageButton
+                    android:id="@+id/btnBookmarkReader"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_bookmark_border"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_bookmark"
+                    android:tooltipText="@string/cd_bookmark"/>
+
+                <!-- Botão de mais opções (abre BottomSheet de ações) -->
+                <ImageButton
+                    android:id="@+id/btnReaderOpcoes"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_mais"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_mais_opcoes"
+                    android:tooltipText="@string/cd_mais_opcoes"/>
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/color_divider"/>
+
+            <!-- ── Search bar (inicialmente oculta) ───────────────────────── -->
+            <LinearLayout
+                android:id="@+id/layoutBuscaReader"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="4dp"
+                android:background="@color/color_surface_variant"
+                android:visibility="gone">
+
+                <EditText
+                    android:id="@+id/etBuscaReader"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:hint="@string/busca_hint"
+                    android:textSize="13sp"
+                    android:inputType="text"
+                    android:background="@android:color/transparent"
+                    android:imeOptions="actionSearch"
+                    android:maxLines="1"/>
+
+                <TextView
+                    android:id="@+id/tvBuscaContador"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="12sp"
-                    android:textColor="@color/color_on_surface_dim"
-                    android:visibility="gone"
-                    tools:text="42% · ~8 min restantes no capítulo"/>
+                    android:textColor="@color/color_on_surface_muted"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:visibility="gone"/>
+
+                <ImageButton
+                    android:id="@+id/btnBuscaAnterior"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_busca_seta_cima"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_busca_anterior"/>
+
+                <ImageButton
+                    android:id="@+id/btnBuscaProximo"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_busca_seta_baixo"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_busca_proximo"/>
+
+                <ImageButton
+                    android:id="@+id/btnBuscaFechar"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_player_fechar"
+                    android:padding="12dp"
+                    app:tint="@color/color_on_surface_muted"
+                    android:contentDescription="@string/cd_busca_fechar"/>
+
             </LinearLayout>
 
-            <ImageButton
-                android:id="@+id/btnCapituloProximo"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_capitulo_proximo"
-                app:tint="@color/color_on_surface_dim"
-                android:contentDescription="@string/cd_capitulo_proximo"
-                android:tooltipText="@string/cd_capitulo_proximo"/>
+            <!-- ── Barra do capítulo atual: ‹ "3/42 · Título ▾" › + progresso ──
+                 Tocar no título abre a lista de capítulos; as setas vão ao anterior/próximo. -->
+            <LinearLayout
+                android:id="@+id/barraCapitulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:visibility="gone">
 
+                <ImageButton
+                    android:id="@+id/btnCapituloAnterior"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_capitulo_anterior"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_capitulo_anterior"
+                    android:tooltipText="@string/cd_capitulo_anterior"/>
+
+                <LinearLayout
+                    android:id="@+id/areaCapituloAtual"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="48dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvCapituloAtual"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/color_on_surface"
+                            tools:text="3/42 · O despertar"/>
+
+                        <ImageView
+                            android:id="@+id/ivAbrirCapitulos"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="2dp"
+                            android:src="@drawable/ic_lista_capitulos"
+                            app:tint="@color/color_on_surface_dim"
+                            android:importantForAccessibility="no"/>
+                    </LinearLayout>
+
+                    <!-- Progresso rico: % lido + tempo restante no capítulo -->
+                    <TextView
+                        android:id="@+id/tvProgressoLeitura"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:textColor="@color/color_on_surface_dim"
+                        android:visibility="gone"
+                        tools:text="42% · ~8 min restantes no capítulo"/>
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/btnCapituloProximo"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_capitulo_proximo"
+                    app:tint="@color/color_on_surface_dim"
+                    android:contentDescription="@string/cd_capitulo_proximo"
+                    android:tooltipText="@string/cd_capitulo_proximo"/>
+
+            </LinearLayout>
         </LinearLayout>
 
         <!-- ── Status pill (banner de texto otimizado) ────────────────── -->

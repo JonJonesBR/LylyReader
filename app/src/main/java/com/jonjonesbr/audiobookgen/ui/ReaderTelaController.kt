@@ -23,8 +23,9 @@ private const val DURACAO_PILL_LIMPEZA_MS = 5000L
 
 /**
  * Aplica na tela do leitor o estado calculado em TelaDoLeitor.kt: carregando e erro, pílula da limpeza, barra de modo,
- * FABs, tema e margem, e a dica. Por instância da Activity (a dica, o tema e a margem zeram ao girar). A pílula já
- * mostrada fica no ViewModel ([aoMostrarPilula] a marca), para não voltar ao girar.
+ * FABs, tema e margem, a dica e a tela cheia do modo páginas (rb-26b, passo 6, ver [TelaCheiaDoLeitor]). Por instância
+ * da Activity (a dica, o tema e a margem zeram ao girar). A pílula já mostrada fica no ViewModel ([aoMostrarPilula] a
+ * marca), para não voltar ao girar.
  * Não lê o ViewModel: o que a tela precisa chega por parâmetro ou por lambda.
  */
 class ReaderTelaController(
@@ -55,6 +56,18 @@ class ReaderTelaController(
     // mexer na montagem da Activity. Achados uma vez, quando o FAB é aplicado.
     private val botaoVoltarNoPainel: View by lazy { activity.findViewById(R.id.btnGuidedVoltarNarracao) }
     private val tvStatusDoPainel: View by lazy { activity.findViewById(R.id.tvGuidedStatus) }
+    // Tela cheia do modo páginas (rb-26b, passo 6): o cabeçalho some ao virar a página. Achada uma vez, como os de
+    // cima.
+    private val telaCheia: TelaCheiaDoLeitor? by lazy {
+        (recyclerView as? RecyclerViewParagrafos)?.let {
+            TelaCheiaDoLeitor(
+                activity,
+                it,
+                activity.findViewById(R.id.cabecalhoDoLeitor),
+                activity.findViewById(R.id.layoutBuscaReader),
+            )
+        }
+    }
 
     /**
      * Chamado uma vez, no vincularViews, depois do recyclerView. Mesma ordem de efeitos de antes: insets, listeners do
@@ -98,6 +111,8 @@ class ReaderTelaController(
             views.layoutGuidedPlayer.visibility = View.GONE
             views.btnConverterAssim.visibility = View.GONE
         }
+        // rb-26b (passo 6): a tela cheia liga os avisos da lista (gesto da página e virada pelo dedo).
+        telaCheia?.ligar()
     }
 
     /**
@@ -111,6 +126,8 @@ class ReaderTelaController(
             views.layoutErro.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
             views.barraCapitulo.visibility = View.GONE
+            // Com erro, o cabeçalho (com o botão de voltar) fica sempre visível.
+            telaCheia?.aplicar(false)
             views.tvErro.text = erro
             return true
         }
@@ -159,6 +176,9 @@ class ReaderTelaController(
             )
         }
         aplicarBarraDeSelecao(tela.paragrafosSelecionados)
+        // Tela cheia: o modo vem da tela (tela.modoAdapter), porque o adapter só é atualizado depois deste ponto.
+        val paginacao = (recyclerView as? RecyclerViewParagrafos)?.paginacao
+        telaCheia?.aplicar(paginacao?.ligada == true && tela.modoAdapter == AdapterModo.LEITURA)
     }
 
     /**

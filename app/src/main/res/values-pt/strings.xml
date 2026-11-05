@@ -1176,6 +1176,8 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dica_leitor_capitulos_texto">As setas vão ao capítulo anterior ou ao próximo. Toque no título para ver todos, pular para um deles ou marcar capítulos para gerar áudio.</string>
     <string name="dica_leitor_voz_titulo">Troque a voz sem parar a leitura</string>
     <string name="dica_leitor_voz_texto">Toque no microfone para mudar a voz ou o motor enquanto a leitura continua.</string>
+    <string name="dica_leitor_tela_cheia_titulo">Tela cheia</string>
+    <string name="dica_leitor_tela_cheia_texto">Deslize para baixo na página para ver o menu e os capítulos.</string>
 
     <string name="label_aprender">Aprender</string>
     <string name="aprender_titulo">Aprender o app</string>

@@ -2077,6 +2077,13 @@ class ReaderActivitySmokeTest {
             "linha $linha do parágrafo $pos fora da lista"
         }
 
+    /** Primeira linha que começa no topo da página (rb-26b, passo 6): a 1ª linha inteira, na posição de agora. */
+    private fun primeiraLinhaDaPagina(rv: RecyclerView): LinhaNaLista =
+        checkNotNull(linhasNaLista(rv).firstOrNull { it.topo >= rv.paddingTop }) { "sem linha na página" }
+
+    /** O cabeçalho do Leitor (toolbar, busca e capítulo), que a tela cheia recolhe nas páginas (rb-26b, passo 6). */
+    private fun cabecalhoDo(a: ReaderActivity): View = a.findViewById(R.id.cabecalhoDoLeitor)
+
     /** Primeira linha que termina depois da base da página, ou seja, a escondida pelo corte. Nula se não há. */
     private fun primeiraLinhaEscondida(rv: RecyclerView): LinhaNaLista? {
         val base = rv.height - rv.paddingBottom
@@ -2320,11 +2327,9 @@ class ReaderActivitySmokeTest {
         AppPrefs(app).readerRolagemHorizontal = true
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
             esperarModoPaginas(scenario)
-            var escondida: LinhaNaLista? = null
-            scenario.onActivity { a -> escondida = primeiraLinhaEscondida(listaDoLeitor(a)) }
-            val alvo = checkNotNull(escondida)
 
-            // (f) Arraste vertical de 120 dp: a lista e a primeira linha ficam onde estavam.
+            // (f) Arraste vertical de 120 dp: a lista e a primeira linha ficam onde estavam. Com o cabeçalho (rb-26b,
+            // passo 6), o deslize para cima o recolhe: a página cresce, e a linha escondida de antes fica à vista.
             var topoAntes = 0
             scenario.onActivity { a -> topoAntes = tvEm(listaDoLeitor(a), 0)!!.top }
             scenario.onActivity { a ->
@@ -2332,11 +2337,17 @@ class ReaderActivitySmokeTest {
                 arrastar(rv, 0f, -120 * rv.resources.displayMetrics.density)
             }
             esperarAte(scenario, "gesto vertical processado") { a -> !listaDoLeitor(a).isLayoutRequested }
+            esperarAte(scenario, "cabeçalho recolhido pelo deslize") { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
             scenario.onActivity { a ->
                 val rv = listaDoLeitor(a)
                 assertEquals(RecyclerView.SCROLL_STATE_IDLE, rv.scrollState)
                 assertEquals(topoAntes, tvEm(rv, 0)!!.top)
             }
+            var escondida: LinhaNaLista? = null
+            scenario.onActivity { a -> escondida = primeiraLinhaEscondida(listaDoLeitor(a)) }
+            val alvo = checkNotNull(escondida)
 
             // (e) Arraste lateral de 150 dp, da direita para a esquerda: a página vira.
             scenario.onActivity { a ->
@@ -2347,6 +2358,130 @@ class ReaderActivitySmokeTest {
                 val rv = listaDoLeitor(a)
                 linhasNaLista(rv).any { it.pos == alvo.pos && it.linha == alvo.linha && it.topo == rv.paddingTop }
             }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun telaCheiaRecolheComODeslizeParaCimaEVoltaParaBaixo() {
+        // rb-26b (passo 6): deslizar para cima recolhe o cabeçalho sem virar a página; para baixo ele volta; virar com
+        // o dedo recolhe de novo.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var antes: LinhaNaLista? = null
+            scenario.onActivity { a ->
+                assertEquals(View.VISIBLE, cabecalhoDo(a).visibility)
+                antes = primeiraLinhaDaPagina(listaDoLeitor(a))
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, -120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "cabeçalho recolhido com o deslize para cima") { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                assertEquals(RecyclerView.SCROLL_STATE_IDLE, rv.scrollState)
+                assertEquals("a página não deveria virar", antes, primeiraLinhaDaPagina(rv))
+            }
+
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, 120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "cabeçalho voltou com o deslize para baixo") { a ->
+                cabecalhoDo(a).visibility == View.VISIBLE && !listaDoLeitor(a).isLayoutRequested
+            }
+            scenario.onActivity { a ->
+                assertEquals("a 1ª linha deveria ficar a mesma", antes, primeiraLinhaDaPagina(listaDoLeitor(a)))
+            }
+
+            // Recolhe de novo. A virada com o dedo, então, acontece com o cabeçalho já recolhido.
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, -120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "cabeçalho recolhido de novo") { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
+            var escondida: LinhaNaLista? = null
+            scenario.onActivity { a -> escondida = primeiraLinhaEscondida(listaDoLeitor(a)) }
+            val alvo = checkNotNull(escondida)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, -150 * rv.resources.displayMetrics.density, 0f)
+            }
+            esperarAte(scenario, "arraste lateral virou a página e recolheu o cabeçalho") { a ->
+                val rv = listaDoLeitor(a)
+                linhasNaLista(rv).any { it.pos == alvo.pos && it.linha == alvo.linha && it.topo == rv.paddingTop } &&
+                    cabecalhoDo(a).visibility == View.GONE
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun cabecalhoQueVoltaComParagrafoFocadoNaoSobeAPagina() {
+        // rb-26b (passo 6): com um parágrafo focado cruzando a base, o cabeçalho que volta não sobe a página: a 1ª
+        // linha é a mesma (posição e número). Prova o manterAPrimeiraLinha da TelaCheiaDoLeitor.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            scenario.onActivity { a -> entrarNoModoDeToque(a) }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, -120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "cabeçalho recolhido") { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
+            scenario.onActivity { a -> tvEm(listaDoLeitor(a), 1)!!.requestFocus() }
+            var antes: LinhaNaLista? = null
+            scenario.onActivity { a -> antes = primeiraLinhaDaPagina(listaDoLeitor(a)) }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, 120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "cabeçalho voltou com o parágrafo focado") { a ->
+                cabecalhoDo(a).visibility == View.VISIBLE && !listaDoLeitor(a).isLayoutRequested
+            }
+            scenario.onActivity { a ->
+                val depois = primeiraLinhaDaPagina(listaDoLeitor(a))
+                assertEquals(checkNotNull(antes).pos, depois.pos)
+                assertEquals(checkNotNull(antes).linha, depois.linha)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun noVerticalOCabecalhoNuncaRecolhe() {
+        // rb-26b (passo 6): fora do modo páginas, o deslize não recolhe o cabeçalho, nem o arraste lateral.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = false
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarAte(scenario, "lista vertical com o primeiro parágrafo medido") { a ->
+                tvEm(listaDoLeitor(a), 0)?.layout != null
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val densidade = rv.resources.displayMetrics.density
+                arrastar(rv, 0f, -120 * densidade)
+                arrastar(rv, 0f, 120 * densidade)
+                arrastar(rv, -150 * densidade, 0f)
+            }
+            esperarAte(scenario, "gestos processados") { a -> !listaDoLeitor(a).isLayoutRequested }
+            scenario.onActivity { a -> assertEquals(View.VISIBLE, cabecalhoDo(a).visibility) }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }

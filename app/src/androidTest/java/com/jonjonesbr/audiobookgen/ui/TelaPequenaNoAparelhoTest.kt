@@ -24,6 +24,7 @@ import com.jonjonesbr.audiobookgen.ui.apoio.esperarPalavraVisivel
 import com.jonjonesbr.audiobookgen.ui.apoio.fundoParaEscolherPalavra
 import com.jonjonesbr.audiobookgen.ui.apoio.selecionarPalavra
 import com.jonjonesbr.audiobookgen.util.dpToPx
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -133,6 +134,58 @@ class TelaPequenaNoAparelhoTest {
                     }
                     assertFalse("No Só ler o painel da leitura guiada deveria estar oculto", painelVisivel)
                     registrar(scenario, "s5", "s5_paisagem_so_ler", "paisagem, só ler")
+                }
+            }
+        }
+    }
+
+    /**
+     * P13 (rb-26b, passo 6), paisagem com a fonte 1,3: depois de virar uma página com a guiada em modo manual, o
+     * cabeçalho sai e a página ganha altura. Ela mostra três ou mais linhas inteiras, e uma seleção não muda essa
+     * conta.
+     */
+    @Test
+    fun p13_paisagemComTelaCheiaMostraAsLinhasDaAltura() {
+        comPaginas {
+            comFonteGrande {
+                comPaisagem {
+                    val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+                    regras.usarVoz(VozFalsa.longa(contexto))
+                    val scenario = abrirLeitorComGuiada(regras, contexto)
+                    virarPaginaComGuiadaEmManual(scenario)
+                    esperarAte(scenario, "cabeçalho recolhido depois da virada") { a ->
+                        a.findViewById<View>(R.id.cabecalhoDoLeitor).visibility == View.GONE &&
+                            !a.findViewById<View>(R.id.recyclerViewParagrafos).isLayoutRequested
+                    }
+                    esperarPaginaParada(scenario)
+                    var semSelecao = -1
+                    scenario.onActivity { a ->
+                        semSelecao = linhasInteirasVisiveis(a)
+                        Capturas.anotar("p13", medirTelaPequena(a).detalhes)
+                    }
+                    assertTrue(
+                        "Com o cabeçalho recolhido deveriam caber 3 linhas inteiras, couberam $semSelecao",
+                        semSelecao >= 3,
+                    )
+
+                    val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
+                    selecionarPalavra(scenario, regras, indice, palavra, cenario = "p13")
+                    esperarAte(scenario, "barra da seleção visível") { a ->
+                        a.findViewById<View>(R.id.barraSelecaoTexto).visibility == View.VISIBLE
+                    }
+                    var comSelecao = -1
+                    var visibilidadeDoCabecalho = -1
+                    scenario.onActivity { a ->
+                        comSelecao = linhasInteirasVisiveis(a)
+                        visibilidadeDoCabecalho = a.findViewById<View>(R.id.cabecalhoDoLeitor).visibility
+                    }
+                    assertEquals(
+                        "Com a seleção aberta o cabeçalho continua recolhido",
+                        View.GONE,
+                        visibilidadeDoCabecalho,
+                    )
+                    assertEquals("A seleção não deveria mudar o número de linhas inteiras", semSelecao, comSelecao)
+                    Capturas.capturar("p13_selecao")
                 }
             }
         }

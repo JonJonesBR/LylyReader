@@ -1163,6 +1163,8 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dica_leitor_capitulos_texto">Las flechas van al capítulo anterior o al siguiente. Toca el título para ver todos, saltar a uno o marcar capítulos para generar audio.</string>
     <string name="dica_leitor_voz_titulo">Cambia la voz sin parar la lectura</string>
     <string name="dica_leitor_voz_texto">Toca el micrófono para cambiar la voz o el motor mientras la lectura continúa.</string>
+    <string name="dica_leitor_tela_cheia_titulo">Pantalla completa</string>
+    <string name="dica_leitor_tela_cheia_texto">Desliza hacia abajo en la página para ver el menú y los capítulos.</string>
 
     <string name="label_aprender">Aprender</string>
     <string name="aprender_titulo">Aprender la app</string>
