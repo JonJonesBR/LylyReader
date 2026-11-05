@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -2742,6 +2743,58 @@ class ReaderActivitySmokeTest {
             }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "land")
+    fun paisagemTemOsIdsDoPainelEDaBarraEOPainelCabeEmUmaLinha() {
+        // rb-26b (passo 5): na paisagem o painel e a barra da seleção vêm dos layouts layout-land, com os mesmos ids.
+        // O painel tem de medir até 72 dp (a linha de 48 dp dos botões mais o padding), o que cabe no ~360 dp da tela.
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            scenario.onActivity { a ->
+                assertEquals(Configuration.ORIENTATION_LANDSCAPE, a.resources.configuration.orientation)
+                conferirIdsDoPainelEDaBarra(a)
+                val painel = a.findViewById<View>(R.id.layoutGuidedPlayer)
+                assertTrue("o painel da paisagem não foi medido (${painel.height}px)", painel.height > 0)
+                assertTrue(
+                    "o painel da paisagem mede ${painel.height}px, acima de ${a.dpToPx(72)}px (72 dp)",
+                    painel.height <= a.dpToPx(72)
+                )
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "port")
+    fun retratoTemOsMesmosIdsDoPainelEDaBarra() {
+        // rb-26b (passo 5): o retrato continua com os mesmos ids do painel e da barra (só extraídos para os includes).
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            scenario.onActivity { a ->
+                assertEquals(Configuration.ORIENTATION_PORTRAIT, a.resources.configuration.orientation)
+                conferirIdsDoPainelEDaBarra(a)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    /** Os ids do painel da guiada e da barra da seleção, que os includes trazem em cada orientação (rb-26b, passo 5). */
+    private fun conferirIdsDoPainelEDaBarra(a: ReaderActivity) {
+        val ids = listOf(
+            R.id.layoutGuidedPlayer, R.id.divisorGuidedPlayer, R.id.btnGuidedVoltarNarracao, R.id.tvGuidedStatus,
+            R.id.tvGuidedSoneca, R.id.tvGuidedPassos, R.id.btnGuidedVelocidade, R.id.progressGuidedLoading,
+            R.id.btnGuidedVoz, R.id.btnGuidedPrev, R.id.btnGuidedPlayPause, R.id.btnGuidedNext, R.id.btnGuidedClose,
+            R.id.barraSelecaoTexto, R.id.btnSelecaoTextoGerar, R.id.btnSelecaoTextoDestacar,
+            R.id.btnSelecaoTextoPronuncia, R.id.btnSelecaoTextoDefinir, R.id.btnSelecaoTextoVarios,
+        )
+        ids.forEach { id ->
+            assertTrue("falta o id ${a.resources.getResourceEntryName(id)}", a.findViewById<View>(id) != null)
+        }
     }
 
     // ── Livro de teste (cache, sem Python) ────────────────────────────────────

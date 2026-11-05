@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paisagem da barra da seleção de texto (rb-26b, passo 5): mesmos ids e tipos de layout/barra_selecao_texto.xml,
+     com o ícone ao lado do rótulo e o rótulo numa linha só (cabe na altura curta da paisagem). -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/barraSelecaoTexto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="top"
+    android:background="?attr/colorSurfaceVariant"
+    android:elevation="4dp"
+    android:clickable="true"
+    android:orientation="horizontal"
+    android:baselineAligned="false"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp"
+    android:visibility="gone">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelecaoTextoGerar"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minWidth="0dp"
+        android:minHeight="48dp"
+        android:minLines="1"
+        android:maxLines="1"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
+        android:text="@string/selecao_gerar_audio"
+        android:textSize="11sp"
+        app:icon="@drawable/ic_gerar_audio"
+        app:iconGravity="textStart"
+        app:iconSize="24dp"
+        app:iconPadding="0dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelecaoTextoDestacar"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minWidth="0dp"
+        android:minHeight="48dp"
+        android:minLines="1"
+        android:maxLines="1"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
+        android:text="@string/menu_destacar_trecho"
+        android:textSize="11sp"
+        app:icon="@drawable/ic_marca_texto"
+        app:iconGravity="textStart"
+        app:iconSize="24dp"
+        app:iconPadding="0dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelecaoTextoPronuncia"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minWidth="0dp"
+        android:minHeight="48dp"
+        android:minLines="1"
+        android:maxLines="1"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
+        android:contentDescription="@string/menu_pronuncia"
+        android:text="@string/barra_selecao_texto_pronuncia"
+        android:textSize="11sp"
+        app:icon="@drawable/ic_pronuncia"
+        app:iconGravity="textStart"
+        app:iconSize="24dp"
+        app:iconPadding="0dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelecaoTextoDefinir"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minWidth="0dp"
+        android:minHeight="48dp"
+        android:minLines="1"
+        android:maxLines="1"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
+        android:text="@string/menu_definir_palavra"
+        android:textSize="11sp"
+        app:icon="@drawable/ic_buscar"
+        app:iconGravity="textStart"
+        app:iconSize="24dp"
+        app:iconPadding="0dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelecaoTextoVarios"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minWidth="0dp"
+        android:minHeight="48dp"
+        android:minLines="1"
+        android:maxLines="1"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
+        android:contentDescription="@string/menu_selecionar_varios_paragrafos"
+        android:text="@string/barra_selecao_texto_varios"
+        android:textSize="11sp"
+        app:icon="@drawable/ic_mais"
+        app:iconGravity="textStart"
+        app:iconSize="24dp"
+        app:iconPadding="0dp"/>
+
+</LinearLayout>

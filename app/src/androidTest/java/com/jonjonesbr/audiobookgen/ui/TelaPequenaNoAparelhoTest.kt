@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Rect
 import android.view.Surface
 import android.view.View
+import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -22,6 +23,7 @@ import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarPalavraVisivel
 import com.jonjonesbr.audiobookgen.ui.apoio.fundoParaEscolherPalavra
 import com.jonjonesbr.audiobookgen.ui.apoio.selecionarPalavra
+import com.jonjonesbr.audiobookgen.util.dpToPx
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -134,6 +136,82 @@ class TelaPequenaNoAparelhoTest {
                 }
             }
         }
+    }
+
+    /**
+     * P11 (rb-26b, passo 5): paisagem com a guiada tocando e a fonte 1,3. O painel da guiada tem de medir até 72 dp e
+     * os cinco botões dele têm de caber inteiros na tela. Depois, com uma seleção aberta, os rótulos da barra da
+     * seleção não podem ter reticências (cada rótulo numa linha só, sem corte).
+     */
+    @Test
+    fun p11_paisagemComGuiadaPainelCompactoERotulosSemReticencias() {
+        comPaginas {
+            comFonteGrande {
+                comPaisagem {
+                    val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+                    regras.usarVoz(VozFalsa.longa(contexto))
+                    val scenario = abrirLeitorComGuiada(regras, contexto)
+                    esperarGuiadaTocando(scenario, 0)
+                    esperarPaginaComLinhas(scenario)
+                    esperarPaginaParada(scenario)
+                    regras.fecharDialogosDoSistema()
+
+                    val problemasDoPainel = mutableListOf<String>()
+                    scenario.onActivity { a -> problemasDoPainel += problemasDoPainelDaGuiada(a) }
+                    Capturas.capturar("p11_paisagem_guiada_painel")
+
+                    val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
+                    selecionarPalavra(scenario, regras, indice, palavra, cenario = "p11")
+                    regras.fecharDialogosDoSistema()
+                    esperarAte(scenario, "barra da seleção com os rótulos desenhados") { a ->
+                        a.findViewById<View>(R.id.barraSelecaoTexto).visibility == View.VISIBLE &&
+                            ROTULOS_DA_BARRA.all { (_, id) -> a.findViewById<TextView>(id).layout != null }
+                    }
+                    val reticencias = mutableListOf<String>()
+                    scenario.onActivity { a ->
+                        ROTULOS_DA_BARRA.forEach { (nome, id) ->
+                            val layout = checkNotNull(a.findViewById<TextView>(id).layout)
+                            val total = (0 until layout.lineCount).sumOf { layout.getEllipsisCount(it) }
+                            Capturas.anotar("p11", "'$nome' linhas=${layout.lineCount} reticencias=$total")
+                            if (total > 0) reticencias += "'$nome' com $total caractere(s) cortado(s)"
+                        }
+                    }
+                    Capturas.capturar("p11_paisagem_guiada_selecao")
+
+                    val painel = problemasDoPainel.joinToString("; ")
+                    assertTrue("Painel da guiada na paisagem: $painel", problemasDoPainel.isEmpty())
+                    val rotulos = reticencias.joinToString("; ")
+                    assertTrue("Rótulos da barra da seleção na paisagem: $rotulos", reticencias.isEmpty())
+                }
+            }
+        }
+    }
+
+    /** Problemas do painel da guiada na paisagem: altura até 72 dp e os cinco botões inteiros dentro da tela. */
+    private fun problemasDoPainelDaGuiada(a: ReaderActivity): List<String> {
+        val problemas = mutableListOf<String>()
+        val painel = a.findViewById<View>(R.id.layoutGuidedPlayer)
+        if (painel.visibility != View.VISIBLE) problemas += "o painel não está visível"
+        val teto = a.dpToPx(TETO_DO_PAINEL_NA_PAISAGEM_DP)
+        Capturas.anotar("p11", "painel altura=${painel.height}px (teto $teto px)")
+        if (painel.height > teto) problemas += "o painel mede ${painel.height} px, acima de $teto px (72 dp)"
+        val larguraTela = a.resources.displayMetrics.widthPixels
+        val alturaTela = a.resources.displayMetrics.heightPixels
+        BOTOES_DO_PAINEL.forEach { (nome, id) ->
+            val botao = a.findViewById<View>(id)
+            if (botao.visibility != View.VISIBLE) {
+                problemas += "'$nome' escondido"
+                return@forEach
+            }
+            val retangulo = Rect()
+            val visivel = botao.getGlobalVisibleRect(retangulo)
+            Capturas.anotar("p11", "'$nome' rect=${retangulo.toShortString()} tamanho=${botao.width}x${botao.height}")
+            val inteiro = visivel && retangulo.width() == botao.width && retangulo.height() == botao.height &&
+                retangulo.left >= 0 && retangulo.top >= 0 &&
+                retangulo.right <= larguraTela && retangulo.bottom <= alturaTela
+            if (!inteiro) problemas += "'$nome' não cabe inteiro na tela: ${retangulo.toShortString()}"
+        }
+        return problemas
     }
 
     /**
@@ -425,5 +503,26 @@ class TelaPequenaNoAparelhoTest {
 
         /** Intervalo entre as leituras do deslocamento, em ms. */
         const val INTERVALO_DE_PAGINA_PARADA_MS = 200L
+
+        /** Teto da altura do painel da guiada na paisagem, em dp (rb-26b, passo 5). */
+        const val TETO_DO_PAINEL_NA_PAISAGEM_DP = 72
+
+        /** Os cinco botões do painel da guiada, com o nome que aparece nas mensagens de falha. */
+        val BOTOES_DO_PAINEL = listOf(
+            "Voz" to R.id.btnGuidedVoz,
+            "Anterior" to R.id.btnGuidedPrev,
+            "Tocar/pausar" to R.id.btnGuidedPlayPause,
+            "Próximo" to R.id.btnGuidedNext,
+            "Fechar" to R.id.btnGuidedClose,
+        )
+
+        /** Os cinco rótulos da barra da seleção com áudio (rb-61), com o nome das mensagens de falha. */
+        val ROTULOS_DA_BARRA = listOf(
+            "Gerar áudio" to R.id.btnSelecaoTextoGerar,
+            "Destacar" to R.id.btnSelecaoTextoDestacar,
+            "Pronúncia" to R.id.btnSelecaoTextoPronuncia,
+            "Definir" to R.id.btnSelecaoTextoDefinir,
+            "Vários parágrafos" to R.id.btnSelecaoTextoVarios,
+        )
     }
 }

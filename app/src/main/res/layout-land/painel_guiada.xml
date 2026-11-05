@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paisagem do painel da leitura guiada (rb-26b, passo 5): uma linha só, com os mesmos ids de
+     layout/painel_guiada.xml. Na paisagem a altura é pouca (~360 dp): o status tem 1 linha (com reticências),
+     os chips e os controles ficam lado a lado, e o play tem 48 dp. Sem divisor visível. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layoutGuidedPlayer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:accessibilityTraversalBefore="@id/recyclerViewParagrafos"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@color/color_surface"
+    android:elevation="8dp"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    android:visibility="gone">
+
+    <View
+        android:id="@+id/divisorGuidedPlayer"
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:background="@color/color_divider"
+        android:visibility="gone"/>
+
+    <!-- "Voltar à narração" no modo páginas (rb-26b, passo 4): no lugar do status, como no retrato. -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnGuidedVoltarNarracao"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:contentDescription="@string/cd_guided_voltar_narracao"
+        android:text="@string/guided_voltar_narracao"
+        android:textSize="14sp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:icon="@android:drawable/ic_media_play"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/tvGuidedStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        tools:text="Leitura Guiada"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/color_on_surface"
+        android:ellipsize="end"
+        android:maxLines="1"/>
+
+    <TextView
+        android:id="@+id/tvGuidedSoneca"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:minWidth="48dp"
+        android:gravity="center"
+        tools:text="😴"
+        android:textSize="13sp"
+        android:textColor="?attr/colorPrimary"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:layout_marginEnd="4dp"
+        android:visibility="gone"
+        android:contentDescription="@string/cd_sleep_timer"/>
+
+    <TextView
+        android:id="@+id/tvGuidedPassos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:minWidth="48dp"
+        android:gravity="center"
+        tools:text="⚙ 12"
+        android:textSize="13sp"
+        android:textColor="?attr/colorPrimary"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:layout_marginEnd="4dp"
+        android:visibility="gone"
+        android:contentDescription="@string/cd_guided_voz_motor"/>
+
+    <TextView
+        android:id="@+id/btnGuidedVelocidade"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:minWidth="48dp"
+        android:gravity="center"
+        tools:text="1.0×"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorPrimary"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/cd_guided_speed"/>
+
+    <ProgressBar
+        android:id="@+id/progressGuidedLoading"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="8dp"
+        android:visibility="gone"/>
+
+    <ImageButton
+        android:id="@+id/btnGuidedVoz"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_player_voz"
+        android:padding="12dp"
+        app:tint="?attr/colorPrimary"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="4dp"
+        android:contentDescription="@string/fab_voz_desc"
+        android:tooltipText="@string/fab_voz_desc"/>
+
+    <ImageButton
+        android:id="@+id/btnGuidedPrev"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_player_prev"
+        android:padding="12dp"
+        app:tint="?attr/colorPrimary"
+        android:contentDescription="@string/cd_guided_anterior"
+        android:tooltipText="@string/cd_guided_anterior"/>
+
+    <ImageButton
+        android:id="@+id/btnGuidedPlayPause"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_play_arredondado"
+        android:src="@drawable/ic_player_play"
+        android:padding="12dp"
+        app:tint="?attr/colorOnPrimary"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:contentDescription="@string/cd_guided_play"
+        android:tooltipText="@string/cd_guided_play"/>
+
+    <ImageButton
+        android:id="@+id/btnGuidedNext"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_player_next"
+        android:padding="12dp"
+        app:tint="?attr/colorPrimary"
+        android:contentDescription="@string/cd_guided_proximo"
+        android:tooltipText="@string/cd_guided_proximo"/>
+
+    <ImageButton
+        android:id="@+id/btnGuidedClose"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_player_fechar"
+        android:padding="12dp"
+        app:tint="@color/color_on_surface_muted"
+        android:layout_marginStart="12dp"
+        android:contentDescription="@string/cd_guided_fechar"
+        android:tooltipText="@string/cd_guided_fechar"/>
+
+</LinearLayout>
