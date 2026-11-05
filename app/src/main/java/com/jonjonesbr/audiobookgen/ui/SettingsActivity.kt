@@ -1,7 +1,6 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import com.jonjonesbr.audiobookgen.R
-import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.domain.TipoRegistroErro
 import com.jonjonesbr.audiobookgen.domain.resumirArquivoDeErro
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
@@ -12,12 +11,8 @@ import com.jonjonesbr.audiobookgen.util.marcarComoLink
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.view.inputmethod.EditorInfo
 import android.widget.Button
-import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -51,6 +46,11 @@ class SettingsActivity : BasePlayerActivity() {
     private val buffering: AjustesBufferingController by lazy { AjustesBufferingController(this) }
     private val qualidade: AjustesQualidadeController by lazy { AjustesQualidadeController(this) }
     private val pausas: AjustesPausasController by lazy { AjustesPausasController(this, pythonEngine) }
+    private val motor: AjustesMotorController by lazy {
+        AjustesMotorController(this, pythonEngine, AjustesMotorController.Callbacks(
+            abrirPaginaDoMotor = { abrirPagina(R.id.pagMotor, R.string.aj_motor) },
+        ))
+    }
     private val ouvir: AjustesOuvirController by lazy {
         AjustesOuvirController(this, pythonEngine, AjustesOuvirController.Callbacks(
             aoRestaurarSom = { carregarConfigAtual(); naturalidade.carregar() },
@@ -66,15 +66,6 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
     // Tema
-
-    // Motor TTS
-    private lateinit var radioGroupMotor: RadioGroup
-    private lateinit var layoutGeminiKey: LinearLayout
-    private lateinit var etGeminiKey: EditText
-    private lateinit var btnSalvarChave: Button
-    private lateinit var layoutElevenLabsKey: LinearLayout
-    private lateinit var etElevenLabsKey: EditText
-    private lateinit var btnSalvarChaveElevenLabs: Button
 
     private val naturalidade by lazy { NaturalidadeVozUi(this) }
 
@@ -139,7 +130,7 @@ class SettingsActivity : BasePlayerActivity() {
         configurarListeners()
         vincularPermissoes()
         naturalidade.vincular()
-        tratarExtraFocoChave()
+        motor.focarChaveSePedido()
     }
 
     override fun abaPrincipal() = AbaPrincipal.AJUSTES
@@ -160,14 +151,6 @@ class SettingsActivity : BasePlayerActivity() {
         findViewById<ImageButton>(R.id.btnVoltarSettings).setOnClickListener { fecharPagina() }
         findViewById<ImageButton>(R.id.btnAjudaSettings)
             .setOnClickListener { HelpActivity.start(this, HelpTopico.CONFIGURACOES) }
-
-        radioGroupMotor = findViewById(R.id.radioGroupMotor)
-        layoutGeminiKey = findViewById(R.id.layoutGeminiKey)
-        etGeminiKey     = findViewById(R.id.etGeminiKey)
-        btnSalvarChave  = findViewById(R.id.btnSalvarChave)
-        layoutElevenLabsKey    = findViewById(R.id.layoutElevenLabsKey)
-        etElevenLabsKey        = findViewById(R.id.etElevenLabsKey)
-        btnSalvarChaveElevenLabs = findViewById(R.id.btnSalvarChaveElevenLabs)
 
         // Blacklist
         tvBlacklistInfo = findViewById(R.id.tvBlacklistInfo)
@@ -273,25 +256,7 @@ class SettingsActivity : BasePlayerActivity() {
         // Tema (claro/escuro/sistema)
         findViewById<android.widget.TextView>(R.id.tvTemaAtual).setText(SeletorTemaSheet.nomeDoModo(ThemePrefs.load(this)))
 
-        // Motor TTS — reflete o motor REAL salvo (antes só existiam Edge/Gemini aqui, e um
-        // usuário com vozes offline/Android via "Edge" marcado, o que era mentira).
-        val motor = com.jonjonesbr.audiobookgen.data.AppPrefs(this).motorTts
-        val radioId = when (motor) {
-            "gemini"     -> R.id.radioGemini
-            "onnx"       -> R.id.radioOnnx
-            "kokoro"     -> R.id.radioKokoro
-            "pocket"     -> R.id.radioPocket
-            "android"    -> R.id.radioAndroidTts
-            "elevenlabs" -> R.id.radioElevenLabs
-            else         -> R.id.radioEdge
-        }
-        findViewById<android.widget.RadioButton>(radioId).isChecked = true
-        layoutGeminiKey.visibility = if (motor == "gemini") View.VISIBLE else View.GONE
-        etGeminiKey.setText(SecurePreferences.getGeminiKeys(this))
-        layoutElevenLabsKey.visibility = if (motor == "elevenlabs") View.VISIBLE else View.GONE
-        etElevenLabsKey.setText(SecurePreferences.getElevenLabsKey(this))
-        atualizarMotorAtual(motor)
-        carregarTamanhosDoMotor()
+        motor.carregar()
 
         pausas.carregar()
 
@@ -313,36 +278,7 @@ class SettingsActivity : BasePlayerActivity() {
         findViewById<android.view.View>(R.id.rowTema).marcarComoBotao()
         findViewById<android.view.View>(R.id.rowTema).setOnClickListener { SeletorTemaSheet.mostrar(this) }
 
-        // Motor TTS
-        radioGroupMotor.setOnCheckedChangeListener { _, checkedId ->
-            val motor = when (checkedId) {
-                R.id.radioGemini     -> "gemini"
-                R.id.radioOnnx       -> "onnx"
-                R.id.radioKokoro     -> "kokoro"
-                R.id.radioPocket     -> "pocket"
-                R.id.radioAndroidTts -> "android"
-                R.id.radioElevenLabs -> "elevenlabs"
-                else                 -> "edge"
-            }
-            layoutGeminiKey.visibility = if (motor == "gemini") View.VISIBLE else View.GONE
-            layoutElevenLabsKey.visibility = if (motor == "elevenlabs") View.VISIBLE else View.GONE
-            atualizarMotorAtual(motor)
-            salvarMotor(motor)
-        }
-
-        // Chave Gemini
-        btnSalvarChave.setOnClickListener { configurarListenerSalvarChave() }
-        etGeminiKey.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) btnSalvarChave.performClick()
-            false
-        }
-
-        // Chave ElevenLabs
-        btnSalvarChaveElevenLabs.setOnClickListener { configurarListenerSalvarChaveElevenLabs() }
-        etElevenLabsKey.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) btnSalvarChaveElevenLabs.performClick()
-            false
-        }
+        motor.configurar()
 
         pausas.configurar()
 
@@ -383,107 +319,6 @@ class SettingsActivity : BasePlayerActivity() {
         findViewById<View>(id).apply {
             marcarComoBotao()
             setOnClickListener { acao() }
-        }
-    }
-
-    /** Valor da linha "Voz que lê os livros": o nome curto da voz escolhida. */
-    private fun atualizarMotorAtual(motor: String) {
-        findViewById<TextView>(R.id.tvMotorAtual).text = when (motor) {
-            "gemini" -> "Gemini"
-            "onnx" -> "Supertonic"
-            "kokoro" -> "Kokoro"
-            "pocket" -> "Pocket"
-            "android" -> "Android"
-            "elevenlabs" -> "ElevenLabs"
-            else -> "Microsoft"
-        }
-    }
-
-    /**
-     * Tamanho do download do Kokoro e do Pocket nas descrições do motor. Vem do mesmo catálogo que a Central
-     * de downloads mostra antes de baixar (`tamanhoDownloadMb`); lido fora da thread principal, como o card de vozes.
-     */
-    private fun carregarTamanhosDoMotor() {
-        lifecycleScope.launch {
-            val (kokoroMb, pocketMb) = withContext(Dispatchers.IO) {
-                val pacotes = com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesRegistrados()
-                // O Pocket baixa um pacote por idioma; o do português representa os três.
-                val kokoro = pacotes.firstOrNull { it.id == "kokoro" }?.tamanhoDownloadMb
-                val pocket = pacotes.firstOrNull { it.id == "pocket-ptbr-int8" }?.tamanhoDownloadMb
-                kokoro to pocket
-            }
-            // Sem tamanho (catálogo não carregou ou pacote ausente), a linha fica oculta em vez de vazia.
-            findViewById<TextView>(R.id.tvMotorDescKokoro).apply {
-                text = kokoroMb?.let { getString(R.string.aj_motor_desc_kokoro, it) } ?: ""
-                visibility = if (kokoroMb != null) View.VISIBLE else View.GONE
-            }
-            findViewById<TextView>(R.id.tvMotorDescPocket).apply {
-                text = pocketMb?.let { getString(R.string.aj_motor_desc_pocket, it) } ?: ""
-                visibility = if (pocketMb != null) View.VISIBLE else View.GONE
-            }
-        }
-    }
-
-    // ── Motor ────────────────────────────────────────────────────────────────
-
-    private fun salvarMotor(motor: String) {
-        appPrefs.motorTts = motor
-        lifecycleScope.launch {
-            pythonEngine.sincronizarConfiguracoes(
-                motor,
-                SecurePreferences.getGeminiKeys(this@SettingsActivity),
-                appPrefs.pausaMs
-            )
-        }
-    }
-
-    private fun salvarGeminiKey(chave: String): SecurePreferences.SaveResult {
-        val resultado = SecurePreferences.setGeminiKeys(this, chave)
-        if (resultado == SecurePreferences.SaveResult.FAILED) return resultado
-        lifecycleScope.launch {
-            pythonEngine.sincronizarConfiguracoes(appPrefs.motorTts, chave, appPrefs.pausaMs)
-        }
-        return resultado
-    }
-
-    // ElevenLabs não passa pelo Python (chamada HTTP direta em Kotlin), então não precisa
-    // de sincronizarConfiguracoes — a chave é lida direto de SecurePreferences na hora da síntese.
-    private fun salvarElevenLabsKey(chave: String): SecurePreferences.SaveResult =
-        SecurePreferences.setElevenLabsKey(this, chave)
-
-    /** Extraído de [configurarListeners] pra manter dentro do limite de linhas do detekt. */
-    private fun configurarListenerSalvarChave() {
-        val chave = etGeminiKey.text.toString().trim()
-        when (salvarGeminiKey(chave)) {
-            SecurePreferences.SaveResult.SECURE -> Toast.makeText(
-                this,
-                if (chave.isNotBlank()) R.string.toast_key_saved else R.string.toast_key_removed,
-                Toast.LENGTH_SHORT
-            ).show()
-            SecurePreferences.SaveResult.LOCAL_FALLBACK -> Toast.makeText(
-                this,
-                if (chave.isNotBlank()) R.string.toast_key_saved_local_fallback else R.string.toast_key_removed,
-                Toast.LENGTH_LONG
-            ).show()
-            SecurePreferences.SaveResult.FAILED -> mostrarErro(R.string.toast_key_secure_save_failed)
-        }
-    }
-
-    /** Extraído de [configurarListeners] pra manter dentro do limite de linhas do detekt. */
-    private fun configurarListenerSalvarChaveElevenLabs() {
-        val chave = etElevenLabsKey.text.toString().trim()
-        when (salvarElevenLabsKey(chave)) {
-            SecurePreferences.SaveResult.SECURE -> Toast.makeText(
-                this,
-                if (chave.isNotBlank()) R.string.toast_key_saved else R.string.toast_key_removed,
-                Toast.LENGTH_SHORT
-            ).show()
-            SecurePreferences.SaveResult.LOCAL_FALLBACK -> Toast.makeText(
-                this,
-                if (chave.isNotBlank()) R.string.toast_key_saved_local_fallback else R.string.toast_key_removed,
-                Toast.LENGTH_LONG
-            ).show()
-            SecurePreferences.SaveResult.FAILED -> mostrarErro(R.string.toast_key_secure_save_failed)
         }
     }
 
@@ -578,29 +413,6 @@ class SettingsActivity : BasePlayerActivity() {
     private fun carregarInfoPermissaoNotificacao() {
         val habilitadas = NotificationManagerCompat.from(this).areNotificationsEnabled()
         findViewById<View>(R.id.cardAvisoNotificacao).visibility = if (habilitadas) View.GONE else View.VISIBLE
-    }
-
-    /** Se aberta com extra "focar_chave_gemini"/"focar_chave_elevenlabs" (seleção de voz sem
-     * chave), rola até o campo da chave e o foca — cumpre a promessa do toast de configuração. */
-    private fun tratarExtraFocoChave() {
-        val campo = when {
-            intent.getBooleanExtra("focar_chave_gemini", false) -> layoutGeminiKey
-            intent.getBooleanExtra("focar_chave_elevenlabs", false) -> layoutElevenLabsKey
-            else -> return
-        }
-        abrirPagina(R.id.pagMotor, R.string.aj_motor)
-        scrollSettings.post {
-            val alvo = IntArray(2)
-            val conteudo = IntArray(2)
-            campo.getLocationInWindow(alvo)
-            scrollSettings.getChildAt(0)?.getLocationInWindow(conteudo)
-            scrollSettings.smoothScrollTo(0, (alvo[1] - conteudo[1]).coerceAtLeast(0))
-            val edit = if (campo === layoutGeminiKey) etGeminiKey else etElevenLabsKey
-            edit.requestFocus()
-            val teclado = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
-                as? android.view.inputmethod.InputMethodManager
-            teclado?.showSoftInput(edit, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-        }
     }
 
     private fun abrirLogsErro() {
