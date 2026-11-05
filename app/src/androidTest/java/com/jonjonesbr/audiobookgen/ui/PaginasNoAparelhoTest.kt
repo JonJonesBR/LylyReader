@@ -41,7 +41,7 @@ import org.junit.runner.RunWith
  * Modo páginas do Leitor no emulador (rb-26b, passo 4): com a opção "Horizontal (páginas)" ligada, a lista continua
  * vertical e o que vira é a página virtual (ver [PaginacaoDoLeitor]). P1 confere o corte e a orientação; P2 e P3
  * viram a página com o arraste lateral e confere que o vertical não rola; P4 confere que a seleção e a alça não
- * viram a página; P5 é a leitura guiada virando sozinha e o chip "Voltar à narração"; P6 gira a tela; P7 confere
+ * viram a página; P5 é a leitura guiada virando sozinha e o botão "Voltar à narração"; P6 gira a tela; P7 confere
  * PAGE_DOWN; P9 e P10 são a seleção com a barra embaixo, no retrato e na paisagem (rb-26b, passo 3). Os toques são
  * reais (ver [Gestos]); as conferências leem as Views na thread principal.
  */
@@ -224,11 +224,11 @@ class PaginasNoAparelhoTest {
 
     /**
      * P5: com a voz falsa, a guiada narra e, quando a linha narrada passa do corte, a página vira sozinha (o
-     * deslocamento aumenta) e o parágrafo narrado continua na tela. Um arraste lateral pelo leitor liga o chip "Voltar
+     * deslocamento aumenta) e o parágrafo narrado continua na tela. Um arraste lateral pelo leitor liga o botão "Voltar
      * à narração", e tocar nele leva à página do narrado.
      */
     @Test
-    fun p5_guiadaViraAPaginaEOChipVoltaAoNarrado() {
+    fun p5_guiadaViraAPaginaEOBotaoVoltaAoNarrado() {
         comPaginas {
             val contexto = InstrumentationRegistry.getInstrumentation().targetContext
             // Trechos de 6 s (e não a voz longa de 30 s): a guiada precisa passar do corte dentro do tempo do teste.
@@ -275,16 +275,24 @@ class PaginasNoAparelhoTest {
             conferirSemLinhaCortada(virou, "p5-virou")
 
             // Pausa a guiada antes do arraste: com ela tocando, a página e o narrado andam a cada ~50 ms e a medida
-            // do arraste sai instável. pause() mantém o índice narrado, então o chip ainda consegue levar até ele.
+            // do arraste sai instável. pause() mantém o índice narrado, então o botão ainda consegue levar até ele.
             InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.pause() }
 
-            // O leitor vira a página com o dedo: a guiada entra em modo manual e o chip aparece.
+            // O leitor vira a página com o dedo: a guiada entra em modo manual e o "Voltar à narração" aparece no
+            // painel (rb-26b, passo 4). O chip flutuante fica de fora no modo páginas.
             arrastarLateral(scenario, paraFrente = true)
-            esperarAte(scenario, "chip 'Voltar à narração' visível depois do arraste lateral", TEMPO_DE_VIRADA_MS) { a ->
-                a.findViewById<View>(R.id.fabVoltarNarracao).visibility == View.VISIBLE
+            esperarAte(
+                scenario,
+                "botão 'Voltar à narração' do painel visível depois do arraste lateral",
+                TEMPO_DE_VIRADA_MS,
+            ) { a ->
+                a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
             }
-            Capturas.capturar("77_p5_chip_voltar")
-            // Antes do toque, o narrado tem de estar fora da página: é isso que o chip sinaliza. Nulo quer dizer que o
+            scenario.onActivity { a ->
+                assertEquals(View.GONE, a.findViewById<View>(R.id.fabVoltarNarracao).visibility)
+            }
+            Capturas.capturar("77_p5_botao_voltar")
+            // Antes do toque, o narrado tem de estar fora da página: é isso que o botão sinaliza. Nulo quer dizer que o
             // parágrafo nem está montado na lista, ou seja, também está fora da página.
             // Leitura separada da falha: se onActivity lançar (Activity indisponível), lido continua falso.
             var foraAntes: Narrado? = null
@@ -295,27 +303,32 @@ class PaginasNoAparelhoTest {
                     lido = true
                 }
             } catch (erro: IllegalStateException) {
-                Capturas.anotar("p5", "antes do chip: leitura da tela falhou (${erro.message})")
+                Capturas.anotar("p5", "antes do botão: leitura da tela falhou (${erro.message})")
             }
-            Capturas.anotar("p5", "antes do chip: narrado=$foraAntes lido=$lido")
-            assertTrue("Não consegui ler a tela antes do chip", lido)
+            Capturas.anotar("p5", "antes do botão: narrado=$foraAntes lido=$lido")
+            assertTrue("Não consegui ler a tela antes do botão", lido)
             assertTrue(
-                "O narrado deveria estar fora da página antes do toque no chip (nulo = parágrafo fora da lista montada), veio $foraAntes",
+                "O narrado deveria estar fora da página antes do toque no botão " +
+                    "(nulo = parágrafo fora da lista montada), veio $foraAntes",
                 foraAntes?.visivel != true,
             )
 
-            val (x, y) = Gestos.centroDaView(scenario, R.id.fabVoltarNarracao, "chip Voltar à narração")
+            val (x, y) = Gestos.centroDaView(
+                scenario,
+                R.id.btnGuidedVoltarNarracao,
+                "botão Voltar à narração do painel",
+            )
             regras.fecharDialogosDoSistema()
             device.click(x, y)
-            esperarAte(scenario, "o chip levar à página do parágrafo narrado", TEMPO_DE_VIRADA_MS) { a ->
+            esperarAte(scenario, "o botão levar à página do parágrafo narrado", TEMPO_DE_VIRADA_MS) { a ->
                 narradoNaPagina(a)?.visivel == true
             }
-            val depoisDoChip = lerAtividade(scenario) { narradoNaPagina(it) }
-            Capturas.anotar("p5", "depois do chip: narrado=$depoisDoChip")
-            Capturas.capturar("78_p5_depois_do_chip")
+            val depoisDoBotao = lerAtividade(scenario) { narradoNaPagina(it) }
+            Capturas.anotar("p5", "depois do botão: narrado=$depoisDoBotao")
+            Capturas.capturar("78_p5_depois_do_botao")
             assertTrue(
-                "O toque no chip deveria levar o narrado de volta à página, veio $depoisDoChip",
-                depoisDoChip?.visivel == true,
+                "O toque no botão deveria levar o narrado de volta à página, veio $depoisDoBotao",
+                depoisDoBotao?.visivel == true,
             )
         }
     }

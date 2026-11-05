@@ -84,6 +84,15 @@ class TelaDoLeitorTest {
     }
 
     @Test
+    fun voltarNarracaoFicaNoPainelSoNoModoPaginas() {
+        // rb-26b (passo 4): sem o modo manual não há botão; com ele, o painel no modo páginas e o chip nos outros.
+        assertEquals(LugarDoVoltar.NENHUM, lugarDoVoltarANarracao(voltar = false, paginas = false))
+        assertEquals(LugarDoVoltar.NENHUM, lugarDoVoltarANarracao(voltar = false, paginas = true))
+        assertEquals(LugarDoVoltar.CHIP, lugarDoVoltarANarracao(voltar = true, paginas = false))
+        assertEquals(LugarDoVoltar.PAINEL, lugarDoVoltarANarracao(voltar = true, paginas = true))
+    }
+
+    @Test
     fun fabConverterSoComCapitulosMarcados() {
         // Com capítulos marcados e sem seleção, o FAB aparece com a contagem (rb-30).
         val doisCapitulos = FabsDoLeitor(voltarNarracao = false, converter = true, capitulosNoRotulo = 2)

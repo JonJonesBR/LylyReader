@@ -2691,7 +2691,8 @@ class ReaderActivitySmokeTest {
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun chipVoltarNarracaoLevaAPaginaDoNarrado() {
-        // rb-26b (passo 3): a página manual some do narrado; o chip leva de volta à página em que ele está.
+        // rb-26b (passo 3): a página manual some do narrado; o botão leva de volta à página em que ele está. No modo
+        // páginas o "Voltar à narração" fica no painel da guiada (passo 4), por isso o botão do painel.
         ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
             esperarGuiadaNoModoPaginas(scenario)
             var progresso = 0f
@@ -2702,14 +2703,14 @@ class ReaderActivitySmokeTest {
                 linha = l
             }
             emitirProgresso(scenario, progresso)
-            // (i) Duas teclas de página: o usuário rola para longe e o chip aparece.
+            // (i) Duas teclas de página: o usuário rola para longe e o botão do painel aparece.
             scenario.onActivity { a ->
                 repeat(2) { a.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PAGE_DOWN)) }
             }
-            esperarAte(scenario, "chip Voltar à narração visível") { a ->
-                a.findViewById<View>(R.id.fabVoltarNarracao).visibility == View.VISIBLE
+            esperarAte(scenario, "botão Voltar à narração do painel visível") { a ->
+                a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
             }
-            scenario.onActivity { a -> a.findViewById<View>(R.id.fabVoltarNarracao).performClick() }
+            scenario.onActivity { a -> a.findViewById<View>(R.id.btnGuidedVoltarNarracao).performClick() }
             // O clique só pede o salto: o layout e o alinhamento do topo vêm no próximo quadro. Sem esperar, o
             // progresso abaixo rodaria sobre o layout antigo.
             esperarAte(scenario, "salto do chip aplicado") { a ->

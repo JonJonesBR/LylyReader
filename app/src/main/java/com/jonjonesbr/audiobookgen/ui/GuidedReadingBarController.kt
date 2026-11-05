@@ -107,6 +107,11 @@ class GuidedReadingBarController(
     var dialogoInicioPendente = false
         private set
 
+    init {
+        // "Voltar à narração" dentro do painel (rb-26b, passo 4): mesma ação do chip, que segue ligado na Activity.
+        activity.findViewById<View>(R.id.btnGuidedVoltarNarracao).setOnClickListener { voltarAoAcompanhamento() }
+    }
+
     fun onParagrafoToque(indice: Int) {
         val state = viewModel.uiState.value
         if (state.selecaoInicio == null && !state.modoEdicao && !state.mostrandoAlteracoes) {

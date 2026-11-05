@@ -126,6 +126,19 @@ internal fun estadoDosFabs(
     )
 }
 
+/** Onde aparece o "Voltar à narração": chip flutuante sobre o texto, botão no painel da guiada, ou nenhum. */
+internal enum class LugarDoVoltar { NENHUM, CHIP, PAINEL }
+
+/**
+ * Com o modo manual da guiada, o "Voltar à narração" fica no painel quando o leitor está no modo páginas (rb-26b): o
+ * chip cobria o texto e a alça. Nos outros modos segue o chip, como antes.
+ */
+internal fun lugarDoVoltarANarracao(voltar: Boolean, paginas: Boolean): LugarDoVoltar = when {
+    !voltar -> LugarDoVoltar.NENHUM
+    paginas -> LugarDoVoltar.PAINEL
+    else -> LugarDoVoltar.CHIP
+}
+
 /** Início da leitura guiada: abrir o diálogo de ponto de início e/ou continuar na posição salva. */
 internal data class InicioDaGuiada(val abrirDialogo: Boolean, val continuar: Boolean)
 

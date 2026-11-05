@@ -157,7 +157,7 @@ class TelaPequenaNoAparelhoTest {
 
     /**
      * Liga a leitura guiada tocando e a deixa em modo manual: pausa a guiada (como no P5, para o arraste medir
-     * sem a página andando), vira uma página com um arraste lateral e espera o chip "Voltar à narração" aparecer.
+     * sem a página andando), vira uma página com um arraste lateral e espera o "Voltar à narração" do painel.
      */
     private fun virarPaginaComGuiadaEmManual(scenario: ActivityScenario<ReaderActivity>) {
         esperarGuiadaTocando(scenario, 0)
@@ -169,8 +169,12 @@ class TelaPequenaNoAparelhoTest {
         esperarAte(scenario, "a página virar com o arraste lateral", TEMPO_DE_VIRADA_MS) { a ->
             a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos).computeVerticalScrollOffset() > antes
         }
-        esperarAte(scenario, "chip 'Voltar à narração' visível depois do arraste lateral", TEMPO_DE_VIRADA_MS) { a ->
-            a.findViewById<View>(R.id.fabVoltarNarracao).visibility == View.VISIBLE
+        esperarAte(
+            scenario,
+            "'Voltar à narração' do painel visível depois do arraste lateral",
+            TEMPO_DE_VIRADA_MS,
+        ) { a ->
+            a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
         }
         regras.fecharDialogosDoSistema()
     }

@@ -51,6 +51,10 @@ class ReaderTelaController(
     private var temaAplicado: TemaLeitura? = null
     // Última contagem mostrada na barra de seleção: o aplicarStatus roda ~20x/s e um setText repetido pede layout.
     private var selecionadosNaBarra = -1
+    // "Voltar à narração" dentro do painel da guiada e o status da barra (rb-26b, passo 4): fora da Views, para não
+    // mexer na montagem da Activity. Achados uma vez, quando o FAB é aplicado.
+    private val botaoVoltarNoPainel: View by lazy { activity.findViewById(R.id.btnGuidedVoltarNarracao) }
+    private val tvStatusDoPainel: View by lazy { activity.findViewById(R.id.tvGuidedStatus) }
 
     /**
      * Chamado uma vez, no vincularViews, depois do recyclerView. Mesma ordem de efeitos de antes: insets, listeners do
@@ -171,9 +175,17 @@ class ReaderTelaController(
         }
     }
 
-    /** Visibilidade e rótulo dos FABs (a regra está em [estadoDosFabs]). */
+    /**
+     * Visibilidade e rótulo dos FABs (a regra está em [estadoDosFabs]). O "Voltar à narração" vai para o chip ou
+     * para o painel conforme o modo (ver [lugarDoVoltarANarracao]). No painel, o status da guiada sai para caber o
+     * botão.
+     */
     internal fun aplicarFabs(fabs: FabsDoLeitor) {
-        views.fabVoltarNarracao.visibility = if (fabs.voltarNarracao) View.VISIBLE else View.GONE
+        val paginas = (recyclerView as? RecyclerViewParagrafos)?.paginacao?.ativa == true
+        val lugar = lugarDoVoltarANarracao(fabs.voltarNarracao, paginas)
+        views.fabVoltarNarracao.visibility = if (lugar == LugarDoVoltar.CHIP) View.VISIBLE else View.GONE
+        botaoVoltarNoPainel.visibility = if (lugar == LugarDoVoltar.PAINEL) View.VISIBLE else View.GONE
+        tvStatusDoPainel.visibility = if (lugar == LugarDoVoltar.PAINEL) View.GONE else View.VISIBLE
         views.fabConverter.visibility = if (fabs.converter) View.VISIBLE else View.GONE
         views.fabConverter.setIconResource(R.drawable.ic_gerar_audio)
         val capitulos = fabs.capitulosNoRotulo

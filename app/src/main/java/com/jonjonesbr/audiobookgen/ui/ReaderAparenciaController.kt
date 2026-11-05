@@ -234,8 +234,10 @@ class ReaderAparenciaController(
         grupoRolagem.addOnButtonCheckedListener { _, id, marcado ->
             if (!marcado) return@addOnButtonCheckedListener
             val horizontal = id == R.id.btnRolagemHorizontal
-            viewModel.setRolagemHorizontal(horizontal)
+            // Antes do estado: a atualização da tela (que refaz os FABs, ver ReaderTelaController.aplicarFabs) já lê o
+            // modo páginas, e o StateFlow pode entregá-la de imediato, na mesma chamada.
             onOrientacaoRolagem(horizontal)
+            viewModel.setRolagemHorizontal(horizontal)
         }
     }
 

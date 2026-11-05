@@ -607,6 +607,22 @@
             android:paddingEnd="12dp"
             android:layout_marginBottom="4dp">
 
+            <!-- "Voltar à narração" no modo páginas (rb-26b, passo 4): o chip flutuante cobria o texto e a alça. Fica
+                 no lugar do status, que some enquanto o botão aparece (ver ReaderTelaController.aplicarFabs). -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGuidedVoltarNarracao"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="@string/cd_guided_voltar_narracao"
+                android:text="@string/guided_voltar_narracao"
+                android:textSize="14sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                app:icon="@android:drawable/ic_media_play"
+                android:visibility="gone"/>
+
             <TextView
                 android:id="@+id/tvGuidedStatus"
                 android:layout_width="0dp"
