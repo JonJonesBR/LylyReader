@@ -278,12 +278,24 @@ class PaginasNoAparelhoTest {
                 a.findViewById<View>(R.id.fabVoltarNarracao).visibility == View.VISIBLE
             }
             Capturas.capturar("77_p5_chip_voltar")
-            // Antes do toque, o narrado tem de estar fora da página: é isso que o chip sinaliza.
-            val foraAntes = lerAtividade(scenario) { narradoNaPagina(it) }
-            Capturas.anotar("p5", "antes do chip: narrado=$foraAntes")
+            // Antes do toque, o narrado tem de estar fora da página: é isso que o chip sinaliza. Nulo quer dizer que o
+            // parágrafo nem está montado na lista, ou seja, também está fora da página.
+            // Leitura separada da falha: se onActivity lançar (Activity indisponível), lido continua falso.
+            var foraAntes: Narrado? = null
+            var lido = false
+            try {
+                scenario.onActivity { a ->
+                    foraAntes = narradoNaPagina(a)
+                    lido = true
+                }
+            } catch (erro: IllegalStateException) {
+                Capturas.anotar("p5", "antes do chip: leitura da tela falhou (${erro.message})")
+            }
+            Capturas.anotar("p5", "antes do chip: narrado=$foraAntes lido=$lido")
+            assertTrue("Não consegui ler a tela antes do chip", lido)
             assertTrue(
-                "O narrado deveria estar fora da página antes do toque no chip, veio $foraAntes",
-                foraAntes?.visivel == false,
+                "O narrado deveria estar fora da página antes do toque no chip (nulo = parágrafo fora da lista montada), veio $foraAntes",
+                foraAntes?.visivel != true,
             )
 
             val (x, y) = Gestos.centroDaView(scenario, R.id.fabVoltarNarracao, "chip Voltar à narração")

@@ -127,6 +127,9 @@ class DefinirNoAparelhoTest {
     /**
      * Volta ao Leitor com Voltar (até [MAXIMO_DE_VOLTAS] vezes, só enquanto outro app estiver na frente) e espera o
      * Leitor voltar a RESUMED. Falha se ele não voltar.
+     *
+     * Se o app de busca continuar na frente depois dos Voltar (no CI, o teclado aberto costuma engolir o Voltar), ele
+     * é fechado com `am force-stop` e a volta é anotada em medidas.txt. Só o app da frente é fechado, nunca o Leitor.
      */
     private fun voltarAoLeitor(device: UiDevice, pacote: String, scenario: ActivityScenario<ReaderActivity>) {
         var voltas = 0
@@ -134,6 +137,11 @@ class DefinirNoAparelhoTest {
             device.pressBack()
             voltas++
             Thread.sleep(PAUSA_MS)
+        }
+        val outro = device.currentPackageName
+        if (outro != pacote && !outro.isNullOrEmpty()) {
+            device.executeShellCommand("am force-stop $outro")
+            Capturas.anotar("c13", "o app $outro ficou na frente depois de $voltas Voltar; fechado com force-stop")
         }
         val fim = System.currentTimeMillis() + TEMPO_DE_VOLTA_MS
         while (scenario.state != Lifecycle.State.RESUMED && System.currentTimeMillis() < fim) {
