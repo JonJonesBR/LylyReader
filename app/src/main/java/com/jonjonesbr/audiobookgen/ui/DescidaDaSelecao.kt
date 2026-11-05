@@ -3,9 +3,6 @@ package com.jonjonesbr.audiobookgen.ui
 // Regra pura da descida da lista quando a barra da seleção cobre o trecho marcado (rb-48): sem nada de Android,
 // testada na JVM. Quem aplica o valor é o BarraDaSelecaoDeTexto, no translationY da RecyclerViewParagrafos.
 
-/** Posição de uma linha ou faixa de texto na tela, em px (coordenadas da tela, já com a translação da lista). */
-internal data class LinhaNaTela(val topo: Int, val fundo: Int)
-
 /**
  * Deslocamento total (o translationY) que a lista precisa ter para a linha da seleção ficar abaixo da barra, com a
  * margem entre as duas. Quem chama soma ao espaço do menu flutuante da seleção (ver BarraDaSelecaoDeTexto).
@@ -47,15 +44,15 @@ internal fun selecaoParadaNoPreparo(inicioAntes: Int, fimAntes: Int, inicio: Int
 /**
  * Se o preparo deve refazer a descida (rb-50): a seleção ficou parada desde o preparo anterior e é diferente da
  * seleção da última descida aplicada. O UP de uma rolagem que começa sobre o parágrafo selecionado também repete a
- * seleção, mas ela é a mesma da descida: refazer a descida ali faria a lista pular. [inicioDescida] e [fimDescida]
- * são -1 antes da primeira descida.
+ * seleção, mas ela é a mesma da descida: refazer a descida ali faria a lista pular. [ultimaDescida] é a faixa
+ * (início..fim) da seleção da última descida, ou nulo antes da primeira descida.
  */
 internal fun refazerDescidaNoPreparo(
     inicioAntes: Int,
     fimAntes: Int,
     inicio: Int,
     fim: Int,
-    inicioDescida: Int,
-    fimDescida: Int,
+    ultimaDescida: IntRange?,
 ): Boolean =
-    selecaoParadaNoPreparo(inicioAntes, fimAntes, inicio, fim) && (inicio != inicioDescida || fim != fimDescida)
+    selecaoParadaNoPreparo(inicioAntes, fimAntes, inicio, fim) &&
+        (ultimaDescida == null || inicio != ultimaDescida.first || fim != ultimaDescida.last)

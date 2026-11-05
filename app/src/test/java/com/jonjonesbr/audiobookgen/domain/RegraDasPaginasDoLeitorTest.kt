@@ -36,7 +36,9 @@ class RegraDasPaginasDoLeitorTest {
     private fun folhearParaFrente(linhas: List<LinhaDaPagina>, altura: Int): Pair<Int, List<Set<Int>>> {
         var topo = linhas.first().topo
         val paginas = mutableListOf<Set<Int>>()
-        for (folha in 0 until limiteDeFolhas) {
+        var folhas = 0
+        while (folhas < limiteDeFolhas) {
+            folhas++
             paginas += mostradas(linhas, topo, topo + altura)
             val passo = regra.passoParaFrente(linhas, topo, topo + altura)
             if (passo == 0) break
@@ -50,8 +52,9 @@ class RegraDasPaginasDoLeitorTest {
         val inicio = linhas.first().topo
         var topo = topoFinal
         val paginas = mutableListOf(mostradas(linhas, topo, topo + altura))
-        for (folha in 0 until limiteDeFolhas) {
-            if (topo <= inicio) break
+        var folhas = 0
+        while (folhas < limiteDeFolhas && topo > inicio) {
+            folhas++
             topo = maxOf(inicio, topo - altura)
             topo += regra.ajusteDepoisDeVoltar(linhas, topo)
             paginas += mostradas(linhas, topo, topo + altura)

@@ -143,21 +143,23 @@ internal class PaginacaoDoLeitor(
  * Linhas dos parágrafos na tela, nas coordenadas da lista, ordenadas pelo topo (rb-26b). Só entra o TextView de leitura
  * (no modo vertical o item é o próprio TextView). A conta é de O(log n) por parágrafo, mais as linhas visíveis.
  */
-internal fun RecyclerViewParagrafos.linhasNaTela(): List<LinhaDaPagina> {
-    val linhas = mutableListOf<LinhaDaPagina>()
-    for (i in 0 until childCount) {
-        val holder = getChildViewHolder(getChildAt(i)) as? ParagrafoAdapter.VHLeitura ?: continue
-        val tv = holder.tv
-        val layout = tv.layout ?: continue
-        if (holder.itemView !== tv) continue
-        val y0 = tv.top + tv.totalPaddingTop - tv.scrollY
-        val primeira = layout.getLineForVertical((-y0).coerceAtLeast(0))
-        val ultima = layout.getLineForVertical((height - y0).coerceAtLeast(0))
-        for (linha in primeira..ultima) {
-            linhas.add(LinhaDaPagina(y0 + layout.getLineTop(linha), y0 + layout.getLineBottom(linha)))
-        }
+internal fun RecyclerViewParagrafos.linhasNaTela(): List<LinhaDaPagina> =
+    (0 until childCount)
+        .mapNotNull { getChildViewHolder(getChildAt(it)) as? ParagrafoAdapter.VHLeitura }
+        // Só o TextView direto da linha conta: holder com outra View por cima é ignorado.
+        .filter { it.itemView === it.tv }
+        .flatMap { linhasDoParagrafo(it.tv) }
+        .sortedBy { it.topo }
+
+/** Linhas de um parágrafo visível, nas coordenadas da lista. Vazio sem layout do texto. */
+private fun RecyclerViewParagrafos.linhasDoParagrafo(tv: TextView): List<LinhaDaPagina> {
+    val layout = tv.layout ?: return emptyList()
+    val y0 = tv.top + tv.totalPaddingTop - tv.scrollY
+    val primeira = layout.getLineForVertical((-y0).coerceAtLeast(0))
+    val ultima = layout.getLineForVertical((height - y0).coerceAtLeast(0))
+    return (primeira..ultima).map { linha ->
+        LinhaDaPagina(y0 + layout.getLineTop(linha), y0 + layout.getLineBottom(linha))
     }
-    return linhas.sortedBy { it.topo }
 }
 
 /**

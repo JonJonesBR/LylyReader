@@ -96,8 +96,8 @@ internal class MenuDaSelecaoDeTexto(
             fimNoUltimoPreparo,
             inicio,
             fim,
-            inicioDaUltimaDescida,
-            fimDaUltimaDescida,
+            // -1 = nenhuma descida ainda (rb-50); a faixa é a seleção que a descida usou.
+            if (inicioDaUltimaDescida < 0) null else inicioDaUltimaDescida..fimDaUltimaDescida,
         )
         inicioNoUltimoPreparo = inicio
         fimNoUltimoPreparo = fim
