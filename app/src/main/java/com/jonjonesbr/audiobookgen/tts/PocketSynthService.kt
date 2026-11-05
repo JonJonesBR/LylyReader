@@ -23,6 +23,7 @@ class PocketSynthService : Service() {
     private var idleRelease: Runnable? = null
 
     // Primeiro plano do processo (rb-36): entra na primeira síntese e sai 60 s depois da última.
+    // rb-37: o tipo é mediaPlayback quando a leitura guiada está ativa (paraReproducao), no Android 15+.
     private val motor = PrimeiroPlanoDoMotor(this, NOTIFICATION_ID)
 
     private val binder = object : IPocketSynthService.Stub() {
@@ -32,10 +33,11 @@ class PocketSynthService : Service() {
             outPath: String,
             lsdSteps: Int,
             temperature: Float,
-            threads: Int
+            threads: Int,
+            paraReproducao: Boolean
         ): String {
             activeCalls.incrementAndGet()
-            motor.comecar()
+            motor.comecar(paraReproducao)
             try {
                 synchronized(engineLock) {
                     val spec = PocketTtsModelManager.specForVoice(voiceId)

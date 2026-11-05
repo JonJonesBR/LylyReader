@@ -9,6 +9,8 @@ interface ISupertonicSynthService {
      * contrário — evita que o motivo real (ex.: exceção do ONNX Runtime) se perca ao cruzar
      * a fronteira do processo. Se o processo abortar durante a chamada, o cliente recebe
      * DeadObjectException (tratada como falha), sem derrubar o app principal.
+     * `paraReproducao`: true quando a leitura guiada (mediaPlayback) está ativa no processo
+     * principal; define o tipo do primeiro plano do motor (rb-37).
      */
-    String synthesize(String text, String voiceId, String outPath);
+    String synthesize(String text, String voiceId, String outPath, boolean paraReproducao);
 }

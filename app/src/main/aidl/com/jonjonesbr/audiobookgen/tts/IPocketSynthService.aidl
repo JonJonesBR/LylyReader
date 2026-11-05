@@ -2,7 +2,11 @@
 package com.jonjonesbr.audiobookgen.tts;
 
 interface IPocketSynthService {
-    /** Returns an empty string on success and a readable error otherwise. */
-    String synthesize(String text, String voiceId, String outPath, int lsdSteps, float temperature, int threads);
+    /**
+     * Returns an empty string on success and a readable error otherwise.
+     * paraReproducao: true when the guided reading (mediaPlayback) is active in the main process;
+     * it sets the type of the engine's foreground service (rb-37).
+     */
+    String synthesize(String text, String voiceId, String outPath, int lsdSteps, float temperature, int threads, boolean paraReproducao);
 
 }

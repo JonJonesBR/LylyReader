@@ -255,12 +255,13 @@
         <!-- Síntese Supertonic em processo isolado: um abort() nativo do ONNX Runtime
              mata apenas este processo, sem derrubar o app principal. foregroundServiceType
              espelha o SherpaSynthService (mesmo achado do MIUI SmartPower congelando
-             processos sem superfície própria — ver comentário na classe). -->
+             processos sem superfície própria — ver comentário na classe). mediaPlayback
+             quando serve a leitura guiada, para não gastar o limite de 6 h do dataSync (rb-37). -->
         <service
             android:name=".tts.SupertonicSynthService"
             android:process=":supertonic"
             android:exported="false"
-            android:foregroundServiceType="dataSync"/>
+            android:foregroundServiceType="dataSync|mediaPlayback"/>
 
         <!-- Síntese Kokoro (Sherpa-ONNX) em processo isolado: mesmo princípio do :supertonic —
              o ONNX Runtime embutido no AAR pode abortar nativamente; aqui mata só este
@@ -269,7 +270,7 @@
             android:name=".tts.SherpaSynthService"
             android:process=":sherpa"
             android:exported="false"
-            android:foregroundServiceType="dataSync"/>
+            android:foregroundServiceType="dataSync|mediaPlayback"/>
 
         <!-- Pocket mantém somente um modelo INT8 carregado no processo filho; falhas do ORT
              ficam isoladas e o modelo ocioso é liberado para devolver memória ao Android. -->
@@ -277,7 +278,7 @@
             android:name=".tts.PocketSynthService"
             android:process=":pocket"
             android:exported="false"
-            android:foregroundServiceType="dataSync"/>
+            android:foregroundServiceType="dataSync|mediaPlayback"/>
 
         <!-- Serviço do WorkManager que executa setForeground() da conversão (ConversionWorker).
              Mescla com o declarado pela biblioteca, trocando só o tipo de serviço. -->

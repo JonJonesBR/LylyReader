@@ -17,6 +17,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import com.jonjonesbr.audiobookgen.service.GuidedReadingService
 import java.io.File
 import kotlin.coroutines.resume
 
@@ -66,7 +67,9 @@ object SupertonicProcessClient {
         return try {
             semaphore.withPermit {
                 withContext(Dispatchers.IO) {
-                    svc.synthesize(text, voiceId, outputFile.absolutePath).ifBlank { null }
+                    // rb-37: lido depois do semáforo, logo antes do IPC, para não usar um valor velho da espera.
+                    val paraReproducao = GuidedReadingService.ativo
+                    svc.synthesize(text, voiceId, outputFile.absolutePath, paraReproducao).ifBlank { null }
                 }
             }
         } catch (e: DeadObjectException) {

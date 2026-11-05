@@ -20,11 +20,11 @@ import com.jonjonesbr.audiobookgen.R
  * Antes, cada síntese fazia startForeground/stopForeground: a notificação era recriada e mudava
  * de lugar na lista. Com a espera, ela fica parada enquanto a leitura ou a conversão continua.
  *
- * Custo no limite do dataSync (Android 15+): como as orações da leitura guiada saem a menos de
- * [ESPERA_PARA_SAIR_MS] uma da outra, o primeiro plano do motor dura a sessão inteira, e não só
- * as sínteses. Esse tempo conta para o limite de 6 h por 24 h do dataSync (o GuidedReadingService
- * é mediaPlayback e não entra na conta). Ao estourar, vem onTimeout, e aoTimeout trata a saída.
- * Se isso aparecer em uso real, baixar ESPERA_PARA_SAIR_MS para uns 20 s.
+ * Custo no limite do dataSync (Android 15+, rb-37): na leitura guiada o motor entra com
+ * mediaPlayback, que não tem limite de tempo, então a sessão inteira não gasta as 6 h por 24 h do
+ * dataSync. A conversão e o pré-render seguem com dataSync; ao estourar, vem onTimeout, e aoTimeout
+ * trata a saída. A espera fica em [ESPERA_PARA_SAIR_MS]: baixá-la não reduziria o tempo contado,
+ * porque as orações da guiada saem a menos de 20 s uma da outra.
  *
  * Todo acesso ao estado passa pela [trava]. A regra fica em [CicloPrimeiroPlanoMotor].
  */
@@ -38,11 +38,16 @@ internal class PrimeiroPlanoDoMotor(private val service: Service, private val no
     private val criadoEm = System.currentTimeMillis()
     private var saidaPendente: Runnable? = null
 
-    /** Início de uma síntese. Nunca lança: se o primeiro plano for negado, sintetiza mesmo assim. */
-    fun comecar() {
+    /**
+     * Início de uma síntese. [paraReproducao] = a leitura guiada está ativa no processo principal
+     * (rb-37): usa mediaPlayback no Android 15+. Nunca lança: se o primeiro plano for negado,
+     * sintetiza mesmo assim.
+     */
+    fun comecar(paraReproducao: Boolean) {
+        val tipo = tipoDoPrimeiroPlanoMotor(Build.VERSION.SDK_INT, paraReproducao)
         synchronized(trava) {
             cancelarSaida()
-            if (ciclo.aoComecar()) ciclo.confirmarPrimeiroPlano(entrar())
+            if (ciclo.aoComecar(tipo)) ciclo.confirmarPrimeiroPlano(entrar(tipo), tipo)
         }
     }
 
@@ -84,7 +89,7 @@ internal class PrimeiroPlanoDoMotor(private val service: Service, private val no
         saidaPendente = null
     }
 
-    private fun entrar(): Boolean = runCatching {
+    private fun entrar(tipo: TipoPrimeiroPlanoMotor): Boolean = runCatching {
         criarCanal()
         val notif = NotificationCompat.Builder(service, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_lyly)
@@ -98,13 +103,17 @@ internal class PrimeiroPlanoDoMotor(private val service: Service, private val no
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_DEFERRED)
             .build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            service.startForeground(notifId, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            val flag = when (tipo) {
+                TipoPrimeiroPlanoMotor.REPRODUCAO -> ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                TipoPrimeiroPlanoMotor.DADOS -> ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            }
+            service.startForeground(notifId, notif, flag)
         } else {
             service.startForeground(notifId, notif)
         }
     }.onFailure {
         // Sem stack trace: com a nova tentativa a cada síntese, a falha pode se repetir no lote.
-        Log.w(TAG, "Primeiro plano do motor de voz negado (${it.javaClass.simpleName}); segue sem ele")
+        Log.w(TAG, "Primeiro plano do motor de voz ($tipo) negado (${it.javaClass.simpleName}); segue sem ele")
     }.isSuccess
 
     private fun criarCanal() {

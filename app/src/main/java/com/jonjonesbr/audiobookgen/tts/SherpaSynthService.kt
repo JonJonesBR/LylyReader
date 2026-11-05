@@ -26,6 +26,8 @@ import java.io.File
  * rb-36: o primeiro plano agora tem histerese. Entra na primeira síntese e sai 60 s depois da
  * última, sem liga/desliga a cada chamada (a notificação ficava recriada e mudava de lugar na
  * lista); canal e notificação são os do [PrimeiroPlanoDoMotor], compartilhados pelos três motores.
+ * rb-37: o tipo depende do uso. Com a leitura guiada ativa (paraReproducao) no Android 15+, o
+ * primeiro plano é mediaPlayback, que não tem o limite de 6 h do dataSync; o resto segue dataSync.
  */
 class SherpaSynthService : Service() {
 
@@ -43,8 +45,8 @@ class SherpaSynthService : Service() {
     // Fronteira com nativo: exceção ampla intencional (mesmo motivo do KokoroTtsEngine).
     @Suppress("TooGenericExceptionCaught")
     private val binder = object : ISherpaSynthService.Stub() {
-        override fun synthesize(text: String, voiceId: String, outPath: String): String {
-            motor.comecar()
+        override fun synthesize(text: String, voiceId: String, outPath: String, paraReproducao: Boolean): String {
+            motor.comecar(paraReproducao)
             try {
                 val out = File(outPath)
                 val result = runBlocking { engine.synthesize(text, voiceId, out) }
