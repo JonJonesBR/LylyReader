@@ -9,6 +9,7 @@ import android.os.ParcelFileDescriptor
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Configurator
 import androidx.test.uiautomator.UiDevice
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.service.GuidedReadingService
@@ -145,13 +146,22 @@ class RegrasDoLeitor : TestRule {
      */
     fun fecharDialogosDoSistema() {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        repeat(TENTATIVAS_DIALOGO) {
-            val anr = device.hasObject(By.textContains("isn't responding")) ||
-                device.hasObject(By.res("android", "aerr_wait"))
-            if (!anr) return
-            val botao = device.findObject(By.res("android", "aerr_wait")) ?: device.findObject(By.text("Wait"))
-            if (botao != null) botao.click() else device.pressBack()
-            Thread.sleep(ESPERA_DIALOGO_MS)
+        // O diálogo de ANR não depende de o app ficar ocioso. Com a guiada tocando, o app nunca fica ocioso, e cada
+        // checagem esperaria o tempo cheio do UiAutomator: por isso a espera de ociosidade cai só durante a checagem.
+        val configurador = Configurator.getInstance()
+        val esperaOciosaAntes = configurador.getWaitForIdleTimeout()
+        configurador.setWaitForIdleTimeout(ESPERA_OCIOSA_DIALOGO_MS)
+        try {
+            repeat(TENTATIVAS_DIALOGO) {
+                val anr = device.hasObject(By.textContains("isn't responding")) ||
+                    device.hasObject(By.res("android", "aerr_wait"))
+                if (!anr) return
+                val botao = device.findObject(By.res("android", "aerr_wait")) ?: device.findObject(By.text("Wait"))
+                if (botao != null) botao.click() else device.pressBack()
+                Thread.sleep(ESPERA_DIALOGO_MS)
+            }
+        } finally {
+            configurador.setWaitForIdleTimeout(esperaOciosaAntes)
         }
     }
 
@@ -184,5 +194,8 @@ class RegrasDoLeitor : TestRule {
     private companion object {
         const val TENTATIVAS_DIALOGO = 3
         const val ESPERA_DIALOGO_MS = 1_000L
+
+        /** Ociosidade do UiAutomator só na checagem de diálogo (com a guiada tocando, o app nunca fica ocioso). */
+        const val ESPERA_OCIOSA_DIALOGO_MS = 500L
     }
 }

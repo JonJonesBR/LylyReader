@@ -234,7 +234,12 @@ class PaginasNoAparelhoTest {
                     maxMs = VOZ_POR_TRECHO_P5_MS,
                 ),
             )
-            val scenario = abrirLeitorComGuiada(regras, contexto)
+            // Livro dobrado: sempre sobra página adiante quando o arraste lateral acontecer, mesmo com a leitura lenta.
+            val scenario = abrirLeitorComGuiada(
+                regras,
+                contexto,
+                textos = LivroNoAparelho.PARAGRAFOS + LivroNoAparelho.PARAGRAFOS,
+            )
             esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
                 GuidedPlaybackBridge.manager?.state?.value?.let { it.isPlaying && it.index == 0 } == true
             }
@@ -262,6 +267,10 @@ class PaginasNoAparelhoTest {
                 narrado?.visivel == true,
             )
             conferirSemLinhaCortada(virou, "p5-virou")
+
+            // Pausa a guiada antes do arraste: com ela tocando, a página e o narrado andam a cada ~50 ms e a medida
+            // do arraste sai instável. pause() mantém o índice narrado, então o chip ainda consegue levar até ele.
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.pause() }
 
             // O leitor vira a página com o dedo: a guiada entra em modo manual e o chip aparece.
             arrastarLateral(scenario, paraFrente = true)
@@ -308,10 +317,12 @@ class PaginasNoAparelhoTest {
             esperarAte(scenario, "a página virar antes do giro", TEMPO_DE_VIRADA_MS) { a ->
                 offsetDaLista(a) > primeira.offset
             }
-            val referencia = checkNotNull(medirPagina(scenario).topoVisivel()) {
+            // Medida depois da virada: o parágrafo 0 pode já ter saído da tela, e a referência é o que está no topo agora.
+            val virada = medirPagina(scenario)
+            val referencia = checkNotNull(virada.topoVisivel()) {
                 "Sem linha no topo antes de girar"
             }.paragrafo
-            Capturas.anotar("p6", "antes do giro: offset=${primeira.offset} paragrafo de referencia=$referencia")
+            Capturas.anotar("p6", "antes do giro: offset=${virada.offset} paragrafo de referencia=$referencia")
 
             comRotacaoManual {
                 val antesDoGiro = instanciaAtual(scenario)
@@ -354,19 +365,30 @@ class PaginasNoAparelhoTest {
         comPaginas {
             val scenario = abrirNoPaginado()
             regras.fecharDialogosDoSistema()
-            val antes = medirPagina(scenario)
-            InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_PAGE_DOWN)
-            esperarAte(scenario, "PAGE_DOWN virar a página", TEMPO_DE_VIRADA_MS) { a ->
-                offsetDaLista(a) > antes.offset
+            // Com a janela em modo de toque, o 1º PAGE_DOWN é consumido pelo ViewRootImpl para sair desse modo (o foco
+            // vai para a toolbar) e não chega à Activity: comportamento do Android, não do app. Por isso sai-se do modo
+            // de toque antes de medir, e volta-se a ele no fim (mesmo se o teste falhar).
+            val instrumentacao = InstrumentationRegistry.getInstrumentation()
+            instrumentacao.setInTouchMode(false)
+            instrumentacao.waitForIdleSync()
+            try {
+                esperarAte(scenario, "sair do modo de toque") { a -> !a.window.decorView.isInTouchMode }
+                val antes = medirPagina(scenario)
+                instrumentacao.sendKeyDownUpSync(KeyEvent.KEYCODE_PAGE_DOWN)
+                esperarAte(scenario, "PAGE_DOWN virar a página", TEMPO_DE_VIRADA_MS) { a ->
+                    offsetDaLista(a) > antes.offset
+                }
+                val depois = medirPagina(scenario)
+                Capturas.anotar("p7", "PAGE_DOWN: offset ${antes.offset} -> ${depois.offset}")
+                Capturas.capturar("81_p7_page_down")
+                assertTrue(
+                    "PAGE_DOWN deveria virar a página (${antes.offset} -> ${depois.offset})",
+                    depois.offset > antes.offset,
+                )
+                conferirSemLinhaCortada(depois, "p7")
+            } finally {
+                instrumentacao.setInTouchMode(true)
             }
-            val depois = medirPagina(scenario)
-            Capturas.anotar("p7", "PAGE_DOWN: offset ${antes.offset} -> ${depois.offset}")
-            Capturas.capturar("81_p7_page_down")
-            assertTrue(
-                "PAGE_DOWN deveria virar a página (${antes.offset} -> ${depois.offset})",
-                depois.offset > antes.offset,
-            )
-            conferirSemLinhaCortada(depois, "p7")
         }
     }
 
@@ -537,9 +559,10 @@ class PaginasNoAparelhoTest {
                 val nova = System.identityHashCode(a) != antes
                 val ativa = lista.paginacao?.ativa == true
                 val alinhada = RegraDasPaginasDoLeitor.ajusteDoTopo(lista.linhasNaTela(), lista.paddingTop) == 0
-                // Sem o parágrafo 0 montado e a lista inteira no adapter, ajusteDoTopo devolve 0 por falta de linhas.
+                // Sem linha na tela (lista sem layout ou sem parágrafos montados), ajusteDoTopo devolve 0 por falta de
+                // linhas. A virada pode ter tirado o parágrafo 0 da tela, então o que conta é haver linha visível.
                 val montada = lista.adapter?.itemCount == LivroNoAparelho.PARAGRAFOS.size &&
-                    lista.findViewHolderForAdapterPosition(0) != null
+                    lista.linhasNaTela().isNotEmpty()
                 visto = "nova=$nova ativa=$ativa alinhada=$alinhada montada=$montada"
                 nova && ativa && alinhada && montada
             }
