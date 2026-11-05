@@ -431,7 +431,11 @@ class PaginasNoAparelhoTest {
             lista.adapter?.itemCount == LivroNoAparelho.PARAGRAFOS.size &&
                 lista.paginacao?.ativa == true &&
                 lista.findViewHolderForAdapterPosition(0) != null &&
-                RegraDasPaginasDoLeitor.ajusteDoTopo(lista.linhasNaTela(), lista.paddingTop) == 0
+                RegraDasPaginasDoLeitor.ajusteDoTopo(
+                    lista.linhasNaTela(),
+                    lista.paddingTop,
+                    lista.height - lista.paddingBottom - lista.paddingTop,
+                ) == 0
         }
         return scenario
     }
@@ -570,7 +574,8 @@ class PaginasNoAparelhoTest {
                 val lista = listaDoLeitor(a)
                 val nova = System.identityHashCode(a) != antes
                 val ativa = lista.paginacao?.ativa == true
-                val alinhada = RegraDasPaginasDoLeitor.ajusteDoTopo(lista.linhasNaTela(), lista.paddingTop) == 0
+                val altura = lista.height - lista.paddingBottom - lista.paddingTop
+                val alinhada = RegraDasPaginasDoLeitor.ajusteDoTopo(lista.linhasNaTela(), lista.paddingTop, altura) == 0
                 // Sem linha na tela (lista sem layout ou sem parágrafos montados), ajusteDoTopo devolve 0 por falta de
                 // linhas. A virada pode ter tirado o parágrafo 0 da tela, então o que conta é haver linha visível.
                 val montada = lista.adapter?.itemCount == LivroNoAparelho.PARAGRAFOS.size &&

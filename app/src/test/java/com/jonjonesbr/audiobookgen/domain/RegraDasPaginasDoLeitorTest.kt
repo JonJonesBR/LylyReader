@@ -135,15 +135,24 @@ class RegraDasPaginasDoLeitorTest {
     @Test
     fun `ajuste do topo com linha cruzando devolve o delta negativo que a mostra inteira`() {
         val linhas = listOf(LinhaDaPagina(0, 40), LinhaDaPagina(40, 80), LinhaDaPagina(80, 120))
-        assertEquals(-20, regra.ajusteDoTopo(linhas, 100))
+        assertEquals(-20, regra.ajusteDoTopo(linhas, 100, alturaDaPagina = 1000))
     }
 
     @Test
     fun `ajuste do topo sem linha cruzando e zero`() {
         val linhas = listOf(LinhaDaPagina(0, 40), LinhaDaPagina(40, 80), LinhaDaPagina(80, 120))
-        assertEquals(0, regra.ajusteDoTopo(linhas, 80))
-        assertEquals(0, regra.ajusteDoTopo(linhas, 40))
-        assertEquals(0, regra.ajusteDoTopo(linhas, 0))
+        assertEquals(0, regra.ajusteDoTopo(linhas, 80, alturaDaPagina = 1000))
+        assertEquals(0, regra.ajusteDoTopo(linhas, 40, alturaDaPagina = 1000))
+        assertEquals(0, regra.ajusteDoTopo(linhas, 0, alturaDaPagina = 1000))
+    }
+
+    @Test
+    fun `ajuste do topo nao alinha linha tao alta quanto a pagina (virada sobre linha gigante)`() {
+        // Linha de 40 a 400 (360 px) cruza o topo 100. Com página de 300 px, ela é maior que a página: fica como está.
+        val linhas = listOf(LinhaDaPagina(0, 40), LinhaDaPagina(40, 400))
+        assertEquals(0, regra.ajusteDoTopo(linhas, 100, alturaDaPagina = 300))
+        // Com página de 500 px, a linha cabe: alinha como uma linha comum (40 - 100).
+        assertEquals(-60, regra.ajusteDoTopo(linhas, 100, alturaDaPagina = 500))
     }
 
     @Test

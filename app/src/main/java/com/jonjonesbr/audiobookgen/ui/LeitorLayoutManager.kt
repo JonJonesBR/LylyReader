@@ -8,7 +8,8 @@ import androidx.recyclerview.widget.RecyclerView
 
 /**
  * LinearLayoutManager do leitor que, enquanto [seguindoLeitura] for verdadeiro, ignora os pedidos de
- * "mostrar este trecho" vindos dos parágrafos.
+ * "mostrar este trecho" vindos dos parágrafos. No modo páginas ([paginaFixa], rb-26b) a lista só muda por virada, então
+ * esses pedidos também são ignorados.
  *
  * Os parágrafos são TextViews selecionáveis: o que o usuário tocou (para começar a leitura dali ou
  * selecionar uma palavra) fica com o foco. A leitura guiada repinta o parágrafo atual ~20x/s, e cada
@@ -24,6 +25,8 @@ class LeitorLayoutManager(
     private val toqueEmAndamento: () -> Boolean = { false },
     // Foco dado pelo código que não pode rolar a lista (rb-60b, a reabertura do trecho guardado).
     private val focoSemRolar: () -> Boolean = { false },
+    // Modo páginas (rb-26b): a página só muda por virada, então pedido de mostrar trecho e foco não rolam a lista.
+    private val paginaFixa: () -> Boolean = { false },
 ) : LinearLayoutManager(context, orientation, false) {
 
     override fun requestChildRectangleOnScreen(
@@ -33,7 +36,7 @@ class LeitorLayoutManager(
         immediate: Boolean,
         focusedChildVisible: Boolean
     ): Boolean =
-        if (seguindoLeitura()) false
+        if (seguindoLeitura() || paginaFixa()) false
         else super.requestChildRectangleOnScreen(parent, child, rect, immediate, focusedChildVisible)
 
     /** True = "já tratei": impede a lista de rolar até o parágrafo que ganhou foco durante a leitura guiada. */
@@ -42,7 +45,7 @@ class LeitorLayoutManager(
         state: RecyclerView.State,
         child: View,
         focused: View?
-    ): Boolean = seguindoLeitura() || toqueEmAndamento() || focoSemRolar() ||
+    ): Boolean = seguindoLeitura() || paginaFixa() || toqueEmAndamento() || focoSemRolar() ||
         super.onRequestChildFocus(parent, state, child, focused)
 
     /**

@@ -38,6 +38,9 @@ internal class PaginacaoDoLeitor(
     /** Última base de página medida, para redesenhar quando o padding de baixo muda (barra da guiada, giro). */
     private var ultimaBase = -1
 
+    /** Há topo desalinhado esperando o texto ser liberado (toque ou menu aberto), para alinhar depois (rb-26b, D2). */
+    private var alinharPendente = false
+
     private val arraste = ArrasteLateralDaPagina(
         lista,
         podeVirar = { ativa },
@@ -54,11 +57,27 @@ internal class PaginacaoDoLeitor(
                 ultimaBase = base()
                 lista.invalidate()
             }
+            // Layout que deixa o topo no meio de uma linha (a área de baixo encolhe e o parágrafo com foco fica no
+            // lugar): alinha de novo. Com texto em uso, espera a liberação (ver aoLiberarPagina). No fim do
+            // conteúdo não alinha: o corte da última página é inevitável, e alinhar esconderia a última linha do livro.
+            if (ativa && lista.canScrollVertically(1) && ajusteDoTopoAtual() != 0) {
+                if (lista.textoEmUso) alinharPendente = true else lista.post { alinharTopo() }
+            }
+        }
+        lista.aoLiberarPagina = {
+            if (alinharPendente) {
+                alinharPendente = false
+                alinharTopo()
+            }
         }
     }
 
     /** Altura da página na lista: até onde o texto pode aparecer, sem o padding de baixo (barra, mini player). */
     private fun base(): Int = lista.height - lista.paddingBottom
+
+    /** Ajuste do topo agora (ver [RegraDasPaginasDoLeitor.ajusteDoTopo]), com a altura da página desta lista. */
+    private fun ajusteDoTopoAtual(): Int =
+        RegraDasPaginasDoLeitor.ajusteDoTopo(lista.linhasNaTela(), lista.paddingTop, base() - lista.paddingTop)
 
     /**
      * Até onde a página desenha. O filtro é obrigatório: depois de virar sobre uma linha maior que a página, as linhas
@@ -121,11 +140,13 @@ internal class PaginacaoDoLeitor(
 
     /**
      * Alinha o topo na primeira linha inteira, depois de um salto (busca, capítulo, marcação, posição salva, chip).
-     * Não roda com toque, menu ou foco com seleção: o Editor é dono da lista nesse momento.
+     * Não roda com toque, menu ou foco com seleção: o Editor é dono da lista nesse momento. No fim do conteúdo (a
+     * lista não rola para a frente) também não roda: o topo cortado ali é inevitável, e alinhar esconderia a última
+     * linha.
      */
     fun alinharTopo() {
-        if (!ativa || lista.textoEmUso) return
-        val ajuste = RegraDasPaginasDoLeitor.ajusteDoTopo(lista.linhasNaTela(), lista.paddingTop)
+        if (!ativa || lista.textoEmUso || !lista.canScrollVertically(1)) return
+        val ajuste = ajusteDoTopoAtual()
         if (ajuste != 0) lista.scrollBy(0, ajuste)
     }
 

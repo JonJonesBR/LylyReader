@@ -100,6 +100,7 @@ class ReaderRolagemController(
                 seguindoLeitura = { guiadaConduzRolagem() },
                 toqueEmAndamento = { recyclerView.toqueEmAndamento },
                 focoSemRolar = { recyclerView.focoSemRolar },
+                paginaFixa = { paginacao.ativa },
             ).also { it.aoTerminarSalto = { paginacao.aoTerminarSalto() } }
         }
         recyclerView.paginacao = paginacao

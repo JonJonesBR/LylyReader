@@ -58,6 +58,9 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     /** Chamado (por post, antes de [aoLiberarTexto]) para conferir a seleção viva e mostrar ou esconder a barra. */
     var aoConferirSelecao: (() -> Unit)? = null
 
+    /** Chamado (por post, depois de [aoLiberarTexto]) quando o texto é liberado: o modo páginas alinha (rb-26b). */
+    internal var aoLiberarPagina: (() -> Unit)? = null
+
     /**
      * Alvo da descida da barra da seleção (rb-48), sem a animação. Só a BarraDaSelecaoDeTexto escreve. O espaço depois
      * do último parágrafo (rb-51) soma este valor quando a barra está aberta, então ele não lê o translationY, que muda
@@ -239,7 +242,10 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     internal fun liberarDepois() {
         post {
             aoConferirSelecao?.invoke()
-            if (!textoEmUso) aoLiberarTexto?.invoke()
+            if (!textoEmUso) {
+                aoLiberarTexto?.invoke()
+                aoLiberarPagina?.invoke()
+            }
         }
     }
 

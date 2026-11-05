@@ -45,9 +45,13 @@ object RegraDasPaginasDoLeitor {
     /**
      * Ajuste do topo quando uma linha cruza a borda superior ([topo] entre o começo e o fim dela): devolve o
      * deslocamento negativo que a mostra inteira, que é o começo da linha menos [topo]. Sem linha cruzada, devolve 0.
+     * Linha tão alta quanto a página ([alturaDaPagina]) não é alinhada: alinhar o topo nela a esconderia, e a virada
+     * sobre ela desfazia.
      */
-    fun ajusteDoTopo(linhas: List<LinhaDaPagina>, topo: Int): Int =
-        linhas.firstOrNull { it.topo < topo && topo < it.base }?.let { it.topo - topo } ?: 0
+    fun ajusteDoTopo(linhas: List<LinhaDaPagina>, topo: Int, alturaDaPagina: Int): Int {
+        val cruzada = linhas.firstOrNull { it.topo < topo && topo < it.base } ?: return 0
+        return if (cruzada.base - cruzada.topo >= alturaDaPagina) 0 else cruzada.topo - topo
+    }
 
     /**
      * Passo do acompanhamento da leitura guiada. Se a linha narrada termina depois do [corte] (está escondida),

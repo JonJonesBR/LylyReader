@@ -2168,6 +2168,107 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun paginaFixaNaoRolaPorPedidoDeMostrarTrecho() {
+        // rb-26b (passo 2): no modo páginas, o pedido de mostrar trecho (foco, TalkBack) não rola a lista.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val tv = checkNotNull(tvEm(rv, 1)) { "parágrafo 1 fora da lista" }
+                val antes = rv.computeVerticalScrollOffset()
+                // Um trecho bem abaixo da página: sem a trava, a lista rolaria até ele.
+                val trecho = Rect(0, 2_000, tv.width, 2_040)
+                val pediu = rv.layoutManager!!.requestChildRectangleOnScreen(rv, tv, trecho, false, false)
+                assertFalse("o pedido de mostrar trecho deveria ser ignorado", pediu)
+                assertEquals("a página não deveria rolar", antes, rv.computeVerticalScrollOffset())
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun paginaAlinhadaQuandoAAreaDeBaixoEncolheComFocoNoParagrafo() {
+        // rb-26b (passo 2, D2): a área de baixo encolhe (paddingBottom maior) com um parágrafo focado. Depois do
+        // layout, a 1ª linha da página começa no paddingTop, sem corte em cima.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val tv = checkNotNull(tvEm(rv, 1)) { "parágrafo 1 fora da lista" }
+                assertTrue("o parágrafo deveria ganhar o foco", tv.requestFocus())
+                // Desalinha o topo de propósito, no meio de uma linha. scrollBy não dispara layout, então o listener
+                // ainda não corrige: a asserção abaixo garante que o cenário começa desalinhado.
+                val layout = checkNotNull(tv.layout) { "parágrafo 1 sem layout" }
+                val alturaDaLinha = layout.getLineBottom(0) - layout.getLineTop(0)
+                rv.scrollBy(0, alturaDaLinha / 2)
+                val altura = rv.height - rv.paddingBottom - rv.paddingTop
+                assertTrue(
+                    "o cenário deveria começar desalinhado",
+                    RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop, altura) != 0,
+                )
+                rv.setPadding(rv.paddingLeft, rv.paddingTop, rv.paddingRight, rv.paddingBottom + 60)
+            }
+            esperarAte(scenario, "página alinhada depois de a área de baixo encolher") { a ->
+                val rv = listaDoLeitor(a)
+                !rv.isLayoutRequested &&
+                    RegraDasPaginasDoLeitor.ajusteDoTopo(
+                        rv.linhasNaTela(), rv.paddingTop, rv.height - rv.paddingBottom - rv.paddingTop,
+                    ) == 0
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val ajuste = RegraDasPaginasDoLeitor.ajusteDoTopo(
+                    rv.linhasNaTela(), rv.paddingTop, rv.height - rv.paddingBottom - rv.paddingTop,
+                )
+                assertEquals("a 1ª linha da página deveria começar no paddingTop", 0, ajuste)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun fimDoLivroNoModoPaginasNaoEscondeAUltimaLinha() {
+        // rb-26b (passo 2): no fim do conteúdo, o realinhamento não pode esconder a última linha do livro. Vira até
+        // o fim, força um layout e espera: a última linha continua inteira acima do corte, e não há mais virada.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var chegouAoFim = false
+            scenario.onActivity { a ->
+                val pag = listaDoLeitor(a).paginacao!!
+                for (i in 0 until 100) {
+                    if (!pag.virar(1)) {
+                        chegouAoFim = true
+                        break
+                    }
+                }
+            }
+            assertTrue("a virada deveria chegar ao fim do livro", chegouAoFim)
+            scenario.onActivity { a -> listaDoLeitor(a).requestLayout() }
+            esperarAte(scenario, "layout do fim do livro") { a -> !listaDoLeitor(a).isLayoutRequested }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val corte = rv.paginacao!!.corte()
+                val ultima = rv.linhasNaTela().last()
+                assertTrue("a última linha do livro deveria estar inteira acima do corte", ultima.base <= corte)
+                assertFalse("não deveria haver mais virada depois do fim", rv.paginacao!!.virar(1))
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun barraDaGuiadaEncolheAPaginaSemCrash() {
         // rb-26b (passo 2): a barra da guiada aparece, a área de texto diminui e o corte acompanha, sem exceção.
         val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
@@ -2537,7 +2638,8 @@ class ReaderActivitySmokeTest {
                 val narrada = linhaNaLista(rv, 2, linha)
                 assertTrue("a linha narrada deveria estar na página", narrada.topo >= rv.paddingTop)
                 assertTrue("a linha narrada deveria estar inteira", narrada.base <= rv.paginacao!!.corte())
-                val ajuste = RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop)
+                val altura = rv.height - rv.paddingBottom - rv.paddingTop
+                val ajuste = RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop, altura)
                 assertEquals("a página deveria estar alinhada", 0, ajuste)
             }
         }
