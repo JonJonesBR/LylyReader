@@ -500,12 +500,7 @@ class PaginasNoAparelhoTest {
     fun p10_paisagemComGuiadaESelecaoDeixaLinhasAcimaDaBarra() {
         comPaginas {
             comRotacaoManual {
-                device.setOrientationLeft()
-                Thread.sleep(PAUSA_APOS_GIRO_MS)
-                assertTrue(
-                    "Pedi a paisagem, mas a rotação ficou em ${device.displayRotation}",
-                    device.displayRotation != Surface.ROTATION_0,
-                )
+                // O giro é depois de abrir o Leitor: antes disso a tela da frente é o launcher, que fica no retrato.
                 val contexto = InstrumentationRegistry.getInstrumentation().targetContext
                 regras.usarVoz(VozFalsa.longa(contexto))
                 val scenario = abrirLeitorComGuiada(regras, contexto)
@@ -513,6 +508,21 @@ class PaginasNoAparelhoTest {
                     GuidedPlaybackBridge.manager?.state?.value?.let { it.isPlaying && it.index == 0 } == true
                 }
                 esperarPaginaComLinhas(scenario)
+                val antesDoGiro = instanciaAtual(scenario)
+                device.setOrientationLeft()
+                val fimDoGiro = System.currentTimeMillis() + TEMPO_LIMITE_ESPERA_MS
+                while (device.displayRotation == Surface.ROTATION_0 && System.currentTimeMillis() < fimDoGiro) {
+                    Thread.sleep(INTERVALO_DE_LEITURA_MS)
+                }
+                assertTrue(
+                    "Pedi a paisagem, mas a rotação ficou em ${device.displayRotation}",
+                    device.displayRotation != Surface.ROTATION_0,
+                )
+                esperarPaginaRecriada(scenario, antesDoGiro, "paisagem")
+                Thread.sleep(PAUSA_APOS_GIRO_MS)
+                esperarAte(scenario, "painel da guiada visível na paisagem") { a ->
+                    a.findViewById<View>(R.id.layoutGuidedPlayer).visibility == View.VISIBLE
+                }
                 InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.pause() }
                 esperarPaginaParada(scenario)
                 regras.fecharDialogosDoSistema()

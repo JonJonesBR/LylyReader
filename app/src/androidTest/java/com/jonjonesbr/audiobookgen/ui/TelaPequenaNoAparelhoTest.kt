@@ -87,10 +87,11 @@ class TelaPequenaNoAparelhoTest {
     fun s3_paisagemComGuiadaTocando() {
         comPaginas {
             comFonteGrande {
-                comPaisagem {
+                comRotacaoManual {
                     val contexto = InstrumentationRegistry.getInstrumentation().targetContext
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
+                    girarParaPaisagem(scenario, comGuiada = true)
                     esperarGuiadaTocando(scenario, 0)
                     esperarPaginaComLinhas(scenario)
                     esperarPaginaParada(scenario)
@@ -105,10 +106,11 @@ class TelaPequenaNoAparelhoTest {
     fun s4_paisagemComGuiadaESelecao() {
         comPaginas {
             comFonteGrande {
-                comPaisagem {
+                comRotacaoManual {
                     val contexto = InstrumentationRegistry.getInstrumentation().targetContext
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
+                    girarParaPaisagem(scenario, comGuiada = true)
                     virarPaginaComGuiadaEmManual(scenario)
                     val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
                     selecionarPalavra(scenario, regras, indice, palavra, cenario = "s4")
@@ -123,8 +125,9 @@ class TelaPequenaNoAparelhoTest {
     fun s5_paisagemSoLer() {
         comPaginas {
             comFonteGrande {
-                comPaisagem {
+                comRotacaoManual {
                     val scenario = abrirSoLerPaginado()
+                    girarParaPaisagem(scenario, comGuiada = false)
                     esperarPaginaComLinhas(scenario)
                     esperarPaginaParada(scenario)
                     // Sem a guiada, o painel dela (oculto no XML) não pode aparecer, senão a medida muda de sentido.
@@ -148,10 +151,11 @@ class TelaPequenaNoAparelhoTest {
     fun p13_paisagemComTelaCheiaMostraAsLinhasDaAltura() {
         comPaginas {
             comFonteGrande {
-                comPaisagem {
+                comRotacaoManual {
                     val contexto = InstrumentationRegistry.getInstrumentation().targetContext
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
+                    girarParaPaisagem(scenario, comGuiada = true)
                     virarPaginaComGuiadaEmManual(scenario)
                     esperarAte(scenario, "cabeçalho recolhido depois da virada") { a ->
                         a.findViewById<View>(R.id.cabecalhoDoLeitor).visibility == View.GONE &&
@@ -200,10 +204,11 @@ class TelaPequenaNoAparelhoTest {
     fun p11_paisagemComGuiadaPainelCompactoERotulosSemReticencias() {
         comPaginas {
             comFonteGrande {
-                comPaisagem {
+                comRotacaoManual {
                     val contexto = InstrumentationRegistry.getInstrumentation().targetContext
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
+                    girarParaPaisagem(scenario, comGuiada = true)
                     esperarGuiadaTocando(scenario, 0)
                     esperarPaginaComLinhas(scenario)
                     esperarPaginaParada(scenario)
@@ -455,22 +460,70 @@ class TelaPequenaNoAparelhoTest {
     }
 
     /**
-     * Gira para a paisagem antes de [corpo] (rotação manual, para o Leitor abrir já na paisagem) e espera a rotação
-     * assentar. A volta ao retrato e a rotação automática ficam em [comRotacaoManual].
+     * Gira para a paisagem com o Leitor JÁ aberto. Antes de abrir o Leitor, a tela da frente é o launcher do emulador,
+     * que fica preso no retrato e não gira. Espera o Leitor antigo ficar pronto, gira, espera a rotação e a Activity
+     * nova ficar pronta (com [comGuiada], o painel da guiada visível). Usar dentro de [comRotacaoManual].
      */
-    private fun comPaisagem(corpo: () -> Unit) {
-        comRotacaoManual {
-            device.setOrientationLeft()
-            val fim = System.currentTimeMillis() + TEMPO_LIMITE_ESPERA_MS
-            while (device.displayRotation == Surface.ROTATION_0 && System.currentTimeMillis() < fim) {
-                Thread.sleep(INTERVALO_DE_ROTACAO_MS)
-            }
-            if (device.displayRotation == Surface.ROTATION_0) {
-                throw AssertionError("Pedi a paisagem, mas a rotação ficou em ${device.displayRotation}")
-            }
-            Thread.sleep(PAUSA_APOS_GIRO_MS)
-            corpo()
+    private fun girarParaPaisagem(scenario: ActivityScenario<ReaderActivity>, comGuiada: Boolean) {
+        val antes = esperarLeitorPronto(scenario, comGuiada, antes = null, momento = "antes do giro")
+        device.setOrientationLeft()
+        val fim = System.currentTimeMillis() + TEMPO_LIMITE_ESPERA_MS
+        while (device.displayRotation == Surface.ROTATION_0 && System.currentTimeMillis() < fim) {
+            Thread.sleep(INTERVALO_DE_ROTACAO_MS)
         }
+        assertTrue(
+            "Pedi a paisagem, mas a rotação ficou em ${device.displayRotation}",
+            device.displayRotation != Surface.ROTATION_0,
+        )
+        esperarLeitorPronto(scenario, comGuiada, antes = antes, momento = "paisagem")
+        Thread.sleep(PAUSA_APOS_GIRO_MS)
+    }
+
+    /**
+     * Espera uma Activity do Leitor pronta para medir: lista com páginas ativas e linhas na tela e, com [comGuiada],
+     * o painel da guiada visível. Com [antes] nulo aceita qualquer Activity; senão exige outra instância. Devolve a
+     * identidade da Activity pronta. Durante a recriação não há Activity para ler (ver [lerAtividade]): tenta de novo.
+     */
+    private fun esperarLeitorPronto(
+        scenario: ActivityScenario<ReaderActivity>,
+        comGuiada: Boolean,
+        antes: Int?,
+        momento: String,
+    ): Int {
+        val fim = System.currentTimeMillis() + TEMPO_LIMITE_ESPERA_MS
+        var visto = "nenhuma Activity disponível"
+        while (System.currentTimeMillis() < fim) {
+            var pronta: Int? = null
+            lerAtividade(scenario) { a ->
+                val identidade = System.identityHashCode(a)
+                val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+                val painel = a.findViewById<View>(R.id.layoutGuidedPlayer).visibility
+                visto = "nova=${identidade != antes} paginaAtiva=${lista.paginacao?.ativa} " +
+                    "linhas=${lista.linhasNaTela().size} painelGuiada=$painel"
+                val nova = antes == null || identidade != antes
+                val painelOk = !comGuiada || painel == View.VISIBLE
+                if (nova && painelOk && lista.paginacao?.ativa == true && lista.linhasNaTela().isNotEmpty()) {
+                    pronta = identidade
+                }
+            }
+            pronta?.let { return it }
+            Thread.sleep(INTERVALO_DE_ROTACAO_MS)
+        }
+        throw AssertionError("O Leitor não ficou pronto $momento em ${TEMPO_LIMITE_ESPERA_MS / 1000} s. Viu: $visto")
+    }
+
+    /**
+     * Roda [leitura] na Activity atual. Logo depois de um giro, o ActivityScenario pode estar com a instância antiga
+     * destruída, ou com a nova ainda sem resumir: aí onActivity lança IllegalStateException, e a função devolve nulo.
+     */
+    private fun <T> lerAtividade(scenario: ActivityScenario<ReaderActivity>, leitura: (ReaderActivity) -> T): T? {
+        var resultado: T? = null
+        try {
+            scenario.onActivity { a -> resultado = leitura(a) }
+        } catch (erro: IllegalStateException) {
+            return null
+        }
+        return resultado
     }
 
     /**

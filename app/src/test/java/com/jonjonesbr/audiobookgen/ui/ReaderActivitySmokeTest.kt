@@ -2918,7 +2918,9 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
-    /** Os ids do painel da guiada e da barra da seleção, que os includes trazem em cada orientação (rb-26b, passo 5). */
+    /**
+     * Os ids do painel da guiada e da barra da seleção, que os includes trazem em cada orientação (rb-26b, passo 5).
+     */
     private fun conferirIdsDoPainelEDaBarra(a: ReaderActivity) {
         val ids = listOf(
             R.id.layoutGuidedPlayer, R.id.divisorGuidedPlayer, R.id.btnGuidedVoltarNarracao, R.id.tvGuidedStatus,
