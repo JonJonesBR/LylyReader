@@ -51,6 +51,11 @@ class SettingsActivity : BasePlayerActivity() {
     private val buffering: AjustesBufferingController by lazy { AjustesBufferingController(this) }
     private val qualidade: AjustesQualidadeController by lazy { AjustesQualidadeController(this) }
     private val pausas: AjustesPausasController by lazy { AjustesPausasController(this, pythonEngine) }
+    private val ouvir: AjustesOuvirController by lazy {
+        AjustesOuvirController(this, pythonEngine, AjustesOuvirController.Callbacks(
+            aoRestaurarSom = { carregarConfigAtual(); naturalidade.carregar() },
+        ))
+    }
     private val backup: AjustesBackupController by lazy {
         AjustesBackupController(this, pythonEngine, AjustesBackupController.Callbacks(
             lancarExportarConfig = { exportarConfigLauncher.launch(it) },
@@ -294,8 +299,7 @@ class SettingsActivity : BasePlayerActivity() {
 
         buffering.carregar()
 
-        // Ao retomar e audiobook pronto
-        atualizarTextosOuvir()
+        ouvir.carregar()
 
         // Blacklist
         carregarInfoBlacklist()
@@ -360,8 +364,8 @@ class SettingsActivity : BasePlayerActivity() {
         linha(R.id.rowPausasNaturais) { pausas.alternarPausasNaturais() }
         linha(R.id.rowPocketMaisRapido) { qualidade.alternarPocketMaisRapido() }
         linha(R.id.rowTimbre) { TimbreDialog.show(this, appPrefs) }
-        linha(R.id.rowAutoRewind) { escolherAutoRewind() }
-        linha(R.id.rowPlayerConversao) { escolherPlayerConversao() }
+        linha(R.id.rowAutoRewind) { ouvir.escolherAutoRewind() }
+        linha(R.id.rowPlayerConversao) { ouvir.escolherPlayerConversao() }
         linha(R.id.rowBackupFazer) { backup.escolherBackupAFazer() }
         linha(R.id.rowBackupRestaurar) { backup.restaurarBackup() }
         linha(R.id.rowLogsErro) { abrirLogsErro() }
@@ -372,7 +376,7 @@ class SettingsActivity : BasePlayerActivity() {
             appPrefs.dicasVistas = emptySet()
             Toast.makeText(this, R.string.aprender_dicas_reativadas, Toast.LENGTH_SHORT).show()
         }
-        findViewById<Button>(R.id.btnRestaurarSom).setOnClickListener { confirmarRestaurarSom() }
+        findViewById<Button>(R.id.btnRestaurarSom).setOnClickListener { ouvir.confirmarRestaurarSom() }
     }
 
     private fun linha(id: Int, acao: () -> Unit) {
@@ -418,72 +422,6 @@ class SettingsActivity : BasePlayerActivity() {
                 visibility = if (pocketMb != null) View.VISIBLE else View.GONE
             }
         }
-    }
-
-    // ── Ao ouvir: repetir ao retomar e player do audiobook pronto ───────────
-
-    private val modosAutoRewind = com.jonjonesbr.audiobookgen.util.AutoRewindMode.entries
-    private val rotulosAutoRewind =
-        intArrayOf(R.string.aj_retomar_nao, R.string.aj_retomar_curto, R.string.aj_retomar_longo)
-    private val valoresPlayerConversao = listOf(null, "app", "sistema")
-    private val rotulosPlayerConversao =
-        intArrayOf(R.string.aj_fim_perguntar, R.string.aj_fim_app, R.string.aj_fim_sistema)
-
-    private fun atualizarTextosOuvir() {
-        findViewById<TextView>(R.id.tvAutoRewindAtual)
-            .setText(rotulosAutoRewind[modosAutoRewind.indexOf(appPrefs.autoRewindMode).coerceAtLeast(0)])
-        val player = valoresPlayerConversao.indexOf(appPrefs.playerConversaoConcluida).coerceAtLeast(0)
-        findViewById<TextView>(R.id.tvPlayerConversaoAtual).setText(rotulosPlayerConversao[player])
-    }
-
-    private fun escolherAutoRewind() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.aj_retomar)
-            .setSingleChoiceItems(
-                rotulosAutoRewind.map { getString(it) }.toTypedArray(),
-                modosAutoRewind.indexOf(appPrefs.autoRewindMode)
-            ) { dialogo, qual ->
-                appPrefs.autoRewindMode = modosAutoRewind[qual]
-                atualizarTextosOuvir()
-                dialogo.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .exibir()
-    }
-
-    private fun escolherPlayerConversao() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.aj_fim_conversao)
-            .setSingleChoiceItems(
-                rotulosPlayerConversao.map { getString(it) }.toTypedArray(),
-                valoresPlayerConversao.indexOf(appPrefs.playerConversaoConcluida).coerceAtLeast(0)
-            ) { dialogo, qual ->
-                appPrefs.playerConversaoConcluida = valoresPlayerConversao[qual]
-                atualizarTextosOuvir()
-                dialogo.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .exibir()
-    }
-
-    /** "Restaurar o padrão do som": pausas, tom, repetir ao retomar, qualidade, passos e buffering. */
-    private fun confirmarRestaurarSom() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.aj_restaurar_som)
-            .setMessage(R.string.aj_restaurar_som_msg)
-            .setPositiveButton(R.string.aj_restaurar) { _, _ ->
-                appPrefs.restaurarPadroesDeSom()
-                lifecycleScope.launch {
-                    pythonEngine.sincronizarConfiguracoes(
-                        appPrefs.motorTts, SecurePreferences.getGeminiKeys(this@SettingsActivity), appPrefs.pausaMs
-                    )
-                }
-                carregarConfigAtual()
-                naturalidade.carregar()
-                Toast.makeText(this, R.string.aj_restaurado, Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .exibir()
     }
 
     // ── Motor ────────────────────────────────────────────────────────────────
