@@ -1,8 +1,10 @@
 name: UI Tests
 
-# Testes de interface (rb-46) no emulador Android: abrem a ReaderActivity real, tiram capturas e medidas. Ainda só
-# avisam: um teste vermelho deixa o run falho, mas o workflow não entra na regra do rb-32 (o que pode ir para a main)
-# até ter alguns runs estáveis. Sem segredos e sem publicar nada; as capturas ficam no artefato ui-capturas por 3 dias.
+# Testes de interface (rb-46) no emulador Android: abrem a ReaderActivity real, tiram capturas e medidas. Este workflow
+# barra: entra na regra do rb-32 (a main só recebe código que passou no Checks e no UI Tests do PR). Tem nova tentativa
+# automática só para falha de infraestrutura do emulador (não subiu, pacote corrompido, aparelho caiu no meio): um teste
+# vermelho (assert) não é repetido, para não mascarar teste instável. Sem segredos e sem publicar nada; as capturas
+# ficam no artefato ui-capturas por 3 dias.
 on:
   pull_request:
     paths:
@@ -122,6 +124,34 @@ jobs:
         run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
 
       - name: Testes de interface no emulador
+        id: emulador
+        # continue-on-error: a falha de infraestrutura é decidida no passo Resultado (com a nova tentativa abaixo).
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 3072M
+          disk-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/ci/testes-de-interface.sh
+
+      - name: Limpa o 1º run do emulador (falha de infraestrutura)
+        if: steps.emulador.outcome == 'failure'
+        # Apaga também os relatórios do Gradle do 1º run, para o artefato não misturar resultados velhos com os da 2ª tentativa.
+        run: |
+          rm -rf ui-resultado.txt logcat-ui.txt ui-adb ui-gradle.txt
+          rm -rf app/build/outputs/androidTest-results app/build/reports/androidTests app/build/outputs/connected_android_test_additional_output
+          echo "::warning::O emulador falhou (infraestrutura, não um teste): nova tentativa."
+
+      - name: Testes de interface no emulador (nova tentativa)
+        # Igual ao passo acima. Só roda se o 1º falhou como passo (emulador que não subiu ou falha de infraestrutura no script).
+        id: emulador2
+        if: steps.emulador.outcome == 'failure'
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
@@ -149,7 +179,22 @@ jobs:
             app/build/outputs/androidTest-results/
             ui-adb/
             logcat-ui.txt
+            ui-gradle.txt
 
       - name: Resultado
-        # O script só registra a falha em ui-resultado.txt (sempre sai com 0): é este passo que deixa o run vermelho.
-        run: test ! -f ui-resultado.txt
+        # Deixa o run vermelho quando (a) um teste falhou (o script grava ui-resultado.txt) ou (b) o emulador falhou nas
+        # duas tentativas. Se a 1ª passou, a 2ª fica "skipped", e isso é sucesso.
+        if: always()
+        env:
+          OUTCOME_EMULADOR_1: ${{ steps.emulador.outcome }}
+          OUTCOME_EMULADOR_2: ${{ steps.emulador2.outcome }}
+        run: |
+          if [ -f ui-resultado.txt ]; then
+            echo "::error::Testes de interface falharam (ver ui-resultado.txt e o logcat no artefato ui-capturas)."
+            exit 1
+          fi
+          if [ "$OUTCOME_EMULADOR_1" = "failure" ] && [ "$OUTCOME_EMULADOR_2" = "failure" ]; then
+            echo "::error::O emulador falhou nas duas tentativas (infraestrutura, não um teste)."
+            exit 1
+          fi
+          echo "Testes de interface: sem falha (emulador: 1ª=$OUTCOME_EMULADOR_1, 2ª=$OUTCOME_EMULADOR_2)."

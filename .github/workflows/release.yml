@@ -142,6 +142,16 @@ jobs:
           restore-keys: |
             pip-${{ runner.os }}-
 
+      - name: Cache Robolectric (rb-64)
+        # Os jars android-all do Robolectric vêm do Maven Central na hora dos testes (~/.m2). Sem cache, um 429 do Maven
+        # derruba o passo de testes (como em 04/11).
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ runner.os }}-${{ hashFiles('app/build.gradle.kts') }}
+          restore-keys: |
+            robolectric-${{ runner.os }}-
+
       - name: Run unit tests (gate)
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
