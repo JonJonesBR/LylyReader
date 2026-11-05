@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.AttributeSet
@@ -33,7 +34,12 @@ import kotlin.math.hypot
  *   decide (rb-60b, ver [faixaParaReabrirSozinho] em SelecaoSemMenu).
  * - dar o foco do código sem rolar a lista, na janela de [focoSemRolar] (rb-60b): a reabertura do trecho pede o foco
  *   para o TextView, e o foco não pode rolar a lista até o parágrafo inteiro.
+ * - no modo páginas (rb-26b, ver [paginacao]), cortar a linha parcial de baixo, virar a página com o arraste lateral e
+ *   com as ações de rolagem da acessibilidade. O pedido do Editor de ficar com o gesto (toque longo) tira o arraste
+ *   lateral dele (ver [editorDonoDoGesto]).
  */
+// 12 funções, limite 10: o modo páginas (rb-26b) fica na própria lista (clip e pedido do Editor).
+@Suppress("TooManyFunctions")
 class RecyclerViewParagrafos @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -62,6 +68,9 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     /** Refaz o espaço do fim quando a descida muda (rb-51). Quem liga é o ReaderTelaController. */
     internal var aoMudarDescida: (() -> Unit)? = null
 
+    /** Modo páginas do Leitor (rb-26b), ligado pelo ReaderRolagemController. Nulo ou inativo: a vertical normal. */
+    internal var paginacao: PaginacaoDoLeitor? = null
+
     /** Há dedo na lista, do ACTION_DOWN até o UP ou o CANCEL. */
     var toqueEmAndamento = false
         private set
@@ -71,6 +80,12 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
 
     /** Filho da lista que estava sob o dedo no ACTION_DOWN (rb-53). Nulo sem toque. */
     private var filhoSobODedo: View? = null
+
+    /**
+     * O Editor pediu o gesto para si, no toque longo ou no duplo toque, com o toque em andamento (rb-26b, ver
+     * [requestDisallowInterceptTouchEvent]). O arraste lateral da página deixa o gesto para ele. Zerada no DOWN.
+     */
+    internal var editorDonoDoGesto = false
 
     /** Trecho guardado quando o parágrafo selecionado sai da tela (rb-58). Só a barra e o toque olham para ele. */
     internal val guardada: SelecaoGuardada = SelecaoGuardada()
@@ -166,6 +181,7 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
             toqueEmAndamento = true
+            editorDonoDoGesto = false
             filhoSobODedo = findChildViewUnder(ev.x, ev.y)
             descidaX = ev.x
             descidaY = ev.y
@@ -175,7 +191,7 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
             val paginaRolando = (filhoSobODedo as? PaginaDoParagrafo)?.rolandoSozinha == true
             listaParadaNoDown = scrollState == RecyclerView.SCROLL_STATE_IDLE && !paginaRolando
         }
-        val tratado = super.dispatchTouchEvent(ev)
+        val tratado = paginacao?.despacharToque(ev) { super.dispatchTouchEvent(it) } ?: super.dispatchTouchEvent(ev)
         val fimDoToque = ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL
         if (toqueEmAndamento && fimDoToque) {
             // Seleção aberta agora (duplo toque, toque longo) não conta: ela substitui o trecho na conferência.
@@ -205,6 +221,15 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
             if (acao != null) post { acao() }
         }
         return tratado
+    }
+
+    /**
+     * O Editor pede o gesto para si no toque longo e no duplo toque (rb-26b). Com toque em andamento, marca que o
+     * arraste lateral da página deve largar o gesto; senão ele engoliria a seleção que o Editor estende.
+     */
+    override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+        super.requestDisallowInterceptTouchEvent(disallowIntercept)
+        if (disallowIntercept && toqueEmAndamento) editorDonoDoGesto = true
     }
 
     /**
@@ -243,11 +268,30 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
         (getChildViewHolder(child) as? ParagrafoAdapter.VHLeitura)?.tv?.rearmarSelecao()
     }
 
+    /** Desenha só até o corte no modo páginas (rb-26b): a linha parcial de baixo some. Sem paginação, é o padrão. */
+    override fun dispatchDraw(canvas: Canvas) {
+        val p = paginacao
+        if (p == null || !p.ativa) {
+            super.dispatchDraw(canvas)
+            return
+        }
+        val salvo = canvas.save()
+        // O clip de cima também: com clipToPadding falso, a última linha da página anterior apareceria no respiro.
+        canvas.clipRect(0, paddingTop, width, p.corte())
+        super.dispatchDraw(canvas)
+        canvas.restoreToCount(salvo)
+    }
+
     override fun performAccessibilityAction(action: Int, arguments: Bundle?): Boolean {
         val rolagem = action == AccessibilityNodeInfo.ACTION_SCROLL_FORWARD ||
             action == AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
         if (rolagem) {
             aoRolagemDeAcessibilidade?.invoke()
+            val paginada = paginacao?.takeIf { it.ativa }
+            if (paginada != null) {
+                val sentido = if (action == AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) 1 else -1
+                return paginada.virar(sentido)
+            }
         }
         return super.performAccessibilityAction(action, arguments)
     }
@@ -255,7 +299,8 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
 
 /**
  * Guarda o trecho marcado no parágrafo com foco quando ele sai da tela (rb-58). Função de topo: a classe da lista já
- * está no limite de funções do detekt. Pinta logo o span marcador, porque a view pode voltar do cache sem bind.
+ * está acima do limite de funções do detekt (ver o @Suppress). Pinta logo o span marcador, porque a view pode voltar
+ * do cache sem bind.
  * Holder invalidado (notifyDataSetChanged, lista nova) não guarda: o trecho seria de outro texto. Isso já sai do
  * próprio `bindingAdapterPosition`, que devolve NO_POSITION para holder invalidado ou removido (o `isInvalid` do
  * ViewHolder é package-private, por isso não é checado aqui).
@@ -273,7 +318,8 @@ internal fun RecyclerViewParagrafos.guardarTrechoAoSair(child: View) {
 /**
  * Faixa do trecho guardado que um toque curto tocou (rb-60), ou nulo. O TextView é o do item sob o dedo no DOWN (na
  * página horizontal, o TextView dentro dela). O offset sai do ponto do DOWN em coordenadas do TextView: o offsetRect
- * desconta a posição e a rolagem de cada pai, a página horizontal inclusive. Função de topo, pelo limite de funções.
+ * desconta a posição e a rolagem de cada pai, a página horizontal inclusive. Função de topo, fora da contagem de
+ * funções da classe.
  */
 internal fun RecyclerViewParagrafos.faixaDoToqueNoGuardado(
     filho: View?,

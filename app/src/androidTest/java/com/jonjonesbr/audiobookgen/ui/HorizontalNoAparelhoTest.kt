@@ -22,6 +22,7 @@ import com.jonjonesbr.audiobookgen.ui.apoio.selecaoAtual
 import com.jonjonesbr.audiobookgen.ui.apoio.selecionarPalavra
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,6 +46,7 @@ class HorizontalNoAparelhoTest {
      * lista não troca de página. Depois, um toque longo numa palavra visível da página rolada abre a seleção (uma só,
      * como no C02), e a linha da palavra fica abaixo da barra da seleção.
      */
+    @Ignore("rb-26b: o modo páginas substitui o pager por parágrafo; reescrito no passo 4")
     @Test
     fun c12_paragrafoLongoRolaPorDentroNaHorizontal() {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext

@@ -22,6 +22,23 @@ import kotlin.math.max
 /** Views que, visíveis sob o dedo, desligam os gestos da tela (ex.: a dica sobreposta do CoachMark). */
 interface BloqueiaArrasteDeTela
 
+/** Largura mínima, em dp, das bordas laterais que ficam para o gesto de voltar do sistema. */
+private const val BORDA_DP = 24f
+
+/**
+ * Se [xNaJanela] cai fora das bordas laterais de [raiz], onde fica o gesto de voltar do sistema: o mínimo de [BORDA_DP]
+ * ou a área de gestos do sistema, o que for maior. Usado pela tela (ArrasteNaTela) e pela lista do modo páginas
+ * (rb-26b).
+ */
+internal fun foraDasBordasDoVoltar(raiz: View, xNaJanela: Float): Boolean {
+    val densidade = raiz.resources.displayMetrics.density
+    val gestos = ViewCompat.getRootWindowInsets(raiz)?.getInsets(WindowInsetsCompat.Type.systemGestures())
+    val minimo = BORDA_DP * densidade
+    val esquerda = max(minimo, gestos?.left?.toFloat() ?: 0f)
+    val direita = max(minimo, gestos?.right?.toFloat() ?: 0f)
+    return xNaJanela > esquerda && xNaJanela < raiz.width - direita
+}
+
 /**
  * Gestos de arraste da tela inteira, lidos em dispatchTouchEvent (antes dos filhos):
  * - lateral: [aoArrastarLateral] (troca a aba interna ou a tela principal);
@@ -152,14 +169,8 @@ class ArrasteNaTela(
         velocidade = null
     }
 
-    /** As bordas laterais ficam para o gesto de voltar do sistema (no mínimo [BORDA_DP]). */
-    private fun foraDasBordas(raiz: View, x: Float): Boolean {
-        val gestos = ViewCompat.getRootWindowInsets(raiz)?.getInsets(WindowInsetsCompat.Type.systemGestures())
-        val minimo = BORDA_DP * densidade
-        val esquerda = max(minimo, gestos?.left?.toFloat() ?: 0f)
-        val direita = max(minimo, gestos?.right?.toFloat() ?: 0f)
-        return x > esquerda && x < raiz.width - direita
-    }
+    /** As bordas laterais ficam para o gesto de voltar do sistema (ver [foraDasBordasDoVoltar]). */
+    private fun foraDasBordas(raiz: View, x: Float): Boolean = foraDasBordasDoVoltar(raiz, x)
 
     /** Percorre só os ramos sob o dedo: true se algum deles já usa o arraste lateral ou bloqueia os gestos. */
     private fun sobreBloqueio(view: View, x: Float, y: Float): Boolean {
@@ -189,7 +200,6 @@ class ArrasteNaTela(
     }
 
     companion object {
-        private const val BORDA_DP = 24f
         private const val FOLGA_DIAGONAL = 3f
         private const val DISTANCIA_LATERAL_DP = 80f
         private const val DISTANCIA_MINI_DP = 40f

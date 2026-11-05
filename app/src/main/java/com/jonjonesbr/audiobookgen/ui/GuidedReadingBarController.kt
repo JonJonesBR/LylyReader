@@ -4,6 +4,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
 import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
 import com.jonjonesbr.audiobookgen.domain.RegraDaPaginaDoParagrafo
+import com.jonjonesbr.audiobookgen.domain.RegraDasPaginasDoLeitor
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedState
 import com.jonjonesbr.audiobookgen.data.RecentReadingsStore
@@ -138,8 +139,9 @@ class GuidedReadingBarController(
         // O chip some logo depois deste toque: sem o anúncio, o foco do TalkBack se perderia sem aviso.
         recyclerView.announceForAccessibility(activity.getString(R.string.cd_guided_voltar_narracao))
         // Salto direto, como a navegação por capítulos. Na vertical, o parágrafo fica na altura da linha de
-        // destaque; o acompanhamento fino retoma com o próximo progresso.
-        val margem = if (lm.orientation == LinearLayoutManager.VERTICAL) {
+        // destaque; o acompanhamento fino retoma com o próximo progresso. No modo páginas, o topo vai para a primeira
+        // linha inteira depois do layout (ver PaginacaoDoLeitor), e o próximo progresso vira a página até a narrada.
+        val margem = if (lm.orientation == LinearLayoutManager.VERTICAL && recyclerView.paginacao?.ativa != true) {
             (recyclerView.height * RegraDaPaginaDoParagrafo.PROPORCAO_ALVO).toInt()
         } else {
             0
@@ -460,6 +462,8 @@ class GuidedReadingBarController(
         // rb-65: no mesmo parágrafo já acompanhado a lista só desce. Subir (rb-62) só no primeiro acompanhamento depois
         // de o parágrafo mudar (troca de voz, ⏮, toque, capítulo): play() zera indiceAcompanhado.
         val podeSubir = index != indiceAcompanhado
+        // Modo páginas (rb-26b): a página vira com a narração, em vez do cálculo da rolagem vertical.
+        val paginacao = recyclerView.paginacao?.takeIf { it.ativa }
 
         // Mesmo caminho pra "view da posição ainda não existe" E "rolagem horizontal (paginada)". Na horizontal, com
         // a página do parágrafo parada na tela, o acompanhamento rola dentro dela (rb-26a), como o vertical. Durante o
@@ -479,10 +483,14 @@ class GuidedReadingBarController(
                     // Salto instantâneo, sem smoothScrollToPosition (que animaria por todos os itens do meio). Na
                     // vertical, a 1ª linha do parágrafo vai para os 42% (a mesma conta de voltarAoAcompanhamento).
                     // O SNAP_TO_END passava do início, e o acompanhamento voltava a subir (rb-65). Na horizontal
-                    // distante, offset 0.
+                    // distante, offset 0. No modo páginas, offset 0 também: o topo é alinhado depois do layout.
                     lm.scrollToPositionWithOffset(
                         index,
-                        if (vertical) (recyclerView.height * RegraDaPaginaDoParagrafo.PROPORCAO_ALVO).toInt() else 0,
+                        if (vertical && paginacao == null) {
+                            (recyclerView.height * RegraDaPaginaDoParagrafo.PROPORCAO_ALVO).toInt()
+                        } else {
+                            0
+                        },
                     )
                 } else {
                     lm.smoothScrollToPosition(recyclerView, null, index)
@@ -496,7 +504,35 @@ class GuidedReadingBarController(
         }
 
         aguardandoAutoScroll = false
-        rolarParaDestaque(tv, index, progressPct, podeSubir)
+        if (paginacao != null) {
+            acompanharNaPagina(paginacao, tv, index, progressPct, podeSubir)
+        } else {
+            rolarParaDestaque(tv, index, progressPct, podeSubir)
+        }
+    }
+
+    /**
+     * Modo páginas (rb-26b): a página vira até a linha narrada ficar no topo, quando ela termina escondida pelo
+     * corte. Sobe só com [podeSubir] (a histerese do rb-65). Scroll por código: não liga o modo manual, como
+     * rolarParaDestaque.
+     */
+    private fun acompanharNaPagina(
+        paginacao: PaginacaoDoLeitor,
+        tv: TextView,
+        index: Int,
+        progressPct: Float,
+        podeSubir: Boolean,
+    ) {
+        val linha = linhaDoProgresso(tv, progressPct)
+        val passo = linha?.let {
+            val corte = paginacao.corte()
+            RegraDasPaginasDoLeitor.passoDaGuiada(it.topo, it.base, recyclerView.paddingTop, corte, podeSubir)
+        } ?: 0
+        // Animação de rolagem ainda em curso: espera o fim, como em rolarParaDestaque.
+        val emAnimacao = passo != 0 && recyclerView.scrollState == RecyclerView.SCROLL_STATE_SETTLING
+        if (emAnimacao) return
+        if (passo != 0) recyclerView.scrollBy(0, passo)
+        if (linha != null) indiceAcompanhado = index
     }
 
     /**

@@ -298,12 +298,13 @@ private fun RecyclerViewParagrafos.trechoInteiroNaTela(
 
 /**
  * Área da lista onde a linha pode aparecer (rb-60b): a área de conteúdo da lista. Na página horizontal, também a área
- * de conteúdo da página, porque ela rola sozinha para mostrar a seleção.
+ * de conteúdo da página, porque ela rola sozinha para mostrar a seleção. No modo páginas (rb-26b), o fundo é o corte:
+ * a linha escondida pelo corte não aparece.
  */
 private fun RecyclerViewParagrafos.areaDaListaNaTela(item: View): LinhaNaTela {
     val posLista = posicaoNaTela()
     var topo = posLista[1] + paddingTop
-    var fundo = posLista[1] + height - paddingBottom
+    var fundo = posLista[1] + (paginacao?.takeIf { it.ativa }?.corte() ?: (height - paddingBottom))
     if (item is PaginaDoParagrafo) {
         val posPagina = item.posicaoNaTela()
         topo = maxOf(topo, posPagina[1] + item.paddingTop)

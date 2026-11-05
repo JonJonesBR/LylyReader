@@ -44,4 +44,32 @@ class LeitorLayoutManager(
         focused: View?
     ): Boolean = seguindoLeitura() || toqueEmAndamento() || focoSemRolar() ||
         super.onRequestChildFocus(parent, state, child, focused)
+
+    /**
+     * Chamado quando um salto (busca, capítulo, posição salva, acompanhamento da guiada) termina o layout. No modo
+     * páginas (rb-26b) alinha o topo na primeira linha inteira. É propriedade, não parâmetro, para não passar do limite
+     * do detekt.
+     */
+    internal var aoTerminarSalto: (() -> Unit)? = null
+
+    /** Há um salto pedido que ainda não terminou o layout (ver [aoTerminarSalto]). */
+    private var saltoPendente = false
+
+    override fun scrollToPositionWithOffset(position: Int, offset: Int) {
+        saltoPendente = true
+        super.scrollToPositionWithOffset(position, offset)
+    }
+
+    override fun scrollToPosition(position: Int) {
+        saltoPendente = true
+        super.scrollToPosition(position)
+    }
+
+    override fun onLayoutCompleted(state: RecyclerView.State?) {
+        super.onLayoutCompleted(state)
+        if (saltoPendente) {
+            saltoPendente = false
+            aoTerminarSalto?.invoke()
+        }
+    }
 }

@@ -36,6 +36,17 @@ class ReaderRolagemController(
         val aoPararDeRolar: () -> Unit,
     )
 
+    /** Modo páginas (rb-26b): páginas virtuais sobre a lista vertical. Esta classe a cria e a mantém. */
+    private val paginacao = PaginacaoDoLeitor(
+        lista = recyclerView,
+        emModoLeitura = { callbacks.obterAdapter()?.modo == AdapterModo.LEITURA },
+        aoVirar = {
+            callbacks.obterBarraGuiada()?.aguardandoAutoScroll = false
+            callbacks.aoPararDeRolar()
+        },
+        aoVirarPeloLeitor = { rolagemPeloLeitor() },
+    )
+
     private var scrollListener: RecyclerView.OnScrollListener? = null
     private var pagerSnapHelper: PagerSnapHelper? = null
     private var scrollRestaurado = false
@@ -70,28 +81,32 @@ class ReaderRolagemController(
         }
     }
 
-    /** Alterna o RecyclerView entre scroll vertical contínuo (padrão) e horizontal paginado
-     * (com PagerSnapHelper — "página" por página é o mesmo parágrafo, unidade de navegação
-     * inalterada). Na horizontal, cada parágrafo é uma PaginaDoParagrafo, que rola por dentro quando o texto é longo
-     * (rb-26a). Chamada tanto na criação quanto ao alternar a opção ao vivo. */
+    /**
+     * Liga ou desliga o modo páginas da opção "Horizontal (páginas)" (rb-26b). A lista é sempre a vertical: as páginas
+     * são a [paginacao] por cima dela, com o mesmo adapter e o mesmo TextView por parágrafo. O layout manager é criado
+     * uma vez e não é trocado, porque trocá-lo levaria o leitor ao início do livro. Chamada na criação e ao alternar a
+     * opção ao vivo.
+     */
     fun aplicarOrientacao(horizontal: Boolean) {
-        // Antes de trocar o layoutManager: a troca recicla as views, e os itens já voltam com o tipo de página certo.
-        callbacks.obterAdapter()?.paginado = horizontal
+        // Sem o pager por parágrafo (rb-26b, passo 2): o adapter fica sempre no item de texto. O código do pager fica
+        // sem uso até o passo 5.
+        callbacks.obterAdapter()?.paginado = false
         pagerSnapHelper?.attachToRecyclerView(null)
-        recyclerView.layoutManager = LeitorLayoutManager(
-            activity,
-            if (horizontal) LinearLayoutManager.HORIZONTAL else LinearLayoutManager.VERTICAL,
-            seguindoLeitura = { guiadaConduzRolagem() },
-            toqueEmAndamento = { recyclerView.toqueEmAndamento },
-            focoSemRolar = { recyclerView.focoSemRolar },
-        )
-        if (horizontal) {
-            pagerSnapHelper = PagerSnapHelper().apply {
-                attachToRecyclerView(recyclerView)
-            }
-        } else {
-            pagerSnapHelper = null
+        pagerSnapHelper = null
+        if (recyclerView.layoutManager !is LeitorLayoutManager) {
+            recyclerView.layoutManager = LeitorLayoutManager(
+                activity,
+                LinearLayoutManager.VERTICAL,
+                seguindoLeitura = { guiadaConduzRolagem() },
+                toqueEmAndamento = { recyclerView.toqueEmAndamento },
+                focoSemRolar = { recyclerView.focoSemRolar },
+            ).also { it.aoTerminarSalto = { paginacao.aoTerminarSalto() } }
         }
+        recyclerView.paginacao = paginacao
+        val ligou = horizontal && !paginacao.ligada
+        paginacao.ligada = horizontal
+        // Ao ligar, o topo vai para a primeira linha inteira: a lista pode ter parado no meio de uma linha.
+        if (ligou) recyclerView.post { paginacao.alinharTopo() }
     }
 
     /**
@@ -102,9 +117,22 @@ class ReaderRolagemController(
     fun tratarTecla(event: KeyEvent, padrao: (KeyEvent) -> Boolean): Boolean {
         val keyCode = event.keyCode
         val sentido = RegraDaRolagemDoLeitor.sentidoDaTecla(keyCode)
+        val seta = RegraDaRolagemDoLeitor.sentidoDaSeta(keyCode)
         return when {
-            // O RecyclerView não trata as teclas de página: a rolagem é feita aqui, uma tela por vez.
-            sentido != null -> rolarPagina(sentido) || padrao(event)
+            // O RecyclerView não trata as teclas de página: a rolagem é feita aqui, uma tela por vez (no modo páginas,
+            // a tela é a página virtual).
+            sentido != null -> {
+                val virou = if (paginacao.ativa) paginacao.virarPeloLeitor(sentido) else rolarPagina(sentido)
+                virou || padrao(event)
+            }
+            // Modo páginas: a seta vira a página, como a tecla de página. Com Shift ou seleção, a seta vai ao TextView.
+            // Com foco num controle fora da lista (botão, chip, barra), a seta segue a navegação de foco.
+            paginacao.ativa && seta != null && RegraDaRolagemDoLeitor.setaRolaAPagina(
+                shift = event.isShiftPressed,
+                temSelecao = recyclerView.selecoesAbertas > 0 || recyclerView.textoComSelecaoViva != null,
+                textoFocado = activity.currentFocus == null || recyclerView.hasFocus(),
+                podeRolar = true,
+            ) -> paginacao.virarPeloLeitor(seta) || padrao(event)
             // Setas: a lista só rola se o foco for para um filho fora da tela. Conta só se o deslocamento mudou.
             RegraDaRolagemDoLeitor.ehSetaVertical(keyCode) -> {
                 if (rolarSetaNaPagina(event)) return true
@@ -135,8 +163,10 @@ class ReaderRolagemController(
         )
         if (podeRolarAutomaticamente) {
             controlador.ultimoScrollSyncStandard = state.paragrafoSyncAtual
-            (recyclerView.layoutManager as? LinearLayoutManager)
-                ?.smoothScrollToPosition(recyclerView, null, state.paragrafoSyncAtual)
+            val lm = recyclerView.layoutManager as? LinearLayoutManager
+            // No modo páginas a virada é sem animação; o topo é alinhado depois do layout (ver PaginacaoDoLeitor).
+            if (paginacao.ativa) lm?.scrollToPositionWithOffset(state.paragrafoSyncAtual, 0)
+            else lm?.smoothScrollToPosition(recyclerView, null, state.paragrafoSyncAtual)
         }
     }
 

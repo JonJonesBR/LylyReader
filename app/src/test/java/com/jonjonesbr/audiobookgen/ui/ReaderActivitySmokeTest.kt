@@ -36,6 +36,7 @@ import com.jonjonesbr.audiobookgen.data.CacheDeTextoDoLivro
 import com.jonjonesbr.audiobookgen.domain.Capitulo
 import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
+import com.jonjonesbr.audiobookgen.domain.RegraDasPaginasDoLeitor
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
@@ -56,6 +57,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -556,6 +558,7 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Ignore("rb-26b: o modo páginas substitui o pager por parágrafo; sai no passo 5")
     fun rolagemHorizontalRolaDentroDoParagrafoLongo() {
         // Parágrafo 1 longo; os demais são os de sempre. Só este teste usa o texto longo.
         val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
@@ -619,6 +622,7 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Ignore("rb-26b: o modo páginas substitui o pager por parágrafo; sai no passo 5")
     fun notifyNaPaginaMantemARolagemETextoNovoVoltaAoTopo() {
         // rb-26c: um notify no mesmo parágrafo mantém a rolagem de quem lê; texto novo no mesmo lugar volta ao topo.
         val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
@@ -2040,6 +2044,485 @@ class ReaderActivitySmokeTest {
             esperarAte(scenario, "primeira linha do parágrafo 3 de volta à lista") { a ->
                 val tv = tvEm(lista(a), 2)
                 tv != null && pePrimeiraLinha(tv) > 0
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    // ── Modo páginas (rb-26b): páginas virtuais sobre a lista vertical ───────
+
+    /** Uma linha de um parágrafo, com o topo e a base dela nas coordenadas da lista. */
+    private data class LinhaNaLista(val pos: Int, val linha: Int, val topo: Int, val base: Int)
+
+    /** Todas as linhas dos parágrafos presos à lista, em ordem (o topo cresce). */
+    private fun linhasNaLista(rv: RecyclerView): List<LinhaNaLista> =
+        (0 until (rv.adapter?.itemCount ?: 0)).flatMap { pos ->
+            val tv = tvEm(rv, pos)
+            val layout = tv?.layout
+            if (tv == null || layout == null) {
+                emptyList<LinhaNaLista>()
+            } else {
+                val y0 = tv.top + tv.totalPaddingTop
+                (0 until layout.lineCount).map { i ->
+                    LinhaNaLista(pos, i, y0 + layout.getLineTop(i), y0 + layout.getLineBottom(i))
+                }
+            }
+        }
+
+    private fun linhaNaLista(rv: RecyclerView, pos: Int, linha: Int): LinhaNaLista =
+        checkNotNull(linhasNaLista(rv).firstOrNull { it.pos == pos && it.linha == linha }) {
+            "linha $linha do parágrafo $pos fora da lista"
+        }
+
+    /** Primeira linha que termina depois da base da página, ou seja, a escondida pelo corte. Nula se não há. */
+    private fun primeiraLinhaEscondida(rv: RecyclerView): LinhaNaLista? {
+        val base = rv.height - rv.paddingBottom
+        return linhasNaLista(rv).firstOrNull { it.base > base }
+    }
+
+    /** Espera o modo páginas ligado, com os parágrafos 0 e 1 medidos. */
+    private fun esperarModoPaginas(scenario: ActivityScenario<ReaderActivity>) {
+        esperarAte(scenario, "modo páginas com os parágrafos 0 e 1 medidos") { a ->
+            val rv = listaDoLeitor(a)
+            rv.paginacao?.ativa == true && tvEm(rv, 0)?.layout != null && tvEm(rv, 1)?.layout != null
+        }
+    }
+
+    /** Um arraste como um dedo: DOWN no meio da lista, um MOVE de [dx] e [dy] (px) em 200 ms, e o UP. */
+    private fun arrastar(rv: RecyclerView, dx: Float, dy: Float) {
+        val x0 = rv.width / 2f - dx / 2
+        val y0 = rv.height / 2f - dy / 2
+        val baixo = MotionEvent.obtain(1_000L, 1_000L, MotionEvent.ACTION_DOWN, x0, y0, 0)
+        val movido = MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_MOVE, x0 + dx, y0 + dy, 0)
+        val solto = MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_UP, x0 + dx, y0 + dy, 0)
+        rv.dispatchTouchEvent(baixo)
+        rv.dispatchTouchEvent(movido)
+        rv.dispatchTouchEvent(solto)
+        listOf(baixo, movido, solto).forEach { it.recycle() }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun modoPaginasFicaNaListaVerticalComOMesmoTextView() {
+        // rb-26b (passo 2): a opção horizontal é a lista vertical com páginas virtuais, sem o pager por parágrafo.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                assertEquals(LinearLayoutManager.VERTICAL, (rv.layoutManager as LinearLayoutManager).orientation)
+                assertFalse((rv.adapter as ParagrafoAdapter).paginado)
+                assertTrue(rv.findViewHolderForAdapterPosition(0)?.itemView is TextView)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun virarAPaginaAlinhaOTopoSemCortarLinha() {
+        // rb-26b (passos 2): virar põe a primeira linha escondida no topo; voltar não perde a última linha inteira.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var escondida: LinhaNaLista? = null
+            var ultimaInteira: LinhaNaLista? = null
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                escondida = primeiraLinhaEscondida(rv)
+                val base = rv.height - rv.paddingBottom
+                ultimaInteira = linhasNaLista(rv).lastOrNull { it.base <= base }
+            }
+            val alvo = checkNotNull(escondida) { "nenhuma linha escondida: a página não corta o parágrafo longo" }
+            val ultima = checkNotNull(ultimaInteira) { "nenhuma linha inteira na página" }
+
+            // (b) Virar: a linha escondida vai ao topo, e nenhuma linha cruza o corte.
+            scenario.onActivity { a -> listaDoLeitor(a).paginacao!!.virar(1) }
+            esperarAte(scenario, "página virada: a linha escondida no topo") { a ->
+                val rv = listaDoLeitor(a)
+                !rv.isLayoutRequested && linhaNaLista(rv, alvo.pos, alvo.linha).topo == rv.paddingTop
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val corte = rv.paginacao!!.corte()
+                assertTrue("linha cortada pelo corte", rv.linhasNaTela().none { it.topo < corte && corte < it.base })
+                assertTrue("o corte passa da base da página", corte <= rv.height - rv.paddingBottom)
+            }
+
+            // (c) Voltar: a última linha inteira da página anterior continua inteira na tela.
+            scenario.onActivity { a -> listaDoLeitor(a).paginacao!!.virar(-1) }
+            esperarAte(scenario, "voltou à página anterior") { a -> !listaDoLeitor(a).isLayoutRequested }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val volta = linhaNaLista(rv, ultima.pos, ultima.linha)
+                assertTrue("a linha perdida ficou acima do topo", volta.topo >= rv.paddingTop)
+                assertTrue("a linha perdida ficou cortada", volta.base <= rv.paginacao!!.corte())
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun barraDaGuiadaEncolheAPaginaSemCrash() {
+        // rb-26b (passo 2): a barra da guiada aparece, a área de texto diminui e o corte acompanha, sem exceção.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var paddingAntes = 0
+            var corteAntes = 0
+            scenario.onActivity { a ->
+                paddingAntes = listaDoLeitor(a).paddingBottom
+                corteAntes = listaDoLeitor(a).paginacao!!.corte()
+            }
+            scenario.onActivity { a ->
+                val barra = a.findViewById<View>(R.id.layoutGuidedPlayer)
+                barra.minimumHeight = listaDoLeitor(a).height / 3
+                barra.visibility = View.VISIBLE
+            }
+            esperarAte(scenario, "barra da guiada aumenta o espaço de baixo da lista") { a ->
+                listaDoLeitor(a).paddingBottom > paddingAntes
+            }
+            scenario.onActivity { a ->
+                assertTrue("o corte deveria diminuir com a barra", listaDoLeitor(a).paginacao!!.corte() < corteAntes)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun arrasteLateralViraAPaginaEArrasteVerticalNaoRolaALista() {
+        // rb-26b (passo 2): o lateral vira a página; o vertical é engolido, e a lista não rola com o dedo.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var escondida: LinhaNaLista? = null
+            scenario.onActivity { a -> escondida = primeiraLinhaEscondida(listaDoLeitor(a)) }
+            val alvo = checkNotNull(escondida)
+
+            // (f) Arraste vertical de 120 dp: a lista e a primeira linha ficam onde estavam.
+            var topoAntes = 0
+            scenario.onActivity { a -> topoAntes = tvEm(listaDoLeitor(a), 0)!!.top }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, -120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "gesto vertical processado") { a -> !listaDoLeitor(a).isLayoutRequested }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                assertEquals(RecyclerView.SCROLL_STATE_IDLE, rv.scrollState)
+                assertEquals(topoAntes, tvEm(rv, 0)!!.top)
+            }
+
+            // (e) Arraste lateral de 150 dp, da direita para a esquerda: a página vira.
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, -150 * rv.resources.displayMetrics.density, 0f)
+            }
+            esperarAte(scenario, "arraste lateral virou a página") { a ->
+                val rv = listaDoLeitor(a)
+                linhasNaLista(rv).any { it.pos == alvo.pos && it.linha == alvo.linha && it.topo == rv.paddingTop }
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun selecaoDoToqueLongoNaoViraAPagina() {
+        // rb-26b (revisão do passo 2): a seleção que nasce no toque longo é do Editor. O arraste lateral depois dela
+        // não vira a página nem tira a seleção. O Editor seleciona a palavra no toque longo, sem foco e sem menu.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var escondida: LinhaNaLista? = null
+            scenario.onActivity { a -> escondida = primeiraLinhaEscondida(listaDoLeitor(a)) }
+            val alvo = checkNotNull(escondida) { "nenhuma linha escondida: a página não corta o parágrafo longo" }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val tv = checkNotNull(tvEm(rv, 0)) { "parágrafo 0 fora da lista" }
+                val x0 = tv.left + tv.width / 2f
+                val y0 = tv.top + tv.height / 2f
+                val dx = -100 * rv.resources.displayMetrics.density
+                val baixo = MotionEvent.obtain(1_000L, 1_000L, MotionEvent.ACTION_DOWN, x0, y0, 0)
+                rv.dispatchTouchEvent(baixo)
+                Selection.setSelection(tv.text as Spannable, 0, 4)
+                val movido = MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_MOVE, x0 + dx, y0, 0)
+                rv.dispatchTouchEvent(movido)
+                val solto = MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_UP, x0 + dx, y0, 0)
+                rv.dispatchTouchEvent(solto)
+                listOf(baixo, movido, solto).forEach { it.recycle() }
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                assertTrue("a seleção do toque longo sumiu", tvEm(rv, 0)!!.hasSelection())
+                assertTrue(
+                    "o arraste lateral virou a página depois do toque longo",
+                    linhaNaLista(rv, alvo.pos, alvo.linha).topo != rv.paddingTop,
+                )
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun selecaoAbertaComOEditorNaoViraAPagina() {
+        // rb-26b (revisão 4): seleção viva já no DOWN. Num toque longo novo ali, o Editor pede o gesto para si
+        // (requestDisallowInterceptTouchEvent) e estende a seleção. O arraste lateral depois disso não vira a página,
+        // não engole a seleção e não manda CANCEL ao TextView: o TextView tem de receber o MOVE e o UP.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var escondida: LinhaNaLista? = null
+            scenario.onActivity { a -> escondida = primeiraLinhaEscondida(listaDoLeitor(a)) }
+            val alvo = checkNotNull(escondida) { "nenhuma linha escondida: a página não corta o parágrafo longo" }
+            val acoesNoTexto = mutableListOf<Int>()
+            var marcaAntesDoMove = false
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val tv = selecionarComFoco(rv, 0, 0, 4)
+                // Só leitura: registra as ações que chegam ao TextView, e devolve falso para não mudar o gesto.
+                tv.setOnTouchListener { _, ev ->
+                    acoesNoTexto.add(ev.actionMasked)
+                    false
+                }
+                val x0 = tv.left + tv.width / 2f
+                val y0 = tv.top + tv.height / 2f
+                val dx = -100 * rv.resources.displayMetrics.density
+                val baixo = MotionEvent.obtain(1_000L, 1_000L, MotionEvent.ACTION_DOWN, x0, y0, 0)
+                rv.dispatchTouchEvent(baixo)
+                // O Editor, no toque longo, pede o gesto para si e troca a seleção pela palavra sob o dedo.
+                rv.requestDisallowInterceptTouchEvent(true)
+                marcaAntesDoMove = rv.editorDonoDoGesto
+                Selection.setSelection(tv.text as Spannable, 5, 9)
+                val movido = MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_MOVE, x0 + dx, y0, 0)
+                rv.dispatchTouchEvent(movido)
+                val solto = MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_UP, x0 + dx, y0, 0)
+                rv.dispatchTouchEvent(solto)
+                listOf(baixo, movido, solto).forEach { it.recycle() }
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val tv = checkNotNull(tvEm(rv, 0)) { "parágrafo 0 fora da lista" }
+                assertTrue("o Editor não tinha pedido o gesto antes do MOVE", marcaAntesDoMove)
+                assertEquals("a seleção do Editor não ficou", 5, tv.selectionStart)
+                assertEquals("a seleção do Editor não ficou", 9, tv.selectionEnd)
+                assertFalse(
+                    "o TextView recebeu CANCEL: o gesto saiu do Editor",
+                    acoesNoTexto.contains(MotionEvent.ACTION_CANCEL),
+                )
+                assertTrue(
+                    "o MOVE não chegou ao TextView: $acoesNoTexto",
+                    acoesNoTexto.contains(MotionEvent.ACTION_MOVE),
+                )
+                assertTrue("o UP não chegou ao TextView: $acoesNoTexto", acoesNoTexto.contains(MotionEvent.ACTION_UP))
+                assertTrue(
+                    "o arraste lateral virou a página depois de o Editor pedir o gesto",
+                    linhaNaLista(rv, alvo.pos, alvo.linha).topo != rv.paddingTop,
+                )
+                tv.setOnTouchListener(null)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun arrasteDiagonalNaFolgaNaoRolaALista() {
+        // rb-26b (revisão 4): um começo diagonal dentro da folga não pode deixar o RecyclerView entrar em arraste. O
+        // MOVE diagonal passa do slop (1,5 slop nos dois eixos), então sem a correção a lista rolava com o dedo.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            val estados = mutableListOf<Int>()
+            var estadosDoArraste = listOf<Int>()
+            var inicio = 0
+            var antesDoUp = 0
+            var depoisDoUp = 0
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                    override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                        estados.add(newState)
+                    }
+                })
+                inicio = rv.computeVerticalScrollOffset()
+                val densidade = rv.resources.displayMetrics.density
+                val slop = ViewConfiguration.get(rv.context).scaledTouchSlop.toFloat()
+                // Mesmo x do arraste de teste (centro + 50 dp, para o lateral de -100 dp caber na lista).
+                val x0 = rv.width / 2f + 50 * densidade
+                val y0 = rv.height / 2f
+                val diagonal = slop * 1.5f
+                val recuo = -100 * densidade
+                val baixo = MotionEvent.obtain(1_000L, 1_000L, MotionEvent.ACTION_DOWN, x0, y0, 0)
+                val torto = MotionEvent.obtain(1_000L, 1_100L, MotionEvent.ACTION_MOVE, x0 + diagonal, y0 + diagonal, 0)
+                val lateral = MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_MOVE, x0 + recuo, y0, 0)
+                val solto = MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_UP, x0 + recuo, y0, 0)
+                rv.dispatchTouchEvent(baixo)
+                rv.dispatchTouchEvent(torto)
+                rv.dispatchTouchEvent(lateral)
+                antesDoUp = rv.computeVerticalScrollOffset()
+                estadosDoArraste = estados.toList()
+                rv.dispatchTouchEvent(solto)
+                listOf(baixo, torto, lateral, solto).forEach { it.recycle() }
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            scenario.onActivity { a -> depoisDoUp = listaDoLeitor(a).computeVerticalScrollOffset() }
+            assertTrue(
+                "a lista saiu do IDLE durante o arraste: $estadosDoArraste",
+                estadosDoArraste.all { it == RecyclerView.SCROLL_STATE_IDLE },
+            )
+            assertEquals("a lista andou com o dedo antes do UP", inicio, antesDoUp)
+            assertTrue("a página não virou depois do UP", depoisDoUp > inicio)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    /**
+     * Progresso que põe a narração na [linha] do parágrafo [pos] (o mesmo offset da guiada), [deslocamento] caracteres
+     * depois do começo dela. O StateFlow descarta um estado igual, então os testes mudam de ponto dentro da linha.
+     */
+    private fun progressoDaLinha(rv: RecyclerView, pos: Int, linha: Int, deslocamento: Int = 0): Float {
+        val tv = checkNotNull(tvEm(rv, pos)) { "parágrafo $pos fora da lista" }
+        val layout = checkNotNull(tv.layout) { "parágrafo $pos sem layout" }
+        val inicio = layout.getLineStart(linha) + deslocamento
+        check(inicio < layout.getLineEnd(linha)) { "linha $linha do parágrafo $pos curta demais para o deslocamento" }
+        return (inicio + 0.5f) / tv.text.length
+    }
+
+    /** Progresso e índice da primeira linha do parágrafo [pos] que o corte esconde. */
+    private fun progressoDaPrimeiraLinhaEscondida(rv: RecyclerView, pos: Int): Pair<Float, Int> {
+        val base = rv.height - rv.paddingBottom
+        val tv = checkNotNull(tvEm(rv, pos)) { "parágrafo $pos fora da lista" }
+        val layout = checkNotNull(tv.layout) { "parágrafo $pos sem layout" }
+        val y0 = tv.top + tv.totalPaddingTop
+        val linha = (0 until layout.lineCount).first { y0 + layout.getLineBottom(it) > base }
+        return progressoDaLinha(rv, pos, linha) to linha
+    }
+
+    /** Leitura guiada no modo páginas, no parágrafo 3 (índice 2), com a voz parada: só o progresso anda (rb-26b). */
+    private fun intencaoGuiadaNoModoPaginas(): Intent {
+        val textos = PARAGRAFOS.toMutableList().apply { this[2] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        AppPrefs(app).salvarPosicaoLeitura(livro.absolutePath, 2, textos.size)
+        // Voz falsa que espera para sempre, como no teste do rb-65.
+        val vozQueEspera = object : TtsSynthesizer {
+            override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
+                awaitCancellation()
+            }
+        }
+        TtsSynthesizer.substitutoParaTestes = { vozQueEspera }
+        return Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_CONTINUAR_GUIADA, true)
+    }
+
+    private fun esperarGuiadaNoModoPaginas(scenario: ActivityScenario<ReaderActivity>) {
+        esperarAte(scenario, "guiada no parágrafo 3 com a lista parada, no modo páginas") { a ->
+            GuidedPlaybackBridge.manager?.state?.value?.index == 2 &&
+                lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE &&
+                listaDoLeitor(a).paginacao?.ativa == true && tvEm(lista(a), 2)?.layout != null
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun guiadaViraAPaginaUmaVezENaoOscila() {
+        // rb-26b (passo 3): a linha narrada escondida vira a página uma vez; voltar e ir não sobe a lista (rb-65).
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            var progresso = 0f
+            var linha = 0
+            scenario.onActivity { a ->
+                val (p, l) = progressoDaPrimeiraLinhaEscondida(listaDoLeitor(a), 2)
+                progresso = p
+                linha = l
+            }
+            // (g) Um tique: a linha narrada vai ao topo. Mais três tiques, cada um num ponto novo da mesma linha,
+            // não viram a página de novo.
+            val depoisDoPrimeiro = emitirProgresso(scenario, progresso)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                assertEquals(rv.paddingTop, linhaNaLista(rv, 2, linha).topo)
+            }
+            var depoisDosTres = depoisDoPrimeiro
+            for (deslocamento in 1..3) {
+                var pct = 0f
+                scenario.onActivity { a -> pct = progressoDaLinha(listaDoLeitor(a), 2, linha, deslocamento) }
+                depoisDosTres = emitirProgresso(scenario, pct)
+            }
+            assertEquals("virou mais de uma vez", depoisDoPrimeiro, depoisDosTres)
+
+            // (h) Vai e volta entre a linha de cima e a narrada: a lista só desce, nunca sobe.
+            var pctDeCima = 0f
+            scenario.onActivity { a -> pctDeCima = progressoDaLinha(listaDoLeitor(a), 2, 0) }
+            val tops = mutableListOf(depoisDoPrimeiro)
+            for (pct in listOf(pctDeCima, progresso, pctDeCima, progresso)) tops.add(emitirProgresso(scenario, pct))
+            assertTrue(
+                "A lista subiu com o progresso que voltou: $tops",
+                tops.zipWithNext().all { (antes, depois) -> depois <= antes },
+            )
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun chipVoltarNarracaoLevaAPaginaDoNarrado() {
+        // rb-26b (passo 3): a página manual some do narrado; o chip leva de volta à página em que ele está.
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            var progresso = 0f
+            var linha = 0
+            scenario.onActivity { a ->
+                val (p, l) = progressoDaPrimeiraLinhaEscondida(listaDoLeitor(a), 2)
+                progresso = p
+                linha = l
+            }
+            emitirProgresso(scenario, progresso)
+            // (i) Duas teclas de página: o usuário rola para longe e o chip aparece.
+            scenario.onActivity { a ->
+                repeat(2) { a.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PAGE_DOWN)) }
+            }
+            esperarAte(scenario, "chip Voltar à narração visível") { a ->
+                a.findViewById<View>(R.id.fabVoltarNarracao).visibility == View.VISIBLE
+            }
+            scenario.onActivity { a -> a.findViewById<View>(R.id.fabVoltarNarracao).performClick() }
+            // O clique só pede o salto: o layout e o alinhamento do topo vêm no próximo quadro. Sem esperar, o
+            // progresso abaixo rodaria sobre o layout antigo.
+            esperarAte(scenario, "salto do chip aplicado") { a ->
+                !lista(a).isLayoutRequested && tvEm(lista(a), 2)?.top == lista(a).paddingTop
+            }
+            // Mesma linha, outro ponto: o tique só roda com progresso novo, e é ele que leva a página à narração.
+            var outroPonto = 0f
+            scenario.onActivity { a -> outroPonto = progressoDaLinha(listaDoLeitor(a), 2, linha, deslocamento = 1) }
+            emitirProgresso(scenario, outroPonto)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val narrada = linhaNaLista(rv, 2, linha)
+                assertTrue("a linha narrada deveria estar na página", narrada.topo >= rv.paddingTop)
+                assertTrue("a linha narrada deveria estar inteira", narrada.base <= rv.paginacao!!.corte())
+                val ajuste = RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop)
+                assertEquals("a página deveria estar alinhada", 0, ajuste)
             }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
