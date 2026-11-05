@@ -12,8 +12,8 @@ import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.TelaDica
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
-import com.jonjonesbr.audiobookgen.util.aplicarMargemInferiorComNavigationBar
-import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
+import com.jonjonesbr.audiobookgen.util.aplicarMargemInferiorSoNaSobreposicao
+import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorSoNaSobreposicao
 import com.jonjonesbr.audiobookgen.util.dpToPx
 
 /** Respiro entre o botão "Voltar à narração" e a barra da leitura guiada (que fica na base da tela). */
@@ -59,8 +59,10 @@ class ReaderTelaController(
     fun configurar() {
         // T6.1 (edge-to-edge): FAB e barra de leitura guiada são ancorados na base da tela —
         // sem isso, ficam atrás da barra de gestos em telas sem botões de navegação físicos.
-        views.fabConverter.aplicarMargemInferiorComNavigationBar()
-        views.layoutGuidedPlayer.aplicarPaddingInferiorComNavigationBar()
+        // rb-26b (passo 1): o pai (fitsSystemWindows) já põe estas views acima da barra;
+        // aqui só entra a sobreposição real, sem somar a barra de novo.
+        views.fabConverter.aplicarMargemInferiorSoNaSobreposicao()
+        views.layoutGuidedPlayer.aplicarPaddingInferiorSoNaSobreposicao()
         // A barra guiada muda de altura (chips, modo manual): o "Voltar à narração" acompanha a borda de cima dela.
         views.layoutGuidedPlayer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             posicionarFabVoltarNarracao()
