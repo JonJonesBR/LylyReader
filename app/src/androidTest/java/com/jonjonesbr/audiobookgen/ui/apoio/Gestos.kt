@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.ui.ParagrafoAdapter
 import com.jonjonesbr.audiobookgen.ui.ReaderActivity
 
 /**
@@ -294,13 +295,18 @@ object Gestos {
     }
 
     /**
-     * O TextView do parágrafo na rolagem vertical (o item é o próprio TextView). Só na thread principal. Falha se o
-     * parágrafo não estiver na tela.
+     * O TextView do parágrafo na tela, nas duas rolagens: na vertical o item é o próprio TextView; na horizontal (rb-26a)
+     * o item é a PaginaDoParagrafo, com o TextView dentro (VHLeitura.tv). Só na thread principal. Falha se o parágrafo
+     * não estiver na tela.
      */
-    fun textoDoParagrafo(a: ReaderActivity, indiceParagrafo: Int): TextView {
+    fun textoDoParagrafo(a: ReaderActivity, indiceParagrafo: Int): TextView =
+        textoDoParagrafoOuNulo(a, indiceParagrafo) ?: error("Parágrafo $indiceParagrafo fora da tela")
+
+    /** Igual a [textoDoParagrafo], mas devolve nulo se o parágrafo não tem View na tela. Só na thread principal. */
+    fun textoDoParagrafoOuNulo(a: ReaderActivity, indiceParagrafo: Int): TextView? {
         val lista = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos)
-        return lista.findViewHolderForAdapterPosition(indiceParagrafo)?.itemView as? TextView
-            ?: error("Parágrafo $indiceParagrafo fora da tela")
+        val holder = lista.findViewHolderForAdapterPosition(indiceParagrafo) ?: return null
+        return (holder as? ParagrafoAdapter.VHLeitura)?.tv ?: holder.itemView as? TextView
     }
 
     /** Converte uma coordenada do layout do TextView (sem padding nem rolagem) para pixels de tela. */

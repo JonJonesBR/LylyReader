@@ -216,7 +216,7 @@ private fun medirNaTela(a: ReaderActivity, indiceParagrafo: Int, palavra: String
     val problemas = mutableListOf<String>()
     var precisaSubir = false
     var obstaculoTemporario = false
-    val tv = lista.findViewHolderForAdapterPosition(indiceParagrafo)?.itemView as? TextView
+    val tv = Gestos.textoDoParagrafoOuNulo(a, indiceParagrafo)
     val ponto = tv?.let { Gestos.pontoDaPalavraNoTexto(it, indiceParagrafo, palavra) }
     if (ponto == null) {
         // Sem View do parágrafo: a palavra está fora da lista. Arrasta para o lado dele.
@@ -542,8 +542,7 @@ fun selecionarPalavra(
 fun limparSelecaoAberta(scenario: ActivityScenario<ReaderActivity>, indiceParagrafo: Int) {
     if (selecaoAtual(scenario, indiceParagrafo) == null) return
     scenario.onActivity { a ->
-        val tv = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos)
-            .findViewHolderForAdapterPosition(indiceParagrafo)?.itemView as? TextView
+        val tv = Gestos.textoDoParagrafoOuNulo(a, indiceParagrafo)
         if (tv != null) {
             (tv.text as? Spannable)?.let { Selection.removeSelection(it) }
             tv.clearFocus()
