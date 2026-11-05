@@ -1342,7 +1342,7 @@ class ReaderActivitySmokeTest {
                 lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
             }
             guardarTrechoDoParagrafo(scenario, 1)
-            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 24) }
+            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 64) }
             esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
                 tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
             }
@@ -1352,6 +1352,29 @@ class ReaderActivitySmokeTest {
                 assertTrue(
                     "Pré-condição: a linha 0 (${linha0NaTela(tv)}) deveria ficar abaixo da barra ($limite)",
                     linha0NaTela(tv) >= limite,
+                )
+                // Mede como a produção mede (rb-60b): o trecho inteiro na área útil, antes do 1 px.
+                val medidas = checkNotNull(medidasDaReabertura(a)) {
+                    "Pré-condição: o trecho guardado não foi medido. ${diagnosticoDaReabertura(a)}"
+                }
+                assertEquals(
+                    "Pré-condição: a barra deveria estar visível. ${diagnosticoDaReabertura(a)}",
+                    limite,
+                    medidas.limiteDaBarra,
+                )
+                assertTrue(
+                    "Pré-condição: o topo da linha do fim (${medidas.linhaDoFim.topo}) deveria estar abaixo da " +
+                        "barra ($limite). ${diagnosticoDaReabertura(a)}",
+                    medidas.linhaDoFim.topo >= limite,
+                )
+                assertTrue(
+                    "Pré-condição: o trecho inteiro deveria estar na área útil. ${diagnosticoDaReabertura(a)}",
+                    medidas.trechoInteiroNaTela,
+                )
+                assertTrue(
+                    "Pré-condição: o fundo da linha do fim (${medidas.linhaDoFim.fundo}) deveria caber na área " +
+                        "útil (fim ${medidas.area.fundo}). ${diagnosticoDaReabertura(a)}",
+                    medidas.linhaDoFim.fundo <= medidas.area.fundo,
                 )
             }
             scenario.onActivity { a -> focarOutroParagrafoInteiro(a, 1) }
@@ -1439,7 +1462,7 @@ class ReaderActivitySmokeTest {
                 lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
             }
             guardarTrechoDoParagrafo(scenario, 1)
-            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 24) }
+            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 64) }
             esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
                 tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
             }
@@ -1481,9 +1504,19 @@ class ReaderActivitySmokeTest {
                 lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
             }
             guardarTrechoDoParagrafo(scenario, 1)
-            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 24) }
+            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 64) }
             esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
                 tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
+            }
+            // Com o trecho inteiro na área útil, quem impede a reabertura é só o foco fora da lista.
+            scenario.onActivity { a ->
+                val medidas = checkNotNull(medidasDaReabertura(a)) {
+                    "Pré-condição: o trecho guardado não foi medido. ${diagnosticoDaReabertura(a)}"
+                }
+                assertTrue(
+                    "Pré-condição: o trecho inteiro deveria estar na área útil. ${diagnosticoDaReabertura(a)}",
+                    medidas.trechoInteiroNaTela,
+                )
             }
             scenario.onActivity { a ->
                 // Sem o foco no botão, o teste não prova nada (o modo de toque é por reflexão, como no rb-57).
@@ -1526,7 +1559,7 @@ class ReaderActivitySmokeTest {
                 lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
             }
             guardarTrechoDoParagrafo(scenario, 1)
-            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 24) }
+            scenario.onActivity { a -> rolarParaParagrafoUmComFolga(a, folgaDp = 64) }
             esperarAte(scenario, "parágrafo 1 de volta com o trecho pintado") { a ->
                 tvEm(lista(a), 1) != null && spansDoTrecho(tvEm(lista(a), 1)!!).size == 1
             }
@@ -2277,36 +2310,58 @@ class ReaderActivitySmokeTest {
             "barraVisivel=$barraVisivel limiteDaBarra=$limite",
             "faixaParaReabrirSozinho=${rv.faixaParaReabrirSozinho(limite, telaAtiva)}",
         )
-        val tv = tvEm(rv, guardada.posicao)
-        val layout = tv?.layout
-        if (tv != null && layout != null && guardada.ativa) {
-            val posTv = IntArray(2).also { tv.getLocationOnScreen(it) }
-            val posLista = IntArray(2).also { rv.getLocationOnScreen(it) }
-            val base = posTv[1] + tv.totalPaddingTop - tv.scrollY
-            val linhaIni = layout.getLineForOffset(guardada.inicio)
-            val linhaFim = layout.getLineForOffset(guardada.fim)
-            val trecho = LinhaNaTela(base + layout.getLineTop(linhaIni), base + layout.getLineBottom(linhaFim))
-            val linhaDoFim = LinhaNaTela(
-                base + layout.getLineTop(linhaFim) - (if (linhaFim == 0) tv.extendedPaddingTop else 0),
-                base + layout.getLineBottom(linhaFim) +
-                    (if (linhaFim == layout.lineCount - 1) tv.extendedPaddingBottom else 0),
-            )
-            val areaDaLista = LinhaNaTela(posLista[1] + rv.paddingTop, posLista[1] + rv.height - rv.paddingBottom)
-            val fundoDoPai = (rv.parent as? View)?.let { p ->
-                IntArray(2).also { p.getLocationOnScreen(it) }[1] + p.height
-            } ?: Int.MAX_VALUE
-            val guiada = a.findViewById<View>(R.id.layoutGuidedPlayer)?.takeIf { it.isShown }
-                ?.let { IntArray(2).also { p -> it.getLocationOnScreen(p) }[1] }
-            val area = areaUtilParaReabrir(areaDaLista, fundoDoPai, limite, guiada)
-            partes += "trechoNaTela=${trecho.topo}..${trecho.fundo}"
-            partes += "linhaDoFim=${linhaDoFim.topo}..${linhaDoFim.fundo}"
-            partes += "areaUtil=${area.topo}..${area.fundo} areaDaLista=${areaDaLista.topo}..${areaDaLista.fundo}"
-            partes += "trechoInteiroNaTela=${
-                trechoInteiroNaArea(trecho, area) && trechoInteiroNaArea(linhaDoFim, areaDaLista)
-            }"
+        medidasDaReabertura(a)?.let { m ->
+            partes += "trechoNaTela=${m.trecho.topo}..${m.trecho.fundo}"
+            partes += "linhaDoFim=${m.linhaDoFim.topo}..${m.linhaDoFim.fundo}"
+            partes += "areaUtil=${m.area.topo}..${m.area.fundo} " +
+                "areaDaLista=${m.areaDaLista.topo}..${m.areaDaLista.fundo}"
+            partes += "trechoInteiroNaTela=${m.trechoInteiroNaTela}"
         }
         partes.joinToString("; ", "[diagnóstico da reabertura] ", ".")
     }.getOrElse { "[diagnóstico da reabertura indisponível: $it]" }
+
+    /** Medidas do trecho guardado na tela, como SelecaoSemMenu as calcula para reabrir sozinho (rb-60b). */
+    private class MedidasDaReabertura(
+        val trecho: LinhaNaTela,
+        val linhaDoFim: LinhaNaTela,
+        val area: LinhaNaTela,
+        val areaDaLista: LinhaNaTela,
+        val limiteDaBarra: Int?,
+    ) {
+        /** Mesma regra de SelecaoSemMenu.trechoInteiroNaTela na vertical (a largura não entra aqui). */
+        val trechoInteiroNaTela: Boolean
+            get() = trechoInteiroNaArea(trecho, area) && trechoInteiroNaArea(linhaDoFim, areaDaLista)
+    }
+
+    /** Nulo sem trecho guardado medível (sem tela ativa, sem layout ou sem trecho). */
+    private fun medidasDaReabertura(a: ReaderActivity): MedidasDaReabertura? {
+        val rv = listaDoLeitor(a)
+        val guardada = rv.guardada
+        val tv = tvEm(rv, guardada.posicao) ?: return null
+        val layout = tv.layout ?: return null
+        if (!guardada.ativa) return null
+        val posTv = IntArray(2).also { tv.getLocationOnScreen(it) }
+        val posLista = IntArray(2).also { rv.getLocationOnScreen(it) }
+        val base = posTv[1] + tv.totalPaddingTop - tv.scrollY
+        val linhaIni = layout.getLineForOffset(guardada.inicio)
+        val linhaFim = layout.getLineForOffset(guardada.fim)
+        val trecho = LinhaNaTela(base + layout.getLineTop(linhaIni), base + layout.getLineBottom(linhaFim))
+        val linhaDoFim = LinhaNaTela(
+            base + layout.getLineTop(linhaFim) - (if (linhaFim == 0) tv.extendedPaddingTop else 0),
+            base + layout.getLineBottom(linhaFim) +
+                (if (linhaFim == layout.lineCount - 1) tv.extendedPaddingBottom else 0),
+        )
+        val areaDaLista = LinhaNaTela(posLista[1] + rv.paddingTop, posLista[1] + rv.height - rv.paddingBottom)
+        val fundoDoPai = (rv.parent as? View)?.let { p ->
+            IntArray(2).also { p.getLocationOnScreen(it) }[1] + p.height
+        } ?: Int.MAX_VALUE
+        val guiada = a.findViewById<View>(R.id.layoutGuidedPlayer)?.takeIf { it.isShown }
+            ?.let { IntArray(2).also { p -> it.getLocationOnScreen(p) }[1] }
+        // O limite da barra é o da produção: base da barra mais 72 dp, só com a barra visível.
+        val limite = if (barraDaSelecaoTextoVisivel(a)) limiteDaAreaNaTela(a) else null
+        val area = areaUtilParaReabrir(areaDaLista, fundoDoPai, limite, guiada)
+        return MedidasDaReabertura(trecho, linhaDoFim, area, areaDaLista, limite)
+    }
 
     /**
      * Estado do cache e do arquivo agora, comparado com o que o @Before gravou, e os cacheDir dos dois Applications (o
