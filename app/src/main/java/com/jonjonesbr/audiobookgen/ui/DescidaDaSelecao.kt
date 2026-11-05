@@ -34,3 +34,12 @@ internal fun quantoDescerParaMostrarSelecao(
     val limite = alturaDaBarra + margemPx + (linha.fundo - linha.topo)
     return (fundoDaBarraNaTela + margemPx - topoSem).coerceIn(0, limite)
 }
+
+/**
+ * Se a seleção ficou parada desde o preparo anterior do menu (rb-50): mesmo início e mesmo fim. Quando a alça da
+ * seleção é arrastada, cada passo muda a seleção, então o preparo chega com ela diferente. O preparo que vem depois
+ * de soltar a alça (o do UP, síncrono ou assíncrono) repete a seleção, e é nele que a descida se refaz. O primeiro
+ * preparo (sem anterior, com -1) não conta, e uma seleção vazia (início igual ao fim) também não.
+ */
+internal fun selecaoParadaNoPreparo(inicioAntes: Int, fimAntes: Int, inicio: Int, fim: Int): Boolean =
+    inicio >= 0 && inicio != fim && inicio == inicioAntes && fim == fimAntes

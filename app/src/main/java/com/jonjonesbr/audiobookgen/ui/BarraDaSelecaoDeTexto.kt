@@ -24,6 +24,12 @@ internal class BarraDaSelecaoDeTexto(
     // Verdadeiro só entre o mostrar que abriu a barra e a primeira descida dela: a sessão nova pode voltar ao lugar.
     private var sessaoNova = false
 
+    // Recálculo pedido ao soltar a alça da seleção (rb-50): a linha e o que roda depois da descida, guardados até o
+    // post.
+    private var linhaDoReajuste: (() -> LinhaNaTela?)? = null
+    private var depoisDoReajuste: (() -> Unit)? = null
+    private val reajuste = Runnable { linhaDoReajuste?.let { agendarDescida(it, depoisDoReajuste ?: {}) } }
+
     /** Se a barra está na tela agora (rb-54: a barra sem o modo do sistema confere isto para o Voltar). */
     val visivel: Boolean get() = barra.visibility == View.VISIBLE
 
@@ -72,12 +78,33 @@ internal class BarraDaSelecaoDeTexto(
         // Antes de mostrar: depois disso a barra já está visível e não dá para saber se é sessão nova (rb-48).
         sessaoNova = outraSelecao || barra.visibility != View.VISIBLE
         barra.visibility = View.VISIBLE
-        lista.depoisDoToque { barra.doOnLayout { descerSePreciso(linhaDaSelecao) } }
+        agendarDescida(linhaDaSelecao)
+    }
+
+    /**
+     * Refaz a descida depois de soltar a alça da seleção (rb-50): com a seleção nova, a linha do início pode ter ido
+     * para sob a barra. O preparo do menu que vem ao soltar roda dentro do toque da alça, por isso o cálculo é postado.
+     * [depois] roda junto com a descida (o menu pede a barra flutuante de novo, para a barra do sistema não cobrir a
+     * seleção no Xiaomi). Duas soltadas seguidas se juntam: o post anterior é retirado.
+     */
+    fun reajustar(linhaDaSelecao: () -> LinhaNaTela?, depois: () -> Unit) {
+        if (!visivel) return
+        linhaDoReajuste = linhaDaSelecao
+        depoisDoReajuste = depois
+        lista.removeCallbacks(reajuste)
+        lista.post(reajuste)
+    }
+
+    // Mesmo caminho do mostrar (rb-48): espera o toque terminar e a barra ser medida, e só então desce o necessário.
+    private fun agendarDescida(linhaDaSelecao: () -> LinhaNaTela?, depois: () -> Unit = {}) {
+        lista.depoisDoToque { barra.doOnLayout { descerSePreciso(linhaDaSelecao); depois() } }
     }
 
     /** Esconde a barra e devolve a lista ao lugar, com a volta animada (rb-48). */
     fun esconder() {
         barra.visibility = View.GONE
+        lista.removeCallbacks(reajuste)
+        linhaDoReajuste = null
         if (lista.translationY != 0f) {
             lista.animate().translationY(0f).setDuration(DURACAO_VOLTA_MS).start()
         }

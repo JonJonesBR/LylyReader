@@ -33,6 +33,8 @@ internal data class AcoesDaSelecaoDeTexto(
     // Recebem o menu que abriu ou fechou: o adapter sabe qual seleção está aberta (rb-38).
     val aoAbrir: (MenuDaSelecaoDeTexto) -> Unit,
     val aoFechar: (MenuDaSelecaoDeTexto) -> Unit,
+    // Chamado quando a seleção fica parada entre dois preparos: é o preparo que vem ao soltar a alça (rb-50).
+    val aoSoltarAlca: (MenuDaSelecaoDeTexto) -> Unit = {},
 )
 
 /**
@@ -53,8 +55,17 @@ internal class MenuDaSelecaoDeTexto(
     /** Se o menu do sistema está aberto agora. Sem ele, a seleção do TextView não tem quem a feche (rb-54). */
     val aberto: Boolean get() = modoAberto != null
 
+    /** O modo aberto agora, ou nulo. O adapter o usa para pedir o recálculo da barra (rb-50). */
+    val modo: ActionMode? get() = modoAberto
+
+    // Início e fim da seleção no preparo anterior, para saber se ela ficou parada (rb-50). -1 = sem preparo ainda.
+    private var inicioNoUltimoPreparo = -1
+    private var fimNoUltimoPreparo = -1
+
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
         modoAberto = mode
+        inicioNoUltimoPreparo = -1
+        fimNoUltimoPreparo = -1
         acoes.aoAbrir(this)
         // No ⋮. Apagar frase é destrutiva, por isso fica por último.
         menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
@@ -62,7 +73,18 @@ internal class MenuDaSelecaoDeTexto(
         return true
     }
 
-    override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = false
+    // rb-50: o preparo com a seleção igual à do preparo anterior vem ao soltar a alça (o UP refaz o preparo). Um passo
+    // de arraste muda a seleção e não entra. Por isso o aviso é o único efeito: a descida é agendada por post, nunca
+    // aqui dentro. Devolve false, como antes.
+    override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
+        val inicio = tv.selectionStart
+        val fim = tv.selectionEnd
+        val parada = selecaoParadaNoPreparo(inicioNoUltimoPreparo, fimNoUltimoPreparo, inicio, fim)
+        inicioNoUltimoPreparo = inicio
+        fimNoUltimoPreparo = fim
+        if (parada) acoes.aoSoltarAlca(this)
+        return false
+    }
 
     override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = executarItem(item.itemId, mode)
 

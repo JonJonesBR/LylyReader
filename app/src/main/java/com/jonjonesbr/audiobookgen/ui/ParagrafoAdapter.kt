@@ -185,6 +185,13 @@ class ParagrafoAdapter(
             // continua viva sem o menu (rb-54).
             recyclerView.fechouSelecao()
         },
+        // rb-50: ao soltar a alça, a descida se refaz para a linha nova do início. Depois pede a barra flutuante de
+        // novo (invalidateContentRect, sem onPrepare, então não há laço).
+        aoSoltarAlca = { menu ->
+            if (menuAberto === menu) {
+                barraDaSelecao.reajustar({ menu.linhaDoInicioDaSelecaoNaTela() }) { menu.modo?.invalidateContentRect() }
+            }
+        },
     )
 
     /**

@@ -1,6 +1,8 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DescidaDaSelecaoTest {
@@ -99,5 +101,30 @@ class DescidaDaSelecaoTest {
         )
         // Atual vira 0: 240 + 24 - 150 = 114.
         assertEquals(114, descida)
+    }
+
+    @Test
+    fun primeiroPreparoSemAnteriorNaoEParado() {
+        assertFalse(selecaoParadaNoPreparo(inicioAntes = -1, fimAntes = -1, inicio = 5, fim = 20))
+    }
+
+    @Test
+    fun preparoRepetidoEParadoDepoisDeSoltarAAlca() {
+        assertTrue(selecaoParadaNoPreparo(inicioAntes = 5, fimAntes = 20, inicio = 5, fim = 20))
+    }
+
+    @Test
+    fun passoDeArrasteComInicioMudadoNaoEParado() {
+        assertFalse(selecaoParadaNoPreparo(inicioAntes = 5, fimAntes = 20, inicio = 3, fim = 20))
+    }
+
+    @Test
+    fun passoDeArrasteComFimMudadoNaoEParado() {
+        assertFalse(selecaoParadaNoPreparo(inicioAntes = 5, fimAntes = 20, inicio = 5, fim = 25))
+    }
+
+    @Test
+    fun selecaoVaziaRepetidaNaoEParada() {
+        assertFalse(selecaoParadaNoPreparo(inicioAntes = 5, fimAntes = 5, inicio = 5, fim = 5))
     }
 }

@@ -803,6 +803,51 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    fun soltarAAlcaRefazADescidaParaOInicioNovo() {
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            // Seleção que começa na 3ª linha do parágrafo 0: a barra cobre a linha e a lista desce.
+            var tv: TextView? = null
+            var l2 = 0
+            scenario.onActivity { a ->
+                val rv = lista(a)
+                val alvo = requireNotNull(tvEm(rv, 0))
+                assertTrue(alvo.layout.lineCount >= 3)
+                l2 = alvo.layout.getLineStart(2)
+                tv = selecionarComFoco(rv, 0, l2, l2 + 5)
+            }
+            val texto = requireNotNull(tv)
+            lateinit var modo: ModoFalso
+            scenario.onActivity { a -> modo = abrirModoFalso(a, texto) }
+            esperarAte(scenario, "barra própria da seleção aparece") { a -> barraDaSelecaoTextoVisivel(a) }
+            esperarAte(scenario, "lista desce para a seleção") { a -> lista(a).translationY > 0f }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            var t0 = 0f
+            scenario.onActivity { a -> t0 = lista(a).translationY }
+
+            // Preparo inicial: registra a seleção. Passo de arraste da alça para o início (0): não desce nada.
+            scenario.onActivity { texto.customSelectionActionModeCallback.onPrepareActionMode(modo, modo.menu) }
+            scenario.onActivity { _ ->
+                Selection.setSelection(texto.text as Spannable, 0, l2 + 5)
+                texto.customSelectionActionModeCallback.onPrepareActionMode(modo, modo.menu)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400))
+            scenario.onActivity { a -> assertEquals(t0, lista(a).translationY, 0.5f) }
+
+            // Soltou: o preparo do UP repete a seleção. Agora a descida se refaz para o início novo (0).
+            scenario.onActivity { texto.customSelectionActionModeCallback.onPrepareActionMode(modo, modo.menu) }
+            esperarAte(scenario, "lista desce de novo para o início novo") { a -> lista(a).translationY > t0 }
+
+            // Fecha com Destacar: a barra some e a lista volta ao lugar.
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "lista volta ao lugar") { a -> lista(a).translationY == 0f }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun repinturaQueChegaComODedoNoParagrafoNaoReescreveOTexto() {
         // rb-53: a sincronia repinta o parágrafo que está sendo lido. Se a repintura chega com o dedo já sobre ele,
         // o texto fica como está (o toque longo precisa da posição do texto) e a repintura sai quando o toque acaba.
