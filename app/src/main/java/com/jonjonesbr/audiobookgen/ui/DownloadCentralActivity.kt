@@ -139,7 +139,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
             override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab) = Unit
         })
         // Fonte ampliada: as duas abas de largura igual cortam o nome; nesse caso elas rolam (como na Biblioteca).
-        if (resources.configuration.fontScale >= 1.3f) {
+        if (resources.configuration.fontScale >= FONTE_AMPLIADA_MINIMA) {
             abas.tabMode = com.google.android.material.tabs.TabLayout.MODE_SCROLLABLE
         }
         if (intent.getBooleanExtra(EXTRA_ABA_LIVROS, false)) abas.getTabAt(ABA_LIVROS)?.select()
@@ -433,6 +433,7 @@ class DownloadCentralActivity : BasePlayerActivity() {
         private const val MENU_BAIXAR_TODOS_LIVROS = 3
         private const val ABA_LIVROS = 1
         private const val MAX_LIVROS_VISIVEIS = 3
+        private const val FONTE_AMPLIADA_MINIMA = 1.3f
 
         /** Abre direto na aba Livros grátis (ex.: "Ver" depois de "Baixar todos" na busca da Biblioteca). */
         const val EXTRA_ABA_LIVROS = "extra_aba_livros"

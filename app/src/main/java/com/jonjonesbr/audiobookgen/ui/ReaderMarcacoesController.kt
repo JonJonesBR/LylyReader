@@ -25,6 +25,9 @@ import java.io.File
 // Constante movida do companion de ReaderActivity (T2.2) — usada só no bloco de marcadores.
 private const val BOOKMARK_NOME_MAX = 40
 
+/** Percentual de 0 a 100 mostrado ao lado do trecho marcado. */
+private const val PERCENTUAL_MAXIMO = 100
+
 /**
  * Marcadores (bookmarks) e destaques do leitor — extraído de [ReaderActivity] pra reduzir o
  * tamanho do arquivo (T2.2). Padrão do projeto: activity + viewModel + callbacks no
@@ -314,7 +317,7 @@ class ReaderMarcacoesController(
     /** Quanto do livro foi lido até o parágrafo ("42%"); vazio se o texto ainda não estiver carregado. */
     private fun percentualDoParagrafo(texto: TextoExtraido?, indice: Int): String {
         if (texto == null) return ""
-        val porcento = (progressoLivroPct(texto.paragrafos, indice, texto.totalChars) * 100).toInt()
+        val porcento = (progressoLivroPct(texto.paragrafos, indice, texto.totalChars) * PERCENTUAL_MAXIMO).toInt()
         return activity.getString(R.string.marcacoes_percentual, porcento)
     }
 

@@ -32,7 +32,10 @@ class ReaderRetornoController(
     private val dialogos = DialogosAbertos(activity)
     private fun androidx.appcompat.app.AlertDialog.Builder.exibir(): androidx.appcompat.app.AlertDialog = dialogos.mostrar(this)
 
-    /** Liga enquanto o texto editado está sendo importado como novo livro: um segundo "voltar" não pergunta de novo nem salva em duplicata. */
+    /**
+     * Liga enquanto o texto editado está sendo importado como novo livro: um segundo "voltar" não pergunta de novo
+     * nem salva em duplicata.
+     */
     private var salvandoEdicoes = false
 
     data class Callbacks(
@@ -361,7 +364,9 @@ class ReaderRetornoController(
             .exibir()
     }
 
-    /** "Exportar texto": um arquivo só ou um por capítulo. Sem capítulos para separar, exporta o arquivo único direto. */
+    /**
+     * "Exportar texto": um arquivo só ou um por capítulo. Sem capítulos para separar, exporta o arquivo único direto.
+     */
     private fun mostrarDialogoExportarTexto() {
         val texto = viewModel.textoEfetivo()
         if (!valePerguntarPorCapitulo(texto?.capitulos?.size ?: 0)) {

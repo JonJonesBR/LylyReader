@@ -35,6 +35,9 @@ import kotlinx.coroutines.withContext
 object PronunciationAiFlow {
     private const val ROUNDS = 2
     private const val RETRY_PAUSE_MS = 8_000L
+    private const val ESPACO_TOPO_REVISAO_DP = 4
+    private const val TAMANHO_DICA_REVISAO_SP = 13f
+    private const val ESPACO_APOS_DICA_DP = 8
     private var job: Job? = null
 
     fun start(activity: AppCompatActivity, paragraphs: List<String>, caminhoDoLivro: String? = null) {
@@ -195,11 +198,11 @@ object PronunciationAiFlow {
         val sugestoes = found.map { (palavra, falada) -> linhaDeRevisao(activity, lista, palavra, falada) }
         val conteudo = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(pad, (4 * dp).toInt(), pad, 0)
+            setPadding(pad, (ESPACO_TOPO_REVISAO_DP * dp).toInt(), pad, 0)
             addView(TextView(activity).apply {
                 text = activity.getString(R.string.pron_ai_review_hint)
-                textSize = 13f
-                setPadding(0, 0, 0, (8 * dp).toInt())
+                textSize = TAMANHO_DICA_REVISAO_SP
+                setPadding(0, 0, 0, (ESPACO_APOS_DICA_DP * dp).toInt())
             })
             addView(ScrollView(activity).apply { addView(lista) })
         }

@@ -127,7 +127,7 @@ class ArrasteNaTela(
 
     private fun concluir(ev: MotionEvent) {
         val vt = velocidade ?: return
-        vt.computeCurrentVelocity(1000)
+        vt.computeCurrentVelocity(UNIDADE_VELOCIDADE_PX_S)
         val velocidadeMin = VELOCIDADE_MIN_DP * densidade
         when (estado) {
             Estado.LATERAL -> {
@@ -194,5 +194,6 @@ class ArrasteNaTela(
         private const val DISTANCIA_LATERAL_DP = 80f
         private const val DISTANCIA_MINI_DP = 40f
         private const val VELOCIDADE_MIN_DP = 500f
+        private const val UNIDADE_VELOCIDADE_PX_S = 1000
     }
 }

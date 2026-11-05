@@ -169,7 +169,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Âncoras de sincronia (trecho do MP3 → caractere do livro) do audiobook, calculadas uma vez por MP3 e texto. */
-    private var ancorasCache: Triple<String, com.jonjonesbr.audiobookgen.domain.TextoExtraido, List<Pair<Long, Int>>>? = null
+    private var ancorasCache: Triple<
+        String, com.jonjonesbr.audiobookgen.domain.TextoExtraido, List<Pair<Long, Int>>
+    >? = null
 
     private suspend fun ancorasDoAudiobook(
         mp3: String,
@@ -352,7 +354,8 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 val resultado = withContext(Dispatchers.IO) {
-                    // O texto pode ter vindo do cache, sem o Python ter sido iniciado nesta sessão (ver limparComCache).
+                    // O texto pode ter vindo do cache, sem o Python ter sido iniciado nesta sessão
+                    // (ver limparComCache).
                     val motor = com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase(getApplication<Application>())
                     check(motor.inicializarMotorSeNecessario()) { "Motor Python indisponível para excluir ocorrências" }
                     Python.getInstance()

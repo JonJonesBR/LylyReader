@@ -589,7 +589,9 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
         private fun bindVoice(holder: VH, row: VoiceRow.Voice) {
             val voice = row.option
             val isSelected = voice.id == selectedVoiceId
-            val nome = TextoDaListaDeVozes.nomeSemMotor(voice.nomeExibido(requireContext()), rotuloDoMotor(voice).orEmpty())
+            val nome = TextoDaListaDeVozes.nomeSemMotor(
+                voice.nomeExibido(requireContext()), rotuloDoMotor(voice).orEmpty()
+            )
             holder.name.text = if (isSelected) "✓ $nome" else nome
             holder.name.setTextColor(
                 ContextCompat.getColor(

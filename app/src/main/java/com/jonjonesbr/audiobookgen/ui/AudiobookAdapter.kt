@@ -74,6 +74,7 @@ class AudiobookAdapter(
         private const val ACAO_VIDEO = 2
         private const val ACAO_DETALHES = 3
         private const val ACAO_DELETAR = 4
+        private const val ORDEM_MENU_DELETAR = 3
         private const val PAYLOAD_PLAYER = "player"
     }
 
@@ -146,7 +147,7 @@ class AudiobookAdapter(
                 menu.add(0, ACAO_COMPARTILHAR, 0, R.string.btn_compartilhar)
                 menu.add(0, ACAO_VIDEO, 1, R.string.cd_exportar_video)
                 menu.add(0, ACAO_DETALHES, 2, R.string.bib_acao_detalhes)
-                menu.add(0, ACAO_DELETAR, 3, R.string.btn_deletar)
+                menu.add(0, ACAO_DELETAR, ORDEM_MENU_DELETAR, R.string.btn_deletar)
                 setOnMenuItemClickListener {
                     when (it.itemId) {
                         ACAO_COMPARTILHAR -> onCompartilhar(item)
@@ -169,7 +170,9 @@ class AudiobookAdapter(
             holder.ivCover.setImageBitmap(cached)
         } else {
             holder.ivCover.scaleType = ImageView.ScaleType.FIT_XY
-            holder.ivCover.setImageDrawable(CapaTipografica(item.nome, item.autor, chave, serifa(holder.itemView.context)))
+            holder.ivCover.setImageDrawable(
+                CapaTipografica(item.nome, item.autor, chave, serifa(holder.itemView.context))
+            )
             if (SEM_CAPA_EMBUTIDA.get(chave) == null) onBindCover?.invoke(item, holder.ivCover)
         }
     }

@@ -10,6 +10,11 @@ import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 // trecho lido continua distinto do que falta ler.
 private const val ALFA_TRECHO_LIDO = 0xB3
 
+// Máscara do RGB (sem o alfa) e posição do byte de alfa num Int ARGB.
+private const val MASCARA_RGB = 0x00FFFFFF
+private const val ALFA_MAXIMO = 255
+private const val DESLOCAMENTO_ALFA = 24
+
 // Cores do trecho já lido, sem alfa (RGB), na mesma cor de antes de rb-56.
 private val COR_TRECHO_LIDO = mapOf(
     TemaLeitura.CLARO  to 0xFFBBA6FF.toInt(),
@@ -19,7 +24,8 @@ private val COR_TRECHO_LIDO = mapOf(
 )
 
 /** Troca só o alfa de [cor] (0 a 255); o RGB fica igual. Função de topo e pura, para teste na JVM. */
-internal fun comAlfa(cor: Int, alfa: Int): Int = (cor and 0x00FFFFFF) or (alfa.coerceIn(0, 255) shl 24)
+internal fun comAlfa(cor: Int, alfa: Int): Int =
+    (cor and MASCARA_RGB) or (alfa.coerceIn(0, ALFA_MAXIMO) shl DESLOCAMENTO_ALFA)
 
 /** Cor do trecho já lido pela guiada no [tema]: a cor do tema com alfa de [ALFA_TRECHO_LIDO]. */
 internal fun corDoTrechoLido(tema: TemaLeitura): Int =

@@ -334,7 +334,9 @@ class LibraryActivity : BasePlayerActivity() {
         adapter.onBindCover = { item, imageView ->
             val chave = item.chaveDaCapa
             lifecycleScope.launch {
-                val resultado = AudiobookLibraryUseCase.lerCapaEmbutida(this@LibraryActivity, item.uri, LADO_CAPA_LISTA_PX)
+                val resultado = AudiobookLibraryUseCase.lerCapaEmbutida(
+                    this@LibraryActivity, item.uri, LADO_CAPA_LISTA_PX
+                )
                 when (resultado) {
                     is CapaEmbutida.Encontrada -> {
                         adapter.cacheCover(chave, resultado.bitmap)
@@ -761,10 +763,20 @@ class LibraryActivity : BasePlayerActivity() {
     private fun mostrarDetalhes(item: AudiobookItem) {
         val linhas = buildList {
             item.autor?.let { add("${getString(R.string.bib_det_autor)}: $it") }
-            val duracao = if (item.duracaoMs > 0) com.jonjonesbr.audiobookgen.util.formatarDuracao(item.duracaoMs) else "\u2014"
+            val duracao = if (item.duracaoMs > 0) {
+                com.jonjonesbr.audiobookgen.util.formatarDuracao(item.duracaoMs)
+            } else {
+                "\u2014"
+            }
             add("${getString(R.string.lib_det_duracao)}: $duracao")
-            add("${getString(R.string.bib_det_adicionado)}: ${DateFormat.getMediumDateFormat(this@LibraryActivity).format(Date(item.dataAdicionado))}")
-            add("${getString(R.string.bib_det_tamanho)}: ${Formatter.formatShortFileSize(this@LibraryActivity, item.tamanhoBytes)}")
+            add(
+                "${getString(R.string.bib_det_adicionado)}: " +
+                    DateFormat.getMediumDateFormat(this@LibraryActivity).format(Date(item.dataAdicionado))
+            )
+            add(
+                "${getString(R.string.bib_det_tamanho)}: " +
+                    Formatter.formatShortFileSize(this@LibraryActivity, item.tamanhoBytes)
+            )
             add("${getString(R.string.lib_det_pasta)}: ${item.localizacao}")
             item.nomeArquivo?.let { add("${getString(R.string.lib_det_arquivo)}: $it") }
         }

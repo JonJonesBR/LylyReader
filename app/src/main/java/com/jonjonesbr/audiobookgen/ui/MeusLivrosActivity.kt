@@ -276,9 +276,8 @@ class MeusLivrosActivity : BasePlayerActivity() {
         }
         if (appPrefs.onboardingDone && !appPrefs.voiceDownloadOnboardingDone && !ofertandoVozes) ofertarVozesUmaVez()
         // Quem já usava o app não vê as boas-vindas de novo: notificações desligadas → pergunta uma vez.
-        if (appPrefs.onboardingDone && appPrefs.voiceDownloadOnboardingDone && !ofertandoVozes &&
-            !ReleaseNotesDialog.pendente(this)
-        ) {
+        val jaUsavaOApp = appPrefs.onboardingDone && appPrefs.voiceDownloadOnboardingDone && !ofertandoVozes
+        if (jaUsavaOApp && !ReleaseNotesDialog.pendente(this)) {
             PermissoesDoApp.oferecerNotificacoesUmaVez(this, pedidoNotificacoes)
         }
         carregar() // a posição de leitura/progresso pode ter mudado no leitor

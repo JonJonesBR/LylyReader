@@ -48,6 +48,9 @@ internal class OuvirNoFluxo(
  */
 object PronunciationDialog {
 
+    /** Altura mínima do botão de texto, em dp: o toque tem 48dp (recomendação do Android). */
+    private const val ALTURA_MINIMA_TOQUE_DP = 48
+
     /** Dicionário onde o [escopo] salva: o do livro, ou o global. Sem livro, sempre o global. */
     fun dicionarioDoEscopo(
         activity: AppCompatActivity,
@@ -206,12 +209,17 @@ object PronunciationDialog {
      * Ação em texto no conteúdo da janela (o AlertDialog só tem três botões). É um botão de texto de verdade:
      * o TalkBack o anuncia como botão e o toque tem 48dp. O listener é ligado depois.
      */
-    private fun linkDoDialogo(activity: AppCompatActivity, texto: Int, cor: Int, margemInicio: Int = 0): MaterialButton {
+    private fun linkDoDialogo(
+        activity: AppCompatActivity,
+        texto: Int,
+        cor: Int,
+        margemInicio: Int = 0
+    ): MaterialButton {
         val dp = activity.resources.displayMetrics.density
         return MaterialButton(activity, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
             setText(texto)
             setTextColor(ContextCompat.getColor(activity, cor))
-            minimumHeight = (48 * dp).toInt()
+            minimumHeight = (ALTURA_MINIMA_TOQUE_DP * dp).toInt()
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply { marginStart = margemInicio }

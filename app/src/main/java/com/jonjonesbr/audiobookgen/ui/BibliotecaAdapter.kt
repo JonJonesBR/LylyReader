@@ -24,7 +24,11 @@ sealed interface ItemBiblioteca {
     val chave: String
 
     /** [tocando]: a leitura guiada deste livro está tocando agora (o botão vira "pausar"). */
-    data class Continuar(val livro: LivroBiblioteca, val progresso: Float, val tocando: Boolean = false) : ItemBiblioteca {
+    data class Continuar(
+        val livro: LivroBiblioteca,
+        val progresso: Float,
+        val tocando: Boolean = false
+    ) : ItemBiblioteca {
         override val chave get() = "continuar"
     }
 
@@ -110,7 +114,8 @@ class BibliotecaAdapter(
                 mostrarCapa(h.capa, livro)
                 h.itemView.setOnClickListener { onAbrir(livro, false) }
                 h.itemView.setOnLongClickListener { onMenu(h.itemView, livro); true }
-                // Botão visível: o mesmo menu do long-press (o long-press no botão também abre, senão o toque longo não chegaria ao cartão)
+                // Botão visível: o mesmo menu do long-press (o long-press no botão também abre,
+                // senão o toque longo não chegaria ao cartão)
                 h.mais.setOnClickListener { onMenu(h.mais, livro) }
                 h.mais.setOnLongClickListener { onMenu(h.mais, livro); true }
             }

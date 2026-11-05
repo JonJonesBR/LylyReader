@@ -120,7 +120,8 @@ class ReaderPersonagensController(
             if (caminhoArquivo == identidadeLivro && textoAtual == textos) {
                 speakerAttribution = resultado
                 speakerGenders = generos
-                // Só para o livro desta tela: a fila pode já estar narrando outro (ver GuidedPlayerManager.trocarDeLivro).
+                // Só para o livro desta tela: a fila pode já estar narrando outro
+                // (ver GuidedPlayerManager.trocarDeLivro).
                 guidedPlayerManager?.takeIf { it.caminhoArquivo == identidadeLivro }?.setSpeakerAttribution(resultado)
                 avisarPersonagensEncontradosSeNecessario(resultado)
             }

@@ -100,7 +100,9 @@ abstract class BasePlayerActivity : AppCompatActivity() {
             aoArrastarMiniPlayer = { paraCima ->
                 val root = findViewById<View>(R.id.miniPlayerRoot)
                 // O áudio pode ter fechado durante o arraste: aí não há o que abrir.
-                if (root != null && audioVisivel && paraCima != playerExpanded) toggleExpandido(root, forcarExpandido = paraCima)
+                if (root != null && audioVisivel && paraCima != playerExpanded) {
+                    toggleExpandido(root, forcarExpandido = paraCima)
+                }
             }
         )
     }
@@ -138,8 +140,8 @@ abstract class BasePlayerActivity : AppCompatActivity() {
 
     /** Barra ou parte aberta do player de áudio (não o indicador da leitura guiada, que fica no mesmo bloco). */
     private fun sobreMiniPlayerAudio(x: Float, y: Float): Boolean {
-        if (!audioVisivel) return false
-        val root = findViewById<View>(R.id.miniPlayerRoot)?.takeIf { it.isShown } ?: return false
+        val root = if (audioVisivel) findViewById<View>(R.id.miniPlayerRoot)?.takeIf { it.isShown } else null
+        if (root == null) return false
         val guiado = root.findViewById<View>(R.id.guidedIndicatorBar)
         return contemNaJanela(root, x, y) && !(guiado != null && guiado.isShown && contemNaJanela(guiado, x, y))
     }

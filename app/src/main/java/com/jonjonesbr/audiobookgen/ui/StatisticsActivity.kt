@@ -189,7 +189,7 @@ class StatisticsActivity : AppCompatActivity() {
     private fun gravarPng(bitmap: Bitmap): File {
         val pasta = File(cacheDir, "compartilhar").apply { mkdirs() }
         val arquivo = File(pasta, "estatisticas.png")
-        FileOutputStream(arquivo).use { saida -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, saida) }
+        FileOutputStream(arquivo).use { saida -> bitmap.compress(Bitmap.CompressFormat.PNG, QUALIDADE_PNG, saida) }
         return arquivo
     }
 
@@ -197,5 +197,6 @@ class StatisticsActivity : AppCompatActivity() {
         private const val TAG = "StatisticsActivity"
         private const val BAR_MAX_HEIGHT_DP = 90
         private const val CARTAO_LARGURA_DP = 360
+        private const val QUALIDADE_PNG = 100
     }
 }

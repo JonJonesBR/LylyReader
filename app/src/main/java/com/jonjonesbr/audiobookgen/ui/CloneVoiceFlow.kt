@@ -59,6 +59,12 @@ import java.io.File
 /** Meta de duração da gravação guiada: a barra de progresso chega cheia aqui (a gravação vai até 30 s). */
 private const val META_GRAVACAO_S = 15
 
+/** Escala da barra de progresso da gravação: décimos de segundo. */
+private const val ESCALA_BARRA_GRAVACAO = 10
+
+/** Pico do áudio abaixo do qual a gravação curta pede para falar mais perto do microfone. */
+private const val NIVEL_PICO_VOZ_BAIXA = 0.02f
+
 /**
  * Criação e gestão de vozes clonadas com o Pocket TTS. Instanciar ANTES de a Activity iniciar (registra
  * os seletores de resultado). A referência (gravada ou de arquivo) só é convertida e guardada no
@@ -114,12 +120,17 @@ class CloneVoiceFlow(
         val conteudo = LinearLayout(activity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
-            setPadding(dp(24), dp(20), dp(24), dp(12))
+            setPadding(
+                dp(PREENCHIMENTO_LATERAL_AVISO_DP),
+                dp(PREENCHIMENTO_VERTICAL_AVISO_DP),
+                dp(PREENCHIMENTO_LATERAL_AVISO_DP),
+                dp(PREENCHIMENTO_INFERIOR_AVISO_DP)
+            )
             addView(ProgressBar(activity).apply { isIndeterminate = true })
             addView(TextView(activity).apply {
                 setText(mensagem)
-                textSize = 15f
-                setPadding(dp(16), 0, 0, 0)
+                textSize = TAMANHO_TEXTO_AVISO_SP
+                setPadding(dp(ESPACO_TEXTO_AVISO_DP), 0, 0, 0)
             })
         }
         val dialogo = AlertDialog.Builder(activity).setView(conteudo).setCancelable(false).exibir()
@@ -179,10 +190,20 @@ class CloneVoiceFlow(
     // ── Passo 2: gravar ou escolher arquivo ──────────────────────────────────
 
     private fun escolherOrigem() {
+        val opcoes = arrayOf(
+            activity.getString(R.string.clone_source_record),
+            activity.getString(R.string.clone_source_file)
+        )
         AlertDialog.Builder(activity)
             .setTitle(R.string.clone_source_title)
-            .setItems(arrayOf(activity.getString(R.string.clone_source_record), activity.getString(R.string.clone_source_file))) { _, qual ->
-                if (qual == 0) escolherIdiomaGravacao() else escolherArquivo.launch(arrayOf("audio/*", "video/*", "application/ogg", "application/octet-stream"))
+            .setItems(opcoes) { _, qual ->
+                if (qual == 0) {
+                    escolherIdiomaGravacao()
+                } else {
+                    escolherArquivo.launch(
+                        arrayOf("audio/*", "video/*", "application/ogg", "application/octet-stream")
+                    )
+                }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .exibir()
@@ -282,7 +303,11 @@ class CloneVoiceFlow(
                 if (avaliacao.boa) {
                     finalizarGravacao(amostras, taxa)
                 } else {
-                    mostrarAvisos(avaliacao, usar = { finalizarGravacao(amostras, taxa) }, regravar = { mostrarGravacao() })
+                    mostrarAvisos(
+                        avaliacao,
+                        usar = { finalizarGravacao(amostras, taxa) },
+                        regravar = { mostrarGravacao() }
+                    )
                 }
             }
         }
@@ -306,7 +331,7 @@ class CloneVoiceFlow(
                 val segundos = rec.segundos
                 val faixa = classificarProgresso(segundos)
                 tempo.text = String.format(java.util.Locale.getDefault(), "%.1f s", segundos)
-                barra.progress = (minOf(segundos, META_GRAVACAO_S.toFloat()) * 10).toInt()
+                barra.progress = (minOf(segundos, META_GRAVACAO_S.toFloat()) * ESCALA_BARRA_GRAVACAO).toInt()
                 barra.progressTintList = ColorStateList.valueOf(corDaFaixa(faixa))
                 nivel.progress = (rec.nivel * 100).toInt()
                 status.setText(textoDoStatus(faixa, rec.nivel))
@@ -615,7 +640,9 @@ private fun textoDoAviso(aviso: Aviso): Int = when (aviso) {
 
 /** Abaixo de 5 s: se o nível está muito baixo, pede para falar mais perto; senão diz que ainda está curto. */
 private fun textoDoStatus(faixa: Faixa, nivelPico: Float): Int = when (faixa) {
-    Faixa.INSUFICIENTE -> if (nivelPico < 0.02f) R.string.clone_record_status_low else R.string.clone_record_status_short
+    Faixa.INSUFICIENTE ->
+        if (nivelPico < NIVEL_PICO_VOZ_BAIXA) R.string.clone_record_status_low
+        else R.string.clone_record_status_short
     Faixa.OK -> R.string.clone_record_status_ok
     Faixa.OTIMO -> R.string.clone_record_status_great
 }
