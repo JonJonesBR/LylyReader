@@ -68,6 +68,13 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
      */
     internal var descidaDaSelecao: Int = 0
 
+    /**
+     * Se a barra da seleção está embaixo, no lugar do painel da guiada (rb-26b, passo 3). Só a BarraDaSelecaoDeTexto
+     * escreve. Quem lê: a GuidedReadingBarController, para não repor o painel VISIBLE enquanto ele está cedido, e o
+     * ReaderTelaController, que conta a barra no respiro da lista.
+     */
+    internal var baseCedidaASelecao: Boolean = false
+
     /** Refaz o espaço do fim quando a descida muda (rb-51). Quem liga é o ReaderTelaController. */
     internal var aoMudarDescida: (() -> Unit)? = null
 

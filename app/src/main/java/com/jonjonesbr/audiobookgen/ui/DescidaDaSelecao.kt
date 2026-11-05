@@ -56,3 +56,30 @@ internal fun refazerDescidaNoPreparo(
 ): Boolean =
     selecaoParadaNoPreparo(inicioAntes, fimAntes, inicio, fim) &&
         (ultimaDescida == null || inicio != ultimaDescida.first || fim != ultimaDescida.last)
+
+/**
+ * Onde a barra da seleção fica (rb-26b, passo 3): embaixo, no lugar do painel da guiada, no modo páginas; no topo, com
+ * a descida, no vertical. [embaixo] escolhe a gravidade; [margemDeBaixo] é o bottomMargin (o mini player, quando
+ * visível, fica abaixo da barra); [desce] diz se a lista pode descer para a linha da seleção (embaixo, não: o texto não
+ * se mexe).
+ */
+internal data class LugarDaBarraDaSelecao(val embaixo: Boolean, val margemDeBaixo: Int, val desce: Boolean)
+
+/**
+ * Lugar da barra da seleção (rb-26b, passo 3). Com as páginas ativas, a barra fica embaixo e a margem é a altura que o
+ * mini player ocupa acima da base da área ([fundoDaArea] − [topoDoMiniPlayer]), sem negativo. As duas coordenadas são
+ * na janela.
+ *
+ * Não usa a altura útil (`height - paddingBottom`) de ReaderTelaController: lá a margem do FAB já inclui a barra de
+ * navegação. Aqui a barra fica dentro da área, cuja base é a do mini player; descontar o padding deixaria a barra
+ * cobrir `paddingBottom` px do mini player.
+ */
+internal fun lugarDaBarraDaSelecao(
+    paginasAtivas: Boolean,
+    fundoDaArea: Int,
+    topoDoMiniPlayer: Int?,
+): LugarDaBarraDaSelecao {
+    if (!paginasAtivas) return LugarDaBarraDaSelecao(embaixo = false, margemDeBaixo = 0, desce = true)
+    val margem = topoDoMiniPlayer?.let { (fundoDaArea - it).coerceAtLeast(0) } ?: 0
+    return LugarDaBarraDaSelecao(embaixo = true, margemDeBaixo = margem, desce = false)
+}

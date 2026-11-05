@@ -12,6 +12,7 @@ import android.os.Looper
 import android.text.Selection
 import android.text.Spannable
 import android.view.ActionMode
+import android.view.Gravity
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuInflater
@@ -20,6 +21,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.lifecycle.Lifecycle
@@ -2604,6 +2606,90 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun barraDaSelecaoEmbaixoNoModoPaginasCedeOPainel() {
+        // rb-26b (passo 3): no modo páginas a barra da seleção fica embaixo, no lugar do painel da guiada, e o texto
+        // não se mexe (sem descida, mesmo padding, mesmo corte, mesmas linhas).
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            var paddingAntes = 0
+            var corteAntes = 0
+            var linhasAntes: List<LinhaNaLista> = emptyList()
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                paddingAntes = rv.paddingBottom
+                corteAntes = rv.paginacao!!.corte()
+                linhasAntes = linhasNaLista(rv)
+            }
+            lateinit var modo: ModoFalso
+            scenario.onActivity { a -> modo = abrirModoFalso(a, selecionarComFoco(lista(a), 2, 0, 5)) }
+            esperarAte(scenario, "barra da seleção embaixo e o painel cedido") { a ->
+                val gravidade = (a.findViewById<View>(R.id.barraSelecaoTexto).layoutParams as FrameLayout.LayoutParams)
+                    .gravity
+                barraDaSelecaoTextoVisivel(a) && gravidade == Gravity.BOTTOM && listaDoLeitor(a).baseCedidaASelecao &&
+                    a.findViewById<View>(R.id.layoutGuidedPlayer).visibility == View.INVISIBLE
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                assertEquals(0f, rv.translationY, 0f)
+                assertEquals(0, rv.descidaDaSelecao)
+                assertEquals(paddingAntes, rv.paddingBottom)
+                assertEquals(corteAntes, rv.paginacao!!.corte())
+                assertEquals(linhasAntes, linhasNaLista(rv))
+            }
+            // Corrida: a guiada pausa e a barra segue com o painel cedido (a guiada não repõe o VISIBLE).
+            scenario.onActivity { GuidedPlaybackBridge.manager?.pause() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            scenario.onActivity { a ->
+                assertEquals(View.INVISIBLE, a.findViewById<View>(R.id.layoutGuidedPlayer).visibility)
+                assertTrue(listaDoLeitor(a).baseCedidaASelecao)
+            }
+            // Fechar: a seleção sai, a barra some e o painel volta.
+            val esperaDoDuploToque = Duration.ofMillis(ViewConfiguration.getDoubleTapTimeout().toLong() + 200L)
+            scenario.onActivity { modo.finish() }
+            shadowOf(Looper.getMainLooper()).idleFor(esperaDoDuploToque)
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            esperarAte(scenario, "barra some e o painel volta") { a ->
+                !barraDaSelecaoTextoVisivel(a) &&
+                    a.findViewById<View>(R.id.layoutGuidedPlayer).visibility == View.VISIBLE
+            }
+            scenario.onActivity { a ->
+                assertFalse(listaDoLeitor(a).baseCedidaASelecao)
+                assertEquals(0f, listaDoLeitor(a).translationY, 0f)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun barraDaSelecaoNoVerticalFicaNoTopoSemCederOPainel() {
+        // rb-26b (passo 3): no vertical a barra continua no topo, com a descida, e o painel da guiada não é cedido.
+        val intent = intencaoGuiadaNoModoPaginas()
+        AppPrefs(app).readerRolagemHorizontal = false
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "guiada no parágrafo 2 com a lista parada, no vertical") { a ->
+                GuidedPlaybackBridge.manager?.state?.value?.index == 2 &&
+                    lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE && tvEm(lista(a), 2)?.layout != null
+            }
+            lateinit var modo: ModoFalso
+            scenario.onActivity { a -> modo = abrirModoFalso(a, selecionarComFoco(lista(a), 2, 0, 5)) }
+            esperarAte(scenario, "barra da seleção no topo") { a ->
+                val gravidade = (a.findViewById<View>(R.id.barraSelecaoTexto).layoutParams as FrameLayout.LayoutParams)
+                    .gravity
+                barraDaSelecaoTextoVisivel(a) && gravidade == Gravity.TOP
+            }
+            scenario.onActivity { a ->
+                assertEquals(View.VISIBLE, a.findViewById<View>(R.id.layoutGuidedPlayer).visibility)
+                assertFalse(listaDoLeitor(a).baseCedidaASelecao)
+            }
+            scenario.onActivity { modo.finish() }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun chipVoltarNarracaoLevaAPaginaDoNarrado() {
         // rb-26b (passo 3): a página manual some do narrado; o chip leva de volta à página em que ele está.
         ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
@@ -3077,6 +3163,10 @@ class ReaderActivitySmokeTest {
         val seguindo = (rv.layoutManager as? LeitorLayoutManager)?.seguindoLeitura?.invoke() == true
         val barraVisivel = barraDaSelecaoTextoVisivel(a)
         val limite = if (barraVisivel) limiteDaAreaNaTela(a) else null
+        // rb-26b (passo 3): com a barra embaixo, o topo dela é o limite de baixo da área do trecho.
+        val barraEmbaixo = barraVisivel && rv.paginacao?.ativa == true
+        val topoEmbaixo = a.findViewById<View>(R.id.barraSelecaoTexto)
+            ?.takeIf { barraEmbaixo }?.let { v -> IntArray(2).also { v.getLocationOnScreen(it) }[1] }
         val telaAtiva = a.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
         val partes = mutableListOf(
             "scrollState=${rv.scrollState}",
@@ -3090,7 +3180,7 @@ class ReaderActivitySmokeTest {
             "seguindoLeitura=$seguindo",
             "telaAtiva=$telaAtiva",
             "barraVisivel=$barraVisivel limiteDaBarra=$limite",
-            "faixaParaReabrirSozinho=${rv.faixaParaReabrirSozinho(limite, telaAtiva)}",
+            "faixaParaReabrirSozinho=${rv.faixaParaReabrirSozinho(limite, topoEmbaixo, telaAtiva)}",
         )
         medidasDaReabertura(a)?.let { m ->
             partes += "trechoNaTela=${m.trecho.topo}..${m.trecho.fundo}"

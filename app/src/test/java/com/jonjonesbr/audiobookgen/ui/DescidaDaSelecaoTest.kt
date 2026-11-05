@@ -149,4 +149,29 @@ class DescidaDaSelecaoTest {
     fun passoDeArrasteNaoRefazADescidaMesmoComSelecaoNova() {
         assertFalse(refazerDescidaNoPreparo(5, 20, 3, 20, ultimaDescida = 5..20))
     }
+
+    @Test
+    fun paginasComBarraEmbaixoNaoDesceEMargemZeroSemMiniPlayer() {
+        val lugar = lugarDaBarraDaSelecao(paginasAtivas = true, fundoDaArea = 1800, topoDoMiniPlayer = null)
+        assertEquals(LugarDaBarraDaSelecao(embaixo = true, margemDeBaixo = 0, desce = false), lugar)
+    }
+
+    @Test
+    fun paginasComMiniPlayerSobeABarraPelaAlturaDELe() {
+        // O mini player começa 120 px acima da base da área: a barra fica 120 px acima dela.
+        val lugar = lugarDaBarraDaSelecao(paginasAtivas = true, fundoDaArea = 1800, topoDoMiniPlayer = 1680)
+        assertEquals(LugarDaBarraDaSelecao(embaixo = true, margemDeBaixo = 120, desce = false), lugar)
+    }
+
+    @Test
+    fun miniPlayerAbaixoDoFundoDaAreaNaoDaMargemNegativa() {
+        val lugar = lugarDaBarraDaSelecao(paginasAtivas = true, fundoDaArea = 1800, topoDoMiniPlayer = 1900)
+        assertEquals(0, lugar.margemDeBaixo)
+    }
+
+    @Test
+    fun verticalComMiniPlayerFicaNoTopoComDescida() {
+        val lugar = lugarDaBarraDaSelecao(paginasAtivas = false, fundoDaArea = 1800, topoDoMiniPlayer = 1680)
+        assertEquals(LugarDaBarraDaSelecao(embaixo = false, margemDeBaixo = 0, desce = true), lugar)
+    }
 }

@@ -111,17 +111,20 @@ internal fun reabrirSozinho(
 
 /**
  * Área útil onde o trecho guardado pode ficar para voltar sozinho (rb-60b), em coordenadas da tela. O topo é o da
- * lista, ou o limite da barra da seleção ([limiteDaBarra], nulo sem barra) se ela estiver mais abaixo. O fundo é o
- * menor entre a lista, o corte do pai (que já inclui a descida) e o topo da guiada ([topoDaGuiada], nulo sem guiada).
+ * lista, ou o limite da barra da seleção ([limiteDaBarra], nulo sem barra ou com a barra embaixo) se ela estiver mais
+ * abaixo. O fundo é o menor entre a lista, o corte do pai (que já inclui a descida), o topo da guiada ([topoDaGuiada],
+ * nulo sem guiada) e o topo da barra quando ela está embaixo ([topoDaBarraEmbaixo], rb-26b passo 3, nulo no topo).
+ * Com a barra embaixo, o trecho não pode ficar sob ela; o topo da guiada (INVISIBLE, cedida) já sai da conta.
  */
 internal fun areaUtilParaReabrir(
     areaDaLista: LinhaNaTela,
     fundoDoPai: Int,
     limiteDaBarra: Int?,
     topoDaGuiada: Int?,
+    topoDaBarraEmbaixo: Int? = null,
 ): LinhaNaTela = LinhaNaTela(
     topo = maxOf(areaDaLista.topo, limiteDaBarra ?: Int.MIN_VALUE),
-    fundo = minOf(areaDaLista.fundo, fundoDoPai, topoDaGuiada ?: Int.MAX_VALUE),
+    fundo = minOf(areaDaLista.fundo, fundoDoPai, topoDaGuiada ?: Int.MAX_VALUE, topoDaBarraEmbaixo ?: Int.MAX_VALUE),
 )
 
 /**

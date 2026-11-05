@@ -1,6 +1,8 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.view.Gravity
 import android.view.View
+import android.widget.FrameLayout
 import androidx.core.view.doOnLayout
 import com.jonjonesbr.audiobookgen.R
 import kotlin.math.roundToInt
@@ -8,8 +10,9 @@ import kotlin.math.roundToInt
 /**
  * Barra própria do Leitor com as ações da seleção nativa de texto (rb-38). Existe porque o menu da seleção é do
  * sistema: alguns fabricantes (ex.: Xiaomi/HyperOS) mandam os itens do app para o ⋮ ou nem os mostram. A barra
- * fica sobreposta no topo da lista e não empurra o texto. Cabe na largura da tela, sem rolar (rb-43). Quem decide
- * quais botões aparecem é [acoesDaBarraDeSelecao]; aqui só se liga cada botão à sua ação.
+ * fica sobreposta no topo da lista (no modo páginas, embaixo: ver rb-26b abaixo) e não empurra o texto. Cabe na
+ * largura da tela, sem rolar (rb-43). Quem decide quais botões aparecem é [acoesDaBarraDeSelecao]; aqui só se liga
+ * cada botão à sua ação.
  *
  * Quando a seleção começa sob a barra, a lista desce por translação só o necessário, com uma margem que também
  * abre espaço para o menu flutuante do sistema (fica acima da seleção). Volta ao lugar quando a barra some (rb-48).
@@ -18,15 +21,24 @@ import kotlin.math.roundToInt
  * O alvo da descida fica em `lista.descidaDaSelecao`, e o espaço depois do último parágrafo (rb-51, ver
  * [EspacoDaDescidaNoFim]) soma esse alvo enquanto a barra está aberta. Quem muda o alvo avisa `lista.aoMudarDescida`,
  * para esse espaço ser refeito.
+ *
+ * rb-26b (passo 3): no modo páginas a barra fica embaixo, no lugar do painel da guiada, e o texto não desce (a
+ * descida vira zero). O painel é cedido por INVISIBLE (a página não muda de tamanho) e a marca
+ * [RecyclerViewParagrafos.baseCedidaASelecao] segue o lugar aplicado. O lugar é decidido no `mostrar` ([embaixo]); o
+ * resto do código lê [lugar], não [embaixo] de novo. No vertical nada muda: a barra fica no topo, com a descida.
  */
 internal class BarraDaSelecaoDeTexto(
     private val barra: View,
     private val lista: RecyclerViewParagrafos,
     comAudio: Boolean,
+    private val embaixo: () -> Boolean = { lista.paginacao?.ativa == true },
     private val aoTocar: (AcaoDaBarraDeSelecao) -> Unit,
 ) {
     // Verdadeiro só entre o mostrar que abriu a barra e a primeira descida dela: a sessão nova pode voltar ao lugar.
     private var sessaoNova = false
+
+    // Lugar aplicado de fato na barra (rb-26b, passo 3). Todas as decisões leem daqui.
+    private var lugar = LugarDaBarraDaSelecao(embaixo = false, margemDeBaixo = 0, desce = true)
 
     // Recálculo pedido ao soltar a alça da seleção (rb-50): a linha e o que roda depois da descida, guardados até o
     // post.
@@ -43,10 +55,22 @@ internal class BarraDaSelecaoDeTexto(
      */
     val limiteDaSelecaoNaTela: Int?
         get() {
-            if (!visivel) return null
+            if (!visivel || lugar.embaixo) return null
             val posBarra = IntArray(2)
             barra.getLocationOnScreen(posBarra)
             return posBarra[1] + barra.height + margemPx
+        }
+
+    /**
+     * Topo da barra na tela quando ela está embaixo (rb-26b, passo 3): o limite de baixo da área em que o trecho
+     * guardado pode voltar sozinho (rb-60b). Nulo com a barra escondida ou no topo.
+     */
+    val topoNaTelaEmbaixo: Int?
+        get() {
+            if (!visivel || !lugar.embaixo) return null
+            val posBarra = IntArray(2)
+            barra.getLocationOnScreen(posBarra)
+            return posBarra[1]
         }
 
     // Espaço entre a base da barra e a linha da seleção: o do menu flutuante mais o respiro (rb-48). Usada pela
@@ -62,6 +86,9 @@ internal class BarraDaSelecaoDeTexto(
             botao.visibility = if (acao in visiveis) View.VISIBLE else View.GONE
             botao.setOnClickListener { aoTocar(acao) }
         }
+        // Mini player que aparece, some ou abre com a barra embaixo: a barra sobe ou desce pela margem
+        // (rb-26b, passo 3). Só pede layout se mudou, então converge.
+        lista.viewTreeObserver.addOnGlobalLayoutListener { if (visivel && lugar.embaixo) posicionar(embaixo = true) }
     }
 
     /**
@@ -84,6 +111,8 @@ internal class BarraDaSelecaoDeTexto(
         barra.rootView.findViewById<View>(R.id.bannerTextoOtimizado)?.visibility = View.GONE
         // Antes de mostrar: depois disso a barra já está visível e não dá para saber se é sessão nova (rb-48).
         sessaoNova = outraSelecao || barra.visibility != View.VISIBLE
+        posicionar(embaixo())
+        cederPainel(lugar.embaixo)
         barra.visibility = View.VISIBLE
         agendarDescida(linhaDaSelecao, depois)
     }
@@ -103,8 +132,58 @@ internal class BarraDaSelecaoDeTexto(
     }
 
     // Mesmo caminho do mostrar (rb-48): espera o toque terminar e a barra ser medida, e só então desce o necessário.
+    // Embaixo (rb-26b, passo 3), o texto não desce: o lugar da barra não pede a descida.
     private fun agendarDescida(linhaDaSelecao: () -> LinhaNaTela?, depois: () -> Unit = {}) {
-        lista.depoisDoToque { barra.doOnLayout { descerSePreciso(linhaDaSelecao); depois() } }
+        lista.depoisDoToque {
+            barra.doOnLayout {
+                if (lugar.desce) descerSePreciso(linhaDaSelecao) else ficarNoLugar()
+                depois()
+            }
+        }
+    }
+
+    // Embaixo: a lista fica como está (translação zero, sem animação) e a descida guardada vai a zero
+    // (rb-26b, passo 3).
+    private fun ficarNoLugar() {
+        sessaoNova = false
+        lista.animate().cancel()
+        if (lista.translationY != 0f) lista.translationY = 0f
+        guardarDescida(0)
+    }
+
+    // Põe a barra no topo ou embaixo da área da lista, pela gravidade e pela margem do mini player (rb-26b, passo 3).
+    // Só pede layout se a gravidade ou a margem mudaram.
+    private fun posicionar(embaixo: Boolean) {
+        val params = barra.layoutParams as? FrameLayout.LayoutParams ?: return
+        val area = barra.parent as? View
+        val miniPlayer = barra.rootView.findViewById<View>(R.id.miniPlayerRoot)
+            ?.takeIf { it.visibility == View.VISIBLE && it.height > 0 }
+        val novo = lugarDaBarraDaSelecao(
+            paginasAtivas = embaixo,
+            fundoDaArea = area?.let { it.topoNaJanela() + it.height } ?: 0,
+            topoDoMiniPlayer = miniPlayer?.topoNaJanela(),
+        )
+        lugar = novo
+        val gravidade = if (novo.embaixo) Gravity.BOTTOM else Gravity.TOP
+        if (params.gravity != gravidade || params.bottomMargin != novo.margemDeBaixo) {
+            params.gravity = gravidade
+            params.bottomMargin = novo.margemDeBaixo
+            barra.layoutParams = params
+        }
+    }
+
+    // Cede o lugar do painel da guiada à barra embaixo (INVISIBLE: continua medido, e a página não muda de tamanho).
+    // Sem ceder, devolve o painel só se foi a barra que o escondeu (a guiada repõe o VISIBLE pela sua marca).
+    // A marca segue o lugar, não a visibilidade do painel: com o painel GONE (guiada parada) ela fica igual.
+    private fun cederPainel(ceder: Boolean) {
+        val painel = barra.rootView.findViewById<View>(R.id.layoutGuidedPlayer)
+        if (painel != null) {
+            if (ceder && painel.visibility == View.VISIBLE) painel.visibility = View.INVISIBLE
+            if (!ceder && lista.baseCedidaASelecao && painel.visibility == View.INVISIBLE) {
+                painel.visibility = View.VISIBLE
+            }
+        }
+        lista.baseCedidaASelecao = ceder
     }
 
     /**
@@ -121,6 +200,9 @@ internal class BarraDaSelecaoDeTexto(
         // Só refaz o espaço do fim se havia descida: sem ela, a decoração já está como deve ficar (rb-51).
         val tinhaDescida = lista.descidaDaSelecao != 0
         barra.visibility = View.GONE
+        // rb-26b (passo 3): a barra sai, e o painel da guiada volta se foi a barra que o cedeu. A gravidade fica como
+        // está: o próximo mostrar a aplica de novo.
+        cederPainel(false)
         lista.removeCallbacks(reajuste)
         linhaDoReajuste = null
         lista.descidaDaSelecao = 0
@@ -143,6 +225,7 @@ internal class BarraDaSelecaoDeTexto(
     }
 
     // Quem chama já garante que a barra está medida. Só mexe na translação: nada de rolagem nem de layout.
+    // Embaixo a descida não entra aqui (ver agendarDescida): o ReturnCount desta função está no baseline do detekt.
     private fun descerSePreciso(linhaDaSelecao: () -> LinhaNaTela?) {
         // Sai se a seleção fechou antes deste momento (o post de fechar pode ter chegado primeiro). Com a barra sem o
         // modo do sistema (rb-54), a seleção viva também conta: a descida vale para ela. Só a seleção do Leitor
@@ -191,3 +274,7 @@ internal class BarraDaSelecaoDeTexto(
         const val DURACAO_VOLTA_MS = 150L
     }
 }
+
+// Topo da view na janela (rb-26b, passo 3): a área da barra e o mini player são medidos assim. Função de topo,
+// para a contagem de funções da classe não crescer.
+private fun View.topoNaJanela(): Int = IntArray(2).also { getLocationInWindow(it) }[1]

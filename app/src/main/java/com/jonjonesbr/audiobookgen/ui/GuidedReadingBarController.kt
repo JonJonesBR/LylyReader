@@ -392,7 +392,9 @@ class GuidedReadingBarController(
 
         viewModel.pausarStandardSync()
 
-        views.layoutGuidedPlayer.visibility = View.VISIBLE
+        // rb-26b (passo 3): com a seleção embaixo, o painel cede o lugar à barra (INVISIBLE, a base não muda).
+        views.layoutGuidedPlayer.visibility =
+            if (recyclerView.baseCedidaASelecao) View.INVISIBLE else View.VISIBLE
         if (guidedState.isPlaying && !eventoGuiadaRegistrado) {
             eventoGuiadaRegistrado = true
             com.jonjonesbr.audiobookgen.data.AppPrefs(activity).registrarEvento(com.jonjonesbr.audiobookgen.domain.EventoAprendizado.LEITURA_GUIADA_INICIADA.id)

@@ -4,14 +4,18 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.text.Selection
 import android.text.Spannable
+import android.view.Gravity
 import android.view.View
 import android.view.accessibility.AccessibilityWindowInfo
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.ui.ParagrafoAdapter
 import com.jonjonesbr.audiobookgen.ui.ReaderActivity
+import com.jonjonesbr.audiobookgen.ui.RecyclerViewParagrafos
 import org.junit.Assert.fail
 import kotlin.math.abs
 
@@ -22,7 +26,7 @@ data class Selecao(val inicio: Int, val fim: Int, val texto: String)
  * Topo da linha do início da seleção e fundo da barra, em coordenadas da tela (rb-48). O retângulo da barra é só
  * para as medidas.
  */
-data class LinhaEBarra(val topoDaLinha: Int, val fundoDaBarra: Int, val rectBarra: String)
+data class LinhaEBarra(val topoDaLinha: Int, val fundoDaBarra: Int, val rectBarra: String, val embaixo: Boolean = false)
 
 /** Até quanto esperar a seleção mudar ou a barra descer depois de um gesto (rb-48). */
 const val TEMPO_PARA_SELECAO_MUDAR_MS = 2_000L
@@ -607,14 +611,17 @@ fun medirLinhaEBarra(scenario: ActivityScenario<ReaderActivity>, indiceParagrafo
         barra.getLocationOnScreen(posBarra)
         val rectBarra = Rect()
         barra.getGlobalVisibleRect(rectBarra)
-        medida = LinhaEBarra(topo, posBarra[1] + barra.height, rectBarra.toShortString())
+        // rb-26b (passo 3): com a barra embaixo, a linha não tem como ficar abaixo dela; quem espera sai logo.
+        val embaixo = (barra.layoutParams as? FrameLayout.LayoutParams)?.gravity == Gravity.BOTTOM
+        medida = LinhaEBarra(topo, posBarra[1] + barra.height, rectBarra.toShortString(), embaixo)
     }
     return medida
 }
 
 /**
- * Lê a linha e a barra a cada [PAUSA_ENTRE_LEITURAS_MS] até a linha ficar abaixo da barra ou o tempo acabar. Não
- * falha: devolve a última medida, e quem chama decide o que fazer com ela.
+ * Lê a linha e a barra a cada [PAUSA_ENTRE_LEITURAS_MS] até a linha ficar abaixo da barra ou o tempo acabar. Com a
+ * barra embaixo (rb-26b, passo 3) não espera: a linha nunca fica abaixo dela. Não falha: devolve a última medida, e
+ * quem chama decide o que fazer com ela.
  */
 fun esperarLinhaAbaixoDaBarra(
     scenario: ActivityScenario<ReaderActivity>,
@@ -623,7 +630,9 @@ fun esperarLinhaAbaixoDaBarra(
 ): LinhaEBarra? {
     val fim = System.currentTimeMillis() + timeoutMs
     var medida = medirLinhaEBarra(scenario, indiceParagrafo)
-    while ((medida == null || medida.topoDaLinha < medida.fundoDaBarra) && System.currentTimeMillis() < fim) {
+    while ((medida == null || (!medida.embaixo && medida.topoDaLinha < medida.fundoDaBarra)) &&
+        System.currentTimeMillis() < fim
+    ) {
         Thread.sleep(PAUSA_ENTRE_LEITURAS_MS)
         medida = medirLinhaEBarra(scenario, indiceParagrafo)
     }
@@ -656,4 +665,61 @@ fun esperarInicioMenorQue(
         atual = selecaoAtual(scenario, indiceParagrafo)
     }
     return atual
+}
+
+/** Palavra inteira de 5 letras ou mais (para o toque longo cair numa palavra só). */
+private val PALAVRA_INTEIRA = Regex("\\p{L}{5,}")
+
+/**
+ * Fundo útil da página para escolher palavra, em coordenadas da lista: o fundo da página ou, com o chip "Voltar à
+ * narração" visível, o topo dele, o que vier primeiro (rb-26b, passo 3). Assim a palavra não cai sob o chip.
+ */
+fun fundoParaEscolherPalavra(scenario: ActivityScenario<ReaderActivity>): Int {
+    var fundo = 0
+    scenario.onActivity { a ->
+        val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+        fundo = lista.height - lista.paddingBottom
+        val chip = a.findViewById<View>(R.id.fabVoltarNarracao)
+        if (chip.visibility == View.VISIBLE) {
+            // Sem a translação da lista: a diferença das duas posições na tela já dá a coordenada da lista.
+            val posLista = IntArray(2).also { lista.getLocationOnScreen(it) }
+            val posChip = IntArray(2).also { chip.getLocationOnScreen(it) }
+            fundo = minOf(fundo, posChip[1] - posLista[1])
+        }
+    }
+    return fundo
+}
+
+/**
+ * Espera uma palavra inteira (5 letras ou mais) numa linha inteira da página, com a base da linha até [fundoNaLista]
+ * (coordenadas da lista). Devolve o parágrafo e a palavra. Quem chama passa [fundoParaEscolherPalavra] para não
+ * escolher palavra sob o chip.
+ */
+fun esperarPalavraVisivel(scenario: ActivityScenario<ReaderActivity>, fundoNaLista: Int): Pair<Int, String> {
+    var achada: Pair<Int, String>? = null
+    esperarAte(scenario, "uma palavra inteira visível na página") { a ->
+        achada = palavraVisivelDaPagina(a, fundoNaLista)
+        achada != null
+    }
+    return achada ?: throw AssertionError("Não achei palavra inteira visível na página")
+}
+
+/** Primeira palavra de 5 letras em linha inteira dentro da página, na thread principal; nula se não há. */
+private fun palavraVisivelDaPagina(a: ReaderActivity, fundoNaLista: Int): Pair<Int, String>? {
+    val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+    for (i in 0 until lista.childCount) {
+        val holder = lista.getChildViewHolder(lista.getChildAt(i)) as? ParagrafoAdapter.VHLeitura ?: continue
+        val tv = holder.tv
+        val layout = tv.layout ?: continue
+        val y0 = tv.top + tv.totalPaddingTop - tv.scrollY
+        for (numero in 0 until layout.lineCount) {
+            val topo = y0 + layout.getLineTop(numero)
+            val base = y0 + layout.getLineBottom(numero)
+            if (topo < lista.paddingTop || base > fundoNaLista) continue
+            val trecho = tv.text.subSequence(layout.getLineStart(numero), layout.getLineEnd(numero)).toString()
+            val palavra = PALAVRA_INTEIRA.find(trecho)?.value ?: continue
+            return holder.bindingAdapterPosition to palavra
+        }
+    }
+    return null
 }

@@ -19,6 +19,8 @@ import com.jonjonesbr.audiobookgen.ui.apoio.TEMPO_LIMITE_ESPERA_MS
 import com.jonjonesbr.audiobookgen.ui.apoio.VozFalsa
 import com.jonjonesbr.audiobookgen.ui.apoio.abrirLeitorComGuiada
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
+import com.jonjonesbr.audiobookgen.ui.apoio.esperarPalavraVisivel
+import com.jonjonesbr.audiobookgen.ui.apoio.fundoParaEscolherPalavra
 import com.jonjonesbr.audiobookgen.ui.apoio.selecionarPalavra
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -70,7 +72,7 @@ class TelaPequenaNoAparelhoTest {
                 regras.usarVoz(VozFalsa.longa(contexto))
                 val scenario = abrirLeitorComGuiada(regras, contexto)
                 virarPaginaComGuiadaEmManual(scenario)
-                val (indice, palavra) = esperarPalavraVisivel(scenario)
+                val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
                 selecionarPalavra(scenario, regras, indice, palavra, cenario = "s2")
                 registrar(scenario, "s2", "s2_retrato_guiada_selecao", "retrato, guiada e seleção")
             }
@@ -105,7 +107,7 @@ class TelaPequenaNoAparelhoTest {
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
                     virarPaginaComGuiadaEmManual(scenario)
-                    val (indice, palavra) = esperarPalavraVisivel(scenario)
+                    val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
                     selecionarPalavra(scenario, regras, indice, palavra, cenario = "s4")
                     registrar(scenario, "s4", "s4_paisagem_guiada_selecao", "paisagem, guiada e seleção")
                 }
@@ -171,37 +173,6 @@ class TelaPequenaNoAparelhoTest {
             a.findViewById<View>(R.id.fabVoltarNarracao).visibility == View.VISIBLE
         }
         regras.fecharDialogosDoSistema()
-    }
-
-    /** Espera uma palavra inteira (5 letras ou mais) numa linha inteira da página; devolve o parágrafo e a palavra. */
-    private fun esperarPalavraVisivel(scenario: ActivityScenario<ReaderActivity>): Pair<Int, String> {
-        var achada: Pair<Int, String>? = null
-        esperarAte(scenario, "uma palavra inteira visível na página") { a ->
-            achada = palavraVisivelDaPagina(a)
-            achada != null
-        }
-        return achada ?: throw AssertionError("Não achei palavra inteira visível na página")
-    }
-
-    /** Primeira palavra de 5 letras em linha inteira dentro da página, na thread principal; nula se não há. */
-    private fun palavraVisivelDaPagina(a: ReaderActivity): Pair<Int, String>? {
-        val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
-        val fundo = lista.height - lista.paddingBottom
-        for (i in 0 until lista.childCount) {
-            val holder = lista.getChildViewHolder(lista.getChildAt(i)) as? ParagrafoAdapter.VHLeitura ?: continue
-            val tv = holder.tv
-            val layout = tv.layout ?: continue
-            val y0 = tv.top + tv.totalPaddingTop - tv.scrollY
-            for (numero in 0 until layout.lineCount) {
-                val topo = y0 + layout.getLineTop(numero)
-                val base = y0 + layout.getLineBottom(numero)
-                if (topo < lista.paddingTop || base > fundo) continue
-                val trecho = tv.text.subSequence(layout.getLineStart(numero), layout.getLineEnd(numero)).toString()
-                val palavra = PALAVRA_INTEIRA.find(trecho)?.value ?: continue
-                return holder.bindingAdapterPosition to palavra
-            }
-        }
-        return null
     }
 
     /** Espera a guiada tocando o parágrafo [indice] (estado lido direto do manager, sem onView). */
@@ -427,9 +398,6 @@ class TelaPequenaNoAparelhoTest {
     )
 
     private companion object {
-        /** Palavra inteira de 5 letras ou mais (para o toque longo cair numa palavra só). */
-        val PALAVRA_INTEIRA = Regex("\\p{L}{5,}")
-
         /** Fração da largura da lista que cada arraste lateral anda para cada lado do centro (0,34 no total). */
         const val FRACAO_DO_ARRASTE_LATERAL = 0.17f
 

@@ -101,6 +101,7 @@ internal class SelecaoSemMenu(
         // passo abaixo dá ESPERAR, e o menu abre sozinho, como no toque.
         lista.faixaParaReabrirSozinho(
             barra.limiteDaSelecaoNaTela,
+            barra.topoNaTelaEmbaixo,
             activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED),
         )?.let { reabrirTrechoGuardado(it) }
         // Relida depois da limpeza: o trecho reaberto pelo toque (rb-60) pode ter virado a seleção viva agora.
@@ -224,7 +225,11 @@ internal class SelecaoSemMenu(
  * tela ativa (RESUMED), o parágrafo do trecho na lista, o trecho ainda no texto e [reabrirSozinho] aprovando. A regra
  * não rola nada: o trecho só volta se já estiver inteiro na área útil. Função de topo, pelo limite de funções da lista.
  */
-internal fun RecyclerViewParagrafos.faixaParaReabrirSozinho(limiteDaBarra: Int?, telaAtiva: Boolean): IntRange? =
+internal fun RecyclerViewParagrafos.faixaParaReabrirSozinho(
+    limiteDaBarra: Int?,
+    topoDaBarraEmbaixo: Int?,
+    telaAtiva: Boolean,
+): IntRange? =
     holderDoTrechoGuardado(telaAtiva)?.let { holder ->
         guardada.trechoNoParagrafo(holder.bindingAdapterPosition, holder.tv.text.toString())?.takeIf {
             reabrirSozinho(
@@ -233,7 +238,7 @@ internal fun RecyclerViewParagrafos.faixaParaReabrirSozinho(limiteDaBarra: Int?,
                 dedoNaTela = toqueEmAndamento,
                 outroTextoEmUso = outroTextoEmUso(),
                 guiadaConduzRolagem = (layoutManager as? LeitorLayoutManager)?.seguindoLeitura?.invoke() == true,
-                trechoInteiroVisivel = trechoInteiroNaTela(holder, it, limiteDaBarra),
+                trechoInteiroVisivel = trechoInteiroNaTela(holder, it, limiteDaBarra, topoDaBarraEmbaixo),
             )
         }
     }
@@ -270,6 +275,7 @@ private fun RecyclerViewParagrafos.trechoInteiroNaTela(
     holder: ParagrafoAdapter.VHLeitura,
     faixa: IntRange,
     limiteDaBarra: Int?,
+    topoDaBarraEmbaixo: Int?,
 ): Boolean {
     val tv = holder.tv
     val layout = tv.layout ?: return false
@@ -289,7 +295,7 @@ private fun RecyclerViewParagrafos.trechoInteiroNaTela(
     val fundoDoPai = (parent as? View)?.let { it.posicaoNaTela()[1] + it.height } ?: Int.MAX_VALUE
     val topoDaGuiada = rootView.findViewById<View>(R.id.layoutGuidedPlayer)
         ?.takeIf { it.isShown }?.posicaoNaTela()?.get(1)
-    val area = areaUtilParaReabrir(areaDaLista, fundoDoPai, limiteDaBarra, topoDaGuiada)
+    val area = areaUtilParaReabrir(areaDaLista, fundoDoPai, limiteDaBarra, topoDaGuiada, topoDaBarraEmbaixo)
     // Na horizontal, a página tem de estar inteira na lista (o snap deixa uma página parada, mas a borda pode cortar).
     val posLista = posicaoNaTela()
     val larguraInteira = posTv[0] >= posLista[0] && posTv[0] + tv.width <= posLista[0] + width

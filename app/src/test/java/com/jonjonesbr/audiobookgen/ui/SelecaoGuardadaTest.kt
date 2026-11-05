@@ -211,4 +211,16 @@ class SelecaoGuardadaTest {
         assertFalse(trechoInteiroNaArea(LinhaNaTela(200, 200), LinhaNaTela(300, 300)))
         assertFalse(trechoInteiroNaArea(LinhaNaTela(200, 200), LinhaNaTela(900, 100)))
     }
+
+    @Test
+    fun barraEmbaixoLimitaOFundoDaAreaDoTrecho() {
+        // A barra embaixo começa em 620: o trecho não pode ficar abaixo do topo dela.
+        assertEquals(LinhaNaTela(100, 620), areaUtilParaReabrir(lista, Int.MAX_VALUE, null, null, 620))
+    }
+
+    @Test
+    fun semBarraEmbaixoAAreaEAMesmaDeAntes() {
+        assertEquals(LinhaNaTela(100, 700), areaUtilParaReabrir(lista, 700, null, null, null))
+        assertEquals(LinhaNaTela(100, 650), areaUtilParaReabrir(lista, 700, null, 650, null))
+    }
 }

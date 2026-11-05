@@ -69,13 +69,19 @@ class ReaderTelaController(
         }
         // ux-5: o mini player fica por cima do FAB. O OnLayoutChangeListener não dispara quando ele vira GONE,
         // por isso o listener é global.
-        activity.findViewById<View?>(R.id.miniPlayerRoot)?.let { miniPlayer ->
-            miniPlayer.viewTreeObserver.addOnGlobalLayoutListener { posicionarFabAcimaDoMiniPlayer(miniPlayer) }
+        val miniPlayer: View? = activity.findViewById(R.id.miniPlayerRoot)
+        miniPlayer?.let { mini ->
+            mini.viewTreeObserver.addOnGlobalLayoutListener { posicionarFabAcimaDoMiniPlayer(mini) }
         }
-        val barras: List<View> = listOf(
-            activity.findViewById(R.id.layoutGuidedPlayer), activity.findViewById(R.id.miniPlayerRoot)
-        )
-        EspacoSobControles.manter(recyclerView, barras)
+        // rb-26b (passo 3): a barra da seleção entra no respiro só quando está embaixo, cedendo o lugar do painel.
+        val barraDeTexto: View? = activity.findViewById(R.id.barraSelecaoTexto)
+        EspacoSobControles.manter(recyclerView) {
+            listOfNotNull(
+                views.layoutGuidedPlayer,
+                miniPlayer,
+                barraDeTexto?.takeIf { (recyclerView as? RecyclerViewParagrafos)?.baseCedidaASelecao == true },
+            )
+        }
         // rb-51: a descida da barra da seleção vira espaço depois do último parágrafo (decoração, não padding). A lista
         // avisa quando a descida muda, e a decoração é refeita.
         (recyclerView as? RecyclerViewParagrafos)?.let { lista ->
@@ -219,7 +225,8 @@ class ReaderTelaController(
      */
     private fun posicionarFabVoltarNarracao() {
         val barra = views.layoutGuidedPlayer
-        val alvo = (if (barra.visibility == View.VISIBLE) barra.height else 0) + activity.dpToPx(MARGEM_FAB_VOLTAR_DP)
+        // Não VISIBLE: com a seleção embaixo, o painel fica INVISIBLE (rb-26b, passo 3) e o chip segue a base.
+        val alvo = (if (barra.visibility != View.GONE) barra.height else 0) + activity.dpToPx(MARGEM_FAB_VOLTAR_DP)
         val params = views.fabVoltarNarracao.layoutParams as ViewGroup.MarginLayoutParams
         // Só mexe quando muda. Este método roda dentro do layout da barra: o requestLayout vai para o próximo
         // ciclo, senão o ViewRootImpl adia a margem para outro frame (e pode avisar "requestLayout during layout").
