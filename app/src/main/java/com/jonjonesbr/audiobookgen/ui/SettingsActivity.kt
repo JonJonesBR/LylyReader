@@ -51,6 +51,11 @@ class SettingsActivity : BasePlayerActivity() {
         BlacklistDialog(this, blacklistStore, onMudou = { carregarInfoBlacklist() })
     }
 
+    // Controllers dos Ajustes (rb-11): criados no primeiro uso, sempre depois do setContentView.
+    private val armazenamento: AjustesArmazenamentoController by lazy {
+        AjustesArmazenamentoController(this, pythonEngine)
+    }
+
     // Tema
 
     // Motor TTS
@@ -102,17 +107,6 @@ class SettingsActivity : BasePlayerActivity() {
     private val botoesParalelismoSupertonico get() = listOf(
         btnParalelismoSupertonicoPadrao to false, btnParalelismoSupertonicoExperimental to true
     )
-
-    // Cache
-    private lateinit var tvCacheInfo: TextView
-    private lateinit var btnLimparCache: Button
-    private lateinit var tvCacheAudioInfo: TextView
-    private lateinit var seekTetoCache: android.widget.SeekBar
-    private lateinit var tvTetoCacheValor: TextView
-    // Espaço dos livros na biblioteca (aba Dados, só informativo)
-    private lateinit var tvLivrosEspaco: TextView
-    // true enquanto "Liberar espaço" roda: a atualização da tela (onResume) não troca o "Liberando…"
-    private var liberandoEspaco = false
 
     // Vozes Offline (card generalizado por pacote — V6 T2.2)
 
@@ -187,8 +181,7 @@ class SettingsActivity : BasePlayerActivity() {
     override fun onResume() {
         super.onResume()
         NavegacaoPrincipal.configurar(this, AbaPrincipal.AJUSTES) // volta de outra tela: realça de novo a aba certa
-        atualizarInfoCacheAudio()
-        atualizarEspacoLivros()
+        armazenamento.aoRetomar()
         carregarInfoLogsErro()
         carregarInfoPermissaoNotificacao()
         carregarInfoOtimizacaoBateria()
@@ -232,14 +225,6 @@ class SettingsActivity : BasePlayerActivity() {
         btnParalelismoReduzido  = findViewById(R.id.btnParalelismoReduzido)
         btnParalelismoSupertonicoPadrao       = findViewById(R.id.btnParalelismoSupertonicoPadrao)
         btnParalelismoSupertonicoExperimental = findViewById(R.id.btnParalelismoSupertonicoExperimental)
-
-        tvCacheInfo   = findViewById(R.id.tvCacheInfo)
-        btnLimparCache = findViewById(R.id.btnLimparCache)
-        tvCacheAudioInfo = findViewById(R.id.tvCacheAudioInfo)
-        seekTetoCache = findViewById(R.id.seekTetoCache)
-        tvTetoCacheValor = findViewById(R.id.tvTetoCacheValor)
-        tvLivrosEspaco = findViewById(R.id.tvLivrosEspaco)
-
 
         // Blacklist
         tvBlacklistInfo = findViewById(R.id.tvBlacklistInfo)
@@ -442,9 +427,7 @@ class SettingsActivity : BasePlayerActivity() {
         configurarPausaFinalFraseSeekbar()
         configurarBufferingLeituraGuiada()
 
-        // Cache
-        btnLimparCache.setOnClickListener { limparCache() }
-        configurarTetoCache()
+        armazenamento.configurar()
     }
 
     /** Cada linha abre a sua escolha, diálogo ou página. */
@@ -845,104 +828,12 @@ class SettingsActivity : BasePlayerActivity() {
         }
     }
 
-    // ── Cache ────────────────────────────────────────────────────────────────
-
-    private fun rotuloTetoCache(mb: Int): String = when {
-        mb <= 0 -> getString(R.string.cache_teto_sem_limite)
-        mb >= 1024 -> getString(R.string.cache_teto_gb, mb / 1024)
-        else -> getString(R.string.cache_teto_mb, mb)
-    }
-
-    /** Slider do teto do cache de áudio das vozes (256 MB … 4 GB, ou sem limite). */
-    private fun configurarTetoCache() {
-        val opcoes = com.jonjonesbr.audiobookgen.tts.CachePolicy.TETOS_MB
-        val atual = appPrefs.tetoCacheAudioMb
-        val indice = opcoes.indexOf(atual).takeIf { it >= 0 }
-            ?: opcoes.indexOf(com.jonjonesbr.audiobookgen.tts.CachePolicy.TETO_PADRAO_MB)
-        seekTetoCache.progress = indice
-        tvTetoCacheValor.text = rotuloTetoCache(opcoes[indice])
-        ViewCompat.setStateDescription(seekTetoCache, tvTetoCacheValor.text)
-        seekTetoCache.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
-                tvTetoCacheValor.text = rotuloTetoCache(opcoes[progress])
-                ViewCompat.setStateDescription(sb, tvTetoCacheValor.text)
-            }
-            override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
-            override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {
-                val mb = opcoes[seekTetoCache.progress]
-                appPrefs.tetoCacheAudioMb = mb
-                lifecycleScope.launch {
-                    withContext(Dispatchers.IO) {
-                        com.jonjonesbr.audiobookgen.tts.TtsChunkCache.aparar(
-                            applicationContext, com.jonjonesbr.audiobookgen.tts.CachePolicy.tetoEmBytes(mb)
-                        )
-                    }
-                    atualizarInfoCacheAudio()
-                }
-            }
-        })
-        atualizarInfoCacheAudio()
-    }
-
-    /**
-     * Total que "Liberar espaço" apaga (temporários do Python e falas das vozes; o TtsChunkCache já soma
-     * a pasta audio_chunks do Python) e o limite atual.
-     */
-    private fun atualizarInfoCacheAudio() {
-        lifecycleScope.launch {
-            val bytes = withContext(Dispatchers.IO) {
-                com.jonjonesbr.audiobookgen.tts.TtsChunkCache.tamanhoBytes(applicationContext)
-            }
-            if (!liberandoEspaco) { // durante a limpeza mantém "Liberando…"
-                tvCacheInfo.text = if (bytes <= 0L) {
-                    getString(R.string.cache_empty)
-                } else {
-                    android.text.format.Formatter.formatShortFileSize(this@SettingsActivity, bytes)
-                }
-            }
-            tvCacheAudioInfo.text = getString(R.string.aj_limite_valor, rotuloTetoCache(appPrefs.tetoCacheAudioMb))
-        }
-    }
-
-    /** Tamanho da pasta dos livros da biblioteca, só para mostrar (sem botão). */
-    private fun atualizarEspacoLivros() {
-        lifecycleScope.launch {
-            val bytes = withContext(Dispatchers.IO) {
-                com.jonjonesbr.audiobookgen.data.BibliotecaStore.espacoUsado(applicationContext)
-            }
-            tvLivrosEspaco.text = android.text.format.Formatter.formatShortFileSize(this@SettingsActivity, bytes)
-        }
-    }
-
     private fun mostrarAjuda(titulo: String, texto: String) {
         androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle(titulo)
                 .setMessage(texto)
                 .setPositiveButton(R.string.dialog_ok, null)
                 .exibir()
-    }
-
-    private fun limparCache() {
-        btnLimparCache.isEnabled = false
-        liberandoEspaco = true
-        tvCacheInfo.text = getString(R.string.cache_cleaning)
-        lifecycleScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    pythonEngine.limparCachePython()
-                    // Apaga também as falas guardadas do lado Kotlin (leitura guiada + conversão).
-                    com.jonjonesbr.audiobookgen.tts.TtsChunkCache.clear(applicationContext)
-                }
-                liberandoEspaco = false // antes da atualização final, senão ela não mostra o total
-                atualizarInfoCacheAudio()
-                btnLimparCache.isEnabled = true
-                Toast.makeText(this@SettingsActivity, R.string.toast_espaco_liberado, Toast.LENGTH_SHORT).show()
-            } catch (_: Exception) {
-                liberandoEspaco = false
-                tvCacheInfo.text = getString(R.string.cache_clean_error)
-                btnLimparCache.isEnabled = true
-            }
-        }
     }
 
     private fun configurarCreditosVoz() {
