@@ -18,7 +18,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,9 +45,10 @@ class SettingsActivity : BasePlayerActivity() {
     private val buffering: AjustesBufferingController by lazy { AjustesBufferingController(this) }
     private val qualidade: AjustesQualidadeController by lazy { AjustesQualidadeController(this) }
     private val pausas: AjustesPausasController by lazy { AjustesPausasController(this, pythonEngine) }
+    private val paginas: AjustesPaginasController by lazy { AjustesPaginasController(this) }
     private val motor: AjustesMotorController by lazy {
         AjustesMotorController(this, pythonEngine, AjustesMotorController.Callbacks(
-            abrirPaginaDoMotor = { abrirPagina(R.id.pagMotor, R.string.aj_motor) },
+            abrirPaginaDoMotor = { paginas.abrir(R.id.pagMotor, R.string.aj_motor) },
         ))
     }
     private val ouvir: AjustesOuvirController by lazy {
@@ -76,17 +76,6 @@ class SettingsActivity : BasePlayerActivity() {
 
     // Logs de Erro
     private lateinit var tvLogsErroInfo: TextView
-
-    // Abas (agrupam as ~14 seções em 4 categorias, ao invés de uma rolagem só)
-    private lateinit var tabsSettings: TabLayout
-    private lateinit var scrollSettings: androidx.core.widget.NestedScrollView
-    private lateinit var gruposSettings: List<View>
-
-    // Página aberta por uma linha (escolha da voz, ajustes avançados, Sobre); null = nas abas.
-    private var paginaAberta: View? = null
-    private val voltarDaPagina = object : androidx.activity.OnBackPressedCallback(false) {
-        override fun handleOnBackPressed() = fecharPagina()
-    }
 
     // Os lançadores ficam aqui (campos) porque registram antes do STARTED; o controller só os chama.
     private val exportarConfigLauncher = registerForActivityResult(
@@ -123,9 +112,9 @@ class SettingsActivity : BasePlayerActivity() {
         findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollSettings)
             .getChildAt(0).limitarLarguraEmTelaAmpla(840)
 
-        onBackPressedDispatcher.addCallback(this, voltarDaPagina)
+        paginas.vincular()
         vincularViews()
-        configurarTabsSettings()
+        paginas.configurarAbas(intent.getIntExtra(EXTRA_ABA, intent.getIntExtra("extra_debug_aba", -1)))
         carregarConfigAtual()
         configurarListeners()
         vincularPermissoes()
@@ -135,7 +124,7 @@ class SettingsActivity : BasePlayerActivity() {
 
     override fun abaPrincipal() = AbaPrincipal.AJUSTES
     override fun abasInternas(): com.google.android.material.tabs.TabLayout? = findViewById(R.id.tabsSettings)
-    override fun arrasteLateralLigado() = paginaAberta == null
+    override fun arrasteLateralLigado() = !paginas.temPaginaAberta
 
     override fun onResume() {
         super.onResume()
@@ -148,7 +137,6 @@ class SettingsActivity : BasePlayerActivity() {
     }
 
     private fun vincularViews() {
-        findViewById<ImageButton>(R.id.btnVoltarSettings).setOnClickListener { fecharPagina() }
         findViewById<ImageButton>(R.id.btnAjudaSettings)
             .setOnClickListener { HelpActivity.start(this, HelpTopico.CONFIGURACOES) }
 
@@ -161,15 +149,6 @@ class SettingsActivity : BasePlayerActivity() {
         // Permissão de notificações
         configurarBotaoPermissaoNotificacao()
 
-        tabsSettings   = findViewById(R.id.tabsSettings)
-        scrollSettings = findViewById(R.id.scrollSettings)
-        gruposSettings = listOf(
-            findViewById(R.id.grupoSettingsGeral),
-            findViewById(R.id.grupoSettingsAudio),
-            findViewById(R.id.grupoSettingsDados),
-            findViewById(R.id.grupoSettingsAjuda)
-        )
-
         configurarBotoesAjuda()
 
         // Versão do app
@@ -179,67 +158,6 @@ class SettingsActivity : BasePlayerActivity() {
             "v?"
         }
         findViewById<TextView>(R.id.tvVersao).text = versao
-    }
-
-    // ── Abas ─────────────────────────────────────────────────────────────────
-    // Agrupa as ~14 seções (antes empilhadas numa rolagem só) em 4 categorias.
-    // Reorganização puramente visual: nenhum id/lógica de seção existente mudou,
-    // só a agrupou dentro de 4 LinearLayouts (grupoSettings*) cuja visibilidade
-    // segue a aba selecionada.
-    private fun configurarTabsSettings() {
-        mostrarGrupoSettings(0)
-        // Fonte ampliada: as abas de largura igual cortariam o nome; nesse caso elas rolam.
-        if (resources.configuration.fontScale >= 1.3f) {
-            tabsSettings.tabMode = TabLayout.MODE_SCROLLABLE
-            tabsSettings.tabGravity = TabLayout.GRAVITY_START
-        }
-        tabsSettings.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
-                mostrarGrupoSettings(tab.position)
-            }
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
-        })
-        // Abrir direto numa aba (ex.: "Mais ajustes" da leitura guiada abre em Som).
-        val aba = intent.getIntExtra(EXTRA_ABA, intent.getIntExtra("extra_debug_aba", -1))
-        if (aba >= 0) tabsSettings.getTabAt(aba)?.select()
-    }
-
-    private fun mostrarGrupoSettings(posicao: Int) {
-        if (paginaAberta != null) fecharPagina()
-        gruposSettings.forEachIndexed { i, grupo -> grupo.visibility = if (i == posicao) View.VISIBLE else View.GONE }
-        scrollSettings.scrollTo(0, 0)
-    }
-
-    // ── Páginas ──────────────────────────────────────────────────────────────
-    // O que é longo ou técnico (escolha da voz, ajustes avançados, Sobre) abre no lugar das abas, com a
-    // seta no topo para voltar; o voltar do sistema também volta para a aba.
-
-    private fun abrirPagina(id: Int, titulo: Int) {
-        gruposSettings.forEach { it.visibility = View.GONE }
-        paginaAberta?.visibility = View.GONE
-        paginaAberta = findViewById<View>(id).apply { visibility = View.VISIBLE }
-        tabsSettings.visibility = View.GONE
-        findViewById<View>(R.id.divisorTabsSettings).visibility = View.GONE
-        findViewById<View>(R.id.btnVoltarSettings).visibility = View.VISIBLE
-        // A Sobre não tem ajuda própria: o "?" do topo some enquanto ela está aberta.
-        findViewById<View>(R.id.btnAjudaSettings).visibility = if (id == R.id.pagSobre) View.GONE else View.VISIBLE
-        findViewById<TextView>(R.id.tvTituloSettings).setText(titulo)
-        voltarDaPagina.isEnabled = true
-        scrollSettings.scrollTo(0, 0)
-    }
-
-    private fun fecharPagina() {
-        val pagina = paginaAberta ?: return
-        pagina.visibility = View.GONE
-        paginaAberta = null
-        tabsSettings.visibility = View.VISIBLE
-        findViewById<View>(R.id.divisorTabsSettings).visibility = View.VISIBLE
-        findViewById<View>(R.id.btnVoltarSettings).visibility = View.GONE
-        findViewById<View>(R.id.btnAjudaSettings).visibility = View.VISIBLE
-        findViewById<TextView>(R.id.tvTituloSettings).setText(R.string.nav_ajustes)
-        voltarDaPagina.isEnabled = false
-        mostrarGrupoSettings(tabsSettings.selectedTabPosition)
     }
 
     private fun configurarBotoesAjuda() {
@@ -290,9 +208,9 @@ class SettingsActivity : BasePlayerActivity() {
 
     /** Cada linha abre a sua escolha, diálogo ou página. */
     private fun configurarLinhas() {
-        linha(R.id.rowMotor) { abrirPagina(R.id.pagMotor, R.string.aj_motor) }
-        linha(R.id.rowAvancado) { abrirPagina(R.id.pagAvancado, R.string.aj_avancado_titulo) }
-        linha(R.id.rowSobre) { abrirPagina(R.id.pagSobre, R.string.aj_sobre) }
+        linha(R.id.rowMotor) { paginas.abrir(R.id.pagMotor, R.string.aj_motor) }
+        linha(R.id.rowAvancado) { paginas.abrir(R.id.pagAvancado, R.string.aj_avancado_titulo) }
+        linha(R.id.rowSobre) { paginas.abrir(R.id.pagSobre, R.string.aj_sobre) }
         linha(R.id.rowVozesAparelho) { startActivity(Intent(this, DownloadCentralActivity::class.java)) }
         linha(R.id.rowPronuncias) { PronunciationDialog.showManager(this) }
         linha(R.id.rowBlacklist) { blacklistDialog.mostrarDialogoBlacklist() }
@@ -306,7 +224,7 @@ class SettingsActivity : BasePlayerActivity() {
         linha(R.id.rowBackupRestaurar) { backup.restaurarBackup() }
         linha(R.id.rowLogsErro) { abrirLogsErro() }
         linha(R.id.rowAprenderApp) { startActivity(Intent(this, AprenderActivity::class.java)) }
-        linha(R.id.rowPermissoesApp) { abrirPagina(R.id.pagPermissoes, R.string.aj_permissoes_app) }
+        linha(R.id.rowPermissoesApp) { paginas.abrir(R.id.pagPermissoes, R.string.aj_permissoes_app) }
         linha(R.id.rowAbrirTutorial) { HelpActivity.start(this, HelpTopico.CONVERSAO) }
         linha(R.id.rowReverDicas) {
             appPrefs.dicasVistas = emptySet()
