@@ -176,6 +176,11 @@ class ParagrafoAdapter(
             ultimoMenuAberto = menu
             barraDaSelecao.mostrar(
                 outraSelecao = outraSelecao,
+                // rb-50: grava a seleção que a descida acabou de usar, para o preparo do UP não a refazer à toa.
+                depois = {
+                    menu.inicioDaUltimaDescida = menu.inicioDaSelecao
+                    menu.fimDaUltimaDescida = menu.fimDaSelecao
+                },
                 linhaDaSelecao = { menu.linhaDoInicioDaSelecaoNaTela() },
             )
         },
@@ -189,7 +194,11 @@ class ParagrafoAdapter(
         // novo (invalidateContentRect, sem onPrepare, então não há laço).
         aoSoltarAlca = { menu ->
             if (menuAberto === menu) {
-                barraDaSelecao.reajustar({ menu.linhaDoInicioDaSelecaoNaTela() }) { menu.modo?.invalidateContentRect() }
+                barraDaSelecao.reajustar({ menu.linhaDoInicioDaSelecaoNaTela() }) {
+                    menu.inicioDaUltimaDescida = menu.inicioDaSelecao
+                    menu.fimDaUltimaDescida = menu.fimDaSelecao
+                    menu.modo?.invalidateContentRect()
+                }
             }
         },
     )

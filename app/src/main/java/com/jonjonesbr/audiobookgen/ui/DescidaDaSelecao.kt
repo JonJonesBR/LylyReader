@@ -43,3 +43,19 @@ internal fun quantoDescerParaMostrarSelecao(
  */
 internal fun selecaoParadaNoPreparo(inicioAntes: Int, fimAntes: Int, inicio: Int, fim: Int): Boolean =
     inicio >= 0 && inicio != fim && inicio == inicioAntes && fim == fimAntes
+
+/**
+ * Se o preparo deve refazer a descida (rb-50): a seleção ficou parada desde o preparo anterior e é diferente da
+ * seleção da última descida aplicada. O UP de uma rolagem que começa sobre o parágrafo selecionado também repete a
+ * seleção, mas ela é a mesma da descida: refazer a descida ali faria a lista pular. [inicioDescida] e [fimDescida]
+ * são -1 antes da primeira descida.
+ */
+internal fun refazerDescidaNoPreparo(
+    inicioAntes: Int,
+    fimAntes: Int,
+    inicio: Int,
+    fim: Int,
+    inicioDescida: Int,
+    fimDescida: Int,
+): Boolean =
+    selecaoParadaNoPreparo(inicioAntes, fimAntes, inicio, fim) && (inicio != inicioDescida || fim != fimDescida)

@@ -127,4 +127,26 @@ class DescidaDaSelecaoTest {
     fun selecaoVaziaRepetidaNaoEParada() {
         assertFalse(selecaoParadaNoPreparo(inicioAntes = 5, fimAntes = 5, inicio = 5, fim = 5))
     }
+
+    @Test
+    fun paradaQueJaDesceuNaoRefazADescida() {
+        // Rolagem que começa sobre a seleção: o UP repete a seleção da última descida, e nada muda.
+        assertFalse(refazerDescidaNoPreparo(5, 20, 5, 20, inicioDescida = 5, fimDescida = 20))
+    }
+
+    @Test
+    fun paradaComSelecaoDiferenteDaDescidaRefazADescida() {
+        // Soltou a alça depois de mudar a seleção: a última descida foi para 5..20, e a seleção agora é 3..20.
+        assertTrue(refazerDescidaNoPreparo(3, 20, 3, 20, inicioDescida = 5, fimDescida = 20))
+    }
+
+    @Test
+    fun semDescidaAindaRefazAQuandoParada() {
+        assertTrue(refazerDescidaNoPreparo(5, 20, 5, 20, inicioDescida = -1, fimDescida = -1))
+    }
+
+    @Test
+    fun passoDeArrasteNaoRefazADescidaMesmoComSelecaoNova() {
+        assertFalse(refazerDescidaNoPreparo(5, 20, 3, 20, inicioDescida = 5, fimDescida = 20))
+    }
 }

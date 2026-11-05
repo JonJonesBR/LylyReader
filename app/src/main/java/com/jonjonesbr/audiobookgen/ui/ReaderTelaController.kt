@@ -74,6 +74,12 @@ class ReaderTelaController(
             activity.findViewById(R.id.layoutGuidedPlayer), activity.findViewById(R.id.miniPlayerRoot)
         )
         EspacoSobControles.manter(recyclerView, barras)
+        // rb-51: a descida da barra da seleção vira espaço depois do último parágrafo (decoração, não padding). A lista
+        // avisa quando a descida muda, e a decoração é refeita.
+        (recyclerView as? RecyclerViewParagrafos)?.let { lista ->
+            lista.addItemDecoration(EspacoDaDescidaNoFim(lista))
+            lista.aoMudarDescida = { lista.invalidateItemDecorations() }
+        }
         if (somenteLeitura) {
             // "Ler sem áudio": sem FAB de conversão, sem barra da leitura guiada e sem "converter assim mesmo".
             views.fabConverter.visibility = View.GONE

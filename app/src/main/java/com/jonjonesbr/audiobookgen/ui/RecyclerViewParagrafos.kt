@@ -23,7 +23,8 @@ import kotlin.math.hypot
  *   isso, [textoEmUso] é verdadeiro e o adapter segura as repinturas de sincronia, que trocariam a view sob o dedo.
  * - rearmar a seleção de texto de cada parágrafo quando a view é anexada à janela (rb-38, ver [rearmarSelecao]).
  * - rodar, depois do toque, a descida que a barra da seleção pede quando cobre o trecho marcado (rb-48, ver
- *   [depoisDoToque]). A descida é translação, não rolagem: não dispara os listeners de rolagem.
+ *   [depoisDoToque]). A descida é translação, não rolagem: não dispara os listeners de rolagem. O alvo dela fica em
+ *   [descidaDaSelecao], e o espaço depois do último parágrafo soma esse alvo (rb-51, ver [EspacoDaDescidaNoFim]).
  * - ignorar o pedido de mostrar trecho de um parágrafo em foco, no modo de toque, sem seleção (rb-55, ver
  *   [pedidoDeMostrarTrechoVale]); mesmo mecanismo da `PaginaDoParagrafo.requestChildRectangleOnScreen`.
  * - guardar o trecho selecionado quando o parágrafo sai da tela (rb-58, ver [guardada]), e limpá-lo com um toque
@@ -50,6 +51,16 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
 
     /** Chamado (por post, antes de [aoLiberarTexto]) para conferir a seleção viva e mostrar ou esconder a barra. */
     var aoConferirSelecao: (() -> Unit)? = null
+
+    /**
+     * Alvo da descida da barra da seleção (rb-48), sem a animação. Só a BarraDaSelecaoDeTexto escreve. O espaço depois
+     * do último parágrafo (rb-51) soma este valor quando a barra está aberta, então ele não lê o translationY, que muda
+     * na animação.
+     */
+    internal var descidaDaSelecao: Int = 0
+
+    /** Refaz o espaço do fim quando a descida muda (rb-51). Quem liga é o ReaderTelaController. */
+    internal var aoMudarDescida: (() -> Unit)? = null
 
     /** Há dedo na lista, do ACTION_DOWN até o UP ou o CANCEL. */
     var toqueEmAndamento = false

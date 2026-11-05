@@ -848,6 +848,144 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    fun preparoQueRepeteASelecaoDepoisDaDescidaNaoRefazADescida() {
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            // Seleção que começa na 3ª linha do parágrafo 0 e já desceu a lista (como no teste acima).
+            var tv: TextView? = null
+            var l2 = 0
+            scenario.onActivity { a ->
+                val rv = lista(a)
+                val alvo = requireNotNull(tvEm(rv, 0))
+                assertTrue(alvo.layout.lineCount >= 3)
+                l2 = alvo.layout.getLineStart(2)
+                tv = selecionarComFoco(rv, 0, l2, l2 + 5)
+            }
+            val texto = requireNotNull(tv)
+            lateinit var modo: ModoFalso
+            scenario.onActivity { a -> modo = abrirModoFalso(a, texto) }
+            esperarAte(scenario, "barra própria da seleção aparece") { a -> barraDaSelecaoTextoVisivel(a) }
+            esperarAte(scenario, "lista desce para a seleção") { a -> lista(a).translationY > 0f }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            var t0 = 0f
+            scenario.onActivity { a -> t0 = lista(a).translationY }
+
+            // rb-50: dois preparos seguidos com a seleção que já desceu, sem passo de arraste: a descida não se refaz.
+            scenario.onActivity { texto.customSelectionActionModeCallback.onPrepareActionMode(modo, modo.menu) }
+            scenario.onActivity { texto.customSelectionActionModeCallback.onPrepareActionMode(modo, modo.menu) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400))
+            scenario.onActivity { a -> assertEquals(t0, lista(a).translationY, 0.5f) }
+
+            // Rolagem que começa sobre o parágrafo selecionado: a linha sobe para baixo da barra, e o UP repete a
+            // seleção sem mudá-la. Antes da correção, o preparo refazia a descida e a lista descia de novo.
+            val rolagemPx = 60
+            scenario.onActivity { lista(it).scrollBy(0, rolagemPx) }
+            scenario.onActivity { texto.customSelectionActionModeCallback.onPrepareActionMode(modo, modo.menu) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400))
+            scenario.onActivity { a -> assertEquals(t0, lista(a).translationY, 0.5f) }
+
+            // Fecha com Destacar: a barra some e a lista volta ao lugar.
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "lista volta ao lugar") { a -> lista(a).translationY == 0f }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun descidaVaiParaOEspacoDepoisDoUltimoParagrafo() {
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            // rb-51: a descida vira espaço depois do último parágrafo, e o padding não muda. Por isso o fim da lista
+            // precisa estar na tela para medir o espaço.
+            scenario.onActivity { lista(it).scrollToPosition(PARAGRAFOS.lastIndex) }
+            esperarAte(scenario, "fim da lista na tela") { a ->
+                !lista(a).canScrollVertically(1) && textoEm(lista(a), PARAGRAFOS.lastIndex) != null
+            }
+            var p0 = -1
+            var primeiro = -1
+            scenario.onActivity { a ->
+                p0 = lista(a).paddingBottom
+                primeiro = (lista(a).layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+            }
+            // Seleção no primeiro parágrafo visível, com o menu aberto: a barra cobre o início e a lista desce.
+            scenario.onActivity { a ->
+                val tv = lista(a).findViewHolderForAdapterPosition(primeiro)!!.itemView as TextView
+                Selection.setSelection(tv.text as Spannable, 0, 5)
+                abrirModoFalso(a, tv)
+            }
+            esperarAte(scenario, "lista desce para a seleção") { a -> lista(a).translationY > 0f }
+            esperarAte(scenario, "espaço depois do último parágrafo leva a descida") { a ->
+                val descida = listaDoLeitor(a).descidaDaSelecao
+                descida > 0 && decoracaoDoUltimo(a) == descida && lista(a).paddingBottom == p0
+            }
+            // Destacar fecha o menu: a lista e o espaço do fim voltam ao de antes.
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "espaço do fim volta ao de antes da seleção") { a ->
+                lista(a).translationY == 0f && decoracaoDoUltimo(a) == 0 && lista(a).paddingBottom == p0 &&
+                    listaDoLeitor(a).descidaDaSelecao == 0
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    fun selecaoFocadaNoParagrafoQueComecaAbaixoDoTopoNaoSobeOTexto() {
+        // rb-51: o parágrafo começa abaixo do topo e passa da base, e tem o foco (a seleção nativa). A descida não pode
+        // subir o texto depois do post: o topo dele na tela segue só a translação da lista.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = false
+        val intent = Intent(app, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+
+        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
+            esperarAte(scenario, "parágrafo longo na tela") { a ->
+                lista(a).adapter?.itemCount == textos.size && textoEm(lista(a), 1) != null
+            }
+            // O parágrafo 1 começa 12 dp abaixo do topo, sob a barra da seleção quando ela abrir.
+            scenario.onActivity { a ->
+                val recuo = (12 * a.resources.displayMetrics.density).toInt()
+                (lista(a).layoutManager as LinearLayoutManager).scrollToPositionWithOffset(1, recuo)
+            }
+            esperarAte(scenario, "parágrafo longo começa abaixo do topo") { a ->
+                (lista(a).layoutManager as LinearLayoutManager).findViewByPosition(1) != null
+            }
+            // Foco no parágrafo antes de abrir a seleção: a conferência do foco não pode rolar a lista.
+            scenario.onActivity { a ->
+                (lista(a).findViewHolderForAdapterPosition(1)!!.itemView as TextView).requestFocus()
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            var topoAntes = 0f
+            scenario.onActivity { a ->
+                val tv = lista(a).findViewHolderForAdapterPosition(1)!!.itemView as TextView
+                val posTela = IntArray(2)
+                tv.getLocationOnScreen(posTela)
+                topoAntes = posTela[1].toFloat()
+                // Seleção na 1ª linha do parágrafo longo, com o menu aberto: a barra cobre a linha e a lista desce.
+                Selection.setSelection(tv.text as Spannable, 0, 5)
+                abrirModoFalso(a, tv)
+            }
+            esperarAte(scenario, "lista desce para a seleção") { a -> lista(a).translationY > 0f }
+            // Depois dos posts da descida (o espaço do fim e a conferência), o topo do texto anda só com a translação.
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400))
+            scenario.onActivity { a ->
+                val tv = lista(a).findViewHolderForAdapterPosition(1)!!.itemView as TextView
+                val posTela = IntArray(2)
+                tv.getLocationOnScreen(posTela)
+                assertEquals(topoAntes + lista(a).translationY, posTela[1].toFloat(), 1f)
+            }
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "lista volta ao lugar") { a -> lista(a).translationY == 0f }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun repinturaQueChegaComODedoNoParagrafoNaoReescreveOTexto() {
         // rb-53: a sincronia repinta o parágrafo que está sendo lido. Se a repintura chega com o dedo já sobre ele,
         // o texto fica como está (o toque longo precisa da posição do texto) e a repintura sai quando o toque acaba.
@@ -1989,6 +2127,13 @@ class ReaderActivitySmokeTest {
 
     // A lista tipada: textoEmUso e selecoesAbertas só existem em RecyclerViewParagrafos (rb-54).
     private fun listaDoLeitor(a: ReaderActivity): RecyclerViewParagrafos = a.findViewById(R.id.recyclerViewParagrafos)
+
+    /** Espaço que a decoração põe depois do último parágrafo (rb-51). -1 se ele não está na tela. */
+    private fun decoracaoDoUltimo(a: ReaderActivity): Int {
+        val rv = lista(a)
+        val ultimo = rv.findViewHolderForAdapterPosition(PARAGRAFOS.lastIndex)?.itemView ?: return -1
+        return rv.layoutManager!!.getBottomDecorationHeight(ultimo)
+    }
 
     /** O mesmo ViewModel da tela (o da Activity, pelo dono), para simular o menu e os toques. */
     private fun modeloDe(a: ReaderActivity): ReaderViewModel = ViewModelProvider(a)[ReaderViewModel::class.java]

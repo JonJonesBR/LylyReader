@@ -62,10 +62,21 @@ internal class MenuDaSelecaoDeTexto(
     private var inicioNoUltimoPreparo = -1
     private var fimNoUltimoPreparo = -1
 
+    // Início e fim da seleção quando a descida foi aplicada por último (rb-50). O ParagrafoAdapter os grava no depois
+    // da descida: o preparo só refaz a descida se a seleção mudou desde então. -1 = nenhuma descida ainda.
+    internal var inicioDaUltimaDescida = -1
+    internal var fimDaUltimaDescida = -1
+
+    // Seleção agora, lida do TextView, para gravar a última descida.
+    internal val inicioDaSelecao: Int get() = tv.selectionStart
+    internal val fimDaSelecao: Int get() = tv.selectionEnd
+
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
         modoAberto = mode
         inicioNoUltimoPreparo = -1
         fimNoUltimoPreparo = -1
+        inicioDaUltimaDescida = -1
+        fimDaUltimaDescida = -1
         acoes.aoAbrir(this)
         // No ⋮. Apagar frase é destrutiva, por isso fica por último.
         menu.add(0, MENU_ITEM_EXCLUIR_OCORRENCIAS, 0, R.string.btn_excluir_ocorrencias)
@@ -74,15 +85,23 @@ internal class MenuDaSelecaoDeTexto(
     }
 
     // rb-50: o preparo com a seleção igual à do preparo anterior vem ao soltar a alça (o UP refaz o preparo). Um passo
-    // de arraste muda a seleção e não entra. Por isso o aviso é o único efeito: a descida é agendada por post, nunca
-    // aqui dentro. Devolve false, como antes.
+    // de arraste muda a seleção e não entra. Uma rolagem que começa sobre a seleção também repete a seleção, mas ela
+    // já é a da última descida, e não refaz nada. Por isso o aviso é o único efeito: a descida é agendada por post,
+    // nunca aqui dentro. Devolve false, como antes.
     override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
         val inicio = tv.selectionStart
         val fim = tv.selectionEnd
-        val parada = selecaoParadaNoPreparo(inicioNoUltimoPreparo, fimNoUltimoPreparo, inicio, fim)
+        val refazer = refazerDescidaNoPreparo(
+            inicioNoUltimoPreparo,
+            fimNoUltimoPreparo,
+            inicio,
+            fim,
+            inicioDaUltimaDescida,
+            fimDaUltimaDescida,
+        )
         inicioNoUltimoPreparo = inicio
         fimNoUltimoPreparo = fim
-        if (parada) acoes.aoSoltarAlca(this)
+        if (refazer) acoes.aoSoltarAlca(this)
         return false
     }
 

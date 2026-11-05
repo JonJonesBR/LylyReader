@@ -14,6 +14,10 @@ import kotlin.math.roundToInt
  * Quando a seleção começa sob a barra, a lista desce por translação só o necessário, com uma margem que também
  * abre espaço para o menu flutuante do sistema (fica acima da seleção). Volta ao lugar quando a barra some (rb-48).
  * A descida não rola a lista: não mexe na posição de leitura nem nos listeners.
+ *
+ * O alvo da descida fica em `lista.descidaDaSelecao`, e o espaço depois do último parágrafo (rb-51, ver
+ * [EspacoDaDescidaNoFim]) soma esse alvo enquanto a barra está aberta. Quem muda o alvo avisa `lista.aoMudarDescida`,
+ * para esse espaço ser refeito.
  */
 internal class BarraDaSelecaoDeTexto(
     private val barra: View,
@@ -70,15 +74,18 @@ internal class BarraDaSelecaoDeTexto(
      *
      * [outraSelecao] diz que a seleção mudou de parágrafo (outro menu): mesmo com a barra já visível, é sessão nova,
      * e a descida pode voltar ao lugar.
+     *
+     * [depois] roda depois de cada descida que o mostrar agenda (o menu grava ali a seleção descida, rb-50). Fica antes
+     * de [linhaDaSelecao] para o trailing lambda dos chamadores continuar nesse parâmetro.
      */
-    fun mostrar(outraSelecao: Boolean = false, linhaDaSelecao: () -> LinhaNaTela?) {
+    fun mostrar(outraSelecao: Boolean = false, depois: () -> Unit = {}, linhaDaSelecao: () -> LinhaNaTela?) {
         // A pílula fica na coluna do topo, fora da área da lista. Achá-la pela raiz evita passar mais uma view
         // ao ParagrafoAdapter.
         barra.rootView.findViewById<View>(R.id.bannerTextoOtimizado)?.visibility = View.GONE
         // Antes de mostrar: depois disso a barra já está visível e não dá para saber se é sessão nova (rb-48).
         sessaoNova = outraSelecao || barra.visibility != View.VISIBLE
         barra.visibility = View.VISIBLE
-        agendarDescida(linhaDaSelecao)
+        agendarDescida(linhaDaSelecao, depois)
     }
 
     /**
@@ -100,14 +107,39 @@ internal class BarraDaSelecaoDeTexto(
         lista.depoisDoToque { barra.doOnLayout { descerSePreciso(linhaDaSelecao); depois() } }
     }
 
-    /** Esconde a barra e devolve a lista ao lugar, com a volta animada (rb-48). */
+    /**
+     * Esconde a barra e devolve a lista ao lugar, com a volta animada (rb-48). Chamado só por
+     * SelecaoSemMenu.esconderBarra, dentro do post da conferência e fora do layout, então pode mexer no espaço do fim
+     * já aqui (rb-51).
+     */
     fun esconder() {
+        // rb-51: ao tirar a descida do fim, o fixLayoutEndGap empurra o texto para baixo na mesma medida. A parte da
+        // translação que cabe nesse empurrão sai sem animação, no mesmo quadro; o resto volta animado. Sem o último
+        // parágrafo na tela, nada sai junto e a volta é a de sempre.
+        val descida = lista.descidaNoFim()
+        val junto = quantoSaiJuntoNaVolta(descida, lista.restanteAteOFim(), lista.computeVerticalScrollOffset())
+        // Só refaz o espaço do fim se havia descida: sem ela, a decoração já está como deve ficar (rb-51).
+        val tinhaDescida = lista.descidaDaSelecao != 0
         barra.visibility = View.GONE
         lista.removeCallbacks(reajuste)
         linhaDoReajuste = null
+        lista.descidaDaSelecao = 0
+        if (junto > 0) {
+            lista.animate().cancel()
+            lista.translationY = (lista.translationY - junto).coerceAtLeast(0f)
+        }
         if (lista.translationY != 0f) {
             lista.animate().translationY(0f).setDuration(DURACAO_VOLTA_MS).start()
         }
+        if (tinhaDescida) lista.aoMudarDescida?.invoke()
+    }
+
+    // Guarda o alvo da descida e avisa o espaço do fim (rb-51). Por post, porque a descida pode rodar dentro do
+    // doOnLayout, e a invalidação das decorações pede outro layout.
+    private fun guardarDescida(alvo: Int) {
+        if (alvo == lista.descidaDaSelecao) return
+        lista.descidaDaSelecao = alvo
+        lista.post { lista.aoMudarDescida?.invoke() }
     }
 
     // Quem chama já garante que a barra está medida. Só mexe na translação: nada de rolagem nem de layout.
@@ -137,6 +169,7 @@ internal class BarraDaSelecaoDeTexto(
             // Subir só acontece numa sessão nova: a lista volta com a mesma animação da barra que some.
             alvo < atual -> lista.animate().translationY(alvo.toFloat()).setDuration(DURACAO_VOLTA_MS).start()
         }
+        guardarDescida(alvo)
     }
 
     private companion object {
