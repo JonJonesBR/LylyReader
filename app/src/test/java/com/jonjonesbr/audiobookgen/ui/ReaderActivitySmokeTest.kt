@@ -803,6 +803,7 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun soltarAAlcaRefazADescidaParaOInicioNovo() {
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
             esperarAte(scenario, "parágrafos na tela") { a ->
@@ -814,7 +815,7 @@ class ReaderActivitySmokeTest {
             scenario.onActivity { a ->
                 val rv = lista(a)
                 val alvo = requireNotNull(tvEm(rv, 0))
-                assertTrue(alvo.layout.lineCount >= 3)
+                assertTrue("O parágrafo 0 precisa de 3 linhas (linhas: ${alvo.layout.lineCount})", alvo.layout.lineCount >= 3)
                 l2 = alvo.layout.getLineStart(2)
                 tv = selecionarComFoco(rv, 0, l2, l2 + 5)
             }
@@ -848,6 +849,7 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun preparoQueRepeteASelecaoDepoisDaDescidaNaoRefazADescida() {
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
             esperarAte(scenario, "parágrafos na tela") { a ->
@@ -859,7 +861,7 @@ class ReaderActivitySmokeTest {
             scenario.onActivity { a ->
                 val rv = lista(a)
                 val alvo = requireNotNull(tvEm(rv, 0))
-                assertTrue(alvo.layout.lineCount >= 3)
+                assertTrue("O parágrafo 0 precisa de 3 linhas (linhas: ${alvo.layout.lineCount})", alvo.layout.lineCount >= 3)
                 l2 = alvo.layout.getLineStart(2)
                 tv = selecionarComFoco(rv, 0, l2, l2 + 5)
             }
