@@ -1,7 +1,7 @@
 name: Checks
 
 # Conferência leve a cada mudança de código no main (e em pull requests): compila, roda os testes
-# unitários e, por enquanto só avisando, o detekt e o lint. Não gera APK, não publica nada e não usa
+# unitários, o detekt (que barra) e o lint (só avisa). Não gera APK, não publica nada e não usa
 # segredos. Gerar APK continua manual (android-ci.yml) e versões continuam no release.yml.
 #
 # Disparo manual com `gerar_baseline_detekt=true` regenera o detekt-baseline.xml e o publica como
@@ -156,9 +156,11 @@ jobs:
         # Erro de compilação de um teste do emulador (androidTest) aparece aqui, e não só no UI Tests.
         run: ./gradlew :app:compileDebugAndroidTestKotlin --stacktrace
 
-      - name: Run detekt (só avisa)
-        # Achados antigos estão no detekt-baseline.xml. Tornar bloqueante depois de alguns runs verdes.
-        continue-on-error: true
+      - name: Run detekt
+        # Achados antigos estão no detekt-baseline.xml (regenerado no rb-28 pelo disparo manual). Código novo não pode
+        # criar achado: o detekt barra o Checks. Só no disparo manual de regenerar o baseline (gerar_baseline_detekt)
+        # o detekt não barra, para o passo de gerar o baseline ainda rodar.
+        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.gerar_baseline_detekt }}
         run: ./gradlew :app:detekt --stacktrace
 
       - name: Gera o baseline do detekt (manual, rb-28)
