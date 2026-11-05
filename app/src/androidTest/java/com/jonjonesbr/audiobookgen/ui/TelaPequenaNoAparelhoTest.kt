@@ -74,7 +74,7 @@ class TelaPequenaNoAparelhoTest {
                 val contexto = InstrumentationRegistry.getInstrumentation().targetContext
                 regras.usarVoz(VozFalsa.longa(contexto))
                 val scenario = abrirLeitorComGuiada(regras, contexto)
-                virarPaginaComGuiadaEmManual(scenario)
+                virarPaginaComGuiadaEmManual(scenario, indice = 0)
                 val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
                 selecionarPalavra(scenario, regras, indice, palavra, cenario = "s2")
                 registrar(scenario, "s2", "s2_retrato_guiada_selecao", "retrato, guiada e seleção")
@@ -92,7 +92,7 @@ class TelaPequenaNoAparelhoTest {
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
                     girarParaPaisagem(scenario, comGuiada = true)
-                    esperarGuiadaTocando(scenario, 0)
+                    esperarGuiadaTocando(scenario, indice = null)
                     esperarPaginaComLinhas(scenario)
                     esperarPaginaParada(scenario)
                     registrar(scenario, "s3", "s3_paisagem_guiada", "paisagem, guiada tocando")
@@ -111,7 +111,7 @@ class TelaPequenaNoAparelhoTest {
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
                     girarParaPaisagem(scenario, comGuiada = true)
-                    virarPaginaComGuiadaEmManual(scenario)
+                    virarPaginaComGuiadaEmManual(scenario, indice = null)
                     val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
                     selecionarPalavra(scenario, regras, indice, palavra, cenario = "s4")
                     registrar(scenario, "s4", "s4_paisagem_guiada_selecao", "paisagem, guiada e seleção")
@@ -156,7 +156,7 @@ class TelaPequenaNoAparelhoTest {
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
                     girarParaPaisagem(scenario, comGuiada = true)
-                    virarPaginaComGuiadaEmManual(scenario)
+                    virarPaginaComGuiadaEmManual(scenario, indice = null)
                     esperarAte(scenario, "cabeçalho recolhido depois da virada") { a ->
                         a.findViewById<View>(R.id.cabecalhoDoLeitor).visibility == View.GONE &&
                             !a.findViewById<View>(R.id.recyclerViewParagrafos).isLayoutRequested
@@ -209,7 +209,7 @@ class TelaPequenaNoAparelhoTest {
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
                     girarParaPaisagem(scenario, comGuiada = true)
-                    esperarGuiadaTocando(scenario, 0)
+                    esperarGuiadaTocando(scenario, indice = null)
                     esperarPaginaComLinhas(scenario)
                     esperarPaginaParada(scenario)
                     regras.fecharDialogosDoSistema()
@@ -295,8 +295,8 @@ class TelaPequenaNoAparelhoTest {
      * Liga a leitura guiada tocando e a deixa em modo manual: pausa a guiada (como no P5, para o arraste medir
      * sem a página andando), vira uma página com um arraste lateral e espera o "Voltar à narração" do painel.
      */
-    private fun virarPaginaComGuiadaEmManual(scenario: ActivityScenario<ReaderActivity>) {
-        esperarGuiadaTocando(scenario, 0)
+    private fun virarPaginaComGuiadaEmManual(scenario: ActivityScenario<ReaderActivity>, indice: Int?) {
+        esperarGuiadaTocando(scenario, indice)
         esperarPaginaComLinhas(scenario)
         regras.fecharDialogosDoSistema()
         InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.pause() }
@@ -315,10 +315,16 @@ class TelaPequenaNoAparelhoTest {
         regras.fecharDialogosDoSistema()
     }
 
-    /** Espera a guiada tocando o parágrafo [indice] (estado lido direto do manager, sem onView). */
-    private fun esperarGuiadaTocando(scenario: ActivityScenario<ReaderActivity>, indice: Int) {
-        esperarAte(scenario, "leitura guiada tocando o parágrafo $indice") { _ ->
-            GuidedPlaybackBridge.manager?.state?.value?.let { it.isPlaying && it.index == indice } == true
+    /**
+     * Espera a guiada tocando: o parágrafo [indice] ou, com [indice] nulo, qualquer parágrafo (depois de um giro, o
+     * índice não importa: a guiada segue lendo enquanto o giro assenta). Estado lido direto do manager, sem onView.
+     */
+    private fun esperarGuiadaTocando(scenario: ActivityScenario<ReaderActivity>, indice: Int?) {
+        val descricao = if (indice == null) "leitura guiada tocando" else "leitura guiada tocando o parágrafo $indice"
+        esperarAte(scenario, descricao) { _ ->
+            GuidedPlaybackBridge.manager?.state?.value?.let {
+                it.isPlaying && (if (indice == null) it.index >= 0 else it.index == indice)
+            } == true
         }
     }
 
