@@ -71,7 +71,10 @@ private const val MEDIDAS_DE_VISIBILIDADE_MAXIMAS = 6
 /** Espera, depois de um arraste, antes de medir de novo (a barra da guiada e a seleção se acomodam). */
 private const val PAUSA_APOS_ARRASTE_MS = 300L
 
-/** Margem esquerda da lista, em dp, onde o dedo cai para arrastar: fora do texto e dos menus (rb-46 U4). */
+/**
+ * Margem esquerda, em dp, onde o dedo cai para arrastar: fora do texto e dos menus (rb-46 U4). Na lista horizontal
+ * o dedo fica depois do padding da lista, dentro da página (ver [AreaDaLista.recuoDoDedo]).
+ */
 private const val MARGEM_DO_ARRASTE_DP = 16f
 
 /** Menor segmento do arraste, em frações da área útil: não encurta abaixo de um oitavo dela (rb-46 U4). */
@@ -95,8 +98,16 @@ private const val TEMPO_PARA_SNACKBAR_SUMIR_MS = 4_000L
 /**
  * Área da lista na tela, em pixels, para os arrastes: o retângulo visível da lista, a faixa entre o topo e o fundo
  * úteis (fora das barras da seleção e da guiada) e a densidade do aparelho, para converter dp em pixels.
+ * [recuoDoDedo]: quanto, em pixels, o dedo recua para dentro da lista a partir da borda esquerda (o padding lateral
+ * da lista horizontal; zero na vertical).
  */
-private class AreaDaLista(val listaRect: Rect, val topoUtil: Int, val fundoUtil: Int, val densidade: Float)
+private class AreaDaLista(
+    val listaRect: Rect,
+    val topoUtil: Int,
+    val fundoUtil: Int,
+    val densidade: Float,
+    val recuoDoDedo: Int = 0,
+)
 
 /**
  * Medida, na thread principal, de onde a palavra está e do que a cobre. Com [problemas] vazio, o toque é seguro.
@@ -199,7 +210,10 @@ private fun areaDaLista(a: ReaderActivity): AreaDaLista {
     val barraDeVarios = retanguloVisivel(a.findViewById<View>(R.id.layoutBarraSelecao))
     val topoUtil = maxOf(listaRect.top, barraDeTexto?.bottom ?: 0, barraDeVarios?.bottom ?: 0)
     val fundoUtil = minOf(listaRect.bottom, guia?.top ?: listaRect.bottom)
-    return AreaDaLista(listaRect, topoUtil, fundoUtil, lista.resources.displayMetrics.density)
+    val horizontal = (lista.layoutManager as? LinearLayoutManager)?.orientation == LinearLayoutManager.HORIZONTAL
+    // Na horizontal a lista só rola de lado: o dedo tem de cair dentro da página, não na margem da lista.
+    val recuo = if (horizontal) lista.paddingLeft else 0
+    return AreaDaLista(listaRect, topoUtil, fundoUtil, lista.resources.displayMetrics.density, recuo)
 }
 
 /** A conta da medida, na thread principal. Ver [garantirPalavraVisivel] para as regras. */
@@ -338,14 +352,15 @@ fun rolarListaComODedo(
 
 /**
  * Núcleo dos arrastes da lista: um segmento vertical de [fracao] da área útil, centrado nela, em x fixo na margem
- * esquerda da lista (rb-46 U4). O dedo sobe quando [dedoSobe] (o texto anda para baixo), senão desce. Se o segmento
+ * esquerda da lista (rb-46 U4); na horizontal, a margem fica depois do padding da lista, dentro da página
+ * ([AreaDaLista.recuoDoDedo]). O dedo sobe quando [dedoSobe] (o texto anda para baixo), senão desce. Se o segmento
  * cruzar uma janela flutuante, ele é deslocado ([escolherSegmento]). Anota em medidas.txt as janelas e o segmento
  * escolhido. Falha se não houver área útil.
  */
 private fun arrastarAreaComODedo(area: AreaDaLista, dedoSobe: Boolean, fracao: Float, cenario: String) {
     val altura = area.fundoUtil - area.topoUtil
     check(altura > 0) { "Sem área útil para arrastar a lista: topo ${area.topoUtil}, fundo ${area.fundoUtil}" }
-    val x = area.listaRect.left + MARGEM_DO_ARRASTE_DP * area.densidade
+    val x = area.listaRect.left + area.recuoDoDedo + MARGEM_DO_ARRASTE_DP * area.densidade
     val folga = FOLGA_DA_AREA_OCUPADA_DP * area.densidade
     val obstaculos = obstaculosDoArraste(area.listaRect, cenario)
     val segmento = escolherSegmento(area, fracao, x, folga, obstaculos)
@@ -446,7 +461,9 @@ private fun primeiraViewDaLista(scenario: ActivityScenario<ReaderActivity>): Str
     scenario.onActivity { a ->
         val lm = a.findViewById<RecyclerView>(R.id.recyclerViewParagrafos).layoutManager as LinearLayoutManager
         val posicao = lm.findFirstVisibleItemPosition()
-        texto = "posição=$posicao topo=${lm.findViewByPosition(posicao)?.top}"
+        // A esquerda entra na conta: na horizontal a lista rola de lado, e só o `left` muda.
+        val view = lm.findViewByPosition(posicao)
+        texto = "posição=$posicao topo=${view?.top} esquerda=${view?.left}"
     }
     return texto
 }
