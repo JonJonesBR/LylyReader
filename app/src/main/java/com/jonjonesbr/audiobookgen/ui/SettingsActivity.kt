@@ -51,6 +51,7 @@ class SettingsActivity : BasePlayerActivity() {
     private val armazenamento: AjustesArmazenamentoController by lazy {
         AjustesArmazenamentoController(this, pythonEngine)
     }
+    private val buffering: AjustesBufferingController by lazy { AjustesBufferingController(this) }
     private val backup: AjustesBackupController by lazy {
         AjustesBackupController(this, pythonEngine, AjustesBackupController.Callbacks(
             lancarExportarConfig = { exportarConfigLauncher.launch(it) },
@@ -97,20 +98,6 @@ class SettingsActivity : BasePlayerActivity() {
     private lateinit var chkPausasNaturais: android.widget.CompoundButton
     private lateinit var divPausaFrase: View
     private lateinit var blocoPausaFrase: View
-
-    // Buffering da leitura guiada (profundidade de prefetch + paralelismo do kokoro)
-    private lateinit var seekBufferParagrafos: android.widget.SeekBar
-    private lateinit var tvBufferParagrafosValor: TextView
-    private lateinit var btnParalelismoPadrao: Button
-    private lateinit var btnParalelismoReduzido: Button
-    private val botoesParalelismo get() = listOf(
-        btnParalelismoPadrao to false, btnParalelismoReduzido to true
-    )
-    private lateinit var btnParalelismoSupertonicoPadrao: Button
-    private lateinit var btnParalelismoSupertonicoExperimental: Button
-    private val botoesParalelismoSupertonico get() = listOf(
-        btnParalelismoSupertonicoPadrao to false, btnParalelismoSupertonicoExperimental to true
-    )
 
     // Vozes Offline (card generalizado por pacote — V6 T2.2)
 
@@ -220,13 +207,6 @@ class SettingsActivity : BasePlayerActivity() {
         chkPausasNaturais      = findViewById(R.id.chkPausasNaturais)
         divPausaFrase          = findViewById(R.id.divPausaFrase)
         blocoPausaFrase        = findViewById(R.id.blocoPausaFrase)
-
-        seekBufferParagrafos    = findViewById(R.id.seekBufferParagrafos)
-        tvBufferParagrafosValor = findViewById(R.id.tvBufferParagrafosValor)
-        btnParalelismoPadrao    = findViewById(R.id.btnParalelismoPadrao)
-        btnParalelismoReduzido  = findViewById(R.id.btnParalelismoReduzido)
-        btnParalelismoSupertonicoPadrao       = findViewById(R.id.btnParalelismoSupertonicoPadrao)
-        btnParalelismoSupertonicoExperimental = findViewById(R.id.btnParalelismoSupertonicoExperimental)
 
         // Blacklist
         tvBlacklistInfo = findViewById(R.id.tvBlacklistInfo)
@@ -373,7 +353,7 @@ class SettingsActivity : BasePlayerActivity() {
         chkPausasNaturais.isChecked = appPrefs.pausasNaturais
         atualizarPausaFixaVisivel()
 
-        atualizarUiBuffering()
+        buffering.carregar()
 
         // Ao retomar e audiobook pronto
         atualizarTextosOuvir()
@@ -427,7 +407,7 @@ class SettingsActivity : BasePlayerActivity() {
         configurarPocketPassosSeekbar()
         configurarPocketMaisRapido()
         configurarPausaFinalFraseSeekbar()
-        configurarBufferingLeituraGuiada()
+        buffering.configurar()
 
         armazenamento.configurar()
     }
@@ -706,92 +686,6 @@ class SettingsActivity : BasePlayerActivity() {
             override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
             override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
         })
-    }
-
-    // ── Buffering da leitura guiada (profundidade de prefetch + paralelismo kokoro) ──
-
-    private fun configurarBufferingLeituraGuiada() {
-        seekBufferParagrafos.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
-                // Posição 0 = automático (sentinela); 1..8 = valor explícito, sobrepondo o
-                // padrão interno de TODOS os motores (ver GuidedPlayerManager.profundidadePrefetchEfetiva).
-                appPrefs.bufferParagrafosAdiante = if (progress == 0) {
-                    com.jonjonesbr.audiobookgen.data.AppPrefs.BUFFER_ADIANTE_AUTOMATICO
-                } else {
-                    progress
-                }
-                atualizarLabelBufferParagrafos(progress)
-            }
-            override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
-            override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
-        })
-
-        for ((btn, reduzido) in botoesParalelismo) {
-            btn.setOnClickListener {
-                appPrefs.paralelismoKokoroReduzido = reduzido
-                atualizarBotoesParalelismo(reduzido)
-            }
-        }
-
-        btnParalelismoSupertonicoPadrao.setOnClickListener {
-            appPrefs.paralelismoSupertonicoAumentado = false
-            atualizarBotoesParalelismoSupertonico(false)
-        }
-        btnParalelismoSupertonicoExperimental.setOnClickListener {
-            // EXPERIMENTAL de verdade (thread-safety nativa nunca validada) — confirma antes
-            // de ativar, mesmo padrão do aviso de licença na importação BYOM.
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_paralelismo_experimental_titulo)
-                .setMessage(R.string.dialog_paralelismo_experimental_mensagem)
-                .setPositiveButton(R.string.btn_ativar_mesmo_assim) { _, _ ->
-                    appPrefs.paralelismoSupertonicoAumentado = true
-                    atualizarBotoesParalelismoSupertonico(true)
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .exibir()
-        }
-    }
-
-    private fun atualizarUiBuffering() {
-        val override = appPrefs.bufferParagrafosAdiante
-        val progress = if (override == com.jonjonesbr.audiobookgen.data.AppPrefs.BUFFER_ADIANTE_AUTOMATICO) {
-            0
-        } else {
-            override.coerceIn(0, seekBufferParagrafos.max)
-        }
-        seekBufferParagrafos.progress = progress
-        atualizarLabelBufferParagrafos(progress)
-        atualizarBotoesParalelismo(appPrefs.paralelismoKokoroReduzido)
-        atualizarBotoesParalelismoSupertonico(appPrefs.paralelismoSupertonicoAumentado)
-    }
-
-    private fun atualizarBotoesParalelismoSupertonico(aumentado: Boolean) {
-        for ((btn, valor) in botoesParalelismoSupertonico) {
-            val sel = valor == aumentado
-            btn.setTextColor(ContextCompat.getColor(this,
-                if (sel) R.color.color_primary else R.color.color_on_surface_muted))
-            btn.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this,
-                if (sel) R.color.color_primary_surface else R.color.color_surface_variant))
-        }
-    }
-
-    private fun atualizarLabelBufferParagrafos(progress: Int) {
-        tvBufferParagrafosValor.text = if (progress == 0) {
-            getString(R.string.settings_buffer_paragrafos_valor_automatico)
-        } else {
-            getString(R.string.settings_buffer_paragrafos_valor, progress)
-        }
-        ViewCompat.setStateDescription(seekBufferParagrafos, tvBufferParagrafosValor.text)
-    }
-
-    private fun atualizarBotoesParalelismo(reduzido: Boolean) {
-        for ((btn, valor) in botoesParalelismo) {
-            val sel = valor == reduzido
-            btn.setTextColor(ContextCompat.getColor(this,
-                if (sel) R.color.color_primary else R.color.color_on_surface_muted))
-            btn.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this,
-                if (sel) R.color.color_primary_surface else R.color.color_surface_variant))
-        }
     }
 
     /** Extraído de [configurarListeners] pra manter dentro do limite de linhas do detekt. */
