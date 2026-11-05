@@ -22,6 +22,16 @@ object FolgaFrasesCurtas {
 
     private const val JANELA_MS = 30
     private const val TOLERANCIA_MS = 10
+    private const val MS_POR_SEGUNDO = 1000
+
+    /** Fator a menos disto de 1 não altera o áudio, então nem passa pelo WSOLA. */
+    private const val TOLERANCIA_FATOR = 0.01f
+
+    /** Metade da janela de Hann: ela vai de 0 a 1 e volta a 0. */
+    private const val HANN_METADE = 0.5
+
+    /** Peso mínimo para dividir a soma das janelas; abaixo disso a amostra sai como está. */
+    private const val PESO_MINIMO = 1e-3f
 
     fun aplica(texto: String): Boolean =
         texto.count { it.isLetterOrDigit() } in MIN_LETRAS..MAX_LETRAS
@@ -32,11 +42,11 @@ object FolgaFrasesCurtas {
      * anterior (sem isso a voz sai "borbulhando").
      */
     fun acelerar(audio: FloatArray, sampleRate: Int, fator: Float): FloatArray {
-        val n = (sampleRate * JANELA_MS / 1000).let { it - it % 2 }
-        if (fator <= 0f || kotlin.math.abs(fator - 1f) < 0.01f || audio.size < n * 2) return audio
+        val n = (sampleRate * JANELA_MS / MS_POR_SEGUNDO).let { it - it % 2 }
+        if (fator <= 0f || kotlin.math.abs(fator - 1f) < TOLERANCIA_FATOR || audio.size < n * 2) return audio
         val passo = n / 2
-        val tolerancia = sampleRate * TOLERANCIA_MS / 1000
-        val janela = FloatArray(n) { (0.5 - 0.5 * cos(2 * PI * it / n)).toFloat() }
+        val tolerancia = sampleRate * TOLERANCIA_MS / MS_POR_SEGUNDO
+        val janela = FloatArray(n) { (HANN_METADE - HANN_METADE * cos(2 * PI * it / n)).toFloat() }
         val tamanhoSaida = (audio.size / fator).roundToInt()
         val saida = FloatArray(tamanhoSaida + n)
         val pesos = FloatArray(tamanhoSaida + n)
@@ -68,7 +78,7 @@ object FolgaFrasesCurtas {
             anterior = inicio
             k++
         }
-        return FloatArray(tamanhoSaida) { i -> if (pesos[i] > 1e-3f) saida[i] / pesos[i] else saida[i] }
+        return FloatArray(tamanhoSaida) { i -> if (pesos[i] > PESO_MINIMO) saida[i] / pesos[i] else saida[i] }
     }
 
     /** Início perto de [nominal] cujo trecho mais se parece com a continuação natural ([natural]) do anterior. */

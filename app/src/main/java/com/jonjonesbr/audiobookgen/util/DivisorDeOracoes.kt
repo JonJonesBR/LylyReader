@@ -27,6 +27,9 @@ data class OracaoGuia(
  */
 object DivisorDeOracoes {
 
+    /** Caracteres que ficam colados à pontuação final (reticências, aspas, parênteses) e entram no mesmo trecho. */
+    private const val FECHAMENTOS_DEPOIS_DA_PONTUACAO = "\u2026.!?\"\u201D'\u2019)\u00BB\u203A"
+
     fun dividirEmOracoes(texto: String): List<OracaoGuia> {
         if (texto.isBlank()) return emptyList()
 
@@ -40,13 +43,7 @@ object DivisorDeOracoes {
             if (c == '.' || c == '!' || c == '?' || c == '\u2026') {
                 var fim = i + 1
                 // Engloba reticências/combinações e fechamentos comuns depois da pontuação.
-                while (fim < n && (
-                        texto[fim] == '\u2026' || texto[fim] == '.' || texto[fim] == '!' ||
-                            texto[fim] == '?' || texto[fim] == '"' || texto[fim] == '\u201D' ||
-                            texto[fim] == '\'' || texto[fim] == '\u2019' || texto[fim] == ')' ||
-                            texto[fim] == '\u00BB' || texto[fim] == '\u203A'
-                        )
-                ) {
+                while (fim < n && texto[fim] in FECHAMENTOS_DEPOIS_DA_PONTUACAO) {
                     fim++
                 }
                 val proximo = texto.getOrNull(fim)

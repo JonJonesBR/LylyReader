@@ -168,7 +168,8 @@ object SupertonicAssetManager {
                     conn.connect()
                     val responseCode = conn.responseCode
                     if (responseCode == 429) {
-                        val retryAfter = conn.getHeaderField("Retry-After")?.toLongOrNull()?.coerceIn(1L, RETRY_AFTER_MAX_S) ?: 60L
+                        val retryAfter = conn.getHeaderField("Retry-After")?.toLongOrNull()
+                            ?.coerceIn(1L, RETRY_AFTER_MAX_S) ?: 60L
                         Log.w(TAG, "Rate limited probing $urlString, waiting ${retryAfter}s")
                         delay(retryAfter * 1_000)
                         lastException = Exception("HTTP 429 for $urlString")
@@ -223,7 +224,8 @@ object SupertonicAssetManager {
                 try {
                     val responseCode = conn.responseCode
                     if (responseCode == 429) {
-                        val retryAfter = conn.getHeaderField("Retry-After")?.toLongOrNull()?.coerceIn(1L, RETRY_AFTER_MAX_S) ?: 60L
+                        val retryAfter = conn.getHeaderField("Retry-After")?.toLongOrNull()
+                            ?.coerceIn(1L, RETRY_AFTER_MAX_S) ?: 60L
                         Log.w(TAG, "Rate limited downloading $url, waiting ${retryAfter}s")
                         delay(retryAfter * 1_000)
                         throw Exception("HTTP 429 for $url")

@@ -156,6 +156,7 @@ object VoiceReferenceAudio {
     }
 
     /** Reduz um WAV de referência longo (24 kHz mono PCM16) ao melhor trecho, reescrevendo o arquivo. */
+    @Suppress("TooGenericExceptionCaught") // fronteira com o áudio: sem aparar a referência segue utilizável
     fun aparar(arquivo: File) {
         try {
             if (arquivo.length() <= 44L + MAX_SAMPLES * 2L + TARGET_RATE) return
@@ -203,7 +204,9 @@ object VoiceReferenceAudio {
                 amostras.forEach { corpo.putShort(it) }
                 f.write(corpo.array())
             }
-            if (!temporario.renameTo(arquivo)) throw IOException("Não foi possível trocar ${arquivo.name} pelo WAV novo")
+            if (!temporario.renameTo(arquivo)) {
+                throw IOException("Não foi possível trocar ${arquivo.name} pelo WAV novo")
+            }
         } finally {
             // Depois do rename o .tmp não existe mais; se algo falhou no meio, ele é descartado.
             if (temporario.exists()) temporario.delete()

@@ -204,7 +204,8 @@ object AudiobookLibraryUseCase {
         val docId = cursor.getString(colunas.idCol)
         val nome = cursor.getString(colunas.nameCol)
         // AAC comprimido (MP4) também é audiolivro: sai como audio/mp4 com extensão .m4a.
-        if ((mime != MIME_MP3 && mime != MIME_M4A) || docId == null || nome == null) return null
+        val formatoNaoAceito = mime != MIME_MP3 && mime != MIME_M4A
+        if (formatoNaoAceito || docId == null || nome == null) return null
 
         val tamanho = cursor.getLong(colunas.sizeCol)
         val data = cursor.getLong(colunas.dateCol)

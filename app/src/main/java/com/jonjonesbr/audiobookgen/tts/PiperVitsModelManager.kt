@@ -42,12 +42,30 @@ object PiperVitsModelManager {
     }
 
     val models = listOf(
-        Model("piper-ptbr-cadu", "Cadu", "média", "vits-piper-pt_BR-cadu-medium", "pt_BR-cadu-medium.onnx", "MIT / CC0", "Piper Voices Cadu; dataset CC0. https://huggingface.co/rhasspy/piper-voices", sha256 = "aba78157d4b89acc17ddef15a70f4b2474f4c189d4de6035002ac7fec9d5d303"),
-        Model("piper-ptbr-dii", "Dii", "alta", "vits-piper-pt_BR-dii-high", "pt_BR-dii-high.onnx", "CC BY-NC-SA 4.0", "Dii PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-dii-high", sha256 = "76bdf009bb29e69b12336de833d0d219ffa558f4281330eb141e4a0569c108a2"),
-        Model("piper-ptbr-edresson", "Edresson", "baixa", "vits-piper-pt_BR-edresson-low", "pt_BR-edresson-low.onnx", "MIT / CC BY 4.0", "Piper Voices Edresson; corpus CC BY 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-edresson-low", sha256 = "670569e755cc48cda0a2f6a3ccba0698815566297069961edcd5f7daaf3d47a5"),
-        Model("piper-ptbr-faber", "Faber", "média", "vits-piper-pt_BR-faber-medium", "pt_BR-faber-medium.onnx", "MIT / CC0", "Piper Voices Faber; dataset CC0. https://huggingface.co/rhasspy/piper-voices", sha256 = "7add3f923ad6bc25ca8a192805fd1a64d1b3893e4611c4a9719545a825039a83"),
-        Model("piper-ptbr-jeff", "Jeff", "média", "vits-piper-pt_BR-jeff-medium", "pt_BR-jeff-medium.onnx", "MIT / CC0", "Piper Voices Jeff; dataset CC0. https://huggingface.co/rhasspy/piper-voices", sha256 = "da4c870fc7b20600c74261b3e1dd1c816da2ce063e18c46e1f2cd86dea88f3f0"),
-        Model("piper-ptbr-miro", "Miro", "alta", "vits-piper-pt_BR-miro-high", "pt_BR-miro-high.onnx", "CC BY-NC-SA 4.0", "Miro PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/TarcisoAmorim/piper-pt_BR-miro-high", sha256 = "7f30d1c3421362a60381807543aeafd7e1cd0acbcb92c349a29908526c6f4e6f"),
+        Model("piper-ptbr-cadu", "Cadu", "média", "vits-piper-pt_BR-cadu-medium", "pt_BR-cadu-medium.onnx",
+            "MIT / CC0",
+            "Piper Voices Cadu; dataset CC0. https://huggingface.co/rhasspy/piper-voices",
+            sha256 = "aba78157d4b89acc17ddef15a70f4b2474f4c189d4de6035002ac7fec9d5d303"),
+        Model("piper-ptbr-dii", "Dii", "alta", "vits-piper-pt_BR-dii-high", "pt_BR-dii-high.onnx",
+            "CC BY-NC-SA 4.0",
+            "Dii PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-dii-high",
+            sha256 = "76bdf009bb29e69b12336de833d0d219ffa558f4281330eb141e4a0569c108a2"),
+        Model("piper-ptbr-edresson", "Edresson", "baixa", "vits-piper-pt_BR-edresson-low", "pt_BR-edresson-low.onnx",
+            "MIT / CC BY 4.0",
+            "Piper Voices Edresson; corpus CC BY 4.0. https://huggingface.co/csukuangfj/vits-piper-pt_BR-edresson-low",
+            sha256 = "670569e755cc48cda0a2f6a3ccba0698815566297069961edcd5f7daaf3d47a5"),
+        Model("piper-ptbr-faber", "Faber", "média", "vits-piper-pt_BR-faber-medium", "pt_BR-faber-medium.onnx",
+            "MIT / CC0",
+            "Piper Voices Faber; dataset CC0. https://huggingface.co/rhasspy/piper-voices",
+            sha256 = "7add3f923ad6bc25ca8a192805fd1a64d1b3893e4611c4a9719545a825039a83"),
+        Model("piper-ptbr-jeff", "Jeff", "média", "vits-piper-pt_BR-jeff-medium", "pt_BR-jeff-medium.onnx",
+            "MIT / CC0",
+            "Piper Voices Jeff; dataset CC0. https://huggingface.co/rhasspy/piper-voices",
+            sha256 = "da4c870fc7b20600c74261b3e1dd1c816da2ce063e18c46e1f2cd86dea88f3f0"),
+        Model("piper-ptbr-miro", "Miro", "alta", "vits-piper-pt_BR-miro-high", "pt_BR-miro-high.onnx",
+            "CC BY-NC-SA 4.0",
+            "Miro PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/TarcisoAmorim/piper-pt_BR-miro-high",
+            sha256 = "7f30d1c3421362a60381807543aeafd7e1cd0acbcb92c349a29908526c6f4e6f"),
         Model(
             id = "piper-enus-ljspeech-medium",
             name = "LJSpeech",
@@ -174,7 +192,8 @@ object PiperVitsModelManager {
                     }
                 }
                 if (archive.length() != total) throw IOException("Download Piper incompleto.")
-                // O tamanho bate mas o conteúdo pode estar corrompido ou ter mudado no servidor: confere antes de extrair.
+                // O tamanho bate mas o conteúdo pode estar corrompido ou ter mudado no servidor:
+                // confere antes de extrair.
                 model.sha256?.let { esperado ->
                     val real = sha256Hex(archive)
                     if (!real.equals(esperado, ignoreCase = true)) {

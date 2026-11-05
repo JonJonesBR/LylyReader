@@ -50,7 +50,9 @@ object SecurePreferences {
             .getOrNull()
     }
 
-    /** Apaga o cofre que não abre mais; se ele existia (havia chaves), marca o aviso para o usuário digitá-las de novo. */
+    /**
+     * Apaga o cofre que não abre mais; se ele existia (havia chaves), marca o aviso para o usuário digitá-las de novo.
+     */
     private fun recriarCofre(context: Context) {
         val arquivo = java.io.File(java.io.File(context.applicationInfo.dataDir, "shared_prefs"), "$SECURE_PREFS.xml")
         if (arquivo.exists()) localPrefs(context).edit().putBoolean(COFRE_RECRIADO, true).apply()
@@ -58,8 +60,8 @@ object SecurePreferences {
     }
 
     /**
-     * True uma única vez depois que o cofre de chaves foi recriado (falha do Android ao descriptografar): as chaves de API
-     * salvas se perderam e precisam ser digitadas de novo. Antes isso acontecia em silêncio.
+     * True uma única vez depois que o cofre de chaves foi recriado (falha do Android ao descriptografar):
+     * as chaves de API salvas se perderam e precisam ser digitadas de novo. Antes isso acontecia em silêncio.
      */
     fun consumirAvisoCofreRecriado(context: Context): Boolean {
         val prefs = localPrefs(context)

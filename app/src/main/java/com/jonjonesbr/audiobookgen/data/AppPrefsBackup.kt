@@ -60,7 +60,9 @@ object AppPrefsBackup {
             appPrefs.tomVozMeiosTons = json.optInt("timbre_tom_meios_tons", appPrefs.tomVozMeiosTons)
         }
         // Cada ajuste de IA só é aplicado se o backup o tiver: um backup antigo, sem algum deles, não zera o atual.
-        if (json.has("gemini_modelo_analise")) appPrefs.geminiModeloAnalise = json.optString("gemini_modelo_analise", "")
+        if (json.has("gemini_modelo_analise")) {
+            appPrefs.geminiModeloAnalise = json.optString("gemini_modelo_analise", "")
+        }
         if (json.has("ia_provedor")) appPrefs.iaProvedor = json.optString("ia_provedor", appPrefs.iaProvedor)
         if (json.has("ia_personalizada_url")) {
             appPrefs.iaPersonalizadaUrl = json.optString("ia_personalizada_url", appPrefs.iaPersonalizadaUrl)

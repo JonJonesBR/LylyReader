@@ -23,6 +23,7 @@ object VocabularioDoLivro {
     private val escopo = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     @Volatile private var registro: Job? = null
 
+    @Suppress("TooGenericExceptionCaught") // fronteira com o Python (Chaquopy): qualquer erro só vai ao log
     fun registrar(context: Context, chave: String, texto: String) {
         val app = context.applicationContext
         registro = escopo.launch {

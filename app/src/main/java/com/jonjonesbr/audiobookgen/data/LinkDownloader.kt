@@ -46,7 +46,9 @@ object LinkDownloader {
                         val destino = conn.getHeaderField("Location") ?: throw LinkException(MotivoLink.REDE, "Redirecionamento sem destino")
                         val proximo = URL(atual, destino)
                         // Só https: um redirecionamento para http deixaria o livro ser adulterado no caminho.
-                        if (proximo.protocol != "https") throw LinkException(MotivoLink.INSEGURO, "O link tentou sair de https")
+                        if (proximo.protocol != "https") {
+                            throw LinkException(MotivoLink.INSEGURO, "O link tentou sair de https")
+                        }
                         atual = proximo
                         continue
                     }

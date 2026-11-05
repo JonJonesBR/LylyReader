@@ -91,6 +91,7 @@ class EstimativaDeGeracao(private val medicoes: Map<String, MedicaoMotor>) {
         }
 
         /** Lê o arquivo de medições; arquivo ausente, vazio ou corrompido vira "sem medições". */
+        @Suppress("TooGenericExceptionCaught", "SwallowedException") // arquivo ilegível vira estimativa vazia
         fun lerDoArquivo(arquivo: File): EstimativaDeGeracao {
             return try {
                 if (!arquivo.isFile) EstimativaDeGeracao(emptyMap()) else parse(arquivo.readText())
@@ -100,6 +101,7 @@ class EstimativaDeGeracao(private val medicoes: Map<String, MedicaoMotor>) {
         }
 
         /** Parse tolerante: entradas inválidas (sem número, zero, negativo) são ignoradas. */
+        @Suppress("SwallowedException") // JSON inválido vira estimativa vazia, sem propagar o erro de parse
         fun parse(json: String?): EstimativaDeGeracao {
             if (json.isNullOrBlank()) return EstimativaDeGeracao(emptyMap())
             val raiz = try {

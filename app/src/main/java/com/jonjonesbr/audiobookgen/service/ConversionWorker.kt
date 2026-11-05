@@ -53,6 +53,9 @@ class ConversionWorker(
 ) : CoroutineWorker(context, params) {
 
     companion object {
+        /** Bytes em um megabyte (1024 × 1024), para mostrar o tamanho do audiobook no histórico. */
+        private const val BYTES_POR_MB = 1_048_576.0
+
         // Chaves de InputData
         const val KEY_ARQUIVO    = "arquivo"
         const val KEY_VOZ        = "voz"
@@ -143,6 +146,7 @@ class ConversionWorker(
      */
     private val nomeDaConversao: String? get() = metadados?.titulo ?: nomeDoArquivoDeSaida
 
+    @Suppress("TooGenericExceptionCaught") // fronteira do WorkManager: qualquer falha vira Result.failure
     override suspend fun doWork(): Result {
         ControleDaConversao.limpar()
         val arquivo    = inputData.getString(KEY_ARQUIVO)
@@ -290,7 +294,11 @@ class ConversionWorker(
      * Comprime o WAV disfarçado de .mp3 (motor local) para AAC, se houver espaço (≥ 0,2 × o WAV). Mostra a etapa com
      * [PCT_COMPRIMINDO]. Devolve true se o arquivo foi substituído. Falhas ficam com o WAV; cancelamento propaga.
      */
-    private suspend fun comprimirSeNecessario(arquivo: File, notif: ConversionNotificationManager, runToken: String?): Boolean {
+    private suspend fun comprimirSeNecessario(
+        arquivo: File,
+        notif: ConversionNotificationManager,
+        runToken: String?
+    ): Boolean {
         if (!ehWavArquivo(arquivo)) return false
         if (!temEspacoParaCompressao(arquivo.usableSpace, arquivo.length())) return false
         val mensagem = applicationContext.getString(com.jonjonesbr.audiobookgen.R.string.conv_comprimindo_audio)
@@ -305,7 +313,7 @@ class ConversionWorker(
     }
 
     /** Tamanho no mesmo formato que o Python devolve (MB com uma casa decimal, ponto como separador). */
-    private fun formatarTamanhoMb(bytes: Long): String = String.format(Locale.US, "%.1f", bytes / 1_048_576.0)
+    private fun formatarTamanhoMb(bytes: Long): String = String.format(Locale.US, "%.1f", bytes / BYTES_POR_MB)
 
     /**
      * Título e autor do livro da Biblioteca, pelo caminho que a entrada já traz: [KEY_LIVRO_DICIONARIO] (o livro
@@ -441,7 +449,8 @@ class ConversionWorker(
             is ProcessamentoResult.Success -> {
                 // Finaliza aqui, e não na tela: se o usuário sair da tela de acompanhamento, o audiobook ainda é salvo na
                 // pasta de saída (senão ele só apareceria na lista de Audiobooks depois de reabrir a tela).
-                // Motor local gravou WAV com nome .mp3: comprime para AAC no mesmo caminho antes de marcar, vincular e exportar.
+                // Motor local gravou WAV com nome .mp3: comprime para AAC no mesmo caminho antes de marcar,
+                // vincular e exportar.
                 val arquivoGerado = File(result.caminho)
                 val comprimido = comprimirSeNecessario(arquivoGerado, notif, runToken)
                 val tamanhoMb = if (comprimido) formatarTamanhoMb(arquivoGerado.length()) else result.tamanhoMb
@@ -450,7 +459,11 @@ class ConversionWorker(
                 val capitulosJson = ChapterMarksStore.paraJson(result.capitulos)
                 ChapterMarksStore.salvarJson(applicationContext, result.caminho, capitulosJson)
                 // Fica fora do outputData (limite de 10 KB do WorkManager): o leitor lê do arquivo.
-                com.jonjonesbr.audiobookgen.data.SincroniaAudioStore.salvarJson(applicationContext, result.caminho, result.trechosJson)
+                com.jonjonesbr.audiobookgen.data.SincroniaAudioStore.salvarJson(
+                    applicationContext,
+                    result.caminho,
+                    result.trechosJson
+                )
                 TimbreAudiobookStore.salvarDaConversao(applicationContext, result.caminho, tomDoLivro, agudosDoLivro)
                 livroOrigem?.let { com.jonjonesbr.audiobookgen.data.LinkedBookStore.vincular(applicationContext, it, result.caminho) }
                 val pastaDestino = com.jonjonesbr.audiobookgen.data.AppPrefs(applicationContext).pastaDestino

@@ -41,7 +41,11 @@ object SincroniaAudioStore {
     fun carregar(ctx: Context, caminhoMp3: String): List<TrechoAudio> {
         if (caminhoMp3.isBlank()) return emptyList()
         val origem = arquivo(ctx, caminhoMp3)
-        return if (origem.isFile) trechosDeJson(runCatching { origem.readText(Charsets.UTF_8) }.getOrNull()) else emptyList()
+        return if (origem.isFile) {
+            trechosDeJson(runCatching { origem.readText(Charsets.UTF_8) }.getOrNull())
+        } else {
+            emptyList()
+        }
     }
 
     fun remover(ctx: Context, caminhoMp3: String) {

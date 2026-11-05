@@ -43,7 +43,9 @@ object TrechosSupertonic {
         return trechos
     }
 
-    /** Frase maior que o limite: corta depois de vírgula/ponto e vírgula/dois-pontos e, se não houver, entre palavras. */
+    /**
+     * Frase maior que o limite: corta depois de vírgula/ponto e vírgula/dois-pontos e, se não houver, entre palavras.
+     */
     private fun partir(frase: String, maxChars: Int): List<String> {
         if (frase.length <= maxChars) return listOf(frase)
         val partes = mutableListOf<String>()

@@ -439,13 +439,18 @@ class AudioPlayerService : MediaLibraryService() {
             reconciliarEstadoPlay()
         }
 
+        @Suppress("TooGenericExceptionCaught") // a pausa é melhor esforço dentro do callback de erro
         override fun onPlayerError(error: PlaybackException) {
             Log.e(TAG, "Erro no ExoPlayer: ${error.message}", error)
             // Sem isso, um erro antes de STATE_READY deixava esperaReady.aguardando travado em true:
             // aoFicarPronto() nunca rodaria pra este item (sem notificação, sem tick, sem
             // capítulos), mesmo que uma tentativa seguinte tivesse sucesso.
             esperaReady.aoErro()
-            try { if (exoPlayer.isPlaying) emMudancaPlayInterna { exoPlayer.pause() } } catch (e: Exception) { Log.w(TAG, "Falha ao pausar após erro no ExoPlayer", e) }
+            try {
+                if (exoPlayer.isPlaying) emMudancaPlayInterna { exoPlayer.pause() }
+            } catch (e: Exception) {
+                Log.w(TAG, "Falha ao pausar após erro no ExoPlayer", e)
+            }
             // Feedback visível (P1): sem isso o erro ia só pro Logcat — notificação e
             // mini-player mostravam "Pausado" normal, e o usuário ficava num loop de tap
             // silencioso (retry abaixo re-tenta, mas sem explicação do motivo).
@@ -976,7 +981,11 @@ class AudioPlayerService : MediaLibraryService() {
             exoPlayer.stop()
             exoPlayer.clearMediaItems()
         } catch (e: Exception) { Log.w(TAG, "Falha ao parar o ExoPlayer", e) }
-        try { audioFocusController.abandonar() } catch (e: Exception) { Log.w(TAG, "Falha ao liberar o foco de áudio", e) }
+        try {
+            audioFocusController.abandonar()
+        } catch (e: Exception) {
+            Log.w(TAG, "Falha ao liberar o foco de áudio", e)
+        }
     }
 
     private fun iniciarTick() {

@@ -20,6 +20,7 @@ import java.util.Locale
 class TextoNarravelDoLivro(private val context: Context) {
 
     /** Extrai (ExtractTextUseCase) e limpa. A limpeza falhou: devolve o bruto, como o ReaderViewModel. */
+    @Suppress("TooGenericExceptionCaught") // fronteira com o Python/IO: a limpeza falha para o texto bruto
     suspend fun carregar(caminho: String): ExtractionResult {
         val extraido = ExtractTextUseCase(context).invoke(caminho)
         if (extraido !is ExtractionResult.Success) return extraido

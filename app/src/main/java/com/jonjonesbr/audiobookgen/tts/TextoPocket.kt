@@ -18,7 +18,8 @@ object TextoPocket {
     private const val FECHAMENTOS = "\"'”’»)]"
 
     fun normalizar(texto: String): String {
-        if ('.' !in texto && '…' !in texto && '!' !in texto && '?' !in texto) return texto
+        val semPontosFinais = '.' !in texto && '…' !in texto
+        if (semPontosFinais && '!' !in texto && '?' !in texto) return texto
         val sb = StringBuilder()
         var ultimo = 0
         for (m in RETICENCIAS.findAll(texto)) {

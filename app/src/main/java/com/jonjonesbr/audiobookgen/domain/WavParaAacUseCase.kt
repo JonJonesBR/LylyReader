@@ -121,6 +121,7 @@ private fun u16(bytes: ByteArray, deslocamento: Int): Int =
 private fun u32(bytes: ByteArray, deslocamento: Int): Long =
     u16(bytes, deslocamento).toLong() or (u16(bytes, deslocamento + 2).toLong() shl 16)
 
+@Suppress("TooGenericExceptionCaught", "SwallowedException") // MediaMetadataRetriever lança tipos variados
 private fun duracaoAacMs(arquivo: File): Long? {
     val leitor = MediaMetadataRetriever()
     return try {
@@ -140,6 +141,7 @@ private fun duracaoAacMs(arquivo: File): Long? {
  * Qualquer falha devolve false e mantém o WAV intacto (com log). Cancelamento da coroutine propaga como
  * CancellationException, também sem tocar no WAV.
  */
+@Suppress("TooGenericExceptionCaught") // fronteira com o MediaCodec: falha mantém o WAV
 suspend fun comprimirWavParaAac(arquivo: File): Boolean = withContext(Dispatchers.IO) {
     val tmp = File(arquivo.parentFile, arquivo.name + ".tmp")
     val job = coroutineContext[Job]
