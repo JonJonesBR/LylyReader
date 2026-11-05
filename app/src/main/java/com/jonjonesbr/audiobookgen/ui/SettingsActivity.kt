@@ -5,7 +5,6 @@ import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.domain.TipoRegistroErro
 import com.jonjonesbr.audiobookgen.domain.resumirArquivoDeErro
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
-import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.mostrarErro
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
@@ -13,7 +12,6 @@ import com.jonjonesbr.audiobookgen.util.marcarComoLink
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
@@ -32,10 +30,8 @@ import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.net.Uri
 import android.provider.Settings
 import androidx.activity.result.contract.ActivityResultContracts
-import org.json.JSONObject
 
 class SettingsActivity : BasePlayerActivity() {
 
@@ -54,6 +50,14 @@ class SettingsActivity : BasePlayerActivity() {
     // Controllers dos Ajustes (rb-11): criados no primeiro uso, sempre depois do setContentView.
     private val armazenamento: AjustesArmazenamentoController by lazy {
         AjustesArmazenamentoController(this, pythonEngine)
+    }
+    private val backup: AjustesBackupController by lazy {
+        AjustesBackupController(this, pythonEngine, AjustesBackupController.Callbacks(
+            lancarExportarConfig = { exportarConfigLauncher.launch(it) },
+            lancarExportarBackup = { exportarBackupLauncher.launch(it) },
+            lancarRestaurar = { restaurarLauncher.launch(it) },
+            aoImportarConfig = { carregarConfigAtual() },
+        ))
     }
 
     // Tema
@@ -116,9 +120,6 @@ class SettingsActivity : BasePlayerActivity() {
     // Logs de Erro
     private lateinit var tvLogsErroInfo: TextView
 
-    // Backup (configurações em JSON ou backup completo em ZIP)
-    private val backupUseCase by lazy { com.jonjonesbr.audiobookgen.domain.BackupUseCase(this) }
-
     // Abas (agrupam as ~14 seções em 4 categorias, ao invés de uma rolagem só)
     private lateinit var tabsSettings: TabLayout
     private lateinit var scrollSettings: androidx.core.widget.NestedScrollView
@@ -130,18 +131,19 @@ class SettingsActivity : BasePlayerActivity() {
         override fun handleOnBackPressed() = fecharPagina()
     }
 
+    // Os lançadores ficam aqui (campos) porque registram antes do STARTED; o controller só os chama.
     private val exportarConfigLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri == null) return@registerForActivityResult
-        salvarConfigJson(uri)
+        backup.salvarConfigJson(uri)
     }
 
     private val exportarBackupLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
         if (uri == null) return@registerForActivityResult
-        salvarBackupCompleto(uri)
+        backup.salvarBackupCompleto(uri)
     }
 
     // "Restaurar um backup": um arquivo só; o conteúdo diz se é o backup completo (ZIP) ou só as configurações.
@@ -149,7 +151,7 @@ class SettingsActivity : BasePlayerActivity() {
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@registerForActivityResult
-        restaurarDeArquivo(uri)
+        backup.restaurarDeArquivo(uri)
     }
 
     // Cartões de "Permissões do app" (Ajuda): os da introdução. Criado aqui, como propriedade, para registrar
@@ -444,8 +446,8 @@ class SettingsActivity : BasePlayerActivity() {
         linha(R.id.rowTimbre) { TimbreDialog.show(this, appPrefs) }
         linha(R.id.rowAutoRewind) { escolherAutoRewind() }
         linha(R.id.rowPlayerConversao) { escolherPlayerConversao() }
-        linha(R.id.rowBackupFazer) { escolherBackupAFazer() }
-        linha(R.id.rowBackupRestaurar) { restaurarBackup() }
+        linha(R.id.rowBackupFazer) { backup.escolherBackupAFazer() }
+        linha(R.id.rowBackupRestaurar) { backup.restaurarBackup() }
         linha(R.id.rowLogsErro) { abrirLogsErro() }
         linha(R.id.rowAprenderApp) { startActivity(Intent(this, AprenderActivity::class.java)) }
         linha(R.id.rowPermissoesApp) { abrirPagina(R.id.pagPermissoes, R.string.aj_permissoes_app) }
@@ -969,187 +971,6 @@ class SettingsActivity : BasePlayerActivity() {
         for ((btn, ms) in botoesPausa) {
             btn.setOnClickListener { salvarPausa(ms) }
         }
-    }
-
-    /** "Fazer backup": tudo (recomendado) ou só as configurações. */
-    private fun escolherBackupAFazer() {
-        val opcoes = arrayOf(getString(R.string.aj_backup_tudo), getString(R.string.aj_backup_so_config))
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.aj_backup_fazer)
-            .setItems(opcoes) { _, qual -> if (qual == 0) exportarBackupCompleto() else exportarConfiguracoes() }
-            .setNegativeButton(android.R.string.cancel, null)
-            .exibir()
-    }
-
-    private fun restaurarBackup() {
-        try {
-            restaurarLauncher.launch(
-                arrayOf("application/zip", "application/json", "application/octet-stream", "text/plain")
-            )
-        } catch (e: android.content.ActivityNotFoundException) {
-            Log.w("SettingsActivity", "Erro ao iniciar restauracao", e)
-            mostrarErro(getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e))))
-        }
-    }
-
-    /** ZIP (começa com "PK") é o backup completo; o resto é tratado como o JSON das configurações. */
-    private fun restaurarDeArquivo(uri: Uri) {
-        lifecycleScope.launch {
-            val ehZip = withContext(Dispatchers.IO) {
-                runCatching {
-                    contentResolver.openInputStream(uri)?.use { it.read() == 'P'.code && it.read() == 'K'.code }
-                }.getOrNull() == true
-            }
-            if (ehZip) restaurarBackupCompleto(uri) else carregarConfigJson(uri)
-        }
-    }
-
-    private fun exportarConfiguracoes() {
-        try {
-            exportarConfigLauncher.launch("lylyreader-config.json")
-        } catch (e: android.content.ActivityNotFoundException) {
-            Log.w("SettingsActivity", "Erro ao iniciar exportacao", e)
-            mostrarErro(getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))))
-        }
-    }
-
-    private fun salvarConfigJson(uri: Uri) {
-        try {
-            val json = com.jonjonesbr.audiobookgen.data.AppPrefsBackup.paraJson(appPrefs)
-            val stream = contentResolver.openOutputStream(uri)
-            if (stream == null) {
-                Log.w("SettingsActivity", "openOutputStream retornou null — sem permissão de escrita no provedor")
-                mostrarErro(R.string.toast_erro_exportar_null)
-                return
-            }
-            stream.use { outputStream ->
-                outputStream.write(json.toString(JSON_INDENT).toByteArray(Charsets.UTF_8))
-            }
-            Toast.makeText(this, R.string.toast_backup_exportado, Toast.LENGTH_SHORT).show()
-        } catch (e: java.io.IOException) {
-            Log.w("SettingsActivity", "Erro ao salvar configuracoes", e)
-            mostrarErro(getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))))
-        } catch (e: org.json.JSONException) {
-            Log.w("SettingsActivity", "Erro ao salvar configuracoes", e)
-            mostrarErro(getString(R.string.toast_erro_exportar, getString(mensagemDeErro(e))))
-        }
-    }
-
-    /** Lê e parseia o JSON do Uri. Roda em IO; devolve (json, erro) para a main mostrar o erro. */
-    private fun lerJsonDeUri(uri: Uri): Pair<JSONObject?, Exception?> {
-        try {
-            val jsonStr = contentResolver.openInputStream(uri)?.use { inputStream ->
-                inputStream.bufferedReader().use { it.readText() }
-            } ?: error("Input stream is null")
-            return JSONObject(jsonStr) to null
-        } catch (e: java.io.IOException) {
-            Log.w("SettingsActivity", "Erro ao carregar configuracoes", e)
-            return null to e
-        } catch (e: java.lang.IllegalStateException) {
-            Log.w("SettingsActivity", "Erro ao carregar configuracoes", e)
-            return null to e
-        } catch (e: org.json.JSONException) {
-            Log.w("SettingsActivity", "Erro ao parsear JSON", e)
-            return null to e
-        }
-    }
-
-    private fun carregarConfigJson(uri: Uri) {
-        lifecycleScope.launch {
-            val (json, erro) = withContext(Dispatchers.IO) { lerJsonDeUri(uri) }
-            if (erro != null) {
-                mostrarErro(getString(R.string.toast_erro_importar, getString(mensagemDeErro(erro))))
-                return@launch
-            }
-            if (json == null) return@launch
-
-            com.jonjonesbr.audiobookgen.data.AppPrefsBackup.aplicar(appPrefs, json)
-
-            // Sincroniza com o motor Python
-            launch {
-                pythonEngine.sincronizarConfiguracoes(
-                    appPrefs.motorTts,
-                    SecurePreferences.getGeminiKeys(this@SettingsActivity),
-                    appPrefs.pausaMs
-                )
-            }
-
-            // Recarrega configs na UI
-            carregarConfigAtual()
-
-            // Dialog de sucesso
-            androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
-                .setTitle(R.string.dialog_importar_sucesso_titulo)
-                .setMessage(R.string.dialog_importar_sucesso_mensagem)
-                .setPositiveButton(R.string.dialog_ok, null)
-                .exibir()
-        }
-    }
-
-    private fun exportarBackupCompleto() {
-        try {
-            exportarBackupLauncher.launch("lylyreader-backup.zip")
-        } catch (e: android.content.ActivityNotFoundException) {
-            Log.w("SettingsActivity", "Erro ao iniciar exportacao de backup", e)
-            val msg = getString(R.string.toast_erro_exportar_backup, getString(mensagemDeErro(e)))
-            mostrarErro(msg)
-        }
-    }
-
-    private fun salvarBackupCompleto(uri: Uri) {
-        lifecycleScope.launch {
-            val resultado = withContext(Dispatchers.IO) { backupUseCase.exportar(uri) }
-            resultado.onSuccess {
-                val msg = R.string.toast_backup_completo_exportado
-                Toast.makeText(this@SettingsActivity, msg, Toast.LENGTH_SHORT).show()
-            }.onFailure { e ->
-                Log.w("SettingsActivity", "Erro ao exportar backup completo", e)
-                mostrarErro(getString(R.string.toast_erro_exportar_backup, getString(mensagemDeErro(e))))
-            }
-        }
-    }
-
-    private fun restaurarBackupCompleto(uri: Uri) {
-        lifecycleScope.launch {
-            val resultado = withContext(Dispatchers.IO) { backupUseCase.importar(uri) }
-            resultado.onSuccess { resumo -> mostrarResumoBackupImportado(resumo) }
-                .onFailure { e ->
-                    Log.w("SettingsActivity", "Erro ao importar backup completo", e)
-                    val motivo = (e as? com.jonjonesbr.audiobookgen.domain.BackupException)?.motivo
-                    val msg = when (motivo) {
-                        com.jonjonesbr.audiobookgen.domain.MotivoBackup.ARQUIVO_INVALIDO -> getString(R.string.backup_erro_arquivo_invalido)
-                        com.jonjonesbr.audiobookgen.domain.MotivoBackup.VERSAO_MAIS_NOVA -> getString(R.string.backup_erro_versao_mais_nova)
-                        com.jonjonesbr.audiobookgen.domain.MotivoBackup.MUITO_GRANDE -> getString(R.string.backup_erro_muito_grande)
-                        null -> getString(R.string.toast_erro_importar_backup, getString(mensagemDeErro(e)))
-                    }
-                    mostrarErro(msg)
-                }
-        }
-    }
-
-    private fun mostrarResumoBackupImportado(resumo: com.jonjonesbr.audiobookgen.domain.BackupUseCase.ImportSummary) {
-        if (resumo.configImportado) {
-            lifecycleScope.launch {
-                pythonEngine.sincronizarConfiguracoes(
-                    appPrefs.motorTts,
-                    SecurePreferences.getGeminiKeys(this@SettingsActivity),
-                    appPrefs.pausaMs
-                )
-            }
-            carregarConfigAtual()
-        }
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.dialog_importar_backup_sucesso_titulo)
-            .setMessage(
-                getString(
-                    R.string.dialog_importar_backup_sucesso_mensagem,
-                    resumo.bookmarks,
-                    resumo.highlights,
-                    resumo.progresso
-                )
-            )
-            .setPositiveButton(R.string.dialog_ok, null)
-            .exibir()
     }
 
     companion object {
