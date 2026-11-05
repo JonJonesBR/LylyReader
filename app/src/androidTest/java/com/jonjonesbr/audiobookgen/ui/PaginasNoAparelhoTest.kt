@@ -643,6 +643,10 @@ class PaginasNoAparelhoTest {
                 "A alça deveria ampliar a seleção até '$palavraDoFim', veio '${depois.texto}'",
                 depois.fim > selecao.fim,
             )
+            assertTrue(
+                "A seleção deveria chegar à palavra '$palavraDoFim', veio '${depois.texto}'",
+                depois.texto.trimEnd().endsWith(palavraDoFim),
+            )
             assertEquals(
                 "Arrastar a alça da última linha não deveria rolar a página",
                 pagina.offset,

@@ -36,6 +36,13 @@ private val DESLOCAMENTOS_DA_ALCA_DP = listOf(16f, 12f, 8f)
 private val FOLGAS_EXTRAS_DA_LINHA = listOf(0.8f, 0.4f, 1.2f)
 
 /**
+ * Tempo com o dedo parado no alvo, antes de soltar. O Editor desfaz o último passo da alça se o dedo sai menos de
+ * 150 ms depois dele (HandleView.filterOnTouchUp): sem essa pausa, uma alça que chegou ao meio de uma palavra na
+ * mesma linha volta ao início da palavra.
+ */
+private const val PAUSA_NO_ALVO_MS = 300L
+
+/**
  * Arrasta a alça do fim da seleção do parágrafo [indiceParagrafo] até a palavra [palavraAlvo], com o dedo
  * andando o quanto a alça tem de andar (rb-48). Soltar o dedo direto no alvo não funciona, porque o Android mantém
  * a distância entre o dedo e a ponta da alça: por isso o dedo desce o deslocamento vertical até o alvo mais a folga
@@ -71,7 +78,8 @@ fun arrastarAlcaFinalAte(
         val altura = Gestos.alturaDaLinha(scenario, indiceParagrafo)
         val dx = alvo.x - fim.x
         val dy = alvo.y - fim.y
-        val extra = folga * altura
+        // Na mesma linha (dy == 0) não há linha a trocar: a folga para baixo mandaria a alça a uma linha escondida.
+        val extra = if (dy == 0f) 0f else folga * altura
         regras.fecharDialogosDoSistema()
         // O diagnóstico vale só para a primeira tentativa.
         val diagnosticoDaVez = if (indice == 0) diagnostico else null
@@ -85,7 +93,11 @@ fun arrastarAlcaFinalAte(
             aoMover = diagnosticoDaVez?.let { d ->
                 { passo: Int, x: Float, y: Float -> d.aoMover(inicioDoArraste, passo, x, y) }
             },
-            antesDeSoltar = diagnosticoDaVez?.let { d -> { d.antesDeSoltar(inicioDoArraste) } },
+            antesDeSoltar = {
+                diagnosticoDaVez?.antesDeSoltar(inicioDoArraste)
+                // Segura o dedo no alvo antes do UP (roda antes dele, dentro do try de Gestos.arrastar).
+                Thread.sleep(PAUSA_NO_ALVO_MS)
+            },
         )
         val duracaoDoGesto = SystemClock.uptimeMillis() - inicioDoArraste
         val achado = esperarFimMaiorQue(scenario, indiceParagrafo, antes.fim)
