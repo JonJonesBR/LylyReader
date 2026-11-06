@@ -40,6 +40,8 @@ internal class ArrasteLateralDaPagina(
     private var selecaoNoTvNoDown = false
     /** Dois dedos no gesto: não é deslize da página, então não avisa a tela cheia (rb-26b, passo 6). */
     private var doisDedos = false
+    /** O Editor pediu o gesto depois do CANCEL: engolido, mas sem avisar a tela cheia (rb-67, item 11). */
+    private var semAviso = false
     private var x0 = 0f
     private var y0 = 0f
     private var velocidade: VelocityTracker? = null
@@ -97,7 +99,14 @@ internal class ArrasteLateralDaPagina(
      * da página: o que está engolido não chega ao RecyclerView, que assim não entra em arraste vertical.
      */
     private fun mover(ev: MotionEvent, despachar: (MotionEvent) -> Boolean): Boolean {
-        if (estado == Estado.OBSERVANDO || estado == Estado.DIAGONAL_PENDENTE) observar(ev, despachar)
+        val pendente = estado == Estado.DIAGONAL_PENDENTE
+        if (pendente || estado == Estado.OBSERVANDO) observar(ev, despachar)
+        // No começo torto, a lista e os filhos já receberam o CANCEL. Se o gesto virasse DESCARTADO, um MOVE seguinte
+        // chegaria à lista sem DOWN e ela entraria em arraste: o gesto fica engolido até o UP (rb-67, item 11).
+        if (pendente && estado == Estado.DESCARTADO) {
+            estado = Estado.ENGOLIDO
+            semAviso = true
+        }
         return engolido() || despachar(ev)
     }
 
@@ -145,7 +154,7 @@ internal class ArrasteLateralDaPagina(
             Estado.ENGOLIDO -> {
                 // Gesto de um dedo que a página engoliu: a tela cheia do Leitor decide pelo deslocamento
                 // (rb-26b, passo 6). Dois dedos não avisam.
-                if (!doisDedos) {
+                if (!doisDedos && !semAviso) {
                     val dx = ev.x - x0
                     val dy = ev.y - y0
                     lista.post { lista.aoGestoDaPagina?.invoke(dx, dy) }
@@ -176,6 +185,7 @@ internal class ArrasteLateralDaPagina(
     private fun encerrar() {
         estado = Estado.OCIOSO
         doisDedos = false
+        semAviso = false
         velocidade?.recycle()
         velocidade = null
         tvNoDown = null

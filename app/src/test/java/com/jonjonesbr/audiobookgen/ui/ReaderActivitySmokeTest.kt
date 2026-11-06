@@ -2375,6 +2375,53 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun diagonalQueVirouDescartadoNaoSoltaMoveSemDown() {
+        // rb-67 (item 11): um começo diagonal dentro da folga que depois o Editor pede para si não deixa passar MOVE
+        // sem o DOWN da lista. O gesto segue engolido até o UP, e a lista fica parada.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val arraste = ArrasteLateralDaPagina(rv, podeVirar = { true }, aoCompletar = { })
+                val folga = ViewConfiguration.get(a).scaledTouchSlop * 1.5f
+                val recebidos = mutableListOf<Int>()
+                val despachar: (MotionEvent) -> Boolean = { ev ->
+                    recebidos += ev.actionMasked
+                    true
+                }
+                var avisou = false
+                rv.aoGestoDaPagina = { _, _ -> avisou = true }
+                val x0 = rv.width / 2f
+                val y0 = rv.height / 2f
+                val baixo = MotionEvent.obtain(1_000L, 1_000L, MotionEvent.ACTION_DOWN, x0, y0, 0)
+                val primeiroMove = MotionEvent.obtain(
+                    1_000L, 1_050L, MotionEvent.ACTION_MOVE, x0 + folga, y0 + folga, 0,
+                )
+                val segundoMove = MotionEvent.obtain(
+                    1_000L, 1_100L, MotionEvent.ACTION_MOVE, x0 + 2 * folga, y0 + 2 * folga, 0,
+                )
+                val solto = MotionEvent.obtain(1_000L, 1_150L, MotionEvent.ACTION_UP, x0 + 2 * folga, y0 + 2 * folga, 0)
+                arraste.despachar(baixo, despachar)
+                arraste.despachar(primeiroMove, despachar)
+                // O Editor pede o gesto depois do começo diagonal (toque longo): é o caminho que vira DESCARTADO.
+                rv.editorDonoDoGesto = true
+                arraste.despachar(segundoMove, despachar)
+                arraste.despachar(solto, despachar)
+                shadowOf(Looper.getMainLooper()).idle()
+                assertFalse("um MOVE sem DOWN chegou à lista: $recebidos", recebidos.contains(MotionEvent.ACTION_MOVE))
+                assertEquals("a lista deveria ficar parada", RecyclerView.SCROLL_STATE_IDLE, rv.scrollState)
+                assertFalse("o gesto do Editor não avisa a tela cheia", avisou)
+                listOf(baixo, primeiroMove, segundoMove, solto).forEach { it.recycle() }
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun paginaAlinhadaQuandoAAreaDeBaixoEncolheComFocoNoParagrafo() {
         // rb-26b (passo 2, D2): a área de baixo encolhe (paddingBottom maior) com um parágrafo focado. Depois do
         // layout, a 1ª linha da página começa no paddingTop, sem corte em cima.
