@@ -2668,7 +2668,8 @@ class ReaderActivitySmokeTest {
                 val raiz = a.findViewById<CoordinatorLayout>(R.id.readerRoot)
                 assertTrue("o cabeçalho deveria ser uma BarraDoLeitor", cabecalhoDo(a) is BarraDoLeitor)
                 assertSame("o cabeçalho deveria ser o 1º filho", cabecalhoDo(a), raiz.getChildAt(0))
-                assertSame("o conteúdo deveria vir logo depois do cabeçalho", conteudoDo(a), raiz.getChildAt(1))
+                assertSame("a setinha vem logo depois do cabeçalho", setinhaDo(a), raiz.getChildAt(1))
+                assertSame("o conteúdo vem depois do cabeçalho e da setinha", conteudoDo(a), raiz.getChildAt(2))
             }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
@@ -2895,8 +2896,8 @@ class ReaderActivitySmokeTest {
             esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no vertical", visivel = false)
             rolarComODedo(scenario, -300)
             val limite = 48 * app.resources.displayMetrics.density
-            val andou = rolarComODedo(scenario, 20)
-            assertTrue("20 dp andaram a lista, mas menos que 48 dp: $andou", andou > 0 && andou < limite)
+            val subiu = -rolarComODedo(scenario, 20)
+            assertTrue("a lista subiu 20 dp com o dedo, menos que 48 dp: $subiu", subiu > 0 && subiu < limite)
             scenario.onActivity { a -> assertEquals(View.GONE, cabecalhoDo(a).visibility) }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
@@ -2943,7 +2944,12 @@ class ReaderActivitySmokeTest {
                 barraDaSelecaoTextoVisivel(a) && cabecalhoDo(a).visibility == View.GONE &&
                     setinhaDo(a).visibility == View.GONE
             }
+            val esperaDoDuploToque = Duration.ofMillis(ViewConfiguration.getDoubleTapTimeout().toLong() + 200L)
             scenario.onActivity { modo.finish() }
+            shadowOf(Looper.getMainLooper()).idleFor(esperaDoDuploToque)
+            // Como no aparelho (rb-54): o modo fecha com a seleção viva e a barra fica;
+            // o Voltar desfaz a seleção e fecha a barra.
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
             esperarAte(scenario, "cabeçalho e setinha voltam ao fechar a seleção") { a ->
                 !barraDaSelecaoTextoVisivel(a) && cabecalhoDo(a).visibility == View.VISIBLE &&
                     setinhaDo(a).visibility == View.VISIBLE
@@ -3785,10 +3791,12 @@ class ReaderActivitySmokeTest {
     }
 
     /**
-     * Rola a lista com o dedo [dp] (positivo: o dedo desce, a lista sobe) pelo caminho da RecyclerView (rb-66, passo 4). Eventos:
-     * DOWN no meio da lista (cai no TextView selecionável); um MOVE logo acima do slop, que é o que liga o DRAGGING na
+     * Rola a lista com o dedo [dp] (positivo: o dedo desce, a lista sobe) pelo caminho da RecyclerView (rb-66,
+     * passo 4). Eventos: DOWN no meio da lista (cai no TextView selecionável); um MOVE logo acima do slop, que é o
+     * que liga o DRAGGING na
      * interceptação; um MOVE até o total, que chega ao onTouchEvent e rola; e um UP um segundo depois do último MOVE,
-     * para não sobrar fling. Devolve quantos pixels a lista andou, para o teste conferir que ela andou de verdade.
+     * para não sobrar fling. Depois do slop, a lista anda [dp] dp. Devolve quantos pixels a lista andou, para o teste
+     * conferir que ela andou de verdade.
      */
     private fun rolarComODedo(scenario: ActivityScenario<ReaderActivity>, dp: Int): Int {
         var andou = 0
@@ -3797,14 +3805,14 @@ class ReaderActivitySmokeTest {
             val antes = rv.computeVerticalScrollOffset()
             val dy = dp * rv.resources.displayMetrics.density
             val sentido = if (dy >= 0) 1f else -1f
-            val folga = ViewConfiguration.get(rv.context).scaledTouchSlop + 1f
+            val folga = sentido * (ViewConfiguration.get(rv.context).scaledTouchSlop + 1f)
             val x0 = rv.width / 2f
-            val y0 = rv.height / 2f - dy / 2
+            val y0 = rv.height / 2f - (dy + folga) / 2
             val eventos = listOf(
                 MotionEvent.obtain(1_000L, 1_000L, MotionEvent.ACTION_DOWN, x0, y0, 0),
-                MotionEvent.obtain(1_000L, 1_100L, MotionEvent.ACTION_MOVE, x0, y0 + sentido * folga, 0),
-                MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_MOVE, x0, y0 + dy, 0),
-                MotionEvent.obtain(1_000L, 2_200L, MotionEvent.ACTION_UP, x0, y0 + dy, 0),
+                MotionEvent.obtain(1_000L, 1_100L, MotionEvent.ACTION_MOVE, x0, y0 + folga, 0),
+                MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_MOVE, x0, y0 + folga + dy, 0),
+                MotionEvent.obtain(1_000L, 2_200L, MotionEvent.ACTION_UP, x0, y0 + folga + dy, 0),
             )
             eventos.forEach { rv.dispatchTouchEvent(it) }
             eventos.forEach { it.recycle() }
