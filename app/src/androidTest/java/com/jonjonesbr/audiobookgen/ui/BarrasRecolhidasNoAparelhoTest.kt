@@ -23,6 +23,7 @@ import com.jonjonesbr.audiobookgen.ui.apoio.VozFalsa
 import com.jonjonesbr.audiobookgen.ui.apoio.abrirLeitorComGuiada
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
 import com.jonjonesbr.audiobookgen.ui.apoio.rolarListaComODedo
+import com.jonjonesbr.audiobookgen.ui.apoio.selecionarPalavra
 import com.jonjonesbr.audiobookgen.util.dpToPx
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
