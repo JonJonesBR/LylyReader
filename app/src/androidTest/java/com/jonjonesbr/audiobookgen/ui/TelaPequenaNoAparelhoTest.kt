@@ -378,8 +378,9 @@ class TelaPequenaNoAparelhoTest {
     /**
      * Linhas inteiras da página na tela, com o que sobra em cima e embaixo. Converte as linhas de [linhasNaTela] (nas
      * coordenadas da lista) para a tela com getLocationOnScreen, que já inclui a translação. Conta as linhas entre o
-     * limite de cima (topo útil da lista, ou a base da barra da seleção se ela está no topo) e o de baixo (o corte, o
-     * topo do painel da guiada, o topo do chip "Voltar à narração" e o topo da barra da seleção se ela está embaixo).
+     * limite de cima (topo útil da lista, a base do cabeçalho se ele está visível, ou a base da barra da seleção se ela
+     * está no topo) e o de baixo (o corte, o topo do painel da guiada, o topo do chip "Voltar à narração" e o topo da
+     * barra da seleção se ela está embaixo).
      */
     private fun medirTelaPequena(a: ReaderActivity): Medida {
         val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
@@ -390,6 +391,10 @@ class TelaPequenaNoAparelhoTest {
 
         var limiteDeCima = topoLista + lista.paddingTop
         var limiteDeBaixo = topoLista + corte
+
+        // Cabeçalho sobreposto (rb-66): quando visível, cobre o topo da lista, então também conta como limite de cima.
+        val cabecalho = a.findViewById<View>(R.id.cabecalhoDoLeitor)
+        if (cabecalho.visibility == View.VISIBLE) limiteDeCima = maxOf(limiteDeCima, baseNaTela(cabecalho))
 
         val barra = a.findViewById<View>(R.id.barraSelecaoTexto)
         val barraVisivel = barra.visibility == View.VISIBLE

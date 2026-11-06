@@ -24,8 +24,10 @@ import android.view.ViewTreeObserver
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -56,6 +58,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -1966,6 +1969,9 @@ class ReaderActivitySmokeTest {
     /** O cabeçalho do Leitor (toolbar, busca e capítulo), que a tela cheia recolhe nas páginas (rb-26b, passo 6). */
     private fun cabecalhoDo(a: ReaderActivity): View = a.findViewById(R.id.cabecalhoDoLeitor)
 
+    /** O contêiner do texto (rb-66): o paddingTop dele é a reserva do cabeçalho sobreposto. */
+    private fun conteudoDo(a: ReaderActivity): View = a.findViewById(R.id.conteudoDoLeitor)
+
     /** Primeira linha que termina depois da base da página, ou seja, a escondida pelo corte. Nula se não há. */
     private fun primeiraLinhaEscondida(rv: RecyclerView): LinhaNaLista? {
         val base = rv.height - rv.paddingBottom
@@ -2381,6 +2387,111 @@ class ReaderActivitySmokeTest {
                 val rv = listaDoLeitor(a)
                 linhasNaLista(rv).any { it.pos == alvo.pos && it.linha == alvo.linha && it.topo == rv.paddingTop } &&
                     cabecalhoDo(a).visibility == View.GONE
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun cabecalhoEOPrimeiroFilhoDoCoordinator() {
+        // rb-66 (passo 2): o cabeçalho sobreposto é o 1º filho do CoordinatorLayout (TalkBack e teclado leem
+        // primeiro) e é uma BarraDoLeitor, com o conteúdo logo depois dele.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            scenario.onActivity { a ->
+                val raiz = a.findViewById<CoordinatorLayout>(R.id.readerRoot)
+                assertTrue("o cabeçalho deveria ser uma BarraDoLeitor", cabecalhoDo(a) is BarraDoLeitor)
+                assertSame("o cabeçalho deveria ser o 1º filho", cabecalhoDo(a), raiz.getChildAt(0))
+                assertSame("o conteúdo deveria vir logo depois do cabeçalho", conteudoDo(a), raiz.getChildAt(1))
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun reservaDoCabecalhoEOPaddingDoConteudo() {
+        // rb-66 (passo 2): o conteúdo reserva o espaço do cabeçalho no paddingTop: a altura dele quando está visível, e
+        // 0 quando some (com o deslize para cima), como quando ele estava no fluxo. Confere a posição na tela (o texto
+        // começa embaixo da base do cabeçalho), não só a propriedade: o padding pode estar velho até o próximo layout.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            fun topoNaTela(v: View): Int = IntArray(2).also { v.getLocationOnScreen(it) }[1]
+            // O texto começa no 1º filho visível do conteúdo (o banner ou a lista).
+            fun topoDoTexto(a: ReaderActivity): Int {
+                val conteudo = conteudoDo(a) as LinearLayout
+                val primeiro = (0 until conteudo.childCount).map { conteudo.getChildAt(it) }
+                    .first { it.visibility == View.VISIBLE }
+                return topoNaTela(primeiro)
+            }
+            esperarAte(scenario, "texto começa embaixo da base do cabeçalho visível") { a ->
+                val cabecalho = cabecalhoDo(a)
+                cabecalho.visibility == View.VISIBLE && cabecalho.height > 0 &&
+                    topoDoTexto(a) == topoNaTela(cabecalho) + cabecalho.height
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, -120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "texto sobe para o topo com o cabeçalho recolhido") { a ->
+                cabecalhoDo(a).visibility == View.GONE && topoDoTexto(a) == topoNaTela(conteudoDo(a))
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, 120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "texto volta embaixo do cabeçalho") { a ->
+                val cabecalho = cabecalhoDo(a)
+                cabecalho.visibility == View.VISIBLE && cabecalho.height > 0 &&
+                    topoDoTexto(a) == topoNaTela(cabecalho) + cabecalho.height
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun mostrarERecolherOCabecalhoNaoRodaOGanchoDoVoltarANarracao() {
+        // rb-66 (passo 2): o fixador da primeira linha não conta como salto. Com um "Voltar à narração" armado
+        // (depoisDoProximoSalto), recolher e mostrar o cabeçalho não roda o gancho nem o consome.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            var rodou = false
+            scenario.onActivity { a ->
+                val paginacao = checkNotNull(listaDoLeitor(a).paginacao) { "sem paginação no modo páginas" }
+                paginacao.depoisDoProximoSalto = { rodou = true }
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, -120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "cabeçalho recolhido com o gancho armado") { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                arrastar(rv, 0f, 120 * rv.resources.displayMetrics.density)
+            }
+            esperarAte(scenario, "cabeçalho voltou com o gancho armado") { a ->
+                cabecalhoDo(a).visibility == View.VISIBLE && !listaDoLeitor(a).isLayoutRequested
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            scenario.onActivity { a ->
+                assertFalse("o gancho rodou ao mostrar e recolher o cabeçalho", rodou)
+                assertNotNull(
+                    "o gancho foi consumido ao mostrar e recolher o cabeçalho",
+                    listaDoLeitor(a).paginacao?.depoisDoProximoSalto,
+                )
             }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())

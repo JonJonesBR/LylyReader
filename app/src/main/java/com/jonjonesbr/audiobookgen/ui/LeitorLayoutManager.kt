@@ -71,6 +71,16 @@ class LeitorLayoutManager(
         super.scrollToPosition(position)
     }
 
+    /**
+     * Mantém a primeira linha da página no lugar quando a altura da lista muda (rb-66, passo 2): pede a mesma [posicao]
+     * com o mesmo [offset] que `scrollToPositionWithOffset`, mas sem marcar o salto pendente. Por isso não dispara
+     * [aoTerminarSalto] e não consome o gancho "Voltar à narração" (`depoisDoProximoSalto`, do PaginacaoDoLeitor), que
+     * espera um salto de verdade. Só a `manterAPrimeiraLinha` da TelaCheiaDoLeitor usa esta função.
+     */
+    fun fixarPrimeiraLinha(posicao: Int, offset: Int) {
+        super.scrollToPositionWithOffset(posicao, offset)
+    }
+
     override fun onLayoutCompleted(state: RecyclerView.State?) {
         super.onLayoutCompleted(state)
         if (saltoPendente) {

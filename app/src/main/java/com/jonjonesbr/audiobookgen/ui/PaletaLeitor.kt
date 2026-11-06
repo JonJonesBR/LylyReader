@@ -35,6 +35,8 @@ private fun cor(hex: String) = Color.parseColor(hex)
  */
 internal fun Activity.aplicarPaletaNasBarrasDoLeitor(p: PaletaLeitor) {
     findViewById<android.view.View>(R.id.toolbarReader)?.setBackgroundColor(p.fundo)
+    // Cabeçalho sobreposto ao texto (rb-66): o fundo do contêiner é o do tema, para o texto não aparecer por baixo.
+    findViewById<android.view.View>(R.id.cabecalhoDoLeitor)?.setBackgroundColor(p.fundo)
     findViewById<android.view.View>(R.id.layoutBuscaReader)?.setBackgroundColor(p.superficie)
     val principal = ColorStateList.valueOf(p.texto)
     val secundaria = ColorStateList.valueOf(p.suave)
