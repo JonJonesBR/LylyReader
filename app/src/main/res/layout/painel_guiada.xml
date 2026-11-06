@@ -38,6 +38,9 @@
              no lugar do status, que some enquanto o botão aparece (ver ReaderTelaController.aplicarFabs). -->
         <!-- Ocupa o mesmo espaço que o status (largura 0dp com peso 1): os chips de passos e de velocidade ficam com
              a largura natural e não quebram em duas linhas (rb-26b, tela pequena com fonte grande). -->
+        <!-- Rótulo curto ("Narração") com ícone de retorno, para caber com a fonte grande; o texto longo fica no
+             tooltip e no contentDescription para o TalkBack (rb-26b, rodada 3). Com 0dp e peso 1, o botão divide o
+             espaço com o status, como antes. -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGuidedVoltarNarracao"
             style="@style/Widget.Material3.Button.TonalButton"
@@ -45,12 +48,19 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="12dp"
             android:contentDescription="@string/cd_guided_voltar_narracao"
-            android:text="@string/guided_voltar_narracao"
+            android:tooltipText="@string/guided_voltar_narracao"
+            android:text="@string/guided_voltar_narracao_curto"
             android:textSize="14sp"
             android:maxLines="1"
             android:ellipsize="end"
-            app:icon="@android:drawable/ic_media_play"
+            app:icon="@drawable/ic_voltar_narracao"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:iconTint="?attr/colorOnSecondaryContainer"
             android:visibility="gone"/>
 
         <TextView

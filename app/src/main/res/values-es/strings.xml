@@ -956,6 +956,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="guided_options_more">Más ajustes</string>
     <string name="guided_options_chip">⚙ Voz</string>
     <string name="guided_voltar_narracao">Volver a la narración</string>
+    <string name="guided_voltar_narracao_curto">Narración</string>
     <string name="guided_options_engine_android">Voz de Android</string>
     <string name="guided_options_only_book">Solo para este libro</string>
     <string name="guided_options_only_book_desc">Guarda el tono, las pausas y la preparación solo para este libro.</string>

@@ -969,6 +969,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="guided_options_more">Mais ajustes</string>
     <string name="guided_options_chip">⚙ Voz</string>
     <string name="guided_voltar_narracao">Voltar à narração</string>
+    <string name="guided_voltar_narracao_curto">Narração</string>
     <string name="guided_options_engine_android">Voz do Android</string>
     <string name="guided_options_only_book">Só neste livro</string>
     <string name="guided_options_only_book_desc">Guarda tom, pausas e preparo só para este livro.</string>

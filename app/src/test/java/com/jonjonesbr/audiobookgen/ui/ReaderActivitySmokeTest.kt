@@ -32,6 +32,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.BlacklistStore
@@ -64,6 +65,7 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -162,6 +164,7 @@ class ReaderActivitySmokeTest {
         // A costura e a ponte da guiada são estáticas: não podem vazar para o próximo teste (rb-15).
         TtsSynthesizer.substitutoParaTestes = null
         GuidedPlaybackBridge.manager?.let { it.release(); GuidedPlaybackBridge.deactivate(it) }
+        RuntimeEnvironment.setFontScale(1f)
         zerarFabricaDeViewModel()
     }
 
@@ -3059,6 +3062,71 @@ class ReaderActivitySmokeTest {
         val altura = rv.height - rv.paddingBottom - rv.paddingTop
         val ajuste = RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop, altura)
         assertEquals("a página deveria estar alinhada", 0, ajuste)
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "pt-w360dp-h800dp-port")
+    fun rotuloDoBotaoDoPainelCabeComFonteGrandeEmPortugues() {
+        conferirRotuloDoBotaoComFonteGrande()
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "es-w360dp-h800dp-port")
+    fun rotuloDoBotaoDoPainelCabeComFonteGrandeEmEspanhol() {
+        // O espanhol é o rótulo mais longo ("Volver a la narración" no texto cheio; "Narración" no curto).
+        conferirRotuloDoBotaoComFonteGrande()
+    }
+
+    /**
+     * rb-26b, rodada 3: no retrato de 360 dp com fonte 1,3, o botão do painel mostra o rótulo curto inteiro, sem
+     * reticências, e os chips de passos e de velocidade também. O texto tem de caber com folga para fontes mais largas
+     * (MiSans): se não couber, o ajuste é nos paddings, não no tamanho do texto.
+     */
+    private fun conferirRotuloDoBotaoComFonteGrande() {
+        RuntimeEnvironment.setFontScale(1.3f)
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            // Duas teclas de página: o modo manual liga e o botão do painel aparece.
+            scenario.onActivity { a ->
+                repeat(2) { a.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PAGE_DOWN)) }
+            }
+            esperarAte(scenario, "botão Voltar à narração do painel visível") { a ->
+                a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
+            }
+            // Como no print do usuário (pausada, sem síntese): a soneca mostra o emoji e o spinner está escondido.
+            scenario.onActivity { a ->
+                a.findViewById<TextView>(R.id.tvGuidedSoneca).apply {
+                    text = "\uD83D\uDE34"
+                    visibility = View.VISIBLE
+                }
+                a.findViewById<View>(R.id.progressGuidedLoading).visibility = View.GONE
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            scenario.onActivity { a ->
+                val botao = a.findViewById<MaterialButton>(R.id.btnGuidedVoltarNarracao)
+                assertEquals(a.getString(R.string.guided_voltar_narracao_curto), botao.text.toString())
+                val chips = listOf<TextView>(
+                    botao,
+                    a.findViewById<TextView>(R.id.tvGuidedPassos),
+                    a.findViewById<TextView>(R.id.btnGuidedVelocidade),
+                )
+                for (tv in chips) {
+                    val layout = checkNotNull(tv.layout) { "'${tv.text}' sem layout" }
+                    assertEquals("'${tv.text}' tem reticências", 0, layout.getEllipsisCount(0))
+                }
+                // Folga para fontes mais largas (MiSans): o texto cabe em 90% da área de texto. O totalPadding do
+                // MaterialButton já inclui o ícone e o iconPadding (são compound drawable e drawablePadding).
+                val espaco = botao.width - botao.totalPaddingLeft - botao.totalPaddingRight
+                val largura = botao.paint.measureText(botao.text.toString())
+                assertTrue(
+                    "O rótulo mede $largura px e o espaço é $espaco px: sem folga para fontes mais largas",
+                    largura <= espaco * 0.9f,
+                )
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
     /**

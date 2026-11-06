@@ -964,6 +964,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="guided_options_more">More settings</string>
     <string name="guided_options_chip">⚙ Voice</string>
     <string name="guided_voltar_narracao">Back to narration</string>
+    <string name="guided_voltar_narracao_curto">Narration</string>
     <string name="guided_options_engine_android">Android voice</string>
     <string name="guided_options_only_book">Only for this book</string>
     <string name="guided_options_only_book_desc">Keeps pitch, pauses and look-ahead for this book only.</string>
