@@ -196,6 +196,26 @@ class RegraDasPaginasDoLeitorTest {
     }
 
     @Test
+    fun `topo do desenho sem linha cruzando e o proprio topo`() {
+        val linhas = listOf(LinhaDaPagina(0, 40), LinhaDaPagina(40, 80), LinhaDaPagina(80, 120))
+        assertEquals(80, regra.topoDoDesenho(linhas, 80, alturaDaPagina = 1000))
+        assertEquals(40, regra.topoDoDesenho(linhas, 40, alturaDaPagina = 1000))
+    }
+
+    @Test
+    fun `topo do desenho comeca na base da meia linha de cima`() {
+        // A linha de 80 a 120 cruza o topo 100: o desenho começa na base dela (120), e a meia linha some.
+        val linhas = listOf(LinhaDaPagina(0, 40), LinhaDaPagina(40, 80), LinhaDaPagina(80, 120))
+        assertEquals(120, regra.topoDoDesenho(linhas, 100, alturaDaPagina = 1000))
+    }
+
+    @Test
+    fun `topo do desenho nao corta linha tao alta quanto a pagina`() {
+        val linhas = listOf(LinhaDaPagina(0, 40), LinhaDaPagina(40, 400))
+        assertEquals(100, regra.topoDoDesenho(linhas, 100, alturaDaPagina = 300))
+    }
+
+    @Test
     fun `passo da guiada vira quando a linha narrada esta escondida`() {
         // Linha de 300 a 340, corte em 320: escondida, então vira até ela ficar no topo (200).
         assertEquals(100, regra.passoDaGuiada(300, 340, 200, 320, podeSubir = true))

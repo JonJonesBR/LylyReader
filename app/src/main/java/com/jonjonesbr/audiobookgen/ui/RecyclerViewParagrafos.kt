@@ -294,7 +294,7 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
         }
         val salvo = canvas.save()
         // O clip de cima também: com clipToPadding falso, a última linha da página anterior apareceria no respiro.
-        canvas.clipRect(0, paddingTop, width, p.corte())
+        canvas.clipRect(0, topoDaPagina(), width, p.corte())
         super.dispatchDraw(canvas)
         canvas.restoreToCount(salvo)
     }

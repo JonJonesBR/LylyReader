@@ -1,5 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import com.jonjonesbr.audiobookgen.domain.RegraDasPaginasDoLeitor
+
 /**
  * Uma linha do texto identificada pelo parágrafo (posição no adapter) e pelo índice dela no layout (rb-67, item 1).
  * [topo] é a borda de cima dela nas coordenadas da lista, no momento em que foi medida.
@@ -83,4 +85,14 @@ private fun RecyclerViewParagrafos.ancorasDoParagrafo(holder: ParagrafoAdapter.V
     return (0 until layout.lineCount).map {
         AncoraDaLinha(holder.bindingAdapterPosition, it, y0 + layout.getLineTop(it))
     }
+}
+
+/**
+ * Topo do desenho da página (rb-67, item 4): o `paddingTop` enquanto a lista ainda rola para a frente, ou com texto em
+ * uso (com seleção, a linha cortada pode ser a selecionada). No fim do livro, a meia linha de cima não é desenhada: o
+ * desenho começa na base dela, porque a página não pode subir para alinhá-la.
+ */
+internal fun RecyclerViewParagrafos.topoDaPagina(): Int {
+    if (canScrollVertically(1) || textoEmUso) return paddingTop
+    return RegraDasPaginasDoLeitor.topoDoDesenho(linhasNaTela(), paddingTop, height - paddingBottom - paddingTop)
 }

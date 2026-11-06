@@ -63,6 +63,15 @@ object RegraDasPaginasDoLeitor {
     }
 
     /**
+     * Topo do desenho da página (rb-67, item 4): a base da linha que cruza o [topo], para a meia linha de cima sumir do
+     * desenho. Sem linha cruzada, ou com uma linha tão alta quanto a página ([alturaDaPagina]), devolve [topo].
+     */
+    fun topoDoDesenho(linhas: List<LinhaDaPagina>, topo: Int, alturaDaPagina: Int): Int {
+        val cruzada = linhas.firstOrNull { it.topo < topo && topo < it.base } ?: return topo
+        return if (cruzada.base - cruzada.topo >= alturaDaPagina) topo else cruzada.base
+    }
+
+    /**
      * Passo do acompanhamento da leitura guiada. Se a linha narrada termina depois do [corte] (está escondida),
      * vira até ela ficar no topo. Se começa acima do [topo] e [podeSubir] vale, sobe até ela. Nos outros casos
      * não mexe. [podeSubir] falso é a histerese: dentro do mesmo parágrafo a página não sobe (rb-65).

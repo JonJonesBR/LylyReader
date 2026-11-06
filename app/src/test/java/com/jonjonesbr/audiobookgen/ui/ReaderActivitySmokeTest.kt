@@ -2274,6 +2274,47 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun fimDoLivroNaoDesenhaAMeiaLinhaDeCima() {
+        // rb-67 (item 4): na última página a meia linha de cima não aparece (o desenho começa na base dela), e a última
+        // linha do livro continua inteira. Com a lista ainda rolando, o desenho começa no paddingTop.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                assertEquals("com a lista rolando, o desenho começa no paddingTop", rv.paddingTop, rv.topoDaPagina())
+            }
+            scenario.onActivity { a ->
+                val pag = listaDoLeitor(a).paginacao!!
+                for (i in 0 until 100) {
+                    if (!pag.virar(1)) break
+                }
+            }
+            esperarAte(scenario, "layout do fim do livro") { a -> !listaDoLeitor(a).isLayoutRequested }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val altura = rv.height - rv.paddingBottom - rv.paddingTop
+                assertTrue(
+                    "a última página deveria começar no meio de uma linha para o teste discriminar",
+                    RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop, altura) != 0,
+                )
+                assertTrue(
+                    "no fim do livro o desenho deveria começar abaixo do paddingTop, veio ${rv.topoDaPagina()}",
+                    rv.topoDaPagina() > rv.paddingTop,
+                )
+                assertTrue(
+                    "a última linha do livro deveria estar inteira acima do corte",
+                    rv.linhasNaTela().last().base <= rv.paginacao!!.corte(),
+                )
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun paginaAlinhadaQuandoAAreaDeBaixoEncolheComFocoNoParagrafo() {
         // rb-26b (passo 2, D2): a área de baixo encolhe (paddingBottom maior) com um parágrafo focado. Depois do
         // layout, a 1ª linha da página começa no paddingTop, sem corte em cima.
