@@ -828,6 +828,9 @@ class ReaderActivity : BasePlayerActivity() {
 
         capitulosController.atualizarBarra(texto)
 
+        // ── Busca (antes das barras: o cabeçalho reserva espaço conforme a busca, rb-66) ──────────
+        buscaController.aplicar(state)
+
         // ── Pill de status (banner de limpeza) e barra de modo ativo ───────────
         telaController.aplicarStatus(tela, texto)
 
@@ -835,9 +838,6 @@ class ReaderActivity : BasePlayerActivity() {
         val paragrafosExibidos = atualizarAdapterDeLeitura(state, texto, tela.modoAdapter)
 
         processarAutoStartLeituraGuiada(texto)
-
-        // ── Busca ──────────────────────────────────────────────────────────────
-        buscaController.aplicar(state)
 
         // Restaura a posição de leitura salva — apenas uma vez, no carregamento inicial,
         // e nunca quando a leitura guiada vai iniciar sozinha (ela faz seu próprio scroll).
