@@ -2272,6 +2272,66 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    /** Espera a lista vertical com o TalkBack ligado: a paginação não está ativa e os parágrafos 0 estão medidos. */
+    private fun esperarListaVerticalComTalkBack(scenario: ActivityScenario<ReaderActivity>) {
+        esperarAte(scenario, "lista vertical com o TalkBack ligado") { a ->
+            val rv = listaDoLeitor(a)
+            rv.paginacao?.ativa == false && tvEm(rv, 0)?.layout != null
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun comTalkBackOModoPaginasViraVerticalERolaComAAcessibilidade() {
+        // rb-67 (item 2): com o TalkBack ligado, a opção de páginas não vale. A lista é vertical e não corta nem vira
+        // a página; a ação de rolagem da acessibilidade rola a lista (a leitura contínua lê o que está abaixo).
+        shadowOf(app.getSystemService(AccessibilityManager::class.java)).setTouchExplorationEnabled(true)
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarListaVerticalComTalkBack(scenario)
+            var antes = 0
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                assertFalse("com o TalkBack a paginação não deveria estar ativa", rv.paginacao!!.ativa)
+                antes = rv.computeVerticalScrollOffset()
+                rv.performAccessibilityAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, null)
+            }
+            esperarAte(scenario, "a rolagem da acessibilidade rola a lista") { a ->
+                listaDoLeitor(a).computeVerticalScrollOffset() > antes
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun ligarTalkBackComOLeitorAbertoPassaParaAListaVertical() {
+        // rb-67 (item 2): o TalkBack ligado com o Leitor já aberto no modo páginas troca a lista para vertical, sem
+        // fechar a tela: o cabeçalho segue à mostra e o parágrafo do topo continua o mesmo.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var topoAntes: LinhaNaLista? = null
+            scenario.onActivity { a -> topoAntes = primeiraLinhaDaPagina(listaDoLeitor(a)) }
+            val antes = checkNotNull(topoAntes) { "sem linha no topo antes do TalkBack" }
+            shadowOf(app.getSystemService(AccessibilityManager::class.java)).setTouchExplorationEnabled(true)
+            shadowOf(Looper.getMainLooper()).idle()
+            esperarListaVerticalComTalkBack(scenario)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                assertFalse("com o TalkBack ligado a paginação deveria sair", rv.paginacao!!.ativa)
+                assertEquals("com o TalkBack o cabeçalho deveria ficar à mostra", View.VISIBLE,
+                    cabecalhoDo(a).visibility)
+                assertEquals("o parágrafo do topo deveria continuar o mesmo", antes.pos, primeiraLinhaDaPagina(rv).pos)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun fimDoLivroNaoDesenhaAMeiaLinhaDeCima() {
@@ -2573,7 +2633,8 @@ class ReaderActivitySmokeTest {
         // Com o TalkBack ligado desde a abertura, o cabeçalho começa à mostra e ocupa lugar.
         shadowOf(app.getSystemService(AccessibilityManager::class.java)).setTouchExplorationEnabled(true)
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
-            esperarModoPaginas(scenario)
+            // Com o TalkBack a lista é vertical (rb-67, item 2): a opção de páginas não vale.
+            esperarListaVerticalComTalkBack(scenario)
             esperarCabecalho(scenario, "cabeçalho à mostra com o TalkBack", visivel = true)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
             scenario.onActivity { a ->

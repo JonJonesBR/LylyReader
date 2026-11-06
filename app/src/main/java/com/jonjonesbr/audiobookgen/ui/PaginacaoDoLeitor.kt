@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.ui
 
 import android.view.MotionEvent
+import android.view.accessibility.AccessibilityManager
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -23,8 +24,18 @@ internal class PaginacaoDoLeitor(
     // Virada pedida por quem lê (gesto, tecla, TalkBack): liga o modo manual da leitura guiada.
     private val aoVirarPeloLeitor: () -> Unit,
 ) {
-    /** Opção "Horizontal (páginas)" ligada. Trocar o valor redesenha a lista (o corte muda). */
+    /** Serviço de acessibilidade: com o TalkBack ligado a lista é vertical (rb-67, item 2). */
+    private val acessibilidade: AccessibilityManager? = lista.context.getSystemService(AccessibilityManager::class.java)
+
+    private val leitorDeTela: Boolean
+        get() = acessibilidade?.isTouchExplorationEnabled == true
+
+    /**
+     * Opção "Horizontal (páginas)" ligada. Trocar o valor redesenha a lista (o corte muda). Com o TalkBack ligado, a
+     * opção fica guardada mas não vale: quem ouve não ganha nada com páginas cortadas por desenho (rb-67, item 2).
+     */
     var ligada: Boolean = false
+        get() = field && !leitorDeTela
         set(valor) {
             if (field == valor) return
             field = valor

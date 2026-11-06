@@ -85,6 +85,15 @@ internal class BarrasDoLeitor(
             aplicarPainel(leitorDeTela())
         }
     }
+    // TalkBack ligado ou desligado com o Leitor aberto (atalho do volume): a lista troca de vertical para páginas ou
+    // volta (rb-67, item 2). Ao sair do TalkBack, a página já se alinha; e as barras reaplicam com o modo novo.
+    private val ouvinteDoLeitorDeTela = AccessibilityManager.TouchExplorationStateChangeListener { ligado ->
+        lista.requestLayout()
+        lista.invalidate()
+        val paginacao = lista.paginacao
+        if (!ligado && paginacao != null && paginacao.ligada) lista.post { paginacao.alinharTopo() }
+        aplicar(leitura, lista.paginacao?.ligada == true && leitura)
+    }
     // Teclado: o Tab sem dono mostra o que estiver recolhido (cabeçalho e painel) e segue para a navegação de foco
     // normal (não consome o evento).
     private val tecla = ViewCompat.OnUnhandledKeyEventListenerCompat { _, ev ->
@@ -136,6 +145,7 @@ internal class BarrasDoLeitor(
         activity.window.decorView.viewTreeObserver.addOnWindowFocusChangeListener(focoDaJanela)
         activity.window.decorView.viewTreeObserver.addOnGlobalLayoutListener(layoutDaJanela)
         ViewCompat.addOnUnhandledKeyEventListener(activity.window.decorView, tecla)
+        acessibilidade?.addTouchExplorationStateChangeListener(ouvinteDoLeitorDeTela)
     }
 
     /**
@@ -286,5 +296,6 @@ internal class BarrasDoLeitor(
         activity.lifecycle.removeObserver(temporizador)
         activity.lifecycle.removeObserver(fimDaActivity)
         ViewCompat.removeOnUnhandledKeyEventListener(activity.window.decorView, tecla)
+        acessibilidade?.removeTouchExplorationStateChangeListener(ouvinteDoLeitorDeTela)
     }
 }
