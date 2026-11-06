@@ -41,6 +41,12 @@ internal class PaginacaoDoLeitor(
     /** Há topo desalinhado esperando o texto ser liberado (toque ou menu aberto), para alinhar depois (rb-26b, D2). */
     private var alinharPendente = false
 
+    /**
+     * Gancho de uma vez só, roda depois do alinhamento do próximo salto (rb-26b): o botão "Voltar à narração" o usa
+     * para levar a página até a linha narrada. Fora das páginas, [aoTerminarSalto] o descarta.
+     */
+    var depoisDoProximoSalto: (() -> Unit)? = null
+
     private val arraste = ArrasteLateralDaPagina(
         lista,
         podeVirar = { ativa },
@@ -155,7 +161,9 @@ internal class PaginacaoDoLeitor(
 
     /** Chamado pelo LeitorLayoutManager quando um salto termina o layout. Por post: o layout não pode rolar a lista. */
     fun aoTerminarSalto() {
-        if (ativa) lista.post { alinharTopo() }
+        val depois = depoisDoProximoSalto
+        depoisDoProximoSalto = null
+        if (ativa) lista.post { alinharTopo(); depois?.invoke() }
     }
 
     /** Toque da lista no modo páginas: o arraste lateral vira a página, e o resto do gesto é engolido. */
@@ -184,6 +192,24 @@ private fun RecyclerViewParagrafos.linhasDoParagrafo(tv: TextView): List<LinhaDa
     return (primeira..ultima).map { linha ->
         LinhaDaPagina(y0 + layout.getLineTop(linha), y0 + layout.getLineBottom(linha))
     }
+}
+
+/**
+ * Leva a página até a linha do [progressPct] do parágrafo [indice] (rb-26b). O salto leva só ao início do parágrafo, e
+ * a linha narrada pode estar em outra página. Chamado depois do layout do salto (por post, ver [aoTerminarSalto]).
+ * Falso se não há paginação em uso, texto em uso ou layout do parágrafo.
+ */
+internal fun RecyclerViewParagrafos.levarALinhaNarrada(indice: Int, progressPct: Float): Boolean {
+    val pag = paginacao?.takeIf { it.ativa && !textoEmUso }
+    val tv = (findViewHolderForAdapterPosition(indice) as? ParagrafoAdapter.VHLeitura)
+        ?.takeIf { it.itemView === it.tv }?.tv
+    val linha = tv?.let { linhaDoProgresso(it, progressPct) }
+    if (pag == null || linha == null) return false
+    // Mesma regra da guiada ao virar a página, com subida: a linha narrada vai ao topo e a página fica alinhada.
+    val passo = RegraDasPaginasDoLeitor.passoDaGuiada(linha.topo, linha.base, paddingTop, pag.corte(), podeSubir = true)
+    // scrollBy por código não passa por DRAGGING: não liga o modo manual nem a tela cheia.
+    if (passo != 0) scrollBy(0, passo)
+    return true
 }
 
 /**

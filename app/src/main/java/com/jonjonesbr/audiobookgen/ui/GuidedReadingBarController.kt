@@ -107,11 +107,6 @@ class GuidedReadingBarController(
     var dialogoInicioPendente = false
         private set
 
-    init {
-        // "Voltar à narração" dentro do painel (rb-26b, passo 4): mesma ação do chip, que segue ligado na Activity.
-        activity.findViewById<View>(R.id.btnGuidedVoltarNarracao).setOnClickListener { voltarAoAcompanhamento() }
-    }
-
     fun onParagrafoToque(indice: Int) {
         val state = viewModel.uiState.value
         if (state.selecaoInicio == null && !state.modoEdicao && !state.mostrandoAlteracoes) {
@@ -145,11 +140,23 @@ class GuidedReadingBarController(
         recyclerView.announceForAccessibility(activity.getString(R.string.cd_guided_voltar_narracao))
         // Salto direto, como a navegação por capítulos. Na vertical, o parágrafo fica na altura da linha de
         // destaque; o acompanhamento fino retoma com o próximo progresso. No modo páginas, o topo vai para a primeira
-        // linha inteira depois do layout (ver PaginacaoDoLeitor), e o próximo progresso vira a página até a narrada.
-        val margem = if (lm.orientation == LinearLayoutManager.VERTICAL && recyclerView.paginacao?.ativa != true) {
+        // linha inteira depois do layout (ver PaginacaoDoLeitor), e depois dele a página vai até a linha narrada (ver
+        // levarALinhaNarrada), mesmo com a guiada pausada.
+        val paginacao = recyclerView.paginacao?.takeIf { it.ativa }
+        val margem = if (lm.orientation == LinearLayoutManager.VERTICAL && paginacao == null) {
             (recyclerView.height * RegraDaPaginaDoParagrafo.PROPORCAO_ALVO).toInt()
         } else {
             0
+        }
+        if (paginacao != null) {
+            paginacao.depoisDoProximoSalto = {
+                val mesmaNarracao = !scrollManual && guidedPlayerManager.state.value.index == indice
+                if (mesmaNarracao && recyclerView.levarALinhaNarrada(indice, guidedPlayerManager.progressoDoNarrado)) {
+                    aguardandoAutoScroll = false
+                    // Evita que o primeiro tique depois de retomar (progresso 0) suba a página até o início (rb-65).
+                    indiceAcompanhado = indice
+                }
+            }
         }
         // O salto só vale no próximo layout. Até lá, um progresso que não ache a view do alvo refaz o salto
         // (manterDestaqueVisivel). A flag fica ligada até o próximo parágrafo, o fim de uma rolagem ou, na vertical,
@@ -225,6 +232,8 @@ class GuidedReadingBarController(
     }
 
     fun configurarGuidedPlayerBotoes() {
+        // "Voltar à narração" dentro do painel (rb-26b, passo 4): mesma ação do chip, que segue ligado na Activity.
+        activity.findViewById<View>(R.id.btnGuidedVoltarNarracao).setOnClickListener { voltarAoAcompanhamento() }
         views.btnGuidedVoz.setOnClickListener { callbacks.abrirSeletorVozes() }
         views.tvGuidedSoneca.setOnClickListener { callbacks.mostrarDialogoSleepTimer() }
         views.tvGuidedPassos.setOnClickListener {

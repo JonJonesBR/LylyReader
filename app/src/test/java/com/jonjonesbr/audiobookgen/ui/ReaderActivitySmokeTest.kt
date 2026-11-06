@@ -2938,24 +2938,16 @@ class ReaderActivitySmokeTest {
                 a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
             }
             scenario.onActivity { a -> a.findViewById<View>(R.id.btnGuidedVoltarNarracao).performClick() }
-            // O clique só pede o salto: o layout e o alinhamento do topo vêm no próximo quadro. Sem esperar, o
-            // progresso abaixo rodaria sobre o layout antigo.
-            esperarAte(scenario, "salto do chip aplicado") { a ->
-                !lista(a).isLayoutRequested && tvEm(lista(a), 2)?.top == lista(a).paddingTop
-            }
-            // Mesma linha, outro ponto: o tique só roda com progresso novo, e é ele que leva a página à narração.
+            // O clique só pede o salto: o layout, o alinhamento do topo e o gancho que leva à linha narrada rodam
+            // depois do layout (rb-26b). Sem emitir progresso, a página já tem de estar na linha narrada.
+            esperarAte(scenario, "salto do botão aplicado") { a -> !lista(a).isLayoutRequested }
+            shadowOf(Looper.getMainLooper()).idle()
+            scenario.onActivity { a -> conferirLinhaNarradaNaPagina(listaDoLeitor(a), 2, linha) }
+            // Mesma linha, outro ponto: o tique não pode tirar a página da narração.
             var outroPonto = 0f
             scenario.onActivity { a -> outroPonto = progressoDaLinha(listaDoLeitor(a), 2, linha, deslocamento = 1) }
             emitirProgresso(scenario, outroPonto)
-            scenario.onActivity { a ->
-                val rv = listaDoLeitor(a)
-                val narrada = linhaNaLista(rv, 2, linha)
-                assertTrue("a linha narrada deveria estar na página", narrada.topo >= rv.paddingTop)
-                assertTrue("a linha narrada deveria estar inteira", narrada.base <= rv.paginacao!!.corte())
-                val altura = rv.height - rv.paddingBottom - rv.paddingTop
-                val ajuste = RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop, altura)
-                assertEquals("a página deveria estar alinhada", 0, ajuste)
-            }
+            scenario.onActivity { a -> conferirLinhaNarradaNaPagina(listaDoLeitor(a), 2, linha) }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
@@ -2996,6 +2988,77 @@ class ReaderActivitySmokeTest {
             }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "land")
+    fun paisagemVoltarNarracaoDoPainelLevaALinhaNarradaComAGuiadaPausada() {
+        // rb-26b: na paisagem o botão do painel tem listener logo depois de abrir, e o toque com a guiada pausada leva
+        // a página até a linha narrada (não só ao início do parágrafo).
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            scenario.onActivity { a ->
+                assertTrue(a.findViewById<View>(R.id.btnGuidedVoltarNarracao).hasOnClickListeners())
+            }
+            conferirBotaoDoPainelComGuiadaPausada(scenario)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "port")
+    fun retratoVoltarNarracaoDoPainelLevaALinhaNarradaComAGuiadaPausada() {
+        // rb-26b: no retrato, com a guiada pausada, o botão do painel também leva à linha narrada.
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            conferirBotaoDoPainelComGuiadaPausada(scenario)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    /**
+     * Botão "Voltar à narração" do painel com a guiada pausada (rb-26b): a pausa guarda o progresso da linha narrada,
+     * e o toque leva a página até ela. Com a guiada tocando, o tique cuida disso; aqui não há tique.
+     */
+    private fun conferirBotaoDoPainelComGuiadaPausada(scenario: ActivityScenario<ReaderActivity>) {
+        var progresso = 0f
+        var linha = 0
+        scenario.onActivity { a ->
+            val (p, l) = progressoDaPrimeiraLinhaEscondida(listaDoLeitor(a), 2)
+            progresso = p
+            linha = l
+        }
+        emitirProgresso(scenario, progresso)
+        // Duas teclas de página: o usuário rola para longe da narração e o botão do painel aparece.
+        scenario.onActivity { a ->
+            repeat(2) { a.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PAGE_DOWN)) }
+        }
+        esperarAte(scenario, "botão Voltar à narração do painel visível") { a ->
+            a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
+        }
+        scenario.onActivity { GuidedPlaybackBridge.manager!!.pause() }
+        scenario.onActivity { assertEquals(0f, GuidedPlaybackBridge.manager!!.state.value.progressPct, 0f) }
+        scenario.onActivity { a -> a.findViewById<View>(R.id.btnGuidedVoltarNarracao).performClick() }
+        esperarAte(scenario, "salto do botão aplicado") { a -> !lista(a).isLayoutRequested }
+        shadowOf(Looper.getMainLooper()).idle()
+        scenario.onActivity { a ->
+            val rv = listaDoLeitor(a)
+            conferirLinhaNarradaNaPagina(rv, 2, linha)
+            assertTrue("o início do parágrafo deveria ter subido além do topo", tvEm(rv, 2)!!.top < rv.paddingTop)
+            assertEquals(View.GONE, a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility)
+        }
+    }
+
+    /** A linha narrada inteira na página, com a página alinhada no topo (rb-26b). */
+    private fun conferirLinhaNarradaNaPagina(rv: RecyclerView, pos: Int, linha: Int) {
+        val narrada = linhaNaLista(rv, pos, linha)
+        assertTrue("a linha narrada deveria estar na página", narrada.topo >= rv.paddingTop)
+        assertTrue("a linha narrada deveria estar inteira", narrada.base <= rv.paginacao!!.corte())
+        val altura = rv.height - rv.paddingBottom - rv.paddingTop
+        val ajuste = RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop, altura)
+        assertEquals("a página deveria estar alinhada", 0, ajuste)
     }
 
     /**

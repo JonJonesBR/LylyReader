@@ -583,6 +583,76 @@ class GuidedPlayerManagerTest {
             arquivo.delete()
         }
     }
+    // rb-26b: com a guiada pausada, o estado zera o progresso (stopProgressPolling), mas a tela precisa saber qual
+    // linha estava sendo narrada para levar a página até ela.
+    @Test
+    fun pausaGuardaOProgressoDoNarradoEZeraOEstado() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(0)
+        manager.mutableState().value = manager.state.value.copy(progressPct = 0.6f)
+
+        manager.pause()
+
+        assertEquals(0f, manager.state.value.progressPct, 0f)
+        assertEquals(0.6f, manager.progressoDoNarrado, 0f)
+    }
+
+    @Test
+    fun retomarDepoisDaPausaSegueOEstado() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(0)
+        manager.mutableState().value = manager.state.value.copy(progressPct = 0.6f)
+        manager.pause()
+
+        manager.resume()
+        manager.mutableState().value = manager.state.value.copy(progressPct = 0.3f)
+
+        assertEquals(0.3f, manager.progressoDoNarrado, 0f)
+    }
+
+    @Test
+    fun proximoDepoisDaPausaNaoDevolveOValorGuardado() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(0)
+        manager.mutableState().value = manager.state.value.copy(progressPct = 0.6f)
+        manager.pause()
+
+        manager.next()
+
+        assertNotEquals(0.6f, manager.progressoDoNarrado, 0f)
+        assertEquals(manager.state.value.progressPct, manager.progressoDoNarrado, 0f)
+    }
+
+    @Test
+    fun tocarOutroDepoisDaPausaNaoDevolveOValorGuardado() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(0)
+        manager.mutableState().value = manager.state.value.copy(progressPct = 0.6f)
+        manager.pause()
+
+        manager.play(1)
+
+        assertNotEquals(0.6f, manager.progressoDoNarrado, 0f)
+        assertEquals(manager.state.value.progressPct, manager.progressoDoNarrado, 0f)
+    }
+
+    @Test
+    fun duasPausasSeguidasMantemOValorGuardado() {
+        val manager = createManager()
+        manager.setParagraphs(paragraphs(2))
+        manager.setCurrentIndex(0)
+        manager.mutableState().value = manager.state.value.copy(progressPct = 0.6f)
+        manager.pause()
+
+        manager.pause() // soneca ou fone pausando de novo: não zera o valor guardado
+
+        assertEquals(0.6f, manager.progressoDoNarrado, 0f)
+    }
+
     // --- Helpers de reflexão para os poucos campos privados sem seam público ---
 
     private fun GuidedPlayerManager.field(name: String) =

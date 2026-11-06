@@ -359,6 +359,9 @@ class GuidedPlayerManager(
     // A pausa aconteceu sem áudio tocando (esperando síntese): retomar não deve chamar o player,
     // que reiniciaria a unidade anterior já terminada.
     @Volatile private var pausadoSemAudio = false
+    // Progresso do parágrafo no instante da pausa: stopProgressPolling() zera o estado, e a tela precisa saber
+    // qual linha estava sendo narrada para levar a página até ela (rb-26b).
+    @Volatile private var progressoAoPausar = 0f
     // O player avisou erro no trecho atual (arquivo inválido, falha do decodificador): o laço não espera um fim
     // que não vem, a tela não volta a mostrar "tocando" e "tocar" recomeça o parágrafo em vez de retomar.
     @Volatile private var trechoFalhou = false
@@ -1241,6 +1244,13 @@ class GuidedPlayerManager(
     val estaPausado: Boolean get() = pausadoPeloUsuario
 
     /**
+     * Progresso (0 a 1) do parágrafo que está sendo narrado. Com a guiada pausada, o estado já voltou a 0
+     * (stopProgressPolling), então devolve o valor guardado na pausa.
+     */
+    val progressoDoNarrado: Float
+        get() = if (pausadoPeloUsuario) progressoAoPausar else _state.value.progressPct
+
+    /**
      * Conta tocar, pausar, retomar e parar, venham de onde vierem (tela, notificação, soneca, foco, chamada).
      * Quem pausa por conta própria (rb-24, PausaParaOuvir) guarda o valor e só retoma se nada mudou.
      */
@@ -1252,6 +1262,7 @@ class GuidedPlayerManager(
         // Já pausado: uma segunda pausa (soneca, fone, foco de áudio) leria o player parado, marcaria
         // "pausado sem áudio", e o próximo "tocar" não retomaria o som.
         if (pausadoPeloUsuario) return
+        progressoAoPausar = _state.value.progressPct
         stopProgressPolling()
         // Trecho com erro não toca: não pergunta ao motor (ver publicarTrecho).
         pausadoSemAudio = trechoFalhou || playerEngine?.isPlaying() != true

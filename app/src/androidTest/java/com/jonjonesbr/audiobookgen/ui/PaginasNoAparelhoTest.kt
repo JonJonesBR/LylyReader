@@ -44,8 +44,9 @@ import org.junit.runner.RunWith
  * viram a página; P5 é a leitura guiada virando sozinha e o botão "Voltar à narração" no painel; P6 gira a tela; P7
  * confere PAGE_DOWN; P8 põe a alça na linha de baixo da página, com a guiada pausada, e confere que a página não rola;
  * P9 e P10 são a seleção com a barra embaixo, no retrato e na paisagem (rb-26b, passo 3); P12 é o cabeçalho que some
- * ao virar a página e volta com um deslize para baixo (rb-26b, passo 6). Os toques são reais (ver
- * [Gestos]); as conferências leem as Views na thread principal.
+ * ao virar a página e volta com um deslize para baixo (rb-26b, passo 6); P14 é o botão "Voltar à narração" do painel na
+ * paisagem, com a guiada pausada e longe da narração, que tem de levar a página até a linha narrada (rb-26b, rodada 3).
+ * Os toques são reais (ver [Gestos]); as conferências leem as Views na thread principal.
  */
 @RunWith(AndroidJUnit4::class)
 class PaginasNoAparelhoTest {
@@ -667,6 +668,129 @@ class PaginasNoAparelhoTest {
      * capítulo), e um deslize para baixo o traz de volta. A 1ª linha da página é a mesma antes e depois de mostrar ou
      * recolher o cabeçalho, e um deslize para cima não vira a página.
      */
+    /**
+     * P14 (rb-26b, rodada 3): na paisagem, com a guiada no modo páginas, o botão "Voltar à narração" do painel leva a
+     * página até a linha narrada, também com a guiada pausada. O parágrafo 0 é longo (50 frases de 2 s): a guiada vira
+     * a página dentro dele; depois a pessoa vira duas páginas à mão, pausa e toca no botão. Com a guiada tocando, o
+     * mesmo botão leva à linha narrada depois de virar mais duas páginas.
+     */
+    @Test
+    fun p14_paisagemVoltarANarracaoDoPainelLevaALinhaNarrada() {
+        comPaginas {
+            comRotacaoManual {
+                val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+                regras.usarVoz(VozFalsa(contexto, 0.0, VOZ_POR_TRECHO_P14_MS, VOZ_POR_TRECHO_P14_MS))
+                val livro = listOf(LivroNoAparelho.PARAGRAFO_LONGO) + LivroNoAparelho.PARAGRAFOS
+                val scenario = abrirLeitorComGuiada(regras, contexto, textos = livro)
+                esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
+                    GuidedPlaybackBridge.manager?.state?.value?.let { it.isPlaying && it.index == 0 } == true
+                }
+                esperarPaginaComLinhas(scenario, livro.size)
+                val antesDoGiro = instanciaAtual(scenario)
+                device.setOrientationLeft()
+                val fimDoGiro = System.currentTimeMillis() + TEMPO_LIMITE_ESPERA_MS
+                while (device.displayRotation == Surface.ROTATION_0 && System.currentTimeMillis() < fimDoGiro) {
+                    Thread.sleep(INTERVALO_DE_LEITURA_MS)
+                }
+                assertTrue(
+                    "Pedi a paisagem, mas a rotação ficou em ${device.displayRotation}",
+                    device.displayRotation != Surface.ROTATION_0,
+                )
+                esperarPaginaRecriada(scenario, antesDoGiro, "paisagem", livro.size)
+                Thread.sleep(PAUSA_APOS_GIRO_MS)
+                esperarAte(scenario, "painel da guiada visível na paisagem") { a ->
+                    a.findViewById<View>(R.id.layoutGuidedPlayer).visibility == View.VISIBLE
+                }
+                regras.fecharDialogosDoSistema()
+
+                // A guiada vira a página ainda no parágrafo 0: a linha narrada fica além da primeira página dele.
+                var offsetAntes = 0
+                scenario.onActivity { a -> offsetAntes = offsetDaLista(a) }
+                esperarAte(scenario, "a guiada virar a página sozinha no parágrafo 0", TEMPO_DA_GUIADA_MS) { a ->
+                    GuidedPlaybackBridge.manager?.state?.value?.index != 0 || offsetDaLista(a) > offsetAntes
+                }
+                var indiceAoVirar = -1
+                var offsetAoVirar = 0
+                scenario.onActivity { a ->
+                    indiceAoVirar = GuidedPlaybackBridge.manager?.state?.value?.index ?: -1
+                    offsetAoVirar = offsetDaLista(a)
+                }
+                check(indiceAoVirar == 0) {
+                    "A guiada passou do parágrafo 0 (índice $indiceAoVirar) antes de virar a página dele"
+                }
+                assertTrue(
+                    "A guiada deveria ter virado a página no parágrafo 0 ($offsetAntes -> $offsetAoVirar)",
+                    offsetAoVirar > offsetAntes,
+                )
+
+                // Pausada e longe da narração: duas páginas à mão. A linha narrada sai da página.
+                InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.pause() }
+                esperarPaginaParada(scenario)
+                arrastarLateral(scenario, paraFrente = true)
+                esperarPaginaParada(scenario)
+                arrastarLateral(scenario, paraFrente = true)
+                esperarPaginaParada(scenario)
+                esperarAte(scenario, "botão Voltar à narração do painel visível") { a ->
+                    a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
+                }
+                scenario.onActivity { a ->
+                    assertEquals(View.GONE, a.findViewById<View>(R.id.fabVoltarNarracao).visibility)
+                }
+                val foraAntes = lerAtividade(scenario) { narradoNaPagina(it) }
+                Capturas.anotar("p14", "pausada, antes do botão: narrado=$foraAntes")
+                assertTrue(
+                    "O narrado deveria estar fora da página antes do toque, veio $foraAntes",
+                    foraAntes?.visivel != true,
+                )
+
+                val (x, y) = Gestos.centroDaView(
+                    scenario,
+                    R.id.btnGuidedVoltarNarracao,
+                    "botão Voltar à narração do painel",
+                )
+                regras.fecharDialogosDoSistema()
+                device.click(x, y)
+                esperarAte(scenario, "o botão levar a linha narrada inteira à página") { a ->
+                    narradoNaPagina(a)?.inteira == true
+                }
+                Capturas.capturar("p14_pausada_depois_do_botao")
+                scenario.onActivity { a ->
+                    val rv = listaDoLeitor(a)
+                    val inicio = Gestos.textoDoParagrafoOuNulo(a, 0)?.top
+                    assertTrue(
+                        "O início do parágrafo 0 deveria ficar acima do topo (só foi ao início?), veio $inicio",
+                        inicio != null && inicio < rv.paddingTop,
+                    )
+                    assertEquals(View.GONE, a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility)
+                }
+
+                // Tocando: a guiada volta a narrar, a pessoa vira duas páginas e o botão leva de novo à narração.
+                InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.resume() }
+                esperarAte(scenario, "guiada tocando de novo") { _ ->
+                    GuidedPlaybackBridge.manager?.state?.value?.isPlaying == true
+                }
+                arrastarLateral(scenario, paraFrente = true)
+                esperarPaginaParada(scenario)
+                arrastarLateral(scenario, paraFrente = true)
+                esperarPaginaParada(scenario)
+                esperarAte(scenario, "botão Voltar à narração do painel visível de novo") { a ->
+                    a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
+                }
+                val (xDeNovo, yDeNovo) = Gestos.centroDaView(
+                    scenario,
+                    R.id.btnGuidedVoltarNarracao,
+                    "botão Voltar à narração do painel",
+                )
+                regras.fecharDialogosDoSistema()
+                device.click(xDeNovo, yDeNovo)
+                esperarAte(scenario, "o botão levar a linha narrada tocando à página") { a ->
+                    narradoNaPagina(a)?.inteira == true
+                }
+                Capturas.capturar("p14_tocando_depois_do_botao")
+            }
+        }
+    }
+
     @Test
     fun p12_cabecalhoSomeAoVirarEVoltaComDeslizeParaBaixo() {
         comPaginas {
@@ -886,20 +1010,26 @@ class PaginasNoAparelhoTest {
 
     /** Parágrafo narrado pela guiada e onde a sua linha de progresso cai na página (rb-26b). Na thread principal. */
     private fun narradoNaPagina(a: ReaderActivity): Narrado? {
-        val estado = GuidedPlaybackBridge.manager?.state?.value ?: return null
+        val manager = GuidedPlaybackBridge.manager ?: return null
+        val indice = manager.state.value.index
         val lista = listaDoLeitor(a)
-        val tv = Gestos.textoDoParagrafoOuNulo(a, estado.index) ?: return null
-        val linha = linhaDoProgresso(tv, estado.progressPct) ?: return null
+        val tv = Gestos.textoDoParagrafoOuNulo(a, indice) ?: return null
+        // Com a guiada pausada o estado já zerou o progresso: o manager guarda a linha que estava sendo narrada.
+        val linha = linhaDoProgresso(tv, manager.progressoDoNarrado) ?: return null
         val fundo = lista.height - lista.paddingBottom
         val visivel = linha.base > lista.paddingTop && linha.topo < fundo
-        return Narrado(estado.index, linha.topo, linha.base, visivel)
+        val inteira = linha.topo >= lista.paddingTop && linha.base <= checkNotNull(lista.paginacao).corte()
+        return Narrado(indice, linha.topo, linha.base, visivel, inteira)
     }
 
     /** Espera a lista do Leitor ter parágrafos montados, a paginação ativa e linhas na tela. */
-    private fun esperarPaginaComLinhas(scenario: ActivityScenario<ReaderActivity>) {
+    private fun esperarPaginaComLinhas(
+        scenario: ActivityScenario<ReaderActivity>,
+        totalDeParagrafos: Int = LivroNoAparelho.PARAGRAFOS.size,
+    ) {
         esperarAte(scenario, "páginas com linhas na tela") { a ->
             val lista = listaDoLeitor(a)
-            lista.adapter?.itemCount == LivroNoAparelho.PARAGRAFOS.size &&
+            lista.adapter?.itemCount == totalDeParagrafos &&
                 lista.paginacao?.ativa == true &&
                 lista.linhasNaTela().isNotEmpty()
         }
@@ -1004,7 +1134,12 @@ class PaginasNoAparelhoTest {
      * Espera a Activity nova (outra identidade que [antes]) com o modo páginas ativo e o topo alinhado numa linha inteira.
      * Falha com o estado visto se não chegar a tempo.
      */
-    private fun esperarPaginaRecriada(scenario: ActivityScenario<ReaderActivity>, antes: Int, momento: String) {
+    private fun esperarPaginaRecriada(
+        scenario: ActivityScenario<ReaderActivity>,
+        antes: Int,
+        momento: String,
+        totalDeParagrafos: Int = LivroNoAparelho.PARAGRAFOS.size,
+    ) {
         val fim = System.currentTimeMillis() + TEMPO_LIMITE_ESPERA_MS
         var visto = "nenhuma Activity disponível"
         while (System.currentTimeMillis() < fim) {
@@ -1016,7 +1151,7 @@ class PaginasNoAparelhoTest {
                 val alinhada = RegraDasPaginasDoLeitor.ajusteDoTopo(lista.linhasNaTela(), lista.paddingTop, altura) == 0
                 // Sem linha na tela (lista sem layout ou sem parágrafos montados), ajusteDoTopo devolve 0 por falta de
                 // linhas. A virada pode ter tirado o parágrafo 0 da tela, então o que conta é haver linha visível.
-                val montada = lista.adapter?.itemCount == LivroNoAparelho.PARAGRAFOS.size &&
+                val montada = lista.adapter?.itemCount == totalDeParagrafos &&
                     lista.linhasNaTela().isNotEmpty()
                 visto = "nova=$nova ativa=$ativa alinhada=$alinhada montada=$montada"
                 nova && ativa && alinhada && montada
@@ -1075,7 +1210,14 @@ class PaginasNoAparelhoTest {
     }
 
     /** Parágrafo narrado: a linha da narração na lista e se ela aparece na página. */
-    private data class Narrado(val indice: Int, val topo: Int, val base: Int, val visivel: Boolean)
+    private data class Narrado(
+        val indice: Int,
+        val topo: Int,
+        val base: Int,
+        val visivel: Boolean,
+        /** A linha narrada inteira na página: acima do corte e abaixo do topo útil. */
+        val inteira: Boolean,
+    )
 
     private companion object {
         const val PALAVRA = "chuva"
@@ -1098,6 +1240,9 @@ class PaginasNoAparelhoTest {
 
         /** Duração de cada trecho da voz falsa no P5, em ms. */
         const val VOZ_POR_TRECHO_P5_MS = 6_000
+
+        /** Duração de cada frase da voz falsa no P14, em ms: o parágrafo longo leva ~100 s para ser narrado. */
+        const val VOZ_POR_TRECHO_P14_MS = 2_000
 
         /** Pausa depois do giro, para o layout e o alinhamento da página assentarem antes de medir. */
         const val PAUSA_APOS_GIRO_MS = 500L
