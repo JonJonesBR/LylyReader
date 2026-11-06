@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.view.KeyEvent
@@ -38,6 +39,9 @@ import org.junit.runner.RunWith
  *
  * Painel de baixo (rb-66, passo 5). R2: retrato com a guiada, painel em TEMPO: a tira (≤ 72 dp), o play da tira pausa
  * e o ícone acompanha, a seta abre, e sem tocar o painel recolhe. R3: paisagem, com a tira (play e seta inteiros).
+ *
+ * Critério de aceite (rb-66, passo 8). R4: retrato, modo páginas, com a tira na base: a linha da seleção fica inteira
+ * acima da barra da seleção. R5: o giro com o cabeçalho aberto: no MANUAL ele continua aberto, no TEMPO recolhe.
  */
 @RunWith(AndroidJUnit4::class)
 class BarrasRecolhidasNoAparelhoTest {
@@ -183,6 +187,230 @@ class BarrasRecolhidasNoAparelhoTest {
     }
 
     /**
+     * R4 (rb-66, passo 8): retrato, modo páginas, com a tira da guiada na base (TEMPO nas duas barras). A guiada é
+     * pausada (como no P8), com a fonte 1,3, e um toque longo na palavra da última linha inteira da página abre a
+     * seleção. A linha selecionada tem de ficar inteira acima do topo da barra da seleção: a barra cobre o lugar da
+     * tira, não o texto.
+     * Capturas em `r4_*`.
+     */
+    @Test
+    fun r4_retratoSelecaoNaUltimaLinhaFicaAcimaDaBarra() {
+        val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+        AppPrefs(contexto).readerRolagemHorizontal = true
+        AppPrefs(contexto).readerBarraDeCima = "TEMPO"
+        AppPrefs(contexto).readerBarraDeBaixo = "TEMPO"
+        // A fonte 1,3 é a condição de referência das medidas de S1 a S5. A regra restaura a escala depois do teste.
+        regras.comandoDoShell("settings put system font_scale 1.3")
+        regras.usarVoz(VozFalsa.longa(contexto))
+        val scenario = abrirLeitorComGuiada(regras, contexto)
+        esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
+            GuidedPlaybackBridge.manager?.state?.value?.let { it.isPlaying && it.index == 0 } == true
+        }
+        esperarAte(scenario, "barra de cima e tira da guiada recolhidas") { a ->
+            a.findViewById<View>(R.id.cabecalhoDoLeitor).visibility == View.GONE && tiraVisivel(a)
+        }
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.pause() }
+        regras.fecharDialogosDoSistema()
+        esperarPaginaParada(scenario)
+        Capturas.capturar("r4_1_tira_na_base")
+
+        val (paragrafo, palavra) = ultimaPalavraDaUltimaLinhaInteira(scenario)
+        selecionarPalavra(scenario, regras, paragrafo, palavra, cenario = "r4")
+        regras.fecharDialogosDoSistema()
+        var medida: LinhaDaSelecao? = null
+        scenario.onActivity { a -> medida = medirLinhaDaSelecao(a, paragrafo) }
+        val linha = checkNotNull(medida) { "Sem a linha da seleção da palavra '$palavra'" }
+        Capturas.anotar(
+            "r4",
+            "linha da seleção=[${linha.topo},${linha.base}] topoUtil=${linha.topoUtil} " +
+                "barra=${linha.barraTopo} barraVisivel=${linha.barraVisivel}",
+        )
+        Capturas.capturar("r4_2_selecao_na_ultima_linha")
+        assertTrue("A barra da seleção deveria estar à vista", linha.barraVisivel)
+        assertTrue(
+            "A linha selecionada deveria ficar inteira acima da barra (topo ${linha.barraTopo} px), " +
+                "veio [${linha.topo}, ${linha.base}]",
+            linha.base <= linha.barraTopo && linha.topo >= linha.topoUtil,
+        )
+    }
+
+    /**
+     * R5 (rb-66, passo 8), MANUAL: no modo páginas, o cabeçalho aberto com o deslize para baixo continua aberto depois
+     * do giro para a paisagem (o MANUAL guarda esse estado no giro) e não recolhe sozinho. Capturas em `r5_1_*` e
+     * `r5_2_*`.
+     */
+    @Test
+    fun r5_manualGiroMantemOCabecalhoAberto() {
+        val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+        AppPrefs(contexto).readerRolagemHorizontal = true
+        AppPrefs(contexto).readerBarraDeCima = "MANUAL"
+        val scenario = abrirSoLerPaginado(contexto)
+        esperarPaginaComLinhas(scenario)
+        regras.fecharDialogosDoSistema()
+        scenario.onActivity { a ->
+            val visibilidade = a.findViewById<View>(R.id.cabecalhoDoLeitor).visibility
+            assertEquals("No MANUAL o cabeçalho começa recolhido", View.GONE, visibilidade)
+        }
+        rolarListaComODedo(scenario, fracaoDaAreaUtil = FRACAO_DO_DESLIZE, paraBaixoNoTexto = false, cenario = "r5")
+        esperarAte(scenario, "cabeçalho aberto pelo deslize para baixo") { a -> cabecalhoVisivel(a) }
+        Capturas.capturar("r5_1_manual_aberto")
+
+        val automaticaAntes = girarParaPaisagem()
+        try {
+            esperarAte(scenario, "paisagem com o cabeçalho ainda aberto") { a ->
+                a.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && cabecalhoVisivel(a)
+            }
+            // Mais que o tempo do TEMPO (uns 4 s): o MANUAL não pode recolher sozinho.
+            Thread.sleep(ESPERA_DE_CONFERENCIA_MS)
+            scenario.onActivity { a ->
+                assertTrue("No MANUAL o cabeçalho deveria continuar aberto depois do giro", cabecalhoVisivel(a))
+            }
+            Capturas.capturar("r5_2_manual_girado")
+        } finally {
+            devolverRotacao(automaticaAntes)
+        }
+    }
+
+    /**
+     * R5 (rb-66, passo 8), TEMPO: o cabeçalho aberto com o deslize para baixo volta recolhido depois do giro para a
+     * paisagem (o Leitor novo começa com a barra de TEMPO recolhida). Capturas em `r5_3_*` e `r5_4_*`.
+     */
+    @Test
+    fun r5_tempoGiroRecolheOCabecalho() {
+        val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+        AppPrefs(contexto).readerRolagemHorizontal = true
+        AppPrefs(contexto).readerBarraDeCima = "TEMPO"
+        val scenario = abrirSoLerPaginado(contexto)
+        esperarPaginaComLinhas(scenario)
+        regras.fecharDialogosDoSistema()
+        rolarListaComODedo(scenario, fracaoDaAreaUtil = FRACAO_DO_DESLIZE, paraBaixoNoTexto = false, cenario = "r5b")
+        esperarAte(scenario, "cabeçalho aberto pelo deslize para baixo") { a -> cabecalhoVisivel(a) }
+        Capturas.capturar("r5_3_tempo_aberto")
+        // O TEMPO recolhe uns 4 s sem toque: confere que o cabeçalho ainda está aberto logo antes do giro. Sem isso, o
+        // teste passaria mesmo se o giro não recolhesse nada.
+        scenario.onActivity { a ->
+            assertTrue("Antes do giro o cabeçalho deveria estar aberto (TEMPO)", cabecalhoVisivel(a))
+        }
+
+        val automaticaAntes = girarParaPaisagem()
+        try {
+            esperarAte(scenario, "paisagem com o cabeçalho recolhido depois do giro", TEMPO_DE_RECOLHER_MS) { a ->
+                a.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && !cabecalhoVisivel(a)
+            }
+            Capturas.capturar("r5_4_tempo_girado_recolhido")
+        } finally {
+            devolverRotacao(automaticaAntes)
+        }
+    }
+
+    /** Abre o livro de teste no Só ler (sem a leitura guiada), no modo que o corpo do teste já gravou. */
+    private fun abrirSoLerPaginado(contexto: Context): ActivityScenario<ReaderActivity> {
+        val arquivo = LivroNoAparelho.gravarLivroNoCache()
+        val intent = Intent(contexto, ReaderActivity::class.java)
+            .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
+            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
+        return regras.abrir(intent)
+    }
+
+    /** Espera a paginação da lista do Leitor ativa e com linhas na tela. */
+    private fun esperarPaginaComLinhas(scenario: ActivityScenario<ReaderActivity>) {
+        esperarAte(scenario, "páginas com linhas na tela") { a ->
+            val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+            lista.paginacao?.ativa == true && lista.linhasNaTela().isNotEmpty()
+        }
+    }
+
+    /** Espera o deslocamento da página parar: cinco leituras iguais seguidas, a cada 200 ms (ou o tempo limite). */
+    private fun esperarPaginaParada(scenario: ActivityScenario<ReaderActivity>) {
+        var anterior = -1
+        var iguais = 0
+        val fim = System.currentTimeMillis() + TEMPO_MAXIMO_PAGINA_PARADA_MS
+        while (System.currentTimeMillis() < fim) {
+            var atual = -1
+            scenario.onActivity { a ->
+                val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+                atual = lista.computeVerticalScrollOffset()
+            }
+            iguais = if (atual == anterior) iguais + 1 else 0
+            anterior = atual
+            if (iguais >= LEITURAS_IGUAIS_PARA_PARAR) return
+            Thread.sleep(INTERVALO_DE_PAGINA_PARADA_MS)
+        }
+    }
+
+    /**
+     * Parágrafo e palavra da última linha inteira da página (acima do corte e abaixo do topo útil). A palavra tem 5
+     * letras ou mais e é a primeira ocorrência dela no parágrafo, para o toque longo acertar a palavra certa.
+     */
+    private fun ultimaPalavraDaUltimaLinhaInteira(scenario: ActivityScenario<ReaderActivity>): Pair<Int, String> {
+        var achada: Pair<Int, String>? = null
+        scenario.onActivity { a ->
+            val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+            val corte = checkNotNull(lista.paginacao) { "A lista do Leitor não tem paginação" }.corte()
+            var baseMaisBaixa = -1
+            for (i in 0 until lista.childCount) {
+                val holder = lista.getChildViewHolder(lista.getChildAt(i)) as? ParagrafoAdapter.VHLeitura ?: continue
+                val tv = holder.tv
+                val layout = tv.layout ?: continue
+                val y0 = tv.top + tv.totalPaddingTop - tv.scrollY
+                for (numero in 0 until layout.lineCount) {
+                    val topo = y0 + layout.getLineTop(numero)
+                    val base = y0 + layout.getLineBottom(numero)
+                    if (topo < lista.paddingTop || base > corte || base <= baseMaisBaixa) continue
+                    val palavra = palavraDaLinha(tv, layout.getLineStart(numero), layout.getLineEnd(numero))
+                    if (palavra != null) {
+                        baseMaisBaixa = base
+                        achada = holder.bindingAdapterPosition to palavra
+                    }
+                }
+            }
+        }
+        return checkNotNull(achada) { "A página não tem linha inteira com uma palavra para o toque" }
+    }
+
+    /** A primeira palavra de 5 letras ou mais, inteira na linha [inicio, fim) do texto, se é a 1ª ocorrência nele. */
+    private fun palavraDaLinha(tv: TextView, inicio: Int, fim: Int): String? {
+        val texto = tv.text.toString()
+        return PALAVRA_DE_CINCO_LETRAS.findAll(texto, inicio)
+            .takeWhile { it.range.first < fim }
+            .firstOrNull { it.range.last < fim && texto.indexOf(it.value) == it.range.first }
+            ?.value
+    }
+
+    /** A linha da seleção do parágrafo [paragrafo] e a barra da seleção, na tela. Nula sem layout do texto. */
+    private fun medirLinhaDaSelecao(a: ReaderActivity, paragrafo: Int): LinhaDaSelecao? {
+        val tv = Gestos.textoDoParagrafo(a, paragrafo)
+        val layout = tv.layout ?: return null
+        val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+        val barra = a.findViewById<View>(R.id.barraSelecaoTexto)
+        val linha = layout.getLineForOffset(minOf(tv.selectionStart, tv.selectionEnd))
+        val y0 = topoNaTela(tv) + tv.totalPaddingTop - tv.scrollY
+        return LinhaDaSelecao(
+            topo = y0 + layout.getLineTop(linha),
+            base = y0 + layout.getLineBottom(linha),
+            barraTopo = topoNaTela(barra),
+            barraVisivel = barra.visibility == View.VISIBLE,
+            topoUtil = topoNaTela(lista) + lista.paddingTop,
+        )
+    }
+
+    /** Posições na tela, em pixels, da linha da seleção, da barra da seleção e do topo útil da lista (R4). */
+    private class LinhaDaSelecao(
+        val topo: Int,
+        val base: Int,
+        val barraTopo: Int,
+        val barraVisivel: Boolean,
+        val topoUtil: Int,
+    )
+
+    /** O cabeçalho do Leitor está à vista. */
+    private fun cabecalhoVisivel(a: ReaderActivity): Boolean =
+        a.findViewById<View>(R.id.cabecalhoDoLeitor).visibility == View.VISIBLE
+
+    /** Topo da view na tela, em pixels (com a translação). */
+    private fun topoNaTela(view: View): Int = IntArray(2).also { view.getLocationOnScreen(it) }[1]
+
+    /**
      * Duas teclas PAGE_DOWN, para a narração ficar para trás (como nos testes P). Sai-se do modo de toque antes, e
      * volta-se a ele no fim, mesmo se o teste falhar: o primeiro PAGE_DOWN no modo de toque não chega à Activity.
      */
@@ -277,5 +505,22 @@ class BarrasRecolhidasNoAparelhoTest {
     private companion object {
         const val MINIMO_BOTAO_DP = 44
         const val INTERVALO_DE_ROTACAO_MS = 200L
+
+        /** Fração da área útil que o deslize para baixo do R5 anda (o cabeçalho aparece com ele). */
+        const val FRACAO_DO_DESLIZE = 0.5f
+
+        /** Tempo para o TEMPO recolher o cabeçalho depois do giro (R5). */
+        const val TEMPO_DE_RECOLHER_MS = 15_000L
+
+        /** Quanto esperar, depois do giro, para mostrar que o MANUAL não recolhe sozinho (o TEMPO é de uns 4 s). */
+        const val ESPERA_DE_CONFERENCIA_MS = 6_000L
+
+        /** Até quando esperar a página parar (R4), e as leituras iguais seguidas que dão a página por parada. */
+        const val TEMPO_MAXIMO_PAGINA_PARADA_MS = 15_000L
+        const val LEITURAS_IGUAIS_PARA_PARAR = 5
+        const val INTERVALO_DE_PAGINA_PARADA_MS = 200L
+
+        /** Palavra de 5 letras ou mais (para o toque longo cair numa palavra só, como no SelecaoDeTexto). */
+        val PALAVRA_DE_CINCO_LETRAS = Regex("\\p{L}{5,}")
     }
 }

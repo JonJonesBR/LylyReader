@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
 import android.view.Surface
@@ -32,13 +33,16 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Sonda de tela pequena (rb-26b, tela pequena, passo 0): quantas linhas inteiras do modo páginas cabem na tela com a
- * fonte 1,3, no retrato e na paisagem, com a leitura guiada, com a seleção e no Só ler. É linha de base: os testes não
- * conferem o número de linhas, só que a tela abriu, que a medida foi feita e que a captura saiu. As medidas vão para
+ * Medidas de tela pequena (rb-26b, passo 0; rb-66, passo 8): quantas linhas inteiras do modo páginas cabem na tela com
+ * a fonte 1,3, no retrato e na paisagem, com a leitura guiada, com a seleção e no Só ler. As medidas vão para
  * medidas.txt com o prefixo [sN] de cada cenário.
  *
  * S1: retrato com a guiada tocando. S2: retrato com a guiada em modo manual e uma seleção. S3: paisagem com a guiada.
  * S4: paisagem com a guiada e uma seleção. S5: paisagem no Só ler. Todos no modo páginas.
+ *
+ * S1 a S5 rodam com as duas barras em TEMPO (o padrão, com as barras recolhidas) e conferem o mínimo de linhas inteiras
+ * de cada cenário (constantes MINIMO_*). S1, S3 e S5 têm uma variante com SEMPRE (barras sempre à vista), que só
+ * registra: é a linha de base da geometria de antes.
  */
 @RunWith(AndroidJUnit4::class)
 class TelaPequenaNoAparelhoTest {
@@ -50,20 +54,19 @@ class TelaPequenaNoAparelhoTest {
 
     private val device: UiDevice by lazy { UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()) }
 
-    /** S1: retrato, leitura guiada tocando (voz falsa longa). */
+    /**
+     * S1: retrato, leitura guiada tocando (voz falsa longa), com as barras em TEMPO.
+     * Mínimo: [MINIMO_S1_RETRATO_GUIADA].
+     */
     @Test
     fun s1_retratoComGuiadaTocando() {
-        comPaginas {
-            comFonteGrande {
-                val contexto = InstrumentationRegistry.getInstrumentation().targetContext
-                regras.usarVoz(VozFalsa.longa(contexto))
-                val scenario = abrirLeitorComGuiada(regras, contexto)
-                esperarGuiadaTocando(scenario, 0)
-                esperarPaginaComLinhas(scenario)
-                esperarPaginaParada(scenario)
-                registrar(scenario, "s1", "s1_retrato_guiada", "retrato, guiada tocando")
-            }
-        }
+        s1RetratoComGuiada(MODO_TEMPO, "s1", "s1_retrato_guiada", MINIMO_S1_RETRATO_GUIADA)
+    }
+
+    /** S1 com SEMPRE (linha de base, rb-66 passo 8): as barras sempre à vista. Só registra, sem mínimo. */
+    @Test
+    fun s1Sempre_retratoComGuiadaTocando() {
+        s1RetratoComGuiada(MODO_SEMPRE, "s1-sempre", "s1_sempre_retrato_guiada", minimo = null)
     }
 
     /** S2: retrato, guiada virada em modo manual com um arraste lateral, e um toque longo numa palavra visível. */
@@ -72,66 +75,130 @@ class TelaPequenaNoAparelhoTest {
         comPaginas {
             comFonteGrande {
                 val contexto = InstrumentationRegistry.getInstrumentation().targetContext
-                // rb-66 (passo 3): TEMPO, como no P13, para medir a tela cheia depois da virada (a barra recolhe).
-                AppPrefs(contexto).readerBarraDeCima = "TEMPO"
+                // rb-66 (passos 3 e 8): TEMPO nas duas barras, para medir a tela cheia depois da virada (recolhem).
+                definirBarras(contexto, MODO_TEMPO)
                 regras.usarVoz(VozFalsa.longa(contexto))
                 val scenario = abrirLeitorComGuiada(regras, contexto)
                 virarPaginaComGuiadaEmManual(scenario, indice = 0)
+                esperarBarrasRecolhidas(scenario, comGuiada = true)
                 val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
                 selecionarPalavra(scenario, regras, indice, palavra, cenario = "s2")
-                registrar(scenario, "s2", "s2_retrato_guiada_selecao", "retrato, guiada e seleção")
+                registrar(
+                    scenario,
+                    "s2",
+                    "s2_retrato_guiada_selecao",
+                    "retrato, guiada e seleção, TEMPO",
+                    MINIMO_S2_RETRATO_GUIADA_SELECAO,
+                )
             }
         }
     }
 
-    /** S3: paisagem (rotação manual antes de abrir), leitura guiada tocando. */
+    /** S3: paisagem (rotação manual antes de abrir), leitura guiada tocando, com as barras em TEMPO. */
     @Test
     fun s3_paisagemComGuiadaTocando() {
-        comPaginas {
-            comFonteGrande {
-                comRotacaoManual {
-                    val contexto = InstrumentationRegistry.getInstrumentation().targetContext
-                    regras.usarVoz(VozFalsa.longa(contexto))
-                    val scenario = abrirLeitorComGuiada(regras, contexto)
-                    girarParaPaisagem(scenario, comGuiada = true)
-                    esperarGuiadaTocando(scenario, indice = null)
-                    esperarPaginaComLinhas(scenario)
-                    esperarPaginaParada(scenario)
-                    registrar(scenario, "s3", "s3_paisagem_guiada", "paisagem, guiada tocando")
-                }
-            }
-        }
+        s3PaisagemComGuiada(MODO_TEMPO, "s3", "s3_paisagem_guiada", MINIMO_S3_PAISAGEM_GUIADA)
     }
 
-    /** S4: paisagem, guiada em modo manual e uma seleção. */
+    /** S3 com SEMPRE (linha de base, rb-66 passo 8): as barras sempre à vista. Só registra, sem mínimo. */
+    @Test
+    fun s3Sempre_paisagemComGuiadaTocando() {
+        s3PaisagemComGuiada(MODO_SEMPRE, "s3-sempre", "s3_sempre_paisagem_guiada", minimo = null)
+    }
+
+    /** S4: paisagem, guiada em modo manual e uma seleção, com as barras em TEMPO. */
     @Test
     fun s4_paisagemComGuiadaESelecao() {
         comPaginas {
             comFonteGrande {
                 comRotacaoManual {
                     val contexto = InstrumentationRegistry.getInstrumentation().targetContext
-                    // rb-66 (passo 3): TEMPO, como no S2, para medir a tela cheia depois da virada.
-                    AppPrefs(contexto).readerBarraDeCima = "TEMPO"
+                    // rb-66 (passos 3 e 8): TEMPO nas duas barras, para medir a tela cheia depois da virada.
+                    definirBarras(contexto, MODO_TEMPO)
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
                     girarParaPaisagem(scenario, comGuiada = true)
                     virarPaginaComGuiadaEmManual(scenario, indice = null)
+                    esperarBarrasRecolhidas(scenario, comGuiada = true)
                     val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
                     selecionarPalavra(scenario, regras, indice, palavra, cenario = "s4")
-                    registrar(scenario, "s4", "s4_paisagem_guiada_selecao", "paisagem, guiada e seleção")
+                    registrar(
+                        scenario,
+                        "s4",
+                        "s4_paisagem_guiada_selecao",
+                        "paisagem, guiada e seleção, TEMPO",
+                        MINIMO_S4_PAISAGEM_GUIADA_SELECAO,
+                    )
                 }
             }
         }
     }
 
-    /** S5: paisagem no Só ler, sem a leitura guiada. */
+    /** S5: paisagem no Só ler, sem a leitura guiada, com as barras em TEMPO. Mínimo: [MINIMO_S5_PAISAGEM_SO_LER]. */
     @Test
     fun s5_paisagemSoLer() {
+        s5PaisagemSoLer(MODO_TEMPO, "s5", "s5_paisagem_so_ler", MINIMO_S5_PAISAGEM_SO_LER)
+    }
+
+    /** S5 com SEMPRE (linha de base, rb-66 passo 8): as barras sempre à vista. Só registra, sem mínimo. */
+    @Test
+    fun s5Sempre_paisagemSoLer() {
+        s5PaisagemSoLer(MODO_SEMPRE, "s5-sempre", "s5_sempre_paisagem_so_ler", minimo = null)
+    }
+
+    /**
+     * Corpo do S1: retrato com a guiada tocando, nas barras em [modo]. Com [minimo] nulo só registra a medida.
+     */
+    private fun s1RetratoComGuiada(modo: String, nome: String, captura: String, minimo: Int?) {
+        comPaginas {
+            comFonteGrande {
+                val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+                definirBarras(contexto, modo)
+                regras.usarVoz(VozFalsa.longa(contexto))
+                val scenario = abrirLeitorComGuiada(regras, contexto)
+                esperarGuiadaTocando(scenario, 0)
+                if (modo == MODO_TEMPO) esperarBarrasRecolhidas(scenario, comGuiada = true)
+                esperarPaginaComLinhas(scenario)
+                esperarPaginaParada(scenario)
+                registrar(scenario, nome, captura, "retrato, guiada tocando, $modo", minimo)
+            }
+        }
+    }
+
+    /**
+     * Corpo do S3: paisagem com a guiada tocando, nas barras em [modo]. Com [minimo] nulo só registra a medida.
+     */
+    private fun s3PaisagemComGuiada(modo: String, nome: String, captura: String, minimo: Int?) {
         comPaginas {
             comFonteGrande {
                 comRotacaoManual {
+                    val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+                    definirBarras(contexto, modo)
+                    regras.usarVoz(VozFalsa.longa(contexto))
+                    val scenario = abrirLeitorComGuiada(regras, contexto)
+                    girarParaPaisagem(scenario, comGuiada = true)
+                    esperarGuiadaTocando(scenario, indice = null)
+                    if (modo == MODO_TEMPO) esperarBarrasRecolhidas(scenario, comGuiada = true)
+                    esperarPaginaComLinhas(scenario)
+                    esperarPaginaParada(scenario)
+                    registrar(scenario, nome, captura, "paisagem, guiada tocando, $modo", minimo)
+                }
+            }
+        }
+    }
+
+    /**
+     * Corpo do S5: paisagem no Só ler, nas barras em [modo]. Com [minimo] nulo só registra a medida.
+     */
+    private fun s5PaisagemSoLer(modo: String, nome: String, captura: String, minimo: Int?) {
+        comPaginas {
+            comFonteGrande {
+                comRotacaoManual {
+                    val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+                    definirBarras(contexto, modo)
                     val scenario = abrirSoLerPaginado()
                     girarParaPaisagem(scenario, comGuiada = false)
+                    if (modo == MODO_TEMPO) esperarBarrasRecolhidas(scenario, comGuiada = false)
                     esperarPaginaComLinhas(scenario)
                     esperarPaginaParada(scenario)
                     // Sem a guiada, o painel dela (oculto no XML) não pode aparecer, senão a medida muda de sentido.
@@ -140,16 +207,40 @@ class TelaPequenaNoAparelhoTest {
                         painelVisivel = a.findViewById<View>(R.id.layoutGuidedPlayer).visibility == View.VISIBLE
                     }
                     assertFalse("No Só ler o painel da leitura guiada deveria estar oculto", painelVisivel)
-                    registrar(scenario, "s5", "s5_paisagem_so_ler", "paisagem, só ler")
+                    registrar(scenario, nome, captura, "paisagem, só ler, $modo", minimo)
                 }
             }
         }
     }
 
+    /** Grava o mesmo modo nas duas barras (de cima e de baixo) do Leitor, depois da regra que as põe em SEMPRE. */
+    private fun definirBarras(contexto: Context, modo: String) {
+        AppPrefs(contexto).readerBarraDeCima = modo
+        AppPrefs(contexto).readerBarraDeBaixo = modo
+    }
+
+    /**
+     * Espera as barras recolhidas do modo TEMPO: o cabeçalho GONE e, com [comGuiada], a tira da guiada à base. Espera
+     * a condição com o tempo limite padrão (o TEMPO recolhe em uns 4 s), sem sleep fixo.
+     */
+    private fun esperarBarrasRecolhidas(scenario: ActivityScenario<ReaderActivity>, comGuiada: Boolean) {
+        esperarAte(scenario, "barras recolhidas (cabeçalho e tira da guiada)") { a ->
+            a.findViewById<View>(R.id.cabecalhoDoLeitor).visibility == View.GONE && (!comGuiada || tiraRecolhida(a))
+        }
+    }
+
+    /** A tira da guiada está à base: o painel tem altura, os controles estão escondidos e a seta aparece. */
+    private fun tiraRecolhida(a: ReaderActivity): Boolean {
+        val painel = a.findViewById<View>(R.id.layoutGuidedPlayer)
+        return painel.visibility == View.VISIBLE && painel.height > 0 &&
+            !a.findViewById<View>(R.id.btnGuidedVoz).isShown &&
+            a.findViewById<View>(R.id.btnGuidedRecolher).isShown
+    }
+
     /**
      * P13 (rb-26b, passo 6), paisagem com a fonte 1,3: depois de virar uma página com a guiada em modo manual, o
-     * cabeçalho sai e a página ganha altura. Ela mostra três ou mais linhas inteiras, e uma seleção não muda essa
-     * conta.
+     * cabeçalho sai e a página ganha altura. Ela mostra [MINIMO_P13_PAISAGEM_TELA_CHEIA] ou mais linhas inteiras, e
+     * uma seleção não muda essa conta.
      */
     @Test
     fun p13_paisagemComTelaCheiaMostraAsLinhasDaAltura() {
@@ -157,12 +248,13 @@ class TelaPequenaNoAparelhoTest {
             comFonteGrande {
                 comRotacaoManual {
                     val contexto = InstrumentationRegistry.getInstrumentation().targetContext
-                    // rb-66 (passo 3): a barra de cima começa recolhida, como no padrão (TEMPO).
-                    AppPrefs(contexto).readerBarraDeCima = "TEMPO"
+                    // rb-66 (passos 3 e 8): TEMPO nas duas barras, como no padrão, para medir a tela cheia.
+                    definirBarras(contexto, MODO_TEMPO)
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
                     girarParaPaisagem(scenario, comGuiada = true)
                     virarPaginaComGuiadaEmManual(scenario, indice = null)
+                    esperarBarrasRecolhidas(scenario, comGuiada = true)
                     esperarAte(scenario, "cabeçalho recolhido depois da virada") { a ->
                         a.findViewById<View>(R.id.cabecalhoDoLeitor).visibility == View.GONE &&
                             !a.findViewById<View>(R.id.recyclerViewParagrafos).isLayoutRequested
@@ -174,8 +266,9 @@ class TelaPequenaNoAparelhoTest {
                         Capturas.anotar("p13", medirTelaPequena(a).detalhes)
                     }
                     assertTrue(
-                        "Com o cabeçalho recolhido deveriam caber 3 linhas inteiras, couberam $semSelecao",
-                        semSelecao >= 3,
+                        "Com o cabeçalho recolhido deveriam caber $MINIMO_P13_PAISAGEM_TELA_CHEIA linhas inteiras, " +
+                            "couberam $semSelecao",
+                        semSelecao >= MINIMO_P13_PAISAGEM_TELA_CHEIA,
                     )
 
                     val (indice, palavra) = esperarPalavraVisivel(scenario, fundoParaEscolherPalavra(scenario))
@@ -279,10 +372,18 @@ class TelaPequenaNoAparelhoTest {
     }
 
     /**
-     * Mede a tela, anota a medida com o prefixo [nome], captura a tela como [nomeDaCaptura] e confere só que a tela
-     * abriu e que a lista tem linhas (sem asserção de valor: é a linha de base).
+     * Mede a tela, anota a medida com o prefixo [nome] e captura a tela como [nomeDaCaptura]. Confere que a tela está
+     * no modo páginas, com linhas, e, com [minimo], que cabem pelo menos aquele tanto de linhas inteiras (rb-66,
+     * passo 8).
+     * Com [minimo] nulo (a linha de base do SEMPRE) não há asserção de valor.
      */
-    private fun registrar(scenario: ActivityScenario<ReaderActivity>, nome: String, nomeDaCaptura: String, descricao: String) {
+    private fun registrar(
+        scenario: ActivityScenario<ReaderActivity>,
+        nome: String,
+        nomeDaCaptura: String,
+        descricao: String,
+        minimo: Int?,
+    ) {
         regras.fecharDialogosDoSistema()
         val medida = medir(scenario)
         var inteirasAgora = -1
@@ -292,6 +393,13 @@ class TelaPequenaNoAparelhoTest {
         Capturas.capturar(nomeDaCaptura)
         assertTrue("A lista do Leitor deveria estar no modo páginas ($descricao)", medida.paginaAtiva)
         assertTrue("A lista do Leitor deveria ter linhas na tela ($descricao)", medida.linhasNaLista > 0)
+        if (minimo != null) {
+            assertTrue(
+                "Com $descricao deveriam caber pelo menos $minimo linhas inteiras (fonte 1,3), " +
+                    "couberam ${medida.linhasInteiras}",
+                medida.linhasInteiras >= minimo,
+            )
+        }
     }
 
     /** Quantas linhas inteiras da página cabem na tela agora (ver [medirTelaPequena]), na thread principal. */
@@ -355,7 +463,8 @@ class TelaPequenaNoAparelhoTest {
         while (System.currentTimeMillis() < fim) {
             var atual = -1
             scenario.onActivity { a ->
-                atual = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos).computeVerticalScrollOffset()
+                val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+                atual = lista.computeVerticalScrollOffset()
             }
             iguais = if (atual == anterior) iguais + 1 else 0
             anterior = atual
@@ -626,6 +735,23 @@ class TelaPequenaNoAparelhoTest {
 
         /** Intervalo entre as leituras do deslocamento, em ms. */
         const val INTERVALO_DE_PAGINA_PARADA_MS = 200L
+
+        /** Modos das barras de cima e de baixo (AppPrefs.readerBarraDeCima e readerBarraDeBaixo). */
+        const val MODO_TEMPO = "TEMPO"
+        const val MODO_SEMPRE = "SEMPRE"
+
+        /**
+         * Mínimos de linhas inteiras com as barras recolhidas (rb-66, passo 8), com a fonte 1,3. Os números medidos
+         * no PR #25 estão entre parênteses: S1 12 (esperado ~16), S2 15 (esperado 16), S3 3, S4 6, S5 4.
+         */
+        const val MINIMO_S1_RETRATO_GUIADA = 15
+        const val MINIMO_S2_RETRATO_GUIADA_SELECAO = 15
+        const val MINIMO_S3_PAISAGEM_GUIADA = 5
+        const val MINIMO_S4_PAISAGEM_GUIADA_SELECAO = 6
+        const val MINIMO_S5_PAISAGEM_SO_LER = 6
+
+        /** P13 (rb-66, passo 8): paisagem com a fonte 1,3, barras recolhidas, depois da virada. */
+        const val MINIMO_P13_PAISAGEM_TELA_CHEIA = 5
 
         /** Teto da altura do painel da guiada na paisagem, em dp (rb-26b, passo 5). */
         const val TETO_DO_PAINEL_NA_PAISAGEM_DP = 72
