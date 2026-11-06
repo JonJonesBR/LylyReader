@@ -888,6 +888,59 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun subirAFolgaDoFimNaoQuicaOTexto() {
+        // rb-67/7: a descida vira espaço depois do último parágrafo (rb-51). Uma seleção nova que não precisa de
+        // descida faz a lista subir, e o fim da lista não pode empurrar o texto para baixo no meio da subida.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            scenario.onActivity { lista(it).scrollToPosition(PARAGRAFOS.lastIndex) }
+            esperarAte(scenario, "fim da lista na tela") { a ->
+                !lista(a).canScrollVertically(1) && textoEm(lista(a), PARAGRAFOS.lastIndex) != null
+            }
+            var primeiro = -1
+            scenario.onActivity { a ->
+                primeiro = (lista(a).layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+            }
+            // Seleção no primeiro parágrafo visível: a lista desce, e o espaço do fim leva a descida.
+            lateinit var primeiroMenu: ModoFalso
+            scenario.onActivity { a ->
+                primeiroMenu = abrirModoFalso(a, selecionarComFoco(lista(a), primeiro, 0, 5))
+            }
+            esperarAte(scenario, "lista desce para a seleção") { a -> lista(a).translationY > 0f }
+            esperarAte(scenario, "espaço do fim leva a descida") { a -> listaDoLeitor(a).descidaDaSelecao > 0 }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400))
+            var inicial = 0f
+            scenario.onActivity { a -> inicial = topoNaTelaDoUltimo(a) }
+            // Seleção nova no último parágrafo, abaixo da barra: sessão nova, sem descida. A lista sobe ao início.
+            scenario.onActivity { a ->
+                primeiroMenu.finish()
+                abrirModoFalso(a, selecionarComFoco(lista(a), PARAGRAFOS.lastIndex, 0, 5))
+            }
+            val quadros = mutableListOf<Float>()
+            repeat(40) {
+                scenario.onActivity { a -> quadros += topoNaTelaDoUltimo(a) }
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(16))
+            }
+            esperarAte(scenario, "lista sobe para a nova seleção") { a -> lista(a).translationY == 0f }
+            scenario.onActivity { a -> quadros += topoNaTelaDoUltimo(a) }
+            // Quadro a quadro, o texto não desce acima do valor de antes e não volta a descer depois de ter subido.
+            assertTrue("Quadros: $quadros", quadros.all { it <= inicial + 0.5f })
+            assertTrue("Quadros: $quadros", quadros.zipWithNext().all { (antes, depois) -> depois <= antes + 0.5f })
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    /** Topo na tela do último parágrafo (o item é o próprio TextView), com a translação da lista (rb-67/7). */
+    private fun topoNaTelaDoUltimo(a: ReaderActivity): Float {
+        val posTela = IntArray(2)
+        checkNotNull(tvEm(lista(a), PARAGRAFOS.lastIndex)).getLocationOnScreen(posTela)
+        return posTela[1].toFloat()
+    }
+
+    @Test
     fun repinturaQueChegaComODedoNoParagrafoNaoReescreveOTexto() {
         // rb-53: a sincronia repinta o parágrafo que está sendo lido. Se a repintura chega com o dedo já sobre ele,
         // o texto fica como está (o toque longo precisa da posição do texto) e a repintura sai quando o toque acaba.

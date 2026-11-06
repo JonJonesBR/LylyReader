@@ -217,11 +217,17 @@ internal class BarraDaSelecaoDeTexto(
     }
 
     // Guarda o alvo da descida e avisa o espaço do fim (rb-51). Por post, porque a descida pode rodar dentro do
-    // doOnLayout, e a invalidação das decorações pede outro layout.
-    private fun guardarDescida(alvo: Int) {
-        if (alvo == lista.descidaDaSelecao) return
+    // doOnLayout, e a invalidação das decorações pede outro layout. Subindo (rb-67/7), a volta da translação
+    // roda no mesmo post, antes do aviso: o que sai junto com o empurrão do fim não anima (ver subirComOFim).
+    private fun guardarDescida(alvo: Int, subindo: Boolean = false) {
+        val antes = lista.descidaDaSelecao
+        if (alvo == antes && !subindo) return
         lista.descidaDaSelecao = alvo
-        lista.post { lista.aoMudarDescida?.invoke() }
+        lista.post {
+            // Se a barra fechou antes deste post, o esconder já devolveu a lista e o espaço do fim (rb-67/7).
+            if (subindo && lista.descidaDaSelecao == alvo) lista.subirComOFim(antes, alvo, DURACAO_VOLTA_MS)
+            lista.aoMudarDescida?.invoke()
+        }
     }
 
     // Quem chama já garante que a barra está medida. Só mexe na translação: nada de rolagem nem de layout.
@@ -246,13 +252,10 @@ internal class BarraDaSelecaoDeTexto(
         // o necessário vale, e a lista pode voltar ao lugar se a seleção não precisar de descida.
         val alvo = if (sessaoNova) necessario else maxOf(atual, necessario)
         sessaoNova = false
-        when {
-            // Descer é direto, sem animação: o estado fica estável para medir.
-            alvo > atual -> lista.translationY = alvo.toFloat()
-            // Subir só acontece numa sessão nova: a lista volta com a mesma animação da barra que some.
-            alvo < atual -> lista.animate().translationY(alvo.toFloat()).setDuration(DURACAO_VOLTA_MS).start()
-        }
-        guardarDescida(alvo)
+        // Descer é direto, sem animação: o estado fica estável para medir. Subir só acontece numa sessão nova, e
+        // a animação dela sai no post de guardarDescida, junto do espaço do fim (rb-67/7).
+        if (alvo > atual) lista.translationY = alvo.toFloat()
+        guardarDescida(alvo, subindo = alvo < atual)
     }
 
     private companion object {

@@ -33,3 +33,16 @@ internal fun quantoSaiJuntoNaVolta(descida: Int, restanteAteOFim: Int?, rolagemD
  */
 internal fun descidaNoFimPx(descidaPx: Int, rolagemVertical: Boolean): Int =
     if (rolagemVertical) descidaPx.coerceAtLeast(0) else 0
+
+/**
+ * Sobe a lista de [descidaAntes] até [alvo] quando a descida diminui (rb-67/7), no mesmo post que avisa o espaço do
+ * fim. Encolher esse espaço faz o fim da lista empurrar o texto para baixo no quadro seguinte (o fixLayoutEndGap). A
+ * parte da volta que cabe nesse empurrão sai da translação sem animação, no mesmo quadro; o resto anima. Sem isso, o
+ * texto descia e subia de novo (o quique). A conta é a mesma do esconder ([quantoSaiJuntoNaVolta]).
+ */
+internal fun RecyclerViewParagrafos.subirComOFim(descidaAntes: Int, alvo: Int, duracaoMs: Long) {
+    val junto = quantoSaiJuntoNaVolta(descidaAntes - alvo, restanteAteOFim(), computeVerticalScrollOffset())
+    animate().cancel()
+    if (junto > 0) translationY = (translationY - junto).coerceAtLeast(alvo.toFloat())
+    if (translationY != alvo.toFloat()) animate().translationY(alvo.toFloat()).setDuration(duracaoMs).start()
+}
