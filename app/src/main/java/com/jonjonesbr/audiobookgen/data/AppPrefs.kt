@@ -465,6 +465,16 @@ class AppPrefs(context: Context) {
         get() = p.getBoolean("reader_manter_tela_ligada", false)
         set(v) = p.edit().putBoolean("reader_manter_tela_ligada", v).apply()
 
+    /** Modo da barra de cima do Leitor: "SEMPRE", "TEMPO" (recolhe sozinha, o padrão) ou "MANUAL" (rb-66). */
+    var readerBarraDeCima: String
+        get() = p.getString("reader_barra_cima", "TEMPO") ?: "TEMPO"
+        set(v) = p.edit().putString("reader_barra_cima", v).apply()
+
+    /** Modo da barra de baixo (painel da guiada) do Leitor, com os mesmos valores da de cima (rb-66). */
+    var readerBarraDeBaixo: String
+        get() = p.getString("reader_barra_baixo", "TEMPO") ?: "TEMPO"
+        set(v) = p.edit().putString("reader_barra_baixo", v).apply()
+
     /** Grava toda a aparência do leitor de uma vez (um único apply). */
     fun salvarAparenciaLeitor(
         fonte: Float,
