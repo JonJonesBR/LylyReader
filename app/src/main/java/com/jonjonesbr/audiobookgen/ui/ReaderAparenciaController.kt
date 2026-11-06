@@ -87,6 +87,7 @@ class ReaderAparenciaController(
             view.findViewById(R.id.tvBrilhoValor)
         )
         configurarManterTelaLigada(view.findViewById(R.id.swManterTelaLigada))
+        configurarBarrasDoLeitor(view, appPrefs)
 
         dialog.show()
     }

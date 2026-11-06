@@ -2101,10 +2101,7 @@ class ReaderActivitySmokeTest {
 
     /** Troca o modo de rolagem pelo caminho da Aparência: Opções, Aparência e o botão do grupo Rolagem (rb-26b). */
     private fun trocarRolagemPelaAparencia(scenario: ActivityScenario<ReaderActivity>, horizontal: Boolean) {
-        scenario.onActivity { it.findViewById<View>(R.id.btnReaderOpcoes).performClick() }
-        scenario.onActivity {
-            ShadowDialog.getLatestDialog().findViewById<View>(R.id.itemAcaoAparencia).performClick()
-        }
+        abrirAparencia(scenario)
         scenario.onActivity {
             val botao = if (horizontal) R.id.btnRolagemHorizontal else R.id.btnRolagemVertical
             ShadowDialog.getLatestDialog().findViewById<View>(botao).performClick()
@@ -2605,6 +2602,80 @@ class ReaderActivitySmokeTest {
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun aparenciaMostraOModoSalvoDasBarras() {
+        // rb-66 (passo 6): a folha abre com o modo salvo em cada grupo e a explicação dele (o @Before grava SEMPRE).
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarParagrafosNaTela(scenario)
+            abrirAparencia(scenario)
+            scenario.onActivity {
+                assertTrue(botaoDaAparencia(R.id.btnBarrasCimaSempre).isChecked)
+                assertTrue(botaoDaAparencia(R.id.btnBarrasBaixoSempre).isChecked)
+                assertEquals(app.getString(R.string.barras_cima_dica_sempre), textoDaAparencia(R.id.tvBarrasCimaDica))
+                val explicacao = textoDaAparencia(R.id.tvBarrasBaixoDica)
+                assertEquals(app.getString(R.string.barras_baixo_dica_sempre), explicacao)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun escolherAMaoEmCimaGravaNaHoraEMudaAExplicacao() {
+        // rb-66 (passo 6): o toque grava o modo de cima na preferência e troca a explicação; o de baixo não muda.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarParagrafosNaTela(scenario)
+            abrirAparencia(scenario)
+            scenario.onActivity { botaoDaAparencia(R.id.btnBarrasCimaMao).performClick() }
+            scenario.onActivity {
+                assertTrue(botaoDaAparencia(R.id.btnBarrasCimaMao).isChecked)
+                assertEquals(app.getString(R.string.barras_cima_dica_mao), textoDaAparencia(R.id.tvBarrasCimaDica))
+            }
+            assertEquals("MANUAL", AppPrefs(app).readerBarraDeCima)
+            assertEquals("SEMPRE", AppPrefs(app).readerBarraDeBaixo)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun escolherOTempoEmBaixoGravaNaHoraEMudaAExplicacao() {
+        // rb-66 (passo 6): o painel de baixo grava TEMPO e troca a explicação; o grupo de cima segue como estava.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarParagrafosNaTela(scenario)
+            abrirAparencia(scenario)
+            scenario.onActivity { botaoDaAparencia(R.id.btnBarrasBaixoTempo).performClick() }
+            scenario.onActivity {
+                assertTrue(botaoDaAparencia(R.id.btnBarrasBaixoTempo).isChecked)
+                assertEquals(app.getString(R.string.barras_baixo_dica_tempo), textoDaAparencia(R.id.tvBarrasBaixoDica))
+            }
+            assertEquals("TEMPO", AppPrefs(app).readerBarraDeBaixo)
+            assertEquals("SEMPRE", AppPrefs(app).readerBarraDeCima)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    private fun esperarParagrafosNaTela(scenario: ActivityScenario<ReaderActivity>) {
+        esperarAte(scenario, "parágrafos na tela") { a -> lista(a).adapter?.itemCount == PARAGRAFOS.size }
+    }
+
+    /** Abre a folha Aparência pelo botão de opções do Leitor (rb-26b, rb-66 passo 6). */
+    private fun abrirAparencia(scenario: ActivityScenario<ReaderActivity>) {
+        scenario.onActivity { it.findViewById<View>(R.id.btnReaderOpcoes).performClick() }
+        scenario.onActivity {
+            ShadowDialog.getLatestDialog().findViewById<View>(R.id.itemAcaoAparencia).performClick()
+        }
+    }
+
+    /** Botão de um grupo da folha Aparência que está aberta agora. */
+    private fun botaoDaAparencia(id: Int): MaterialButton =
+        ShadowDialog.getLatestDialog().findViewById<MaterialButton>(id)
+
+    /** Texto de uma view da folha Aparência que está aberta agora. */
+    private fun textoDaAparencia(id: Int): String =
+        ShadowDialog.getLatestDialog().findViewById<TextView>(id).text.toString()
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)

@@ -499,6 +499,112 @@
             style="@style/Widget.Lyly.BotaoAparencia"/>
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
+    <!-- Barras de cima (título, capítulos, opções): sempre, recolher pelo tempo ou à mão (rb-66) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_barras_cima"
+        android:textSize="13sp"
+        android:textColor="@color/color_on_surface_muted"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"/>
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/grupoBarrasCima"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:singleSelection="true"
+        app:selectionRequired="true"
+        android:layout_marginBottom="8dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBarrasCimaSempre"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_barras_sempre"
+            style="@style/Widget.Lyly.BotaoAparencia"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBarrasCimaTempo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_barras_tempo"
+            style="@style/Widget.Lyly.BotaoAparencia"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBarrasCimaMao"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_barras_mao"
+            style="@style/Widget.Lyly.BotaoAparencia"/>
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <TextView
+        android:id="@+id/tvBarrasCimaDica"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/barras_cima_dica_tempo"
+        android:textColor="@color/color_on_surface_medium"
+        android:textSize="12sp"/>
+
+    <!-- Painel da guiada (embaixo): sempre aberto, recolher pelo tempo ou à mão (rb-66) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_barras_baixo"
+        android:textSize="13sp"
+        android:textColor="@color/color_on_surface_muted"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp"/>
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/grupoBarrasBaixo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:singleSelection="true"
+        app:selectionRequired="true"
+        android:layout_marginBottom="8dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBarrasBaixoSempre"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_barras_sempre"
+            style="@style/Widget.Lyly.BotaoAparencia"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBarrasBaixoTempo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_barras_tempo"
+            style="@style/Widget.Lyly.BotaoAparencia"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBarrasBaixoMao"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_barras_mao"
+            style="@style/Widget.Lyly.BotaoAparencia"/>
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <TextView
+        android:id="@+id/tvBarrasBaixoDica"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/barras_baixo_dica_tempo"
+        android:textColor="@color/color_on_surface_medium"
+        android:textSize="12sp"/>
+
     <!-- Brilho -->
     <TextView
         android:layout_width="wrap_content"

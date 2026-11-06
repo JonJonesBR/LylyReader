@@ -372,6 +372,17 @@
     <string name="label_rolagem">Rolagem</string>
     <string name="btn_rolagem_vertical">Vertical</string>
     <string name="btn_rolagem_horizontal">Horizontal (páginas)</string>
+    <string name="label_barras_cima">Barras de cima (título e capítulos)</string>
+    <string name="label_barras_baixo">Painel da leitura guiada (embaixo)</string>
+    <string name="btn_barras_sempre">Sempre</string>
+    <string name="btn_barras_tempo">Recolher</string>
+    <string name="btn_barras_mao">À mão</string>
+    <string name="barras_cima_dica_sempre">Sempre à mostra.</string>
+    <string name="barras_cima_dica_tempo">Recolhem sozinhas depois de alguns segundos. Para vê-las, deslize para baixo na página, ou role um pouco para cima ou toque na setinha no alto.</string>
+    <string name="barras_cima_dica_mao">Abrem e fecham só quando você pede: deslize para baixo ou para cima na página, ou toque na setinha.</string>
+    <string name="barras_baixo_dica_sempre">O painel fica sempre aberto.</string>
+    <string name="barras_baixo_dica_tempo">Depois de alguns segundos, recolhe numa tira com play e pausa. Toque na seta da tira para ver todos os controles.</string>
+    <string name="barras_baixo_dica_mao">Abre e fecha só pela seta da tira.</string>
     <string name="progresso_leitura_com_tempo">%1$d%% · ~%2$d min restantes no capítulo</string>
     <string name="progresso_leitura_sem_tempo">%1$d%% lido</string>
 
