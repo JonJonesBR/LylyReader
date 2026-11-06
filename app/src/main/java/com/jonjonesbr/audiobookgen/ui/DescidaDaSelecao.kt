@@ -58,6 +58,14 @@ internal fun refazerDescidaNoPreparo(
         (ultimaDescida == null || inicio != ultimaDescida.first || fim != ultimaDescida.last)
 
 /**
+ * Se o preparo que chega deve cancelar o reajuste pedido ao soltar a alça (rb-67/8). Há um pedido ([pedido], a seleção
+ * que ele vai descer) e a seleção do preparo é outra: é um passo de arraste da alça. O preparo que repete a seleção
+ * (o do classificador, depois do DOWN de um novo arraste) não cancela. Sem pedido, nada a cancelar.
+ */
+internal fun cancelarReajusteNoPreparo(inicio: Int, fim: Int, pedido: IntRange?): Boolean =
+    pedido != null && (inicio != pedido.first || fim != pedido.last)
+
+/**
  * Onde a barra da seleção fica (rb-26b, passo 3): embaixo, no lugar do painel da guiada, no modo páginas; no topo, com
  * a descida, no vertical. [embaixo] escolhe a gravidade; [margemDeBaixo] é o bottomMargin (o mini player, quando
  * visível, fica abaixo da barra); [desce] diz se a lista pode descer para a linha da seleção (embaixo, não: o texto não

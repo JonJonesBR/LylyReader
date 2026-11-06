@@ -889,6 +889,63 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun passoDeArrasteCancelaOReajusteQueEstaEsperando() {
+        // rb-67/8: o reajuste pedido ao soltar a alça espera 120 ms. Um passo de arraste (outra seleção) antes disso o
+        // cancela, e a lista fica onde está. Sem arraste, o mesmo reajuste desce a lista depois da espera.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            var tv: TextView? = null
+            var l2 = 0
+            scenario.onActivity { a ->
+                val rv = lista(a)
+                val alvo = requireNotNull(tvEm(rv, 0))
+                assertTrue(
+                    "O parágrafo 0 precisa de 3 linhas (linhas: ${alvo.layout.lineCount})",
+                    alvo.layout.lineCount >= 3,
+                )
+                l2 = alvo.layout.getLineStart(2)
+                tv = selecionarComFoco(rv, 0, l2, l2 + 5)
+            }
+            val texto = requireNotNull(tv)
+            lateinit var modo: ModoFalso
+            scenario.onActivity { a -> modo = abrirModoFalso(a, texto) }
+            esperarAte(scenario, "lista desce para a seleção") { a -> lista(a).translationY > 0f }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            var t0 = 0f
+            scenario.onActivity { a -> t0 = lista(a).translationY }
+            val cb = texto.customSelectionActionModeCallback
+            // Passo de arraste até o início (0) e o preparo do UP que repete a seleção: pede o reajuste (120 ms).
+            scenario.onActivity { _ ->
+                cb.onPrepareActionMode(modo, modo.menu)
+                Selection.setSelection(texto.text as Spannable, 0, l2 + 5)
+                cb.onPrepareActionMode(modo, modo.menu)
+                cb.onPrepareActionMode(modo, modo.menu)
+            }
+            // Novo arraste antes dos 120 ms: a seleção muda e o reajuste pedido é cancelado.
+            scenario.onActivity { _ ->
+                Selection.setSelection(texto.text as Spannable, 0, l2 + 4)
+                cb.onPrepareActionMode(modo, modo.menu)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400))
+            scenario.onActivity { a -> assertEquals(t0, lista(a).translationY, 0.5f) }
+            // Sem novo arraste: o reajuste pedido pelo UP desce a lista depois da espera.
+            scenario.onActivity { _ ->
+                Selection.setSelection(texto.text as Spannable, 0, l2 + 5)
+                cb.onPrepareActionMode(modo, modo.menu)
+                cb.onPrepareActionMode(modo, modo.menu)
+            }
+            esperarAte(scenario, "sem novo arraste, o reajuste desce a lista") { a -> lista(a).translationY > t0 }
+            // Fecha com Destacar: a barra some e a lista volta ao lugar.
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "lista volta ao lugar") { a -> lista(a).translationY == 0f }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun subirAFolgaDoFimNaoQuicaOTexto() {
         // rb-67/7: a descida vira espaço depois do último parágrafo (rb-51). Uma seleção nova que não precisa de
         // descida faz a lista subir, e o fim da lista não pode empurrar o texto para baixo no meio da subida.

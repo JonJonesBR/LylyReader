@@ -174,4 +174,21 @@ class DescidaDaSelecaoTest {
         val lugar = lugarDaBarraDaSelecao(paginasAtivas = false, fundoDaArea = 1800, topoDoMiniPlayer = 1680)
         assertEquals(LugarDaBarraDaSelecao(embaixo = false, margemDeBaixo = 0, desce = true), lugar)
     }
+
+    @Test
+    fun semReajustePedidoNadaECancelado() {
+        assertFalse(cancelarReajusteNoPreparo(inicio = 0, fim = 5, pedido = null))
+    }
+
+    @Test
+    fun preparoComAMesmaSelecaoDoPedidoNaoCancela() {
+        // O preparo do classificador repete a seleção do UP: o reajuste pedido continua.
+        assertFalse(cancelarReajusteNoPreparo(inicio = 10, fim = 20, pedido = 10..20))
+    }
+
+    @Test
+    fun passoDeArrasteNoFimOuNoInicioCancelaOReajuste() {
+        assertTrue(cancelarReajusteNoPreparo(inicio = 10, fim = 21, pedido = 10..20))
+        assertTrue(cancelarReajusteNoPreparo(inicio = 0, fim = 20, pedido = 10..20))
+    }
 }

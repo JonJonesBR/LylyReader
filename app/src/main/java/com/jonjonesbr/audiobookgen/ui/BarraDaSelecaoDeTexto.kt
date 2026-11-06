@@ -128,7 +128,19 @@ internal class BarraDaSelecaoDeTexto(
         linhaDoReajuste = linhaDaSelecao
         depoisDoReajuste = depois
         lista.removeCallbacks(reajuste)
-        lista.post(reajuste)
+        // A espera (rb-67/8) deixa um passo de arraste que chega logo depois cancelar o reajuste (ver
+        // cancelarReajuste).
+        lista.postDelayed(reajuste, ESPERA_DO_REAJUSTE_MS)
+    }
+
+    /**
+     * Cancela o reajuste pedido e ainda não rodado (rb-67/8). Um passo de arraste da alça chegou antes da espera
+     * acabar: a descida não pode acontecer com o dedo na alça, e a seleção nova vai ter o próprio pedido.
+     */
+    fun cancelarReajuste() {
+        lista.removeCallbacks(reajuste)
+        linhaDoReajuste = null
+        depoisDoReajuste = null
     }
 
     // Mesmo caminho do mostrar (rb-48): espera o toque terminar e a barra ser medida, e só então desce o necessário.
@@ -275,6 +287,10 @@ internal class BarraDaSelecaoDeTexto(
         // Respiro entre a base da barra e a linha da seleção, em dp (convertido para px ao usar).
         const val MARGEM_ABAIXO_DA_BARRA_DP = 8f
         const val DURACAO_VOLTA_MS = 150L
+
+        // Espera do reajuste ao soltar a alça (rb-67/8): o preparo do classificador (TextClassifier) pode chegar
+        // depois do DOWN de um novo arraste. Esta folga deixa o passo de arraste cancelar o reajuste antes da descida.
+        const val ESPERA_DO_REAJUSTE_MS = 120L
     }
 }
 

@@ -35,6 +35,8 @@ internal data class AcoesDaSelecaoDeTexto(
     val aoFechar: (MenuDaSelecaoDeTexto) -> Unit,
     // Chamado quando a seleção fica parada entre dois preparos: é o preparo que vem ao soltar a alça (rb-50).
     val aoSoltarAlca: (MenuDaSelecaoDeTexto) -> Unit = {},
+    // Chamado quando um passo de arraste da alça chega com um reajuste pedido ainda esperando (rb-67/8).
+    val aoArrastarAlca: (MenuDaSelecaoDeTexto) -> Unit = {},
 )
 
 /**
@@ -61,6 +63,9 @@ internal class MenuDaSelecaoDeTexto(
     // Início e fim da seleção no preparo anterior, para saber se ela ficou parada (rb-50). -1 = sem preparo ainda.
     private var inicioNoUltimoPreparo = -1
     private var fimNoUltimoPreparo = -1
+
+    // Seleção do reajuste pedido ao soltar a alça, enquanto ele espera a sua hora (rb-67/8). Nulo sem pedido.
+    private var selecaoDoReajuste: IntRange? = null
 
     // Início e fim da seleção quando a descida foi aplicada por último (rb-50). O ParagrafoAdapter os grava no depois
     // da descida: o preparo só refaz a descida se a seleção mudou desde então. -1 = nenhuma descida ainda.
@@ -91,6 +96,12 @@ internal class MenuDaSelecaoDeTexto(
     override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
         val inicio = tv.selectionStart
         val fim = tv.selectionEnd
+        // rb-67/8: a seleção mudou desde o reajuste pedido (um passo de arraste). O preparo que o repetia, e que vem do
+        // classificador depois do DOWN de um novo arraste, não pode descer a lista com o dedo na alça.
+        if (cancelarReajusteNoPreparo(inicio, fim, selecaoDoReajuste)) {
+            selecaoDoReajuste = null
+            acoes.aoArrastarAlca(this)
+        }
         val refazer = refazerDescidaNoPreparo(
             inicioNoUltimoPreparo,
             fimNoUltimoPreparo,
@@ -101,8 +112,17 @@ internal class MenuDaSelecaoDeTexto(
         )
         inicioNoUltimoPreparo = inicio
         fimNoUltimoPreparo = fim
-        if (refazer) acoes.aoSoltarAlca(this)
+        if (refazer) pedirReajuste()
         return false
+    }
+
+    /**
+     * Pede a descida que roda ao soltar a alça, para a seleção que o TextView tem agora (rb-50). Guarda essa seleção
+     * (rb-67/8): o preparo seguinte que a repetir não cancela o reajuste, e um que mudar a seleção cancela.
+     */
+    private fun pedirReajuste() {
+        selecaoDoReajuste = tv.selectionStart..tv.selectionEnd
+        acoes.aoSoltarAlca(this)
     }
 
     override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = executarItem(item.itemId, mode)

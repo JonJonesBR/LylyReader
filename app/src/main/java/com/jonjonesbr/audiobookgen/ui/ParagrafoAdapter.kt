@@ -196,6 +196,8 @@ class ParagrafoAdapter(
                 }
             }
         },
+        // rb-67/8: um passo de arraste com o reajuste ainda esperando o cancela (o preparo que o repetia não desce).
+        aoArrastarAlca = { barraDaSelecao.cancelarReajuste() },
     )
 
     // Carregados uma única vez (não a cada bind) — fontes opcionais da leitura.
