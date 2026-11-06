@@ -272,6 +272,19 @@ class AudioPlayerService : MediaLibraryService() {
 
         override fun seekToNext() = proximoCapitulo()
         override fun seekToPrevious() = capituloAnterior()
+
+        // Pausa da pessoa (fone, relógio, Android Auto, tela de bloqueio) com o foco adiado: o ExoPlayer já está
+        // pausado pelo app, então o onPlayWhenReadyChanged não roda. Sem zerar a flag, o onFocusGained tocaria
+        // sozinho, contra a pausa dela.
+        override fun pause() {
+            estavaTocandoAntesDoFoco = false
+            super.pause()
+        }
+
+        override fun setPlayWhenReady(playWhenReady: Boolean) {
+            if (!playWhenReady) estavaTocandoAntesDoFoco = false
+            super.setPlayWhenReady(playWhenReady)
+        }
     }
 
     private val librarySessionCallback = object : MediaLibrarySession.Callback {
