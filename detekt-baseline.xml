@@ -981,7 +981,7 @@
     <ID>ReturnCount:CaminhoPermitido.kt$fun caminhoPermitido(canonico: String, raizes: List&lt;String&gt;): Boolean</ID>
     <ID>ReturnCount:CatalogoGutenberg.kt$CatalogoGutenberg$private fun entrada(e: Element): LivroEncontrado?</ID>
     <ID>ReturnCount:ChavesDeLivro.kt$ChavesDeLivro$fun migrarMapa( mapa: Map&lt;String, Any?&gt;, antigo: String, novo: String, prefixo: String = "", resolver: (valorAntigo: Any?, valorExistente: Any?) -&gt; Any? = { _, existente -&gt; existente } ): Map&lt;String, Any?&gt;</ID>
-    <ID>ReturnCount:CoachMark.kt$CoachMark$private fun mostrar(activity: AppCompatActivity, dica: Dica, alvo: View)</ID>
+    <ID>ReturnCount:CoachMark.kt$CoachMark$private fun mostrar(activity: AppCompatActivity, dica: Dica, alvo: View): Boolean</ID>
     <ID>ReturnCount:ConversaoPausadaStore.kt$ConversaoPausadaStore$fun salvar(context: Context, data: Data, titulo: String, pct: Int, job: String? = null): Boolean</ID>
     <ID>ReturnCount:ConversionWorker.kt$ConversionWorker$private suspend fun comprimirSeNecessario( arquivo: File, notif: ConversionNotificationManager, runToken: String? ): Boolean</ID>
     <ID>ReturnCount:ConversionWorker.kt$ConversionWorker$private suspend fun executarConversao( arquivo: String, voz: String, velocidade: String, estilo: String, saida: String ): Result</ID>

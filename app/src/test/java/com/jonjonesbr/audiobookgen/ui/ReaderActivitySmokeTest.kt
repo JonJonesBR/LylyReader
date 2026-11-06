@@ -3256,6 +3256,39 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun dicaDoMenuEsperaAOutraDicaSairParaAparecer() {
+        // rb-67 (item 17a): com a dica da tela cheia aberta, mostrar o cabeçalho não gasta a dica do menu. Fechada a
+        // outra, recolher e mostrar de novo traz a do menu. A setinha é clicada por código, porque a dica cobre a tela.
+        liberarDicas()
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no vertical", visivel = false)
+            esperarDica(scenario, R.string.dica_leitor_tela_cheia_vertical_titulo)
+            scenario.onActivity { a -> setinhaDo(a).performClick() }
+            esperarCabecalho(scenario, "cabeçalho mostrado com a outra dica aberta", visivel = true)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            scenario.onActivity { a ->
+                assertEquals(
+                    "com a outra dica aberta, a do menu não aparece",
+                    a.getString(R.string.dica_leitor_tela_cheia_vertical_titulo),
+                    tituloDaDicaNaTela(a),
+                )
+            }
+            fecharDica(scenario)
+            // A setinha com o cabeçalho visível recolhe; de novo, mostra, e agora a dica do menu aparece.
+            scenario.onActivity { a -> setinhaDo(a).performClick() }
+            esperarCabecalho(scenario, "cabeçalho recolhido pela setinha", visivel = false)
+            scenario.onActivity { a -> setinhaDo(a).performClick() }
+            esperarDica(scenario, R.string.dica_leitor_guiada_titulo)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun comDicaAbertaOCabecalhoNaoRecolheComOTempo() {
         // rb-66 (passo 7): com uma dica aberta, cinco segundos sem interação não recolhem o cabeçalho.
         liberarDicas()

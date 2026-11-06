@@ -46,36 +46,44 @@ object CoachMark {
         Dica.LEITOR_PAINEL_TIRA to (R.string.dica_leitor_painel_tira_titulo to R.string.dica_leitor_painel_tira_texto),
     )
 
-    /** Mostra a próxima dica da [tela], se houver, apontando para a view que [alvoDe] devolver. */
-    fun mostrarProxima(activity: AppCompatActivity, tela: TelaDica, alvoDe: (Dica) -> View?) {
+    /**
+     * Mostra a próxima dica da [tela], se houver, apontando para a view que [alvoDe] devolver. Devolve se mostrou,
+     * para quem chama marcar a dica como tentada só quando ela de fato apareceu (rb-67, item 17a).
+     */
+    fun mostrarProxima(activity: AppCompatActivity, tela: TelaDica, alvoDe: (Dica) -> View?): Boolean {
         val ap = AppPrefs(activity)
         val dica = DicasRegras.proxima(
             tela, ap.dicasVistas, ap.onboardingDone, ap.voiceDownloadOnboardingDone, ReleaseNotesDialog.pendente(activity)
-        ) ?: return
-        mostrar(activity, dica, alvoDe(dica) ?: return)
+        ) ?: return false
+        val alvo = alvoDe(dica)
+        return alvo != null && mostrar(activity, dica, alvo)
     }
 
-    /** Mostra uma dica específica (ex.: a da barra da leitura guiada, que só existe depois de iniciar). */
-    fun tentar(activity: AppCompatActivity, dica: Dica, alvo: View) {
+    /**
+     * Mostra uma dica específica (ex.: a da barra da leitura guiada, que só existe depois de iniciar). Devolve se
+     * mostrou (rb-67, item 17a).
+     */
+    fun tentar(activity: AppCompatActivity, dica: Dica, alvo: View): Boolean {
         val ap = AppPrefs(activity)
         if (!DicasRegras.podeMostrar(
                 dica, ap.dicasVistas, ap.onboardingDone, ap.voiceDownloadOnboardingDone, ReleaseNotesDialog.pendente(activity)
             )
-        ) return
-        mostrar(activity, dica, alvo)
+        ) return false
+        return mostrar(activity, dica, alvo)
     }
 
-    private fun mostrar(activity: AppCompatActivity, dica: Dica, alvo: View) {
-        if (activity.isFinishing || activity.isDestroyed) return
-        if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
-        val conteudo = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
-        if (conteudo.findViewById<View>(R.id.coachMarkRaiz) != null) return // uma por vez
+    private fun mostrar(activity: AppCompatActivity, dica: Dica, alvo: View): Boolean {
+        if (activity.isFinishing || activity.isDestroyed) return false
+        if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return false
+        val conteudo = activity.findViewById<ViewGroup>(android.R.id.content) ?: return false
+        if (conteudo.findViewById<View>(R.id.coachMarkRaiz) != null) return false // uma por vez
         // Alvo oculto, fora da tela ou cortado: não mostra e não marca como vista (volta na próxima abertura).
         val visivel = Rect()
-        if (!alvo.isShown || alvo.width == 0 || alvo.height == 0 || !alvo.getGlobalVisibleRect(visivel)) return
-        if (visivel.height() < alvo.height * 0.9f || visivel.width() < alvo.width * 0.9f) return
-        val (titulo, texto) = textos[dica] ?: return
+        if (!alvo.isShown || alvo.width == 0 || alvo.height == 0 || !alvo.getGlobalVisibleRect(visivel)) return false
+        if (visivel.height() < alvo.height * 0.9f || visivel.width() < alvo.width * 0.9f) return false
+        val (titulo, texto) = textos[dica] ?: return false
         CoachMarkView(activity, dica, alvo, titulo, texto).also { conteudo.addView(it, ViewGroup.LayoutParams(-1, -1)) }
+        return true
     }
 
     private class CoachMarkView(

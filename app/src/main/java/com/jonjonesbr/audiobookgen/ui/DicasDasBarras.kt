@@ -22,21 +22,29 @@ private val gestosDaPessoa = setOf(GestoDasBarras.MOSTRAR, GestoDasBarras.ROLOU_
  */
 internal class DicasDasBarras(private val activity: AppCompatActivity, private val cabecalho: View) {
 
+    // Tentado: a dica foi mostrada nesta abertura. Pendente: já há um post agendado para ela (rb-67, item 17a).
     private var cabecalhoTentado = false
+    private var cabecalhoPendente = false
     private var verticalTentado = false
+    private var verticalPendente = false
     private var tiraTentada = false
+    private var tiraPendente = false
 
     /**
      * A pessoa mostrou o cabeçalho nesta abertura (a 1ª vez): a dica do menu ⋮ ou dos capítulos, a que estiver a seguir
      * na ordem da tela LEITOR. Vale para o deslize, rolar para cima, a setinha, o Tab e a ação de acessibilidade.
      */
     fun aoMudarCabecalho(gesto: GestoDasBarras, estavaVisivel: Boolean, agoraVisivel: Boolean) {
+        if (cabecalhoTentado || cabecalhoPendente) return
         val mostrou = !estavaVisivel && agoraVisivel
-        if (mostrou && gesto in gestosDaPessoa && !cabecalhoTentado) {
-            cabecalhoTentado = true
+        if (mostrou && gesto in gestosDaPessoa) {
+            cabecalhoPendente = true
             cabecalho.doOnLayout {
                 cabecalho.post {
-                    CoachMark.mostrarProxima(activity, TelaDica.LEITOR) { dica -> alvoDaDicaDoLeitor(activity, dica) }
+                    cabecalhoPendente = false
+                    cabecalhoTentado = CoachMark.mostrarProxima(activity, TelaDica.LEITOR) { dica ->
+                        alvoDaDicaDoLeitor(activity, dica)
+                    }
                 }
             }
         }
@@ -47,24 +55,30 @@ internal class DicasDasBarras(private val activity: AppCompatActivity, private v
      * quem cuida da dica é a [TelaCheiaDoLeitor], com a lista como alvo.
      */
     fun recolhidoNoVertical() {
-        if (verticalTentado) return
+        if (verticalTentado || verticalPendente) return
         // Alvo oculto não passa por layout: sem esta checagem o listener ficaria pendente e a dica sairia depois, fora
         // de hora. Sem marcar a flag, a dica tenta de novo na próxima vez que o cabeçalho for recolhido nesta abertura.
         val setinha = activity.findViewById<View?>(R.id.btnMostrarBarras)?.takeIf { it.isShown } ?: return
-        verticalTentado = true
+        verticalPendente = true
         setinha.doOnLayout {
-            setinha.post { CoachMark.tentar(activity, Dica.LEITOR_TELA_CHEIA_VERTICAL, setinha) }
+            setinha.post {
+                verticalPendente = false
+                verticalTentado = CoachMark.tentar(activity, Dica.LEITOR_TELA_CHEIA_VERTICAL, setinha)
+            }
         }
     }
 
     /** O painel de baixo apareceu recolhido na tira: a dica aponta para a seta da tira. Uma vez por abertura. */
     fun tiraApareceu() {
-        if (tiraTentada) return
+        if (tiraTentada || tiraPendente) return
         // Mesma regra da setinha: alvo oculto não recebe layout, então só marca a flag com o alvo à vista.
         val seta = activity.findViewById<View?>(R.id.btnGuidedRecolher)?.takeIf { it.isShown } ?: return
-        tiraTentada = true
+        tiraPendente = true
         seta.doOnLayout {
-            seta.post { CoachMark.tentar(activity, Dica.LEITOR_PAINEL_TIRA, seta) }
+            seta.post {
+                tiraPendente = false
+                tiraTentada = CoachMark.tentar(activity, Dica.LEITOR_PAINEL_TIRA, seta)
+            }
         }
     }
 }

@@ -45,7 +45,9 @@ internal class TelaCheiaDoLeitor(
 
     // Último valor de reserva aplicado. Começa falso: o coordenador aplica o primeiro estado logo no início.
     private var reservado = false
+    // A dica da tela cheia: tentada nesta abertura (só quando de fato apareceu) e com post agendado (rb-67, item 17a).
     private var dicaTentada = false
+    private var dicaPendente = false
     private val limiarPx = activity.dpToPx(LIMIAR_DO_DESLIZE_DP).toFloat()
     private val limiarDescerPx = activity.dpToPx(RegraDasBarrasDoLeitor.LIMIAR_DESCER_DP)
     private val limiarSubirPx = activity.dpToPx(RegraDasBarrasDoLeitor.LIMIAR_SUBIR_DP)
@@ -195,15 +197,16 @@ internal class TelaCheiaDoLeitor(
 
     /**
      * Dica da tela cheia, uma vez por abertura do Leitor. Por post, para medir a lista já com a altura nova e com o
-     * modo do adapter atualizado (rb-66, passo 7). Só marca como tentada quando a paginação está em uso e o cabeçalho
-     * recolhido, senão tenta de novo na próxima mudança.
+     * modo do adapter atualizado (rb-66, passo 7). Só marca como tentada quando a dica de fato aparece (com a
+     * paginação em uso e o cabeçalho recolhido); senão tenta de novo na próxima mudança.
      */
     private fun tentarDica() {
-        if (dicaTentada) return
+        if (dicaTentada || dicaPendente) return
+        dicaPendente = true
         lista.post {
-            if (dicaTentada || cabecalho.visibility != View.GONE || lista.paginacao?.ativa != true) return@post
-            dicaTentada = true
-            CoachMark.tentar(activity, Dica.LEITOR_TELA_CHEIA, lista)
+            dicaPendente = false
+            if (cabecalho.visibility != View.GONE || lista.paginacao?.ativa != true) return@post
+            dicaTentada = CoachMark.tentar(activity, Dica.LEITOR_TELA_CHEIA, lista)
         }
     }
 }
