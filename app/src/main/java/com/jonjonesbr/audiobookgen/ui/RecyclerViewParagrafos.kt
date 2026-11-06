@@ -44,7 +44,7 @@ import kotlin.math.hypot
 class RecyclerViewParagrafos @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyle: Int = 0,
+    defStyle: Int = androidx.recyclerview.R.attr.recyclerViewStyle,
 ) : RecyclerView(context, attrs, defStyle) {
 
     /** Chamado antes de a rolagem pedida pela acessibilidade acontecer. */
