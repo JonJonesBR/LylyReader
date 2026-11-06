@@ -372,8 +372,8 @@
     <string name="btn_barras_tempo">Auto-hide</string>
     <string name="btn_barras_mao">Manual</string>
     <string name="barras_cima_dica_sempre">Always visible.</string>
-    <string name="barras_cima_dica_tempo">They hide after a few seconds. To see them, swipe down on the page, or scroll up a little or tap the arrow at the top.</string>
-    <string name="barras_cima_dica_mao">They open and close only when you ask: swipe down or up on the page, or tap the arrow.</string>
+    <string name="barras_cima_dica_tempo">They hide after a few seconds. To see them, swipe down on the page (page mode), or scroll up a little or tap the arrow at the top (vertical scrolling).</string>
+    <string name="barras_cima_dica_mao">They open and close only when you ask: in page mode, swipe down or up on the page; in vertical scrolling, tap the arrow.</string>
     <string name="barras_baixo_dica_sempre">The panel stays open.</string>
     <string name="barras_baixo_dica_tempo">After a few seconds it shrinks to a strip with play and pause. Tap the arrow on the strip to see all controls.</string>
     <string name="barras_baixo_dica_mao">It opens and closes only with the arrow on the strip.</string>

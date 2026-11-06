@@ -377,8 +377,8 @@
     <string name="btn_barras_tempo">Ocultar</string>
     <string name="btn_barras_mao">A mano</string>
     <string name="barras_cima_dica_sempre">Siempre visibles.</string>
-    <string name="barras_cima_dica_tempo">Se ocultan solas después de unos segundos. Para verlas, desliza hacia abajo en la página, o desplázate un poco hacia arriba o toca la flecha de arriba.</string>
-    <string name="barras_cima_dica_mao">Se abren y cierran solo cuando lo pides: desliza hacia abajo o hacia arriba en la página, o toca la flecha.</string>
+    <string name="barras_cima_dica_tempo">Se ocultan solas después de unos segundos. Para verlas, desliza hacia abajo en la página (modo páginas), o desplázate un poco hacia arriba o toca la flecha de arriba (desplazamiento vertical).</string>
+    <string name="barras_cima_dica_mao">Se abren y cierran solo cuando lo pides: en el modo páginas, desliza hacia abajo o hacia arriba en la página; en el desplazamiento vertical, toca la flecha.</string>
     <string name="barras_baixo_dica_sempre">El panel queda siempre abierto.</string>
     <string name="barras_baixo_dica_tempo">Después de unos segundos se reduce a una franja con reproducir y pausa. Toca la flecha de la franja para ver todos los controles.</string>
     <string name="barras_baixo_dica_mao">Se abre y se cierra solo con la flecha de la franja.</string>
