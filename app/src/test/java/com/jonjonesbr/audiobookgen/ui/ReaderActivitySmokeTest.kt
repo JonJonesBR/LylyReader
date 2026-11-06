@@ -852,13 +852,46 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    /**
+     * Dá o foco ao último parágrafo e rola até o fim de novo, porque o foco pode rolar a lista (rb-67/10). Espera a
+     * lista parar no fim.
+     */
+    private fun focarNoFimDaLista(scenario: ActivityScenario<ReaderActivity>) {
+        scenario.onActivity { a ->
+            val rv = lista(a)
+            checkNotNull(tvEm(rv, PARAGRAFOS.lastIndex)).requestFocus()
+            // O foco pede smoothScrollBy até o topo do parágrafo (até 2 s): para antes de voltar ao fim.
+            rv.stopScroll()
+            rolarAteOFim(rv)
+        }
+        esperarAte(scenario, "fim da lista depois do foco") { a ->
+            !lista(a).canScrollVertically(1) && lista(a).scrollState == RecyclerView.SCROLL_STATE_IDLE
+        }
+    }
+
+    /** Diagnóstico da descida para a seleção: barra e linha medidas na tela, como em descerSePreciso. */
+    private fun diagnosticoDaDescida(a: ReaderActivity): String {
+        val rv = lista(a)
+        val barra = a.findViewById<View>(R.id.barraSelecaoTexto)
+        val posLista = IntArray(2).also { rv.getLocationOnScreen(it) }
+        val posBarra = IntArray(2).also { barra.getLocationOnScreen(it) }
+        val topoDaLinha = linhasNaLista(rv).firstOrNull {
+            it.pos == PARAGRAFOS.lastIndex && it.topo >= rv.paddingTop
+        }?.let { posLista[1] + it.topo }
+        return "translationY ${rv.translationY}, base da barra ${posBarra[1] + barra.height}, " +
+            "topo da linha selecionada $topoDaLinha"
+    }
+
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun selecaoNoUltimoParagrafoDesceOEspacoEOTopoAndaSoComATranslacao() {
-        // rb-67/10: o último parágrafo com o foco e a seleção sob a barra. A lista desce, a decoração do fim leva a
-        // descida, e o topo dele na tela anda só com a translação (o LinearLayoutManager não reancora o foco). Fechar
-        // a seleção devolve tudo ao de antes. O último parágrafo é longo: o topo dele não cai sempre no topo da lista,
-        // e a linha selecionada fica sob a barra.
+        // rb-67/10: o último parágrafo com a seleção de uma linha inteira que começa no topo da lista, sob a barra
+        // quando ela abre no topo. Na vertical a barra fica no topo da área, então a lista desce até a linha ficar
+        // abaixo dela (a descida é zero se a linha já está abaixo da barra, como a última linha da tela). A
+        // decoração do fim leva a descida, e o topo do último parágrafo na tela anda só com a translação (o
+        // LinearLayoutManager não reancora o foco). Fechar a seleção devolve tudo ao de antes. O último parágrafo é
+        // longo, então a linha escolhida existe mesmo com a lista no fim.
+        AppPrefs(app).readerRolagemHorizontal = false
         val textos = PARAGRAFOS.toMutableList().apply { this[PARAGRAFOS.lastIndex] = PARAGRAFO_LONGO }
         val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
@@ -871,14 +904,15 @@ class ReaderActivitySmokeTest {
             esperarAte(scenario, "fim da lista com o último parágrafo na tela") { a ->
                 !lista(a).canScrollVertically(1) && textoEm(lista(a), PARAGRAFOS.lastIndex) != null
             }
+            focarNoFimDaLista(scenario)
             var topoAntes = 0f
             scenario.onActivity { a -> topoAntes = topoNaTelaDoUltimo(a) }
-            // Foco e seleção na última linha visível do último parágrafo, com o menu aberto: a barra cobre a linha.
+            // Seleção da 1ª linha inteira do último parágrafo que começa no topo da lista, com o menu aberto.
             scenario.onActivity { a ->
                 val rv = lista(a)
-                val linha = linhasNaLista(rv).last {
-                    it.pos == PARAGRAFOS.lastIndex && it.base <= rv.height - rv.paddingBottom
-                }
+                val linha = checkNotNull(linhasNaLista(rv).firstOrNull {
+                    it.pos == PARAGRAFOS.lastIndex && it.topo >= rv.paddingTop
+                }) { "sem linha inteira no topo do último parágrafo" }
                 val layout = checkNotNull(tvEm(rv, PARAGRAFOS.lastIndex)?.layout)
                 val tv = selecionarComFoco(
                     rv,
@@ -888,7 +922,11 @@ class ReaderActivitySmokeTest {
                 )
                 abrirModoFalso(a, tv)
             }
-            esperarAte(scenario, "lista desce para a seleção") { a -> lista(a).translationY > 0f }
+            esperarAte(
+                scenario,
+                "lista desce para a seleção",
+                diagnostico = { diagnosticoDaDescida(it) },
+            ) { a -> lista(a).translationY > 0f }
             esperarAte(scenario, "espaço do fim leva a descida") { a ->
                 val descida = listaDoLeitor(a).descidaDaSelecao
                 descida > 0 && decoracaoDoUltimo(a) == descida
