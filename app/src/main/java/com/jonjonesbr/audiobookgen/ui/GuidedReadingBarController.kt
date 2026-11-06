@@ -119,6 +119,11 @@ class GuidedReadingBarController(
         }
     }
 
+    /** Arma, no modo páginas, o gancho que leva a página à linha narrada depois do próximo salto (rb-26b). */
+    private val armarLinhaNarradaNoSalto: (Int) -> Unit = { indice ->
+        recyclerView.paginacao?.takeIf { it.ativa }?.depoisDoProximoSalto = levarANarradaDepoisDoSalto(indice)
+    }
+
     /** True enquanto o diálogo "Começar de onde?" está aberto e sem escolha (a rotação o descarta). */
     var dialogoInicioPendente = false
         private set
@@ -164,7 +169,7 @@ class GuidedReadingBarController(
         } else {
             0
         }
-        if (paginacao != null) paginacao.depoisDoProximoSalto = levarANarradaDepoisDoSalto(indice)
+        armarLinhaNarradaNoSalto(indice)
         // O salto só vale no próximo layout. Até lá, um progresso que não ache a view do alvo refaz o salto
         // (manterDestaqueVisivel). A flag fica ligada até o próximo parágrafo, o fim de uma rolagem ou, na vertical,
         // o primeiro destaque com a view pronta.
@@ -520,7 +525,7 @@ class GuidedReadingBarController(
                 }
                 // Modo páginas: o salto pode ter sido feito antes do 1º layout (girar com a guiada pausada). Sem o
                 // gancho, a página ficaria no início do parágrafo, e não viria outro tique para corrigir.
-                if (paginacao != null) paginacao.depoisDoProximoSalto = levarANarradaDepoisDoSalto(index)
+                armarLinhaNarradaNoSalto(index)
                 // Alvo distante (reabertura do app reconectando à guiada, ou capítulo escolhido longe do início): a
                 // flag cai e a nova tentativa vem a cada tique. Perto, a flag fica ligada até a view aparecer
                 // (vertical) ou a animação acabar (horizontal).
