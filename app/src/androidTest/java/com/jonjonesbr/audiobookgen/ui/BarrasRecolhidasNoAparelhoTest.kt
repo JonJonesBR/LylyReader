@@ -7,6 +7,8 @@ import android.view.KeyEvent
 import android.view.Surface
 import android.view.View
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -304,6 +306,102 @@ class BarrasRecolhidasNoAparelhoTest {
         }
     }
 
+    /**
+     * R6 (rb-67, item 6), TEMPO: no modo páginas, o retrato mostra a barra de status com o cabeçalho recolhido; na
+     * paisagem recolhida ela some e o texto sobe (o inset de cima fica em 0); o deslize para baixo mostra o cabeçalho e
+     * a barra junto. De volta ao retrato, a barra volta, e um menu (⋮) aberto e fechado não a esconde. Capturas em
+     * `r6_*`.
+     */
+    @Test
+    fun r6_paisagemCabecalhoRecolhidoEscondeABarraDeStatus() {
+        val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+        AppPrefs(contexto).readerRolagemHorizontal = true
+        AppPrefs(contexto).readerBarraDeCima = "TEMPO"
+        val scenario = abrirSoLerPaginado(contexto)
+        esperarPaginaComLinhas(scenario)
+        regras.fecharDialogosDoSistema()
+        esperarAte(scenario, "retrato com o cabeçalho recolhido mostra a barra de status") { a ->
+            !cabecalhoVisivel(a) && barraDeStatusVisivel(a)
+        }
+
+        val automaticaAntes = girarParaPaisagem()
+        try {
+            esperarAte(scenario, "paisagem com o cabeçalho recolhido") { a ->
+                a.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && !cabecalhoVisivel(a)
+            }
+            esperarAte(scenario, "paisagem recolhida esconde a barra de status") { a -> !barraDeStatusVisivel(a) }
+            // Sem a barra de status o texto sobe: o inset de cima do sistema fica em 0.
+            scenario.onActivity { a ->
+                val topo = topoDoInsetDoSistema(a)
+                assertEquals("com a barra de status escondida, o inset de cima deveria ser 0", 0, topo)
+            }
+            anotarLinhasInteiras(scenario, "r6_linhas_paisagem_recolhida")
+            Capturas.capturar("r6_1_paisagem_recolhida")
+
+            rolarListaComODedo(scenario, fracaoDaAreaUtil = FRACAO_DO_DESLIZE, paraBaixoNoTexto = false, cenario = "r6")
+            esperarAte(scenario, "deslize para baixo mostra o cabeçalho e a barra de status") { a ->
+                cabecalhoVisivel(a) && barraDeStatusVisivel(a)
+            }
+            Capturas.capturar("r6_2_paisagem_aberta")
+        } finally {
+            devolverRotacao(automaticaAntes)
+        }
+
+        // De volta ao retrato, a barra de status volta. Depois de um menu aberto e fechado, ela continua à vista: o
+        // listener de foco da virada não pode esconder a barra no retrato.
+        esperarAte(scenario, "retrato de volta com a barra de status") { a -> barraDeStatusVisivel(a) }
+        rolarListaComODedo(scenario, fracaoDaAreaUtil = FRACAO_DO_DESLIZE, paraBaixoNoTexto = false, cenario = "r6_ret")
+        esperarAte(scenario, "retrato com o cabeçalho aberto pelo deslize") { a -> cabecalhoVisivel(a) }
+        abrirEFecharMenuDeOpcoes(scenario)
+        esperarAte(scenario, "barra de status à vista no retrato depois do menu") { a -> barraDeStatusVisivel(a) }
+        Capturas.capturar("r6_3_retrato_depois_do_menu")
+    }
+
+    /** A barra de status está à vista na janela do Leitor (pelos insets da janela). */
+    private fun barraDeStatusVisivel(a: ReaderActivity): Boolean =
+        ViewCompat.getRootWindowInsets(a.window.decorView)?.isVisible(WindowInsetsCompat.Type.statusBars()) == true
+
+    /** Altura do topo do sistema pelos insets da janela: a barra de status, ou 0 quando ela está escondida. */
+    private fun topoDoInsetDoSistema(a: ReaderActivity): Int =
+        ViewCompat.getRootWindowInsets(a.window.decorView)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars())?.top ?: -1
+
+    /** Abre o menu ⋮ do Leitor e fecha com Voltar: o menu tira o foco da janela e o devolve ao fechar. */
+    private fun abrirEFecharMenuDeOpcoes(scenario: ActivityScenario<ReaderActivity>) {
+        val (x, y) = Gestos.centroDaView(scenario, R.id.btnReaderOpcoes, "menu ⋮ do Leitor")
+        Gestos.toqueCurto(x.toFloat(), y.toFloat())
+        Thread.sleep(ESPERA_DO_MENU_MS)
+        val instrumentacao = InstrumentationRegistry.getInstrumentation()
+        instrumentacao.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        instrumentacao.waitForIdleSync()
+        esperarAte(scenario, "janela do Leitor de volta ao foco depois do menu") { a -> a.hasWindowFocus() }
+        // Dá tempo para o listener de foco da janela rodar (se houver algum que esconda a barra, ele roda aqui).
+        Thread.sleep(ESPERA_DO_FOCO_MS)
+    }
+
+    /** Anota em medidas.txt quantas linhas inteiras da página cabem na tela. */
+    private fun anotarLinhasInteiras(scenario: ActivityScenario<ReaderActivity>, nome: String) {
+        var linhas = -1
+        scenario.onActivity { a ->
+            val lista = a.findViewById<RecyclerViewParagrafos>(R.id.recyclerViewParagrafos)
+            val corte = checkNotNull(lista.paginacao) { "A lista do Leitor não tem paginação" }.corte()
+            var inteiras = 0
+            for (i in 0 until lista.childCount) {
+                val holder = lista.getChildViewHolder(lista.getChildAt(i)) as? ParagrafoAdapter.VHLeitura ?: continue
+                val tv = holder.tv
+                val layout = tv.layout ?: continue
+                val y0 = tv.top + tv.totalPaddingTop - tv.scrollY
+                for (numero in 0 until layout.lineCount) {
+                    val topo = y0 + layout.getLineTop(numero)
+                    val base = y0 + layout.getLineBottom(numero)
+                    if (topo >= lista.paddingTop && base <= corte) inteiras++
+                }
+            }
+            linhas = inteiras
+        }
+        Capturas.anotar(nome, "linhas inteiras: $linhas")
+    }
+
     /** Abre o livro de teste no Só ler (sem a leitura guiada), no modo que o corpo do teste já gravou. */
     private fun abrirSoLerPaginado(contexto: Context): ActivityScenario<ReaderActivity> {
         val arquivo = LivroNoAparelho.gravarLivroNoCache()
@@ -506,6 +604,10 @@ class BarrasRecolhidasNoAparelhoTest {
     private companion object {
         const val MINIMO_BOTAO_DP = 44
         const val INTERVALO_DE_ROTACAO_MS = 200L
+
+        /** Esperas do menu ⋮ no R6: abrir o menu, e depois de fechá-lo até o foco da janela voltar e assentar. */
+        const val ESPERA_DO_MENU_MS = 800L
+        const val ESPERA_DO_FOCO_MS = 1_000L
 
         /** Fração da área útil que o deslize para baixo do R5 anda (o cabeçalho aparece com ele). */
         const val FRACAO_DO_DESLIZE = 0.5f

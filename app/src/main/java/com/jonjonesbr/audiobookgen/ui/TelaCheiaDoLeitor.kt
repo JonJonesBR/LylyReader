@@ -1,10 +1,16 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.content.res.Configuration
 import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.OrientationHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.R
@@ -51,6 +57,17 @@ internal class TelaCheiaDoLeitor(
         aoGesto,
     )
 
+    // Na paisagem com o cabeçalho recolhido a barra de status some (rb-67, item 6). O deslize da borda de cima a
+    // mostra por instantes. A janela é a deste Leitor: diálogos e outras telas têm a sua.
+    private val controleDaJanela = WindowInsetsControllerCompat(activity.window, activity.window.decorView).apply {
+        systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
+
+    // Diálogo ou folha tira o foco da janela, e ao voltar a barra de status segue a regra (ela pode ter aparecido).
+    private val focoDaBarraDeStatus = ViewTreeObserver.OnWindowFocusChangeListener { temFoco ->
+        if (temFoco) aplicarBarraDeStatus(cabecalho.visibility == View.VISIBLE)
+    }
+
     // Rolagem com o dedo no vertical (rb-66, passo 4). Conta só o que o dedo andou: DRAGGING liga e IDLE desliga,
     // então o fling que vem do dedo (SETTLING) conta, e a rolagem do código (guiada, saltos, smoothScrollBy) não.
     private val rolagemComODedo = object : RecyclerView.OnScrollListener() {
@@ -95,6 +112,16 @@ internal class TelaCheiaDoLeitor(
             if (bottom - top != oldBottom - oldTop) conteudo.post { atualizarReserva() }
         }
         lista.addOnScrollListener(rolagemComODedo)
+        activity.window.decorView.viewTreeObserver.addOnWindowFocusChangeListener(focoDaBarraDeStatus)
+        // Na virada o Android preserva o decorView (e o ViewTreeObserver) para a Activity nova. Sem tirar o listener,
+        // a Activity antiga fica presa nele e ele roda com o cabeçalho antigo, mexendo na barra de status do retrato.
+        activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                val vto = activity.window.decorView.viewTreeObserver
+                if (vto.isAlive) vto.removeOnWindowFocusChangeListener(focoDaBarraDeStatus)
+                owner.lifecycle.removeObserver(this)
+            }
+        })
         // Acesso com interruptor e por voz: no modo páginas não há setinha, então a lista oferece a ação.
         ViewCompat.addAccessibilityAction(lista, activity.getString(R.string.cd_mostrar_barras)) { _, _ ->
             aoGesto(GestoDasBarras.MOSTRAR)
@@ -109,6 +136,8 @@ internal class TelaCheiaDoLeitor(
      */
     fun aplicar(estado: EstadoDoCabecalho, manterLinha: Boolean) {
         setinha.aplicar(estado.setinha)
+        // Antes do retorno de baixo: a barra de status segue o cabeçalho mesmo quando a reserva não muda.
+        aplicarBarraDeStatus(estado.visivel)
         val alvo = if (estado.visivel) View.VISIBLE else View.GONE
         if (cabecalho.visibility == alvo && reservado == estado.reservado) return
         if (reservado != estado.reservado && manterLinha) {
@@ -119,6 +148,24 @@ internal class TelaCheiaDoLeitor(
         // A dica fala do deslize do modo páginas: no vertical (sem deslize para mostrar) ela não vale. Quem confere o
         // modo é o post (tentarDica): o modo do adapter só muda depois deste aplicar.
         if (!estado.visivel && lista.paginacao?.ligada == true) tentarDica()
+    }
+
+    /**
+     * Esconde ou mostra a barra de status conforme [RegraDasBarrasDoLeitor.barraDeStatusEscondida] (rb-67, item 6). Só
+     * chama o controle quando o estado real da janela difere do alvo. Sem insets (a janela ainda não foi anexada) não
+     * faz nada: o foco da janela refaz a conta.
+     */
+    private fun aplicarBarraDeStatus(cabecalhoVisivel: Boolean) {
+        val insets = ViewCompat.getRootWindowInsets(activity.window.decorView) ?: return
+        val paisagem = activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val escondida = RegraDasBarrasDoLeitor.barraDeStatusEscondida(
+            paisagem = paisagem,
+            cabecalhoVisivel = cabecalhoVisivel,
+            multiJanela = activity.isInMultiWindowMode,
+        )
+        val visivelAgora = insets.isVisible(WindowInsetsCompat.Type.statusBars())
+        if (escondida && visivelAgora) controleDaJanela.hide(WindowInsetsCompat.Type.statusBars())
+        if (!escondida && !visivelAgora) controleDaJanela.show(WindowInsetsCompat.Type.statusBars())
     }
 
     private fun mudar(alvo: Int, reservar: Boolean) {

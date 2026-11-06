@@ -272,4 +272,20 @@ class RegraDasBarrasDoLeitorTest {
         assertFalse(regra.abertoAoTrocarDeModo(ModoDaBarra.TEMPO, ModoDaBarra.MANUAL, visivelAgora = false))
         assertTrue(regra.abertoAoTrocarDeModo(ModoDaBarra.MANUAL, ModoDaBarra.TEMPO, visivelAgora = true))
     }
+
+    // --- barraDeStatusEscondida ---
+
+    @Test
+    fun barraDeStatusSomenteNaPaisagemComOCabecalhoRecolhido() {
+        assertTrue(regra.barraDeStatusEscondida(paisagem = true, cabecalhoVisivel = false, multiJanela = false))
+        // Com o cabeçalho à vista, a barra de status fica junto dele (o cabeçalho ocupa o lugar de cima).
+        assertFalse(regra.barraDeStatusEscondida(paisagem = true, cabecalhoVisivel = true, multiJanela = false))
+        // No retrato a barra fica, mesmo com o cabeçalho recolhido.
+        assertFalse(regra.barraDeStatusEscondida(paisagem = false, cabecalhoVisivel = false, multiJanela = false))
+    }
+
+    @Test
+    fun barraDeStatusFicaNaJanelaDivididaMesmoNaPaisagem() {
+        assertFalse(regra.barraDeStatusEscondida(paisagem = true, cabecalhoVisivel = false, multiJanela = true))
+    }
 }

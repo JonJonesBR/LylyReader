@@ -183,4 +183,11 @@ object RegraDasBarrasDoLeitor {
         anterior == ModoDaBarra.SEMPRE -> true
         else -> visivelAgora
     }
+
+    /**
+     * A barra de status some? Só na paisagem, com o cabeçalho recolhido e fora da janela dividida (rb-67, item 6).
+     * Ali a linha de cima é a que mais falta, e o deslize da borda ainda a mostra por instantes. No retrato ela fica.
+     */
+    fun barraDeStatusEscondida(paisagem: Boolean, cabecalhoVisivel: Boolean, multiJanela: Boolean): Boolean =
+        paisagem && !cabecalhoVisivel && !multiJanela
 }
