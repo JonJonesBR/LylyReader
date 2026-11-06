@@ -4,7 +4,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.ChaveDoPlayer
 import com.jonjonesbr.audiobookgen.util.IdentidadeDoAudiobook
 import com.jonjonesbr.audiobookgen.util.formatarDuracao
-import com.jonjonesbr.audiobookgen.util.mesmoAudiobook
+import com.jonjonesbr.audiobookgen.util.indicesDoAudiobookNoPlayer
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Typeface
@@ -86,6 +86,12 @@ class AudiobookAdapter(
     private var tocandoAgora = false
     private var pctAoVivo: Int? = null
 
+    // Posições da lista que tocam no player (ver indicesDoAudiobookNoPlayer). Recalculadas só quando muda o
+    // player ou a lista: o bind de cada cartão consulta isto, e refazer a conta da lista inteira a cada bind pesaria.
+    private var marcadasNoPlayer: Set<Int> = emptySet()
+    private var listaDoCalculo: List<AudiobookItem>? = null
+    private var chaveDoCalculo: ChaveDoPlayer? = null
+
     /**
      * Guarda o que o player toca agora e repinta só os cartões afetados. Chamado a cada estado do serviço
      * (cerca de duas vezes por segundo): sem mudança, não faz nada. Cartão novo ou reaproveitado da lista
@@ -94,19 +100,41 @@ class AudiobookAdapter(
     fun atualizarPlayer(chave: ChaveDoPlayer, tocando: Boolean, pct: Int?) {
         val anterior = chaveNoPlayer
         if (anterior == chave && tocandoAgora == tocando && pctAoVivo == pct) return
+        // Só mudou o pct (ou o estado de tocar) no mesmo audiolivro: as posições já estão no cache
+        val eraDoAnterior = if (anterior == chave) {
+            emptySet<Int>()
+        } else {
+            indicesDoAudiobookNoPlayer(anterior, currentList.map { it.identidade })
+        }
         chaveNoPlayer = chave
         tocandoAgora = tocando
         pctAoVivo = pct
-        currentList.forEachIndexed { i, item ->
-            if (item.ehOArquivo(chave) || item.ehOArquivo(anterior)) notifyItemChanged(i, PAYLOAD_PLAYER)
-        }
+        (eraDoAnterior + posicoesNoPlayer()).forEach { notifyItemChanged(it, PAYLOAD_PLAYER) }
     }
 
     /**
-     * O player pode ter recebido a uri do item (aba Audiobooks), o caminho do arquivo interno (tela do livro,
-     * leitor) ou uma uri "file:", e o cartão lista a cópia exportada: [mesmoAudiobook] casa tudo isso (P2).
+     * Trocar a lista (filtro, exclusão, carga) pode deixar um só cartão com o nome repetido ou tirar a marca
+     * de outro, e o DiffUtil não revincula cartão que não mudou. Repinta a marca de todos: é só o botão e a
+     * barra, e a troca de lista é rara.
      */
-    private fun AudiobookItem.ehOArquivo(chave: ChaveDoPlayer) = mesmoAudiobook(chave, identidade)
+    override fun onCurrentListChanged(previousList: List<AudiobookItem>, currentList: List<AudiobookItem>) {
+        super.onCurrentListChanged(previousList, currentList)
+        if (currentList.isNotEmpty()) notifyItemRangeChanged(0, currentList.size, PAYLOAD_PLAYER)
+    }
+
+    /**
+     * Posições da lista atual que tocam no player. O player pode ter recebido a uri do item (aba Audiobooks), o
+     * caminho do arquivo interno (tela do livro, leitor) ou uma uri "file:", e o cartão lista a cópia exportada:
+     * [indicesDoAudiobookNoPlayer] casa tudo isso (P2).
+     */
+    private fun posicoesNoPlayer(): Set<Int> {
+        if (listaDoCalculo !== currentList || chaveDoCalculo != chaveNoPlayer) {
+            listaDoCalculo = currentList
+            chaveDoCalculo = chaveNoPlayer
+            marcadasNoPlayer = indicesDoAudiobookNoPlayer(chaveNoPlayer, currentList.map { it.identidade })
+        }
+        return marcadasNoPlayer
+    }
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val ivCover: ImageView = view.findViewById(R.id.ivCover)
@@ -137,7 +165,7 @@ class AudiobookAdapter(
         holder.tvAutor.text = item.autor.orEmpty()
         holder.tvAutor.visibility = if (item.autor.isNullOrBlank()) View.GONE else View.VISIBLE
 
-        mostrarPlayer(holder, item)
+        mostrarPlayer(holder, item, position in posicoesNoPlayer())
 
         // Toque no cartão ou no botão toca; as ações secundárias ficam no menu ⋮.
         holder.itemView.setOnClickListener { onOuvir(item) }
@@ -191,16 +219,15 @@ class AudiobookAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
         if (payloads.isNotEmpty() && payloads.all { it == PAYLOAD_PLAYER }) {
-            mostrarPlayer(holder, getItem(position))
+            mostrarPlayer(holder, getItem(position), position in posicoesNoPlayer())
         } else {
             onBindViewHolder(holder, position)
         }
     }
 
     /** Botão tocar/pausar e porcentagem ouvida (ao vivo para o item que está no player). */
-    private fun mostrarPlayer(holder: ViewHolder, item: AudiobookItem) {
+    private fun mostrarPlayer(holder: ViewHolder, item: AudiobookItem, noPlayer: Boolean) {
         val ctx = holder.itemView.context
-        val noPlayer = item.ehOArquivo(chaveNoPlayer)
         val tocando = noPlayer && tocandoAgora
         holder.btnOuvir.setImageResource(if (tocando) R.drawable.ic_player_pause else R.drawable.ic_tocar)
         val rotulo = ctx.getString(if (tocando) R.string.cd_play_pause else R.string.btn_ouvir)

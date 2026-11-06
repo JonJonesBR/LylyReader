@@ -18,7 +18,7 @@ import com.jonjonesbr.audiobookgen.domain.ResumoBibliotecaRegras
 import com.jonjonesbr.audiobookgen.util.dpToPx
 import com.jonjonesbr.audiobookgen.util.ChaveDoPlayer
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
-import com.jonjonesbr.audiobookgen.util.mesmoAudiobook
+import com.jonjonesbr.audiobookgen.util.indicesDoAudiobookNoPlayer
 import com.jonjonesbr.audiobookgen.util.mostrarErro
 import com.jonjonesbr.audiobookgen.util.limitarLarguraEmTelaAmpla
 import com.jonjonesbr.audiobookgen.service.ChapterMarksStore
@@ -247,6 +247,17 @@ class LibraryActivity : BasePlayerActivity() {
             (st.currentPosition.toLong() * PCT_TOTAL / st.duration).toInt().coerceIn(0, PCT_TOTAL)
         } else null
         adapter.atualizarPlayer(chaveDoPlayer(st.caminho), st.isPlaying, pct)
+    }
+
+    /**
+     * O cartão [item] é o que o player toca? Casa com a lista que a tela mostra (a do adaptador), para que um
+     * nome repetido só valha quando há um único cartão com ele (ver indicesDoAudiobookNoPlayer).
+     */
+    private fun ehOAudiobookDoPlayer(item: AudiobookItem, caminho: String): Boolean {
+        val lista = adapter.currentList
+        val posicao = lista.indexOf(item)
+        val identidades = lista.map { it.identidade }
+        return posicao >= 0 && posicao in indicesDoAudiobookNoPlayer(chaveDoPlayer(caminho), identidades)
     }
 
     /** Chave do player para o áudio [caminho] (vazio = nada tocando), com a cópia exportada e a pasta interna. */
@@ -510,7 +521,7 @@ class LibraryActivity : BasePlayerActivity() {
         if (callingActivity == null) {
             // Já é o que está no player (mesma regra do cartão, P2): pausa/retoma, em vez de recomeçar o arquivo.
             val estado = playerService?.state?.value ?: com.jonjonesbr.audiobookgen.util.PlayerStateHolder.state.value
-            if (mesmoAudiobook(chaveDoPlayer(estado.caminho), item.identidade)) {
+            if (ehOAudiobookDoPlayer(item, estado.caminho)) {
                 startService(
                     Intent(this, com.jonjonesbr.audiobookgen.service.AudioPlayerService::class.java)
                         .setAction(com.jonjonesbr.audiobookgen.service.PlayerNotificationManager.ACTION_PLAY_PAUSE)

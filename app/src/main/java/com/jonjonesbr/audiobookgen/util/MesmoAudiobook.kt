@@ -25,23 +25,50 @@ data class IdentidadeDoAudiobook(
     val nomeArquivo: String?
 )
 
+/** Como o player casa com o cartão: [DIRETO] (uri, caminho ou cópia), [POR_NOME] (conversão antiga) ou [NENHUM]. */
+enum class Casamento { DIRETO, POR_NOME, NENHUM }
+
 /**
- * Diz se o player está tocando o áudio do cartão.
+ * Diz se o player está tocando o áudio do cartão (qualquer casamento, exceto [Casamento.NENHUM]).
+ */
+fun mesmoAudiobook(player: ChaveDoPlayer, cartao: IdentidadeDoAudiobook): Boolean =
+    casamentoDoAudiobook(player, cartao) != Casamento.NENHUM
+
+/**
+ * Como o player casa com o cartão.
  *
  * Primeiro casa a chave direta (uri, caminho, uri "file:"). Depois, se o app copiou o arquivo para Downloads,
  * casa pelo _id do MediaStore da cópia: a uri do cartão e a da cópia são a mesma linha da tabela files
  * (`content://media/external/audio/media/N` e `content://media/external/downloads/N`). Sem registro da cópia
- * (conversão antiga), casa pelo nome do arquivo interno sem extensão.
+ * (conversão antiga), casa pelo nome do arquivo interno sem extensão: é o [Casamento.POR_NOME], que só vale
+ * quando é o único cartão com esse nome (ver [indicesDoAudiobookNoPlayer]).
  */
-fun mesmoAudiobook(player: ChaveDoPlayer, cartao: IdentidadeDoAudiobook): Boolean {
-    val chave = player.chave?.takeIf { it.isNotEmpty() } ?: return false
-    if (casaDireto(chave, cartao)) return true
+fun casamentoDoAudiobook(player: ChaveDoPlayer, cartao: IdentidadeDoAudiobook): Casamento {
+    val chave = player.chave?.takeIf { it.isNotEmpty() } ?: return Casamento.NENHUM
     val copia = player.copiaExportada
-    if (copia != null) {
-        val idDaCopia = idDoMediaStore(copia)
-        return if (idDaCopia != null) idDaCopia == idDoMediaStore(cartao.uri) else casaDireto(copia, cartao)
+    return when {
+        casaDireto(chave, cartao) -> Casamento.DIRETO
+        copia != null -> if (casaCopia(copia, cartao)) Casamento.DIRETO else Casamento.NENHUM
+        nomeIgualAoInterno(chave, player.pastaInterna, cartao.nomeArquivo) -> Casamento.POR_NOME
+        else -> Casamento.NENHUM
     }
-    return nomeIgualAoInterno(chave, player.pastaInterna, cartao.nomeArquivo)
+}
+
+/**
+ * Quais cartões da lista tocam no player, pela posição. O casamento direto vale sempre; o casamento pelo nome só
+ * vale quando um único cartão tem esse nome: com dois ou mais (dois livros "capitulo.mp3", por exemplo), nenhum é
+ * marcado, para não apontar o livro errado. O mini-player continua dizendo o que toca.
+ */
+fun indicesDoAudiobookNoPlayer(player: ChaveDoPlayer, cartoes: List<IdentidadeDoAudiobook>): Set<Int> {
+    val casos = cartoes.map { casamentoDoAudiobook(player, it) }
+    val diretos = casos.indices.filter { casos[it] == Casamento.DIRETO }
+    val porNome = casos.indices.filter { casos[it] == Casamento.POR_NOME }
+    return (diretos + porNome.takeIf { it.size == 1 }.orEmpty()).toSet()
+}
+
+private fun casaCopia(copia: String, cartao: IdentidadeDoAudiobook): Boolean {
+    val idDaCopia = idDoMediaStore(copia) ?: return casaDireto(copia, cartao)
+    return idDaCopia == idDoMediaStore(cartao.uri)
 }
 
 private fun casaDireto(chave: String, cartao: IdentidadeDoAudiobook): Boolean {
