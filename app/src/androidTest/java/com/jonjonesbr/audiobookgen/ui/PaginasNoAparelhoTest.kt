@@ -730,16 +730,24 @@ class PaginasNoAparelhoTest {
 
     /**
      * P14 (rb-26b, rodada 3): na paisagem, com a guiada no modo páginas, o botão "Voltar à narração" do painel leva a
-     * página até a linha narrada, também com a guiada pausada. O parágrafo 0 é longo (50 frases de 2 s): a guiada vira
-     * a página dentro dele; depois a pessoa vira duas páginas à mão, pausa e toca no botão. Com a guiada tocando, o
-     * mesmo botão leva à linha narrada depois de virar mais duas páginas.
+     * página até a linha narrada, também com a guiada pausada. O parágrafo 0 é longo (a voz falsa o narra num trecho
+     * de 120 s): a guiada vira a página dentro dele; depois a pessoa vira duas páginas à mão, pausa e toca no botão.
+     * Com a guiada tocando, o mesmo botão leva à linha narrada depois de virar mais duas páginas.
      */
     @Test
     fun p14_paisagemVoltarANarracaoDoPainelLevaALinhaNarrada() {
         comPaginas {
             comRotacaoManual {
                 val contexto = InstrumentationRegistry.getInstrumentation().targetContext
-                regras.usarVoz(VozFalsa(contexto, 0.0, VOZ_POR_TRECHO_P14_MS, VOZ_POR_TRECHO_P14_MS))
+                regras.usarVoz(
+                    VozFalsa(
+                        contexto,
+                        msPorCaractere = 0.0,
+                        minMs = VOZ_POR_TRECHO_P14_MS,
+                        maxMs = VOZ_POR_TRECHO_P14_MS,
+                        taxaDeAmostragem = TAXA_DA_VOZ_P14,
+                    ),
+                )
                 val livro = listOf(LivroNoAparelho.PARAGRAFO_LONGO) + LivroNoAparelho.PARAGRAFOS
                 val scenario = abrirLeitorComGuiada(regras, contexto, textos = livro)
                 esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
@@ -757,6 +765,9 @@ class PaginasNoAparelhoTest {
                     device.displayRotation != Surface.ROTATION_0,
                 )
                 esperarPaginaRecriada(scenario, antesDoGiro, "paisagem", livro.size)
+                check(GuidedPlaybackBridge.manager?.state?.value?.index == 0) {
+                    "a guiada saiu do parágrafo 0 durante o giro"
+                }
                 Thread.sleep(PAUSA_APOS_GIRO_MS)
                 esperarAte(scenario, "painel da guiada visível na paisagem") { a ->
                     a.findViewById<View>(R.id.layoutGuidedPlayer).visibility == View.VISIBLE
@@ -1241,8 +1252,14 @@ class PaginasNoAparelhoTest {
         /** Duração de cada trecho da voz falsa no P5, em ms. */
         const val VOZ_POR_TRECHO_P5_MS = 6_000
 
-        /** Duração de cada frase da voz falsa no P14, em ms: o parágrafo longo leva ~100 s para ser narrado. */
-        const val VOZ_POR_TRECHO_P14_MS = 2_000
+        /**
+         * Duração do trecho da voz falsa no P14, em ms: a guiada narra o parágrafo longo num trecho só. 120 s dão tempo
+         * de girar (o setOrientation chega a levar ~25 s), virar a página, pausar e voltar.
+         */
+        const val VOZ_POR_TRECHO_P14_MS = 120_000
+
+        /** Taxa do WAV da voz do P14: acima de ~89 s a taxa padrão estoura o Int de SilentWav.bytes. */
+        const val TAXA_DA_VOZ_P14 = 8_000
 
         /** Pausa depois do giro, para o layout e o alinhamento da página assentarem antes de medir. */
         const val PAUSA_APOS_GIRO_MS = 500L

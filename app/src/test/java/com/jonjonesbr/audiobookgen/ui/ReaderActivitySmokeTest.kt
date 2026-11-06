@@ -20,6 +20,7 @@ import android.view.MenuInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.ViewTreeObserver
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -3076,12 +3077,22 @@ class ReaderActivitySmokeTest {
                 a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
             }
             scenario.onActivity { GuidedPlaybackBridge.manager!!.pause() }
-            scenario.onActivity { a -> a.findViewById<View>(R.id.btnGuidedVoltarNarracao).performClick() }
-            // O restaurar pede outro salto (offset 0 no parágrafo 2) por post, antes de o layout do primeiro terminar.
+            // O restaurar (restaurarPosicaoSeNecessario) roda depois do 1º layout do salto e antes do post do gancho
+            // (aoTerminarSalto). O listener de layout global roda nesse ponto: o post do gancho já está na fila, e o
+            // salto novo é pedido antes do próximo layout.
+            var restaurou = false
             scenario.onActivity { a ->
                 val lista = lista(a)
-                lista.post { (lista.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(2, 0) }
+                lista.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                    override fun onGlobalLayout() {
+                        lista.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        restaurou = true
+                        (lista.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(2, 0)
+                    }
+                })
+                a.findViewById<View>(R.id.btnGuidedVoltarNarracao).performClick()
             }
+            esperarAte(scenario, "os dois saltos aplicados") { a -> restaurou && !lista(a).isLayoutRequested }
             shadowOf(Looper.getMainLooper()).idle()
             scenario.onActivity { a -> conferirLinhaNarradaNaPagina(listaDoLeitor(a), 2, linha) }
         }
