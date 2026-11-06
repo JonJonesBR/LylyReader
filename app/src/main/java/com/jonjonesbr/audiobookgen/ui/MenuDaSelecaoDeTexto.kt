@@ -125,7 +125,15 @@ internal class MenuDaSelecaoDeTexto(
         acoes.aoSoltarAlca(this)
     }
 
-    override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = executarItem(item.itemId, mode)
+    override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+        // rb-67/9: "Selecionar tudo" é do sistema, que seleciona depois que este clique devolve falso. O pedido da
+        // descida vai no post, com a seleção nova (o início volta ao 1º parágrafo, que pode ficar sob a barra).
+        if (item.itemId == android.R.id.selectAll) {
+            tv.post { pedirReajuste() }
+            return false
+        }
+        return executarItem(item.itemId, mode)
+    }
 
     /** Executa a ação da barra do Leitor, como se o item equivalente do menu tivesse sido tocado (rb-38). */
     fun executarPelaBarra(acao: AcaoDaBarraDeSelecao): Boolean = executarItem(idDoItem(acao), modoAberto)

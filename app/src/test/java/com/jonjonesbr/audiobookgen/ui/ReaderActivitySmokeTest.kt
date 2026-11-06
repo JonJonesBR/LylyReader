@@ -889,6 +889,61 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun selecionarTudoRefazADescidaParaOInicio() {
+        // rb-67/9: "Selecionar tudo" leva o início da seleção ao 1º parágrafo, que pode ficar sob a barra. O sistema
+        // seleciona depois que o clique devolve falso, e o pedido da descida vai no post, com a seleção nova.
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(arquivo)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            var tv: TextView? = null
+            scenario.onActivity { a ->
+                val rv = lista(a)
+                val alvo = requireNotNull(tvEm(rv, 0))
+                assertTrue(
+                    "O parágrafo 0 precisa de 3 linhas (linhas: ${alvo.layout.lineCount})",
+                    alvo.layout.lineCount >= 3,
+                )
+                // Seleção no meio do 1º parágrafo: a barra cobre a linha e a lista desce.
+                tv = selecionarComFoco(rv, 0, alvo.layout.getLineStart(2), alvo.layout.getLineStart(2) + 5)
+            }
+            val texto = requireNotNull(tv)
+            lateinit var modo: ModoFalso
+            scenario.onActivity { a -> modo = abrirModoFalso(a, texto) }
+            esperarAte(scenario, "lista desce para a seleção") { a -> lista(a).translationY > 0f }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            var t0 = 0f
+            scenario.onActivity { a -> t0 = lista(a).translationY }
+            val cb = texto.customSelectionActionModeCallback
+            // Clique em "Selecionar tudo": o item devolve falso e o sistema seleciona o texto inteiro depois.
+            scenario.onActivity { _ ->
+                val item = modo.menu.add(0, android.R.id.selectAll, 0, "Selecionar tudo")
+                assertFalse(cb.onActionItemClicked(modo, item))
+                Selection.setSelection(texto.text as Spannable, 0, texto.text.length)
+            }
+            esperarAte(scenario, "selecionar tudo desce a lista") { a -> lista(a).translationY > t0 }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400))
+            scenario.onActivity { a ->
+                val barra = a.findViewById<View>(R.id.barraSelecaoTexto)
+                val posBarra = IntArray(2)
+                barra.getLocationOnScreen(posBarra)
+                val fundoDaBarra = posBarra[1] + barra.height
+                val posTela = IntArray(2)
+                texto.getLocationOnScreen(posTela)
+                val topoDaPrimeiraLinha = posTela[1] + texto.totalPaddingTop + checkNotNull(texto.layout).getLineTop(0)
+                assertTrue(
+                    "1ª linha sob a barra: $topoDaPrimeiraLinha < $fundoDaBarra",
+                    topoDaPrimeiraLinha >= fundoDaBarra,
+                )
+            }
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "lista volta ao lugar") { a -> lista(a).translationY == 0f }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun passoDeArrasteCancelaOReajusteQueEstaEsperando() {
         // rb-67/8: o reajuste pedido ao soltar a alça espera 120 ms. Um passo de arraste (outra seleção) antes disso o
         // cancela, e a lista fica onde está. Sem arraste, o mesmo reajuste desce a lista depois da espera.
