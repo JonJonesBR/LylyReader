@@ -50,6 +50,7 @@ import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.RegraDasPaginasDoLeitor
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
+import com.jonjonesbr.audiobookgen.domain.passoDaTeclaDePagina
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
@@ -491,6 +492,7 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun pageDownRolaUmaTela() {
         val intent = Intent(app, ReaderActivity::class.java)
             .putExtra(ReaderActivity.EXTRA_CAMINHO, arquivo.absolutePath)
@@ -502,11 +504,27 @@ class ReaderActivitySmokeTest {
             }
             esperarAte(scenario, "lista que ainda pode rolar para baixo") { a -> lista(a).canScrollVertically(1) }
 
-            // PAGE_DOWN rola uma tela pelo teclado (rb-6: o controller de rolagem trata a tecla).
+            // PAGE_DOWN rola pelo teclado (rb-6: o controller de rolagem trata a tecla): anda a altura útil menos
+            // uma linha (rb-67/13). Soma o que a lista de fato rolou, pelo onScrolled, e confere a distância exata.
+            var passo = -1
+            var rolado = 0
             scenario.onActivity {
+                val rv = listaDoLeitor(it)
+                val linha = rv.linhasNaTela().firstOrNull()
+                passo = passoDaTeclaDePagina(
+                    rv.height, rv.paddingTop, rv.paddingBottom, linha?.let { l -> l.base - l.topo } ?: 0,
+                )
+                rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                        rolado += dy
+                    }
+                })
+                // Com passo 0, a asserção final passaria sem rolar nada: confere que há um passo de verdade.
+                assertTrue("passo da tecla de página sem linhas medidas: $passo", passo > 0)
                 assertTrue(it.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PAGE_DOWN)))
             }
-            esperarAte(scenario, "uma tela abaixo") { a -> primeiroVisivel(a) > 0 }
+            esperarAte(scenario, "uma tela abaixo") { rolado >= passo }
+            scenario.onActivity { assertEquals(passo, rolado) }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }

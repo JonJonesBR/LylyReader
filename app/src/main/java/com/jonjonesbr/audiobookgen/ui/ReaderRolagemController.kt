@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
 import com.jonjonesbr.audiobookgen.domain.RegraDaRolagemDoLeitor
+import com.jonjonesbr.audiobookgen.domain.passoDaTeclaDePagina
 
 /**
  * Rolagem, teclas, posição salva e acompanhamento do audiobook no leitor. Extraído de [ReaderActivity] (rb-6).
@@ -269,10 +270,25 @@ class ReaderRolagemController(
     private fun rolarPagina(sentido: Int): Boolean {
         val podeRolar = recyclerView.canScrollVertically(sentido)
         if (podeRolar) {
-            recyclerView.smoothScrollBy(0, sentido * recyclerView.height)
+            recyclerView.smoothScrollBy(0, sentido * passoDaPagina())
             rolagemPeloLeitor()
         }
         return podeRolar
+    }
+
+    /**
+     * Quanto a tecla de página anda: a altura útil da lista menos uma linha (ver passoDaTeclaDePagina). A linha vem
+     * da primeira que está na tela; sem linhas medidas, 0 (anda a altura útil inteira).
+     */
+    private fun passoDaPagina(): Int {
+        val primeira = recyclerView.linhasNaTela().firstOrNull()
+        val alturaDaLinha = primeira?.let { it.base - it.topo } ?: 0
+        return passoDaTeclaDePagina(
+            altura = recyclerView.height,
+            paddingTop = recyclerView.paddingTop,
+            paddingBottom = recyclerView.paddingBottom,
+            alturaDaLinha = alturaDaLinha,
+        )
     }
 
     /** Deslocamento vertical da lista, para saber se uma tecla mexeu nela. */

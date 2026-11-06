@@ -162,6 +162,25 @@ class RegraDaRolagemDoLeitorTest {
         assertFalse(setaNaPagina(shift = false, selecao = false, focado = true, rola = false))
     }
 
+    // ── Passo da tecla de página (rb-67/13) ──────────────────────────────────
+
+    @Test
+    fun paginaAndaAlturaUtilMenosUmaLinha() {
+        // Altura 1000, paddings 50 e 200: a útil é 750; menos a linha de 40, sobram 710.
+        assertEquals(710, passoDaTeclaDePagina(1000, 50, 200, 40))
+    }
+
+    @Test
+    fun paginaSemLinhasAndaAlturaUtilInteira() {
+        assertEquals(750, passoDaTeclaDePagina(1000, 50, 200, 0))
+    }
+
+    @Test
+    fun paginaNuncaAndaMenosQueUmaLinha() {
+        // Útil negativa (padding maior que a lista): anda pelo menos uma linha, para não travar a leitura.
+        assertEquals(40, passoDaTeclaDePagina(100, 0, 90, 40))
+    }
+
     private fun setaNaPagina(shift: Boolean, selecao: Boolean, focado: Boolean, rola: Boolean): Boolean =
         RegraDaRolagemDoLeitor.setaRolaAPagina(
             shift = shift,

@@ -107,3 +107,11 @@ object RegraDaRolagemDoLeitor {
     /** Teclas que podem rolar a lista (páginas e setas verticais). As outras nunca chegam à lista. */
     fun teclaDeRolagem(keyCode: Int): Boolean = sentidoDaTecla(keyCode) != null || ehSetaVertical(keyCode)
 }
+
+/**
+ * Quanto a tecla de página anda na lista vertical (rb-67/13): a altura útil, sem os paddings (o RecyclerView desenha
+ * as linhas por baixo do painel da guiada e do mini player), menos uma linha. Assim a última linha vista volta ao topo
+ * e o fio não se perde. [alturaDaLinha] é 0 sem linhas na tela; então anda a altura útil inteira.
+ */
+fun passoDaTeclaDePagina(altura: Int, paddingTop: Int, paddingBottom: Int, alturaDaLinha: Int): Int =
+    (altura - paddingTop - paddingBottom - alturaDaLinha).coerceAtLeast(alturaDaLinha)
