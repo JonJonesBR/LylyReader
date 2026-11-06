@@ -240,13 +240,7 @@ class ReaderTelaController(
         dicaTentada = true
         views.btnOpcoes.post {
             if (painelAberto()) return@post
-            CoachMark.mostrarProxima(activity, TelaDica.LEITOR) { dica ->
-                when (dica) {
-                    Dica.LEITOR_GUIADA -> views.btnOpcoes
-                    Dica.LEITOR_CAPITULOS -> views.barraCapitulo
-                    else -> null
-                }
-            }
+            CoachMark.mostrarProxima(activity, TelaDica.LEITOR) { dica -> alvoDaDicaDoLeitor(activity, dica) }
         }
     }
 
@@ -291,4 +285,15 @@ class ReaderTelaController(
             CarregandoDoLeitor.PREPARANDO -> views.tvCarregando.setText(R.string.leitor_preparando_texto)
         }
     }
+}
+
+/**
+ * Alvo das dicas do Leitor que apontam para o cabeçalho (rb-66, passo 7): o menu ⋮ e a barra de capítulos. As outras
+ * têm alvo próprio, dado por quem as mostra (ver [DicasDasBarras] e [BarrasDoLeitor]). Nulo para as outras: a dica não
+ * aparece e não é marcada como vista. Com o cabeçalho recolhido, o [CoachMark] também não mostra (alvo oculto).
+ */
+internal fun alvoDaDicaDoLeitor(activity: AppCompatActivity, dica: Dica): View? = when (dica) {
+    Dica.LEITOR_GUIADA -> activity.findViewById<View>(R.id.btnReaderOpcoes)
+    Dica.LEITOR_CAPITULOS -> activity.findViewById<View>(R.id.barraCapitulo)
+    else -> null
 }

@@ -1180,7 +1180,11 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dica_leitor_voz_titulo">Cambia la voz sin parar la lectura</string>
     <string name="dica_leitor_voz_texto">Toca el micrófono para cambiar la voz o el motor mientras la lectura continúa.</string>
     <string name="dica_leitor_tela_cheia_titulo">Pantalla completa</string>
-    <string name="dica_leitor_tela_cheia_texto">Desliza hacia abajo en la página para ver el menú y los capítulos.</string>
+    <string name="dica_leitor_tela_cheia_texto">Desliza hacia abajo en la página para ver el menú y los capítulos. Puedes cambiarlo en Apariencia.</string>
+    <string name="dica_leitor_tela_cheia_vertical_titulo">Pantalla completa</string>
+    <string name="dica_leitor_tela_cheia_vertical_texto">Desplázate un poco hacia arriba o toca la flecha para ver el menú y los capítulos. Puedes cambiarlo en Apariencia.</string>
+    <string name="dica_leitor_painel_tira_titulo">Panel de la lectura guiada</string>
+    <string name="dica_leitor_painel_tira_texto">El panel se reduce a una franja. Toca la flecha para ver todos los controles. Puedes cambiarlo en Apariencia.</string>
 
     <string name="label_aprender">Aprender</string>
     <string name="aprender_titulo">Aprender la app</string>

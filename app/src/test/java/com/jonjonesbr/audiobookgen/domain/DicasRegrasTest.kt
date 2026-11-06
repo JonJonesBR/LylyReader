@@ -55,4 +55,24 @@ class DicasRegrasTest {
         assertEquals(Dica.LEITOR_GUIADA, proxima(TelaDica.LEITOR))
         assertEquals(Dica.LEITOR_CAPITULOS, proxima(TelaDica.LEITOR, setOf("leitor_guiada")))
     }
+
+    @Test
+    fun `as dicas das barras recolhidas vem no fim da tela do leitor, na ordem dela`() {
+        val doLeitor = Dica.values().filter { it.tela == TelaDica.LEITOR }.map { it.id }
+        assertEquals(
+            listOf(
+                "leitor_guiada", "leitor_capitulos", "leitor_voz_e_motor", "leitor_tela_cheia",
+                "leitor_tela_cheia_vertical", "leitor_painel_tira",
+            ),
+            doLeitor,
+        )
+        assertEquals(Dica.LEITOR_PAINEL_TIRA, Dica.values().last())
+    }
+
+    @Test
+    fun `a dica da tela cheia vertical sai depois das outras do leitor`() {
+        val vistas = setOf("leitor_guiada", "leitor_capitulos", "leitor_voz_e_motor", "leitor_tela_cheia")
+        assertEquals(Dica.LEITOR_TELA_CHEIA_VERTICAL, proxima(TelaDica.LEITOR, vistas))
+        assertEquals(Dica.LEITOR_PAINEL_TIRA, proxima(TelaDica.LEITOR, vistas + "leitor_tela_cheia_vertical"))
+    }
 }

@@ -2657,6 +2657,107 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    /** Com o tour e a escolha de voz feitos, as dicas do Leitor podem aparecer (rb-66, passo 7). */
+    private fun liberarDicas() {
+        AppPrefs(app).onboardingDone = true
+        AppPrefs(app).voiceDownloadOnboardingDone = true
+    }
+
+    /** O título da dica que está na tela, ou nulo se não há dica. */
+    private fun tituloDaDicaNaTela(a: ReaderActivity): String? =
+        a.findViewById<TextView?>(R.id.tvCoachTitulo)?.text?.toString()
+
+    /** Espera a dica de título [titulo] na tela (rb-66, passo 7). */
+    private fun esperarDica(scenario: ActivityScenario<ReaderActivity>, titulo: Int) {
+        esperarAte(scenario, "dica na tela") { a -> tituloDaDicaNaTela(a) == a.getString(titulo) }
+    }
+
+    /** Fecha a dica que está na tela pelo botão Entendi e espera ela sair. */
+    private fun fecharDica(scenario: ActivityScenario<ReaderActivity>) {
+        scenario.onActivity { a -> a.findViewById<View>(R.id.btnCoachEntendi).performClick() }
+        esperarAte(scenario, "dica fechada") { a -> a.findViewById<View?>(R.id.coachMarkRaiz) == null }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun dicaDaTelaCheiaApareceNoModoPaginasComOCabecalhoRecolhido() {
+        // rb-66 (passo 7): na 1ª abertura, com o cabeçalho recolhido no modo páginas, a dica da tela cheia aparece.
+        liberarDicas()
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir", visivel = false)
+            esperarDica(scenario, R.string.dica_leitor_tela_cheia_titulo)
+            scenario.onActivity { a -> assertNotNull(a.findViewById<View?>(R.id.coachMarkRaiz)) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun dicaDoMenuApareceQuandoAPessoaMostraOCabecalho() {
+        // rb-66 (passo 7): depois de fechar a dica da tela cheia, mostrar o cabeçalho com o deslize traz a do menu ⋮.
+        liberarDicas()
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir", visivel = false)
+            esperarDica(scenario, R.string.dica_leitor_tela_cheia_titulo)
+            fecharDica(scenario)
+            deslizarNaPagina(scenario, 120)
+            esperarCabecalho(scenario, "cabeçalho mostrado com o deslize para baixo", visivel = true)
+            esperarDica(scenario, R.string.dica_leitor_guiada_titulo)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun comDicaAbertaOCabecalhoNaoRecolheComOTempo() {
+        // rb-66 (passo 7): com uma dica aberta, cinco segundos sem interação não recolhem o cabeçalho.
+        liberarDicas()
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir", visivel = false)
+            esperarDica(scenario, R.string.dica_leitor_tela_cheia_titulo)
+            fecharDica(scenario)
+            deslizarNaPagina(scenario, 120)
+            esperarCabecalho(scenario, "cabeçalho mostrado com o deslize para baixo", visivel = true)
+            esperarDica(scenario, R.string.dica_leitor_guiada_titulo)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+            scenario.onActivity { a ->
+                assertEquals("com a dica aberta o cabeçalho não recolhe", View.VISIBLE, cabecalhoDo(a).visibility)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun dicaDaTelaCheiaVerticalApareceComOCabecalhoRecolhido() {
+        // rb-66 (passo 7): no vertical, com o cabeçalho recolhido na abertura, a dica aponta para a setinha.
+        liberarDicas()
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no vertical", visivel = false)
+            esperarDica(scenario, R.string.dica_leitor_tela_cheia_vertical_titulo)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     private fun esperarParagrafosNaTela(scenario: ActivityScenario<ReaderActivity>) {
         esperarAte(scenario, "parágrafos na tela") { a -> lista(a).adapter?.itemCount == PARAGRAFOS.size }
     }

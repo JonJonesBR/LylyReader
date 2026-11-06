@@ -1191,7 +1191,11 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="dica_leitor_voz_titulo">Change the voice on the go</string>
     <string name="dica_leitor_voz_texto">Tap the microphone to change the voice or engine while the reading keeps going.</string>
     <string name="dica_leitor_tela_cheia_titulo">Full screen</string>
-    <string name="dica_leitor_tela_cheia_texto">Swipe down on the page to see the menu and chapters.</string>
+    <string name="dica_leitor_tela_cheia_texto">Swipe down on the page to see the menu and chapters. You can change this in Appearance.</string>
+    <string name="dica_leitor_tela_cheia_vertical_titulo">Full screen</string>
+    <string name="dica_leitor_tela_cheia_vertical_texto">Scroll up a little or tap the arrow to see the menu and chapters. You can change this in Appearance.</string>
+    <string name="dica_leitor_painel_tira_titulo">Guided reading panel</string>
+    <string name="dica_leitor_painel_tira_texto">The panel shrinks to a strip. Tap the arrow to see all controls. You can change this in Appearance.</string>
 
     <string name="label_aprender">Learn</string>
     <string name="aprender_titulo">Learn the app</string>

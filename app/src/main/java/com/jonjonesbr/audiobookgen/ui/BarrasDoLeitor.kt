@@ -49,6 +49,8 @@ internal class BarrasDoLeitor(
     private val painelRaiz: View = activity.findViewById(R.id.layoutGuidedPlayer)
     private val painelBarra: BarraDoLeitor? = painelRaiz as? BarraDoLeitor
     private val acessibilidade: AccessibilityManager? = activity.getSystemService(AccessibilityManager::class.java)
+    // As dicas das barras recolhidas (rb-66, passo 7): o coordenador avisa o que aconteceu, a classe decide a dica.
+    private val dicas = DicasDasBarras(activity, cabecalho)
 
     private val telaCheia: TelaCheiaDoLeitor =
         TelaCheiaDoLeitor(activity, lista, cabecalho) { gesto -> aoGestoDeCima(gesto) }
@@ -167,6 +169,8 @@ internal class BarrasDoLeitor(
             ultimo = estado
             telaCheia.aplicar(estado, continuaNasPaginas)
         }
+        // Cabeçalho recolhido no vertical: a dica da tela cheia aponta para a setinha (uma vez por abertura).
+        if (!paginas && !estado.visivel) dicas.recolhidoNoVertical()
         aplicarPainel(situacao.leitorDeTela)
         // Entrar ou sair das páginas com a barra aberta por tempo arma ou para a contagem. Mudar o cabeçalho (ex.: a
         // seleção fechou e ele voltou) recomeça o tempo: senão o período que já corria podia recolhê-lo logo depois.
@@ -180,12 +184,13 @@ internal class BarrasDoLeitor(
      */
     private fun aplicarPainel(leitorDeTela: Boolean) {
         val mostrado = painelRaiz.visibility != View.GONE
-        if (mostrado && !painelMostrado && modoBaixo == ModoDaBarra.TEMPO) abertoBaixo = false
+        val apareceu = mostrado && !painelMostrado
+        if (apareceu && modoBaixo == ModoDaBarra.TEMPO) abertoBaixo = false
         painelMostrado = mostrado
-        painel.aplicar(
-            aberto = RegraDasBarrasDoLeitor.painelAberto(modoBaixo, abertoBaixo, leitorDeTela),
-            seta = RegraDasBarrasDoLeitor.setaDoPainel(modoBaixo, leitorDeTela),
-        )
+        val aberto = RegraDasBarrasDoLeitor.painelAberto(modoBaixo, abertoBaixo, leitorDeTela)
+        painel.aplicar(aberto = aberto, seta = RegraDasBarrasDoLeitor.setaDoPainel(modoBaixo, leitorDeTela))
+        // rb-66 (passo 7): o painel que aparece recolhido pela 1ª vez ganha a dica da tira.
+        if (apareceu && !aberto) dicas.tiraApareceu()
     }
 
     /**
@@ -193,12 +198,14 @@ internal class BarrasDoLeitor(
      * andando e o tempo também recolhem o painel de baixo (pela mesma regra, com o modo dele).
      */
     private fun aoGestoDeCima(gesto: GestoDasBarras) {
+        val estavaVisivel = ultimo?.visivel == true
         abertoCima = RegraDasBarrasDoLeitor.depoisDoGesto(modoCima, abertoCima, gesto)
         if (gesto == GestoDasBarras.LEITURA_ANDOU || gesto == GestoDasBarras.TEMPO_ESGOTADO) {
             abertoBaixo = RegraDasBarrasDoLeitor.depoisDoGesto(modoBaixo, abertoBaixo, gesto)
         }
         aplicar(leitura, paginas)
         armarSeCabe()
+        dicas.aoMudarCabecalho(gesto, estavaVisivel, ultimo?.visivel == true)
     }
 
     /** Um gesto do painel de baixo (a seta da tira, o Tab). Muda o que foi pedido pela regra e rearma o tempo. */

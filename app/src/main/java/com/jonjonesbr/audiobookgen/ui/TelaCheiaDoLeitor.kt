@@ -116,8 +116,9 @@ internal class TelaCheiaDoLeitor(
         } else {
             mudar(alvo, estado.reservado)
         }
-        // A dica fala do deslize do modo páginas: no vertical (sem deslize para mostrar) ela não vale.
-        if (!estado.visivel && lista.paginacao?.ativa == true) tentarDica()
+        // A dica fala do deslize do modo páginas: no vertical (sem deslize para mostrar) ela não vale. Quem confere o
+        // modo é o post (tentarDica): o modo do adapter só muda depois deste aplicar.
+        if (!estado.visivel && lista.paginacao?.ligada == true) tentarDica()
     }
 
     private fun mudar(alvo: Int, reservar: Boolean) {
@@ -145,12 +146,17 @@ internal class TelaCheiaDoLeitor(
         }
     }
 
-    /** Dica da tela cheia, uma vez por abertura do Leitor. Por post, para medir a lista já com a altura nova. */
+    /**
+     * Dica da tela cheia, uma vez por abertura do Leitor. Por post, para medir a lista já com a altura nova e com o modo
+     * do adapter atualizado (rb-66, passo 7). Só marca como tentada quando a paginação está em uso e o cabeçalho
+     * recolhido, senão tenta de novo na próxima mudança.
+     */
     private fun tentarDica() {
         if (dicaTentada) return
-        dicaTentada = true
         lista.post {
-            if (cabecalho.visibility == View.GONE) CoachMark.tentar(activity, Dica.LEITOR_TELA_CHEIA, lista)
+            if (dicaTentada || cabecalho.visibility != View.GONE || lista.paginacao?.ativa != true) return@post
+            dicaTentada = true
+            CoachMark.tentar(activity, Dica.LEITOR_TELA_CHEIA, lista)
         }
     }
 }

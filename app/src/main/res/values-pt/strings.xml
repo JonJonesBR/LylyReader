@@ -1193,7 +1193,11 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="dica_leitor_voz_titulo">Troque a voz sem parar a leitura</string>
     <string name="dica_leitor_voz_texto">Toque no microfone para mudar a voz ou o motor enquanto a leitura continua.</string>
     <string name="dica_leitor_tela_cheia_titulo">Tela cheia</string>
-    <string name="dica_leitor_tela_cheia_texto">Deslize para baixo na página para ver o menu e os capítulos.</string>
+    <string name="dica_leitor_tela_cheia_texto">Deslize para baixo na página para ver o menu e os capítulos. Dá para mudar em Aparência.</string>
+    <string name="dica_leitor_tela_cheia_vertical_titulo">Tela cheia</string>
+    <string name="dica_leitor_tela_cheia_vertical_texto">Role um pouco para cima ou toque na setinha para ver o menu e os capítulos. Dá para mudar em Aparência.</string>
+    <string name="dica_leitor_painel_tira_titulo">Painel da leitura guiada</string>
+    <string name="dica_leitor_painel_tira_texto">O painel recolhe numa tira. Toque na seta para ver todos os controles. Dá para mudar em Aparência.</string>
 
     <string name="label_aprender">Aprender</string>
     <string name="aprender_titulo">Aprender o app</string>

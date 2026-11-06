@@ -41,6 +41,9 @@ object CoachMark {
         Dica.LEITOR_CAPITULOS to (R.string.dica_leitor_capitulos_titulo to R.string.dica_leitor_capitulos_texto),
         Dica.LEITOR_VOZ_E_MOTOR to (R.string.dica_leitor_voz_titulo to R.string.dica_leitor_voz_texto),
         Dica.LEITOR_TELA_CHEIA to (R.string.dica_leitor_tela_cheia_titulo to R.string.dica_leitor_tela_cheia_texto),
+        Dica.LEITOR_TELA_CHEIA_VERTICAL to
+            (R.string.dica_leitor_tela_cheia_vertical_titulo to R.string.dica_leitor_tela_cheia_vertical_texto),
+        Dica.LEITOR_PAINEL_TIRA to (R.string.dica_leitor_painel_tira_titulo to R.string.dica_leitor_painel_tira_texto),
     )
 
     /** Mostra a próxima dica da [tela], se houver, apontando para a view que [alvoDe] devolver. */

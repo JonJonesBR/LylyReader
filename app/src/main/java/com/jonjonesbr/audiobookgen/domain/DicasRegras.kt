@@ -13,7 +13,10 @@ enum class Dica(val id: String, val tela: TelaDica) {
     LEITOR_GUIADA("leitor_guiada", TelaDica.LEITOR),
     LEITOR_CAPITULOS("leitor_capitulos", TelaDica.LEITOR),
     LEITOR_VOZ_E_MOTOR("leitor_voz_e_motor", TelaDica.LEITOR),
-    LEITOR_TELA_CHEIA("leitor_tela_cheia", TelaDica.LEITOR)
+    LEITOR_TELA_CHEIA("leitor_tela_cheia", TelaDica.LEITOR),
+    // rb-66 (passo 7): as dicas das barras recolhidas vêm no fim, para não mudar a ordem das que já existem.
+    LEITOR_TELA_CHEIA_VERTICAL("leitor_tela_cheia_vertical", TelaDica.LEITOR),
+    LEITOR_PAINEL_TIRA("leitor_painel_tira", TelaDica.LEITOR)
 }
 
 object DicasRegras {
