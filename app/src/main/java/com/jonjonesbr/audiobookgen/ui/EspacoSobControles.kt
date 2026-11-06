@@ -18,13 +18,13 @@ import kotlin.math.roundToInt
 object EspacoSobControles {
 
     private const val MINIMO_DP = 96
-    private const val FOLGA_DP = 16
+    internal const val FOLGA_DP = 16
 
     /**
      * A cada layout, o respiro inferior de [lista] passa a ser o quanto as [barras] cobrem. A lambda é lida a cada
      * layout (a lista de barras pode mudar: a barra da seleção entra só quando está embaixo); as views em si são
-     * achadas fora. [reservaMinima] é o espaço mínimo de baixo, em px a partir da base (rb-67, item 18b): o respiro
-     * não fica menor que ela.
+     * achadas fora. [reservaMinima] é o espaço mínimo de baixo, em px a partir da base (rb-67, item 18b), e já leva a
+     * folga: o respiro não fica menor que ela.
      */
     fun manter(lista: RecyclerView, barras: () -> List<View>, reservaMinima: () -> Int = { 0 }) {
         val densidade = lista.resources.displayMetrics.density
@@ -99,17 +99,25 @@ internal fun respiroSobAsBarras(baseDaLista: Int, toposDasBarras: List<Int>, min
     maxOf(minimo, (toposDasBarras.maxOfOrNull { baseDaLista - it } ?: 0) + folga)
 
 /**
- * Distância da base da lista até o topo da barra da seleção embaixo (rb-67, item 18b), em pixels na janela. A barra
- * fica encostada na [fundoDaArea], com a [margemDeBaixo] do mini player por baixo dela.
+ * Reserva de baixo que deixa a última linha da página encostar [folga] px acima do topo da barra da seleção embaixo
+ * (rb-67, item 18b), em pixels na janela: a distância da [baseDaLista] até o topo da barra mais a folga. A barra fica
+ * encostada na [fundoDaArea], com a [margemDeBaixo] do mini player por baixo dela. A folga é a mesma que toda barra
+ * recebe no respiro de [respiroSobAsBarras], então a reserva só passa dele quando a barra é mais alta que a tira.
  */
-internal fun reservaAteABarra(baseDaLista: Int, fundoDaArea: Int, margemDeBaixo: Int, alturaDaBarra: Int): Int =
-    baseDaLista - (fundoDaArea - margemDeBaixo - alturaDaBarra)
+internal fun reservaAteABarra(
+    baseDaLista: Int,
+    fundoDaArea: Int,
+    margemDeBaixo: Int,
+    alturaDaBarra: Int,
+    folga: Int,
+): Int = baseDaLista - (fundoDaArea - margemDeBaixo - alturaDaBarra) + folga
 
 /**
  * Reserva da barra da seleção embaixo, no modo páginas com a tira na base (rb-67, item 18b). A página reserva a barra
  * mesmo com a seleção fechada: assim ela não muda de tamanho quando a seleção abre, e a linha selecionada nunca fica
- * coberta. Mede a barra pela largura da área, porque ela pode não ter layout (GONE) quando a conta é feita. O respiro
- * já conta a tira, e o máximo entre os dois fica.
+ * coberta. A reserva soma a folga, como o respiro de cada barra, e vale quando a barra passa da tira. Mede a barra
+ * pela largura da área, porque ela pode não ter layout (GONE) quando a conta é feita. O respiro já conta a tira, e o
+ * máximo entre os dois fica.
  */
 internal fun reservaDaBarraDaSelecao(barra: View, lista: View): Int {
     val area = barra.parent as? View ?: return 0
@@ -133,5 +141,7 @@ internal fun reservaDaBarraDaSelecao(barra: View, lista: View): Int {
     val posMini = IntArray(2).also { miniPlayer?.getLocationInWindow(it) }
     val topoDoMiniPlayer = miniPlayer?.let { posMini[1] }
     val margem = lugarDaBarraDaSelecao(true, fundoDaArea, topoDoMiniPlayer).margemDeBaixo
-    return reservaAteABarra(baseDaLista, fundoDaArea, margem, alturaDaBarra)
+    // A mesma conta de px da folga que o manter faz (densidade da lista).
+    val folga = (EspacoSobControles.FOLGA_DP * lista.resources.displayMetrics.density).toInt()
+    return reservaAteABarra(baseDaLista, fundoDaArea, margem, alturaDaBarra, folga)
 }

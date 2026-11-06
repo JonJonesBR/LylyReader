@@ -73,11 +73,17 @@ class EspacoSobControlesTest {
     }
 
     @Test
-    fun reservaDaBarraVaiDaBaseAteOTopoDela() {
-        // Área acaba na base da lista (1135) e a barra de 120 px fica encostada nela: a reserva é a própria barra.
+    fun reservaDaBarraVaiDaBaseAteOTopoDelaMaisAFolga() {
+        // Área acaba na base da lista (1135) e a barra de 120 px fica encostada nela: a reserva é a barra mais a folga.
         assertEquals(
-            120,
-            reservaAteABarra(baseDaLista = 1135, fundoDaArea = 1135, margemDeBaixo = 0, alturaDaBarra = 120),
+            136,
+            reservaAteABarra(
+                baseDaLista = 1135,
+                fundoDaArea = 1135,
+                margemDeBaixo = 0,
+                alturaDaBarra = 120,
+                folga = 16,
+            ),
         )
     }
 
@@ -85,8 +91,31 @@ class EspacoSobControlesTest {
     fun reservaDaBarraSobeComAMargemDoMiniPlayer() {
         // Mini player de 60 px por baixo da barra: a barra fica 60 px acima da área, e a reserva cresce junto.
         assertEquals(
-            180,
-            reservaAteABarra(baseDaLista = 1135, fundoDaArea = 1135, margemDeBaixo = 60, alturaDaBarra = 120),
+            196,
+            reservaAteABarra(
+                baseDaLista = 1135,
+                fundoDaArea = 1135,
+                margemDeBaixo = 60,
+                alturaDaBarra = 120,
+                folga = 16,
+            ),
         )
+    }
+
+    @Test
+    fun barraMaisAltaQueATiraMandaNaReserva() {
+        // Números do Robolectric (rb-67, item 18b): tira com topo 89 px acima da base, barra de 99 px. O respiro da
+        // tira dá 105 (89 + folga); a reserva da barra dá 115 (99 + folga) e manda.
+        val tira = respiroSobAsBarras(1135, listOf(1135 - 89), minimo = 16, folga = 16)
+        val barra = reservaAteABarra(1135, 1135, 0, alturaDaBarra = 99, folga = 16)
+        assertEquals(115, maxOf(tira, barra))
+    }
+
+    @Test
+    fun barraNaoMaisAltaQueATiraCustaZero() {
+        // Barra de 80 px, abaixo da tira de 89: a reserva dá 96 e não passa do respiro da tira (105).
+        val tira = respiroSobAsBarras(1135, listOf(1135 - 89), minimo = 16, folga = 16)
+        val barra = reservaAteABarra(1135, 1135, 0, alturaDaBarra = 80, folga = 16)
+        assertEquals(105, maxOf(tira, barra))
     }
 }

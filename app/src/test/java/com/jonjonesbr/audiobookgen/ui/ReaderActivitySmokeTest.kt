@@ -4150,8 +4150,9 @@ class ReaderActivitySmokeTest {
                 scenario.onActivity { a ->
                     val rv = listaDoLeitor(a)
                     paddingAntes = rv.paddingBottom
-                    // Pré-condição: a reserva é quem manda no espaço de baixo. Sem ela, o respiro da tira ficaria e o
-                    // teste não exercitaria a reserva.
+                    // Pré-condição: a reserva (barra + folga) é quem manda no espaço de baixo, porque a barra é mais
+                    // alta que a tira. Sem ela, ficaria o respiro da tira (tira + folga) e o teste não exercitaria a
+                    // reserva.
                     val barra = a.findViewById<View>(R.id.barraSelecaoTexto)
                     val reserva = reservaDaBarraDaSelecao(barra, rv)
                     assertEquals("a reserva da barra da seleção deveria mandar", reserva, paddingAntes)
