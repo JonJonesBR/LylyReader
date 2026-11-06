@@ -3319,22 +3319,29 @@ class ReaderActivitySmokeTest {
                 assertTrue("o parágrafo 1 pega o foco", checkNotNull(tvEm(listaDoLeitor(a), 1)).requestFocus())
             }
             // O painel entra pequeno primeiro: a conta das barras muda uma vez, e o ajuste seguinte é só de altura.
-            scenario.onActivity { a -> a.findViewById<View>(R.id.layoutGuidedPlayer).visibility = View.VISIBLE }
+            scenario.onActivity { a ->
+                a.findViewById<View>(R.id.layoutGuidedPlayer).apply {
+                    // Mais baixo que o natural (~135 dp, aberto no SEMPRE): a base fica abaixo do topo do parágrafo 1.
+                    layoutParams.height = listaDoLeitor(a).height / 8
+                    visibility = View.VISIBLE
+                }
+            }
             esperarAte(scenario, "painel pequeno assentado na base") { a ->
                 val rv = listaDoLeitor(a)
                 a.findViewById<View>(R.id.layoutGuidedPlayer).height > 0 && !rv.isLayoutRequested
             }
             var paddingAntes = 0
             var antes = Pair(0, 0)
+            var crescimento = 0
             scenario.onActivity { a ->
                 val rv = listaDoLeitor(a)
                 paddingAntes = rv.paddingBottom
                 antes = posicaoEOffsetDaPrimeiraLinha(rv)
+                crescimento = crescimentoAteOMeioDoParagrafo(rv, 1)
             }
             scenario.onActivity { a ->
-                val rv = listaDoLeitor(a)
                 a.findViewById<View>(R.id.layoutGuidedPlayer).apply {
-                    layoutParams.height = rv.height / 3
+                    layoutParams.height = height + crescimento
                     requestLayout()
                 }
             }
@@ -3367,6 +3374,17 @@ class ReaderActivitySmokeTest {
         val lm = rv.layoutManager as LinearLayoutManager
         val pos = lm.findFirstVisibleItemPosition()
         return Pair(pos, checkNotNull(lm.findViewByPosition(pos)).top - rv.paddingTop)
+    }
+
+    /**
+     * Quanto o painel de baixo cresce para a base da página cair no meio do caminho entre o topo do parágrafo [pos] e
+     * a base de agora (rb-66, passo 5): o painel cresce de verdade, e o parágrafo cruza a base nova.
+     */
+    private fun crescimentoAteOMeioDoParagrafo(rv: RecyclerView, pos: Int): Int {
+        val base = rv.height - rv.paddingBottom
+        val topo = checkNotNull(tvEm(rv, pos)) { "parágrafo $pos fora da lista" }.top
+        check(base - topo > 1) { "o parágrafo $pos começa abaixo da base $base: topo $topo" }
+        return (base - topo) / 2
     }
 
     @Test
