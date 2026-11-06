@@ -18,14 +18,14 @@ class RegraDasBarrasDoLeitorTest {
         selecaoNoTopo: Boolean = false,
     ) = SituacaoDoLeitor(leitura, leitorDeTela, buscaAberta, barraDoFluxoVisivel, selecaoNoTopo)
 
-    private fun bloqueios(
-        selecao: Boolean = false,
-        janelaSemFoco: Boolean = false,
-        buscaAberta: Boolean = false,
-        leitorDeTela: Boolean = false,
-        focoOuToqueNasBarras: Boolean = false,
-        dicaAberta: Boolean = false,
-    ) = BloqueiosDoTempo(selecao, janelaSemFoco, buscaAberta, leitorDeTela, focoOuToqueNasBarras, dicaAberta)
+    private val semBloqueio = BloqueiosDoTempo(
+        selecao = false,
+        janelaSemFoco = false,
+        buscaAberta = false,
+        leitorDeTela = false,
+        focoOuToqueNasBarras = false,
+        dicaAberta = false,
+    )
 
     // --- cabecalho: os forçados, um a um ---
 
@@ -150,17 +150,17 @@ class RegraDasBarrasDoLeitorTest {
 
     @Test
     fun semBloqueiosPodeRecolher() {
-        assertTrue(regra.podeRecolherPorTempo(bloqueios()))
+        assertTrue(regra.podeRecolherPorTempo(semBloqueio))
     }
 
     @Test
     fun cadaBloqueioSozinhoImpedeRecolher() {
-        assertFalse(regra.podeRecolherPorTempo(bloqueios(selecao = true)))
-        assertFalse(regra.podeRecolherPorTempo(bloqueios(janelaSemFoco = true)))
-        assertFalse(regra.podeRecolherPorTempo(bloqueios(buscaAberta = true)))
-        assertFalse(regra.podeRecolherPorTempo(bloqueios(leitorDeTela = true)))
-        assertFalse(regra.podeRecolherPorTempo(bloqueios(focoOuToqueNasBarras = true)))
-        assertFalse(regra.podeRecolherPorTempo(bloqueios(dicaAberta = true)))
+        assertFalse(regra.podeRecolherPorTempo(semBloqueio.copy(selecao = true)))
+        assertFalse(regra.podeRecolherPorTempo(semBloqueio.copy(janelaSemFoco = true)))
+        assertFalse(regra.podeRecolherPorTempo(semBloqueio.copy(buscaAberta = true)))
+        assertFalse(regra.podeRecolherPorTempo(semBloqueio.copy(leitorDeTela = true)))
+        assertFalse(regra.podeRecolherPorTempo(semBloqueio.copy(focoOuToqueNasBarras = true)))
+        assertFalse(regra.podeRecolherPorTempo(semBloqueio.copy(dicaAberta = true)))
     }
 
     // --- rolagem ---
