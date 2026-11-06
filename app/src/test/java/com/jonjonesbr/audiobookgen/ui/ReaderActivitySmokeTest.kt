@@ -4113,6 +4113,66 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun barraDaSelecaoAltaReservaAlturaComATiraNaBase() {
+        // rb-67 (item 18b): com a tira na base no modo páginas e a fonte grande, a página reserva a barra da seleção
+        // (mais alta que a tira). O espaço de baixo não muda quando a seleção abre, e a barra fica abaixo do corte.
+        AppPrefs(app).readerBarraDeBaixo = "TEMPO"
+        RuntimeEnvironment.setFontScale(2.0f)
+        try {
+            ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+                esperarGuiadaNoModoPaginas(scenario)
+                esperarAte(scenario, "painel recolhido na tira, sem a voz") { a ->
+                    !a.findViewById<View>(R.id.btnGuidedVoz).isShown &&
+                        a.findViewById<View>(R.id.btnGuidedRecolher).isShown
+                }
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+                var paddingAntes = 0
+                scenario.onActivity { a ->
+                    val rv = listaDoLeitor(a)
+                    paddingAntes = rv.paddingBottom
+                    // Pré-condição: a reserva é quem manda no espaço de baixo. Sem ela, o respiro da tira ficaria e o
+                    // teste não exercitaria a reserva.
+                    val barra = a.findViewById<View>(R.id.barraSelecaoTexto)
+                    val reserva = reservaDaBarraDaSelecao(barra, rv)
+                    assertEquals("a reserva da barra da seleção deveria mandar", reserva, paddingAntes)
+                }
+                lateinit var modo: ModoFalso
+                scenario.onActivity { a -> modo = abrirModoFalso(a, selecionarComFoco(lista(a), 2, 0, 5)) }
+                esperarAte(scenario, "barra da seleção embaixo, cedendo o painel") { a ->
+                    barraDaSelecaoTextoVisivel(a) && listaDoLeitor(a).baseCedidaASelecao
+                }
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+                scenario.onActivity { a ->
+                    val rv = listaDoLeitor(a)
+                    assertEquals(
+                        "a página não deveria mudar de tamanho com a seleção aberta",
+                        paddingAntes,
+                        rv.paddingBottom,
+                    )
+                    val corte = rv.paginacao!!.corte()
+                    val topoDaBarra = topoNaLista(a.findViewById(R.id.barraSelecaoTexto), rv)
+                    assertTrue(
+                        "a barra da seleção ($topoDaBarra px) deveria ficar abaixo do corte ($corte px)",
+                        topoDaBarra >= corte,
+                    )
+                }
+                scenario.onActivity { modo.finish() }
+            }
+        } finally {
+            RuntimeEnvironment.setFontScale(1f)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    /** Topo da [view] em relação ao topo da [lista], em pixels da janela (rb-67, item 18b). */
+    private fun topoNaLista(view: View, lista: View): Int {
+        val posView = IntArray(2).also { view.getLocationInWindow(it) }
+        val posLista = IntArray(2).also { lista.getLocationInWindow(it) }
+        return posView[1] - posLista[1]
+    }
+
     /** Posição e offset (em relação ao topo da página) do primeiro item visível, no modo páginas (rb-66, passo 5). */
     private fun posicaoEOffsetDaPrimeiraLinha(rv: RecyclerViewParagrafos): Pair<Int, Int> {
         val lm = rv.layoutManager as LinearLayoutManager

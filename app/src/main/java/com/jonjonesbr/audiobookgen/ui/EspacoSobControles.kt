@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
+import com.jonjonesbr.audiobookgen.R
 import kotlin.math.roundToInt
 
 /**
@@ -22,9 +23,10 @@ object EspacoSobControles {
     /**
      * A cada layout, o respiro inferior de [lista] passa a ser o quanto as [barras] cobrem. A lambda é lida a cada
      * layout (a lista de barras pode mudar: a barra da seleção entra só quando está embaixo); as views em si são
-     * achadas fora.
+     * achadas fora. [reservaMinima] é o espaço mínimo de baixo, em px a partir da base (rb-67, item 18b): o respiro
+     * não fica menor que ela.
      */
-    fun manter(lista: RecyclerView, barras: () -> List<View>) {
+    fun manter(lista: RecyclerView, barras: () -> List<View>, reservaMinima: () -> Int = { 0 }) {
         val densidade = lista.resources.displayMetrics.density
         val minimoVertical = (MINIMO_DP * densidade).toInt()
         val folga = (FOLGA_DP * densidade).toInt()
@@ -49,7 +51,7 @@ object EspacoSobControles {
             }
             val mesmasBarras = toposDasBarras.isNotEmpty() && toposDasBarras.size == barrasNoUltimoLayout
             barrasNoUltimoLayout = toposDasBarras.size
-            val alvo = respiroSobAsBarras(baseDaLista, toposDasBarras, minimo, folga)
+            val alvo = maxOf(respiroSobAsBarras(baseDaLista, toposDasBarras, minimo, folga), reservaMinima())
             // Só mexe quando muda: setPadding pede outro layout, que chama este listener de novo.
             if (lista.paddingBottom != alvo) {
                 val mudar = { lista.setPadding(lista.paddingLeft, lista.paddingTop, lista.paddingRight, alvo) }
@@ -95,3 +97,41 @@ internal fun minimoDoRespiro(paginasAtivas: Boolean, minimoVertical: Int, folga:
  */
 internal fun respiroSobAsBarras(baseDaLista: Int, toposDasBarras: List<Int>, minimo: Int, folga: Int): Int =
     maxOf(minimo, (toposDasBarras.maxOfOrNull { baseDaLista - it } ?: 0) + folga)
+
+/**
+ * Distância da base da lista até o topo da barra da seleção embaixo (rb-67, item 18b), em pixels na janela. A barra
+ * fica encostada na [fundoDaArea], com a [margemDeBaixo] do mini player por baixo dela.
+ */
+internal fun reservaAteABarra(baseDaLista: Int, fundoDaArea: Int, margemDeBaixo: Int, alturaDaBarra: Int): Int =
+    baseDaLista - (fundoDaArea - margemDeBaixo - alturaDaBarra)
+
+/**
+ * Reserva da barra da seleção embaixo, no modo páginas com a tira na base (rb-67, item 18b). A página reserva a barra
+ * mesmo com a seleção fechada: assim ela não muda de tamanho quando a seleção abre, e a linha selecionada nunca fica
+ * coberta. Mede a barra pela largura da área, porque ela pode não ter layout (GONE) quando a conta é feita. O respiro
+ * já conta a tira, e o máximo entre os dois fica.
+ */
+internal fun reservaDaBarraDaSelecao(barra: View, lista: View): Int {
+    val area = barra.parent as? View ?: return 0
+    // Barra visível e já desenhada na largura da área: a altura real serve. Medir de novo aqui, a cada layout da
+    // janela, mexeria no measuredHeight que o pai usa no próprio layout.
+    val alturaDaBarra = if (barra.visibility == View.VISIBLE && barra.isLaidOut && barra.width == area.width) {
+        barra.height
+    } else {
+        barra.measure(
+            View.MeasureSpec.makeMeasureSpec(area.width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+        )
+        barra.measuredHeight
+    }
+    val posLista = IntArray(2).also { lista.getLocationInWindow(it) }
+    val baseDaLista = posLista[1] - lista.translationY.roundToInt() + lista.height
+    val posArea = IntArray(2).also { area.getLocationInWindow(it) }
+    val fundoDaArea = posArea[1] + area.height
+    val miniPlayer = barra.rootView.findViewById<View>(R.id.miniPlayerRoot)
+        ?.takeIf { it.visibility == View.VISIBLE && it.height > 0 }
+    val posMini = IntArray(2).also { miniPlayer?.getLocationInWindow(it) }
+    val topoDoMiniPlayer = miniPlayer?.let { posMini[1] }
+    val margem = lugarDaBarraDaSelecao(true, fundoDaArea, topoDoMiniPlayer).margemDeBaixo
+    return reservaAteABarra(baseDaLista, fundoDaArea, margem, alturaDaBarra)
+}

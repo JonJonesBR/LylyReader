@@ -71,4 +71,22 @@ class EspacoSobControlesTest {
         val minimo = minimoDoRespiro(true, 96, 16)
         assertEquals(56 + 16, respiroSobAsBarras(1135, listOf(1135 - 56), minimo = minimo, folga = 16))
     }
+
+    @Test
+    fun reservaDaBarraVaiDaBaseAteOTopoDela() {
+        // Área acaba na base da lista (1135) e a barra de 120 px fica encostada nela: a reserva é a própria barra.
+        assertEquals(
+            120,
+            reservaAteABarra(baseDaLista = 1135, fundoDaArea = 1135, margemDeBaixo = 0, alturaDaBarra = 120),
+        )
+    }
+
+    @Test
+    fun reservaDaBarraSobeComAMargemDoMiniPlayer() {
+        // Mini player de 60 px por baixo da barra: a barra fica 60 px acima da área, e a reserva cresce junto.
+        assertEquals(
+            180,
+            reservaAteABarra(baseDaLista = 1135, fundoDaArea = 1135, margemDeBaixo = 60, alturaDaBarra = 120),
+        )
+    }
 }

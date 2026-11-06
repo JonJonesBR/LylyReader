@@ -85,18 +85,31 @@ class ReaderTelaController(
         }
         // rb-26b (passo 3): a barra da seleção entra no respiro só quando está embaixo, cedendo o lugar do painel.
         val barraDeTexto: View? = activity.findViewById(R.id.barraSelecaoTexto)
-        EspacoSobControles.manter(recyclerView) {
-            listOfNotNull(
-                views.layoutGuidedPlayer,
-                miniPlayer,
-                // Com a tira do painel na base, a barra da seleção não conta: a página não muda de tamanho
-                // (rb-66, passo 5).
-                barraDeTexto?.takeIf {
-                    (recyclerView as? RecyclerViewParagrafos)?.baseCedidaASelecao == true &&
-                        barras?.painelRecolhidoNaBase != true
-                },
-            )
-        }
+        EspacoSobControles.manter(
+            recyclerView,
+            barras = {
+                listOfNotNull(
+                    views.layoutGuidedPlayer,
+                    miniPlayer,
+                    // Com a tira do painel na base, a barra da seleção não conta: a página não muda de tamanho
+                    // (rb-66, passo 5). A reserva dela é a reservaMinima (rb-67, item 18b).
+                    barraDeTexto?.takeIf {
+                        (recyclerView as? RecyclerViewParagrafos)?.baseCedidaASelecao == true &&
+                            barras?.painelRecolhidoNaBase != true
+                    },
+                )
+            },
+            // rb-67 (item 18b): com a tira na base no modo páginas, a página reserva a barra da seleção quando ela é
+            // mais alta que a tira. A reserva não depende de a seleção estar aberta.
+            reservaMinima = {
+                val paginas = (recyclerView as? RecyclerViewParagrafos)?.paginacao?.ativa == true
+                if (paginas && barraDeTexto != null && barras?.painelRecolhidoNaBase == true) {
+                    reservaDaBarraDaSelecao(barraDeTexto, recyclerView)
+                } else {
+                    0
+                }
+            },
+        )
         // rb-51: a descida da barra da seleção vira espaço depois do último parágrafo (decoração, não padding). A lista
         // avisa quando a descida muda, e a decoração é refeita.
         (recyclerView as? RecyclerViewParagrafos)?.let { lista ->

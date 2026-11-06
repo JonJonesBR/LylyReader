@@ -45,6 +45,9 @@ import org.junit.runner.RunWith
  *
  * Critério de aceite (rb-66, passo 8). R4: retrato, modo páginas, com a tira na base: a linha da seleção fica inteira
  * acima da barra da seleção. R5: o giro com o cabeçalho aberto: no MANUAL ele continua aberto, no TEMPO recolhe.
+ *
+ * rb-67, item 6: R6, paisagem com o cabeçalho recolhido: a barra de status some e volta com o cabeçalho. Item 18b: R7,
+ * o R4 com a fonte 1,5.
  */
 @RunWith(AndroidJUnit4::class)
 class BarrasRecolhidasNoAparelhoTest {
@@ -193,17 +196,35 @@ class BarrasRecolhidasNoAparelhoTest {
      * R4 (rb-66, passo 8): retrato, modo páginas, com a tira da guiada na base (TEMPO nas duas barras). A guiada é
      * pausada (como no P8), com a fonte 1,3, e um toque longo na palavra da última linha inteira da página abre a
      * seleção. A linha selecionada tem de ficar inteira acima do topo da barra da seleção: a barra cobre o lugar da
-     * tira, não o texto.
-     * Capturas em `r4_*`.
+     * tira, não o texto. Capturas em `r4_*`.
      */
     @Test
     fun r4_retratoSelecaoNaUltimaLinhaFicaAcimaDaBarra() {
+        // A fonte 1,3 é a condição de referência das medidas de S1 a S5.
+        conferirSelecaoNaUltimaLinhaAcimaDaBarra(fonte = "1.3", prefixo = "r4")
+    }
+
+    /**
+     * R7 (rb-67, item 18b): o mesmo caso do R4, com a fonte 1,5. A barra da seleção é mais alta que a tira, e a
+     * página a reserva: a linha selecionada continua inteira acima dela, e a página não muda quando a seleção abre.
+     * Capturas em `r7_*`.
+     */
+    @Test
+    fun r7_fonteGrandeSelecaoNaUltimaLinhaFicaAcimaDaBarra() {
+        conferirSelecaoNaUltimaLinhaAcimaDaBarra(fonte = "1.5", prefixo = "r7")
+    }
+
+    /**
+     * Retrato, modo páginas, tira na base, com a fonte [fonte] (escala do sistema): seleciona a última palavra inteira
+     * da página e confere que a linha da seleção fica inteira acima da barra da seleção. Capturas em `[prefixo]_*`.
+     */
+    private fun conferirSelecaoNaUltimaLinhaAcimaDaBarra(fonte: String, prefixo: String) {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
         AppPrefs(contexto).readerRolagemHorizontal = true
         AppPrefs(contexto).readerBarraDeCima = "TEMPO"
         AppPrefs(contexto).readerBarraDeBaixo = "TEMPO"
-        // A fonte 1,3 é a condição de referência das medidas de S1 a S5. A regra restaura a escala depois do teste.
-        regras.comandoDoShell("settings put system font_scale 1.3")
+        // A regra restaura a escala depois do teste.
+        regras.comandoDoShell("settings put system font_scale $fonte")
         regras.usarVoz(VozFalsa.longa(contexto))
         val scenario = abrirLeitorComGuiada(regras, contexto)
         esperarAte(scenario, "leitura guiada tocando o parágrafo 0") { _ ->
@@ -215,20 +236,20 @@ class BarrasRecolhidasNoAparelhoTest {
         InstrumentationRegistry.getInstrumentation().runOnMainSync { GuidedPlaybackBridge.manager?.pause() }
         regras.fecharDialogosDoSistema()
         esperarPaginaParada(scenario)
-        Capturas.capturar("r4_1_tira_na_base")
+        Capturas.capturar("${prefixo}_1_tira_na_base")
 
         val (paragrafo, palavra) = ultimaPalavraDaUltimaLinhaInteira(scenario)
-        selecionarPalavra(scenario, regras, paragrafo, palavra, cenario = "r4")
+        selecionarPalavra(scenario, regras, paragrafo, palavra, cenario = prefixo)
         regras.fecharDialogosDoSistema()
         var medida: LinhaDaSelecao? = null
         scenario.onActivity { a -> medida = medirLinhaDaSelecao(a, paragrafo) }
         val linha = checkNotNull(medida) { "Sem a linha da seleção da palavra '$palavra'" }
         Capturas.anotar(
-            "r4",
+            prefixo,
             "linha da seleção=[${linha.topo},${linha.base}] topoUtil=${linha.topoUtil} " +
                 "barra=${linha.barraTopo} barraVisivel=${linha.barraVisivel}",
         )
-        Capturas.capturar("r4_2_selecao_na_ultima_linha")
+        Capturas.capturar("${prefixo}_2_selecao_na_ultima_linha")
         assertTrue("A barra da seleção deveria estar à vista", linha.barraVisivel)
         assertTrue(
             "A linha selecionada deveria ficar inteira acima da barra (topo ${linha.barraTopo} px), " +
