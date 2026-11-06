@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.data
 
 import android.content.Context
+import java.io.File
 
 /**
  * Liga o arquivo interno de um audiolivro (filesDir, onde a conversão grava) à cópia que o app exporta para
@@ -18,6 +19,21 @@ object CopiaExportadaStore {
     /** Uri da cópia exportada de [caminhoInterno]; null sem registro (conversão antiga ou sem exportação). */
     fun exportadaDe(ctx: Context, caminhoInterno: String): String? =
         prefs(ctx).getString(caminhoInterno, null)
+
+    /**
+     * Apaga as ligações cujo arquivo interno não existe mais: sem ele, o registro não serve para nada e só cresce.
+     * Lê as preferências e testa arquivos, então chamar fora da thread principal.
+     */
+    fun limparOrfas(ctx: Context) {
+        val prefs = prefs(ctx)
+        val editor = prefs.edit()
+        chavesOrfas(prefs.all.keys) { File(it).exists() }.forEach { editor.remove(it) }
+        editor.apply()
+    }
+
+    /** As chaves (caminhos internos) que [existe] diz não existirem mais. Pura, para o teste. */
+    fun chavesOrfas(chaves: Collection<String>, existe: (String) -> Boolean): List<String> =
+        chaves.filterNot(existe)
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 }

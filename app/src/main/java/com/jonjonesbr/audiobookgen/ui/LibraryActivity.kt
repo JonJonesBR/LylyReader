@@ -369,6 +369,12 @@ class LibraryActivity : BasePlayerActivity() {
             audiobooks.addAll(loaded)
             aplicarOrdenacao()
         }
+        limparCopiasOrfas()
+    }
+
+    /** Apaga do registro das cópias as ligações cujo arquivo interno já sumiu (fora da thread principal). */
+    private fun limparCopiasOrfas() {
+        lifecycleScope.launch(Dispatchers.IO) { CopiaExportadaStore.limparOrfas(applicationContext) }
     }
 
     /** Copia cada [uris] (arquivo de áudio externo) pra pasta de destino configurada (mesma
@@ -603,6 +609,7 @@ class LibraryActivity : BasePlayerActivity() {
         LinkedBookStore.removerPorMp3(this, chave)
         audiobooks.removeAll { it.uri == item.uri }
         aplicarOrdenacao()
+        limparCopiasOrfas()
         Toast.makeText(this, getString(R.string.toast_audiobook_deleted, item.nome), Toast.LENGTH_SHORT).show()
     }
 
