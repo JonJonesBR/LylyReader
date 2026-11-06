@@ -2151,6 +2151,46 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    /** Troca o modo de rolagem pelo caminho da Aparência: Opções, Aparência e o botão do grupo Rolagem (rb-26b). */
+    private fun trocarRolagemPelaAparencia(scenario: ActivityScenario<ReaderActivity>, horizontal: Boolean) {
+        scenario.onActivity { it.findViewById<View>(R.id.btnReaderOpcoes).performClick() }
+        scenario.onActivity {
+            ShadowDialog.getLatestDialog().findViewById<View>(R.id.itemAcaoAparencia).performClick()
+        }
+        scenario.onActivity {
+            val botao = if (horizontal) R.id.btnRolagemHorizontal else R.id.btnRolagemVertical
+            ShadowDialog.getLatestDialog().findViewById<View>(botao).performClick()
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun trocarOModoNaAparenciaRefazORespiroDeBaixo() {
+        // rb-26b (Codex): trocar o modo com o Leitor aberto refaz o respiro de baixo na hora, sem esperar outro layout.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = false
+        val minimo = (96 * app.resources.displayMetrics.density).toInt()
+        val folga = (16 * app.resources.displayMetrics.density).toInt()
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarAte(scenario, "vertical só ler com a reserva de 96dp") { a ->
+                val rv = listaDoLeitor(a)
+                rv.height > 0 && rv.paginacao?.ativa != true && rv.paddingBottom >= minimo
+            }
+            trocarRolagemPelaAparencia(scenario, horizontal = true)
+            esperarAte(scenario, "modo páginas com o respiro na folga de 16dp") { a ->
+                val rv = listaDoLeitor(a)
+                rv.paginacao?.ativa == true && rv.paddingBottom == folga
+            }
+            trocarRolagemPelaAparencia(scenario, horizontal = false)
+            esperarAte(scenario, "voltar ao vertical refaz a reserva de 96dp") { a ->
+                val rv = listaDoLeitor(a)
+                rv.paginacao?.ativa != true && rv.paddingBottom >= minimo
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun modoPaginasFicaNaListaVerticalComOMesmoTextView() {

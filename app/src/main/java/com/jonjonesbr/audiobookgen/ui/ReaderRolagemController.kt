@@ -104,8 +104,11 @@ class ReaderRolagemController(
             ).also { it.aoTerminarSalto = { paginacao.aoTerminarSalto() } }
         }
         recyclerView.paginacao = paginacao
-        val ligou = horizontal && !paginacao.ligada
+        val ligadaAntes = paginacao.ligada
+        val ligou = horizontal && !ligadaAntes
         paginacao.ligada = horizontal
+        // O respiro de baixo (EspacoSobControles) depende do modo: o layout refaz a conta no listener global.
+        if (paginacao.ligada != ligadaAntes) recyclerView.requestLayout()
         // Ao ligar, o topo vai para a primeira linha inteira: a lista pode ter parado no meio de uma linha.
         if (ligou) recyclerView.post { paginacao.alinharTopo() }
     }
