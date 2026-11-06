@@ -14,7 +14,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
+import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorSoNaSobreposicao
 
 enum class HelpTopico {
     // A ordem é a das páginas da Ajuda (o tópico abre a página de mesmo índice).
@@ -136,7 +136,7 @@ class HelpActivity : AppCompatActivity() {
         btnProximo = findViewById(R.id.btnProximo)
         layoutDots = findViewById(R.id.layoutDots)
         // T6.1 (edge-to-edge): botões ancorados na base — evita ficarem atrás da barra de gestos.
-        findViewById<View>(R.id.layoutBotoesOnboarding).aplicarPaddingInferiorComNavigationBar()
+        findViewById<View>(R.id.layoutBotoesOnboarding).aplicarPaddingInferiorSoNaSobreposicao()
 
         btnFechar.text = getString(R.string.help_btn_close)
 

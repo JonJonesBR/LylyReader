@@ -12,7 +12,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
+import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorSoNaSobreposicao
 
 class OnboardingActivity : AppCompatActivity() {
 
@@ -92,7 +92,7 @@ class OnboardingActivity : AppCompatActivity() {
         btnProximo   = findViewById(R.id.btnProximo)
         layoutDots   = findViewById(R.id.layoutDots)
         // T6.1 (edge-to-edge): botões ancorados na base — evita ficarem atrás da barra de gestos.
-        findViewById<View>(R.id.layoutBotoesOnboarding).aplicarPaddingInferiorComNavigationBar()
+        findViewById<View>(R.id.layoutBotoesOnboarding).aplicarPaddingInferiorSoNaSobreposicao()
 
         viewPager.adapter = PaginaAdapter(paginas)
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {

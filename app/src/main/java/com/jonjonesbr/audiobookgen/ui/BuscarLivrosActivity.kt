@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.BibliotecaStore
-import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
+import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorSoNaSobreposicao
 
 /**
  * "Livros grátis" aberta pela Biblioteca: a busca ([BuscaLivrosPainel]) e, ao tocar em "Baixar e usar", o livro
@@ -26,7 +26,7 @@ class BuscarLivrosActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_buscar_livros)
         // O fim da lista (aviso do acervo) fica acima da barra de gestos.
-        findViewById<View>(R.id.recyclerLivros).aplicarPaddingInferiorComNavigationBar()
+        findViewById<View>(R.id.recyclerLivros).aplicarPaddingInferiorSoNaSobreposicao()
         findViewById<ImageButton>(R.id.btnVoltarBuscarLivros).setOnClickListener { finish() }
         findViewById<ImageButton>(R.id.btnMaisBuscarLivros).setOnClickListener { mostrarMenuMais(it) }
 

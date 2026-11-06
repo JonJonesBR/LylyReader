@@ -9,30 +9,6 @@ import androidx.core.view.updatePadding
 import kotlin.math.roundToInt
 
 /**
- * Soma o inset da navigation bar/gesture bar ao padding inferior JÁ EXISTENTE da view (mesmo
- * padrão já usado em `MainActivity.ajustarInsetsRodape`, generalizado — T6.1, edge-to-edge).
- * Evita que barras/conteúdo ancorados na base da tela fiquem atrás da barra de gestos.
- */
-fun View.aplicarPaddingInferiorComNavigationBar() {
-    val paddingBaseBottom = paddingBottom
-    ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
-        val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-        view.updatePadding(bottom = paddingBaseBottom + navBar.bottom)
-        insets
-    }
-}
-
-/** Mesma ideia, para views posicionadas por margem (ex.: FAB) em vez de padding. */
-fun View.aplicarMargemInferiorComNavigationBar() {
-    val margemBase = (layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin ?: 0
-    ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
-        val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-        view.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = margemBase + navBar.bottom }
-        insets
-    }
-}
-
-/**
  * Quanto a view ainda desce abaixo do começo da barra de navegação, em px. Quem já descontou a barra (o pai com
  * fitsSystemWindows põe os filhos acima dela) fica com 0; quem não descontou fica com a altura da barra; no meio, a
  * parte que entra nela. Função pura, para o teste sem Android.
@@ -45,10 +21,12 @@ internal fun sobreposicaoComANavegacao(fundoNaJanela: Int, alturaDaJanela: Int, 
     (fundoNaJanela - (alturaDaJanela - navInferior)).coerceAtLeast(0)
 
 /**
- * Versão de [aplicarPaddingInferiorComNavigationBar] para a view que o pai já põe acima da barra de navegação
- * (fitsSystemWindows). Põe no padding inferior só a sobreposição real: base + quanto a view ainda desce abaixo da
- * barra. Como a view é ancorada embaixo, mudar o padding não move a base, então não há laço. Não consome insets:
- * só guarda a altura da barra de navegação para os outros ouvintes.
+ * Padding inferior para a view ancorada embaixo da tela (botões, lista, mini player). Se o pai já a põe acima da
+ * barra de navegação (fitsSystemWindows), a sobreposição dá 0; se não (ex.: o mini player dentro do
+ * CoordinatorLayout do Leitor), dá a parte que entra na barra. O padding inferior recebe só a sobreposição real:
+ * base + quanto a view ainda desce abaixo da barra. Como a view é ancorada embaixo, mudar o padding não move a
+ * base, então não há laço. Não consome insets: só guarda a altura da barra de navegação para os outros
+ * ouvintes.
  */
 fun View.aplicarPaddingInferiorSoNaSobreposicao() {
     val paddingBaseBottom = paddingBottom

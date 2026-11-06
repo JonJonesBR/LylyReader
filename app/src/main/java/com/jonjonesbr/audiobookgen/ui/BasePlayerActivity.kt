@@ -32,7 +32,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayout
 import com.jonjonesbr.audiobookgen.util.DestinoLateral
 import com.jonjonesbr.audiobookgen.util.GestoArraste
-import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorComNavigationBar
+import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorSoNaSobreposicao
 import com.jonjonesbr.audiobookgen.util.formatarTempo
 import com.jonjonesbr.audiobookgen.util.abrirExpandida
 import com.jonjonesbr.audiobookgen.util.textosDaSoneca
@@ -320,7 +320,9 @@ abstract class BasePlayerActivity : AppCompatActivity() {
             val root = findViewById<View>(R.id.miniPlayerRoot) ?: return
             // T6.1 (edge-to-edge): mini-player é ancorado na base da tela em várias telas
             // (via <include>) — sem isso, o conteúdo expandido fica atrás da barra de gestos.
-            root.aplicarPaddingInferiorComNavigationBar()
+            // Só a sobreposição: nas telas com fitsSystemWindows o pai já o põe acima da barra (0);
+            // no Leitor a raiz é um CoordinatorLayout, que não desconta a barra (rb-67/5).
+            root.aplicarPaddingInferiorSoNaSobreposicao()
 
             root.findViewById<ImageButton?>(R.id.miniPlayerPlayPause)?.setOnClickListener {
                 playerService?.alternarPlayPause()
