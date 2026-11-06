@@ -47,17 +47,40 @@ class RegraDasPaginasDoLeitorTest {
         return topo to paginas
     }
 
-    /** Folheia para trás, com scroll de uma altura e ajuste na linha, até o começo do livro. */
-    private fun folhearParaTras(linhas: List<LinhaDaPagina>, altura: Int, topoFinal: Int): List<Set<Int>> {
+    /** Topos por onde a ida passa, uma página de cada vez, começando no início do livro. */
+    private fun toposDaIda(linhas: List<LinhaDaPagina>, altura: Int): List<Int> {
+        var topo = linhas.first().topo
+        val tops = mutableListOf(topo)
+        var folhas = 0
+        while (folhas < limiteDeFolhas) {
+            folhas++
+            val passo = regra.passoParaFrente(linhas, topo, topo + altura)
+            if (passo == 0) break
+            topo += passo
+            tops += topo
+        }
+        return tops
+    }
+
+    /** Uma página: o topo, a base até onde ela desenha (antes do corte) e as linhas que mostra. */
+    private data class Pagina(val topo: Int, val base: Int, val linhas: Set<Int>)
+
+    /**
+     * Volta página a página a partir de [topoFinal], como o modo páginas: a página da volta vai até a linha de onde
+     * se voltou ([fimDaVolta]), e o ajuste leva o topo à primeira linha inteira. A primeira página é a de [topoFinal].
+     */
+    private fun folhearParaTrasComFim(linhas: List<LinhaDaPagina>, altura: Int, topoFinal: Int): List<Pagina> {
         val inicio = linhas.first().topo
         var topo = topoFinal
-        val paginas = mutableListOf(mostradas(linhas, topo, topo + altura))
+        val paginas = mutableListOf(Pagina(topo, topo + altura, mostradas(linhas, topo, topo + altura)))
         var folhas = 0
         while (folhas < limiteDeFolhas && topo > inicio) {
             folhas++
-            topo = maxOf(inicio, topo - altura)
-            topo += regra.ajusteDepoisDeVoltar(linhas, topo)
-            paginas += mostradas(linhas, topo, topo + altura)
+            val raw = topo - altura
+            val novoTopo = raw + regra.ajusteDepoisDeVoltar(linhas, raw)
+            val fim = regra.fimDaVolta(novoTopo + altura, topo)
+            paginas += Pagina(novoTopo, fim, mostradas(linhas, novoTopo, fim))
+            topo = novoTopo
         }
         return paginas
     }
@@ -106,20 +129,37 @@ class RegraDasPaginasDoLeitorTest {
         }
     }
 
-    // Limite conhecido: com alturas como 120 ou 130, a volta pode repetir duas linhas numa mesma página.
-    // Este teste só usa 100 e 150, onde a repetição fica em uma linha. O passo 2 precisa tratar o caso.
+    // Volta a partir de cada página da ida, com alturas que antes repetiam linhas (120 e 130). A página da volta
+    // termina na linha antes da que estava no topo; nada se repete entre vizinhas; a ida depois da volta devolve
+    // o topo.
     @Test
-    fun `folhear o livro inteiro para tras mostra todas as linhas sem repetir mais de uma por pagina`() {
-        for (altura in listOf(150, 100)) {
-            val (topoFinal, _) = folhearParaFrente(livro, altura)
-            val paginas = folhearParaTras(livro, altura, topoFinal)
-            val uniao = paginas.flatten().toSet()
-            assertEquals("altura $altura", livro.indices.toSet(), uniao)
-            assertTrue(
-                "altura $altura: mais de uma linha repetida entre paginas",
-                paginas.zipWithNext { acima, abaixo -> (acima intersect abaixo).size <= 1 }.all { it },
-            )
+    fun `voltar a partir de cada pagina mostra a anterior inteira, sem repetir nem perder linha`() {
+        for (altura in listOf(100, 120, 130, 150)) {
+            for (topoDaIda in toposDaIda(livro, altura)) {
+                val paginas = folhearParaTrasComFim(livro, altura, topoDaIda)
+                val ultimaVista = paginas.first().linhas.maxOrNull() ?: -1
+                val uniao = paginas.flatMap { it.linhas }.toSet()
+                assertEquals("altura $altura, topo $topoDaIda: o livro sem buracos", (0..ultimaVista).toSet(), uniao)
+                paginas.zipWithNext { acima, abaixo ->
+                    val contexto = "altura $altura, topo $topoDaIda, volta de ${acima.topo} para ${abaixo.topo}"
+                    assertTrue("$contexto: linha repetida", (acima.linhas intersect abaixo.linhas).isEmpty())
+                    val linhaDeOndeSeVolta = livro.indexOfFirst { it.topo == acima.topo }
+                    assertEquals("$contexto: termina na linha antes", linhaDeOndeSeVolta - 1, abaixo.linhas.maxOrNull())
+                    assertEquals(
+                        "$contexto: a ida depois da volta devolve o topo",
+                        acima.topo - abaixo.topo,
+                        regra.passoParaFrente(livro, abaixo.topo, abaixo.base),
+                    )
+                }
+            }
         }
+    }
+
+    @Test
+    fun `fim da volta para na linha de onde se voltou ou fica no fundo`() {
+        assertEquals(150, regra.fimDaVolta(base = 200, topoDaSeguinte = 150))
+        assertEquals(200, regra.fimDaVolta(base = 200, topoDaSeguinte = 300))
+        assertEquals(200, regra.fimDaVolta(base = 200, topoDaSeguinte = null))
     }
 
     @Test

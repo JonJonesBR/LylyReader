@@ -45,7 +45,8 @@ import org.junit.runner.RunWith
  * confere PAGE_DOWN; P8 põe a alça na linha de baixo da página, com a guiada pausada, e confere que a página não rola;
  * P9 e P10 são a seleção com a barra embaixo, no retrato e na paisagem (rb-26b, passo 3); P12 é o cabeçalho que some
  * ao virar a página e volta com um deslize para baixo (rb-26b, passo 6); P14 é o botão "Voltar à narração" do painel na
- * paisagem, com a guiada pausada e longe da narração, que tem de levar a página até a linha narrada (rb-26b, rodada 3).
+ * paisagem, com a guiada pausada e longe da narração, que tem de levar a página até a linha narrada (rb-26b, rodada 3);
+ * P15 é a volta de página com a fonte 1,3, que não pode repetir linha (rb-67, item 1).
  * Os toques são reais (ver [Gestos]); as conferências leem as Views na thread principal.
  */
 @RunWith(AndroidJUnit4::class)
@@ -874,6 +875,54 @@ class PaginasNoAparelhoTest {
                     narradoNaPagina(a)?.inteira == true
                 }
                 Capturas.capturar("p14_tocando_depois_do_botao")
+            }
+        }
+    }
+
+    /**
+     * P15 (rb-67, item 1): com a fonte 1,3, voltar uma página mostra a anterior só até a linha antes da que estava no
+     * topo. Três viradas para a frente e três para trás com o dedo: em cada volta, nenhuma linha inteira da página
+     * nova pode ser uma linha inteira da página de onde se voltou.
+     */
+    @Test
+    fun p15_voltarPaginaComFonteGrandeNaoRepeteLinha() {
+        comPaginas {
+            regras.comandoDoShell("settings put system font_scale 1.3")
+            val scenario = abrirNoPaginado()
+            regras.fecharDialogosDoSistema()
+            var atual = medirPagina(scenario)
+            repeat(3) {
+                val deslocamentoAntes = atual.offset
+                arrastarLateral(scenario, paraFrente = true)
+                esperarAte(scenario, "a página virar para a frente", TEMPO_DE_VIRADA_MS) { a ->
+                    offsetDaLista(a) > deslocamentoAntes
+                }
+                atual = medirPagina(scenario)
+            }
+            repeat(3) {
+                val deOndeSeVoltou = atual
+                arrastarLateral(scenario, paraFrente = false)
+                esperarAte(scenario, "a página voltar", TEMPO_DE_VIRADA_MS) { a ->
+                    offsetDaLista(a) < deOndeSeVoltou.offset
+                }
+                val volta = medirPagina(scenario)
+                val primeiraDeOndeSeVoltou = checkNotNull(deOndeSeVoltou.topoVisivel()) {
+                    "Sem linha no topo antes de voltar"
+                }
+                val ultimaInteiraDaVolta = checkNotNull(linhasInteirasDeBaixoParaCima(volta).firstOrNull()) {
+                    "A página da volta não tem linha inteira"
+                }
+                Capturas.anotar(
+                    "p15",
+                    "volta: corte=${volta.corte} ultima inteira=$ultimaInteiraDaVolta " +
+                        "1a da pagina anterior=$primeiraDeOndeSeVoltou",
+                )
+                // Nenhuma linha inteira da volta pode estar entre as inteiras da página de onde se voltou.
+                val daAnterior = linhasInteirasDeBaixoParaCima(deOndeSeVoltou)
+                val repetidas = linhasInteirasDeBaixoParaCima(volta).filter { v -> daAnterior.any { it.mesmaQue(v) } }
+                assertTrue("A volta repetiu as linhas $repetidas", repetidas.isEmpty())
+                conferirSemLinhaCortada(volta, "p15-volta")
+                atual = volta
             }
         }
     }

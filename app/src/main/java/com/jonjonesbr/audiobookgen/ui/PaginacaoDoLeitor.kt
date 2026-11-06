@@ -38,6 +38,9 @@ internal class PaginacaoDoLeitor(
     /** Última base de página medida, para redesenhar quando o padding de baixo muda (barra da guiada, giro). */
     private var ultimaBase = -1
 
+    /** Volta da página em curso: até onde a página anterior desenha, para não repetir linha (rb-67, item 1). */
+    private val volta = VoltaDaPagina(lista)
+
     /** Há topo desalinhado esperando o texto ser liberado (toque ou menu aberto), para alinhar depois (rb-26b, D2). */
     private var alinharPendente = false
 
@@ -94,13 +97,17 @@ internal class PaginacaoDoLeitor(
      */
     fun corte(): Int = RegraDasPaginasDoLeitor.corte(
         lista.linhasNaTela().filter { it.base > lista.paddingTop },
-        base(),
+        volta.limite(base()),
     )
 
     /** Vira a página ([sentido] 1 para a frente, -1 para trás). Falso se não andou (fim ou início do livro). */
     fun virar(sentido: Int): Boolean {
         if (!ativa || lista.height <= 0) return false
-        val andou = if (sentido > 0) avancar(lista.paddingTop, base()) else voltar(lista.paddingTop, base())
+        val andou = if (sentido > 0) {
+            avancar(lista.paddingTop, volta.limite(base()))
+        } else {
+            voltar(lista.paddingTop, base())
+        }
         if (andou) {
             // scrollBy não passa pelo IDLE: a conferência da seleção e o trecho guardado (rb-60b) rodam aqui.
             lista.liberarDepois()
@@ -138,12 +145,15 @@ internal class PaginacaoDoLeitor(
 
     private fun voltar(topo: Int, fundo: Int): Boolean {
         if (!lista.canScrollVertically(-1)) return false
+        volta.antesDeVoltar()
         lista.scrollBy(0, -(fundo - topo))
         // Só ajusta se ainda dá para subir: no início do livro, o ajuste tiraria o respiro do primeiro parágrafo.
         if (lista.canScrollVertically(-1)) {
             val ajuste = RegraDasPaginasDoLeitor.ajusteDepoisDeVoltar(lista.linhasNaTela(), topo)
             if (ajuste > 0) lista.scrollBy(0, ajuste)
         }
+        // Depois dos dois deslocamentos: mede onde ficou a linha que estava no topo, para limitar a página da volta.
+        volta.depoisDeVoltar()
         return true
     }
 

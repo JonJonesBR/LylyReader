@@ -45,6 +45,13 @@ object RegraDasPaginasDoLeitor {
         linhas.firstOrNull { it.topo >= topo }?.let { it.topo - topo } ?: 0
 
     /**
+     * Fundo da página da volta (rb-67, item 1): até o topo da linha de onde se voltou ([topoDaSeguinte]), para a página
+     * terminar na linha antes dela e nada se repetir. Sem essa linha, fica em [base].
+     */
+    fun fimDaVolta(base: Int, topoDaSeguinte: Int?): Int =
+        if (topoDaSeguinte == null) base else minOf(base, topoDaSeguinte)
+
+    /**
      * Ajuste do topo quando uma linha cruza a borda superior ([topo] entre o começo e o fim dela): devolve o
      * deslocamento negativo que a mostra inteira, que é o começo da linha menos [topo]. Sem linha cruzada, devolve 0.
      * Linha tão alta quanto a página ([alturaDaPagina]) não é alinhada: alinhar o topo nela a esconderia, e a virada

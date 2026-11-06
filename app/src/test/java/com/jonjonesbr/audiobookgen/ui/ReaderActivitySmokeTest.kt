@@ -2224,6 +2224,54 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    /** Vira a página ([sentido] 1 ou -1) e espera o layout assentar. Devolve se a página andou (rb-67, item 1). */
+    private fun virarEEsperarLayout(scenario: ActivityScenario<ReaderActivity>, sentido: Int): Boolean {
+        var andou = false
+        scenario.onActivity { a -> andou = listaDoLeitor(a).paginacao!!.virar(sentido) }
+        esperarAte(scenario, "layout depois da virada") { a -> !listaDoLeitor(a).isLayoutRequested }
+        return andou
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun voltarPaginaMostraAAnteriorSemRepetirLinha() {
+        // rb-67 (item 1): voltar uma página mostra a anterior só até a linha antes da que estava no topo, e a virada
+        // para a frente depois devolve essa linha ao topo.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            assertTrue(virarEEsperarLayout(scenario, 1))
+            assertTrue(virarEEsperarLayout(scenario, 1))
+            var noTopo: LinhaNaLista? = null
+            scenario.onActivity { a -> noTopo = primeiraLinhaDaPagina(listaDoLeitor(a)) }
+            val alvo = checkNotNull(noTopo) { "sem linha no topo antes de voltar" }
+            assertTrue(virarEEsperarLayout(scenario, -1))
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val agora = linhaNaLista(rv, alvo.pos, alvo.linha)
+                assertTrue(
+                    "a volta deveria parar antes da linha do topo anterior (corte ${rv.paginacao!!.corte()}, " +
+                        "topo dela ${agora.topo})",
+                    rv.paginacao!!.corte() <= agora.topo,
+                )
+                // Pré-condição da fixture: a linha C ainda cai dentro da área visível, senão a volta não a repetiria.
+                assertTrue(
+                    "a fixture não discrimina: a linha C não estaria na base",
+                    agora.base <= rv.height - rv.paddingBottom,
+                )
+            }
+            assertTrue(virarEEsperarLayout(scenario, 1))
+            scenario.onActivity { a ->
+                val topo = primeiraLinhaDaPagina(listaDoLeitor(a))
+                assertEquals("a virada para a frente deveria devolver a linha ao topo", alvo.pos, topo.pos)
+                assertEquals("a virada para a frente deveria devolver a linha ao topo", alvo.linha, topo.linha)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun paginaAlinhadaQuandoAAreaDeBaixoEncolheComFocoNoParagrafo() {
