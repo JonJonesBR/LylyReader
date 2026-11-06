@@ -2864,15 +2864,25 @@ class ReaderActivitySmokeTest {
                 corteAntes = listaDoLeitor(a).paginacao!!.corte()
             }
             scenario.onActivity { a ->
-                val barra = a.findViewById<View>(R.id.layoutGuidedPlayer)
-                barra.minimumHeight = listaDoLeitor(a).height / 3
-                barra.visibility = View.VISIBLE
+                a.findViewById<View>(R.id.layoutGuidedPlayer).visibility = View.VISIBLE
             }
             esperarAte(scenario, "barra da guiada aumenta o espaço de baixo da lista") { a ->
                 listaDoLeitor(a).paddingBottom > paddingAntes
             }
+            // rb-67 (item 17b): o espaço de baixo cobre o painel, a página acaba acima dele e o corte diminuiu.
             scenario.onActivity { a ->
-                assertTrue("o corte deveria diminuir com a barra", listaDoLeitor(a).paginacao!!.corte() < corteAntes)
+                val lista = listaDoLeitor(a)
+                val painel = a.findViewById<View>(R.id.layoutGuidedPlayer)
+                val corte = lista.paginacao!!.corte()
+                assertTrue(
+                    "o espaço de baixo deveria cobrir o painel (${painel.height} px)",
+                    lista.paddingBottom >= painel.height,
+                )
+                assertTrue(
+                    "a página deveria acabar acima do espaço de baixo (corte $corte)",
+                    corte <= lista.height - lista.paddingBottom,
+                )
+                assertTrue("o corte deveria diminuir com a barra", corte < corteAntes)
             }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
