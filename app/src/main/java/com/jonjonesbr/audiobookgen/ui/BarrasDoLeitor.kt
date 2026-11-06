@@ -105,8 +105,8 @@ internal class BarrasDoLeitor(
     /**
      * Aplica a barra de cima com a situação atual. [leitura] é falso em erro, carregamento, edição ou comparação (aí o
      * cabeçalho é obrigatório); [paginas] é o modo páginas com texto. Roda a cada atualização da tela: só repassa à
-     * tela quando o resultado muda. Rearma o tempo só ao entrar ou sair das páginas (os gestos rearmam em
-     * [aoGestoDeCima]).
+     * tela quando o resultado muda. Rearma o tempo quando o estado do cabeçalho muda ou ao entrar/sair das páginas
+     * (os gestos rearmam em [aoGestoDeCima]).
      */
     fun aplicar(leitura: Boolean, paginas: Boolean) {
         // Na troca de modo (edição, comparação, vertical para páginas) a lista é refeita: a 1ª linha só se mantém
@@ -128,12 +128,14 @@ internal class BarrasDoLeitor(
         val forcarPelaBarra = !paginas && situacao.barraDoFluxoVisivel && !situacao.selecaoNoTopo
         val modo = if (forcarPelaBarra) ModoDaBarra.SEMPRE else modoCima
         val estado = RegraDasBarrasDoLeitor.cabecalho(modo, abertoCima, paginas, situacao)
-        if (estado != ultimo) {
+        val mudou = estado != ultimo
+        if (mudou) {
             ultimo = estado
             telaCheia.aplicar(estado, continuaNasPaginas)
         }
-        // Entrar ou sair das páginas com a barra aberta por tempo arma ou para a contagem.
-        if (mudouDePaginas) armarSeCabe()
+        // Entrar ou sair das páginas com a barra aberta por tempo arma ou para a contagem. Mudar o cabeçalho (ex.: a
+        // seleção fechou e ele voltou) recomeça o tempo: senão o período que já corria podia recolhê-lo logo depois.
+        if (mudouDePaginas || mudou) armarSeCabe()
     }
 
     /** Um gesto da região de cima (deslize, virada, tempo). Muda o que foi pedido pela regra e rearma o tempo. */
