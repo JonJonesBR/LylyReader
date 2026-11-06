@@ -423,6 +423,10 @@ class AudioPlayerService : MediaLibraryService() {
         // Play/pause vindo de fora (notificação, fone, Bluetooth, tela de bloqueio) não passa
         // pelo alternarPlayPause(): sem isto o ícone do mini-player não acompanhava.
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            // Play de fora (notificação, fone, Bluetooth, relógio) também pede o foco antes de tocar; sem foco fica
+            // pausado e o bookkeeping de play não roda (o auto-rewind é calculado quando o play valer).
+            val pedidoDeFora = playWhenReady && !mudancaPlayInterna && exoPlayer.mediaItemCount > 0
+            if (pedidoDeFora && !pedirFocoAntesDeTocar()) return
             if (ehPlayPauseExterno(
                     mudancaInterna = mudancaPlayInterna,
                     playbackEnded = exoPlayer.playbackState == Player.STATE_ENDED,
@@ -588,7 +592,6 @@ class AudioPlayerService : MediaLibraryService() {
         // Garante ciclo de vida "started" para sobreviver ao unbind quando o app é minimizado.
         // Sem isso, o Android mata o serviço ao fazer unbindService() no onStop() da Activity.
         startService(Intent(this, AudioPlayerService::class.java))
-        audioFocusController.solicitar()
         // Reflete o item novo na UI/notificação imediatamente (o onMediaItemTransition é
         // async) e limpa o erro de playback do item anterior.
         _state.update { it.copy(trackName = nome, caminho = caminho, erroMensagem = null, isVisible = true) }
@@ -626,7 +629,8 @@ class AudioPlayerService : MediaLibraryService() {
                 posicaoPedida = null
                 exoPlayer.seekTo(posicaoInicialMs.coerceAtLeast(0L))
             }
-            emMudancaPlayInterna { exoPlayer.play() }
+            // Sem foco (ex.: ligação) o item fica preparado e pausado; com foco adiado, o onFocusGained toca.
+            if (pedirFocoAntesDeTocar()) emMudancaPlayInterna { exoPlayer.play() }
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao iniciar: ${e.message}", e)
             // Só o nome do arquivo no log: o caminho completo revela pastas do aparelho.
@@ -665,10 +669,13 @@ class AudioPlayerService : MediaLibraryService() {
                     // uma nova tentativa ao usuário e limpa a mensagem de erro exibida.
                     prepararRetomadaAposErro()
                 }
-                emMudancaPlayInterna { exoPlayer.play() }
-                exoPlayer.playbackParameters = parametros(_state.value.speed)
-                aplicarAutoRewindNoResume()
-                _state.update { it.copy(isPlaying = true, erroMensagem = null) }
+                val podeTocar = pedirFocoAntesDeTocar()
+                if (podeTocar) {
+                    emMudancaPlayInterna { exoPlayer.play() }
+                    exoPlayer.playbackParameters = parametros(_state.value.speed)
+                    aplicarAutoRewindNoResume()
+                }
+                _state.update { it.copy(isPlaying = podeTocar, erroMensagem = null) }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao alternar play/pause", e)
@@ -869,6 +876,20 @@ class AudioPlayerService : MediaLibraryService() {
         try { bloco() } finally { mudancaPlayInterna = anterior }
     }
 
+    /**
+     * Pede o foco antes de tocar e devolve se pode tocar. Sem o foco (negado ou adiado), pausa o ExoPlayer: ele
+     * pode estar com playWhenReady ligado (ex.: no buffering, ou com o item anterior tocando). Com foco adiado,
+     * o onFocusGained retoma quando o foco chegar.
+     */
+    private fun pedirFocoAntesDeTocar(): Boolean {
+        val resposta = respostaDoFoco(audioFocusController.solicitar())
+        if (resposta != RespostaDoFoco.TOCAR) {
+            emMudancaPlayInterna { exoPlayer.pause() }
+            estavaTocandoAntesDoFoco = resposta == RespostaDoFoco.ESPERAR
+        }
+        return resposta == RespostaDoFoco.TOCAR
+    }
+
     /** Mesmo bookkeeping do mini-player para play/pause vindo de fora: pausa salva progresso e
      *  marca o instante (base do auto-rewind); play aplica o auto-rewind. */
     private fun aplicarBookkeepingPlayPauseExterno(playWhenReady: Boolean) {
@@ -876,7 +897,9 @@ class AudioPlayerService : MediaLibraryService() {
             aplicarAutoRewindNoResume()
         } else {
             salvarProgresso()
-            marcarPausa()
+            // A pausa que o próprio play recusado causa (pedirFocoAntesDeTocar) chega aqui depois do callback, com o
+            // estado ainda parado. Não é uma pausa de verdade: não pode trocar a hora da pausa registrada.
+            if (_state.value.isPlaying) marcarPausa()
         }
     }
 

@@ -94,3 +94,18 @@ class AudioFocusController(
         }
     }
 }
+
+/** O que o player faz com o resultado de [AudioFocusController.solicitar]. */
+enum class RespostaDoFoco { TOCAR, ESPERAR, NAO_TOCAR }
+
+/**
+ * Decide, a partir do resultado do pedido de foco, se o áudio pode tocar agora.
+ *
+ * GRANTED toca; DELAYED (foco adiado, ex.: depois de uma ligação) espera o `onFocusGained`; FAILED (ex.: durante
+ * uma ligação) e qualquer outro valor não tocam.
+ */
+fun respostaDoFoco(resultado: Int): RespostaDoFoco = when (resultado) {
+    AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> RespostaDoFoco.TOCAR
+    AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> RespostaDoFoco.ESPERAR
+    else -> RespostaDoFoco.NAO_TOCAR
+}
