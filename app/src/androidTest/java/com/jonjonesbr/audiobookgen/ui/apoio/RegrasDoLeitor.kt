@@ -11,6 +11,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Configurator
 import androidx.test.uiautomator.UiDevice
+import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.service.GuidedReadingService
 import com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
@@ -83,6 +84,10 @@ class RegrasDoLeitor : TestRule {
         manterTelaAcesa()
         fecharDialogosDoSistema()
         apagarPreferenciasDoApp(app)
+        // rb-66 (passo 3): as barras de cima começam à mostra nos testes antigos (a geometria de hoje). Os testes das
+        // barras recolhíveis gravam o modo deles no corpo.
+        AppPrefs(app).readerBarraDeCima = "SEMPRE"
+        AppPrefs(app).readerBarraDeBaixo = "SEMPRE"
         PythonInicio.iniciar = { throw IllegalStateException("Sem Python nos testes de interface") }
         usarVoz(VozFalsa.curta(app))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

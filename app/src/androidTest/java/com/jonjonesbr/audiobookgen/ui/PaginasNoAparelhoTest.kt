@@ -664,31 +664,22 @@ class PaginasNoAparelhoTest {
     }
 
     /**
-     * P12 (rb-26b, passo 6): no modo páginas, virar a página com o dedo recolhe o cabeçalho (toolbar, busca e
-     * capítulo), e um deslize para baixo o traz de volta. A 1ª linha da página é a mesma antes e depois de mostrar ou
-     * recolher o cabeçalho, e um deslize para cima não vira a página.
+     * P12 (rb-26b, passo 6; rb-66, passo 3): no modo páginas com a barra de cima no modo TEMPO, ela começa
+     * recolhida. Um deslize para baixo a mostra por cima do texto, sem mudar a 1ª linha da página. Virar a página com
+     * o dedo, depois, recolhe o cabeçalho.
      */
     @Test
     fun p12_cabecalhoSomeAoVirarEVoltaComDeslizeParaBaixo() {
         comPaginas {
+            AppPrefs(InstrumentationRegistry.getInstrumentation().targetContext).readerBarraDeCima = "TEMPO"
             val scenario = abrirNoPaginado()
             regras.fecharDialogosDoSistema()
-            scenario.onActivity { a -> assertEquals(View.VISIBLE, cabecalhoDo(a).visibility) }
+            scenario.onActivity { a -> assertEquals(View.GONE, cabecalhoDo(a).visibility) }
 
             val antes = medirPagina(scenario)
-            arrastarLateral(scenario, paraFrente = true)
-            esperarAte(scenario, "a página virar com o arraste lateral", TEMPO_DE_VIRADA_MS) { a ->
-                offsetDaLista(a) > antes.offset
-            }
-            esperarAte(scenario, "cabeçalho recolhido com a virada", TEMPO_DE_VIRADA_MS) { a ->
-                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
-            }
-            esperarPaginaParada(scenario)
-            val recolhido = medirPagina(scenario)
-            val topo = checkNotNull(recolhido.topoVisivel()) { "A página recolhida não tem linha no topo" }
-            Capturas.anotar("p12", "recolhido: topo=$topo")
+            val topo = checkNotNull(antes.topoVisivel()) { "A página recolhida não tem linha no topo" }
             Capturas.capturar("p12_recolhido")
-            conferirSemLinhaCortada(recolhido, "p12-recolhido")
+            conferirSemLinhaCortada(antes, "p12-recolhido")
 
             rolarListaComODedo(
                 scenario,
@@ -696,10 +687,11 @@ class PaginasNoAparelhoTest {
                 paraBaixoNoTexto = false,
                 cenario = "p12",
             )
-            esperarAte(scenario, "cabeçalho voltou com o deslize para baixo", TEMPO_DE_VIRADA_MS) { a ->
+            esperarAte(scenario, "cabeçalho mostrado com o deslize para baixo", TEMPO_DE_VIRADA_MS) { a ->
                 cabecalhoDo(a).visibility == View.VISIBLE && !listaDoLeitor(a).isLayoutRequested
             }
             esperarPaginaParada(scenario)
+            scenario.onActivity { a -> assertEquals(View.VISIBLE, cabecalhoDo(a).visibility) }
             val mostrado = medirPagina(scenario)
             assertTrue(
                 "Mostrar o cabeçalho não deveria mudar a 1ª linha (era $topo, veio ${mostrado.topoVisivel()})",
@@ -708,6 +700,8 @@ class PaginasNoAparelhoTest {
             conferirSemLinhaCortada(mostrado, "p12-mostrado")
             Capturas.capturar("p12_mostrado")
 
+            // O deslize para cima recolhe o cabeçalho que estava por cima, sem mudar a 1ª linha. Depois o deslize para
+            // baixo o mostra de novo, para a virada com o dedo ser testada com o cabeçalho aberto.
             rolarListaComODedo(
                 scenario,
                 fracaoDaAreaUtil = FRACAO_DO_ARRASTE_VERTICAL,
@@ -724,7 +718,29 @@ class PaginasNoAparelhoTest {
                 topo.mesmaQue(deNovo.topoVisivel()),
             )
             conferirSemLinhaCortada(deNovo, "p12-de-novo")
-            Capturas.capturar("p12_recolhido_de_novo")
+            rolarListaComODedo(
+                scenario,
+                fracaoDaAreaUtil = FRACAO_DO_ARRASTE_VERTICAL,
+                paraBaixoNoTexto = false,
+                cenario = "p12c",
+            )
+            esperarAte(scenario, "cabeçalho mostrado de novo com o deslize para baixo", TEMPO_DE_VIRADA_MS) { a ->
+                cabecalhoDo(a).visibility == View.VISIBLE && !listaDoLeitor(a).isLayoutRequested
+            }
+            esperarPaginaParada(scenario)
+            // Com o cabeçalho ainda aberto: senão o tempo recolhe antes da virada e a asserção abaixo passa à toa.
+            scenario.onActivity { a -> assertEquals(View.VISIBLE, cabecalhoDo(a).visibility) }
+
+            arrastarLateral(scenario, paraFrente = true)
+            esperarAte(scenario, "a página virar com o arraste lateral", TEMPO_DE_VIRADA_MS) { a ->
+                offsetDaLista(a) > mostrado.offset
+            }
+            esperarAte(scenario, "cabeçalho recolhido com a virada", TEMPO_DE_VIRADA_MS) { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
+            esperarPaginaParada(scenario)
+            conferirSemLinhaCortada(medirPagina(scenario), "p12-virada")
+            Capturas.capturar("p12_virada")
         }
     }
 

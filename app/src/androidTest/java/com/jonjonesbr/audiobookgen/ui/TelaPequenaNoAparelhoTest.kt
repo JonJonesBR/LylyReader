@@ -72,6 +72,8 @@ class TelaPequenaNoAparelhoTest {
         comPaginas {
             comFonteGrande {
                 val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+                // rb-66 (passo 3): TEMPO, como no P13, para medir a tela cheia depois da virada (a barra recolhe).
+                AppPrefs(contexto).readerBarraDeCima = "TEMPO"
                 regras.usarVoz(VozFalsa.longa(contexto))
                 val scenario = abrirLeitorComGuiada(regras, contexto)
                 virarPaginaComGuiadaEmManual(scenario, indice = 0)
@@ -108,6 +110,8 @@ class TelaPequenaNoAparelhoTest {
             comFonteGrande {
                 comRotacaoManual {
                     val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+                    // rb-66 (passo 3): TEMPO, como no S2, para medir a tela cheia depois da virada.
+                    AppPrefs(contexto).readerBarraDeCima = "TEMPO"
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
                     girarParaPaisagem(scenario, comGuiada = true)
@@ -153,6 +157,8 @@ class TelaPequenaNoAparelhoTest {
             comFonteGrande {
                 comRotacaoManual {
                     val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+                    // rb-66 (passo 3): a barra de cima começa recolhida, como no padrão (TEMPO).
+                    AppPrefs(contexto).readerBarraDeCima = "TEMPO"
                     regras.usarVoz(VozFalsa.longa(contexto))
                     val scenario = abrirLeitorComGuiada(regras, contexto)
                     girarParaPaisagem(scenario, comGuiada = true)

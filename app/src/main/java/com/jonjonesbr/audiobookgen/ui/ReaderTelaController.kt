@@ -23,7 +23,7 @@ private const val DURACAO_PILL_LIMPEZA_MS = 5000L
 
 /**
  * Aplica na tela do leitor o estado calculado em TelaDoLeitor.kt: carregando e erro, pílula da limpeza, barra de modo,
- * FABs, tema e margem, a dica e a tela cheia do modo páginas (rb-26b, passo 6, ver [TelaCheiaDoLeitor]). Por instância
+ * FABs, tema e margem, a dica e as barras de cima do modo páginas (rb-66, ver [BarrasDoLeitor]). Por instância
  * da Activity (a dica, o tema e a margem zeram ao girar). A pílula já mostrada fica no ViewModel ([aoMostrarPilula] a
  * marca), para não voltar ao girar.
  * Não lê o ViewModel: o que a tela precisa chega por parâmetro ou por lambda.
@@ -56,17 +56,10 @@ class ReaderTelaController(
     // mexer na montagem da Activity. Achados uma vez, quando o FAB é aplicado.
     private val botaoVoltarNoPainel: View by lazy { activity.findViewById(R.id.btnGuidedVoltarNarracao) }
     private val tvStatusDoPainel: View by lazy { activity.findViewById(R.id.tvGuidedStatus) }
-    // Tela cheia do modo páginas (rb-26b, passo 6): o cabeçalho some ao virar a página. Achada uma vez, como os de
-    // cima.
-    private val telaCheia: TelaCheiaDoLeitor? by lazy {
-        (recyclerView as? RecyclerViewParagrafos)?.let {
-            TelaCheiaDoLeitor(
-                activity,
-                it,
-                activity.findViewById(R.id.cabecalhoDoLeitor),
-                activity.findViewById(R.id.layoutBuscaReader),
-            )
-        }
+    // Barras de cima recolhíveis do modo páginas (rb-66, passo 3): o coordenador decide o cabeçalho e a reserva.
+    // Achado uma vez, como os de cima. Só existe com a lista de páginas (RecyclerViewParagrafos).
+    private val barras: BarrasDoLeitor? by lazy {
+        (recyclerView as? RecyclerViewParagrafos)?.let { BarrasDoLeitor(activity, it) }
     }
 
     /**
@@ -111,8 +104,8 @@ class ReaderTelaController(
             views.layoutGuidedPlayer.visibility = View.GONE
             views.btnConverterAssim.visibility = View.GONE
         }
-        // rb-26b (passo 6): a tela cheia liga os avisos da lista (gesto da página e virada pelo dedo).
-        telaCheia?.ligar()
+        // rb-66 (passo 3): o coordenador liga a tela cheia (avisos da lista), o toque nas barras, o tempo e o foco.
+        barras?.ligar()
     }
 
     /**
@@ -127,7 +120,7 @@ class ReaderTelaController(
             recyclerView.visibility = View.GONE
             views.barraCapitulo.visibility = View.GONE
             // Com erro, o cabeçalho (com o botão de voltar) fica sempre visível.
-            telaCheia?.aplicar(false)
+            barras?.aplicar(leitura = false, paginas = false)
             views.tvErro.text = erro
             return true
         }
@@ -176,9 +169,10 @@ class ReaderTelaController(
             )
         }
         aplicarBarraDeSelecao(tela.paragrafosSelecionados)
-        // Tela cheia: o modo vem da tela (tela.modoAdapter), porque o adapter só é atualizado depois deste ponto.
+        // Barras de cima: o modo vem da tela (tela.modoAdapter), porque o adapter só é atualizado depois deste ponto.
         val paginacao = (recyclerView as? RecyclerViewParagrafos)?.paginacao
-        telaCheia?.aplicar(paginacao?.ligada == true && tela.modoAdapter == AdapterModo.LEITURA)
+        val leitura = tela.modoAdapter == AdapterModo.LEITURA
+        barras?.aplicar(leitura = leitura, paginas = paginacao?.ligada == true && leitura)
     }
 
     /**

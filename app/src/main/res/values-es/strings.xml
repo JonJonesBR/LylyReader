@@ -8,6 +8,8 @@
     <string name="cd_voltar">Volver</string>
     <string name="cd_aparencia">Apariencia</string>
     <string name="cd_play_pause">Reproducir/Pausar</string>
+    <string name="cd_mostrar_barras">Mostrar el menú y los capítulos</string>
+    <string name="cd_recolher_barras">Ocultar el menú y los capítulos</string>
     <string name="cd_guided_play">Iniciar lectura guiada</string>
     <string name="cd_guided_pause">Pausar lectura guiada</string>
     <string name="cd_guided_speed">Velocidad de lectura: %1$s</string>
