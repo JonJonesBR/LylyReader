@@ -835,6 +835,60 @@ class ReaderActivitySmokeTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun selecaoNoUltimoParagrafoDesceOEspacoEOTopoAndaSoComATranslacao() {
+        // rb-67/10: o último parágrafo com o foco e a seleção sob a barra. A lista desce, a decoração do fim leva a
+        // descida, e o topo dele na tela anda só com a translação (o LinearLayoutManager não reancora o foco). Fechar
+        // a seleção devolve tudo ao de antes. O último parágrafo é longo: o topo dele não cai sempre no topo da lista,
+        // e a linha selecionada fica sob a barra.
+        val textos = PARAGRAFOS.toMutableList().apply { this[PARAGRAFOS.lastIndex] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarAte(scenario, "parágrafos na tela") { a ->
+                lista(a).adapter?.itemCount == PARAGRAFOS.size && textoEm(lista(a), 0) != null
+            }
+            // Rola até o fim da lista, e a lista não rola mais para a frente.
+            scenario.onActivity { lista(it).scrollToPosition(PARAGRAFOS.lastIndex) }
+            scenario.onActivity { rolarAteOFim(lista(it)) }
+            esperarAte(scenario, "fim da lista com o último parágrafo na tela") { a ->
+                !lista(a).canScrollVertically(1) && textoEm(lista(a), PARAGRAFOS.lastIndex) != null
+            }
+            var topoAntes = 0f
+            scenario.onActivity { a -> topoAntes = topoNaTelaDoUltimo(a) }
+            // Foco e seleção na última linha visível do último parágrafo, com o menu aberto: a barra cobre a linha.
+            scenario.onActivity { a ->
+                val rv = lista(a)
+                val linha = linhasNaLista(rv).last {
+                    it.pos == PARAGRAFOS.lastIndex && it.base <= rv.height - rv.paddingBottom
+                }
+                val layout = checkNotNull(tvEm(rv, PARAGRAFOS.lastIndex)?.layout)
+                val tv = selecionarComFoco(
+                    rv,
+                    PARAGRAFOS.lastIndex,
+                    layout.getLineStart(linha.linha),
+                    layout.getLineEnd(linha.linha),
+                )
+                abrirModoFalso(a, tv)
+            }
+            esperarAte(scenario, "lista desce para a seleção") { a -> lista(a).translationY > 0f }
+            esperarAte(scenario, "espaço do fim leva a descida") { a ->
+                val descida = listaDoLeitor(a).descidaDaSelecao
+                descida > 0 && decoracaoDoUltimo(a) == descida
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400))
+            scenario.onActivity { a ->
+                assertEquals(topoAntes + lista(a).translationY, topoNaTelaDoUltimo(a), 1f)
+            }
+            // Fechar com Destacar: a lista e o espaço do fim voltam ao de antes.
+            scenario.onActivity { it.findViewById<View>(R.id.btnSelecaoTextoDestacar).performClick() }
+            esperarAte(scenario, "lista e espaço do fim voltam ao lugar") { a ->
+                lista(a).translationY == 0f && decoracaoDoUltimo(a) == 0 && listaDoLeitor(a).descidaDaSelecao == 0
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
     fun selecaoFocadaNoParagrafoQueComecaAbaixoDoTopoNaoSobeOTexto() {
         // rb-51: o parágrafo começa abaixo do topo e passa da base, e tem o foco (a seleção nativa). A descida não pode
         // subir o texto depois do post: o topo dele na tela segue só a translação da lista.
@@ -4706,6 +4760,12 @@ class ReaderActivitySmokeTest {
         val ev = MotionEvent.obtain(downTime, eventTime, acao, ponto.first, ponto.second, 0)
         rv.dispatchTouchEvent(ev)
         ev.recycle()
+    }
+
+    /** Rola a lista para baixo até o fim dela (ou até 50 passos). */
+    private fun rolarAteOFim(rv: RecyclerView) {
+        var vezes = 0
+        while (rv.canScrollVertically(1) && vezes++ < 50) rv.scrollBy(0, 300)
     }
 
     /** Rola a lista para baixo até nenhum filho ligado mostrar a posição [pos] (o parágrafo saiu da tela). */
