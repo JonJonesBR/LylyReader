@@ -54,16 +54,16 @@ object EspacoSobControles {
             if (lista.paddingBottom != alvo) {
                 val mudar = { lista.setPadding(lista.paddingLeft, lista.paddingTop, lista.paddingRight, alvo) }
                 val paginaDaLista = lista as? RecyclerViewParagrafos
-                // rb-66 (passo 5): no modo páginas, quando o espaço sob os controles encolhe (o respiro de baixo
-                // cresce, p.ex. o painel abre), o LinearLayoutManager sobe a página pela âncora do parágrafo focado.
-                // Com a lista parada e as mesmas barras, a 1ª linha fica no lugar (manterAPrimeiraLinha). Fora disso,
-                // como antes.
+                // rb-66 (passo 5): quando o espaço sob os controles encolhe (o respiro de baixo cresce, p.ex. o painel
+                // abre), o LinearLayoutManager sobe o texto pela âncora do parágrafo focado. Com a lista parada e as
+                // mesmas barras, a 1ª linha fica no lugar (manterAPrimeiraLinha). Fora disso, como antes.
+                // rb-67 (item 18a): vale nos dois modos. No vertical a âncora do foco fazia o mesmo, subindo ~55 dp.
                 // Um salto que acabou de terminar o layout (rb-66, passo 5) já alinhou o topo: o fixador não roda
                 // por cima.
                 val espacoEncolheu = alvo > lista.paddingBottom
                 val listaParada = lista.scrollState == RecyclerView.SCROLL_STATE_IDLE &&
                     (lista.layoutManager as? LeitorLayoutManager)?.saltoNoUltimoLayout != true
-                val segurarALinha = paginas && espacoEncolheu && listaParada
+                val segurarALinha = espacoEncolheu && listaParada
                 if (segurarALinha && mesmasBarras && paginaDaLista != null) {
                     paginaDaLista.manterAPrimeiraLinha(mudar)
                 } else {

@@ -4050,6 +4050,69 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun painelDeBaixoQueCresceNoVerticalMantemAPrimeiraLinha() {
+        // rb-67 (item 18a): no vertical, o painel de baixo que cresce come o espaço da lista. Com a lista parada e um
+        // parágrafo focado, o texto não sobe: a 1ª linha fica na mesma posição e com o mesmo offset.
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeBaixo = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            scenario.onActivity { a ->
+                assertTrue("o parágrafo 1 pega o foco", checkNotNull(tvEm(listaDoLeitor(a), 1)).requestFocus())
+            }
+            // O painel entra pequeno primeiro: a conta das barras muda uma vez, e o ajuste seguinte é só de altura.
+            scenario.onActivity { a ->
+                a.findViewById<View>(R.id.layoutGuidedPlayer).apply {
+                    layoutParams.height = listaDoLeitor(a).height / 8
+                    visibility = View.VISIBLE
+                }
+            }
+            esperarAte(scenario, "painel pequeno assentado na base") { a ->
+                val rv = listaDoLeitor(a)
+                a.findViewById<View>(R.id.layoutGuidedPlayer).height > 0 && !rv.isLayoutRequested
+            }
+            var paddingAntes = 0
+            var antes = Pair(0, 0)
+            var crescimento = 0
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                paddingAntes = rv.paddingBottom
+                antes = posicaoEOffsetDaPrimeiraLinha(rv)
+                crescimento = crescimentoAteOMeioDoParagrafo(rv, 1)
+            }
+            scenario.onActivity { a ->
+                a.findViewById<View>(R.id.layoutGuidedPlayer).apply {
+                    layoutParams.height = height + crescimento
+                    requestLayout()
+                }
+            }
+            esperarAte(scenario, "painel alto assentado na base") { a ->
+                val rv = listaDoLeitor(a)
+                rv.paddingBottom > paddingAntes && !rv.isLayoutRequested
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                // Pré-condição: o parágrafo focado tem de cruzar a base nova, senão o teste não exercita o corte.
+                val paragrafo = checkNotNull(tvEm(rv, 1)) { "parágrafo 1 fora da lista" }
+                val base = rv.height - rv.paddingBottom
+                assertTrue(
+                    "o parágrafo 1 deveria cruzar a base nova: topo ${paragrafo.top}, base $base, " +
+                        "fim ${paragrafo.bottom}",
+                    paragrafo.top < base && paragrafo.bottom > base,
+                )
+                assertEquals(
+                    "o texto não deveria subir com o painel que abre",
+                    antes,
+                    posicaoEOffsetDaPrimeiraLinha(rv),
+                )
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     /** Posição e offset (em relação ao topo da página) do primeiro item visível, no modo páginas (rb-66, passo 5). */
     private fun posicaoEOffsetDaPrimeiraLinha(rv: RecyclerViewParagrafos): Pair<Int, Int> {
         val lm = rv.layoutManager as LinearLayoutManager
