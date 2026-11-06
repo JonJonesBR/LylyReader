@@ -16,6 +16,8 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.data.AppPrefs
@@ -136,11 +138,23 @@ object CoachMark {
             val folga = (12 * densidade).toInt()
             val acima = buraco.top.toInt() - folga - alturaCartao
             val topo = if (acima >= 0) acima else (buraco.bottom.toInt() + folga)
+            // Fim útil em coordenadas desta view: o cartão para acima da barra de navegação. Só desconta a parte
+            // dela que cobre esta view de fato (com edge-to-edge é a tela toda; sem, a view já termina acima dela).
+            val posicao = IntArray(2)
+            getLocationInWindow(posicao)
+            val fimUtil = ((rootView.height - inferiorDasBarras()) - posicao[1]).coerceAtMost(height)
             val lp = LayoutParams(larg, LayoutParams.WRAP_CONTENT)
             lp.leftMargin = lateral
-            lp.topMargin = topo.coerceIn(0, (height - alturaCartao).coerceAtLeast(0))
+            lp.topMargin = topo.coerceIn(0, (fimUtil - alturaCartao).coerceAtLeast(0))
             card.layoutParams = lp
             card.sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)
+        }
+
+        /** Altura das barras do sistema embaixo (a de navegação, no Android 15 por cima do fim da tela). */
+        private fun inferiorDasBarras(): Int {
+            val insets = ViewCompat.getRootWindowInsets(this) ?: return 0
+            val tipos = WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.systemBars()
+            return insets.getInsets(tipos).bottom
         }
 
         override fun onDraw(canvas: Canvas) {
