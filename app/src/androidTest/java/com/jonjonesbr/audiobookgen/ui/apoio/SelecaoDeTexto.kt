@@ -190,11 +190,16 @@ private fun medirVisibilidade(
     return checkNotNull(medida) { "Sem medida de visibilidade para '$palavra' no parágrafo $indiceParagrafo" }
 }
 
-/** Retângulo visível (em coordenadas de tela) de [view], ou nulo se ela não estiver visível. */
+/** Retângulo visível de [view] em coordenadas de tela (as do dedo injetado), ou nulo se ela não estiver visível. */
 private fun retanguloVisivel(view: View?): Rect? {
-    if (view == null || view.visibility != View.VISIBLE) return null
     val rect = Rect()
-    return if (view.getGlobalVisibleRect(rect)) rect else null
+    if (view == null || view.visibility != View.VISIBLE || !view.getGlobalVisibleRect(rect)) return null
+    // O getGlobalVisibleRect dá coordenadas da janela; na paisagem a janela começa depois do recorte da câmera
+    // (x=128 no Pixel 6) e o dedo cairia fora dela (rb-67/6).
+    val origem = IntArray(2)
+    view.rootView.getLocationOnScreen(origem)
+    rect.offset(origem[0], origem[1])
+    return rect
 }
 
 /**
@@ -357,6 +362,7 @@ private fun arrastarAreaComODedo(area: AreaDaLista, dedoSobe: Boolean, fracao: F
     val altura = area.fundoUtil - area.topoUtil
     check(altura > 0) { "Sem área útil para arrastar a lista: topo ${area.topoUtil}, fundo ${area.fundoUtil}" }
     val x = area.listaRect.left + MARGEM_DO_ARRASTE_DP * area.densidade
+    Capturas.anotar(cenario, "lista na tela: ${area.listaRect.toShortString()}")
     val folga = FOLGA_DA_AREA_OCUPADA_DP * area.densidade
     val obstaculos = obstaculosDoArraste(area.listaRect, cenario)
     val segmento = escolherSegmento(area, fracao, x, folga, obstaculos)

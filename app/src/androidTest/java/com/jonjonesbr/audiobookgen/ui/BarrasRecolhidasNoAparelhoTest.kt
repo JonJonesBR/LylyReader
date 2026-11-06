@@ -330,7 +330,8 @@ class BarrasRecolhidasNoAparelhoTest {
     /**
      * R6 (rb-67, item 6), TEMPO: no modo páginas, o retrato mostra a barra de status com o cabeçalho recolhido; na
      * paisagem recolhida ela some e o texto sobe (o inset de cima fica em 0); o deslize para baixo mostra o cabeçalho e
-     * a barra junto. De volta ao retrato, a barra volta, e um menu (⋮) aberto e fechado não a esconde. Capturas em
+     * a barra junto. De volta ao retrato, a barra volta, e um menu (⋮) aberto e fechado não a esconde. As esperas do
+     * cabeçalho e da barra são separadas ([esperarAsBarras]), para que uma falha diga qual das duas faltou. Capturas em
      * `r6_*`.
      */
     @Test
@@ -360,7 +361,10 @@ class BarrasRecolhidasNoAparelhoTest {
             Capturas.capturar("r6_1_paisagem_recolhida")
 
             rolarListaComODedo(scenario, fracaoDaAreaUtil = FRACAO_DO_DESLIZE, paraBaixoNoTexto = false, cenario = "r6")
-            esperarAte(scenario, "deslize para baixo mostra o cabeçalho e a barra de status") { a ->
+            esperarAsBarras(scenario, "r6_deslize", "deslize para baixo mostra o cabeçalho") { a ->
+                cabecalhoVisivel(a)
+            }
+            esperarAsBarras(scenario, "r6_barra", "com o cabeçalho à vista, a barra de status volta") { a ->
                 cabecalhoVisivel(a) && barraDeStatusVisivel(a)
             }
             Capturas.capturar("r6_2_paisagem_aberta")
@@ -386,6 +390,38 @@ class BarrasRecolhidasNoAparelhoTest {
     private fun topoDoInsetDoSistema(a: ReaderActivity): Int =
         ViewCompat.getRootWindowInsets(a.window.decorView)
             ?.getInsets(WindowInsetsCompat.Type.systemBars())?.top ?: -1
+
+    /**
+     * Espera [condicao] como [esperarAte], mas guarda os estados do cabeçalho e da barra de status vistos na espera,
+     * sem repetir o estado seguido. Se o tempo esgotar, a mensagem traz a sequência (à vista → recolhido → à vista, por
+     * exemplo); a anotação em medidas.txt traz a mesma sequência quando passa.
+     */
+    private fun esperarAsBarras(
+        scenario: ActivityScenario<ReaderActivity>,
+        nome: String,
+        descricao: String,
+        condicao: (ReaderActivity) -> Boolean,
+    ) {
+        val vistos = mutableListOf<String>()
+        try {
+            esperarAte(scenario, descricao) { a ->
+                val estado = estadoDasBarras(a)
+                if (vistos.lastOrNull() != estado) vistos += estado
+                condicao(a)
+            }
+        } catch (e: AssertionError) {
+            throw AssertionError("${e.message}. Estados vistos: ${vistos.joinToString(" → ")}", e)
+        } finally {
+            Capturas.anotar(nome, "estados: ${vistos.joinToString(" → ")}")
+        }
+    }
+
+    /** Uma linha com o estado do cabeçalho, da barra de status, do topo do inset e do foco da janela. */
+    private fun estadoDasBarras(a: ReaderActivity): String {
+        val cabecalho = if (cabecalhoVisivel(a)) "à vista" else "recolhido"
+        return "cabeçalho=$cabecalho barraDeStatus=${barraDeStatusVisivel(a)} topo=${topoDoInsetDoSistema(a)} " +
+            "foco=${a.hasWindowFocus()}"
+    }
 
     /** Abre o menu ⋮ do Leitor e fecha com Voltar: o menu tira o foco da janela e o devolve ao fechar. */
     private fun abrirEFecharMenuDeOpcoes(scenario: ActivityScenario<ReaderActivity>) {
