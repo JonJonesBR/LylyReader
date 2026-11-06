@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paisagem: texto e ações à esquerda, lista à direita. Mesmos ids do layout de retrato. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/color_background"
+    android:fitsSystemWindows="true">
+
+    <!-- Toolbar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="12dp"
+        android:gravity="center_vertical"
+        android:background="@color/color_background">
+
+        <ImageButton
+            android:id="@+id/btnVoltarLogs"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_voltar"
+            app:tint="@color/color_on_surface_muted"
+            android:contentDescription="@string/cd_voltar"/>
+
+        <TextView
+            android:id="@+id/tvTituloLogs"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="@string/aj_problema"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/color_on_surface"/>
+
+        <ImageButton
+            android:id="@+id/btnLimparTodosLogs"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_menu_delete"
+            app:tint="@color/color_error"
+            android:contentDescription="@string/btn_limpar_fila"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- Coluna da esquerda: texto fixo, link do GitHub e Enviar todos (sempre visível, sem rolar com a lista) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:orientation="vertical"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tvExplicacaoLogs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/logs_explicacao_avancado"
+                android:textColor="@color/color_on_surface_muted"
+                android:textSize="14sp"/>
+
+            <TextView
+                android:id="@+id/tvLinkGithubLogs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="@string/logs_abrir_github"
+                android:textColor="@color/color_primary"
+                android:textSize="14sp"
+                android:textStyle="bold"/>
+
+            <!-- Enviar todos: aparece só quando há registros -->
+            <Button
+                android:id="@+id/btnEnviarTodosLogs"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="48dp"
+                android:text="@string/logs_btn_enviar_todos"
+                android:textAllCaps="false"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+
+        <!-- Coluna da direita: a lista, ou o texto de vazio -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvErrorLogs"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:scrollbars="vertical"
+                tools:listitem="@layout/item_error_log"/>
+
+            <TextView
+                android:id="@+id/tvEmptyLogs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/logs_erro_vazio"
+                android:textColor="@color/color_on_surface_muted"
+                android:textSize="15sp"
+                android:visibility="gone"/>
+
+        </FrameLayout>
+
+    </LinearLayout>
+</LinearLayout>
