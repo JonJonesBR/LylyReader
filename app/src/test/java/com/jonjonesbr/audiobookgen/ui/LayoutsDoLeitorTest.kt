@@ -74,4 +74,17 @@ class LayoutsDoLeitorTest {
         assertTrue("o chip de velocidade ficou sem largura", velocidade.width > 0)
         assertTrue("o botão de voltar ficou sem largura", voltar.width > 0)
     }
+
+    @Test
+    fun rotulosDaVelocidadeCabemNumaLinha() {
+        val folha = medir(R.layout.bottom_sheet_velocidade)
+        val ids = listOf(
+            R.id.btnVelocidade075, R.id.btnVelocidade100, R.id.btnVelocidade125,
+            R.id.btnVelocidade150, R.id.btnVelocidade175, R.id.btnVelocidade200,
+        )
+        for (id in ids) {
+            val botao = folha.findViewById<TextView>(id)
+            assertEquals("o rótulo '${botao.text}' quebrou em linhas", 1, botao.lineCount)
+        }
+    }
 }

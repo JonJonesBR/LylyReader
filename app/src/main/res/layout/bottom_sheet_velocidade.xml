@@ -35,6 +35,7 @@
         android:paddingTop="4dp"
         android:paddingBottom="12dp"/>
 
+    <!-- Seis presets em uma linha: sem o padding do botão, o "0.75×" cabe em 1 linha (quebrava em "0.75" e "×"). -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -51,6 +52,10 @@
             android:text="0.75×"
             android:textSize="12sp"
             android:textColor="@color/color_on_surface"
+            android:maxLines="1"
+            android:minWidth="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
             style="@style/Widget.Material3.Button.TextButton"/>
 
         <Button
@@ -61,6 +66,10 @@
             android:text="1.0×"
             android:textSize="12sp"
             android:textColor="@color/color_on_surface"
+            android:maxLines="1"
+            android:minWidth="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
             style="@style/Widget.Material3.Button.TextButton"/>
 
         <Button
@@ -71,6 +80,10 @@
             android:text="1.25×"
             android:textSize="12sp"
             android:textColor="@color/color_on_surface"
+            android:maxLines="1"
+            android:minWidth="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
             style="@style/Widget.Material3.Button.TextButton"/>
 
         <Button
@@ -81,6 +94,10 @@
             android:text="1.5×"
             android:textSize="12sp"
             android:textColor="@color/color_on_surface"
+            android:maxLines="1"
+            android:minWidth="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
             style="@style/Widget.Material3.Button.TextButton"/>
 
         <Button
@@ -91,6 +108,10 @@
             android:text="1.75×"
             android:textSize="12sp"
             android:textColor="@color/color_on_surface"
+            android:maxLines="1"
+            android:minWidth="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
             style="@style/Widget.Material3.Button.TextButton"/>
 
         <Button
@@ -101,6 +122,10 @@
             android:text="2.0×"
             android:textSize="12sp"
             android:textColor="@color/color_on_surface"
+            android:maxLines="1"
+            android:minWidth="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
             style="@style/Widget.Material3.Button.TextButton"/>
 
     </LinearLayout>
