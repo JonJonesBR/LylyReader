@@ -73,14 +73,5 @@ class AudioCache:
     def clear_all(self) -> int:
         return self.clear_old(days=0)
 
-    def info(self) -> dict:
-        files = list(self.DIR.glob("*.bin")) if self.DIR.exists() else []
-        total_size = sum(f.stat().st_size for f in files if f.exists())
-        return {
-            "arquivos": len(files),
-            "tamanho_mb": round(total_size / (1024 * 1024), 2),
-            "diretorio": str(self.DIR),
-        }
-
 
 CACHE = AudioCache()

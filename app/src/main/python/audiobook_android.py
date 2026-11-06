@@ -144,13 +144,6 @@ def descartar_job(jh: str) -> bool:
     return _descartar_job(jh)
 
 
-def get_cache_info() -> str:
-    """Retorna informações do cache de áudio como JSON."""
-    import json
-    from audio_cache import CACHE
-    return json.dumps(CACHE.info())
-
-
 def limpar_cache() -> int:
     """Limpa todo o cache de áudio. Retorna número de arquivos removidos."""
     from audio_cache import CACHE

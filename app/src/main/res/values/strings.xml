@@ -287,7 +287,6 @@
     <string name="settings_tab_dados">Data</string>
     <string name="settings_tab_ajuda">Help</string>
     <string name="cache_calculando">Calculating…</string>
-    <string name="btn_limpar_cache">Clear</string>
     <string name="label_sobre">ABOUT</string>
     <string name="label_creditos_voz">Voice &amp; model credits</string>
     <string-array name="creditos_voz_entradas">

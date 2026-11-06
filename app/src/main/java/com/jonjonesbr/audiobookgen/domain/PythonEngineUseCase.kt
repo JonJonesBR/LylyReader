@@ -16,8 +16,6 @@ import org.json.JSONObject
 
 // ── Tipos de Retorno Seguros ──────────────────────────────────────────────
 
-data class CacheInfo(val tamanhoMb: Double, val arquivos: Int)
-
 /** Um capítulo com timestamps (ms) no MP3 final, usado para navegação anterior/próximo (T4.4). */
 data class CapituloAudio(val titulo: String, val inicioMs: Long, val fimMs: Long)
 
@@ -146,19 +144,6 @@ class PythonEngineUseCase(private val context: Context) {
             com.jonjonesbr.audiobookgen.data.PronunciationStore.get(context), dicionarioDoLivro
         )
         mod.callAttr("set_pronunciations", dicionarioEfetivo.toJson())
-    }
-
-    /** Consulta o tamanho atual do cache de áudio do lado Python (chunks de Edge/Gemini). */
-    suspend fun obterInfoCache(): CacheInfo? = withContext(Dispatchers.IO) {
-        try {
-            if (!inicializarMotorSeNecessario()) return@withContext null
-            val mod = Python.getInstance().getModule("audiobook_android")
-            val json = JSONObject(mod.callAttr("get_cache_info").toString())
-            CacheInfo(json.getDouble("tamanho_mb"), json.getInt("arquivos"))
-        } catch (e: Exception) {
-            Log.e(TAG, "Erro ao consultar cache: ${e.message}")
-            null
-        }
     }
 
     /**
