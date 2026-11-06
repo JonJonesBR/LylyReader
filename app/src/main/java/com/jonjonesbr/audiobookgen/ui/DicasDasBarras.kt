@@ -14,7 +14,8 @@ private val gestosDaPessoa = setOf(GestoDasBarras.MOSTRAR, GestoDasBarras.ROLOU_
 /**
  * Dicas que acompanham as barras recolhidas do Leitor (rb-66, passo 7). O [BarrasDoLeitor] avisa o que aconteceu e esta
  * classe decide qual dica tentar e onde ela aponta. Cada uma tenta uma vez por abertura do Leitor. Quando a dica não
- * pode aparecer (alvo oculto, outra dica aberta, regra de [CoachMark]), não é marcada como vista e volta na próxima vez.
+ * pode aparecer (alvo oculto, outra dica aberta, regra de [CoachMark]), não é marcada como vista e volta na próxima
+ * vez.
  *
  * Tudo corre por post depois do layout do alvo: o cabeçalho e a setinha acabam de mudar de visibilidade e ainda não
  * têm tamanho quando o gesto chega.
@@ -47,8 +48,8 @@ internal class DicasDasBarras(private val activity: AppCompatActivity, private v
      */
     fun recolhidoNoVertical() {
         if (verticalTentado) return
-        // Alvo oculto não passa por layout: sem esta checagem o listener ficaria pendente e a dica sairia depois, fora de
-        // hora. Sem marcar a flag, a dica tenta de novo na próxima vez que o cabeçalho for recolhido nesta abertura.
+        // Alvo oculto não passa por layout: sem esta checagem o listener ficaria pendente e a dica sairia depois, fora
+        // de hora. Sem marcar a flag, a dica tenta de novo na próxima vez que o cabeçalho for recolhido nesta abertura.
         val setinha = activity.findViewById<View?>(R.id.btnMostrarBarras)?.takeIf { it.isShown } ?: return
         verticalTentado = true
         setinha.doOnLayout {

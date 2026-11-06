@@ -147,8 +147,8 @@ internal class TelaCheiaDoLeitor(
     }
 
     /**
-     * Dica da tela cheia, uma vez por abertura do Leitor. Por post, para medir a lista já com a altura nova e com o modo
-     * do adapter atualizado (rb-66, passo 7). Só marca como tentada quando a paginação está em uso e o cabeçalho
+     * Dica da tela cheia, uma vez por abertura do Leitor. Por post, para medir a lista já com a altura nova e com o
+     * modo do adapter atualizado (rb-66, passo 7). Só marca como tentada quando a paginação está em uso e o cabeçalho
      * recolhido, senão tenta de novo na próxima mudança.
      */
     private fun tentarDica() {
