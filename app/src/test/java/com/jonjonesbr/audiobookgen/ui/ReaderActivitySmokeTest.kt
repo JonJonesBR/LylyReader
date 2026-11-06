@@ -2595,13 +2595,29 @@ class ReaderActivitySmokeTest {
     fun voltarPaginaMostraAAnteriorSemRepetirLinha() {
         // rb-67 (item 1): voltar uma página mostra a anterior só até a linha antes da que estava no topo, e a virada
         // para a frente depois devolve essa linha ao topo.
-        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        // Por que não ida e volta a partir do topo: com linhas da mesma altura, duas viradas para a frente e uma para
+        // trás não repetem linha nem no código antigo (a volta cai sempre na linha que a ida acabou de passar). A
+        // repetição só aparece quando o topo de onde se volta veio de um salto. Por isso a posição salva é o
+        // parágrafo 1, com o parágrafo 0 (curto, cabe na página) acima dele: a volta para no início do livro, e sem
+        // o limite a página repetiria a linha C (1ª do parágrafo 1) e as seguintes.
+        // O parágrafo 0 vira curto (uma ou duas linhas): com o padrão (215 caracteres, várias linhas) a volta não
+        // chegaria à linha C dentro da página, e a pré-condição do fim do teste não valeria.
+        val textos = PARAGRAFOS.toMutableList().apply {
+            this[0] = "Capítulo um, parágrafo 1, curto."
+            this[1] = PARAGRAFO_LONGO
+        }
         val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
         AppPrefs(app).readerRolagemHorizontal = true
+        AppPrefs(app).salvarPosicaoLeitura(livro.absolutePath, 1, textos.size)
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
             esperarModoPaginas(scenario)
-            assertTrue(virarEEsperarLayout(scenario, 1))
-            assertTrue(virarEEsperarLayout(scenario, 1))
+            // O salto assenta quando o parágrafo 1 começa no topo da página (o restaurar roda por post).
+            esperarAte(scenario, "posição salva no parágrafo 1") { a ->
+                val rv = listaDoLeitor(a)
+                val primeira = linhasNaLista(rv).firstOrNull { it.topo >= rv.paddingTop }
+                primeira != null && primeira.pos == 1 && primeira.linha == 0 &&
+                    !rv.isLayoutRequested && rv.scrollState == RecyclerView.SCROLL_STATE_IDLE
+            }
             var noTopo: LinhaNaLista? = null
             scenario.onActivity { a -> noTopo = primeiraLinhaDaPagina(listaDoLeitor(a)) }
             val alvo = checkNotNull(noTopo) { "sem linha no topo antes de voltar" }
@@ -2616,7 +2632,9 @@ class ReaderActivitySmokeTest {
                 )
                 // Pré-condição da fixture: a linha C ainda cai dentro da área visível, senão a volta não a repetiria.
                 assertTrue(
-                    "a fixture não discrimina: a linha C não estaria na base",
+                    "a fixture não discrimina: a linha C não estaria na base (base dela ${agora.base}, " +
+                        "área até ${rv.height - rv.paddingBottom}, canScrollVertically(-1) " +
+                        "${rv.canScrollVertically(-1)})",
                     agora.base <= rv.height - rv.paddingBottom,
                 )
             }
