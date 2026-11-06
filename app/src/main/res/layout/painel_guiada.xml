@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Painel da leitura guiada, no pé da tela (incluído em activity_reader.xml). A paisagem tem a versão de
      layout-land/painel_guiada.xml, com os mesmos ids numa linha só (rb-26b, passo 5). -->
-<LinearLayout
+<com.jonjonesbr.audiobookgen.ui.BarraDoLeitor
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -16,12 +16,25 @@
     android:padding="8dp"
     android:visibility="gone">
 
+    <!-- Tira de progresso fino: só aparece com o painel recolhido (rb-66, passo 5). Mostra o parágrafo atual em relação
+         ao total do livro, pela mesma fonte do status. -->
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progressoGuiadaTira"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:indeterminate="false"
+        app:trackThickness="3dp"
+        app:trackCornerRadius="0dp"
+        android:tag="so_recolhido"
+        android:visibility="gone"/>
+
     <View
         android:id="@+id/divisorGuidedPlayer"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/color_divider"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="8dp"
+        android:tag="so_aberto"/>
 
     <!-- Linha 1: status + chips de soneca/velocidade/loading (largura variável, pode
          encolher sem empurrar nada pra fora — não compete por espaço com os controles). -->
@@ -63,6 +76,21 @@
             app:iconTint="?attr/colorOnSecondaryContainer"
             android:visibility="gone"/>
 
+        <!-- Play da tira (rb-66, passo 5): aparece só com o painel recolhido; espelha o play principal, que está na linha 2. -->
+        <ImageButton
+            android:id="@+id/btnGuidedPlayPauseTira"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/bg_play_arredondado"
+            android:src="@drawable/ic_player_play"
+            android:padding="12dp"
+            app:tint="?attr/colorOnPrimary"
+            android:contentDescription="@string/cd_guided_play"
+            android:tooltipText="@string/cd_guided_play"
+            android:tag="so_recolhido"
+            android:visibility="gone"/>
+
         <TextView
             android:id="@+id/tvGuidedStatus"
             android:layout_width="0dp"
@@ -75,58 +103,69 @@
             android:ellipsize="end"
             android:maxLines="2"/>
 
-        <TextView
-            android:id="@+id/tvGuidedSoneca"
+        <!-- Chips de soneca, passos e velocidade: a tira (painel recolhido) esconde o grupo inteiro (rb-66, passo 5). -->
+        <LinearLayout
+            android:id="@+id/chipsGuiada"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:minWidth="48dp"
-            android:gravity="center"
-            tools:text="😴"
-            android:textSize="13sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textColor="?attr/colorPrimary"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:layout_marginEnd="4dp"
-            android:visibility="gone"
-            android:contentDescription="@string/cd_sleep_timer"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:tag="so_aberto">
 
-        <TextView
-            android:id="@+id/tvGuidedPassos"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:minWidth="48dp"
-            android:gravity="center"
-            tools:text="⚙ 12"
-            android:textSize="13sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textColor="?attr/colorPrimary"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:layout_marginEnd="4dp"
-            android:visibility="gone"
-            android:contentDescription="@string/cd_guided_voz_motor"/>
+            <TextView
+                android:id="@+id/tvGuidedSoneca"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:minWidth="48dp"
+                android:gravity="center"
+                tools:text="😴"
+                android:textSize="13sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="?attr/colorPrimary"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:layout_marginEnd="4dp"
+                android:visibility="gone"
+                android:contentDescription="@string/cd_sleep_timer"/>
 
-        <TextView
-            android:id="@+id/btnGuidedVelocidade"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:minWidth="48dp"
-            android:gravity="center"
-            tools:text="1.0×"
-            android:textSize="13sp"
-            android:maxLines="1"
-            android:textStyle="bold"
-            android:textColor="?attr/colorPrimary"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/cd_guided_speed"/>
+            <TextView
+                android:id="@+id/tvGuidedPassos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:minWidth="48dp"
+                android:gravity="center"
+                tools:text="⚙ 12"
+                android:textSize="13sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="?attr/colorPrimary"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:layout_marginEnd="4dp"
+                android:visibility="gone"
+                android:contentDescription="@string/cd_guided_voz_motor"/>
+
+            <TextView
+                android:id="@+id/btnGuidedVelocidade"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:minWidth="48dp"
+                android:gravity="center"
+                tools:text="1.0×"
+                android:textSize="13sp"
+                android:maxLines="1"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_guided_speed"/>
+
+        </LinearLayout>
 
         <ProgressBar
             android:id="@+id/progressGuidedLoading"
@@ -135,16 +174,32 @@
             android:layout_marginStart="8dp"
             android:visibility="gone"/>
 
+        <!-- Seta que recolhe ou mostra o painel (rb-66, passo 5). Sem tag: a PainelRecolhivelDaGuiada decide se aparece. -->
+        <ImageButton
+            android:id="@+id/btnGuidedRecolher"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_busca_seta_baixo"
+            android:padding="12dp"
+            app:tint="?attr/colorPrimary"
+            android:contentDescription="@string/cd_guided_recolher_controles"
+            android:tooltipText="@string/cd_guided_recolher_controles"
+            android:visibility="gone"/>
+
     </LinearLayout>
 
     <!-- Linha 2: controles de reprodução — largura total fixa (~250dp), sempre cabe
          inteira, então btnGuidedClose nunca é empurrado pra fora da tela (achado do
          usuário: acontecia quando a linha 1 crescia com soneca/loading visíveis). -->
     <LinearLayout
+        android:id="@+id/controlesGuiada"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center"
+        android:tag="so_aberto">
 
         <ImageButton
             android:id="@+id/btnGuidedVoz"
@@ -206,4 +261,4 @@
             android:tooltipText="@string/cd_guided_fechar"/>
 
     </LinearLayout>
-</LinearLayout>
+</com.jonjonesbr.audiobookgen.ui.BarraDoLeitor>

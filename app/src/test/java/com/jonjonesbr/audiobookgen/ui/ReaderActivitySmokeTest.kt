@@ -3234,6 +3234,91 @@ class ReaderActivitySmokeTest {
         return progressoDaLinha(rv, pos, linha) to linha
     }
 
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun painelDeBaixoQueCresceNoModoPaginasMantemAPrimeiraLinha() {
+        // rb-66 (passo 5): no modo páginas, o painel de baixo que cresce come o espaço da página. Com a lista parada e
+        // um parágrafo focado, a 1ª linha fica no lugar (a mesma posição e o mesmo offset) e a página segue alinhada.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            scenario.onActivity { a ->
+                assertTrue("o parágrafo 1 pega o foco", checkNotNull(tvEm(listaDoLeitor(a), 1)).requestFocus())
+            }
+            // O painel entra pequeno primeiro: a conta das barras muda uma vez, e o ajuste seguinte é só de altura.
+            scenario.onActivity { a -> a.findViewById<View>(R.id.layoutGuidedPlayer).visibility = View.VISIBLE }
+            esperarAte(scenario, "painel pequeno assentado na base") { a ->
+                val rv = listaDoLeitor(a)
+                a.findViewById<View>(R.id.layoutGuidedPlayer).height > 0 && !rv.isLayoutRequested
+            }
+            var paddingAntes = 0
+            var antes = Pair(0, 0)
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                paddingAntes = rv.paddingBottom
+                antes = posicaoEOffsetDaPrimeiraLinha(rv)
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                a.findViewById<View>(R.id.layoutGuidedPlayer).apply {
+                    layoutParams.height = rv.height / 3
+                    requestLayout()
+                }
+            }
+            esperarAte(scenario, "painel alto assentado na base") { a ->
+                val rv = listaDoLeitor(a)
+                rv.paddingBottom > paddingAntes && !rv.isLayoutRequested
+            }
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                // Pré-condição: o parágrafo focado tem de cruzar a base nova, senão o teste não exercita o corte.
+                val paragrafo = checkNotNull(tvEm(rv, 1)) { "parágrafo 1 fora da lista" }
+                val base = rv.height - rv.paddingBottom
+                assertTrue(
+                    "o parágrafo 1 deveria cruzar a base nova: topo ${paragrafo.top}, base $base, " +
+                        "fim ${paragrafo.bottom}",
+                    paragrafo.top < base && paragrafo.bottom > base,
+                )
+                assertEquals("a 1ª linha deveria ficar na mesma posição e com o mesmo offset",
+                    antes, posicaoEOffsetDaPrimeiraLinha(rv))
+                val altura = rv.height - rv.paddingBottom - rv.paddingTop
+                assertEquals("a página deveria estar alinhada",
+                    0, RegraDasPaginasDoLeitor.ajusteDoTopo(rv.linhasNaTela(), rv.paddingTop, altura))
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    /** Posição e offset (em relação ao topo da página) do primeiro item visível, no modo páginas (rb-66, passo 5). */
+    private fun posicaoEOffsetDaPrimeiraLinha(rv: RecyclerViewParagrafos): Pair<Int, Int> {
+        val lm = rv.layoutManager as LinearLayoutManager
+        val pos = lm.findFirstVisibleItemPosition()
+        return Pair(pos, checkNotNull(lm.findViewByPosition(pos)).top - rv.paddingTop)
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun painelDaGuiadaComTempoComecaComoTiraEAbreComASetaEVoltaSozinho() {
+        // rb-66 (passo 5): no modo TEMPO o painel da guiada começa recolhido (sem o botão de voz, que fica no painel
+        // aberto). A seta abre; cinco segundos sem interação recolhem de novo.
+        AppPrefs(app).readerBarraDeBaixo = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            esperarAte(scenario, "painel recolhido na tira, sem a voz") { a ->
+                !a.findViewById<View>(R.id.btnGuidedVoz).isShown && a.findViewById<View>(R.id.btnGuidedRecolher).isShown
+            }
+            scenario.onActivity { a -> a.findViewById<View>(R.id.btnGuidedRecolher).performClick() }
+            esperarAte(scenario, "painel aberto pela seta") { a -> a.findViewById<View>(R.id.btnGuidedVoz).isShown }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+            esperarAte(scenario, "painel recolhido de novo depois de 5 s") { a ->
+                !a.findViewById<View>(R.id.btnGuidedVoz).isShown
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     /** Leitura guiada no modo páginas, no parágrafo 3 (índice 2), com a voz parada: só o progresso anda (rb-26b). */
     private fun intencaoGuiadaNoModoPaginas(): Intent {
         val textos = PARAGRAFOS.toMutableList().apply { this[2] = PARAGRAFO_LONGO }

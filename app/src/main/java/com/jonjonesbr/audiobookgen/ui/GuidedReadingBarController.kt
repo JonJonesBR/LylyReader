@@ -473,6 +473,10 @@ class GuidedReadingBarController(
         )
         views.btnGuidedPlayPause.contentDescription = playPauseDescription
         views.btnGuidedPlayPause.tooltipText = playPauseDescription
+        // O progresso fino segue o status (índice + 1 de total): no último parágrafo a barra chega ao fim.
+        views.layoutGuidedPlayer.espelharNaTira(
+            guidedState.isPlaying, playPauseDescription, guidedState.index + 1, total,
+        )
 
         views.progressGuidedLoading.visibility = if (guidedState.isLoading) View.VISIBLE else View.GONE
 

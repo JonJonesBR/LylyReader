@@ -8,7 +8,9 @@ import android.graphics.drawable.InsetDrawable
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.util.dpToPx
@@ -36,6 +38,9 @@ private const val ALFA_DA_SETINHA = 217
 
 /** Folga da bolinha dentro dos 48 dp de toque da setinha: sobra um círculo de 36 dp visíveis (rb-66). */
 private const val FOLGA_DA_SETINHA_DP = 6
+
+/** Alfa do trilho do progresso fino da tira da guiada (rb-66, passo 5): 64 de 255, discreto sobre a superfície. */
+private const val ALFA_DO_TRILHO_DO_PROGRESSO = 64
 
 /**
  * Pinta o topo do leitor (título e botões), a barra do capítulo, a busca, a barra da leitura guiada e os avisos
@@ -81,10 +86,16 @@ internal fun Activity.aplicarPaletaNasBarrasDoLeitor(p: PaletaLeitor) {
     findViewById<android.view.View>(R.id.divisorGuidedPlayer)?.setBackgroundColor(p.suave)
     listOf(R.id.tvGuidedStatus, R.id.tvGuidedSoneca, R.id.tvGuidedPassos, R.id.btnGuidedVelocidade)
         .forEach { findViewById<TextView>(it)?.setTextColor(p.texto) }
-    listOf(R.id.btnGuidedVoz, R.id.btnGuidedPrev, R.id.btnGuidedNext)
+    // A seta de recolher (rb-66, passo 5) é da barra da guiada: sai da cor do app, como voz, anterior e próximo.
+    listOf(R.id.btnGuidedVoz, R.id.btnGuidedPrev, R.id.btnGuidedNext, R.id.btnGuidedRecolher)
         .forEach { findViewById<ImageView>(it)?.imageTintList = principal }
     findViewById<ImageView>(R.id.btnMostrarBarras)?.imageTintList = secundaria
     findViewById<ImageView>(R.id.btnGuidedClose)?.imageTintList = secundaria
+    // Progresso fino da tira (rb-66, passo 5): a barra no texto e o trilho discreto, para não ficar com a cor do app.
+    findViewById<LinearProgressIndicator>(R.id.progressoGuiadaTira)?.apply {
+        setIndicatorColor(p.texto)
+        trackColor = ColorUtils.setAlphaComponent(p.suave, ALFA_DO_TRILHO_DO_PROGRESSO)
+    }
     // Ícones da barra de status escuros no fundo claro (e claros no escuro).
     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = p.clara
 }

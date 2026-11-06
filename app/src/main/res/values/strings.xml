@@ -10,6 +10,8 @@
     <string name="cd_play_pause">Play/Pause</string>
     <string name="cd_mostrar_barras">Show menu and chapters</string>
     <string name="cd_recolher_barras">Hide menu and chapters</string>
+    <string name="cd_guided_mostrar_controles">Show all controls</string>
+    <string name="cd_guided_recolher_controles">Shrink the panel</string>
     <string name="cd_guided_play">Start guided reading</string>
     <string name="cd_guided_pause">Pause guided reading</string>
     <string name="cd_guided_speed">Reading speed %1$s</string>

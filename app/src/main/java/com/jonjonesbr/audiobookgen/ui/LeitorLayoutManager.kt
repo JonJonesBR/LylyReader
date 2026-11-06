@@ -61,6 +61,13 @@ class LeitorLayoutManager(
     /** Há um salto pedido esperando o layout (ver [aoTerminarSalto]). */
     internal val temSaltoPendente: Boolean get() = saltoPendente
 
+    /**
+     * O último layout consumiu um salto pendente. Quem ajusta a lista depois do layout (o fixador da 1ª linha, em
+     * EspacoSobControles) não deve rolar nesse caso: desfaria o alinhamento que o salto acabou de pedir.
+     */
+    var saltoNoUltimoLayout = false
+        private set
+
     override fun scrollToPositionWithOffset(position: Int, offset: Int) {
         saltoPendente = true
         super.scrollToPositionWithOffset(position, offset)
@@ -83,6 +90,7 @@ class LeitorLayoutManager(
 
     override fun onLayoutCompleted(state: RecyclerView.State?) {
         super.onLayoutCompleted(state)
+        saltoNoUltimoLayout = saltoPendente
         if (saltoPendente) {
             saltoPendente = false
             aoTerminarSalto?.invoke()

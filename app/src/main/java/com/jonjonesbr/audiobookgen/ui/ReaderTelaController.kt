@@ -89,7 +89,12 @@ class ReaderTelaController(
             listOfNotNull(
                 views.layoutGuidedPlayer,
                 miniPlayer,
-                barraDeTexto?.takeIf { (recyclerView as? RecyclerViewParagrafos)?.baseCedidaASelecao == true },
+                // Com a tira do painel na base, a barra da seleção não conta: a página não muda de tamanho
+                // (rb-66, passo 5).
+                barraDeTexto?.takeIf {
+                    (recyclerView as? RecyclerViewParagrafos)?.baseCedidaASelecao == true &&
+                        barras?.painelRecolhidoNaBase != true
+                },
             )
         }
         // rb-51: a descida da barra da seleção vira espaço depois do último parágrafo (decoração, não padding). A lista

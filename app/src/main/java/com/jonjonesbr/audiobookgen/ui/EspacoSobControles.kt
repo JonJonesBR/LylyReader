@@ -30,6 +30,9 @@ object EspacoSobControles {
         val folga = (FOLGA_DP * densidade).toInt()
         val posLista = IntArray(2)
         val posBarra = IntArray(2)
+        // Quantas barras contaram no layout anterior. O fixador só vale quando a conta não muda (o painel que aparece
+        // ou a seleção que cede mudam a conta e seguem o setPadding de sempre).
+        var barrasNoUltimoLayout = -1
         lista.viewTreeObserver.addOnGlobalLayoutListener {
             // Lido a cada layout: o modo páginas liga e desliga com a leitura.
             val paginas = (lista as? RecyclerViewParagrafos)?.paginacao?.ativa == true
@@ -44,10 +47,28 @@ object EspacoSobControles {
                 barra.getLocationInWindow(posBarra)
                 posBarra[1]
             }
+            val mesmasBarras = toposDasBarras.isNotEmpty() && toposDasBarras.size == barrasNoUltimoLayout
+            barrasNoUltimoLayout = toposDasBarras.size
             val alvo = respiroSobAsBarras(baseDaLista, toposDasBarras, minimo, folga)
             // Só mexe quando muda: setPadding pede outro layout, que chama este listener de novo.
             if (lista.paddingBottom != alvo) {
-                lista.setPadding(lista.paddingLeft, lista.paddingTop, lista.paddingRight, alvo)
+                val mudar = { lista.setPadding(lista.paddingLeft, lista.paddingTop, lista.paddingRight, alvo) }
+                val paginaDaLista = lista as? RecyclerViewParagrafos
+                // rb-66 (passo 5): no modo páginas, quando o espaço sob os controles encolhe (o respiro de baixo
+                // cresce, p.ex. o painel abre), o LinearLayoutManager sobe a página pela âncora do parágrafo focado.
+                // Com a lista parada e as mesmas barras, a 1ª linha fica no lugar (manterAPrimeiraLinha). Fora disso,
+                // como antes.
+                // Um salto que acabou de terminar o layout (rb-66, passo 5) já alinhou o topo: o fixador não roda
+                // por cima.
+                val espacoEncolheu = alvo > lista.paddingBottom
+                val listaParada = lista.scrollState == RecyclerView.SCROLL_STATE_IDLE &&
+                    (lista.layoutManager as? LeitorLayoutManager)?.saltoNoUltimoLayout != true
+                val segurarALinha = paginas && espacoEncolheu && listaParada
+                if (segurarALinha && mesmasBarras && paginaDaLista != null) {
+                    paginaDaLista.manterAPrimeiraLinha(mudar)
+                } else {
+                    mudar()
+                }
             }
         }
     }
