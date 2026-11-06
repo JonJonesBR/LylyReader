@@ -48,4 +48,27 @@ class EspacoSobControlesTest {
         // Mini player no topo 1080 e barra embaixo no topo 1000 (acima do mini player): vale a barra.
         assertEquals(135 + 16, respiroSobAsBarras(1135, listOf(1080, 1000), minimo = 96, folga = 16))
     }
+
+    @Test
+    fun modoVerticalMantemAReservaDe96() {
+        assertEquals(96, minimoDoRespiro(paginasAtivas = false, minimoVertical = 96, folga = 16))
+    }
+
+    @Test
+    fun modoPaginasTrocaAReservaPelaFolga() {
+        // rb-26b (passo 7): no modo páginas a reserva de 96 comia o texto; sobra só a folga.
+        assertEquals(16, minimoDoRespiro(paginasAtivas = true, minimoVertical = 96, folga = 16))
+    }
+
+    @Test
+    fun modoPaginasSemBarrasFicaNaFolga() {
+        assertEquals(16, respiroSobAsBarras(1135, emptyList(), minimo = minimoDoRespiro(true, 96, 16), folga = 16))
+    }
+
+    @Test
+    fun modoPaginasComPainelCompactoFicaNaBarraMaisFolga() {
+        // Painel da paisagem com ~56dp: o topo dele fica 56 acima da base da lista.
+        val minimo = minimoDoRespiro(true, 96, 16)
+        assertEquals(56 + 16, respiroSobAsBarras(1135, listOf(1135 - 56), minimo = minimo, folga = 16))
+    }
 }

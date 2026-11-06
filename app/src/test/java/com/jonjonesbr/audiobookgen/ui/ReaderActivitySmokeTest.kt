@@ -2113,6 +2113,46 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun modoPaginasSoLerSemBarrasEncostaNaFolgaNaoNaReserva() {
+        // rb-26b (passo 7): sem painel nem FAB, a página vai até a folga de 16dp, e não até a reserva de 96dp.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        val folga = (16 * app.resources.displayMetrics.density).toInt()
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            esperarAte(scenario, "respiro do modo páginas assentado na folga") { a ->
+                listaDoLeitor(a).paddingBottom == folga
+            }
+            scenario.onActivity { a ->
+                assertEquals(folga, listaDoLeitor(a).paddingBottom)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun modoVerticalSoLerMantemAReservaDe96() {
+        // rb-26b (passo 7): fora do modo páginas nada muda: o fim da lista continua com pelo menos 96dp.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = false
+        val minimo = (96 * app.resources.displayMetrics.density).toInt()
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarAte(scenario, "lista vertical com o respiro assentado") { a ->
+                val rv = listaDoLeitor(a)
+                rv.height > 0 && rv.paginacao?.ativa != true && rv.paddingBottom >= minimo
+            }
+            scenario.onActivity { a ->
+                assertTrue(listaDoLeitor(a).paddingBottom >= minimo)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun modoPaginasFicaNaListaVerticalComOMesmoTextView() {
         // rb-26b (passo 2): a opção horizontal é a lista vertical com páginas virtuais, sem o pager por parágrafo.
         val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }

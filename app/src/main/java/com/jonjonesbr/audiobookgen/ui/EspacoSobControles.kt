@@ -11,6 +11,8 @@ import kotlin.math.roundToInt
  *
  * rb-26b (passo 3): a barra da seleção, quando fica embaixo no modo páginas, conta no respiro, e o painel da guiada
  * conta mesmo INVISIBLE (cedido à barra). Assim a página não muda de tamanho quando a seleção abre.
+ *
+ * rb-26b (passo 7): no modo páginas a reserva de 96dp some; o respiro é só o que as barras cobrem mais a folga.
  */
 object EspacoSobControles {
 
@@ -24,11 +26,14 @@ object EspacoSobControles {
      */
     fun manter(lista: RecyclerView, barras: () -> List<View>) {
         val densidade = lista.resources.displayMetrics.density
-        val minimo = (MINIMO_DP * densidade).toInt()
+        val minimoVertical = (MINIMO_DP * densidade).toInt()
         val folga = (FOLGA_DP * densidade).toInt()
         val posLista = IntArray(2)
         val posBarra = IntArray(2)
         lista.viewTreeObserver.addOnGlobalLayoutListener {
+            // Lido a cada layout: o modo páginas liga e desliga com a leitura.
+            val paginas = (lista as? RecyclerViewParagrafos)?.paginacao?.ativa == true
+            val minimo = minimoDoRespiro(paginas, minimoVertical, folga)
             lista.getLocationInWindow(posLista)
             // getLocationInWindow já inclui a translação da lista (rb-48: a barra da seleção a desce). Sem
             // desfazê-la, o respiro cresceria a cada descida, pediria layout e mexeria no parágrafo em leitura.
@@ -54,6 +59,14 @@ object EspacoSobControles {
  */
 internal fun barraContaNoRespiro(visibilidade: Int, altura: Int, paiNaTela: Boolean): Boolean =
     visibilidade != View.GONE && altura > 0 && paiNaTela
+
+/**
+ * Mínimo do respiro da lista (rb-26b, passo 7). No modo vertical, a reserva de [minimoVertical] fica para o fim do
+ * capítulo subir acima do FAB e dos controles. No modo páginas a página acaba em `altura - paddingBottom`, e a
+ * reserva só comeria o texto: sobra a [folga], e as barras que estão embaixo entram pelo próprio respiro.
+ */
+internal fun minimoDoRespiro(paginasAtivas: Boolean, minimoVertical: Int, folga: Int): Int =
+    if (paginasAtivas) folga else minimoVertical
 
 /**
  * Respiro inferior da lista (rb-26b, passo 3): a distância da base da lista até o topo da barra mais alta, mais a
