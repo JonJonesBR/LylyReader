@@ -142,11 +142,6 @@ class ParagrafoAdapter(
             repinturas.liberar().filter { it in paragrafos.indices }.forEach { notifyItemChanged(it) }
         }
         recyclerView.aoConferirSelecao = { selecaoSemMenu.conferir() }
-        // Página que volta ao pool zera a posição e o rolamento (rb-26c). Sem sobrescrever onViewRecycled aqui,
-        // que estouraria o limite de funções do detekt.
-        recyclerView.addRecyclerListener { holder ->
-            (holder.itemView as? PaginaDoParagrafo)?.mostrar(RecyclerView.NO_POSITION, null)
-        }
     }
 
     private val acoesDoMenu: AcoesDaSelecaoDeTexto = AcoesDaSelecaoDeTexto(
@@ -202,13 +197,6 @@ class ParagrafoAdapter(
             }
         },
     )
-
-    /**
-     * Rolagem horizontal: cada item é uma PaginaDoParagrafo. Muda só por ReaderRolagemController.aplicarOrientacao,
-     * antes de trocar o layoutManager (a troca recicla todas as views e os itens voltam com o tipo novo), por isso
-     * sem notify.
-     */
-    var paginado: Boolean = false
 
     // Carregados uma única vez (não a cada bind) — fontes opcionais da leitura.
     private val typefaceSerifado: android.graphics.Typeface? by lazy {
@@ -317,12 +305,12 @@ class ParagrafoAdapter(
     }
 
     override fun getItemViewType(position: Int) = when (modo) {
-        AdapterModo.LEITURA    -> if (paginado) TIPO_LEITURA_PAGINA else TIPO_LEITURA
+        AdapterModo.LEITURA    -> TIPO_LEITURA
         AdapterModo.EDICAO     -> TIPO_EDICAO
-        AdapterModo.ALTERACOES -> if (paginado) TIPO_ALTERACOES_PAGINA else TIPO_ALTERACOES
+        AdapterModo.ALTERACOES -> TIPO_ALTERACOES
     }
 
-    /** Na vertical o itemView é o próprio tv; na horizontal é a PaginaDoParagrafo com o tv dentro. */
+    /** O itemView é o próprio tv (o modo páginas é virtual, por cima da lista vertical; ver PaginacaoDoLeitor). */
     inner class VHLeitura(itemView: View, val tv: TextView) : RecyclerView.ViewHolder(itemView) {
         /** Texto para o qual a seleção já foi (re)armada; evita reiniciá-la a cada repintura do progresso. */
         var textoArmado: String? = null
@@ -352,7 +340,7 @@ class ParagrafoAdapter(
     }
     inner class VHEdicao(val et: EditText) : RecyclerView.ViewHolder(et)
 
-    /** Na vertical o itemView é o próprio tv; na horizontal é a PaginaDoParagrafo com o tv dentro. */
+    /** O itemView é o próprio tv. */
     inner class VHAlteracoes(itemView: View, val tv: TextView) : RecyclerView.ViewHolder(itemView)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -366,8 +354,6 @@ class ParagrafoAdapter(
                 val tv = inflater.inflate(R.layout.item_paragrafo, parent, false) as TextView
                 VHAlteracoes(tv, tv)
             }
-            TIPO_ALTERACOES_PAGINA -> PaginaDoParagrafo.inflar(inflater, parent).let { VHAlteracoes(it, it.texto) }
-            TIPO_LEITURA_PAGINA -> PaginaDoParagrafo.inflar(inflater, parent).let { VHLeitura(it, it.texto) }
             else -> {
                 val tv = inflater.inflate(R.layout.item_paragrafo, parent, false) as TextView
                 VHLeitura(tv, tv)
@@ -413,8 +399,6 @@ class ParagrafoAdapter(
     private fun bindLeitura(holder: VHLeitura, par: Paragrafo?, position: Int, corTexto: Int) {
         par ?: return
         val tv = holder.tv
-        // Rolagem horizontal: a página volta ao topo ao mostrar outro parágrafo ou texto (ver PaginaDoParagrafo).
-        (holder.itemView as? PaginaDoParagrafo)?.mostrar(position, par.texto)
 
         // Há uma seleção em andamento neste item (ex.: o usuário está escolhendo uma palavra): não
         // reaplica o texto — cada atualização do progresso da leitura guiada rebindava o item e
@@ -513,7 +497,6 @@ class ParagrafoAdapter(
         // Em modo ALTERACOES, `paragrafos` = parágrafos limpos, `paragrafosOriginais` = originais
         // Exibe todos os parágrafos originais: removidos = tachado vermelho, mantidos = cor normal
         val parOriginal = paragrafosOriginais.getOrNull(position)
-        (holder.itemView as? PaginaDoParagrafo)?.mostrar(position, parOriginal?.texto ?: par?.texto ?: "")
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
         tv.setBackgroundColor(Color.TRANSPARENT)
@@ -546,12 +529,10 @@ class ParagrafoAdapter(
         private const val FONTE_PADRAO_SP = 16f
         private const val ESPACAMENTO_PADRAO = 1.5f
 
-        // Tipos de view do adapter. Os de página são a rolagem horizontal (rb-26a): o item é uma PaginaDoParagrafo.
+        // Tipos de view do adapter.
         private const val TIPO_LEITURA = 0
         private const val TIPO_EDICAO = 1
         private const val TIPO_ALTERACOES = 2
-        private const val TIPO_LEITURA_PAGINA = 3
-        private const val TIPO_ALTERACOES_PAGINA = 4
     }
 }
 

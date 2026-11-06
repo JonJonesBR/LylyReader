@@ -159,12 +159,12 @@ class GuidedReadingBarController(
         if (indice < 0) return
         // O chip some logo depois deste toque: sem o anúncio, o foco do TalkBack se perderia sem aviso.
         recyclerView.announceForAccessibility(activity.getString(R.string.cd_guided_voltar_narracao))
-        // Salto direto, como a navegação por capítulos. Na vertical, o parágrafo fica na altura da linha de
-        // destaque; o acompanhamento fino retoma com o próximo progresso. No modo páginas, o topo vai para a primeira
-        // linha inteira depois do layout (ver PaginacaoDoLeitor), e depois dele a página vai até a linha narrada (ver
+        // Salto direto, como a navegação por capítulos. O parágrafo fica na altura da linha de destaque; o
+        // acompanhamento fino retoma com o próximo progresso. No modo páginas, o topo vai para a primeira linha inteira
+        // depois do layout (ver PaginacaoDoLeitor), e depois dele a página vai até a linha narrada (ver
         // levarALinhaNarrada), mesmo com a guiada pausada.
         val paginacao = recyclerView.paginacao?.takeIf { it.ativa }
-        val margem = if (lm.orientation == LinearLayoutManager.VERTICAL && paginacao == null) {
+        val margem = if (paginacao == null) {
             (recyclerView.height * RegraDaPaginaDoParagrafo.PROPORCAO_ALVO).toInt()
         } else {
             0
@@ -493,42 +493,24 @@ class GuidedReadingBarController(
         // Modo páginas (rb-26b): a página vira com a narração, em vez do cálculo da rolagem vertical.
         val paginacao = recyclerView.paginacao?.takeIf { it.ativa }
 
-        // Mesmo caminho pra "view da posição ainda não existe" E "rolagem horizontal (paginada)". Na horizontal, com
-        // a página do parágrafo parada na tela, o acompanhamento rola dentro dela (rb-26a), como o vertical. Durante o
-        // snap, ou sem essa página, só pula pra página do parágrafo atual.
-        if (tv == null || lm.orientation == LinearLayoutManager.HORIZONTAL) {
-            val pagina = recyclerView.paginaParadaNaTela()
-            if (pagina != null && recyclerView.getChildAdapterPosition(pagina) == index) {
-                aguardandoAutoScroll = false
-                if (pagina.acompanharDestaque(progressPct, podeSubir)) indiceAcompanhado = index
-            } else if (!aguardandoAutoScroll) {
+        // Caminho da posição cuja view ainda não existe: sem a view, só pula para o parágrafo atual.
+        if (tv == null) {
+            if (!aguardandoAutoScroll) {
                 aguardandoAutoScroll = true
                 val primeiroVisivel = lm.findFirstVisibleItemPosition()
                 val alvoDistante = primeiroVisivel == RecyclerView.NO_POSITION ||
                     Math.abs(index - primeiroVisivel) > SALTO_DISTANTE_LIMIAR
-                val vertical = lm.orientation == LinearLayoutManager.VERTICAL
-                if (vertical || alvoDistante) {
-                    // Salto instantâneo, sem smoothScrollToPosition (que animaria por todos os itens do meio). Na
-                    // vertical, a 1ª linha do parágrafo vai para os 42% (a mesma conta de voltarAoAcompanhamento).
-                    // O SNAP_TO_END passava do início, e o acompanhamento voltava a subir (rb-65). Na horizontal
-                    // distante, offset 0. No modo páginas, offset 0 também: o topo é alinhado depois do layout.
-                    lm.scrollToPositionWithOffset(
-                        index,
-                        if (vertical && paginacao == null) {
-                            (recyclerView.height * RegraDaPaginaDoParagrafo.PROPORCAO_ALVO).toInt()
-                        } else {
-                            0
-                        },
-                    )
-                } else {
-                    lm.smoothScrollToPosition(recyclerView, null, index)
-                }
+                // Salto instantâneo, sem smoothScrollToPosition (que animaria por todos os itens do meio). A 1ª linha
+                // do parágrafo vai para os 42% (a mesma conta de voltarAoAcompanhamento). O SNAP_TO_END passava do
+                // início, e o acompanhamento voltava a subir (rb-65). No modo páginas, offset 0: o topo é alinhado
+                // depois do layout.
+                val alturaDeDestaque = (recyclerView.height * RegraDaPaginaDoParagrafo.PROPORCAO_ALVO).toInt()
+                lm.scrollToPositionWithOffset(index, if (paginacao == null) alturaDeDestaque else 0)
                 // Modo páginas: o salto pode ter sido feito antes do 1º layout (girar com a guiada pausada). Sem o
                 // gancho, a página ficaria no início do parágrafo, e não viria outro tique para corrigir.
                 armarLinhaNarradaNoSalto(index)
                 // Alvo distante (reabertura do app reconectando à guiada, ou capítulo escolhido longe do início): a
-                // flag cai e a nova tentativa vem a cada tique. Perto, a flag fica ligada até a view aparecer
-                // (vertical) ou a animação acabar (horizontal).
+                // flag cai e a nova tentativa vem a cada tique. Perto, a flag fica ligada até a view aparecer.
                 aguardandoAutoScroll = !alvoDistante
             }
             return

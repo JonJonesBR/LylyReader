@@ -233,8 +233,7 @@ internal fun RecyclerViewParagrafos.faixaParaReabrirSozinho(
     holderDoTrechoGuardado(telaAtiva)?.let { holder ->
         guardada.trechoNoParagrafo(holder.bindingAdapterPosition, holder.tv.text.toString())?.takeIf {
             reabrirSozinho(
-                rolagemParada = scrollState == RecyclerView.SCROLL_STATE_IDLE &&
-                    (holder.itemView as? PaginaDoParagrafo)?.rolandoSozinha != true,
+                rolagemParada = scrollState == RecyclerView.SCROLL_STATE_IDLE,
                 dedoNaTela = toqueEmAndamento,
                 outroTextoEmUso = outroTextoEmUso(),
                 guiadaConduzRolagem = (layoutManager as? LeitorLayoutManager)?.seguindoLeitura?.invoke() == true,
@@ -291,31 +290,22 @@ private fun RecyclerViewParagrafos.trechoInteiroNaTela(
         base + layout.getLineBottom(linhaFim) +
             (if (linhaFim == layout.lineCount - 1) tv.extendedPaddingBottom else 0),
     )
-    val areaDaLista = areaDaListaNaTela(holder.itemView)
+    val areaDaLista = areaDaListaNaTela()
     val fundoDoPai = (parent as? View)?.let { it.posicaoNaTela()[1] + it.height } ?: Int.MAX_VALUE
     val topoDaGuiada = rootView.findViewById<View>(R.id.layoutGuidedPlayer)
         ?.takeIf { it.isShown }?.posicaoNaTela()?.get(1)
     val area = areaUtilParaReabrir(areaDaLista, fundoDoPai, limiteDaBarra, topoDaGuiada, topoDaBarraEmbaixo)
-    // Na horizontal, a página tem de estar inteira na lista (o snap deixa uma página parada, mas a borda pode cortar).
-    val posLista = posicaoNaTela()
-    val larguraInteira = posTv[0] >= posLista[0] && posTv[0] + tv.width <= posLista[0] + width
-    return larguraInteira && trechoInteiroNaArea(trechoNaTela, area) && trechoInteiroNaArea(linhaDoFim, areaDaLista)
+    return trechoInteiroNaArea(trechoNaTela, area) && trechoInteiroNaArea(linhaDoFim, areaDaLista)
 }
 
 /**
- * Área da lista onde a linha pode aparecer (rb-60b): a área de conteúdo da lista. Na página horizontal, também a área
- * de conteúdo da página, porque ela rola sozinha para mostrar a seleção. No modo páginas (rb-26b), o fundo é o corte:
- * a linha escondida pelo corte não aparece.
+ * Área da lista onde a linha pode aparecer (rb-60b): a área de conteúdo da lista. No modo páginas (rb-26b), o fundo é o
+ * corte: a linha escondida pelo corte não aparece.
  */
-private fun RecyclerViewParagrafos.areaDaListaNaTela(item: View): LinhaNaTela {
+private fun RecyclerViewParagrafos.areaDaListaNaTela(): LinhaNaTela {
     val posLista = posicaoNaTela()
-    var topo = posLista[1] + paddingTop
-    var fundo = posLista[1] + (paginacao?.takeIf { it.ativa }?.corte() ?: (height - paddingBottom))
-    if (item is PaginaDoParagrafo) {
-        val posPagina = item.posicaoNaTela()
-        topo = maxOf(topo, posPagina[1] + item.paddingTop)
-        fundo = minOf(fundo, posPagina[1] + item.height - item.paddingBottom)
-    }
+    val topo = posLista[1] + paddingTop
+    val fundo = posLista[1] + (paginacao?.takeIf { it.ativa }?.corte() ?: (height - paddingBottom))
     return LinhaNaTela(topo, fundo)
 }
 

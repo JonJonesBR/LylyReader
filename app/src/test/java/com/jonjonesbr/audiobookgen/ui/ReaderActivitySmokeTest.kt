@@ -62,7 +62,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Assume.assumeTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -559,127 +558,6 @@ class ReaderActivitySmokeTest {
                 assertEquals(a.dpToPx(20), lista(a).paddingLeft)
                 assertEquals(a.dpToPx(20), lista(a).paddingRight)
             }
-        }
-        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
-    }
-
-    @Test
-    @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    @Ignore("rb-26b: o modo páginas substitui o pager por parágrafo; sai no passo 5")
-    fun rolagemHorizontalRolaDentroDoParagrafoLongo() {
-        // Parágrafo 1 longo; os demais são os de sempre. Só este teste usa o texto longo.
-        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
-        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
-        AppPrefs(app).readerRolagemHorizontal = true
-        val intent = Intent(app, ReaderActivity::class.java)
-            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
-            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
-
-        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
-            // (a) Horizontal, com a primeira página na tela. O parágrafo curto não rola por dentro.
-            esperarAte(scenario, "rolagem horizontal com a primeira página na tela") { a ->
-                val lm = lista(a).layoutManager as? LinearLayoutManager
-                lm?.orientation == LinearLayoutManager.HORIZONTAL && paginaEm(lista(a), 0) != null
-            }
-            scenario.onActivity { a -> assertFalse(paginaEm(lista(a), 0)!!.canScrollVertically(1)) }
-
-            // (b) Vai ao parágrafo longo: a página dele fica inteira na tela.
-            scenario.onActivity { lista(it).scrollToPosition(1) }
-            esperarAte(scenario, "página do parágrafo longo inteira na tela") { a ->
-                val lm = lista(a).layoutManager as LinearLayoutManager
-                lm.findFirstCompletelyVisibleItemPosition() == 1 && paginaEm(lista(a), 1) != null
-            }
-
-            // (c) A página tem a altura da área da lista, o texto passa dela e dá para rolar por dentro.
-            scenario.onActivity { a ->
-                val rv = lista(a)
-                val pagina = paginaEm(rv, 1)!!
-                assertEquals(rv.height - rv.paddingTop - rv.paddingBottom, pagina.height)
-                assertTrue("parágrafo longo deveria passar da página", pagina.texto.height > pagina.height)
-                assertTrue(pagina.canScrollVertically(1))
-                pagina.scrollTo(0, pagina.texto.height)
-            }
-
-            // (d) Rolou até o fim: o fim do parágrafo está visível e não dá para rolar mais.
-            esperarAte(scenario, "fim do parágrafo longo visível") { a ->
-                val p = paginaEm(lista(a), 1)
-                p != null && !p.canScrollVertically(1) && p.scrollY + p.height >= p.texto.bottom
-            }
-
-            // (e) A barra da leitura guiada aparece: a página encolhe junto com a lista, sem corte residual.
-            var alturaAntes = 0
-            scenario.onActivity { a ->
-                alturaAntes = paginaEm(lista(a), 1)!!.height
-                val barra = a.findViewById<View>(R.id.layoutGuidedPlayer)
-                barra.minimumHeight = lista(a).height / 3
-                barra.visibility = View.VISIBLE
-            }
-            esperarAte(scenario, "página ajustada à área com a barra da guiada") { a ->
-                val rv = lista(a)
-                val p = paginaEm(rv, 1)
-                p != null && p.height < alturaAntes && p.height == rv.height - rv.paddingTop - rv.paddingBottom
-            }
-
-            // (f) A barra some: a página volta à altura de antes.
-            scenario.onActivity { it.findViewById<View>(R.id.layoutGuidedPlayer).visibility = View.GONE }
-            esperarAte(scenario, "página volta à altura de antes") { a -> paginaEm(lista(a), 1)?.height == alturaAntes }
-        }
-        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
-    }
-
-    @Test
-    @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    @Ignore("rb-26b: o modo páginas substitui o pager por parágrafo; sai no passo 5")
-    fun notifyNaPaginaMantemARolagemETextoNovoVoltaAoTopo() {
-        // rb-26c: um notify no mesmo parágrafo mantém a rolagem de quem lê; texto novo no mesmo lugar volta ao topo.
-        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
-        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
-        AppPrefs(app).readerRolagemHorizontal = true
-        val intent = Intent(app, ReaderActivity::class.java)
-            .putExtra(ReaderActivity.EXTRA_CAMINHO, livro.absolutePath)
-            .putExtra(ReaderActivity.EXTRA_SOMENTE_LEITURA, true)
-
-        ActivityScenario.launch<ReaderActivity>(intent).use { scenario ->
-            esperarAte(scenario, "página do parágrafo longo com o texto") { a ->
-                (lista(a).layoutManager as? LinearLayoutManager)?.orientation == LinearLayoutManager.HORIZONTAL &&
-                    paginaEm(lista(a), 1)?.texto?.text?.toString() == PARAGRAFO_LONGO
-            }
-            // Vai ao parágrafo longo de verdade, e não só pela vizinha na margem: a página 1 fica inteira na tela.
-            scenario.onActivity { lista(it).scrollToPosition(1) }
-            esperarAte(scenario, "página do parágrafo longo inteira na tela") { a ->
-                val lm = lista(a).layoutManager as LinearLayoutManager
-                lm.findFirstCompletelyVisibleItemPosition() == 1 && paginaEm(lista(a), 1) != null
-            }
-
-            // Rolagem de quem lê e um notify no mesmo parágrafo (Destacar, busca): a página continua onde estava.
-            scenario.onActivity { a ->
-                paginaEm(lista(a), 1)!!.scrollTo(0, 40)
-                (lista(a).adapter as ParagrafoAdapter).notifyItemChanged(1)
-                lista(a).requestLayout()
-            }
-            esperarAte(scenario, "notify repintado") { a -> !lista(a).isLayoutRequested }
-            scenario.onActivity { a -> assertEquals(40, paginaEm(lista(a), 1)!!.scrollY) }
-
-            // Texto novo no mesmo lugar (limpeza, Retirar, fim da edição): a página volta ao topo.
-            scenario.onActivity { a ->
-                val novos = textos.mapIndexed { i, t ->
-                    Paragrafo(if (i == 1) "$t Texto trocado." else t, charOffset = 0, indiceCapitulo = 0)
-                }
-                (lista(a).adapter as ParagrafoAdapter).atualizarEstado(
-                    paragrafos = novos,
-                    selecaoInicio = null,
-                    selecaoFim = null,
-                    syncAtual = -1,
-                    progressPct = 0f,
-                    tamanhoFonte = 16f,
-                    espacamento = 1.5f,
-                    tema = TemaLeitura.CLARO,
-                )
-            }
-            esperarAte(scenario, "texto novo na página") { a ->
-                paginaEm(lista(a), 1)?.texto?.text?.toString()?.endsWith("Texto trocado.") == true
-            }
-            scenario.onActivity { a -> assertEquals(0, paginaEm(lista(a), 1)!!.scrollY) }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
@@ -2207,7 +2085,6 @@ class ReaderActivitySmokeTest {
             scenario.onActivity { a ->
                 val rv = listaDoLeitor(a)
                 assertEquals(LinearLayoutManager.VERTICAL, (rv.layoutManager as LinearLayoutManager).orientation)
-                assertFalse((rv.adapter as ParagrafoAdapter).paginado)
                 assertTrue(rv.findViewHolderForAdapterPosition(0)?.itemView is TextView)
             }
         }
@@ -3494,7 +3371,7 @@ class ReaderActivitySmokeTest {
         return pos in lm.findFirstVisibleItemPosition()..lm.findLastVisibleItemPosition()
     }
 
-    /** Texto do parágrafo na rolagem vertical, em que o item é o próprio TextView (na horizontal, ver paginaEm). */
+    /** Texto do parágrafo, em que o item é o próprio TextView. */
     private fun textoEm(rv: RecyclerView, pos: Int): String? =
         (rv.findViewHolderForAdapterPosition(pos)?.itemView as? TextView)?.text?.toString()
 
@@ -3535,10 +3412,6 @@ class ReaderActivitySmokeTest {
         scenario.onActivity { a -> topo = checkNotNull(tvEm(lista(a), 2)) { "parágrafo 3 fora da lista" }.top }
         return topo
     }
-
-    /** Página do parágrafo na rolagem horizontal (rb-26a); nulo na vertical. */
-    private fun paginaEm(rv: RecyclerView, pos: Int): PaginaDoParagrafo? =
-        rv.findViewHolderForAdapterPosition(pos)?.itemView as? PaginaDoParagrafo
 
     private fun intencaoSomenteLeitura(livro: File): Intent =
         Intent(app, ReaderActivity::class.java)

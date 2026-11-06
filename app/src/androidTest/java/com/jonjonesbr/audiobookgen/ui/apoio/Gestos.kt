@@ -295,9 +295,8 @@ object Gestos {
     }
 
     /**
-     * O TextView do parágrafo na tela, nas duas rolagens: na vertical o item é o próprio TextView; na horizontal (rb-26a)
-     * o item é a PaginaDoParagrafo, com o TextView dentro (VHLeitura.tv). Só na thread principal. Falha se o parágrafo
-     * não estiver na tela.
+     * O TextView do parágrafo na tela (o item da lista é o próprio TextView, VHLeitura.tv). Só na thread principal.
+     * Falha se o parágrafo não estiver na tela.
      */
     fun textoDoParagrafo(a: ReaderActivity, indiceParagrafo: Int): TextView =
         textoDoParagrafoOuNulo(a, indiceParagrafo) ?: error("Parágrafo $indiceParagrafo fora da tela")

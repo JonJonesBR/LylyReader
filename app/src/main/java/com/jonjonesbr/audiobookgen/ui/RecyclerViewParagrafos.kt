@@ -18,8 +18,7 @@ import kotlin.math.hypot
  *
  * - saber quando o TalkBack pede uma rolagem (ações de acessibilidade SCROLL_FORWARD/BACKWARD): o RecyclerView não
  *   avisa isso, e a leitura guiada precisa tratar essa rolagem como manual, igual ao arraste com o dedo. A rolagem
- *   automática do código não passa por aqui. Na rolagem horizontal (rb-26a), também avisa quando quem lê rola o
- *   texto dentro de uma página de parágrafo longo.
+ *   automática do código não passa por aqui.
  * - saber quando há um toque em andamento (do DOWN ao UP/CANCEL) ou um menu de seleção aberto (rb-38). Enquanto
  *   isso, [textoEmUso] é verdadeiro e o adapter segura as repinturas de sincronia, que trocariam a view sob o dedo.
  * - rearmar a seleção de texto de cada parágrafo quando a view é anexada à janela (rb-38, ver [rearmarSelecao]).
@@ -27,7 +26,7 @@ import kotlin.math.hypot
  *   [depoisDoToque]). A descida é translação, não rolagem: não dispara os listeners de rolagem. O alvo dela fica em
  *   [descidaDaSelecao], e o espaço depois do último parágrafo soma esse alvo (rb-51, ver [EspacoDaDescidaNoFim]).
  * - ignorar o pedido de mostrar trecho de um parágrafo em foco, no modo de toque, sem seleção (rb-55, ver
- *   [pedidoDeMostrarTrechoVale]); mesmo mecanismo da `PaginaDoParagrafo.requestChildRectangleOnScreen`.
+ *   [pedidoDeMostrarTrechoVale]), no requestChildRectangleOnScreen da própria lista.
  * - guardar o trecho selecionado quando o parágrafo sai da tela (rb-58, ver [guardada]), e limpá-lo com um toque
  *   curto (ver [toqueLimpaGuardada]). Um toque curto dentro do trecho traz a seleção de volta (rb-60, ver
  *   [toqueReabreGuardada]). Um toque que para um fling não limpa nem reabre: a conferência do IDLE que vem depois
@@ -50,9 +49,6 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
 
     /** Chamado antes de a rolagem pedida pela acessibilidade acontecer. */
     var aoRolagemDeAcessibilidade: (() -> Unit)? = null
-
-    /** Quem lê rolou o texto dentro de uma página (rolagem horizontal, rb-26a). */
-    var aoRolarDentroDaPagina: (() -> Unit)? = null
 
     /** Chamado (por post) quando o texto deixa de estar em uso: o adapter aplica as repinturas seguradas. */
     var aoLiberarTexto: (() -> Unit)? = null
@@ -119,8 +115,7 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
     private var guardadaNoDown = false
 
     /**
-     * A lista e a página sob o dedo estavam paradas no ACTION_DOWN (rb-60): um toque que para um fling, na lista ou
-     * dentro da página horizontal, não reabre o trecho.
+     * A lista estava parada no ACTION_DOWN (rb-60): um toque que para um fling não reabre o trecho.
      */
     private var listaParadaNoDown = false
 
@@ -207,10 +202,8 @@ class RecyclerViewParagrafos @JvmOverloads constructor(
             descidaX = ev.x
             descidaY = ev.y
             guardadaNoDown = guardada.ativa
-            // Antes do super: a lista ainda não reagiu ao toque (o que para um fling muda o estado). A página
-            // horizontal sob o dedo também conta: o fling dentro dela rola sem a lista sair de IDLE (rb-60).
-            val paginaRolando = (filhoSobODedo as? PaginaDoParagrafo)?.rolandoSozinha == true
-            listaParadaNoDown = scrollState == RecyclerView.SCROLL_STATE_IDLE && !paginaRolando
+            // Antes do super: a lista ainda não reagiu ao toque (o que para um fling muda o estado).
+            listaParadaNoDown = scrollState == RecyclerView.SCROLL_STATE_IDLE
         }
         val tratado = paginacao?.despacharToque(ev) { super.dispatchTouchEvent(it) } ?: super.dispatchTouchEvent(ev)
         val fimDoToque = ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL
@@ -340,10 +333,9 @@ internal fun RecyclerViewParagrafos.guardarTrechoAoSair(child: View) {
 }
 
 /**
- * Faixa do trecho guardado que um toque curto tocou (rb-60), ou nulo. O TextView é o do item sob o dedo no DOWN (na
- * página horizontal, o TextView dentro dela). O offset sai do ponto do DOWN em coordenadas do TextView: o offsetRect
- * desconta a posição e a rolagem de cada pai, a página horizontal inclusive. Função de topo, fora da contagem de
- * funções da classe.
+ * Faixa do trecho guardado que um toque curto tocou (rb-60), ou nulo. O TextView é o do item sob o dedo no DOWN. O
+ * offset sai do ponto do DOWN em coordenadas do TextView: o offsetRect desconta a posição e a rolagem de cada pai.
+ * Função de topo, fora da contagem de funções da classe.
  */
 internal fun RecyclerViewParagrafos.faixaDoToqueNoGuardado(
     filho: View?,

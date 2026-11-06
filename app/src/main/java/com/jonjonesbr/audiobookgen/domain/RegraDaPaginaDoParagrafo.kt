@@ -1,10 +1,8 @@
 package com.jonjonesbr.audiobookgen.domain
 
 /**
- * Regra pura do acompanhamento da leitura guiada (vertical e página de parágrafo longo na horizontal, rb-26a/rb-62).
- * Quanto rolar para manter a linha em leitura perto da altura de destaque. O acompanhamento vertical
- * (GuidedReadingBarController) e o horizontal (PaginaDoParagrafo) usam a mesma regra, para as duas orientações
- * andarem igual. Sem Android.
+ * Regra pura do acompanhamento da leitura guiada (rb-26a/rb-62). Quanto rolar para manter a linha em leitura perto da
+ * altura de destaque. O acompanhamento (GuidedReadingBarController) usa esta regra na lista vertical. Sem Android.
  *
  * rb-65: dentro do mesmo parágrafo a lista só desce; subir (rb-62) só no primeiro acompanhamento depois de o
  * parágrafo mudar. Ver [passoComHisterese].
@@ -21,21 +19,8 @@ object RegraDaPaginaDoParagrafo {
     const val PROPORCAO_PASSO = 0.18f
 
     /**
-     * Até quando uma rolagem conta como "a página está rolando sozinha" (rb-60): cerca de três quadros. Um fling
-     * ou o acompanhamento rolam a cada quadro; parado, a página deixa de rolar depois deste intervalo.
-     */
-    const val LIMIAR_ROLAGEM_MS = 48L
-
-    /**
-     * Se a página rolou há menos de [LIMIAR_ROLAGEM_MS] (rb-60): um toque que cai nela nesse momento para um fling
-     * em andamento, então não é toque de texto. Sem rolagem registrada ([ultimaRolagemMs] nulo), não rola.
-     */
-    fun rolandoSozinha(agoraMs: Long, ultimaRolagemMs: Long?): Boolean =
-        ultimaRolagemMs != null && agoraMs - ultimaRolagemMs < LIMIAR_ROLAGEM_MS
-
-    /**
      * Quanto rolar a página (em pixels, com sinal) para a linha em leitura chegar à altura de destaque.
-     * [fimDaLinha] é a base da linha medida a partir do topo da área visível (lista ou página). Fora da área
+     * [fimDaLinha] é a base da linha medida a partir do topo da área visível da lista. Fora da área
      * (a tela apagada voltou, "Voltar à narração", recomeço do parágrafo) o salto é direto.
      * Dentro dela, a rolagem é em passos.
      */

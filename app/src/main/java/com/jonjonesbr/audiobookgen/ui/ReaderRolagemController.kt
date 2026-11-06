@@ -3,10 +3,8 @@ package com.jonjonesbr.audiobookgen.ui
 import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.ReaderUiState
@@ -48,7 +46,6 @@ class ReaderRolagemController(
     )
 
     private var scrollListener: RecyclerView.OnScrollListener? = null
-    private var pagerSnapHelper: PagerSnapHelper? = null
     private var scrollRestaurado = false
 
     /** Último parágrafo lido pela leitura guiada encerrada nesta tela (-1: nenhum ou o usuário rolou depois). */
@@ -73,8 +70,6 @@ class ReaderRolagemController(
         recyclerView.addOnScrollListener(scrollListener!!)
         // As outras entradas de quem lê: TalkBack (ações de rolagem da lista), roda do mouse/touchpad e teclado.
         recyclerView.aoRolagemDeAcessibilidade = { rolagemPeloLeitor() }
-        // Rolar o texto dentro da página de um parágrafo longo (rolagem horizontal, rb-26a) é rolagem de quem lê.
-        recyclerView.aoRolarDentroDaPagina = { rolagemPeloLeitor() }
         recyclerView.setOnGenericMotionListener { _, evento ->
             if (evento.action == MotionEvent.ACTION_SCROLL) rolagemPeloLeitor()
             false // o RecyclerView continua tratando a roda normalmente
@@ -88,11 +83,6 @@ class ReaderRolagemController(
      * opção ao vivo.
      */
     fun aplicarOrientacao(horizontal: Boolean) {
-        // Sem o pager por parágrafo (rb-26b, passo 2): o adapter fica sempre no item de texto. O código do pager fica
-        // sem uso até o passo 5.
-        callbacks.obterAdapter()?.paginado = false
-        pagerSnapHelper?.attachToRecyclerView(null)
-        pagerSnapHelper = null
         if (recyclerView.layoutManager !is LeitorLayoutManager) {
             recyclerView.layoutManager = LeitorLayoutManager(
                 activity,
@@ -139,7 +129,6 @@ class ReaderRolagemController(
             ) -> paginacao.virarPeloLeitor(seta) || padrao(event)
             // Setas: a lista só rola se o foco for para um filho fora da tela. Conta só se o deslocamento mudou.
             RegraDaRolagemDoLeitor.ehSetaVertical(keyCode) -> {
-                if (rolarSetaNaPagina(event)) return true
                 val antes = deslocamentoAtual()
                 val tratada = padrao(event)
                 if (deslocamentoAtual() != antes) rolagemPeloLeitor()
@@ -229,17 +218,12 @@ class ReaderRolagemController(
     fun paragrafoDaTela(rolouParaLonge: Boolean): Int? =
         if (rolouParaLonge) primeiroParagrafoNaTela() else paragrafoAtualVisivel()
 
-    /** A lista chegou ao fim (não rola mais para baixo, ou para a frente na rolagem horizontal) e há texto. */
+    /** A lista chegou ao fim (não rola mais para baixo) e há texto. */
     fun fimDoLivroNaTela(): Boolean {
-        val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return false
         // Antes do primeiro layout a lista "não rola" por não ter nada medido: isso não é o fim do livro.
         val medida = (callbacks.obterAdapter()?.itemCount ?: 0) > 0 && recyclerView.isLaidOut &&
             recyclerView.childCount > 0
-        return medida && if (lm.orientation == LinearLayoutManager.HORIZONTAL) {
-            !recyclerView.canScrollHorizontally(1)
-        } else {
-            !recyclerView.canScrollVertically(1)
-        }
+        return medida && !recyclerView.canScrollVertically(1)
     }
 
     /** Guarda o parágrafo do fim da leitura guiada; é lido ao sair da tela. Chamado pelo GuidedReadingBarController. */
@@ -281,65 +265,16 @@ class ReaderRolagemController(
         rolagemAudiobookSuspensaAte = SystemClock.uptimeMillis() + RegraDaRolagemDoLeitor.PAUSA_ROLAGEM_MANUAL_MS
     }
 
-    /**
-     * Seta vertical com a página parada, o TextView dela focado e o texto ainda rolável (rb-26c): a página rola,
-     * e a seta não chega ao ArrowKeyMovementMethod do TextView, que só moveria um cursor invisível. Com Shift ou
-     * seleção aberta, a seta continua indo ao TextView, que estende a seleção. Conta como rolagem de quem lê só se
-     * a página de fato rolou (o arrowScroll pode só mover o foco). Falso se a seta não rolou a página.
-     */
-    private fun rolarSetaNaPagina(event: KeyEvent): Boolean {
-        val sentido = RegraDaRolagemDoLeitor.sentidoDaSeta(event.keyCode)
-        val pagina = recyclerView.paginaParadaNaTela()
-        if (pagina == null || sentido == null || !RegraDaRolagemDoLeitor.setaRolaAPagina(
-                shift = event.isShiftPressed,
-                temSelecao = pagina.texto.hasSelection(),
-                textoFocado = pagina.texto.isFocused,
-                podeRolar = pagina.canScrollVertically(sentido),
-            )
-        ) {
-            return false
-        }
-        val antes = pagina.scrollY
-        pagina.arrowScroll(if (sentido > 0) View.FOCUS_DOWN else View.FOCUS_UP)
-        val rolou = pagina.scrollY != antes
-        if (rolou) rolagemPeloLeitor()
-        return rolou
-    }
-
-    /** Rola uma tela para trás (-1) ou para frente (1), no eixo da lista. Falso se a lista já está no limite. */
+    /** Rola uma tela para trás (-1) ou para frente (1), na lista vertical. Falso se a lista já está no limite. */
     private fun rolarPagina(sentido: Int): Boolean {
-        // Rolagem horizontal com parágrafo longo: a página rola na vertical antes de virar (rb-26a).
-        val pagina = recyclerView.paginaParadaNaTela()
-        if (pagina != null && pagina.canScrollVertically(sentido)) {
-            pagina.rolarUmaTela(sentido)
-            rolagemPeloLeitor()
-            return true
-        }
-        val vertical = recyclerView.layoutManager?.canScrollVertically() == true
-        val podeRolar = if (vertical) {
-            recyclerView.canScrollVertically(sentido)
-        } else {
-            recyclerView.canScrollHorizontally(sentido)
-        }
+        val podeRolar = recyclerView.canScrollVertically(sentido)
         if (podeRolar) {
-            if (vertical) {
-                recyclerView.smoothScrollBy(0, sentido * recyclerView.height)
-            } else {
-                recyclerView.smoothScrollBy(sentido * recyclerView.width, 0)
-            }
+            recyclerView.smoothScrollBy(0, sentido * recyclerView.height)
             rolagemPeloLeitor()
         }
         return podeRolar
     }
 
-    /**
-     * Deslocamento da lista no eixo atual, para saber se uma tecla mexeu nela. Na horizontal, soma a rolagem da página
-     * parada (rb-26a), para que a rolagem do texto dentro dela também conte como rolagem de quem lê.
-     */
-    private fun deslocamentoAtual(): Int =
-        if (recyclerView.layoutManager?.canScrollVertically() == true) {
-            recyclerView.computeVerticalScrollOffset()
-        } else {
-            recyclerView.computeHorizontalScrollOffset() + (recyclerView.paginaParadaNaTela()?.scrollY ?: 0)
-        }
+    /** Deslocamento vertical da lista, para saber se uma tecla mexeu nela. */
+    private fun deslocamentoAtual(): Int = recyclerView.computeVerticalScrollOffset()
 }

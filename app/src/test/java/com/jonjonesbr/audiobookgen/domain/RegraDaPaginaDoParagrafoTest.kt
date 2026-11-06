@@ -1,8 +1,6 @@
 package com.jonjonesbr.audiobookgen.domain
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RegraDaPaginaDoParagrafoTest {
@@ -51,23 +49,6 @@ class RegraDaPaginaDoParagrafoTest {
     fun baseDaLinhaNaBordaDeBaixoRolaEmPasso() {
         // Exatamente na borda da área ainda conta como dentro: rola em passo, não salta.
         assertEquals(104, RegraDaPaginaDoParagrafo.passoParaDestaque(1000, altura))
-    }
-
-    @Test
-    fun paginaSemRolagemRegistradaNaoRolaSozinha() {
-        // rb-60: sem nenhuma rolagem marcada, o toque é de texto (a página nunca rolou).
-        assertFalse(RegraDaPaginaDoParagrafo.rolandoSozinha(1_000L, null))
-        assertFalse(RegraDaPaginaDoParagrafo.rolandoSozinha(0L, null))
-    }
-
-    @Test
-    fun rolagemRecenteContaAteOLimiar() {
-        // rb-60: rolou agora, e ainda dentro do limiar: rola sozinha.
-        assertTrue(RegraDaPaginaDoParagrafo.rolandoSozinha(1_000L, 1_000L))
-        assertTrue(RegraDaPaginaDoParagrafo.rolandoSozinha(1_047L, 1_000L))
-        // No limiar (48 ms) ou depois, já parou.
-        assertFalse(RegraDaPaginaDoParagrafo.rolandoSozinha(1_048L, 1_000L))
-        assertFalse(RegraDaPaginaDoParagrafo.rolandoSozinha(2_000L, 1_000L))
     }
 
     @Test
