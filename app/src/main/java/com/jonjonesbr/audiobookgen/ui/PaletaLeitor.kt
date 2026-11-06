@@ -3,12 +3,15 @@ package com.jonjonesbr.audiobookgen.ui
 import android.app.Activity
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.WindowInsetsControllerCompat
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
+import com.jonjonesbr.audiobookgen.util.dpToPx
 
 /** Cores do leitor para um tema de leitura: fundo, superfície (barra de busca), texto e texto secundário. */
 internal data class PaletaLeitor(
@@ -28,6 +31,12 @@ internal fun paletaDoLeitor(tema: TemaLeitura): PaletaLeitor = when (tema) {
 
 private fun cor(hex: String) = Color.parseColor(hex)
 
+/** Alfa da bolinha da setinha da barra de cima (rb-66): 0,85 de 255. */
+private const val ALFA_DA_SETINHA = 217
+
+/** Folga da bolinha dentro dos 48 dp de toque da setinha: sobra um círculo de 36 dp visíveis (rb-66). */
+private const val FOLGA_DA_SETINHA_DP = 6
+
 /**
  * Pinta o topo do leitor (título e botões), a barra do capítulo, a busca, a barra da leitura guiada e os avisos
  * com as cores do tema de leitura. Antes só o fundo mudava: no tema Claro ou Sépia, a barra do capítulo e o topo
@@ -37,6 +46,17 @@ internal fun Activity.aplicarPaletaNasBarrasDoLeitor(p: PaletaLeitor) {
     findViewById<android.view.View>(R.id.toolbarReader)?.setBackgroundColor(p.fundo)
     // Cabeçalho sobreposto ao texto (rb-66): o fundo do contêiner é o do tema, para o texto não aparecer por baixo.
     findViewById<android.view.View>(R.id.cabecalhoDoLeitor)?.setBackgroundColor(p.fundo)
+    // Setinha da barra de cima no vertical (rb-66, passo 4): bolinha da superfície quase opaca, ícone suave. O toque
+    // segue nos 48 dp do botão; a folga do InsetDrawable deixa o círculo visível com 36 dp.
+    findViewById<ImageView>(R.id.btnMostrarBarras)?.apply {
+        val folga = dpToPx(FOLGA_DA_SETINHA_DP)
+        val bolinha = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(p.superficie)
+            setAlpha(ALFA_DA_SETINHA)
+        }
+        background = InsetDrawable(bolinha, folga)
+    }
     findViewById<android.view.View>(R.id.layoutBuscaReader)?.setBackgroundColor(p.superficie)
     val principal = ColorStateList.valueOf(p.texto)
     val secundaria = ColorStateList.valueOf(p.suave)
@@ -63,6 +83,7 @@ internal fun Activity.aplicarPaletaNasBarrasDoLeitor(p: PaletaLeitor) {
         .forEach { findViewById<TextView>(it)?.setTextColor(p.texto) }
     listOf(R.id.btnGuidedVoz, R.id.btnGuidedPrev, R.id.btnGuidedNext)
         .forEach { findViewById<ImageView>(it)?.imageTintList = principal }
+    findViewById<ImageView>(R.id.btnMostrarBarras)?.imageTintList = secundaria
     findViewById<ImageView>(R.id.btnGuidedClose)?.imageTintList = secundaria
     // Ícones da barra de status escuros no fundo claro (e claros no escuro).
     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = p.clara

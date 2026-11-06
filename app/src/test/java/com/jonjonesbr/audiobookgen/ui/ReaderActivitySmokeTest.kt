@@ -25,6 +25,7 @@ import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
@@ -2795,26 +2796,236 @@ class ReaderActivitySmokeTest {
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun noVerticalOCabecalhoNuncaRecolhe() {
-        // rb-26b (passo 6): fora do modo páginas, o deslize não recolhe o cabeçalho, nem o arraste lateral.
-        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
-        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        // rb-26b (passo 6) e rb-66 (passo 4): no modo SEMPRE nada recolhe no vertical, nem o gesto, nem a rolagem com
+        // o dedo, nem o tempo. A setinha também fica escondida.
+        val livro = livroComParagrafoLongo()
         AppPrefs(app).readerRolagemHorizontal = false
-        // Modo TEMPO: no vertical o cabeçalho segue forçado (provisório até o passo 4), mesmo com o tempo passando.
-        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        AppPrefs(app).readerBarraDeCima = "SEMPRE"
         ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
-            esperarAte(scenario, "lista vertical com o primeiro parágrafo medido") { a ->
-                tvEm(listaDoLeitor(a), 0)?.layout != null
-            }
+            esperarVerticalMedido(scenario)
+            assertTrue("a lista andou com o dedo", rolarComODedo(scenario, -120) > 0)
+            assertTrue("a lista voltou com o dedo", rolarComODedo(scenario, 120) < 0)
             scenario.onActivity { a ->
                 val rv = listaDoLeitor(a)
-                val densidade = rv.resources.displayMetrics.density
-                arrastar(rv, 0f, -120 * densidade)
-                arrastar(rv, 0f, 120 * densidade)
-                arrastar(rv, -150 * densidade, 0f)
+                arrastar(rv, -150 * rv.resources.displayMetrics.density, 0f)
             }
             esperarAte(scenario, "gestos processados") { a -> !listaDoLeitor(a).isLayoutRequested }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+            scenario.onActivity { a ->
+                assertEquals(View.VISIBLE, cabecalhoDo(a).visibility)
+                assertEquals(View.GONE, setinhaDo(a).visibility)
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun verticalTempoComecaRecolhidoComASetinhaParaMostrar() {
+        // rb-66 (passo 4): no vertical, TEMPO começa com a barra de cima recolhida e a setinha ⌄ aparece no alto.
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no vertical", visivel = false)
+            scenario.onActivity { a ->
+                assertEquals(View.VISIBLE, setinhaDo(a).visibility)
+                assertEquals(a.getString(R.string.cd_mostrar_barras), setinhaDo(a).contentDescription.toString())
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun verticalSetinhaMostraEDesceAteOCabecalho() {
+        // rb-66 (passo 4): o clique na setinha mostra a barra e a setinha desce logo abaixo dela (translationY igual à
+        // altura do cabeçalho). Outro clique recolhe e a setinha volta ao alto.
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no vertical", visivel = false)
+            scenario.onActivity { a -> setinhaDo(a).performClick() }
+            esperarCabecalho(scenario, "setinha mostra o cabeçalho", visivel = true)
+            esperarAte(scenario, "setinha logo abaixo do cabeçalho") { a ->
+                cabecalhoDo(a).height > 0 && setinhaDo(a).translationY == cabecalhoDo(a).height.toFloat()
+            }
+            scenario.onActivity { a ->
+                assertEquals(a.getString(R.string.cd_recolher_barras), setinhaDo(a).contentDescription.toString())
+                setinhaDo(a).performClick()
+            }
+            esperarCabecalho(scenario, "setinha recolhe o cabeçalho", visivel = false)
+            esperarAte(scenario, "setinha de volta ao alto") { a -> setinhaDo(a).translationY == 0f }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun verticalRolarComODedoRecolheEMostra() {
+        // rb-66 (passo 4): rolar o conteúdo com o dedo para baixo recolhe a barra; para cima, mostra.
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no vertical", visivel = false)
+            rolarComODedo(scenario, -300)
+            esperarCabecalho(scenario, "rolar para baixo sem barra não mostra", visivel = false)
+            rolarComODedo(scenario, 80)
+            esperarCabecalho(scenario, "rolar 80 dp para cima mostra o cabeçalho", visivel = true)
+            rolarComODedo(scenario, -80)
+            esperarCabecalho(scenario, "rolar 80 dp para baixo recolhe o cabeçalho", visivel = false)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun verticalRolarUmPoucoParaCimaNaoMostra() {
+        // rb-66 (passo 4): 20 dp para cima são pouco: a barra segue recolhida, com a lista andando de verdade.
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no vertical", visivel = false)
+            rolarComODedo(scenario, -300)
+            val limite = 48 * app.resources.displayMetrics.density
+            val andou = rolarComODedo(scenario, 20)
+            assertTrue("20 dp andaram a lista, mas menos que 48 dp: $andou", andou > 0 && andou < limite)
+            scenario.onActivity { a -> assertEquals(View.GONE, cabecalhoDo(a).visibility) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun verticalRolagemDoCodigoNaoMexeNoCabecalho() {
+        // rb-66 (passo 4): a rolagem do código (smoothScrollBy, como a guiada e os saltos) não conta como rolagem com o
+        // dedo: não mostra nem recolhe o cabeçalho.
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no vertical", visivel = false)
+            scenario.onActivity { a -> listaDoLeitor(a).smoothScrollBy(0, 600) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+            scenario.onActivity { a -> assertEquals(View.GONE, cabecalhoDo(a).visibility) }
+            scenario.onActivity { a -> setinhaDo(a).performClick() }
+            esperarCabecalho(scenario, "setinha mostra o cabeçalho", visivel = true)
+            scenario.onActivity { a -> listaDoLeitor(a).smoothScrollBy(0, 600) }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
             scenario.onActivity { a -> assertEquals(View.VISIBLE, cabecalhoDo(a).visibility) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun verticalBarraDaSelecaoEscondeOCabecalhoEVolta() {
+        // rb-66 (passo 4): com a barra da seleção de texto aberta no topo, o cabeçalho e a setinha somem; ao fechar,
+        // voltam (a barra aberta pela setinha segue aberta).
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            scenario.onActivity { a -> setinhaDo(a).performClick() }
+            esperarCabecalho(scenario, "setinha mostra o cabeçalho", visivel = true)
+            lateinit var modo: ModoFalso
+            scenario.onActivity { a -> modo = abrirModoFalso(a, selecionarComFoco(listaDoLeitor(a), 0, 0, 5)) }
+            esperarAte(scenario, "seleção no topo esconde o cabeçalho e a setinha") { a ->
+                barraDaSelecaoTextoVisivel(a) && cabecalhoDo(a).visibility == View.GONE &&
+                    setinhaDo(a).visibility == View.GONE
+            }
+            scenario.onActivity { modo.finish() }
+            esperarAte(scenario, "cabeçalho e setinha voltam ao fechar a seleção") { a ->
+                !barraDaSelecaoTextoVisivel(a) && cabecalhoDo(a).visibility == View.VISIBLE &&
+                    setinhaDo(a).visibility == View.VISIBLE
+            }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun verticalManualRolarNaoMexeASetinhaAlterna() {
+        // rb-66 (passo 4): no modo à mão, rolar com o dedo não mexe na barra, e o tempo também não; a setinha alterna.
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "MANUAL"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no modo à mão", visivel = false)
+            assertTrue("a lista andou para baixo", rolarComODedo(scenario, -300) > 0)
+            assertTrue("a lista andou para cima", rolarComODedo(scenario, 80) < 0)
+            scenario.onActivity { a -> assertEquals(View.GONE, cabecalhoDo(a).visibility) }
+            scenario.onActivity { a -> setinhaDo(a).performClick() }
+            esperarCabecalho(scenario, "setinha mostra no modo à mão", visivel = true)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+            assertTrue("a lista andou para baixo com a barra à mão", rolarComODedo(scenario, -80) > 0)
+            scenario.onActivity { a -> assertEquals(View.VISIBLE, cabecalhoDo(a).visibility) }
+            scenario.onActivity { a -> setinhaDo(a).performClick() }
+            esperarCabecalho(scenario, "setinha recolhe no modo à mão", visivel = false)
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun verticalBarraDeSelecaoDeParagrafosMantemOCabecalhoReservado() {
+        // rb-66 (passo 4), revisão: no vertical, com a barra de seleção de parágrafos aberta (no fluxo, no topo), o
+        // cabeçalho fica à mostra e reservado e a setinha some, para não cobrir o botão "Gerar áudio". Rolar com o dedo
+        // e o tempo não mexem nessa reserva.
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            esperarCabecalho(scenario, "cabeçalho recolhido ao abrir no vertical", visivel = false)
+            scenario.onActivity { modeloDe(it).onParagrafoLongPress(1) }
+            esperarAte(scenario, "barra de seleção de parágrafos aberta") { a -> barraDeSelecaoVisivel(a) }
+            esperarCabecalho(scenario, "cabeçalho à mostra com a barra de seleção", visivel = true)
+            esperarAte(scenario, "conteúdo reserva a altura do cabeçalho") { a ->
+                cabecalhoDo(a).height > 0 && conteudoDo(a).paddingTop == cabecalhoDo(a).height
+            }
+            scenario.onActivity { a -> assertEquals(View.GONE, setinhaDo(a).visibility) }
+            var reservaAntes = -1
+            scenario.onActivity { reservaAntes = conteudoDo(it).paddingTop }
+            assertTrue("a lista andou com o dedo", rolarComODedo(scenario, -80) > 0)
+            assertTrue("a lista voltou com o dedo", rolarComODedo(scenario, 80) < 0)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+            scenario.onActivity { a ->
+                assertEquals(View.VISIBLE, cabecalhoDo(a).visibility)
+                assertEquals(View.GONE, setinhaDo(a).visibility)
+                assertEquals(reservaAntes, conteudoDo(a).paddingTop)
+            }
+            scenario.onActivity { modeloDe(it).limparSelecao() }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun verticalTempoRecolheSozinhoEm5sSemInteracao() {
+        // rb-66 (passo 4): mostrada pela setinha, a barra do modo TEMPO recolhe sozinha depois de uns 4 s no vertical.
+        val livro = livroComParagrafoLongo()
+        AppPrefs(app).readerRolagemHorizontal = false
+        AppPrefs(app).readerBarraDeCima = "TEMPO"
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarVerticalMedido(scenario)
+            scenario.onActivity { a -> setinhaDo(a).performClick() }
+            esperarCabecalho(scenario, "setinha mostra o cabeçalho", visivel = true)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+            esperarCabecalho(scenario, "cabeçalho recolhido sozinho depois de 5 s no vertical", visivel = false)
+            scenario.onActivity { a ->
+                assertEquals(a.getString(R.string.cd_mostrar_barras), setinhaDo(a).contentDescription.toString())
+            }
         }
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
@@ -3556,6 +3767,52 @@ class ReaderActivitySmokeTest {
 
     // A lista tipada: textoEmUso e selecoesAbertas só existem em RecyclerViewParagrafos (rb-54).
     private fun listaDoLeitor(a: ReaderActivity): RecyclerViewParagrafos = a.findViewById(R.id.recyclerViewParagrafos)
+
+    /** A setinha da barra de cima no vertical (rb-66, passo 4). */
+    private fun setinhaDo(a: ReaderActivity): ImageButton = a.findViewById(R.id.btnMostrarBarras)
+
+    /** O livro de teste com o parágrafo 1 longo, para o vertical ter onde rolar (rb-66, passo 4). */
+    private fun livroComParagrafoLongo(): File {
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        return gravarLivroNoCache(livroDeTeste(textos), textos)
+    }
+
+    /** Espera a lista vertical medida (o 1º parágrafo com layout), antes de qualquer gesto. */
+    private fun esperarVerticalMedido(scenario: ActivityScenario<ReaderActivity>) {
+        esperarAte(scenario, "lista vertical com o primeiro parágrafo medido") { a ->
+            tvEm(listaDoLeitor(a), 0)?.layout != null
+        }
+    }
+
+    /**
+     * Rola a lista com o dedo [dp] (positivo: o dedo desce, a lista sobe) pelo caminho da RecyclerView (rb-66, passo 4). Eventos:
+     * DOWN no meio da lista (cai no TextView selecionável); um MOVE logo acima do slop, que é o que liga o DRAGGING na
+     * interceptação; um MOVE até o total, que chega ao onTouchEvent e rola; e um UP um segundo depois do último MOVE,
+     * para não sobrar fling. Devolve quantos pixels a lista andou, para o teste conferir que ela andou de verdade.
+     */
+    private fun rolarComODedo(scenario: ActivityScenario<ReaderActivity>, dp: Int): Int {
+        var andou = 0
+        scenario.onActivity { a ->
+            val rv = listaDoLeitor(a)
+            val antes = rv.computeVerticalScrollOffset()
+            val dy = dp * rv.resources.displayMetrics.density
+            val sentido = if (dy >= 0) 1f else -1f
+            val folga = ViewConfiguration.get(rv.context).scaledTouchSlop + 1f
+            val x0 = rv.width / 2f
+            val y0 = rv.height / 2f - dy / 2
+            val eventos = listOf(
+                MotionEvent.obtain(1_000L, 1_000L, MotionEvent.ACTION_DOWN, x0, y0, 0),
+                MotionEvent.obtain(1_000L, 1_100L, MotionEvent.ACTION_MOVE, x0, y0 + sentido * folga, 0),
+                MotionEvent.obtain(1_000L, 1_200L, MotionEvent.ACTION_MOVE, x0, y0 + dy, 0),
+                MotionEvent.obtain(1_000L, 2_200L, MotionEvent.ACTION_UP, x0, y0 + dy, 0),
+            )
+            eventos.forEach { rv.dispatchTouchEvent(it) }
+            eventos.forEach { it.recycle() }
+            andou = rv.computeVerticalScrollOffset() - antes
+        }
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+        return andou
+    }
 
     /** Espaço que a decoração põe depois do último parágrafo (rb-51). -1 se ele não está na tela. */
     private fun decoracaoDoUltimo(a: ReaderActivity): Int {

@@ -27,15 +27,16 @@ private const val CHAVE_ABERTO_CIMA = "abertoCima"
  * o que aparece com [RegraDasBarrasDoLeitor]: modo guardado em AppPrefs, o que a pessoa ou o tempo pediu e a situação
  * do Leitor. Só a região de cima por enquanto: o painel de baixo entra no passo 5.
  *
- * Quem chama: o [ReaderTelaController] (ligar, aplicar), os gestos da página (pela [TelaCheiaDoLeitor]), o tempo (pelo
- * [TemporizadorDasBarras]) e o foco da janela. PROVISÓRIO até o passo 4: fora do modo páginas, o cabeçalho segue
- * forçado, como antes.
+ * Quem chama: o [ReaderTelaController] (ligar, aplicar), os gestos da página e do vertical (pela [TelaCheiaDoLeitor]),
+ * o tempo (pelo [TemporizadorDasBarras]) e o foco da janela. No vertical a rolagem com o dedo e a setinha também geram
+ * gestos, e a seleção de texto no topo esconde o cabeçalho.
  */
 internal class BarrasDoLeitor(
     private val activity: AppCompatActivity,
     private val lista: RecyclerViewParagrafos,
 ) {
     private val cabecalho: BarraDoLeitor = activity.findViewById(R.id.cabecalhoDoLeitor)
+    private val setinha: View = activity.findViewById(R.id.btnMostrarBarras)
     private val busca: View = activity.findViewById(R.id.layoutBuscaReader)
     private val barraDoModo: View = activity.findViewById(R.id.layoutBarraModo)
     private val barraDaSelecao: View = activity.findViewById(R.id.layoutBarraSelecao)
@@ -57,6 +58,11 @@ internal class BarrasDoLeitor(
         }
     }
     private val focoDaJanela = ViewTreeObserver.OnWindowFocusChangeListener { temFoco -> aoMudarFocoDaJanela(temFoco) }
+    // Rede de segurança do vertical: a barra da seleção de texto abre e fecha sem passar pelo aplicar do controller.
+    private val layoutDaJanela = ViewTreeObserver.OnGlobalLayoutListener {
+        // Só no vertical: no modo páginas a reserva mudaria dentro do layout (ali vale o aplicar do controller).
+        if (!paginas && ultimo != null) aplicar(leitura, paginas)
+    }
     // Teclado: o Tab sem dono mostra o cabeçalho e segue para a navegação de foco normal (não consome o evento).
     private val tecla = ViewCompat.OnUnhandledKeyEventListenerCompat { _, ev ->
         if (ev.action == KeyEvent.ACTION_DOWN && ev.keyCode == KeyEvent.KEYCODE_TAB && ultimo?.visivel != true) {
@@ -92,6 +98,7 @@ internal class BarrasDoLeitor(
         activity.lifecycle.addObserver(temporizador)
         activity.lifecycle.addObserver(fimDaActivity)
         activity.window.decorView.viewTreeObserver.addOnWindowFocusChangeListener(focoDaJanela)
+        activity.window.decorView.viewTreeObserver.addOnGlobalLayoutListener(layoutDaJanela)
         ViewCompat.addOnUnhandledKeyEventListener(activity.window.decorView, tecla)
     }
 
@@ -115,14 +122,17 @@ internal class BarrasDoLeitor(
             barraDoFluxoVisivel = barraDoModo.visibility == View.VISIBLE || barraDaSelecao.visibility == View.VISIBLE,
             selecaoNoTopo = barraDeTexto.visibility == View.VISIBLE && !lista.baseCedidaASelecao,
         )
-        // PROVISÓRIO (até o passo 4): fora do modo páginas o cabeçalho segue forçado, como hoje.
-        val modo = if (paginas) modoCima else ModoDaBarra.SEMPRE
+        // No vertical, com a barra do fluxo (seleção de parágrafos ou modo) à mostra, o cabeçalho fica reservado e à
+        // mostra, como no modo SEMPRE: a barra fica no topo e a setinha cobriria o botão "Gerar áudio". Rolar e o
+        // tempo não mexem nessa reserva enquanto a barra estiver aberta. A seleção de texto no topo ainda esconde.
+        val forcarPelaBarra = !paginas && situacao.barraDoFluxoVisivel && !situacao.selecaoNoTopo
+        val modo = if (forcarPelaBarra) ModoDaBarra.SEMPRE else modoCima
         val estado = RegraDasBarrasDoLeitor.cabecalho(modo, abertoCima, paginas, situacao)
         if (estado != ultimo) {
             ultimo = estado
             telaCheia.aplicar(estado, continuaNasPaginas)
         }
-        // Entrar nas páginas com a barra aberta por tempo arma a contagem (ex.: a ação de acessibilidade no vertical).
+        // Entrar ou sair das páginas com a barra aberta por tempo arma ou para a contagem.
         if (mudouDePaginas) armarSeCabe()
     }
 
@@ -147,9 +157,9 @@ internal class BarrasDoLeitor(
         armarSeCabe()
     }
 
-    /** O tempo só corre com a barra de cima aberta por tempo no modo páginas. Fora disso, para. */
+    /** O tempo corre com a barra de cima aberta por tempo, no modo páginas e no vertical. Fora disso, para. */
     private fun armarSeCabe() {
-        if (paginas && modoCima == ModoDaBarra.TEMPO && abertoCima) temporizador.armar() else temporizador.cancelar()
+        if (modoCima == ModoDaBarra.TEMPO && abertoCima) temporizador.armar() else temporizador.cancelar()
     }
 
     private fun aoMudarFocoDaJanela(temFoco: Boolean) {
@@ -164,7 +174,7 @@ internal class BarrasDoLeitor(
             janelaSemFoco = !janelaComFoco,
             buscaAberta = busca.visibility == View.VISIBLE,
             leitorDeTela = leitorDeTela(),
-            focoOuToqueNasBarras = cabecalho.toqueEmAndamento || cabecalho.hasFocus(),
+            focoOuToqueNasBarras = cabecalho.toqueEmAndamento || cabecalho.hasFocus() || setinha.isFocused,
             dicaAberta = activity.findViewById<View>(R.id.coachMarkRaiz) != null,
         ),
     )
@@ -176,6 +186,7 @@ internal class BarrasDoLeitor(
         temporizador.cancelar()
         val janela = activity.window.decorView.viewTreeObserver
         if (janela.isAlive) janela.removeOnWindowFocusChangeListener(focoDaJanela)
+        if (janela.isAlive) janela.removeOnGlobalLayoutListener(layoutDaJanela)
         activity.lifecycle.removeObserver(temporizador)
         activity.lifecycle.removeObserver(fimDaActivity)
         ViewCompat.removeOnUnhandledKeyEventListener(activity.window.decorView, tecla)

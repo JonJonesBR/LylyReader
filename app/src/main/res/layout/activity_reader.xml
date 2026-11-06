@@ -252,6 +252,26 @@
         </LinearLayout>
     </com.jonjonesbr.audiobookgen.ui.BarraDoLeitor>
 
+    <!-- ── Setinha da barra de cima (rb-66, passo 4): só no modo vertical. Recolhida, fica no alto (⌄); aberta, desce
+         logo abaixo do cabecalhoDoLeitor (translationY, pela SetinhaDasBarras). Fundo e cor vêm da paleta. ── -->
+    <ImageButton
+        android:id="@+id/btnMostrarBarras"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:padding="6dp"
+        android:scaleType="centerInside"
+        android:elevation="4dp"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_busca_seta_baixo"
+        app:tint="@color/color_on_surface_dim"
+        android:contentDescription="@string/cd_mostrar_barras"
+        android:tooltipText="@string/cd_mostrar_barras"
+        android:visibility="gone"/>
+
     <LinearLayout
         android:id="@+id/conteudoDoLeitor"
         android:layout_width="match_parent"
