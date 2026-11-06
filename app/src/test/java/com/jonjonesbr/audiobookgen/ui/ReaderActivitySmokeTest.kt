@@ -3021,6 +3021,73 @@ class ReaderActivitySmokeTest {
         assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
     }
 
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "land")
+    fun girarComGuiadaPausadaMantemALinhaNarradaNaPagina() {
+        // rb-26b: com a guiada pausada o progresso (0) já saiu do estado; ao girar, a página tem de ir até a linha
+        // narrada guardada na pausa, e não só ao início do parágrafo.
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            var progresso = 0f
+            var linha = 0
+            scenario.onActivity { a ->
+                val (p, l) = progressoDaPrimeiraLinhaEscondida(listaDoLeitor(a), 2)
+                progresso = p
+                linha = l
+            }
+            emitirProgresso(scenario, progresso)
+            scenario.onActivity { GuidedPlaybackBridge.manager!!.pause() }
+            // Duas teclas de página: a narração fica para trás na tela antes de girar.
+            scenario.onActivity { a ->
+                repeat(2) { a.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PAGE_DOWN)) }
+            }
+            scenario.recreate()
+            esperarAte(scenario, "tela recriada no modo páginas com a guiada pausada") { a ->
+                listaDoLeitor(a).paginacao?.ativa == true && tvEm(lista(a), 2)?.layout != null &&
+                    !lista(a).isLayoutRequested
+            }
+            shadowOf(Looper.getMainLooper()).idle()
+            scenario.onActivity { a -> conferirLinhaNarradaNaPagina(listaDoLeitor(a), 2, linha) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "land")
+    fun voltarNarracaoComRestauracaoPendenteAindaLeVaALinhaNarrada() {
+        // rb-26b: o restaurar da posição (post com scrollToPositionWithOffset) pode pedir outro salto depois do botão.
+        // O gancho espera esse salto terminar, e a página fica na linha narrada.
+        ActivityScenario.launch<ReaderActivity>(intencaoGuiadaNoModoPaginas()).use { scenario ->
+            esperarGuiadaNoModoPaginas(scenario)
+            var progresso = 0f
+            var linha = 0
+            scenario.onActivity { a ->
+                val (p, l) = progressoDaPrimeiraLinhaEscondida(listaDoLeitor(a), 2)
+                progresso = p
+                linha = l
+            }
+            emitirProgresso(scenario, progresso)
+            scenario.onActivity { a ->
+                repeat(2) { a.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PAGE_DOWN)) }
+            }
+            esperarAte(scenario, "botão Voltar à narração do painel visível") { a ->
+                a.findViewById<View>(R.id.btnGuidedVoltarNarracao).visibility == View.VISIBLE
+            }
+            scenario.onActivity { GuidedPlaybackBridge.manager!!.pause() }
+            scenario.onActivity { a -> a.findViewById<View>(R.id.btnGuidedVoltarNarracao).performClick() }
+            // O restaurar pede outro salto (offset 0 no parágrafo 2) por post, antes de o layout do primeiro terminar.
+            scenario.onActivity { a ->
+                val lista = lista(a)
+                lista.post { (lista.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(2, 0) }
+            }
+            shadowOf(Looper.getMainLooper()).idle()
+            scenario.onActivity { a -> conferirLinhaNarradaNaPagina(listaDoLeitor(a), 2, linha) }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
     /**
      * Botão "Voltar à narração" do painel com a guiada pausada (rb-26b): a pausa guarda o progresso da linha narrada,
      * e o toque leva a página até ela. Com a guiada tocando, o tique cuida disso; aqui não há tique.
@@ -3055,7 +3122,7 @@ class ReaderActivitySmokeTest {
     }
 
     /** A linha narrada inteira na página, com a página alinhada no topo (rb-26b). */
-    private fun conferirLinhaNarradaNaPagina(rv: RecyclerView, pos: Int, linha: Int) {
+    private fun conferirLinhaNarradaNaPagina(rv: RecyclerViewParagrafos, pos: Int, linha: Int) {
         val narrada = linhaNaLista(rv, pos, linha)
         assertTrue("a linha narrada deveria estar na página", narrada.topo >= rv.paddingTop)
         assertTrue("a linha narrada deveria estar inteira", narrada.base <= rv.paginacao!!.corte())

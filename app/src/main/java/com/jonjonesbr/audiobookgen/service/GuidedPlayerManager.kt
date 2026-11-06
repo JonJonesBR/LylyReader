@@ -1263,10 +1263,11 @@ class GuidedPlayerManager(
         // "pausado sem áudio", e o próximo "tocar" não retomaria o som.
         if (pausadoPeloUsuario) return
         progressoAoPausar = _state.value.progressPct
-        stopProgressPolling()
         // Trecho com erro não toca: não pergunta ao motor (ver publicarTrecho).
         pausadoSemAudio = trechoFalhou || playerEngine?.isPlaying() != true
+        // Antes do stopProgressPolling, que publica progresso 0: quem observa o estado já vê a pausa.
         pausadoPeloUsuario = true
+        stopProgressPolling()
         playerEngine?.pause()
         publicarTrecho(tocando = false)
         _state.update { it.copy(isPlaying = false, error = null) }

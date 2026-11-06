@@ -159,11 +159,24 @@ internal class PaginacaoDoLeitor(
         if (ajuste != 0) lista.scrollBy(0, ajuste)
     }
 
-    /** Chamado pelo LeitorLayoutManager quando um salto termina o layout. Por post: o layout não pode rolar a lista. */
+    /**
+     * Chamado pelo LeitorLayoutManager quando um salto termina o layout. Por post: o layout não pode rolar a lista.
+     * Se outro salto ficou pedido antes desse post (ex.: restaurarPosicaoSeNecessario ao recriar a tela), o gancho
+     * espera o fim dele, porque o layout dele desfaria o alinhamento.
+     */
     fun aoTerminarSalto() {
         val depois = depoisDoProximoSalto
         depoisDoProximoSalto = null
-        if (ativa) lista.post { alinharTopo(); depois?.invoke() }
+        if (!ativa) return
+        lista.post {
+            alinharTopo()
+            val outroSalto = (lista.layoutManager as? LeitorLayoutManager)?.temSaltoPendente == true
+            if (outroSalto) {
+                if (depoisDoProximoSalto == null) depoisDoProximoSalto = depois
+            } else {
+                depois?.invoke()
+            }
+        }
     }
 
     /** Toque da lista no modo páginas: o arraste lateral vira a página, e o resto do gesto é engolido. */

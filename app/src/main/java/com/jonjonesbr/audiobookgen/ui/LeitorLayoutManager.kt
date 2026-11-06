@@ -58,6 +58,9 @@ class LeitorLayoutManager(
     /** Há um salto pedido que ainda não terminou o layout (ver [aoTerminarSalto]). */
     private var saltoPendente = false
 
+    /** Há um salto pedido esperando o layout (ver [aoTerminarSalto]). */
+    internal val temSaltoPendente: Boolean get() = saltoPendente
+
     override fun scrollToPositionWithOffset(position: Int, offset: Int) {
         saltoPendente = true
         super.scrollToPositionWithOffset(position, offset)

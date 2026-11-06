@@ -668,6 +668,66 @@ class PaginasNoAparelhoTest {
      * capítulo), e um deslize para baixo o traz de volta. A 1ª linha da página é a mesma antes e depois de mostrar ou
      * recolher o cabeçalho, e um deslize para cima não vira a página.
      */
+    @Test
+    fun p12_cabecalhoSomeAoVirarEVoltaComDeslizeParaBaixo() {
+        comPaginas {
+            val scenario = abrirNoPaginado()
+            regras.fecharDialogosDoSistema()
+            scenario.onActivity { a -> assertEquals(View.VISIBLE, cabecalhoDo(a).visibility) }
+
+            val antes = medirPagina(scenario)
+            arrastarLateral(scenario, paraFrente = true)
+            esperarAte(scenario, "a página virar com o arraste lateral", TEMPO_DE_VIRADA_MS) { a ->
+                offsetDaLista(a) > antes.offset
+            }
+            esperarAte(scenario, "cabeçalho recolhido com a virada", TEMPO_DE_VIRADA_MS) { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
+            esperarPaginaParada(scenario)
+            val recolhido = medirPagina(scenario)
+            val topo = checkNotNull(recolhido.topoVisivel()) { "A página recolhida não tem linha no topo" }
+            Capturas.anotar("p12", "recolhido: topo=$topo")
+            Capturas.capturar("p12_recolhido")
+            conferirSemLinhaCortada(recolhido, "p12-recolhido")
+
+            rolarListaComODedo(
+                scenario,
+                fracaoDaAreaUtil = FRACAO_DO_ARRASTE_VERTICAL,
+                paraBaixoNoTexto = false,
+                cenario = "p12",
+            )
+            esperarAte(scenario, "cabeçalho voltou com o deslize para baixo", TEMPO_DE_VIRADA_MS) { a ->
+                cabecalhoDo(a).visibility == View.VISIBLE && !listaDoLeitor(a).isLayoutRequested
+            }
+            esperarPaginaParada(scenario)
+            val mostrado = medirPagina(scenario)
+            assertTrue(
+                "Mostrar o cabeçalho não deveria mudar a 1ª linha (era $topo, veio ${mostrado.topoVisivel()})",
+                topo.mesmaQue(mostrado.topoVisivel()),
+            )
+            conferirSemLinhaCortada(mostrado, "p12-mostrado")
+            Capturas.capturar("p12_mostrado")
+
+            rolarListaComODedo(
+                scenario,
+                fracaoDaAreaUtil = FRACAO_DO_ARRASTE_VERTICAL,
+                paraBaixoNoTexto = true,
+                cenario = "p12b",
+            )
+            esperarAte(scenario, "cabeçalho recolhido com o deslize para cima", TEMPO_DE_VIRADA_MS) { a ->
+                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
+            }
+            esperarPaginaParada(scenario)
+            val deNovo = medirPagina(scenario)
+            assertTrue(
+                "Recolher o cabeçalho não deveria mudar a 1ª linha (era $topo, veio ${deNovo.topoVisivel()})",
+                topo.mesmaQue(deNovo.topoVisivel()),
+            )
+            conferirSemLinhaCortada(deNovo, "p12-de-novo")
+            Capturas.capturar("p12_recolhido_de_novo")
+        }
+    }
+
     /**
      * P14 (rb-26b, rodada 3): na paisagem, com a guiada no modo páginas, o botão "Voltar à narração" do painel leva a
      * página até a linha narrada, também com a guiada pausada. O parágrafo 0 é longo (50 frases de 2 s): a guiada vira
@@ -788,66 +848,6 @@ class PaginasNoAparelhoTest {
                 }
                 Capturas.capturar("p14_tocando_depois_do_botao")
             }
-        }
-    }
-
-    @Test
-    fun p12_cabecalhoSomeAoVirarEVoltaComDeslizeParaBaixo() {
-        comPaginas {
-            val scenario = abrirNoPaginado()
-            regras.fecharDialogosDoSistema()
-            scenario.onActivity { a -> assertEquals(View.VISIBLE, cabecalhoDo(a).visibility) }
-
-            val antes = medirPagina(scenario)
-            arrastarLateral(scenario, paraFrente = true)
-            esperarAte(scenario, "a página virar com o arraste lateral", TEMPO_DE_VIRADA_MS) { a ->
-                offsetDaLista(a) > antes.offset
-            }
-            esperarAte(scenario, "cabeçalho recolhido com a virada", TEMPO_DE_VIRADA_MS) { a ->
-                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
-            }
-            esperarPaginaParada(scenario)
-            val recolhido = medirPagina(scenario)
-            val topo = checkNotNull(recolhido.topoVisivel()) { "A página recolhida não tem linha no topo" }
-            Capturas.anotar("p12", "recolhido: topo=$topo")
-            Capturas.capturar("p12_recolhido")
-            conferirSemLinhaCortada(recolhido, "p12-recolhido")
-
-            rolarListaComODedo(
-                scenario,
-                fracaoDaAreaUtil = FRACAO_DO_ARRASTE_VERTICAL,
-                paraBaixoNoTexto = false,
-                cenario = "p12",
-            )
-            esperarAte(scenario, "cabeçalho voltou com o deslize para baixo", TEMPO_DE_VIRADA_MS) { a ->
-                cabecalhoDo(a).visibility == View.VISIBLE && !listaDoLeitor(a).isLayoutRequested
-            }
-            esperarPaginaParada(scenario)
-            val mostrado = medirPagina(scenario)
-            assertTrue(
-                "Mostrar o cabeçalho não deveria mudar a 1ª linha (era $topo, veio ${mostrado.topoVisivel()})",
-                topo.mesmaQue(mostrado.topoVisivel()),
-            )
-            conferirSemLinhaCortada(mostrado, "p12-mostrado")
-            Capturas.capturar("p12_mostrado")
-
-            rolarListaComODedo(
-                scenario,
-                fracaoDaAreaUtil = FRACAO_DO_ARRASTE_VERTICAL,
-                paraBaixoNoTexto = true,
-                cenario = "p12b",
-            )
-            esperarAte(scenario, "cabeçalho recolhido com o deslize para cima", TEMPO_DE_VIRADA_MS) { a ->
-                cabecalhoDo(a).visibility == View.GONE && !listaDoLeitor(a).isLayoutRequested
-            }
-            esperarPaginaParada(scenario)
-            val deNovo = medirPagina(scenario)
-            assertTrue(
-                "Recolher o cabeçalho não deveria mudar a 1ª linha (era $topo, veio ${deNovo.topoVisivel()})",
-                topo.mesmaQue(deNovo.topoVisivel()),
-            )
-            conferirSemLinhaCortada(deNovo, "p12-de-novo")
-            Capturas.capturar("p12_recolhido_de_novo")
         }
     }
 

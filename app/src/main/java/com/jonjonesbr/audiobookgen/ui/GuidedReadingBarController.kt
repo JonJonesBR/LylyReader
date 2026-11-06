@@ -103,6 +103,22 @@ class GuidedReadingBarController(
     var ultimoScrollSyncStandard = -1
     var recenteRegistrado = false
 
+    /**
+     * Gancho do salto que leva a página até a linha narrada (rb-26b), usado pelo "Voltar à narração" e pelo
+     * acompanhamento quando o estado chega antes do layout (girar com a guiada pausada). Roda uma vez, depois do
+     * alinhamento do salto, e só se a mesma narração ainda está no índice.
+     */
+    private val levarANarradaDepoisDoSalto: (Int) -> () -> Unit = { indice ->
+        {
+            val mesmaNarracao = !scrollManual && guidedPlayerManager.state.value.index == indice
+            if (mesmaNarracao && recyclerView.levarALinhaNarrada(indice, guidedPlayerManager.progressoDoNarrado)) {
+                aguardandoAutoScroll = false
+                // Evita que o primeiro tique depois de retomar (progresso 0) suba a página até o início (rb-65).
+                indiceAcompanhado = indice
+            }
+        }
+    }
+
     /** True enquanto o diálogo "Começar de onde?" está aberto e sem escolha (a rotação o descarta). */
     var dialogoInicioPendente = false
         private set
@@ -148,16 +164,7 @@ class GuidedReadingBarController(
         } else {
             0
         }
-        if (paginacao != null) {
-            paginacao.depoisDoProximoSalto = {
-                val mesmaNarracao = !scrollManual && guidedPlayerManager.state.value.index == indice
-                if (mesmaNarracao && recyclerView.levarALinhaNarrada(indice, guidedPlayerManager.progressoDoNarrado)) {
-                    aguardandoAutoScroll = false
-                    // Evita que o primeiro tique depois de retomar (progresso 0) suba a página até o início (rb-65).
-                    indiceAcompanhado = indice
-                }
-            }
-        }
+        if (paginacao != null) paginacao.depoisDoProximoSalto = levarANarradaDepoisDoSalto(indice)
         // O salto só vale no próximo layout. Até lá, um progresso que não ache a view do alvo refaz o salto
         // (manterDestaqueVisivel). A flag fica ligada até o próximo parágrafo, o fim de uma rolagem ou, na vertical,
         // o primeiro destaque com a view pronta.
@@ -369,7 +376,7 @@ class GuidedReadingBarController(
         if (soProgresso) {
             // Com a seleção de texto em uso (dedo na lista ou menu aberto), o destaque não rola o texto (rb-38).
             if (!scrollManual && !recyclerView.textoEmUso) {
-                manterDestaqueVisivel(guidedState.index, guidedState.progressPct)
+                manterDestaqueVisivel(guidedState.index, guidedPlayerManager.progressoDoNarrado)
             }
             viewModel.setProgressPct(guidedState.progressPct)
             return
@@ -432,7 +439,7 @@ class GuidedReadingBarController(
         }
 
         if (!scrollManual && !recyclerView.textoEmUso && guidedState.index >= 0) {
-            manterDestaqueVisivel(guidedState.index, guidedState.progressPct)
+            manterDestaqueVisivel(guidedState.index, guidedPlayerManager.progressoDoNarrado)
         }
 
         val texto = viewModel.textoEfetivo()
@@ -511,6 +518,9 @@ class GuidedReadingBarController(
                 } else {
                     lm.smoothScrollToPosition(recyclerView, null, index)
                 }
+                // Modo páginas: o salto pode ter sido feito antes do 1º layout (girar com a guiada pausada). Sem o
+                // gancho, a página ficaria no início do parágrafo, e não viria outro tique para corrigir.
+                if (paginacao != null) paginacao.depoisDoProximoSalto = levarANarradaDepoisDoSalto(index)
                 // Alvo distante (reabertura do app reconectando à guiada, ou capítulo escolhido longe do início): a
                 // flag cai e a nova tentativa vem a cada tique. Perto, a flag fica ligada até a view aparecer
                 // (vertical) ou a animação acabar (horizontal).
