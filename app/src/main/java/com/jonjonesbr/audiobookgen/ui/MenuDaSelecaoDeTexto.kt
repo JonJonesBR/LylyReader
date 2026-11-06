@@ -72,6 +72,9 @@ internal class MenuDaSelecaoDeTexto(
     internal var inicioDaUltimaDescida = -1
     internal var fimDaUltimaDescida = -1
 
+    // O TextView do parágrafo: a paginação o usa para virar a página para a seleção (rb-67/3).
+    internal val texto: TextView get() = tv
+
     // Seleção agora, lida do TextView, para gravar a última descida.
     internal val inicioDaSelecao: Int get() = tv.selectionStart
     internal val fimDaSelecao: Int get() = tv.selectionEnd
@@ -80,6 +83,7 @@ internal class MenuDaSelecaoDeTexto(
         modoAberto = mode
         inicioNoUltimoPreparo = -1
         fimNoUltimoPreparo = -1
+        selecaoDoReajuste = null
         inicioDaUltimaDescida = -1
         fimDaUltimaDescida = -1
         acoes.aoAbrir(this)

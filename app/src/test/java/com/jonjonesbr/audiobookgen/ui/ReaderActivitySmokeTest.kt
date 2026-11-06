@@ -889,6 +889,127 @@ class ReaderActivitySmokeTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun alcaLevadaAlemDoCorteViraAPaginaAoSoltar() {
+        // rb-67/3: a alça do fim levada para fora da página vira a página ao soltar (o preparo do UP). Com a seleção da
+        // última linha inteira até a linha escondida, a página nova mostra a ponta do fim.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var inicioS0 = 0
+            var fimS0 = 0
+            var fimS1 = 0
+            var linhaEscondida = -1
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val corte = checkNotNull(rv.paginacao).corte()
+                val linhas = linhasNaLista(rv).filter { it.pos == 1 }
+                val inteira = checkNotNull(linhas.lastOrNull { it.base <= corte }) { "sem linha inteira" }
+                val escondida = checkNotNull(linhas.firstOrNull { it.base > corte }) { "sem linha escondida" }
+                val layout = checkNotNull(tvEm(rv, 1)?.layout)
+                linhaEscondida = escondida.linha
+                inicioS0 = layout.getLineStart(inteira.linha)
+                fimS0 = inicioS0 + 5
+                fimS1 = layout.getLineStart(escondida.linha) + 3
+            }
+            // Seleção inicial (na última linha inteira) com o menu aberto: a descida fica registrada.
+            lateinit var modo: ModoFalso
+            lateinit var texto: TextView
+            scenario.onActivity { a ->
+                texto = selecionarComFoco(listaDoLeitor(a), 1, inicioS0, fimS0)
+                modo = abrirModoFalso(a, texto)
+            }
+            esperarAte(scenario, "barra da seleção embaixo") { a ->
+                barraDaSelecaoTextoVisivel(a) && listaDoLeitor(a).baseCedidaASelecao
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            var scrollAntes = 0
+            scenario.onActivity { a ->
+                scrollAntes = listaDoLeitor(a).computeVerticalScrollOffset()
+                // A alça levada até a linha escondida, e os dois preparos do UP (o segundo repete a seleção).
+                Selection.setSelection(texto.text as Spannable, inicioS0, fimS1)
+                val cb = texto.customSelectionActionModeCallback
+                cb.onPrepareActionMode(modo, modo.menu)
+                cb.onPrepareActionMode(modo, modo.menu)
+            }
+            esperarAte(scenario, "a página virou para a ponta do fim") { a ->
+                listaDoLeitor(a).computeVerticalScrollOffset() > scrollAntes
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val corte = checkNotNull(rv.paginacao).corte()
+                val fim = linhasNaLista(rv).first { it.pos == 1 && it.linha == linhaEscondida }
+                assertTrue(
+                    "a ponta do fim deveria estar na página nova: base ${fim.base} > corte $corte",
+                    fim.base <= corte,
+                )
+                assertTrue("a seleção deveria continuar viva", texto.hasSelection())
+                assertEquals(fimS1, texto.selectionEnd)
+            }
+            scenario.onActivity { modo.finish() }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun selecionarTudoNoModoPaginasNaoViraAPagina() {
+        // rb-67/3: "Selecionar tudo" muda as duas pontas, e só a alça arrastada vira a página. A seleção começa na
+        // última linha inteira de um parágrafo que passa do corte; o sistema estende o início e o fim ao texto inteiro.
+        val textos = PARAGRAFOS.toMutableList().apply { this[1] = PARAGRAFO_LONGO }
+        val livro = gravarLivroNoCache(livroDeTeste(textos), textos)
+        AppPrefs(app).readerRolagemHorizontal = true
+        ActivityScenario.launch<ReaderActivity>(intencaoSomenteLeitura(livro)).use { scenario ->
+            esperarModoPaginas(scenario)
+            var inicioS0 = 0
+            var fimS0 = 0
+            scenario.onActivity { a ->
+                val rv = listaDoLeitor(a)
+                val corte = checkNotNull(rv.paginacao).corte()
+                val linhas = linhasNaLista(rv).filter { it.pos == 1 }
+                val inteira = checkNotNull(linhas.lastOrNull { it.base <= corte }) { "sem linha inteira" }
+                checkNotNull(linhas.firstOrNull { it.base > corte }) { "sem linha escondida" }
+                val layout = checkNotNull(tvEm(rv, 1)?.layout)
+                inicioS0 = layout.getLineStart(inteira.linha)
+                fimS0 = layout.getLineEnd(inteira.linha)
+            }
+            lateinit var modo: ModoFalso
+            lateinit var texto: TextView
+            scenario.onActivity { a ->
+                texto = selecionarComFoco(listaDoLeitor(a), 1, inicioS0, fimS0)
+                modo = abrirModoFalso(a, texto)
+            }
+            esperarAte(scenario, "barra da seleção embaixo") { a ->
+                barraDaSelecaoTextoVisivel(a) && listaDoLeitor(a).baseCedidaASelecao
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+            var scrollAntes = 0
+            scenario.onActivity { a ->
+                scrollAntes = listaDoLeitor(a).computeVerticalScrollOffset()
+                // Clique em "Selecionar tudo": o item devolve falso e o sistema seleciona o texto inteiro depois.
+                val item = modo.menu.add(0, android.R.id.selectAll, 0, "Selecionar tudo")
+                assertFalse(texto.customSelectionActionModeCallback.onActionItemClicked(modo, item))
+                Selection.setSelection(texto.text as Spannable, 0, texto.text.length)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400))
+            scenario.onActivity { a ->
+                assertEquals(
+                    "Selecionar tudo não pode virar a página",
+                    scrollAntes,
+                    listaDoLeitor(a).computeVerticalScrollOffset(),
+                )
+                assertTrue("a seleção deveria continuar viva", texto.hasSelection())
+                assertEquals(texto.text.length, texto.selectionEnd)
+            }
+            scenario.onActivity { modo.finish() }
+        }
+        assertTrue("Exceções não tratadas: $falhas", falhas.isEmpty())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun selecionarTudoRefazADescidaParaOInicio() {
         // rb-67/9: "Selecionar tudo" leva o início da seleção ao 1º parágrafo, que pode ficar sob a barra. O sistema
         // seleciona depois que o clique devolve falso, e o pedido da descida vai no post, com a seleção nova.

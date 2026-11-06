@@ -190,6 +190,14 @@ class ParagrafoAdapter(
         aoSoltarAlca = { menu ->
             if (menuAberto === menu) {
                 barraDaSelecao.reajustar({ menu.linhaDoInicioDaSelecaoNaTela() }) {
+                    // rb-67/3: a página vira para a ponta que a alça levou para fora dela, antes de gravar a descida.
+                    // Só depois de uma descida já gravada: a 1ª descida do menu não vira a página. Só a alça mexe
+                    // numa ponta só; "Selecionar tudo" e a seleção inteligente mexem nas duas, e não viram a página.
+                    val moveuInicio = menu.inicioDaSelecao != menu.inicioDaUltimaDescida
+                    val moveuFim = menu.fimDaSelecao != menu.fimDaUltimaDescida
+                    if (menu.inicioDaUltimaDescida >= 0 && moveuInicio != moveuFim) {
+                        recyclerView.virarParaASelecao(menu.texto, moveuInicio, moveuFim)
+                    }
                     menu.inicioDaUltimaDescida = menu.inicioDaSelecao
                     menu.fimDaUltimaDescida = menu.fimDaSelecao
                     menu.modo?.invalidateContentRect()
