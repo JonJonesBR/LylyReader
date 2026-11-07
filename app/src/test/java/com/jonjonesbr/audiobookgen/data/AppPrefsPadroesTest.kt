@@ -23,7 +23,7 @@ class AppPrefsPadroesTest {
     fun `padroes novos sem nada gravado`() {
         val (appPrefs, _) = prefs()
 
-        assertEquals(18, appPrefs.supertonicSteps)
+        assertEquals(10, appPrefs.supertonicSteps)
         assertEquals(10, appPrefs.pocketPassos)
         assertFalse(appPrefs.pausasNaturais)
     }
@@ -33,7 +33,7 @@ class AppPrefsPadroesTest {
         val (appPrefs, gravado) = prefs()
         gravado.edit().putInt("supertonic_steps", 8).apply()
 
-        assertEquals(18, appPrefs.supertonicSteps)
+        assertEquals(10, appPrefs.supertonicSteps)
         assertFalse(gravado.contains("supertonic_steps"))
     }
 
@@ -42,7 +42,7 @@ class AppPrefsPadroesTest {
         val (appPrefs, gravado) = prefs()
         gravado.edit().putInt("supertonic_steps", 5).apply()
 
-        assertEquals(18, appPrefs.supertonicSteps)
+        assertEquals(10, appPrefs.supertonicSteps)
         assertFalse(gravado.contains("supertonic_steps"))
     }
 
@@ -58,7 +58,7 @@ class AppPrefsPadroesTest {
     @Test
     fun `supertonic escolhido depois da migracao nao e tocado de novo`() {
         val (appPrefs, gravado) = prefs()
-        assertEquals(18, appPrefs.supertonicSteps) // roda as migrações
+        assertEquals(10, appPrefs.supertonicSteps) // roda as migrações
         appPrefs.supertonicSteps = 8
 
         assertEquals(8, appPrefs.supertonicSteps)

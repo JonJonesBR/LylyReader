@@ -154,6 +154,14 @@ class AppPrefs(context: Context) {
                 }
                 e.apply()
             }
+            // Padrão 10: quem estava no 5, no 8 ou no 18 gravado passa para o 10.
+            if (!p.getBoolean("supertonic_steps_padrao10", false)) {
+                val e = p.edit().putBoolean("supertonic_steps_padrao10", true)
+                if (p.getInt("supertonic_steps", SUPERTONIC_STEPS_PADRAO) in SUPERTONIC_STEPS_PADROES_ANTIGOS) {
+                    e.remove("supertonic_steps")
+                }
+                e.apply()
+            }
             return p.getInt("supertonic_steps", SUPERTONIC_STEPS_PADRAO)
         }
         set(v) = p.edit().putInt("supertonic_steps", v).apply()
@@ -564,12 +572,14 @@ class AppPrefs(context: Context) {
         const val READER_ESPACAMENTO_PADRAO = 1.5f
         /** Passos padrão do modelo Supertonic (antes 8, e 5 antes disso: com poucos passos o modelo engolia
          *  mais palavras). */
-        const val SUPERTONIC_STEPS_PADRAO = 18
-        /** Padrões antigos do Supertonic: 5 (versão anterior ao 8) e 8 (versão anterior ao 18). */
+        const val SUPERTONIC_STEPS_PADRAO = 10
+        /** Padrões antigos do Supertonic: 5, 8 e 18 (cada um foi o padrão de uma versão anterior). */
         private const val SUPERTONIC_STEPS_PADRAO_ANTIGO_5 = 5
         private const val SUPERTONIC_STEPS_PADRAO_ANTIGO_8 = 8
-        private val SUPERTONIC_STEPS_PADROES_ANTIGOS =
-            setOf(SUPERTONIC_STEPS_PADRAO_ANTIGO_5, SUPERTONIC_STEPS_PADRAO_ANTIGO_8)
+        private const val SUPERTONIC_STEPS_PADRAO_ANTIGO_18 = 18
+        private val SUPERTONIC_STEPS_PADROES_ANTIGOS = setOf(
+            SUPERTONIC_STEPS_PADRAO_ANTIGO_5, SUPERTONIC_STEPS_PADRAO_ANTIGO_8, SUPERTONIC_STEPS_PADRAO_ANTIGO_18,
+        )
         const val SUPERTONIC_STEPS_MIN = 2
         const val SUPERTONIC_STEPS_MAX = 20
         /** Pausa padrão entre orações na leitura guiada com kokoro (ms). */
