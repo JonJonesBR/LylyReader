@@ -11,7 +11,10 @@ import com.jonjonesbr.audiobookgen.util.DivisorDeOracoes
  * trecho com mais tempo ([velocidadeParaRefazer]).
  */
 object TrechosSupertonic {
-    /** Antes eram 500 chars por chamada (o nativo recortava em ~300) e depois 160; trechos longos erram mais a duração. */
+    /**
+     * Antes eram 500 chars por chamada (o nativo recortava em ~300) e depois 160; trechos longos erram mais
+     * a duração.
+     */
     const val MAX_CHARS = 120
 
     /** Letras por segundo (na velocidade 1.0) acima das quais a fala está comprimida demais. */
