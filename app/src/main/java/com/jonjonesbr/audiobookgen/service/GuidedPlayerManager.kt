@@ -1103,7 +1103,7 @@ class GuidedPlayerManager(
                     audioPath = cacheOracoes[posicao]
                         ?.takeIf { it.voice == voz && it.speedPct == ritmo && it.textHash == textHash }
                         ?.path
-                    if (audioPath != null) origemDoAudio = "esperou-prefetch"
+                    origemDoAudio = "esperou-prefetch"
                 }
                 if (audioPath == null) {
                     // Só chega aqui se o prefetch falhou (ou posicao == 0 — primeira oração,
@@ -1168,7 +1168,9 @@ class GuidedPlayerManager(
                 )
                 trechoFalhou = false
                 val inicioTocarNs = System.nanoTime()
-                tocarTrecho(audioFile, speedVal * speedMultiplier * fatorFala)
+                // A velocidade com que o trecho começou: uma mudança ao vivo durante o trecho não vale para ele.
+                val velocidadeAplicada = speedVal * speedMultiplier * fatorFala
+                tocarTrecho(audioFile, velocidadeAplicada)
                 if (trechoFalhou) return
                 if (posicao == 0) {
                     currentBaseSpeed = speedVal
@@ -1181,7 +1183,7 @@ class GuidedPlayerManager(
                     AmostraDeOracao(
                         "${posicao + 1}/${oracoes.size}", oracao.texto.length, origemDoAudio, esperaMs,
                         (System.nanoTime() - inicioTocarNs) / NS_POR_MS_DIAGNOSTICO,
-                        speedVal * speedMultiplier * fatorFala
+                        velocidadeAplicada
                     ),
                     audioFile
                 )

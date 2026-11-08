@@ -57,6 +57,7 @@ class OnnxTtsEngine(
         /** Quantas vezes um trecho Supertonic com fala comprimida (palavras puladas) é refeito. */
         private const val REFAZER_SUPERTONIC_MAX = 2
         private const val NS_POR_MS = 1_000_000L
+        private const val MS_POR_SEGUNDO = 1000f
         // Todas as vozes Supertonic usam o pacote V2 (Supertone/supertonic-2) — multilíngue:
         // en/ko/es/pt/fr no mesmo modelo (~300 MB). Variantes do voice ID só mudam o `lang`
         // passado para o nativo, e o arquivo de estilo (M1.json/F1.json).
@@ -172,7 +173,7 @@ class OnnxTtsEngine(
                 context, "onnx.chamada",
                 "voz" to voiceId, "chars" to texto.length, "trechos" to chunks.size,
                 "audio_s" to audioS, "ms" to gastoMs,
-                "rtf" to if (audioS > 0f) gastoMs / 1000f / audioS else null
+                "rtf" to if (audioS > 0f) gastoMs / MS_POR_SEGUNDO / audioS else null
             )
             Result.success(outputFile)
 
