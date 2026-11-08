@@ -737,10 +737,12 @@ class GuidedPlayerManager(
 
         playJob?.cancel()
         playJob = coroutineScope.launch {
+            inicioDoPlayNs = System.nanoTime()
             val ritmo = appPrefs.ritmo
             val speedVal = ritmo / RITMO_BASE
 
             val (voz, motor) = vozEMotorAtuais()
+            registrarConfigDaLeituraUmaVez(voz, motor)
 
             val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motor)
             val synthesizer = com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.para(
@@ -844,6 +846,7 @@ class GuidedPlayerManager(
                         tocarTrecho(audioFile, speedVal * speedMultiplier * fatorFala)
                         // Erro ao começar o trecho: o estado já mostra o erro; não sobrescreve com "tocando".
                         if (trechoFalhou) return@launch
+                        registrarInicioDeParagrafo("unico", if (cachedPrefetch != null) "pronto" else "direta")
                         // currentIndex, não o argumento: se o texto foi trocado (bruto → limpo) durante a síntese,
                         // o índice foi remapeado e o marcador tem de seguir o parágrafo que está tocando.
                         _state.update { GuidedState(currentIndex, isPlaying = true, isLoading = false) }
@@ -1176,6 +1179,7 @@ class GuidedPlayerManager(
                     currentBaseSpeed = speedVal
                     _state.update { GuidedState(currentIndex, isPlaying = true, isLoading = false) }
                     startProgressPolling()
+                    registrarInicioDeParagrafo("oracoes", origemDoAudio)
                 }
                 oracaoCompletada?.await()
                 if (trechoFalhou) return
@@ -1236,6 +1240,47 @@ class GuidedPlayerManager(
             "arquivo_ms" to duracaoMs,
             "esperado_ms" to esperadoMs,
             "vel" to amostra.velocidade, "fila" to pendingOracaoJobs.size
+        )
+    }
+
+    // Marcas de tempo do diagnóstico (APK de teste): quando o parágrafo foi pedido e quando o anterior acabou.
+    private var inicioDoPlayNs = 0L
+    private var fimDoParagrafoAnteriorNs = 0L
+    private var configDaLeituraRegistrada = false
+
+    /**
+     * Diagnóstico: o parágrafo começou a tocar. [caminho] é o jeito de tocar (oracoes ou unico) e [origem] diz se o
+     * áudio já estava pronto ou foi sintetizado na hora. `desde_play_ms` é o custo de começar; `desde_fim_ms` é o
+     * silêncio que a pessoa ouviu desde o fim do parágrafo anterior (inclui a pausa natural).
+     */
+    private fun registrarInicioDeParagrafo(caminho: String, origem: String) {
+        val agora = System.nanoTime()
+        val desdeFimMs = if (fimDoParagrafoAnteriorNs > 0L) {
+            (agora - fimDoParagrafoAnteriorNs) / NS_POR_MS_DIAGNOSTICO
+        } else {
+            null
+        }
+        com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.registrar(
+            context, "guiada.inicio",
+            "paragrafo" to currentIndex, "caminho" to caminho, "origem" to origem,
+            "desde_play_ms" to (agora - inicioDoPlayNs) / NS_POR_MS_DIAGNOSTICO, "desde_fim_ms" to desdeFimMs
+        )
+    }
+
+    /** Diagnóstico: as opções que mudam a velocidade, o tom ou a pausa do áudio, uma vez por leitura. */
+    private fun registrarConfigDaLeituraUmaVez(voz: String, motor: String) {
+        if (configDaLeituraRegistrada) return
+        configDaLeituraRegistrada = true
+        val audio = ajustesDeAudio()
+        com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.registrar(
+            context, "guiada.config",
+            "voz" to voz, "motor" to motor, "ritmo" to appPrefs.ritmo, "velocidade" to speedMultiplier,
+            "passos" to appPrefs.supertonicSteps, "entonacaoContinua" to appPrefs.entonacaoContinua,
+            "pausasNaturais" to appPrefs.pausasNaturais, "pausaFixaMs" to audio.pausaFinalFraseMs,
+            "acabamento" to appPrefs.acabamentoAudio, "folga" to appPrefs.folgaFrasesCurtas,
+            "dialogosVivos" to appPrefs.dialogosVivos, "tom" to audio.tomMeiosTons,
+            "tomFalas" to audio.tomNasFalasMeiosTons, "agudosDb" to audio.agudosDb,
+            "buffer" to audio.bufferAdiante, "paralelo2" to appPrefs.paralelismoSupertonicoAumentado
         )
     }
 
@@ -1867,6 +1912,7 @@ class GuidedPlayerManager(
     }
 
     private fun onPlaybackCompleted() {
+        fimDoParagrafoAnteriorNs = System.nanoTime()
         Log.d(TAG, "Playback completed for paragraph $currentIndex")
         if (segurarPelaSonecaDeCapitulo()) return
         next()
