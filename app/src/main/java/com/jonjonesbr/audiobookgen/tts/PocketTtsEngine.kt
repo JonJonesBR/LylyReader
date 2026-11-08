@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.tts
 
 import android.content.Context
 import android.util.Log
+import com.jonjonesbr.audiobookgen.util.DiagnosticoSintese
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -36,7 +37,13 @@ class PocketTtsEngine(private val context: Context) {
                     return@withContext failure("Prepare a clonagem deste idioma em Ajustes → Vozes clonadas.")
                 }
             }
+            val inicioNs = System.nanoTime()
             val error = PocketProcessClient.synthesize(context, text, voiceId, output)
+            DiagnosticoSintese.registrar(
+                context, "pocket.chamada",
+                "voz" to voiceId, "chars" to text.length, "ms" to (System.nanoTime() - inicioNs) / NS_POR_MS,
+                "bytes" to output.length(), "erro" to error, "texto" to text
+            )
             if (error != null) failure(error) else {
                 lastError = null
                 Result.success(output)
@@ -52,5 +59,6 @@ class PocketTtsEngine(private val context: Context) {
     private companion object {
         const val TAG = "PocketTtsEngine"
         const val SILENCE_MS = 400
+        const val NS_POR_MS = 1_000_000L
     }
 }

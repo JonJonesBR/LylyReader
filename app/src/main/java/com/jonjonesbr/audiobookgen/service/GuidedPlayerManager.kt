@@ -69,6 +69,16 @@ private data class PrefetchedAudio(
     val textHash: Int
 )
 
+/** Medidas de uma oração tocada, para o diagnóstico do APK de teste. */
+private data class AmostraDeOracao(
+    val posicao: String,
+    val chars: Int,
+    val origem: String,
+    val esperaMs: Long,
+    val tocouMs: Long,
+    val velocidade: Float
+)
+
 class GuidedPlayerManager(
     private val context: Context,
     private val pythonUseCase: PythonEngineUseCase,
@@ -84,6 +94,9 @@ class GuidedPlayerManager(
         private const val PROGRESS_POLL_INTERVAL_MS = 50L
         private const val MS_POR_MINUTO = 60_000L
 
+        private const val NS_POR_MS_DIAGNOSTICO = 1_000_000L
+        private const val MS_POR_SEGUNDO_DIAGNOSTICO = 1_000L
+        private const val BITS_POR_BYTE_DIAGNOSTICO = 8
         private const val PREFETCH_COUNT_ONNX = 5
         private const val PREFETCH_COUNT_ONLINE = 6
         // Profundidade da janela de prefetch de orações (kokoro e onnx/Supertonic) — casada
@@ -1075,9 +1088,11 @@ class GuidedPlayerManager(
                 currentCoroutineContext().ensureActive()
 
                 val textHash = oracao.texto.hashCode()
+                val inicioEsperaNs = System.nanoTime()
                 var audioPath = cacheOracoes[posicao]
                     ?.takeIf { it.voice == voz && it.speedPct == ritmo && it.textHash == textHash }
                     ?.path
+                var origemDoAudio = if (audioPath != null) "pronto" else "-"
                 if (audioPath == null && posicao > 0) {
                     // O prefetch da oração atual foi disparado quando uma das ANTERIORES
                     // começou a tocar (janela de profundidade 2). Se ainda está em andamento,
@@ -1088,6 +1103,7 @@ class GuidedPlayerManager(
                     audioPath = cacheOracoes[posicao]
                         ?.takeIf { it.voice == voz && it.speedPct == ritmo && it.textHash == textHash }
                         ?.path
+                    if (audioPath != null) origemDoAudio = "esperou-prefetch"
                 }
                 if (audioPath == null) {
                     // Só chega aqui se o prefetch falhou (ou posicao == 0 — primeira oração,
@@ -1095,7 +1111,9 @@ class GuidedPlayerManager(
                     audioPath = withContext(Dispatchers.IO) {
                         synthesizer.synthesize(oracao.texto, voz, ritmo)
                     }
+                    origemDoAudio = "direta"
                 }
+                val esperaMs = (System.nanoTime() - inicioEsperaNs) / NS_POR_MS_DIAGNOSTICO
 
                 if (audioPath == null) {
                     val motivo = synthesizer.ultimoErro() ?: "motivo desconhecido"
@@ -1149,6 +1167,7 @@ class GuidedPlayerManager(
                     partesDasFalas, oracao.charsAcumulados, oracao.texto.length, totalDasOracoes
                 )
                 trechoFalhou = false
+                val inicioTocarNs = System.nanoTime()
                 tocarTrecho(audioFile, speedVal * speedMultiplier * fatorFala)
                 if (trechoFalhou) return
                 if (posicao == 0) {
@@ -1158,6 +1177,14 @@ class GuidedPlayerManager(
                 }
                 oracaoCompletada?.await()
                 if (trechoFalhou) return
+                registrarOracaoNoDiagnostico(
+                    AmostraDeOracao(
+                        "${posicao + 1}/${oracoes.size}", oracao.texto.length, origemDoAudio, esperaMs,
+                        (System.nanoTime() - inicioTocarNs) / NS_POR_MS_DIAGNOSTICO,
+                        speedVal * speedMultiplier * fatorFala
+                    ),
+                    audioFile
+                )
                 // Pausa a cada ponto final — sem ela, orações consecutivas tocavam coladas (o "gap"
                 // do KokoroTtsEngine só existe DENTRO de uma síntese que precisou dividir por
                 // tamanho; cada oração aqui é um arquivo separado, tocado em sequência pelo player).
@@ -1182,6 +1209,32 @@ class GuidedPlayerManager(
         // Uma pausa do usuário durante a última pausa entre frases segura o avanço.
         aguardarRetomada()
         onPlaybackCompleted()
+    }
+
+    /**
+     * Diagnóstico (só no APK de teste): o que cada oração custou de espera antes de tocar e se tocou na duração
+     * do arquivo. Espera alta = a síntese não deu conta; [tocouMs] bem abaixo da duração do áudio na velocidade
+     * pedida = o trecho foi cortado ou o player correu.
+     */
+    private fun registrarOracaoNoDiagnostico(amostra: AmostraDeOracao, arquivo: File) {
+        if (!com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.ativo(context)) return
+        val duracaoMs = runCatching {
+            java.io.RandomAccessFile(arquivo, "r").use { raf ->
+                com.jonjonesbr.audiobookgen.domain.lerCabecalhoWav(raf)?.takeIf { it.taxa > 0 && it.canais > 0 }?.let {
+                    it.tamanhoDados * MS_POR_SEGUNDO_DIAGNOSTICO /
+                        (it.taxa.toLong() * it.canais * (it.bitsPorAmostra / BITS_POR_BYTE_DIAGNOSTICO))
+                }
+            }
+        }.getOrNull()
+        val esperadoMs = duracaoMs?.takeIf { amostra.velocidade > 0f }?.let { (it / amostra.velocidade).toLong() }
+        com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.registrar(
+            context, "guiada.oracao",
+            "paragrafo" to currentIndex, "oracao" to amostra.posicao, "chars" to amostra.chars,
+            "origem" to amostra.origem, "espera_ms" to amostra.esperaMs, "tocou_ms" to amostra.tocouMs,
+            "arquivo_ms" to duracaoMs,
+            "esperado_ms" to esperadoMs,
+            "vel" to amostra.velocidade, "fila" to pendingOracaoJobs.size
+        )
     }
 
     /** Aguarda o job de prefetch da oração [posicao], se ainda estiver em voo. */
@@ -1226,7 +1279,14 @@ class GuidedPlayerManager(
         ritmo: Int,
         synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
     ): Job = coroutineScope.launch {
+        val inicioNs = System.nanoTime()
         val path = withContext(Dispatchers.IO) { synthesizer.synthesize(oracao.texto, voz, ritmo) }
+        com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.registrar(
+            context, "guiada.prefetch",
+            "paragrafo" to currentIndex, "oracao" to alvo, "chars" to oracao.texto.length,
+            "ms" to (System.nanoTime() - inicioNs) / NS_POR_MS_DIAGNOSTICO, "ok" to (path != null),
+            "fila" to pendingOracaoJobs.size
+        )
         if (path != null) {
             cacheOracoes[alvo] = PrefetchedAudio(path, voz, ritmo, oracao.texto.hashCode())
             Log.d(TAG, "Prefetch oração $alvo pronta: $path")

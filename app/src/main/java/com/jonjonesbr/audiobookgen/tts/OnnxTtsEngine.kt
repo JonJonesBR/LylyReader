@@ -3,7 +3,9 @@ package com.jonjonesbr.audiobookgen.tts
 import com.jonjonesbr.audiobookgen.domain.idiomaNativoSupertonic
 import com.jonjonesbr.audiobookgen.domain.versaoEfetivaSupertonic
 import com.jonjonesbr.audiobookgen.domain.versaoSupertonic
+import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.util.CrashLogWriter
+import com.jonjonesbr.audiobookgen.util.DiagnosticoSintese
 import android.content.Context
 
 import android.util.Log
@@ -54,6 +56,7 @@ class OnnxTtsEngine(
         private const val SUPERTONIC_SR       = 44100
         /** Quantas vezes um trecho Supertonic com fala comprimida (palavras puladas) é refeito. */
         private const val REFAZER_SUPERTONIC_MAX = 2
+        private const val NS_POR_MS = 1_000_000L
         // Todas as vozes Supertonic usam o pacote V2 (Supertone/supertonic-2) — multilíngue:
         // en/ko/es/pt/fr no mesmo modelo (~300 MB). Variantes do voice ID só mudam o `lang`
         // passado para o nativo, e o arquivo de estilo (M1.json/F1.json).
@@ -103,6 +106,7 @@ class OnnxTtsEngine(
         }
 
         try {
+            val inicioChamadaNs = System.nanoTime()
             val prefs    = com.jonjonesbr.audiobookgen.data.AppPrefs(context)
             val speedPct = prefs.ritmo
             val speed    = speedPct / 100.0f
@@ -162,6 +166,14 @@ class OnnxTtsEngine(
             }
 
             Log.i(TAG, "Síntese concluída: ${outputFile.length()} bytes @ $sampleRate Hz, ${allSamples.size} samples")
+            val audioS = allSamples.size.toFloat() / sampleRate
+            val gastoMs = (System.nanoTime() - inicioChamadaNs) / NS_POR_MS
+            DiagnosticoSintese.registrar(
+                context, "onnx.chamada",
+                "voz" to voiceId, "chars" to texto.length, "trechos" to chunks.size,
+                "audio_s" to audioS, "ms" to gastoMs,
+                "rtf" to if (audioS > 0f) gastoMs / 1000f / audioS else null
+            )
             Result.success(outputFile)
 
         } catch (e: Exception) {
@@ -226,7 +238,10 @@ class OnnxTtsEngine(
         // "Mais tempo para frases curtas" (experimental): sintetiza mais devagar e acelera de volta no fim.
         val comFolga = folgaFrasesCurtas && FolgaFrasesCurtas.aplica(texto)
         val inicial = if (comFolga) speed * FolgaFrasesCurtas.FATOR_VELOCIDADE else speed
+        val inicioNs = System.nanoTime()
         var audio = synthesizeSupertonicNative(texto, voiceId, inicial, version) ?: return null
+        val primeiraMs = (System.nanoTime() - inicioNs) / NS_POR_MS
+        val primeiroRitmo = TrechosSupertonic.ritmo(texto, audio.size.toFloat() / SUPERTONIC_SR, inicial)
         var velocidade = inicial
         fun refazerCom(a: FloatArray, v: Float) =
             TrechosSupertonic.velocidadeParaRefazer(texto, a.size.toFloat() / SUPERTONIC_SR, v, tipico)
@@ -254,6 +269,18 @@ class OnnxTtsEngine(
         if (comFolga && audio.isNotEmpty()) {
             audio = FolgaFrasesCurtas.acelerar(audio, SUPERTONIC_SR, 1f / FolgaFrasesCurtas.FATOR_VELOCIDADE)
         }
+        // Diagnóstico (só no APK de teste): o trecho, o ritmo antes e depois do refazer e quanto custou.
+        val segundos = audio.size.toFloat() / SUPERTONIC_SR
+        DiagnosticoSintese.registrar(
+            context, "supertonic.trecho",
+            "voz" to voiceId, "passos" to AppPrefs(context).supertonicSteps,
+            "chars" to texto.length, "letras" to TrechosSupertonic.letras(texto),
+            "vel" to speed, "audio_s" to segundos,
+            "ritmo1" to primeiroRitmo, "ritmoFim" to TrechosSupertonic.ritmo(texto, segundos, velocidade),
+            "tipico" to tipico, "refeito" to tentativas, "velFim" to velocidade,
+            "ms1" to primeiraMs, "msTotal" to (System.nanoTime() - inicioNs) / NS_POR_MS,
+            "ainda_rapido" to (nova != null), "texto" to texto
+        )
         return audio
     }
 
