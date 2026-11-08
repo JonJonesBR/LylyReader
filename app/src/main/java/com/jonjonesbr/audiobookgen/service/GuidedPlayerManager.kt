@@ -1251,7 +1251,8 @@ class GuidedPlayerManager(
     /**
      * Diagnóstico: o parágrafo começou a tocar. [caminho] é o jeito de tocar (oracoes ou unico) e [origem] diz se o
      * áudio já estava pronto ou foi sintetizado na hora. `desde_play_ms` é o custo de começar; `desde_fim_ms` é o
-     * tempo desde o avanço do parágrafo anterior, que já vem depois da pausa final: é só o custo da virada, sem a pausa.
+     * tempo desde o avanço do parágrafo anterior, que já vem depois da pausa final: é só o custo da virada,
+     * sem a pausa.
      */
     private fun registrarInicioDeParagrafo(caminho: String, origem: String) {
         val agora = System.nanoTime()
