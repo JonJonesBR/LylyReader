@@ -80,7 +80,8 @@ object DiagnosticoSintese {
         executor.execute {
             runCatching {
                 val hora = SimpleDateFormat("HHmmss_SSS", Locale.US).format(Date())
-                val nome = "lyly_diag_${hora}_$rotulo.wav"
+                // O áudio mantém a extensão de origem: vozes do Python (Edge etc.) entregam MP3, não WAV.
+                val nome = "lyly_diag_${hora}_$rotulo.${arquivo.extension.ifBlank { "wav" }}"
                 if (copiarParaDownloads(app, arquivo, nome)) {
                     registrar(app, "audio.export", "nome" to nome, "texto" to texto)
                     apararAudios(app)
@@ -93,7 +94,7 @@ object DiagnosticoSintese {
     private fun copiarParaDownloads(context: Context, arquivo: File, nome: String): Boolean {
         val valores = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, nome)
-            put(MediaStore.MediaColumns.MIME_TYPE, "audio/x-wav")
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeDoAudio(arquivo))
             put(MediaStore.MediaColumns.RELATIVE_PATH, PASTA_AUDIOS)
         }
         val resolver = context.contentResolver
@@ -102,6 +103,9 @@ object DiagnosticoSintese {
         saida?.use { out -> arquivo.inputStream().use { it.copyTo(out) } }
         return saida != null
     }
+
+    private fun mimeDoAudio(arquivo: File): String =
+        if (arquivo.extension.equals("mp3", ignoreCase = true)) "audio/mpeg" else "audio/x-wav"
 
     /** Apaga os áudios de diagnóstico além dos [MAX_AUDIOS] mais recentes (só os que o próprio app criou). */
     private fun apararAudios(context: Context) {
