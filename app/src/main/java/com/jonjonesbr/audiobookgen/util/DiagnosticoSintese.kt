@@ -1,6 +1,8 @@
 package com.jonjonesbr.audiobookgen.util
 
 import android.app.ActivityManager
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -9,12 +11,14 @@ import android.os.Debug
 import android.os.Build
 import android.os.PowerManager
 import android.os.Process
+import android.provider.MediaStore
 import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executors
 
 /**
  * Registro de diagnóstico da síntese de voz e da leitura guiada, só no APK de teste (id `.dev`).
@@ -30,6 +34,8 @@ object DiagnosticoSintese {
     private const val NOME_ARQUIVO = "lyly_error_diag_sintese.txt"
     private const val SUFIXO_APK_DE_TESTE = ".dev"
     const val TAMANHO_MAX = 400_000
+    private const val MAX_AUDIOS = 80
+    private const val PASTA_AUDIOS = "Download/LylyDiag"
     private const val DECIMOS = 10
     private const val MB = 1024L * 1024L
     private const val KB_POR_MB = 1024L
@@ -37,6 +43,7 @@ object DiagnosticoSintese {
 
     @Volatile private var ativoCache: Boolean? = null
     private val lock = Any()
+    private val executor by lazy { Executors.newSingleThreadExecutor() }
 
     fun ativo(context: Context): Boolean =
         ativoCache ?: context.packageName.endsWith(SUFIXO_APK_DE_TESTE).also { ativoCache = it }
@@ -60,6 +67,59 @@ object DiagnosticoSintese {
                 FileOutputStream(arquivo, true).use { it.write(linha.toByteArray(Charsets.UTF_8)) }
             }
         }.onFailure { Log.w(TAG, "Falha ao registrar diagnóstico", it) }
+    }
+
+    /**
+     * Copia o [arquivo] de áudio que vai tocar para Download/LylyDiag (só Android 10+, só no APK de teste), em
+     * segundo plano, e registra o nome e o [texto] no log. Guarda só os [MAX_AUDIOS] mais recentes. Serve para ouvir
+     * o trecho fora do app e para analisar o sinal: separa defeito do áudio gerado de defeito do player.
+     */
+    fun exportarAudio(context: Context, arquivo: File, rotulo: String, texto: String?) {
+        if (!ativo(context) || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val app = context.applicationContext
+        executor.execute {
+            runCatching {
+                val hora = SimpleDateFormat("HHmmss_SSS", Locale.US).format(Date())
+                val nome = "lyly_diag_${hora}_$rotulo.wav"
+                if (copiarParaDownloads(app, arquivo, nome)) {
+                    registrar(app, "audio.export", "nome" to nome, "texto" to texto)
+                    apararAudios(app)
+                }
+            }.onFailure { Log.w(TAG, "Falha ao exportar o áudio de diagnóstico", it) }
+        }
+    }
+
+    /** Cria o [nome] em [PASTA_AUDIOS] pelo MediaStore (sem permissão no Android 10+) e copia o [arquivo]. */
+    private fun copiarParaDownloads(context: Context, arquivo: File, nome: String): Boolean {
+        val valores = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, nome)
+            put(MediaStore.MediaColumns.MIME_TYPE, "audio/x-wav")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, PASTA_AUDIOS)
+        }
+        val resolver = context.contentResolver
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, valores)
+        val saida = uri?.let { resolver.openOutputStream(it) }
+        saida?.use { out -> arquivo.inputStream().use { it.copyTo(out) } }
+        return saida != null
+    }
+
+    /** Apaga os áudios de diagnóstico além dos [MAX_AUDIOS] mais recentes (só os que o próprio app criou). */
+    private fun apararAudios(context: Context) {
+        val resolver = context.contentResolver
+        val base = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+        resolver.query(
+            base, arrayOf(MediaStore.MediaColumns._ID),
+            "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?", arrayOf("lyly_diag_%"),
+            "${MediaStore.MediaColumns.DATE_ADDED} DESC"
+        )?.use { cursor ->
+            var posicao = 0
+            while (cursor.moveToNext()) {
+                posicao++
+                if (posicao > MAX_AUDIOS) {
+                    resolver.delete(ContentUris.withAppendedId(base, cursor.getLong(0)), null, null)
+                }
+            }
+        }
     }
 
     internal fun montarLinha(

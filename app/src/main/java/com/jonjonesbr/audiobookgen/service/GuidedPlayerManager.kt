@@ -323,8 +323,12 @@ class GuidedPlayerManager(
     }
 
     /** Toca um trecho e publica o início dele na sessão. Falha do player já foi publicada pelo listener de erro. */
-    private fun tocarTrecho(audioFile: File, velocidade: Float) {
+    private fun tocarTrecho(audioFile: File, velocidade: Float, texto: String? = null) {
         velocidadeDoTrecho = velocidade
+        // APK de teste: copia o áudio que vai tocar para Download/LylyDiag, para ouvi-lo fora do app e analisá-lo.
+        com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.exportarAudio(
+            context, audioFile, "p$currentIndex", texto
+        )
         playerEngine?.play(audioFile, velocidade)
         if (!trechoFalhou) publicarTrecho(tocando = true)
     }
@@ -888,7 +892,7 @@ class GuidedPlayerManager(
                             partesParaTomDasFalas(paragraphText), 0, paragraphText.length, paragraphText.length
                         )
                         trechoFalhou = false
-                        tocarTrecho(audioFile, speedVal * speedMultiplier * fatorFala)
+                        tocarTrecho(audioFile, speedVal * speedMultiplier * fatorFala, paragraphText)
                         // Erro ao começar o trecho: o estado já mostra o erro; não sobrescreve com "tocando".
                         if (trechoFalhou) return@launch
                         registrarInicioDeParagrafo("unico", if (cachedPrefetch != null) "pronto" else "direta")
@@ -1454,7 +1458,7 @@ class GuidedPlayerManager(
                 val inicioTocarNs = System.nanoTime()
                 // A velocidade com que o trecho começou: uma mudança ao vivo durante o trecho não vale para ele.
                 val velocidadeAplicada = speedVal * speedMultiplier * fatorFala
-                tocarTrecho(audioFile, velocidadeAplicada)
+                tocarTrecho(audioFile, velocidadeAplicada, oracao.texto)
                 if (trechoFalhou) return
                 if (posicao == 0) {
                     currentBaseSpeed = speedVal
