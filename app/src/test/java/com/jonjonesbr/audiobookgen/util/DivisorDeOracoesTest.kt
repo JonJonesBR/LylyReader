@@ -242,4 +242,61 @@ class DivisorDeOracoesTest {
         val url = "https://exemplo.org/" + "a".repeat(130)
         assertEquals(listOf(OracaoGuia(url, 0)), DivisorDeOracoes.partirLongas(listOf(OracaoGuia(url, 0)), 120))
     }
+
+    private val fraseDeDuasPartes = "Tinha pedaços de capim no cabelo e seu blusão da Academia do FBI estava manchado " +
+        "porque tivera que se atirar ao chão sob o fogo num exercício de aprisionamento em condições especiais " +
+        "durante toda a madrugada chuvosa"
+
+    private val palavrasDeLigacao = setOf(
+        "o", "a", "os", "as", "um", "uma", "de", "do", "da", "dos", "das", "em", "no", "na", "ao", "à",
+        "por", "para", "com", "sem", "sob", "sobre", "até", "entre", "contra", "desde", "e", "ou", "mas",
+        "que", "se", "como", "quando", "porque", "pois", "onde", "meu", "seu", "não", "já", "mais", "me", "te"
+    )
+
+    /** Última palavra da parte, sem pontuação final, em minúsculas: é ela que não pode fechar uma parte. */
+    private fun terminaEmPalavraDeLigacao(parte: String): Boolean =
+        parte.substringAfterLast(' ').trimEnd { !it.isLetterOrDigit() }.lowercase() in palavrasDeLigacao
+
+    @Test
+    fun `frase longa sem virgula vira duas partes balanceadas sem termino de ligacao`() {
+        val partes = DivisorDeOracoes.partirFrase(fraseDeDuasPartes, 120)
+        assertEquals(2, partes.size)
+        assertTrue(partes.all { it.length in 35..120 })
+        assertTrue(partes.none { terminaEmPalavraDeLigacao(it) })
+        assertEquals(
+            fraseDeDuasPartes.split(Regex("\\s+")),
+            partes.joinToString(" ").split(Regex("\\s+"))
+        )
+    }
+
+    @Test
+    fun `corte da frase com virgulas cai na virgula mais perto do alvo`() {
+        val partes = DivisorDeOracoes.partirFrase(fraseLonga, 120)
+        assertEquals("Ela atravessou a praça devagar, olhando as vitrines apagadas, as portas fechadas,", partes[0])
+        assertTrue(partes.all { it.length <= 120 })
+    }
+
+    @Test
+    fun `sem ponto de corte permitido cai no corte guloso sem passar do limite nem perder texto`() {
+        val sobreTudo = "sobre entre contra desde ".repeat(12).trim()
+        val partes = DivisorDeOracoes.partirFrase(sobreTudo, 120)
+        assertTrue(partes.size > 1)
+        assertTrue(partes.all { it.length <= 120 })
+        assertEquals(
+            sobreTudo.split(Regex("\\s+")),
+            partes.joinToString(" ").split(Regex("\\s+"))
+        )
+    }
+
+    @Test
+    fun `frase curta ou no limite fica intacta ao partir`() {
+        assertEquals(listOf("Frase curta."), DivisorDeOracoes.partirFrase("Frase curta.", 120))
+        val noLimite = "a".repeat(120)
+        assertEquals(listOf(noLimite), DivisorDeOracoes.partirFrase(noLimite, 120))
+    }
+
+    @Test
+    fun `palavra unica maior que o limite fica inteira numa parte so`() {
+        assertEquals(listOf("a".repeat(130)), DivisorDeOracoes.partirFrase("a".repeat(130), 120))
+    }
 }

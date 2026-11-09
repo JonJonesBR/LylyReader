@@ -116,7 +116,9 @@ class OnnxTtsEngine(
             // Versão do modelo decidida UMA vez sobre o texto inteiro (não por subchunk).
             val versaoModelo = if (voiceId.startsWith("supertonic-")) versaoSupertonicEfetiva(voiceId, texto)
                 else SUPERTONIC_VERSION
-            val chunks   = splitIntoChunks(texto, voiceId)
+            // Supertonic: o travessão de diálogo sai antes da divisão (ver TextoSupertonic).
+            val textoParaTrechos = if (voiceId.startsWith("supertonic-")) TextoSupertonic.preparar(texto) else texto
+            val chunks   = splitIntoChunks(textoParaTrechos, voiceId)
             Log.d(TAG, "Texto dividido em ${chunks.size} chunks.")
             val wavParts = mutableListOf<FloatArray>()
             var sampleRate = SUPERTONIC_SR

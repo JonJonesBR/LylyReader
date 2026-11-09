@@ -27,9 +27,15 @@ object TtsChunkCache {
 
     private fun dir(context: Context): File = context.cacheDir
 
+    /**
+     * Supertonic sem o travessão de diálogo (ver TextoSupertonic): o áudio antigo, com a vírgula
+     * inicial, não é reaproveitado.
+     */
+    private const val SUFIXO_TRAVESSAO_SUPERTONIC = "-dash1"
+
     /** BYOM usa ID derivado do hash do pacote; revisar estes tokens ao atualizar modelos oficiais. */
     internal fun revisaoModelo(voice: String): String = when {
-        voice.startsWith("supertonic-") -> "supertonic-v2"
+        voice.startsWith("supertonic-") -> "supertonic-v2" + SUFIXO_TRAVESSAO_SUPERTONIC
         voice.startsWith("kokoro-") -> "kokoro-multilang-v1_0-fp32"
         // Pocket "-eosolha1": fim da fala só vale com silêncio depois; "-ini1": 60 ms de silêncio no início.
         voice == "pocket-ptbr-rafael" -> "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2-retry1-retic1-eosolha1-ini1"
@@ -46,8 +52,11 @@ object TtsChunkCache {
      * [versaoEfetivaSupertonic]). Sem V1, inglês é cacheado como v2, igual ao áudio que o motor gera.
      */
     internal fun revisaoModelo(voice: String, texto: String, v1Pronto: Boolean): String =
-        if (voice.startsWith("supertonic-")) "supertonic-" + versaoEfetivaSupertonic(voice, texto, v1Pronto)
-        else revisaoModelo(voice)
+        if (voice.startsWith("supertonic-")) {
+            "supertonic-" + versaoEfetivaSupertonic(voice, texto, v1Pronto) + SUFIXO_TRAVESSAO_SUPERTONIC
+        } else {
+            revisaoModelo(voice)
+        }
 
     internal fun hashTexto(texto: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest(texto.toByteArray(Charsets.UTF_8))
