@@ -244,8 +244,8 @@ class DivisorDeOracoesTest {
     }
 
     private val fraseDeDuasPartes = "Tinha pedaços de capim no cabelo e seu blusão da Academia do FBI estava " +
-        "manchado porque tivera que se atirar ao chão sob o fogo num exercício de aprisionamento em condições especiais " +
-        "durante toda a madrugada chuvosa"
+        "manchado porque tivera que se atirar ao chão sob o fogo num exercício de aprisionamento " +
+        "em condições especiais durante toda a madrugada chuvosa"
 
     private val palavrasDeLigacao = setOf(
         "o", "a", "os", "as", "um", "uma", "de", "do", "da", "dos", "das", "em", "no", "na", "ao", "à",
