@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import android.os.Debug
 import android.os.Build
 import android.os.PowerManager
 import android.os.Process
@@ -31,6 +32,8 @@ object DiagnosticoSintese {
     const val TAMANHO_MAX = 400_000
     private const val DECIMOS = 10
     private const val MB = 1024L * 1024L
+    private const val KB_POR_MB = 1024L
+    private const val SEGUNDOS_PREVISAO_TERMICA = 10
 
     @Volatile private var ativoCache: Boolean? = null
     private val lock = Any()
@@ -101,6 +104,17 @@ object DiagnosticoSintese {
                 partes += "termico=${pm.currentThermalStatus}"
             }
         }
+        runCatching {
+            // Folga térmica prevista (1,0 = no limite do aquecimento; o estado térmico só muda depois), CPU gasta
+            // pelo processo desde o início e memória dele: separam aquecimento, disputa de CPU e inchaço do processo.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                val folga = pm.getThermalHeadroom(SEGUNDOS_PREVISAO_TERMICA)
+                if (!folga.isNaN()) partes += "folgaTermica=%.2f".format(Locale.US, folga)
+            }
+        }
+        partes += "cpuProc=${Process.getElapsedCpuTime()}ms"
+        partes += "pss=${Debug.getPss() / KB_POR_MB}MB"
         runCatching {
             val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             val info = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
