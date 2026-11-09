@@ -1062,16 +1062,37 @@ class GuidedPlayerManager(
         antecipacaoJob = coroutineScope.launch {
             val velocidade = (ritmo / RITMO_BASE * speedMultiplier).coerceAtLeast(VELOCIDADE_MINIMA_ANTECIPACAO)
             var situacao = SituacaoAFrente(0, segundosRestantesDoAtual(velocidade))
-            for (i in currentIndex + 1..paragraphs.lastIndex) {
+            var i = currentIndex + 1
+            while (i <= paragraphs.lastIndex &&
+                PlanoDeAntecipacao.devePreparar(situacao.segundosProntos, situacao.paragrafosProntos)
+            ) {
                 ensureActive()
-                if (!PlanoDeAntecipacao.devePreparar(situacao.segundosProntos, situacao.paragrafosProntos)) break
-                // Sem letra nem dígito o motor não fala nada; falas de outra voz saem por tocarParagrafoPorFalantes.
-                if (paragraphs[i].texto.none { it.isLetterOrDigit() } || paragrafoTemFalasDeOutraVoz(i, voz)) continue
-                // Null = a síntese falhou: para aqui, para não repetir em rajada. O próximo gatilho tenta de novo.
-                val pronta = prepararSePreciso(i, voz, ritmo, synthesizer, situacao) ?: break
-                situacao = SituacaoAFrente(
+                // Null = para aqui: a síntese falhou (não repete em rajada; o próximo gatilho tenta de novo) ou o
+                // parágrafo tem falas de outra voz.
+                situacao = situacaoDepoisDe(AlvoDePreparo(i, voz, ritmo), synthesizer, situacao, velocidade) ?: break
+                i++
+            }
+        }
+    }
+
+    /**
+     * Prepara o parágrafo [alvo] e devolve o que passa a estar pronto à frente; [situacao] intacta se ele não tem o
+     * que falar (sem letra nem dígito). Null encerra a antecipação: síntese que falhou ou parágrafo de falas de
+     * outra voz, que sai por tocarParagrafoPorFalantes e disputaria o motor com a antecipação.
+     */
+    private suspend fun situacaoDepoisDe(
+        alvo: AlvoDePreparo,
+        synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer,
+        situacao: SituacaoAFrente,
+        velocidade: Float
+    ): SituacaoAFrente? {
+        return when {
+            paragrafoTemFalasDeOutraVoz(alvo.indice, alvo.voz) -> null
+            paragraphs[alvo.indice].texto.none { it.isLetterOrDigit() } -> situacao
+            else -> prepararSePreciso(alvo.indice, alvo.voz, alvo.ritmo, synthesizer, situacao)?.let { pronta ->
+                SituacaoAFrente(
                     paragrafosProntos = situacao.paragrafosProntos + 1,
-                    segundosProntos = situacao.segundosProntos + duracaoDaAberturaS(i, pronta, velocidade)
+                    segundosProntos = situacao.segundosProntos + duracaoDaAberturaS(alvo.indice, pronta, velocidade)
                 )
             }
         }
