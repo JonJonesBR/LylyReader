@@ -243,8 +243,8 @@ class DivisorDeOracoesTest {
         assertEquals(listOf(OracaoGuia(url, 0)), DivisorDeOracoes.partirLongas(listOf(OracaoGuia(url, 0)), 120))
     }
 
-    private val fraseDeDuasPartes = "Tinha pedaços de capim no cabelo e seu blusão da Academia do FBI estava manchado " +
-        "porque tivera que se atirar ao chão sob o fogo num exercício de aprisionamento em condições especiais " +
+    private val fraseDeDuasPartes = "Tinha pedaços de capim no cabelo e seu blusão da Academia do FBI estava " +
+        "manchado porque tivera que se atirar ao chão sob o fogo num exercício de aprisionamento em condições especiais " +
         "durante toda a madrugada chuvosa"
 
     private val palavrasDeLigacao = setOf(
