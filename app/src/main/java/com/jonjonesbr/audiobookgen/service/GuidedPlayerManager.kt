@@ -6,6 +6,7 @@ import com.jonjonesbr.audiobookgen.domain.OfflineSpeakerAttributor
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.PausasNaturais
 import com.jonjonesbr.audiobookgen.domain.PerfilAudioLivro
+import com.jonjonesbr.audiobookgen.domain.PlanoDeAntecipacao
 import com.jonjonesbr.audiobookgen.domain.ExtractionResult
 import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
 import com.jonjonesbr.audiobookgen.domain.SpeakerAttributionResult
@@ -31,6 +32,7 @@ import com.jonjonesbr.audiobookgen.player.MediaPlayerEngineImpl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -68,6 +70,15 @@ private data class PrefetchedAudio(
     val speedPct: Int,
     val textHash: Int
 )
+
+/** Parágrafo a preparar com antecedência: índice, voz e ritmo em que o áudio é sintetizado. */
+private data class AlvoDePreparo(val indice: Int, val voz: String, val ritmo: Int)
+
+/** Quanto já está pronto à frente do parágrafo que toca: parágrafos preparados e segundos de áudio. */
+private data class SituacaoAFrente(val paragrafosProntos: Int, val segundosProntos: Float)
+
+/** Síntese de um parágrafo em voo, com a voz e o ritmo dela (para não reaproveitar um preparo de outra voz). */
+private class PreparoDeParagrafo(val voz: String, val ritmo: Int, val job: Job)
 
 /** Medidas de uma oração tocada, para o diagnóstico do APK de teste. */
 private data class AmostraDeOracao(
@@ -121,6 +132,8 @@ class GuidedPlayerManager(
         // kokoro/onnx/Pocket sintetizarem a virada antes do parágrafo atual acabar, sem disputar
         // demais pelo Semaphore(2) do :sherpa com o prefetch dentro do próprio parágrafo.
         private const val LEAD_ORACOES_PROXIMO_PARAGRAFO = 2
+        // Piso da velocidade ao converter a duração do áudio em segundos de leitura (antecipação).
+        private const val VELOCIDADE_MINIMA_ANTECIPACAO = 0.5f
         /** `ritmo` é percentual (100 = normal) — converte para multiplicador de velocidade. */
         private const val RITMO_BASE = 100f
         // Texto mínimo e descartável só para forçar o carregamento da sessão ORT do kokoro
@@ -391,8 +404,11 @@ class GuidedPlayerManager(
     // sem corrupção — ver PLANO_MELHORIAS_V6_PROGRESSO). Só é lido/escrito dentro do
     // coroutineScope (Dispatchers.Main) — não precisa ser concurrent-safe.
     private val pendingOracaoJobs = mutableMapOf<Int, Job>()
-    private var proximoParagrafoJob: Job? = null
-    private var alvoProximoParagrafo: Triple<Int, String, Int>? = null
+    // Antecipação de parágrafos (Supertonic e Pocket): o laço `antecipacaoJob` anda à frente do parágrafo que
+    // toca e prepara um parágrafo por vez (ver PlanoDeAntecipacao). Cada síntese é um Job por índice, em
+    // `preparoPorParagrafo`, e o play() espera só o do índice que vai tocar. Só é lido/escrito na Main.
+    private var antecipacaoJob: Job? = null
+    private val preparoPorParagrafo = mutableMapOf<Int, PreparoDeParagrafo>()
     // Progresso de TEXTO dentro do parágrafo (oração atual → mapeamento para chars).
     private var oracaoCharsInicio = 0
     private var oracaoChars = 0
@@ -408,8 +424,10 @@ class GuidedPlayerManager(
     // resto do bloco lido em sequência). Pré-sintetizar as duas em paralelo durante a última
     // oração do parágrafo ANTERIOR (janela ociosa — nada mais compete pelas 2 vagas concorrentes
     // do :sherpa nesse momento) dá à 2ª a mesma cabeça de vantagem que a 1ª já tinha.
-    private var primeiraOracaoProximoParagrafo: PrefetchedAudio? = null
-    private var segundaOracaoProximoParagrafo: PrefetchedAudio? = null
+    // Guardadas por índice do parágrafo (a antecipação pode ter mais de um à frente). Validade conferida por
+    // voz, ritmo e texto na hora de usar.
+    private val primeiraOracaoPorParagrafo = java.util.concurrent.ConcurrentHashMap<Int, PrefetchedAudio>()
+    private val segundaOracaoPorParagrafo = java.util.concurrent.ConcurrentHashMap<Int, PrefetchedAudio>()
 
     init {
         initializeEngine()
@@ -624,6 +642,8 @@ class GuidedPlayerManager(
             prefetchJob?.cancel()
             prefetchJob = null
             prefetchedPaths.clear()
+            // Os índices mudam no remapeamento: a antecipação em voo apontaria para parágrafos errados.
+            limparAntecipacao()
             // Reabrir o leitor (notificação, mini-player) recarrega o texto, primeiro bruto e depois
             // limpo: os índices mudam. Antes o índice era zerado (-1) e, ao fim do parágrafo, next()
             // recomeçava o livro do início. Agora reencontra o mesmo parágrafo na lista nova.
@@ -768,10 +788,11 @@ class GuidedPlayerManager(
                 // O handoff pode ainda estar sintetizando quando o áudio anterior acaba.
                 // Consome esse lote antes de consultar os caches, sem duplicar a síntese
                 // nem cancelar a segunda oração ao disparar o handoff seguinte.
-                if (usaPipelineDeOracoes(motorEfetivo) &&
-                    alvoProximoParagrafo == Triple(index, voz, ritmo)
-                ) {
-                    proximoParagrafoJob?.join()
+                if (usaPipelineDeOracoes(motorEfetivo)) {
+                    antecipacaoJob?.cancel()
+                    descartarPreparosForaDaJanela(index, voz, ritmo)
+                    // Espera só a síntese DESTE parágrafo, se estiver em voo: nunca a dos seguintes.
+                    preparoPorParagrafo[index]?.takeIf { it.voz == voz && it.ritmo == ritmo }?.job?.join()
                 }
 
                 // Toca o parágrafo como sequência de orações sintetizadas em pipeline (a
@@ -792,25 +813,23 @@ class GuidedPlayerManager(
                     // Consome a 1ª oração pré-sintetizada durante o parágrafo ANTERIOR (se a
                     // voz/ritmo/texto ainda conferem) — a virada de parágrafo não espera síntese.
                     val primeiro = oracoes.first()
-                    val prefetchAnterior = primeiraOracaoProximoParagrafo
+                    val prefetchAnterior = primeiraOracaoPorParagrafo.remove(index)
                     if (prefetchAnterior != null &&
                         prefetchAnterior.voice == voz &&
                         prefetchAnterior.speedPct == ritmo &&
                         prefetchAnterior.textHash == primeiro.texto.hashCode()
                     ) {
                         cacheOracoes[0] = prefetchAnterior
-                        primeiraOracaoProximoParagrafo = null
                         Log.d(TAG, "Usando 1ª oração pré-sintetizada do parágrafo $index")
                     }
                     val segundo = oracoes.getOrNull(1)
-                    val prefetchSegundoAnterior = segundaOracaoProximoParagrafo
+                    val prefetchSegundoAnterior = segundaOracaoPorParagrafo.remove(index)
                     if (segundo != null && prefetchSegundoAnterior != null &&
                         prefetchSegundoAnterior.voice == voz &&
                         prefetchSegundoAnterior.speedPct == ritmo &&
                         prefetchSegundoAnterior.textHash == segundo.texto.hashCode()
                     ) {
                         cacheOracoes[1] = prefetchSegundoAnterior
-                        segundaOracaoProximoParagrafo = null
                         Log.d(TAG, "Usando 2ª oração pré-sintetizada do parágrafo $index")
                     }
                     tocarParagrafoPorOracoes(
@@ -1008,61 +1027,264 @@ class GuidedPlayerManager(
     }
 
     /**
-     * Pré-sintetiza a 1ª (e a 2ª, se houver) unidade do parágrafo seguinte durante a última
-     * oração do atual. Parágrafos de unidade única são pré-sintetizados inteiros no cache de
-     * parágrafos (o play do próximo usa o caminho único existente); parágrafos multi-unidade
-     * têm a 1ª/2ª oração guardadas em [primeiraOracaoProximoParagrafo]/
-     * [segundaOracaoProximoParagrafo] e consumidas no play seguinte (validade por
-     * voz+ritmo+hash do texto). As duas sintetizam em PARALELO (:sherpa aceita 2 sínteses
-     * concorrentes e, nesta janela, nada mais disputa essas vagas) — dá à 2ª oração a mesma
-     * cabeça de vantagem que a 1ª, evitando a pausa perceptível que ela teria se só começasse
-     * a sintetizar quando a 1ª começasse a TOCAR (ver comentário em [segundaOracaoProximoParagrafo]).
+     * Gatilho do preparo do parágrafo seguinte (chamado na unidade única logo depois de tocar, e nas últimas
+     * orações do parágrafo multi-unidade). Supertonic e Pocket: [garantirAntecipacao] mantém preparados os
+     * próximos parágrafos até o orçamento de áudio (ver [PlanoDeAntecipacao]). Kokoro: continua preparando só o
+     * próximo, com a janela de sempre.
      */
     private fun prefetchProximaOracaoDoParagrafoSeguinte(
         voz: String,
         ritmo: Int,
         synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
     ) {
+        if (voz.startsWith("supertonic-") || voz.startsWith("pocket-")) {
+            garantirAntecipacao(voz, ritmo, synthesizer)
+            return
+        }
         val proximo = currentIndex + 1
         if (proximo >= paragraphs.size) return
-        proximoParagrafoJob?.cancel()
-        alvoProximoParagrafo = Triple(proximo, voz, ritmo)
-        proximoParagrafoJob = coroutineScope.launch {
-            val texto = paragraphs[proximo].texto
-            val unidades = oracoesDoParagrafo(texto, voz)
-            if (unidades.isEmpty()) return@launch
-            if (unidades.size == 1) {
-                val ph = texto.hashCode()
-                val path = withContext(Dispatchers.IO) { synthesizer.synthesize(texto, voz, ritmo) }
-                if (path != null) {
-                    prefetchedPaths[proximo] = PrefetchedAudio(path, voz, ritmo, ph)
-                    Log.d(TAG, "Parágrafo $proximo (unidade única) pré-sintetizado: $path")
-                }
-                return@launch
-            }
-            val primeiro = unidades[0]
-            // A 2ª só entra em paralelo com motor que sintetiza em duas vagas (kokoro, ou Supertonic com o
-            // paralelismo ligado). No Supertonic comum e no Pocket a síntese é serial: a 2ª atrasava a 1ª, e o play
-            // do parágrafo esperava as duas (medido: 13 s de silêncio depois de um parágrafo curto). Sem ela, a 2ª
-            // sai do prefetch normal assim que a 1ª começa a tocar.
-            val segundo = unidades.getOrNull(1)
-                ?.takeUnless {
-                    (voz.startsWith("supertonic-") && !appPrefs.paralelismoSupertonicoAumentado) ||
-                        voz.startsWith("pocket-")
-                }
-            val jobPrimeiro = async(Dispatchers.IO) { synthesizer.synthesize(primeiro.texto, voz, ritmo) }
-            val jobSegundo = segundo?.let { async(Dispatchers.IO) { synthesizer.synthesize(it.texto, voz, ritmo) } }
-            val pathPrimeiro = jobPrimeiro.await()
-            if (pathPrimeiro != null) {
-                primeiraOracaoProximoParagrafo = PrefetchedAudio(pathPrimeiro, voz, ritmo, primeiro.texto.hashCode())
-                Log.d(TAG, "1ª oração do parágrafo $proximo pré-sintetizada: $pathPrimeiro")
-            }
-            val pathSegundo = jobSegundo?.await()
-            if (pathSegundo != null) {
-                segundaOracaoProximoParagrafo = PrefetchedAudio(pathSegundo, voz, ritmo, segundo.texto.hashCode())
-                Log.d(TAG, "2ª oração do parágrafo $proximo pré-sintetizada: $pathSegundo")
+        preparoPorParagrafo.values.forEach { it.job.cancel() }
+        preparoPorParagrafo.clear()
+        lancarPreparoDeParagrafo(AlvoDePreparo(proximo, voz, ritmo), synthesizer, SituacaoAFrente(0, 0f))
+    }
+
+    /**
+     * Laço de antecipação (Supertonic e Pocket): prepara os parágrafos que vêm depois do atual, um por vez,
+     * enquanto [PlanoDeAntecipacao.devePreparar] disser que cabe mais. Roda em [antecipacaoJob]; cancelá-lo (o
+     * play() faz isso) não derruba as sínteses em voo, que são Jobs independentes em [preparoPorParagrafo].
+     */
+    private fun garantirAntecipacao(
+        voz: String,
+        ritmo: Int,
+        synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
+    ) {
+        antecipacaoJob?.cancel()
+        antecipacaoJob = coroutineScope.launch {
+            val velocidade = (ritmo / RITMO_BASE * speedMultiplier).coerceAtLeast(VELOCIDADE_MINIMA_ANTECIPACAO)
+            var situacao = SituacaoAFrente(0, segundosRestantesDoAtual(velocidade))
+            for (i in currentIndex + 1..paragraphs.lastIndex) {
+                ensureActive()
+                if (!PlanoDeAntecipacao.devePreparar(situacao.segundosProntos, situacao.paragrafosProntos)) break
+                // Sem letra nem dígito o motor não fala nada; falas de outra voz saem por tocarParagrafoPorFalantes.
+                if (paragraphs[i].texto.none { it.isLetterOrDigit() } || paragrafoTemFalasDeOutraVoz(i, voz)) continue
+                // Null = a síntese falhou: para aqui, para não repetir em rajada. O próximo gatilho tenta de novo.
+                val pronta = prepararSePreciso(i, voz, ritmo, synthesizer, situacao) ?: break
+                situacao = SituacaoAFrente(
+                    paragrafosProntos = situacao.paragrafosProntos + 1,
+                    segundosProntos = situacao.segundosProntos + duracaoDaAberturaS(i, pronta, velocidade)
+                )
             }
         }
+    }
+
+    /**
+     * Devolve a abertura do parágrafo [i] (já pronta ou sintetizada agora). Só espera o preparo DESTE parágrafo; a
+     * síntese fica em fila no motor, então não se lança outra enquanto houver orações do atual em voo.
+     */
+    private suspend fun prepararSePreciso(
+        i: Int,
+        voz: String,
+        ritmo: Int,
+        synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer,
+        situacao: SituacaoAFrente
+    ): PrefetchedAudio? {
+        aberturaPronta(i, voz, ritmo)?.let { return it }
+        val preparo = preparoPorParagrafo[i]?.takeIf { it.voz == voz && it.ritmo == ritmo } ?: run {
+            // Preparo antigo deste índice, de outra voz ou ritmo: não pode haver dois em voo para ele.
+            preparoPorParagrafo[i]?.job?.cancel()
+            while (pendingOracaoJobs.values.any { it.isActive }) delay(ESPERA_PAUSA_MS)
+            lancarPreparoDeParagrafo(AlvoDePreparo(i, voz, ritmo), synthesizer, situacao)
+        }
+        preparo.job.join()
+        return aberturaPronta(i, voz, ritmo)
+    }
+
+    /** Sintetiza, em um Job independente, a abertura do parágrafo [alvo] e a registra por índice. */
+    private fun lancarPreparoDeParagrafo(
+        alvo: AlvoDePreparo,
+        synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer,
+        situacao: SituacaoAFrente
+    ): PreparoDeParagrafo {
+        // LAZY: o Job entra no mapa antes de começar, para que nenhum join veja um preparo ainda não registrado.
+        val job = coroutineScope.launch(start = CoroutineStart.LAZY) {
+            val meuJob = currentCoroutineContext()[Job]
+            val inicioNs = System.nanoTime()
+            try {
+                val path = sintetizarAbertura(alvo, synthesizer)
+                registrarLookahead(alvo, path, inicioNs, situacao)
+            } finally {
+                if (preparoPorParagrafo[alvo.indice]?.job === meuJob) preparoPorParagrafo.remove(alvo.indice)
+            }
+        }
+        val preparo = PreparoDeParagrafo(alvo.voz, alvo.ritmo, job)
+        preparoPorParagrafo[alvo.indice] = preparo
+        job.start()
+        return preparo
+    }
+
+    /** Parágrafo de unidade única vai inteiro para [prefetchedPaths]; multi-unidade, a 1ª (e a 2ª) oração. */
+    private suspend fun CoroutineScope.sintetizarAbertura(
+        alvo: AlvoDePreparo,
+        synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
+    ): String? {
+        val texto = paragraphs[alvo.indice].texto
+        val unidades = oracoesDoParagrafo(texto, alvo.voz)
+        return when {
+            unidades.isEmpty() -> null
+            unidades.size == 1 -> sintetizarParagrafoInteiro(alvo, texto, synthesizer)
+            else -> sintetizarPrimeirasOracoes(alvo, unidades, synthesizer)
+        }
+    }
+
+    private suspend fun sintetizarParagrafoInteiro(
+        alvo: AlvoDePreparo,
+        texto: String,
+        synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
+    ): String? {
+        val path = withContext(Dispatchers.IO) { synthesizer.synthesize(texto, alvo.voz, alvo.ritmo) }
+        if (path != null) {
+            prefetchedPaths[alvo.indice] = PrefetchedAudio(path, alvo.voz, alvo.ritmo, texto.hashCode())
+            Log.d(TAG, "Parágrafo ${alvo.indice} (unidade única) pré-sintetizado: $path")
+        }
+        return path
+    }
+
+    private suspend fun CoroutineScope.sintetizarPrimeirasOracoes(
+        alvo: AlvoDePreparo,
+        unidades: List<OracaoGuia>,
+        synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
+    ): String? {
+        val primeiro = unidades[0]
+        // A 2ª só entra em paralelo com motor que sintetiza em duas vagas (kokoro, ou Supertonic com o
+        // paralelismo ligado). No Supertonic comum e no Pocket a síntese é serial: a 2ª atrasava a 1ª, e o play
+        // do parágrafo esperava as duas (medido: 13 s de silêncio depois de um parágrafo curto). Sem ela, a 2ª
+        // sai do prefetch normal assim que a 1ª começa a tocar.
+        val segundo = unidades.getOrNull(1)
+            ?.takeUnless {
+                (alvo.voz.startsWith("supertonic-") && !appPrefs.paralelismoSupertonicoAumentado) ||
+                    alvo.voz.startsWith("pocket-")
+            }
+        val jobPrimeiro = async(Dispatchers.IO) { synthesizer.synthesize(primeiro.texto, alvo.voz, alvo.ritmo) }
+        val jobSegundo = segundo?.let {
+            async(Dispatchers.IO) { synthesizer.synthesize(it.texto, alvo.voz, alvo.ritmo) }
+        }
+        val pathPrimeiro = jobPrimeiro.await()
+        if (pathPrimeiro != null) {
+            primeiraOracaoPorParagrafo[alvo.indice] =
+                PrefetchedAudio(pathPrimeiro, alvo.voz, alvo.ritmo, primeiro.texto.hashCode())
+            Log.d(TAG, "1ª oração do parágrafo ${alvo.indice} pré-sintetizada: $pathPrimeiro")
+        }
+        val pathSegundo = jobSegundo?.await()
+        if (segundo != null && pathSegundo != null) {
+            segundaOracaoPorParagrafo[alvo.indice] =
+                PrefetchedAudio(pathSegundo, alvo.voz, alvo.ritmo, segundo.texto.hashCode())
+            Log.d(TAG, "2ª oração do parágrafo ${alvo.indice} pré-sintetizada: $pathSegundo")
+        }
+        return pathPrimeiro
+    }
+
+    /** Diagnóstico (só no APK de teste): um parágrafo antecipado ficou pronto, com quanto já estava à frente. */
+    private fun registrarLookahead(alvo: AlvoDePreparo, path: String?, inicioNs: Long, situacao: SituacaoAFrente) {
+        if (!com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.ativo(context)) return
+        val duracaoMs = path?.let { duracaoDoWavMs(File(it)) }
+        com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.registrar(
+            context, "guiada.lookahead",
+            "indice" to alvo.indice,
+            "audio_s" to duracaoMs?.let { it / MS_POR_SEGUNDO_DIAGNOSTICO.toFloat() },
+            "sintese_ms" to (System.nanoTime() - inicioNs) / NS_POR_MS_DIAGNOSTICO,
+            "prontos_a_frente" to situacao.paragrafosProntos,
+            "segundos_a_frente" to situacao.segundosProntos
+        )
+    }
+
+    /** Duração do WAV em milissegundos pelo cabeçalho; null se o arquivo não for um WAV legível. */
+    private fun duracaoDoWavMs(arquivo: File): Long? = runCatching {
+        java.io.RandomAccessFile(arquivo, "r").use { raf ->
+            com.jonjonesbr.audiobookgen.domain.lerCabecalhoWav(raf)?.takeIf { it.taxa > 0 && it.canais > 0 }?.let {
+                it.tamanhoDados * MS_POR_SEGUNDO_DIAGNOSTICO /
+                    (it.taxa.toLong() * it.canais * (it.bitsPorAmostra / BITS_POR_BYTE_DIAGNOSTICO))
+            }
+        }
+    }.getOrNull()
+
+    /**
+     * Segundos de leitura do parágrafo [indice] já pronto, divididos pela velocidade. Multi-unidade: o WAV é só a
+     * 1ª oração, então escala pela proporção de letras do parágrafo inteiro (ou estima tudo por letras, se o WAV
+     * não puder ser lido). Assim o orçamento de áudio não fica subestimado.
+     */
+    private fun duracaoDaAberturaS(indice: Int, pronta: PrefetchedAudio, velocidade: Float): Float {
+        val texto = paragraphs[indice].texto
+        val unidades = oracoesDoParagrafo(texto, pronta.voice)
+        val ms = duracaoDoWavMs(File(pronta.path))
+        val segundos = if (ms != null) {
+            val letrasDaPrimeira = unidades.firstOrNull()?.texto?.length?.coerceAtLeast(1) ?: texto.length
+            val fracao = if (unidades.size > 1) texto.length.toFloat() / letrasDaPrimeira else 1f
+            ms / MS_POR_SEGUNDO_DIAGNOSTICO.toFloat() * fracao
+        } else {
+            PlanoDeAntecipacao.estimarSegundosPorLetras(texto.length)
+        }
+        return segundos / velocidade
+    }
+
+    /** Quanto falta do parágrafo atual, em segundos de leitura (pelo tamanho do texto e pelo progresso). */
+    private fun segundosRestantesDoAtual(velocidade: Float): Float {
+        val restante = (1f - _state.value.progressPct).coerceIn(0f, 1f)
+        val letras = paragraphs[currentIndex].texto.length
+        return PlanoDeAntecipacao.estimarSegundosPorLetras(letras) * restante / velocidade
+    }
+
+    /** A abertura do parágrafo [indice] já sintetizada para esta voz, ritmo e texto (e com o arquivo no disco). */
+    private fun aberturaPronta(indice: Int, voz: String, ritmo: Int): PrefetchedAudio? {
+        val texto = paragraphs[indice].texto
+        val unidades = oracoesDoParagrafo(texto, voz)
+        if (unidades.isEmpty()) return null
+        val pronta = if (unidades.size == 1) {
+            prefetchedPaths[indice]?.takeIf { it.textHash == texto.hashCode() }
+        } else {
+            primeiraOracaoPorParagrafo[indice]?.takeIf { it.textHash == unidades[0].texto.hashCode() }
+        }
+        return pronta?.takeIf { it.voice == voz && it.speedPct == ritmo && File(it.path).exists() }
+    }
+
+    /** Falas de outra voz (voicePlan com mais de uma voz): esse parágrafo sai por tocarParagrafoPorFalantes. */
+    private fun paragrafoTemFalasDeOutraVoz(indice: Int, voz: String): Boolean {
+        val plano = speakerAttribution?.voicePlan(indice, voz)
+        return !plano.isNullOrEmpty() && plano.size > 1 && plano.any { it.voiceId != voz }
+    }
+
+    /**
+     * Tira o que ficou para trás, fora da janela ou de outra voz/ritmo, dos mapas de síntese e dos de áudio.
+     * Só tira as referências: os arquivos continuam no TtsChunkCache (LRU), e um pedido de volta reaproveita.
+     */
+    private fun descartarPreparosForaDaJanela(indice: Int, voz: String, ritmo: Int) {
+        val ultimo = indice + PlanoDeAntecipacao.LIMITE_PARAGRAFOS_A_FRENTE
+        fun foraDaJanela(chave: Int) = chave < indice || chave > ultimo
+        preparoPorParagrafo
+            .filter { (chave, preparo) -> foraDaJanela(chave) || preparo.voz != voz || preparo.ritmo != ritmo }
+            .forEach { (chave, preparo) ->
+                preparo.job.cancel()
+                preparoPorParagrafo.remove(chave)
+            }
+        val descartarAudio: (Int, PrefetchedAudio) -> Boolean = { chave, audio ->
+            foraDaJanela(chave) || audio.voice != voz || audio.speedPct != ritmo
+        }
+        removerAudios(prefetchedPaths, descartarAudio)
+        removerAudios(primeiraOracaoPorParagrafo, descartarAudio)
+        removerAudios(segundaOracaoPorParagrafo, descartarAudio)
+    }
+
+    private fun <V> removerAudios(mapa: MutableMap<Int, V>, descartar: (Int, V) -> Boolean) {
+        mapa.filter { (chave, valor) -> descartar(chave, valor) }.keys.forEach { mapa.remove(it) }
+    }
+
+    /** Zera toda a antecipação: laço, sínteses em voo e aberturas guardadas. */
+    private fun limparAntecipacao() {
+        antecipacaoJob?.cancel()
+        antecipacaoJob = null
+        preparoPorParagrafo.values.forEach { it.job.cancel() }
+        preparoPorParagrafo.clear()
+        primeiraOracaoPorParagrafo.clear()
+        segundaOracaoPorParagrafo.clear()
     }
 
     /**
@@ -1232,14 +1454,7 @@ class GuidedPlayerManager(
      */
     private fun registrarOracaoNoDiagnostico(amostra: AmostraDeOracao, arquivo: File) {
         if (!com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.ativo(context)) return
-        val duracaoMs = runCatching {
-            java.io.RandomAccessFile(arquivo, "r").use { raf ->
-                com.jonjonesbr.audiobookgen.domain.lerCabecalhoWav(raf)?.takeIf { it.taxa > 0 && it.canais > 0 }?.let {
-                    it.tamanhoDados * MS_POR_SEGUNDO_DIAGNOSTICO /
-                        (it.taxa.toLong() * it.canais * (it.bitsPorAmostra / BITS_POR_BYTE_DIAGNOSTICO))
-                }
-            }
-        }.getOrNull()
+        val duracaoMs = duracaoDoWavMs(arquivo)
         val esperadoMs = duracaoMs?.takeIf { amostra.velocidade > 0f }?.let { (it / amostra.velocidade).toLong() }
         com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.registrar(
             context, "guiada.oracao",
@@ -1440,11 +1655,7 @@ class GuidedPlayerManager(
         prefetchJob?.cancel()
         pendingOracaoJobs.values.forEach { it.cancel() }
         pendingOracaoJobs.clear()
-        proximoParagrafoJob?.cancel()
-        proximoParagrafoJob = null
-        alvoProximoParagrafo = null
-        primeiraOracaoProximoParagrafo = null
-        segundaOracaoProximoParagrafo = null
+        limparAntecipacao()
         modoOracoes = false
         oracaoCompletada = null
         publicarTrecho(tocando = false)
@@ -1739,7 +1950,8 @@ class GuidedPlayerManager(
         val estado = _state.value
         return estado.index >= 0 && (
             estado.isLoading || pendingOracaoJobs.isNotEmpty() ||
-                proximoParagrafoJob?.isActive == true || prefetchJob?.isActive == true
+                antecipacaoJob?.isActive == true || preparoPorParagrafo.values.any { it.job.isActive } ||
+                prefetchJob?.isActive == true
             )
     }
 
