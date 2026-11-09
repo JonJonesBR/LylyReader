@@ -70,6 +70,13 @@ object PausasNaturais {
         return faixa.minimo + ((faixa.maximo - faixa.minimo) * fracao).toInt()
     }
 
+    /**
+     * Pausa efetiva: a planejada menos o atraso que o player já impõe a cada unidade ([EstimativaDeAtraso]).
+     * Nunca negativa: se o atraso é maior que a pausa, não há pausa extra.
+     */
+    fun descontar(pausaMs: Int, atrasoEstimadoMs: Long): Int =
+        (pausaMs - atrasoEstimadoMs).coerceAtLeast(0L).toInt()
+
     private fun escalar(ms: Int, velocidade: Float): Int =
         (ms / velocidade.coerceIn(VELOCIDADE_MIN, VELOCIDADE_MAX)).toInt()
 }

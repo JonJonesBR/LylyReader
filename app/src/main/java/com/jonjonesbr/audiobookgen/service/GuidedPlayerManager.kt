@@ -7,6 +7,7 @@ import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.PausasNaturais
 import com.jonjonesbr.audiobookgen.domain.PerfilAudioLivro
 import com.jonjonesbr.audiobookgen.domain.PlanoDeAntecipacao
+import com.jonjonesbr.audiobookgen.domain.EstimativaDeAtraso
 import com.jonjonesbr.audiobookgen.domain.ExtractionResult
 import com.jonjonesbr.audiobookgen.domain.ReadingStartDetector
 import com.jonjonesbr.audiobookgen.domain.SpeakerAttributionResult
@@ -90,6 +91,9 @@ private data class AmostraDeOracao(
     val tocouMs: Long,
     val velocidade: Float
 )
+
+/** Atraso medido numa unidade, a estimativa usada e a pausa efetiva depois do desconto (para o diagnóstico). */
+private data class PausaMedida(val atrasoMs: Long?, val atrasoEstimadoMs: Long, val pausaMs: Int)
 
 class GuidedPlayerManager(
     private val context: Context,
@@ -1443,6 +1447,10 @@ class GuidedPlayerManager(
                     partesDasFalas, oracao.charsAcumulados, oracao.texto.length, totalDasOracoes
                 )
                 trechoFalhou = false
+                val comandosAntes = comandosDeReproducao
+                // Só o multiplicador muda ao vivo (ação do usuário); speedVal é fixo dentro do parágrafo.
+                // Não usar currentBaseSpeed aqui: ele é trocado logo abaixo, no 1º trecho do parágrafo.
+                val multiplicadorAntes = speedMultiplier
                 val inicioTocarNs = System.nanoTime()
                 // A velocidade com que o trecho começou: uma mudança ao vivo durante o trecho não vale para ele.
                 val velocidadeAplicada = speedVal * speedMultiplier * fatorFala
@@ -1456,21 +1464,30 @@ class GuidedPlayerManager(
                 }
                 oracaoCompletada?.await()
                 if (trechoFalhou) return
-                registrarOracaoNoDiagnostico(
-                    AmostraDeOracao(
-                        "${posicao + 1}/${oracoes.size}", oracao.texto.length, origemDoAudio, esperaMs,
-                        (System.nanoTime() - inicioTocarNs) / NS_POR_MS_DIAGNOSTICO,
-                        velocidadeAplicada
-                    ),
-                    audioFile
-                )
+                val tocouMs = (System.nanoTime() - inicioTocarNs) / NS_POR_MS_DIAGNOSTICO
+                // Se o usuário pausou, mexeu na velocidade ou trocou o trecho no meio, a medida não vale.
+                val medicaoValida = comandosDeReproducao == comandosAntes &&
+                    speedMultiplier == multiplicadorAntes
+                val atrasoMs = atrasoDaUnidadeMs(audioFile, velocidadeAplicada, tocouMs, medicaoValida)
                 // Pausa a cada ponto final — sem ela, orações consecutivas tocavam coladas (o "gap"
                 // do KokoroTtsEngine só existe DENTRO de uma síntese que precisou dividir por
                 // tamanho; cada oração aqui é um arquivo separado, tocado em sequência pelo player).
                 // Natural (padrão) ou a fixa editável dos Ajustes. Entre partes de uma frase longa (Supertonic),
-                // a pausa é a curta de continuação (ver pausaDaUnidade).
-                val pausaMs = pausaDaUnidade(oracoes, posicao, paragraphText, speedVal)
-                if (pausaMs > 0) delay(pausaMs.toLong())
+                // a pausa é a curta de continuação (ver pausaDaUnidade). O atraso do player sai da pausa.
+                val pausa = PausaMedida(
+                    atrasoMs = atrasoMs,
+                    atrasoEstimadoMs = atrasoDoPlayer.estimativaMs(),
+                    pausaMs = pausaEfetivaMs(pausaDaUnidade(oracoes, posicao, paragraphText, speedVal))
+                )
+                registrarOracaoNoDiagnostico(
+                    AmostraDeOracao(
+                        "${posicao + 1}/${oracoes.size}", oracao.texto.length, origemDoAudio, esperaMs,
+                        tocouMs, velocidadeAplicada
+                    ),
+                    audioFile,
+                    pausa
+                )
+                if (pausa.pausaMs > 0) delay(pausa.pausaMs.toLong())
             }
         } finally {
             // Só limpa se esta ainda é a reprodução corrente (ver geracaoDeReproducao).
@@ -1493,7 +1510,7 @@ class GuidedPlayerManager(
      * do arquivo. Espera alta = a síntese não deu conta; [tocouMs] bem abaixo da duração do áudio na velocidade
      * pedida = o trecho foi cortado ou o player correu.
      */
-    private fun registrarOracaoNoDiagnostico(amostra: AmostraDeOracao, arquivo: File) {
+    private fun registrarOracaoNoDiagnostico(amostra: AmostraDeOracao, arquivo: File, pausa: PausaMedida) {
         if (!com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.ativo(context)) return
         val duracaoMs = duracaoDoWavMs(arquivo)
         val esperadoMs = duracaoMs?.takeIf { amostra.velocidade > 0f }?.let { (it / amostra.velocidade).toLong() }
@@ -1503,9 +1520,36 @@ class GuidedPlayerManager(
             "origem" to amostra.origem, "espera_ms" to amostra.esperaMs, "tocou_ms" to amostra.tocouMs,
             "arquivo_ms" to duracaoMs,
             "esperado_ms" to esperadoMs,
-            "vel" to amostra.velocidade, "fila" to pendingOracaoJobs.size
+            "vel" to amostra.velocidade, "fila" to pendingOracaoJobs.size,
+            "atraso_ms" to pausa.atrasoMs, "atraso_estimado_ms" to pausa.atrasoEstimadoMs,
+            "pausa_ms" to pausa.pausaMs
         )
     }
+
+    /**
+     * Mede o atraso do player nesta unidade: o tempo que o trecho levou além da duração do arquivo na velocidade
+     * pedida (o MediaPlayer novo, o prepare, o start). Acrescenta a medida à estimativa e a devolve. Não mede se
+     * [medicaoValida] for falso (pausa, retomada ou velocidade mudou no meio do trecho) ou se o WAV não tem duração.
+     */
+    private fun atrasoDaUnidadeMs(
+        arquivo: File,
+        velocidadeAplicada: Float,
+        tocouMs: Long,
+        medicaoValida: Boolean
+    ): Long? {
+        val duracaoMs = duracaoDoWavMs(arquivo)
+        if (!medicaoValida || duracaoMs == null || velocidadeAplicada <= 0f) return null
+        val atrasoMs = tocouMs - (duracaoMs / velocidadeAplicada).toLong()
+        atrasoDoPlayer.add(atrasoMs)
+        return atrasoMs
+    }
+
+    /** Pausa que o laço de orações realmente espera: a planejada menos o atraso estimado do player. */
+    private fun pausaEfetivaMs(pausaPlanejadaMs: Int): Int =
+        PausasNaturais.descontar(pausaPlanejadaMs, atrasoDoPlayer.estimativaMs())
+
+    // Atraso que o player impõe a cada unidade (ver EstimativaDeAtraso). Não persiste: zera só em stop().
+    private val atrasoDoPlayer = EstimativaDeAtraso()
 
     // Marcas de tempo do diagnóstico (APK de teste): quando o parágrafo foi pedido e quando o anterior acabou.
     private var inicioDoPlayNs = 0L
@@ -1715,6 +1759,7 @@ class GuidedPlayerManager(
         // Sessão encerrada: a próxima começa sem a duração deste trecho.
         _trechoNaSessao.value = null
         currentIndex = -1
+        atrasoDoPlayer.zerar()
         if (GuidedPlaybackBridge.manager === this) {
             GuidedPlaybackBridge.deactivate(this)
             // Limpa explicitamente (com manager já nulo, o espelho do _state não dispararia).

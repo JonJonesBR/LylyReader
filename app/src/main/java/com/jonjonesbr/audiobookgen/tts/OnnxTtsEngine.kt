@@ -274,6 +274,7 @@ class OnnxTtsEngine(
         }
         // Diagnóstico (só no APK de teste): o trecho, o ritmo antes e depois do refazer e quanto custou.
         val segundos = audio.size.toFloat() / SUPERTONIC_SR
+        val borda = bordaParaDiagnostico(audio)
         DiagnosticoSintese.registrar(
             context, "supertonic.trecho",
             "voz" to voiceId, "passos" to AppPrefs(context).supertonicSteps,
@@ -282,10 +283,16 @@ class OnnxTtsEngine(
             "ritmo1" to primeiroRitmo, "ritmoFim" to TrechosSupertonic.ritmo(texto, segundos, velocidade),
             "tipico" to tipico, "refeito" to tentativas, "velFim" to velocidade,
             "ms1" to primeiraMs, "msTotal" to (System.nanoTime() - inicioNs) / NS_POR_MS,
-            "ainda_rapido" to (nova != null), "texto" to texto
+            "ainda_rapido" to (nova != null), "texto" to texto,
+            "ini_ms" to borda?.inicioMs, "fim_ms" to borda?.fimMs, "vales_ini" to borda?.valesNoInicio,
+            "primeiro_vale_ms" to borda?.primeiroValeMs, "suspeita_dup" to borda?.suspeitaDeInicioDuplicado
         )
         return audio
     }
+
+    /** Diagnóstico (só no APK de teste): a borda do trecho final. Nos outros APKs não roda e devolve null. */
+    private fun bordaParaDiagnostico(audio: FloatArray): ResultadoDeBorda? =
+        if (DiagnosticoSintese.ativo(context)) AnaliseDeBorda.analisar(audio, SUPERTONIC_SR) else null
 
     /** Versão efetiva (v1 só se instalado; senão v2), com log quando o v1 foi pedido e não está pronto. */
     private fun versaoSupertonicEfetiva(voiceId: String, texto: String): String {
