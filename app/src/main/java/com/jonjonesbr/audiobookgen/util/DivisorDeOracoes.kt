@@ -2,15 +2,21 @@ package com.jonjonesbr.audiobookgen.util
 
 /**
  * Unidade de fala da leitura guiada: um trecho do parágrafo que termina em pontuação
- * de frase (`.`, `!`, `?`, `…`). Sintetizar por oração em vez do parágrafo inteiro
- * reduz a latência até a primeira voz e encurta os silêncios entre blocos quando o
- * motor local tem RTF > 1 (a próxima oração é sintetizada enquanto a atual toca).
+ * de frase (`.`, `!`, `?`, `…`), ou uma parte de frase longa (ver [partirLongas]).
+ * Sintetizar por oração em vez do parágrafo inteiro reduz a latência até a primeira voz e
+ * encurta os silêncios entre blocos quando o motor local tem RTF > 1 (a próxima oração é
+ * sintetizada enquanto a atual toca).
  */
 data class OracaoGuia(
     /** Texto da oração (sem espaços das bordas) — o que vai para o sintetizador. */
     val texto: String,
     /** Posição (em chars) onde a oração começa no parágrafo, com os espaços entre as frases — base do progresso. */
-    val charsAcumulados: Int
+    val charsAcumulados: Int,
+    /**
+     * Verdadeiro quando este trecho é a continuação de uma frase longa dividida por [DivisorDeOracoes.partirLongas]
+     * (a anterior termina no meio da frase). Entre elas a pausa é curta, não a de fim de frase.
+     */
+    val continuacao: Boolean = false
 )
 
 /**
@@ -125,4 +131,74 @@ object DivisorDeOracoes {
         }
         return agrupadas
     }
+
+    /**
+     * Frase maior que [maxChars] vira várias partes, para a síntese à frente não ficar atrás da voz: o motor
+     * sintetiza cada parte numa unidade própria, e a 2ª só começava depois que a 1ª tocava. Orações até
+     * [maxChars] ficam como estão. As partes depois da 1ª saem com `continuacao = true`.
+     */
+    fun partirLongas(oracoes: List<OracaoGuia>, maxChars: Int): List<OracaoGuia> {
+        val resultado = mutableListOf<OracaoGuia>()
+        for (oracao in oracoes) {
+            if (oracao.texto.length <= maxChars) {
+                resultado += oracao
+            } else {
+                resultado += localizarPartes(oracao, partirFrase(oracao.texto, maxChars))
+            }
+        }
+        return resultado
+    }
+
+    /**
+     * Frase maior que [maxChars]: corta depois de vírgula/ponto e vírgula/dois-pontos (a partir da metade do
+     * limite) e, se não houver, entre palavras. Não corta palavra: uma palavra maior que o limite fica inteira.
+     */
+    fun partirFrase(frase: String, maxChars: Int): List<String> {
+        if (frase.length <= maxChars) return listOf(frase)
+        val partes = mutableListOf<String>()
+        val atual = StringBuilder()
+        for (palavra in frase.split(ESPACOS).filter { it.isNotEmpty() }) {
+            if (atual.isNotEmpty() && atual.length + 1 + palavra.length > maxChars) {
+                partes += atual.toString()
+                atual.clear()
+            }
+            if (atual.isNotEmpty()) atual.append(' ')
+            atual.append(palavra)
+            if (palavra.last() in ",;:" && atual.length >= maxChars / 2) {
+                partes += atual.toString()
+                atual.clear()
+            }
+        }
+        if (atual.isNotEmpty()) partes += atual.toString()
+        return partes
+    }
+
+    /**
+     * Posição real de cada parte no texto original da oração: anda palavra a palavra pelo texto, pulando qualquer
+     * quantidade de espaço (o original pode ter espaço duplo ou quebra de linha), em vez de confiar em indexOf.
+     */
+    private fun localizarPartes(oracao: OracaoGuia, partes: List<String>): List<OracaoGuia> {
+        val texto = oracao.texto
+        var cursor = 0
+        val resultado = mutableListOf<OracaoGuia>()
+        for ((indice, parte) in partes.withIndex()) {
+            cursor = pularEspacos(texto, cursor)
+            val inicio = cursor
+            for (palavra in parte.split(' ')) {
+                cursor = pularEspacos(texto, cursor) + palavra.length
+            }
+            resultado += OracaoGuia(parte, oracao.charsAcumulados + inicio, continuacao = indice > 0)
+        }
+        return resultado
+    }
+
+    private fun pularEspacos(texto: String, de: Int): Int {
+        var p = de
+        while (p < texto.length && texto[p] in ESPACOS_DO_SPLIT) p++
+        return p
+    }
+
+    /** Os mesmos espaços do `\s` do Java, que é o separador de [partirFrase]. */
+    private const val ESPACOS_DO_SPLIT = " \t\n\u000B\u000C\r"
+    private val ESPACOS = Regex("\\s+")
 }

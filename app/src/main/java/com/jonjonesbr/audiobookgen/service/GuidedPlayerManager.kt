@@ -22,6 +22,7 @@ import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.data.StatsStore
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.domain.VoiceAssignedSegment
+import com.jonjonesbr.audiobookgen.tts.TrechosSupertonic
 import com.jonjonesbr.audiobookgen.util.TtsErrorMapper
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import android.content.Context
@@ -460,11 +461,32 @@ class GuidedPlayerManager(
     private fun oracoesDoParagrafo(texto: String, voz: String): List<OracaoGuia> {
         val oracoes = DivisorDeOracoes.dividirEmOracoes(texto)
         val continua = appPrefs.entonacaoContinua && (voz.startsWith("supertonic-") || voz.startsWith("pocket-"))
-        return if (continua) {
+        val agrupadas = if (continua) {
             DivisorDeOracoes.agruparOracoesCurta(oracoes, TETO_ENTONACAO_CONTINUA, TETO_ENTONACAO_CONTINUA)
         } else {
             DivisorDeOracoes.agruparOracoesCurta(oracoes)
         }
+        // Supertonic: frase longa vira partes de até MAX_CHARS, para a síntese à frente não esperar a frase toda.
+        return if (voz.startsWith("supertonic-")) {
+            DivisorDeOracoes.partirLongas(agrupadas, TrechosSupertonic.MAX_CHARS)
+        } else {
+            agrupadas
+        }
+    }
+
+    /**
+     * Pausa depois da unidade [posicao] do parágrafo. Entre partes de uma mesma frase longa (a próxima é
+     * continuação) vale a pausa curta de [PausasNaturais.aposContinuacao]; nas demais, a de fim de frase ou de
+     * parágrafo, como antes.
+     */
+    private fun pausaDaUnidade(oracoes: List<OracaoGuia>, posicao: Int, paragrafo: String, speedVal: Float): Int {
+        if (oracoes.getOrNull(posicao + 1)?.continuacao == true) {
+            return PausasNaturais.aposContinuacao(speedVal * speedMultiplier)
+        }
+        return pausaDepoisDe(
+            oracoes[posicao].texto, paragrafo, posicao == oracoes.lastIndex, speedVal,
+            pausaFixaMs = ajustesDeAudio().pausaFinalFraseMs
+        )
     }
 
     private fun timbreAtual() = ajustesDeAudio().let {
@@ -1445,11 +1467,9 @@ class GuidedPlayerManager(
                 // Pausa a cada ponto final — sem ela, orações consecutivas tocavam coladas (o "gap"
                 // do KokoroTtsEngine só existe DENTRO de uma síntese que precisou dividir por
                 // tamanho; cada oração aqui é um arquivo separado, tocado em sequência pelo player).
-                // Natural (padrão) ou a fixa editável dos Ajustes.
-                val pausaMs = pausaDepoisDe(
-                    oracao.texto, paragraphText, posicao == oracoes.lastIndex, speedVal,
-                    pausaFixaMs = ajustesDeAudio().pausaFinalFraseMs
-                )
+                // Natural (padrão) ou a fixa editável dos Ajustes. Entre partes de uma frase longa (Supertonic),
+                // a pausa é a curta de continuação (ver pausaDaUnidade).
+                val pausaMs = pausaDaUnidade(oracoes, posicao, paragraphText, speedVal)
                 if (pausaMs > 0) delay(pausaMs.toLong())
             }
         } finally {

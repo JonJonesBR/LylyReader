@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.util
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -165,5 +166,80 @@ class DivisorDeOracoesTest {
     fun `abreviacao seguida de maiuscula nao divide a frase`() {
         val o = DivisorDeOracoes.dividirEmOracoes("Ele chamou o Sr. Depois saiu.")
         assertEquals(1, o.size)
+    }
+
+    private val fraseLonga = "Ela atravessou a praça devagar, olhando as vitrines apagadas, as portas fechadas, " +
+        "os bancos vazios e a fonte que já não jorrava água havia anos, e lembrou-se então do pai, " +
+        "que a levava ali todos os domingos sem falta."
+
+    private val fraseComVirgula = "Esta frase começa com um trecho bem comprido antes da vírgula, " +
+        "e depois continua por muitas outras palavras até ficar longa demais para caber no limite de caracteres " +
+        "definido."
+
+    @Test
+    fun `oracao curta fica intacta ao partir longas`() {
+        val oracoes = listOf(OracaoGuia("Frase curta.", 4))
+        assertEquals(oracoes, DivisorDeOracoes.partirLongas(oracoes, 120))
+    }
+
+    @Test
+    fun `frase longa vira partes ate o limite sem perder texto e com posicao real`() {
+        val paragrafo = "Frase curta. $fraseLonga"
+        val oracoes = DivisorDeOracoes.partirLongas(DivisorDeOracoes.dividirEmOracoes(paragrafo), 120)
+        val partes = oracoes.drop(1)
+        assertTrue(partes.size > 1)
+        assertTrue(oracoes.all { it.texto.length <= 120 })
+        assertEquals(
+            fraseLonga.split(Regex("\\s+")),
+            partes.joinToString(" ") { it.texto }.split(Regex("\\s+"))
+        )
+        for (o in oracoes) {
+            assertEquals(o.texto, paragrafo.substring(o.charsAcumulados, o.charsAcumulados + o.texto.length))
+        }
+        assertFalse(oracoes[0].continuacao)
+        assertFalse(partes.first().continuacao)
+        assertTrue(partes.drop(1).all { it.continuacao })
+    }
+
+    @Test
+    fun `corte da frase longa prefere a virgula depois da metade do limite`() {
+        val partes = DivisorDeOracoes.partirFrase(fraseComVirgula, 120)
+        assertTrue(partes.size > 1)
+        assertTrue(partes[0].endsWith(","))
+        assertTrue(partes.all { it.length <= 120 })
+    }
+
+    @Test
+    fun `frase longa sem pontuacao corta entre palavras`() {
+        val semPontuacao = "sem pontuação nenhuma nesta frase longa ".repeat(6).trim()
+        val partes = DivisorDeOracoes.partirFrase(semPontuacao, 120)
+        assertTrue(partes.size > 1)
+        assertTrue(partes.all { it.length <= 120 })
+        assertEquals(
+            semPontuacao.split(Regex("\\s+")),
+            partes.joinToString(" ").split(Regex("\\s+"))
+        )
+    }
+
+    @Test
+    fun `espaco duplo e quebra de linha dentro da frase longa mantem o inicio exato`() {
+        val longa = fraseLonga.replace(", ", ",  ").replace(" e ", "\n e ")
+        val paragrafo = "Início curto. $longa"
+        val oracoes = DivisorDeOracoes.partirLongas(DivisorDeOracoes.dividirEmOracoes(paragrafo), 120)
+        val partes = oracoes.drop(1)
+        assertTrue(partes.size > 1)
+        for (o in partes) {
+            assertTrue(paragrafo.startsWith(o.texto.substringBefore(' '), o.charsAcumulados))
+        }
+        assertEquals(
+            fraseLonga.split(Regex("\\s+")),
+            partes.joinToString(" ") { it.texto }.split(Regex("\\s+"))
+        )
+    }
+
+    @Test
+    fun `palavra maior que o limite fica inteira, sem laco infinito`() {
+        val url = "https://exemplo.org/" + "a".repeat(130)
+        assertEquals(listOf(OracaoGuia(url, 0)), DivisorDeOracoes.partirLongas(listOf(OracaoGuia(url, 0)), 120))
     }
 }

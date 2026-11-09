@@ -12,6 +12,13 @@ class PausasNaturaisTest {
         return List(n) { f(aleatorio) }
     }
 
+    @Test fun `pausa entre partes de uma frase longa e fixa e escala com a velocidade`() {
+        assertEquals(100, PausasNaturais.aposContinuacao(1f))
+        assertEquals(50, PausasNaturais.aposContinuacao(2f))
+        assertEquals(200, PausasNaturais.aposContinuacao(0.5f))
+        assertEquals(50, PausasNaturais.aposContinuacao(10f))
+    }
+
     @Test fun `pausa depois de ponto fica na faixa e varia`() {
         val pausas = amostras { PausasNaturais.aposTrecho("Ele saiu de casa.", aleatorio = it) }
         assertTrue(pausas.all { it in 380..650 })

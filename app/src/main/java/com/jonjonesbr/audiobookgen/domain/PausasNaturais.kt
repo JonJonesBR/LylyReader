@@ -32,6 +32,12 @@ object PausasNaturais {
     private const val VELOCIDADE_MAX = 2f
     private const val FECHAMENTOS = "\"'”’»)]—–- "
 
+    /** Pausa entre duas partes da mesma frase longa: igual ao intervalo interno de 0,1 s do motor. */
+    const val PAUSA_CONTINUACAO_MS = 100
+
+    /** Pausa entre partes de uma frase longa (ver [PAUSA_CONTINUACAO_MS]), escalada pela velocidade. */
+    fun aposContinuacao(velocidade: Float = 1f): Int = escalar(PAUSA_CONTINUACAO_MS, velocidade)
+
     /** Pausa depois de um trecho dentro do parágrafo (frase ou oração). */
     fun aposTrecho(texto: String, velocidade: Float = 1f, aleatorio: Random = Random.Default): Int {
         val base = sortear(faixaDoFinal(texto), aleatorio)

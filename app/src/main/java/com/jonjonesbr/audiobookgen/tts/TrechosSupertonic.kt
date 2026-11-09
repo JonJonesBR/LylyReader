@@ -26,14 +26,13 @@ object TrechosSupertonic {
     /** Trechos curtos demais não dão medida confiável (o silêncio das bordas pesa). */
     private const val MIN_LETRAS = 20
     private const val VELOCIDADE_MIN_RELATIVA = 0.5f
-    private val ESPACOS = Regex("\\s+")
 
     /** Divide [texto] em trechos de até [maxChars], por frase e, se preciso, por oração ou palavra. Não perde texto. */
     fun dividir(texto: String, maxChars: Int = MAX_CHARS): List<String> {
         val trechos = mutableListOf<String>()
         val atual = StringBuilder()
         for (oracao in DivisorDeOracoes.dividirEmOracoes(texto)) {
-            for (parte in partir(oracao.texto, maxChars)) {
+            for (parte in DivisorDeOracoes.partirFrase(oracao.texto, maxChars)) {
                 if (atual.isNotEmpty() && atual.length + 1 + parte.length > maxChars) {
                     trechos += atual.toString()
                     atual.clear()
@@ -44,29 +43,6 @@ object TrechosSupertonic {
         }
         if (atual.isNotEmpty()) trechos += atual.toString()
         return trechos
-    }
-
-    /**
-     * Frase maior que o limite: corta depois de vírgula/ponto e vírgula/dois-pontos e, se não houver, entre palavras.
-     */
-    private fun partir(frase: String, maxChars: Int): List<String> {
-        if (frase.length <= maxChars) return listOf(frase)
-        val partes = mutableListOf<String>()
-        val atual = StringBuilder()
-        for (palavra in frase.split(ESPACOS).filter { it.isNotEmpty() }) {
-            if (atual.isNotEmpty() && atual.length + 1 + palavra.length > maxChars) {
-                partes += atual.toString()
-                atual.clear()
-            }
-            if (atual.isNotEmpty()) atual.append(' ')
-            atual.append(palavra)
-            if (palavra.last() in ",;:" && atual.length >= maxChars / 2) {
-                partes += atual.toString()
-                atual.clear()
-            }
-        }
-        if (atual.isNotEmpty()) partes += atual.toString()
-        return partes
     }
 
     /** Letras (e dígitos) do texto: a medida de quanto há para falar. */
