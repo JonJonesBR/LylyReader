@@ -1042,8 +1042,8 @@ class GuidedPlayerManager(
             }
             val primeiro = unidades[0]
             // A 2ª só entra em paralelo com motor que sintetiza em duas vagas (kokoro). No Supertonic e no Pocket a
-            // síntese é serial: a 2ª atrasava a 1ª, e o play do parágrafo esperava as duas (medido: 13 s de silêncio
-            // depois de um parágrafo curto). Sem ela, a 2ª sai do prefetch normal assim que a 1ª começa a tocar.
+            // síntese é serial: a 2ª atrasava a 1ª, e o play do parágrafo esperava as duas (medido: 13 s de
+            // silêncio depois de um parágrafo curto). Sem ela, a 2ª sai do prefetch normal assim que a 1ª começa a tocar.
             val segundo = unidades.getOrNull(1)
                 ?.takeUnless { voz.startsWith("supertonic-") || voz.startsWith("pocket-") }
             val jobPrimeiro = async(Dispatchers.IO) { synthesizer.synthesize(primeiro.texto, voz, ritmo) }

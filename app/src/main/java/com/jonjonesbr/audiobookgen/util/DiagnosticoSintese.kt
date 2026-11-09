@@ -106,7 +106,8 @@ object DiagnosticoSintese {
         }
         runCatching {
             // Folga térmica prevista (1,0 = no limite do aquecimento; o estado térmico só muda depois), CPU gasta
-            // pelo processo desde o início e memória dele: separam aquecimento, disputa de CPU e inchaço do processo.
+            // pelo processo desde o início e memória dele: separam aquecimento,
+            // disputa de CPU e inchaço do processo.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
                 val folga = pm.getThermalHeadroom(SEGUNDOS_PREVISAO_TERMICA)
