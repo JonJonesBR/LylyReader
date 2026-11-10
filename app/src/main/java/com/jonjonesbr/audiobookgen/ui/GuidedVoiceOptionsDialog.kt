@@ -29,6 +29,9 @@ import java.util.Locale
 @Suppress("TooManyFunctions")
 object GuidedVoiceOptionsDialog {
 
+    private const val TEXTO_LINK_SP = 13f
+    private const val ALTURA_TOQUE_DP = 48
+
     fun show(
         activity: AppCompatActivity,
         manager: GuidedPlayerManager,
@@ -200,9 +203,9 @@ object GuidedVoiceOptionsDialog {
         pai.addView(TextView(activity).apply { setText(R.string.guided_ritmo_global); textSize = 12f })
         pai.addView(TextView(activity).apply {
             setText(R.string.aj_ajuda_narracao_link)
-            textSize = 13f
+            textSize = TEXTO_LINK_SP
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            minHeight = (48 * activity.resources.displayMetrics.density).toInt()
+            minHeight = (ALTURA_TOQUE_DP * activity.resources.displayMetrics.density).toInt()
             gravity = android.view.Gravity.CENTER_VERTICAL
             setOnClickListener { HelpActivity.start(activity, HelpTopico.NARRACAO) }
         })
