@@ -14,14 +14,14 @@ private const val FATOR_CALMA = 1.9f
 
 /**
  * Ritmo da narração na leitura guiada: quanto tempo a voz respira entre frases e parágrafos. Um seletor único
- * (Ajustes › Som e diálogo do leitor). [fator] multiplica as pausas de [PausasNaturais]; [entonacaoContinua]
- * liga a entonação contínua (frases seguidas vão juntas ao motor) só nos motores Supertonic e Pocket.
+ * (Ajustes › Som e diálogo do leitor). [fator] multiplica as pausas de [PausasNaturais]. A entonação
+ * contínua (frases seguidas vão juntas ao motor) vale para os três estilos nos motores Supertonic e Pocket.
  * Regra pura, sem Android: a migração das preferências antigas também fica aqui.
  */
-enum class EstiloDeRitmo(val id: String, val fator: Float, val entonacaoContinua: Boolean) {
-    CALMA("calma", FATOR_CALMA, false),
-    NATURAL("natural", FATOR_NATURAL, false),
-    FLUIDA("fluida", FATOR_FLUIDA, true);
+enum class EstiloDeRitmo(val id: String, val fator: Float) {
+    CALMA("calma", FATOR_CALMA),
+    NATURAL("natural", FATOR_NATURAL),
+    FLUIDA("fluida", FATOR_FLUIDA);
 
     companion object {
         /** Estilo de quem nunca escolheu: Fluida (menos recomeços de frase, menos falhas de síntese). */

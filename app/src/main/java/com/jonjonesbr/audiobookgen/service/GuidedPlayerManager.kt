@@ -458,16 +458,15 @@ class GuidedPlayerManager(
     }
 
     /**
-     * Unidades de fala do parágrafo no modo oração. Com a entonação contínua do ritmo Fluida
-     * (Supertonic e Pocket), frases seguidas vão juntas até [TETO_ENTONACAO_CONTINUA]: o motor dá a
+     * Unidades de fala do parágrafo no modo oração. Com a entonação contínua
+     * (Supertonic e Pocket, em qualquer ritmo), frases seguidas vão juntas até [TETO_ENTONACAO_CONTINUA]: o motor dá a
      * entonação do trecho todo, em vez de "fechar" a voz em cada ponto. Kokoro fica de fora (mais lento
      * que a fala: unidades maiores atrasariam).
      * O agrupamento é decidido quando o parágrafo é preparado: uma troca de estilo vale só para os não preparados.
      */
     private fun oracoesDoParagrafo(texto: String, voz: String): List<OracaoGuia> {
         val oracoes = DivisorDeOracoes.dividirEmOracoes(texto)
-        val continua = appPrefs.estiloDeRitmo.entonacaoContinua &&
-            (voz.startsWith("supertonic-") || voz.startsWith("pocket-"))
+        val continua = voz.startsWith("supertonic-") || voz.startsWith("pocket-")
         val agrupadas = if (continua) {
             DivisorDeOracoes.agruparOracoesCurta(oracoes, TETO_ENTONACAO_CONTINUA, TETO_ENTONACAO_CONTINUA)
         } else {

@@ -1699,7 +1699,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="aj_ritmo_fluida">Fluida</string>
     <string name="aj_ritmo_calma_desc">Pausas más largas entre frases y párrafos, para escuchar con calma.</string>
     <string name="aj_ritmo_natural_desc">Pausas parecidas a las de un narrador humano.</string>
-    <string name="aj_ritmo_fluida_desc">Pausas más cortas. Activa la entonación continua (Supertonic y Pocket).</string>
+    <string name="aj_ritmo_fluida_desc">Pausas más cortas.</string>
     <string name="aj_secao_qualidade">Calidad de la voz</string>
     <string name="aj_qualidade_rapida">Rápida</string>
     <string name="aj_qualidade_equilibrada">Equilibrada</string>

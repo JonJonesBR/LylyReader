@@ -1,8 +1,6 @@
 package com.jonjonesbr.audiobookgen.domain
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EstiloDeRitmoTest {
@@ -12,13 +10,6 @@ class EstiloDeRitmoTest {
         assertEquals(1.9f, EstiloDeRitmo.CALMA.fator, 1e-6f)
         assertEquals(1.45f, EstiloDeRitmo.NATURAL.fator, 1e-6f)
         assertEquals(1.0f, EstiloDeRitmo.FLUIDA.fator, 1e-6f)
-    }
-
-    @Test
-    fun `entonacao continua so na Fluida`() {
-        assertFalse(EstiloDeRitmo.CALMA.entonacaoContinua)
-        assertFalse(EstiloDeRitmo.NATURAL.entonacaoContinua)
-        assertTrue(EstiloDeRitmo.FLUIDA.entonacaoContinua)
     }
 
     @Test

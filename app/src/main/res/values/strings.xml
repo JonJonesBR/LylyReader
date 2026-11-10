@@ -1707,7 +1707,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_ritmo_fluida">Fluid</string>
     <string name="aj_ritmo_calma_desc">Pauses longer between sentences and paragraphs, to listen calmly.</string>
     <string name="aj_ritmo_natural_desc">Pauses close to a human narrator.</string>
-    <string name="aj_ritmo_fluida_desc">Shorter pauses. Turns on continuous intonation (Supertonic and Pocket).</string>
+    <string name="aj_ritmo_fluida_desc">Shorter pauses.</string>
     <string name="aj_secao_qualidade">Voice quality</string>
     <string name="aj_qualidade_rapida">Fast</string>
     <string name="aj_qualidade_equilibrada">Balanced</string>
