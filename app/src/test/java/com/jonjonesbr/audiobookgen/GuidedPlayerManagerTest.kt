@@ -573,6 +573,8 @@ class GuidedPlayerManagerTest {
             // Avança enquanto o prefetch continua bloqueado: não pode duplicar a síntese.
             lastCompletionListener()
             testDispatcher.scheduler.runCurrent()
+            // Pausa natural de fim de parágrafo (sempre ligada): o relógio virtual a atravessa.
+            testDispatcher.scheduler.advanceTimeBy(2_000)
             terminarPrefetch.complete(Unit)
             val limiteSeguinte = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5)
             while (!manager.state.value.isPlaying && System.nanoTime() < limiteSeguinte) {
