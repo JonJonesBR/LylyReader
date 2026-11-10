@@ -110,7 +110,7 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putInt("timbre_tom_falas", v.coerceIn(TIMBRE_TOM_MIN, TIMBRE_TOM_MAX)).apply()
 
     var suavizarAgudosDb: Int
-        get() = p.getInt("timbre_agudos_db", 0).coerceIn(0, TIMBRE_AGUDOS_MAX)
+        get() = p.getInt("timbre_agudos_db", TIMBRE_AGUDOS_PADRAO).coerceIn(0, TIMBRE_AGUDOS_MAX)
         set(v) = p.edit().putInt("timbre_agudos_db", v.coerceIn(0, TIMBRE_AGUDOS_MAX)).apply()
 
     /**
@@ -592,9 +592,11 @@ class AppPrefs(context: Context) {
         const val DOWNLOADS_SIMULTANEOS_PADRAO = 2
         const val TIMBRE_TOM_MIN = -6
         const val TIMBRE_TOM_MAX = 6
-        const val TIMBRE_AGUDOS_MAX = 8
+        const val TIMBRE_AGUDOS_MAX = 16
+        /** Suavização de agudos padrão (dB): as vozes neurais soam menos metálicas. */
+        const val TIMBRE_AGUDOS_PADRAO = 8
         /** Passos padrão do Pocket TTS (antes 4): a síntese fica mais lenta, mas com mais fidelidade. */
-        const val POCKET_PASSOS_PADRAO = 10
+        const val POCKET_PASSOS_PADRAO = 12
         /** Padrões antigos do Pocket: 1 (versão muito antiga) e 4. Quem ainda tem um deles gravado nunca escolheu.
          */
         private const val POCKET_PASSOS_PADRAO_ANTIGO_1 = 1
@@ -610,7 +612,7 @@ class AppPrefs(context: Context) {
         const val READER_ESPACAMENTO_PADRAO = 1.5f
         /** Passos padrão do modelo Supertonic (antes 8, e 5 antes disso: com poucos passos o modelo engolia
          *  mais palavras). */
-        const val SUPERTONIC_STEPS_PADRAO = 10
+        const val SUPERTONIC_STEPS_PADRAO = 14
         /** Padrões antigos do Supertonic: 5, 8 e 18 (cada um foi o padrão de uma versão anterior). */
         private const val SUPERTONIC_STEPS_PADRAO_ANTIGO_5 = 5
         private const val SUPERTONIC_STEPS_PADRAO_ANTIGO_8 = 8

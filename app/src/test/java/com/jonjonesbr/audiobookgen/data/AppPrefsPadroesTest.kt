@@ -8,7 +8,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/** Padrões novos (Supertonic 10, Pocket 10, ritmo Natural) e as migrações de uma vez só. */
+/** Padrões novos (Supertonic 14, Pocket 12, ritmo Fluida) e as migrações de uma vez só. */
 class AppPrefsPadroesTest {
 
     @get:Rule
@@ -24,8 +24,8 @@ class AppPrefsPadroesTest {
     fun `padroes novos sem nada gravado`() {
         val (appPrefs, _) = prefs()
 
-        assertEquals(10, appPrefs.supertonicSteps)
-        assertEquals(10, appPrefs.pocketPassos)
+        assertEquals(14, appPrefs.supertonicSteps)
+        assertEquals(12, appPrefs.pocketPassos)
         assertFalse(appPrefs.pausasNaturais)
     }
 
@@ -34,7 +34,7 @@ class AppPrefsPadroesTest {
         val (appPrefs, gravado) = prefs()
         gravado.edit().putInt("supertonic_steps", 8).apply()
 
-        assertEquals(10, appPrefs.supertonicSteps)
+        assertEquals(14, appPrefs.supertonicSteps)
         assertFalse(gravado.contains("supertonic_steps"))
     }
 
@@ -43,7 +43,7 @@ class AppPrefsPadroesTest {
         val (appPrefs, gravado) = prefs()
         gravado.edit().putInt("supertonic_steps", 5).apply()
 
-        assertEquals(10, appPrefs.supertonicSteps)
+        assertEquals(14, appPrefs.supertonicSteps)
         assertFalse(gravado.contains("supertonic_steps"))
     }
 
@@ -59,7 +59,7 @@ class AppPrefsPadroesTest {
     @Test
     fun `supertonic escolhido depois da migracao nao e tocado de novo`() {
         val (appPrefs, gravado) = prefs()
-        assertEquals(10, appPrefs.supertonicSteps) // roda as migrações
+        assertEquals(14, appPrefs.supertonicSteps) // roda as migrações
         appPrefs.supertonicSteps = 8
 
         assertEquals(8, appPrefs.supertonicSteps)
@@ -67,20 +67,20 @@ class AppPrefsPadroesTest {
     }
 
     @Test
-    fun `pocket gravado com 4 vai para 10`() {
+    fun `pocket gravado com 4 vai para 12`() {
         val (appPrefs, gravado) = prefs()
         gravado.edit().putInt("pocket_passos", 4).apply()
 
-        assertEquals(10, appPrefs.pocketPassos)
+        assertEquals(12, appPrefs.pocketPassos)
         assertFalse(gravado.contains("pocket_passos"))
     }
 
     @Test
-    fun `pocket gravado com 1 (padrao muito antigo) vai para 10`() {
+    fun `pocket gravado com 1 (padrao muito antigo) vai para 12`() {
         val (appPrefs, gravado) = prefs()
         gravado.edit().putInt("pocket_passos", 1).apply()
 
-        assertEquals(10, appPrefs.pocketPassos)
+        assertEquals(12, appPrefs.pocketPassos)
         assertFalse(gravado.contains("pocket_passos"))
     }
 
@@ -105,10 +105,10 @@ class AppPrefsPadroesTest {
     }
 
     @Test
-    fun `ritmo sem nada gravado e Natural`() {
+    fun `ritmo sem nada gravado e Fluida`() {
         val (appPrefs, _) = prefs()
 
-        assertEquals(EstiloDeRitmo.NATURAL, appPrefs.estiloDeRitmo)
+        assertEquals(EstiloDeRitmo.FLUIDA, appPrefs.estiloDeRitmo)
     }
 
     @Test
@@ -133,7 +133,7 @@ class AppPrefsPadroesTest {
         val (appPrefs, _) = prefs()
         appPrefs.pausasNaturais = true
 
-        assertEquals(EstiloDeRitmo.NATURAL, appPrefs.estiloDeRitmo)
+        assertEquals(EstiloDeRitmo.FLUIDA, appPrefs.estiloDeRitmo)
     }
 
     @Test
@@ -160,18 +160,18 @@ class AppPrefsPadroesTest {
         val (appPrefs, gravado) = prefs()
         gravado.edit().putString("estilo_ritmo", "lixo").apply()
 
-        assertEquals(EstiloDeRitmo.NATURAL, appPrefs.estiloDeRitmo)
+        assertEquals(EstiloDeRitmo.FLUIDA, appPrefs.estiloDeRitmo)
     }
 
     @Test
-    fun `restaurar o padrao do som volta o ritmo para Natural`() {
+    fun `restaurar o padrao do som volta o ritmo para Fluida`() {
         val (appPrefs, gravado) = prefs()
         appPrefs.estiloDeRitmo = EstiloDeRitmo.FLUIDA
         gravado.edit().putBoolean("entonacao_continua", true).apply()
 
         appPrefs.restaurarPadroesDeSom()
 
-        assertEquals(EstiloDeRitmo.NATURAL, appPrefs.estiloDeRitmo)
+        assertEquals(EstiloDeRitmo.FLUIDA, appPrefs.estiloDeRitmo)
     }
 
     @Test

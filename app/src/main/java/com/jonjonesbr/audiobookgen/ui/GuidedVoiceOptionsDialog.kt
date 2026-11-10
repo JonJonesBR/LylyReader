@@ -198,6 +198,14 @@ object GuidedVoiceOptionsDialog {
         pai.addView(grupo)
         pai.addView(descricao)
         pai.addView(TextView(activity).apply { setText(R.string.guided_ritmo_global); textSize = 12f })
+        pai.addView(TextView(activity).apply {
+            setText(R.string.aj_ajuda_narracao_link)
+            textSize = 13f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            minHeight = (48 * activity.resources.displayMetrics.density).toInt()
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setOnClickListener { HelpActivity.start(activity, HelpTopico.NARRACAO) }
+        })
     }
 
     /**

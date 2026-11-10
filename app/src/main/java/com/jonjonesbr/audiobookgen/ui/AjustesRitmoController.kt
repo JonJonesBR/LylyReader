@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.ui
 
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -9,7 +10,7 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.domain.EstiloDeRitmo
 
 /**
- * "Ritmo da narração" nos Ajustes › Som: Calma, Natural (padrão) ou Fluida, num seletor único. Grava
+ * "Ritmo da narração" nos Ajustes › Som: Calma, Natural ou Fluida (padrão), num seletor único. Grava
  * [AppPrefs.estiloDeRitmo] ao tocar num chip. A Activity chama [carregar] e [configurar] (ver SettingsActivity).
  */
 class AjustesRitmoController(private val activity: AppCompatActivity) {
@@ -28,6 +29,8 @@ class AjustesRitmoController(private val activity: AppCompatActivity) {
     fun carregar() = mostrar(appPrefs.estiloDeRitmo)
 
     fun configurar() {
+        activity.findViewById<View>(R.id.tvAjudaNarracao)
+            .setOnClickListener { HelpActivity.start(activity, HelpTopico.NARRACAO) }
         chips.setOnCheckedStateChangeListener { _, ids ->
             if (carregando) return@setOnCheckedStateChangeListener
             val estilo = ids.firstOrNull()?.let { porChip[it] } ?: return@setOnCheckedStateChangeListener

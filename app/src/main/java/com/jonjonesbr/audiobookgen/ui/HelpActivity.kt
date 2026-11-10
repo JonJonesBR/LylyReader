@@ -18,7 +18,7 @@ import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorSoNaSobreposicao
 
 enum class HelpTopico {
     // A ordem é a das páginas da Ajuda (o tópico abre a página de mesmo índice).
-    CONVERSAO, LEITOR, VOZES, PRONUNCIA, RECURSOS_LEITURA, BIBLIOTECA, FILA, CONFIGURACOES
+    CONVERSAO, LEITOR, VOZES, PRONUNCIA, RECURSOS_LEITURA, BIBLIOTECA, FILA, CONFIGURACOES, NARRACAO
 }
 
 class HelpActivity : AppCompatActivity() {
@@ -110,6 +110,11 @@ class HelpActivity : AppCompatActivity() {
                     getString(R.string.help_settings_step3),
                     getString(R.string.help_settings_step4)
                 )
+            ),
+            pagina(
+                R.drawable.ic_player_voz, R.string.help_narration_title,
+                R.string.help_narration_step1, R.string.help_narration_step2,
+                R.string.help_narration_step3, R.string.help_narration_step4
             )
         )
     }

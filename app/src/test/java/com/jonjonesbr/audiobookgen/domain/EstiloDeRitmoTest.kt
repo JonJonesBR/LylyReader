@@ -22,8 +22,8 @@ class EstiloDeRitmoTest {
     }
 
     @Test
-    fun `padrao e Natural`() {
-        assertEquals(EstiloDeRitmo.NATURAL, EstiloDeRitmo.PADRAO)
+    fun `padrao e Fluida`() {
+        assertEquals(EstiloDeRitmo.FLUIDA, EstiloDeRitmo.PADRAO)
     }
 
     @Test
@@ -34,10 +34,10 @@ class EstiloDeRitmoTest {
     }
 
     @Test
-    fun `deId com nulo, vazio ou lixo cai em Natural`() {
-        assertEquals(EstiloDeRitmo.NATURAL, EstiloDeRitmo.deId(null))
-        assertEquals(EstiloDeRitmo.NATURAL, EstiloDeRitmo.deId(""))
-        assertEquals(EstiloDeRitmo.NATURAL, EstiloDeRitmo.deId("rapidissima"))
+    fun `deId com nulo, vazio ou lixo cai em Fluida`() {
+        assertEquals(EstiloDeRitmo.FLUIDA, EstiloDeRitmo.deId(null))
+        assertEquals(EstiloDeRitmo.FLUIDA, EstiloDeRitmo.deId(""))
+        assertEquals(EstiloDeRitmo.FLUIDA, EstiloDeRitmo.deId("rapidissima"))
     }
 
     private fun migrar(entonacao: Boolean, pausasDesligadas: Boolean) =
@@ -47,7 +47,7 @@ class EstiloDeRitmoTest {
     fun `migrar a partir das preferencias antigas`() {
         assertEquals(EstiloDeRitmo.FLUIDA, migrar(entonacao = true, pausasDesligadas = false))
         assertEquals(EstiloDeRitmo.FLUIDA, migrar(entonacao = false, pausasDesligadas = true))
-        assertEquals(EstiloDeRitmo.NATURAL, migrar(entonacao = false, pausasDesligadas = false))
+        assertEquals(EstiloDeRitmo.FLUIDA, migrar(entonacao = false, pausasDesligadas = false))
         assertEquals(EstiloDeRitmo.FLUIDA, migrar(entonacao = true, pausasDesligadas = true))
     }
 }

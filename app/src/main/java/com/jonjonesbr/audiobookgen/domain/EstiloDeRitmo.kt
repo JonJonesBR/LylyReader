@@ -4,7 +4,7 @@ package com.jonjonesbr.audiobookgen.domain
 private const val FATOR_FLUIDA = 1.0f
 
 /**
- * Fator de [EstiloDeRitmo.NATURAL] (padrão): pausas de narrador. Com as margens de 0,14 s, dá
+ * Fator de [EstiloDeRitmo.NATURAL] pausas de narrador. Com as margens de 0,14 s, dá
  * ~0,9 s entre frases e ~1,6 s entre parágrafos.
  */
 private const val FATOR_NATURAL = 1.45f
@@ -24,8 +24,8 @@ enum class EstiloDeRitmo(val id: String, val fator: Float, val entonacaoContinua
     FLUIDA("fluida", FATOR_FLUIDA, true);
 
     companion object {
-        /** Estilo de quem nunca escolheu: Natural. */
-        val PADRAO = NATURAL
+        /** Estilo de quem nunca escolheu: Fluida (menos recomeços de frase, menos falhas de síntese). */
+        val PADRAO = FLUIDA
 
         /** Estilo gravado pelo [id]; `null` ou desconhecido (preferência corrompida) cai no [PADRAO]. */
         fun deId(id: String?): EstiloDeRitmo = entries.firstOrNull { it.id == id } ?: PADRAO
@@ -35,6 +35,6 @@ enum class EstiloDeRitmo(val id: String, val fator: Float, val entonacaoContinua
          * natural desligada de propósito indicam o modo "Fluida" (o ritmo de antes). Sem isso, [PADRAO].
          */
         fun migrar(entonacaoContinuaLigada: Boolean, pausasNaturaisDesligadaExplicita: Boolean): EstiloDeRitmo =
-            if (entonacaoContinuaLigada || pausasNaturaisDesligadaExplicita) FLUIDA else NATURAL
+            if (entonacaoContinuaLigada || pausasNaturaisDesligadaExplicita) FLUIDA else PADRAO
     }
 }
