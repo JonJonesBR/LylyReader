@@ -115,7 +115,11 @@ internal class TrilhaPcm(
         val f = faixa ?: return
         runCatching { aplicarPlaybackParams(f, velocidade, tom) }
             .onFailure { Log.w(TAG, "Falha ao mudar velocidade ou tom do trecho", it) }
-        if (tocando()) agendarVigia()
+        if (tocando()) {
+            // Velocidade menor alonga o trecho: o WakeLock e o vigia precisam do prazo novo.
+            adquirirWake()
+            agendarVigia()
+        }
     }
 
     fun setVolume(volume: Float) {
