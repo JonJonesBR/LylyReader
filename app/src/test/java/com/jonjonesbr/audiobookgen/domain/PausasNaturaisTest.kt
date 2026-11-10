@@ -58,4 +58,37 @@ class PausasNaturaisTest {
         val rapida = PausasNaturais.aposTrecho("Fim.", velocidade = 2f, aleatorio = Random(7))
         assertEquals(normal / 2, rapida)
     }
+
+    @Test fun `fator de ritmo escala a pausa entre trechos`() {
+        val frase = "Ela abriu a porta devagar, sem fazer barulho nenhum."
+        val base = PausasNaturais.aposTrecho(frase, aleatorio = Random(7))
+        val escalada = PausasNaturais.aposTrecho(frase, aleatorio = Random(7), fator = 1.9f)
+        assertTrue(kotlin.math.abs(escalada - base * 1.9f) <= 1f)
+    }
+
+    @Test fun `fator de ritmo escala a pausa de fim de paragrafo`() {
+        val paragrafo = "Ela abriu a porta devagar, sem fazer barulho nenhum, e saiu sem olhar para trás."
+        val base = PausasNaturais.aposParagrafo(paragrafo, aleatorio = Random(3))
+        val escalada = PausasNaturais.aposParagrafo(paragrafo, aleatorio = Random(3), fator = 1.45f)
+        assertTrue(kotlin.math.abs(escalada - base * 1.45f) <= 1f)
+    }
+
+    @Test fun `fator 1 nao muda a pausa`() {
+        val frase = "Ela abriu a porta devagar, sem fazer barulho nenhum."
+        assertEquals(
+            PausasNaturais.aposTrecho(frase, aleatorio = Random(11)),
+            PausasNaturais.aposTrecho(frase, aleatorio = Random(11), fator = 1f)
+        )
+    }
+
+    @Test fun `pausa de continuacao nao recebe fator`() {
+        assertEquals(PausasNaturais.PAUSA_CONTINUACAO_MS, PausasNaturais.aposContinuacao())
+    }
+
+    @Test fun `o fator entra antes da velocidade`() {
+        val frase = "Ela abriu a porta devagar, sem fazer barulho nenhum."
+        val umX = PausasNaturais.aposTrecho(frase, velocidade = 1f, aleatorio = Random(5), fator = 1.9f)
+        val doisX = PausasNaturais.aposTrecho(frase, velocidade = 2f, aleatorio = Random(5), fator = 1.9f)
+        assertTrue(kotlin.math.abs(doisX - umX / 2) <= 1)
+    }
 }

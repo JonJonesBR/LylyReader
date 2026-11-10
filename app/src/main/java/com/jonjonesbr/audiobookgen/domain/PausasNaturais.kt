@@ -39,17 +39,27 @@ object PausasNaturais {
     fun aposContinuacao(velocidade: Float = 1f): Int = escalar(PAUSA_CONTINUACAO_MS, velocidade)
 
     /** Pausa depois de um trecho dentro do parágrafo (frase ou oração). */
-    fun aposTrecho(texto: String, velocidade: Float = 1f, aleatorio: Random = Random.Default): Int {
+    fun aposTrecho(
+        texto: String,
+        velocidade: Float = 1f,
+        aleatorio: Random = Random.Default,
+        fator: Float = 1f
+    ): Int {
         val base = sortear(faixaDoFinal(texto), aleatorio)
         val folego = if (texto.trim().length > FRASE_LONGA_CHARS) sortear(FOLEGO, aleatorio) else 0
-        return escalar(base + folego, velocidade)
+        return escalar(base + folego, velocidade, fator)
     }
 
     /** Pausa no fim do parágrafo, depois do seu último trecho. */
-    fun aposParagrafo(textoDoParagrafo: String, velocidade: Float = 1f, aleatorio: Random = Random.Default): Int {
+    fun aposParagrafo(
+        textoDoParagrafo: String,
+        velocidade: Float = 1f,
+        aleatorio: Random = Random.Default,
+        fator: Float = 1f
+    ): Int {
         val faixa = if (textoDoParagrafo.trim().length < PARAGRAFO_CURTO_CHARS) FIM_DE_PARAGRAFO_CURTO else FIM_DE_PARAGRAFO
         val doFinal = sortear(faixaDoFinal(textoDoParagrafo), aleatorio)
-        return escalar(maxOf(sortear(faixa, aleatorio), doFinal), velocidade)
+        return escalar(maxOf(sortear(faixa, aleatorio), doFinal), velocidade, fator)
     }
 
     private fun faixaDoFinal(texto: String): Faixa {
@@ -77,6 +87,7 @@ object PausasNaturais {
     fun descontar(pausaMs: Int, atrasoEstimadoMs: Long): Int =
         (pausaMs - atrasoEstimadoMs).coerceAtLeast(0L).toInt()
 
-    private fun escalar(ms: Int, velocidade: Float): Int =
-        (ms / velocidade.coerceIn(VELOCIDADE_MIN, VELOCIDADE_MAX)).toInt()
+    /** Aplica o [fator] de ritmo (ver EstiloDeRitmo) e depois a velocidade: as pausas encurtam ou alongam. */
+    private fun escalar(ms: Int, velocidade: Float, fator: Float = 1f): Int =
+        (ms * fator / velocidade.coerceIn(VELOCIDADE_MIN, VELOCIDADE_MAX)).toInt()
 }

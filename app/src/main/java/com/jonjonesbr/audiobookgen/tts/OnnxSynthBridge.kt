@@ -13,7 +13,9 @@ object OnnxSynthBridge {
     @JvmStatic fun assinaturaAjustes(): String {
         val ctx = appContext ?: return ""
         val prefs = com.jonjonesbr.audiobookgen.data.AppPrefs(ctx)
-        return "st=${prefs.supertonicSteps};folga=${if (prefs.folgaFrasesCurtas) 1 else 0}"
+        // Formato fixo por compatibilidade com `_retomada_compativel` do Python: a folga de frases curtas saiu,
+        // então a parte "folga" fica sempre em 0.
+        return "st=${prefs.supertonicSteps};folga=0"
     }
     @Synchronized private fun engine(): OnnxTtsEngine? {
         val ctx = appContext ?: return null

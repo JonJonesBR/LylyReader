@@ -310,52 +310,17 @@ class GuidedReadingBarController(
         }
     }
 
-    /** Motor do livro que tem "passos de síntese" ajustáveis: Supertonic ("onnx") ou Pocket; senão null. */
-    private fun motorComPassos(): String? {
-        val (voz, motorSalvo) = guidedPlayerManager.vozEMotorDoLivro()
-        return com.jonjonesbr.audiobookgen.util.VoiceCatalog.effectiveEngine(voz, motorSalvo)
-            .takeIf { it == "onnx" || it == "pocket" }
-    }
-
-    /** Chip "⚙ N" na barra, visível só quando a voz atual é Supertonic ou Pocket. */
+    /**
+     * Chip "Voz e motor" na barra: sempre visível e com o rótulo fixo (os passos saíram do chip; a qualidade
+     * da voz fica no diálogo, em "Qualidade da voz").
+     */
     private fun atualizarRotuloPassos() {
-        val prefs = com.jonjonesbr.audiobookgen.data.AppPrefs(activity)
-        val passos = when (motorComPassos()) {
-            "onnx" -> prefs.supertonicSteps
-            "pocket" -> prefs.pocketPassos
-            else -> null
-        }
-        // Sempre visível: abre "Voz e motor" (timbre, passos, pausa, preparo à frente) para qualquer motor.
         views.tvGuidedPassos.visibility = View.VISIBLE
-        // O chip abre "Voz e motor" em qualquer motor: a descrição (leitor de tela) e a dica seguem o rótulo.
-        val (rotulo, descricao) = if (passos != null) {
-            activity.getString(R.string.guided_steps_chip, passos) to
-                activity.getString(R.string.cd_guided_voz_motor_passos, passos)
-        } else {
-            activity.getString(R.string.guided_options_chip) to activity.getString(R.string.cd_guided_voz_motor)
-        }
+        val rotulo = activity.getString(R.string.guided_options_chip)
+        val descricao = activity.getString(R.string.cd_guided_voz_motor)
         views.tvGuidedPassos.text = rotulo
         views.tvGuidedPassos.contentDescription = descricao
         views.tvGuidedPassos.tooltipText = descricao
-    }
-
-    private fun mostrarDialogoPassos() {
-        val prefs = com.jonjonesbr.audiobookgen.data.AppPrefs(activity)
-        val aoAplicar = { _: Int -> atualizarRotuloPassos() }
-        when (motorComPassos()) {
-            "onnx" -> PassosDialog.show(
-                activity, R.string.settings_supertonic_steps_title, R.string.guided_steps_desc_supertonic,
-                com.jonjonesbr.audiobookgen.data.AppPrefs.SUPERTONIC_STEPS_MIN,
-                com.jonjonesbr.audiobookgen.data.AppPrefs.SUPERTONIC_STEPS_MAX,
-                prefs.supertonicSteps
-            ) { prefs.supertonicSteps = it; aoAplicar(it) }
-            "pocket" -> PassosDialog.show(
-                activity, R.string.settings_pocket_steps_title, R.string.settings_pocket_steps_desc,
-                com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_MIN,
-                com.jonjonesbr.audiobookgen.data.AppPrefs.POCKET_PASSOS_MAX,
-                prefs.pocketPassos
-            ) { prefs.pocketPassos = it; aoAplicar(it) }
-        }
     }
 
     /** Voz ou velocidade do livro mudaram fora da barra (menu ⋮ › Voz e velocidade deste livro). */

@@ -85,7 +85,7 @@ class KokoroTtsSynthesizer(private val context: Context) : TtsSynthesizer {
         } else {
             texto
         }
-        val acabamento = AcabamentoAudio.modoNaLeitura(context)
+        val acabamento = AcabamentoAudio.modoNaLeitura()
         val cached = TtsChunkCache.getOrSynthesize(context, voz, ritmo, textoFinal, acabamento) { temporary ->
             if (piper && textoFinal.none { it.isLetterOrDigit() }) {
                 temporary.writeBytes(SilentWav.bytes(SILENCIO_MS))
@@ -128,7 +128,7 @@ class PocketTtsSynthesizer(private val context: Context) : TtsSynthesizer {
                 normalizarViaPython(context, t, idioma, numerosSoltos = true, semTravessoes = true)
             }
         }
-        val acabamento = AcabamentoAudio.modoNaLeitura(context)
+        val acabamento = AcabamentoAudio.modoNaLeitura()
         val cached = TtsChunkCache.getOrSynthesize(context, voz, ritmo, textoNormalizado, acabamento) { temporary ->
             engine.synthesize(textoNormalizado, voz, temporary).fold(
                 onSuccess = { true },
@@ -202,7 +202,7 @@ class OnnxTtsSynthesizer(
             val limpo = normalizarViaPython(context, texto, idioma, numerosSoltos = true, semTravessoes = false)
             if (limpo.isBlank() && texto.any { it.isLetterOrDigit() }) texto else limpo
         }
-        val acabamento = AcabamentoAudio.modoNaLeitura(context)
+        val acabamento = AcabamentoAudio.modoNaLeitura()
         val cached = TtsChunkCache.getOrSynthesize(context, voz, ritmo, textoFalado, acabamento) { temporary ->
             engine().synthesize(textoFalado, voz, temporary).fold(
                 onSuccess = { true },
@@ -280,7 +280,7 @@ class AndroidTtsSynthesizer(private val context: Context) : TtsSynthesizer {
         val speed = ritmo / RITMO_BASE
         var ultimaMensagem = "motivo desconhecido"
         val arquivo = TtsChunkCache.getOrSynthesize(
-            context, voz, ritmo, texto, AcabamentoAudio.modoNaLeitura(context)
+            context, voz, ritmo, texto, AcabamentoAudio.modoNaLeitura()
         ) { arquivoTemporario ->
             var sucesso = false
             var tentativa = 1

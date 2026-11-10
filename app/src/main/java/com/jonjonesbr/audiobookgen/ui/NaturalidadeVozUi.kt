@@ -11,29 +11,24 @@ import java.util.Locale
 import kotlin.math.abs
 
 /**
- * Ajustes › Som › "Naturalidade da voz (experimental)" (quatro interruptores) e, em Ajustes avançados, a
+ * Ajustes › Avançado: o interruptor "Diálogos com mais vida", o de "Reprodução alternativa (teste)" e a
  * expressividade do Pocket TTS: quatro atalhos (Padrão, Moderada, Expressiva, Máxima) e o valor salvo ao lado.
  */
 class NaturalidadeVozUi(private val activity: AppCompatActivity) {
 
     private val prefs = AppPrefs(activity)
-    private val swEntonacao: CompoundButton = activity.findViewById(R.id.swEntonacaoContinua)
-    private val swAcabamento: CompoundButton = activity.findViewById(R.id.swAcabamentoAudio)
     private val swDialogos: CompoundButton = activity.findViewById(R.id.swDialogosVivos)
-    private val swFolga: CompoundButton = activity.findViewById(R.id.swFolgaFrasesCurtas)
+    private val swPlayerAudioTrack: CompoundButton = activity.findViewById(R.id.swPlayerAudioTrack)
     private val tvExpr: TextView = activity.findViewById(R.id.tvPocketExpressividadeValor)
     private val chipsExpr: ChipGroup = activity.findViewById(R.id.chipsPocketExpressividade)
     private var carregando = false
 
     fun vincular() {
-        activity.findViewById<android.view.View>(R.id.rowEntonacaoContinua).setOnClickListener { swEntonacao.toggle() }
-        activity.findViewById<android.view.View>(R.id.rowAcabamentoAudio).setOnClickListener { swAcabamento.toggle() }
         activity.findViewById<android.view.View>(R.id.rowDialogosVivos).setOnClickListener { swDialogos.toggle() }
-        activity.findViewById<android.view.View>(R.id.rowFolgaFrasesCurtas).setOnClickListener { swFolga.toggle() }
-        swEntonacao.setOnCheckedChangeListener { _, v -> prefs.entonacaoContinua = v }
-        swAcabamento.setOnCheckedChangeListener { _, v -> prefs.acabamentoAudio = v }
+        activity.findViewById<android.view.View>(R.id.rowPlayerAudioTrack)
+            .setOnClickListener { swPlayerAudioTrack.toggle() }
         swDialogos.setOnCheckedChangeListener { _, v -> prefs.dialogosVivos = v }
-        swFolga.setOnCheckedChangeListener { _, v -> prefs.folgaFrasesCurtas = v }
+        swPlayerAudioTrack.setOnCheckedChangeListener { _, v -> prefs.playerAudioTrack = v }
 
         chipsExpr.setOnCheckedStateChangeListener { _, ids ->
             val valor = PRESETS.entries.firstOrNull { it.key == ids.firstOrNull() }?.value
@@ -48,10 +43,8 @@ class NaturalidadeVozUi(private val activity: AppCompatActivity) {
     /** Mostra os valores salvos (também depois de "Restaurar padrões de som"). */
     fun carregar() {
         carregando = true
-        swEntonacao.isChecked = prefs.entonacaoContinua
-        swAcabamento.isChecked = prefs.acabamentoAudio
         swDialogos.isChecked = prefs.dialogosVivos
-        swFolga.isChecked = prefs.folgaFrasesCurtas
+        swPlayerAudioTrack.isChecked = prefs.playerAudioTrack
         mostrarExpressividade(prefs.pocketExpressividade)
         carregando = false
     }

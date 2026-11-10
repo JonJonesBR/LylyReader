@@ -248,13 +248,9 @@ class GuidedPlayerManager(
     /** Voz/motor do narrador para este livro (perfil "Voz e velocidade deste livro" ou global). */
     fun vozEMotorDoLivro(): Pair<String, String> = vozEMotorAtuais()
 
-    /** Profundidade de prefetch efetiva (Ajustes › Buffering da leitura guiada): usa o
-     *  override do usuário quando presente; senão, [padraoDoMotor] (comportamento de
-     *  sempre, sem mudança até o usuário mexer nessa configuração). */
-    private fun profundidadePrefetchEfetiva(padraoDoMotor: Int): Int {
-        val override = ajustesDeAudio().bufferAdiante
-        return if (override == AppPrefs.BUFFER_ADIANTE_AUTOMATICO) padraoDoMotor else override
-    }
+    /** Profundidade de prefetch efetiva: sempre o padrão interno de [padraoDoMotor]. O controle manual
+     *  (Ajustes › Buffering) saiu da tela; o campo bufferAdiante de perfis antigos é ignorado. */
+    private fun profundidadePrefetchEfetiva(padraoDoMotor: Int): Int = padraoDoMotor
 
     // Nome exibido na notificação da leitura guiada (definido pela Activity)
     var trackName: String = context.getString(R.string.btn_leitura_guiada)
@@ -382,8 +378,8 @@ class GuidedPlayerManager(
     // ~1 oração de síntese e o silêncio entre orações fica ~0 — em vez de esperar o
     // parágrafo inteiro (dezenas de segundos quando o RTF do motor é > 1, como no
     // kokoro). No onnx/Supertonic e Pocket (RTF abaixo de 1 nos aparelhos testados), o mesmo modo
-    // serve pra narração contínua por frase com pausa configurável (pausaFinalFraseMs)
-    // entre elas, em vez de blocos de parágrafo inteiro — pedido explícito do usuário.
+    // serve pra narração contínua por frase, com as pausas naturais (ver pausaDepoisDe), em vez de
+    // blocos de parágrafo inteiro — pedido explícito do usuário.
     // O estado/UI (índice, destaque, "N de M") continuam por PARÁGRAFO; o callback de
     // fim de áudio é roteado para o loop de orações enquanto uma sequência está ativa.
     @Volatile private var modoOracoes = false
@@ -462,13 +458,16 @@ class GuidedPlayerManager(
     }
 
     /**
-     * Unidades de fala do parágrafo no modo oração. Com "Entonação contínua" (Supertonic e Pocket), frases
-     * seguidas vão juntas até [TETO_ENTONACAO_CONTINUA]: o motor dá a entonação do trecho todo, em vez de
-     * "fechar" a voz em cada ponto. Kokoro fica de fora (mais lento que a fala: unidades maiores atrasariam).
+     * Unidades de fala do parágrafo no modo oração. Com a entonação contínua do ritmo Fluida
+     * (Supertonic e Pocket), frases seguidas vão juntas até [TETO_ENTONACAO_CONTINUA]: o motor dá a
+     * entonação do trecho todo, em vez de "fechar" a voz em cada ponto. Kokoro fica de fora (mais lento
+     * que a fala: unidades maiores atrasariam).
+     * O agrupamento é decidido quando o parágrafo é preparado: uma troca de estilo vale só para os não preparados.
      */
     private fun oracoesDoParagrafo(texto: String, voz: String): List<OracaoGuia> {
         val oracoes = DivisorDeOracoes.dividirEmOracoes(texto)
-        val continua = appPrefs.entonacaoContinua && (voz.startsWith("supertonic-") || voz.startsWith("pocket-"))
+        val continua = appPrefs.estiloDeRitmo.entonacaoContinua &&
+            (voz.startsWith("supertonic-") || voz.startsWith("pocket-"))
         val agrupadas = if (continua) {
             DivisorDeOracoes.agruparOracoesCurta(oracoes, TETO_ENTONACAO_CONTINUA, TETO_ENTONACAO_CONTINUA)
         } else {
@@ -491,10 +490,7 @@ class GuidedPlayerManager(
         if (oracoes.getOrNull(posicao + 1)?.continuacao == true) {
             return PausasNaturais.aposContinuacao(speedVal * speedMultiplier)
         }
-        return pausaDepoisDe(
-            oracoes[posicao].texto, paragrafo, posicao == oracoes.lastIndex, speedVal,
-            pausaFixaMs = ajustesDeAudio().pausaFinalFraseMs
-        )
+        return pausaDepoisDe(oracoes[posicao].texto, paragrafo, posicao == oracoes.lastIndex, speedVal)
     }
 
     private fun timbreAtual() = ajustesDeAudio().let {
@@ -831,7 +827,7 @@ class GuidedPlayerManager(
                 // inteiro. Kokoro (RTF > 1) precisa disso pra não ficar em silêncio por
                 // dezenas de segundos entre blocos; Supertonic (RTF ~0,57, mais rápido que
                 // tempo real) não tem esse déficit, mas o pedido do usuário é a narração
-                // contínua por frase (com pausa configurável entre elas — pausaFinalFraseMs)
+                // contínua por frase (com as pausas naturais entre elas)
                 // em vez de blocos de parágrafo inteiro. Orações muito curtas são agrupadas
                 // na seguinte (rajada de unidades minúsculas deixava o pipeline sem áudio
                 // pronto — silêncio a cada ponto final).
@@ -1042,9 +1038,7 @@ class GuidedPlayerManager(
                 }
                 oracaoCompletada?.await()
                 if (trechoFalhou) return
-                val pausaMs = pausaDepoisDe(
-                    segment.text, paragraphText, position == segments.lastIndex, speedVal, pausaFixaMs = 0
-                )
+                val pausaMs = pausaDepoisDe(segment.text, paragraphText, position == segments.lastIndex, speedVal)
                 if (pausaMs > 0) delay(pausaMs.toLong())
             }
         } finally {
@@ -1207,14 +1201,12 @@ class GuidedPlayerManager(
         synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
     ): String? {
         val primeiro = unidades[0]
-        // A 2ª só entra em paralelo com motor que sintetiza em duas vagas (kokoro, ou Supertonic com o
-        // paralelismo ligado). No Supertonic comum e no Pocket a síntese é serial: a 2ª atrasava a 1ª, e o play
-        // do parágrafo esperava as duas (medido: 13 s de silêncio depois de um parágrafo curto). Sem ela, a 2ª
-        // sai do prefetch normal assim que a 1ª começa a tocar.
+        // A 2ª só entra em paralelo com o kokoro, que sintetiza em duas vagas. Supertonic e Pocket sintetizam em
+        // uma vaga só: a 2ª atrasava a 1ª, e o play do parágrafo esperava as duas (medido: 13 s de silêncio depois
+        // de um parágrafo curto). Sem ela, a 2ª sai do prefetch normal assim que a 1ª começa a tocar.
         val segundo = unidades.getOrNull(1)
             ?.takeUnless {
-                (alvo.voz.startsWith("supertonic-") && !appPrefs.paralelismoSupertonicoAumentado) ||
-                    alvo.voz.startsWith("pocket-")
+                alvo.voz.startsWith("supertonic-") || alvo.voz.startsWith("pocket-")
             }
         val jobPrimeiro = async(Dispatchers.IO) { synthesizer.synthesize(primeiro.texto, alvo.voz, alvo.ritmo) }
         val jobSegundo = segundo?.let {
@@ -1590,12 +1582,10 @@ class GuidedPlayerManager(
         com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.registrar(
             context, "guiada.config",
             "voz" to voz, "motor" to motor, "ritmo" to appPrefs.ritmo, "velocidade" to speedMultiplier,
-            "passos" to appPrefs.supertonicSteps, "entonacaoContinua" to appPrefs.entonacaoContinua,
-            "pausasNaturais" to appPrefs.pausasNaturais, "pausaFixaMs" to audio.pausaFinalFraseMs,
-            "acabamento" to appPrefs.acabamentoAudio, "folga" to appPrefs.folgaFrasesCurtas,
+            "passos" to appPrefs.supertonicSteps, "passosPocket" to appPrefs.pocketPassos,
+            "estiloRitmo" to appPrefs.estiloDeRitmo.id, "fatorRitmo" to appPrefs.estiloDeRitmo.fator,
             "dialogosVivos" to appPrefs.dialogosVivos, "tom" to audio.tomMeiosTons,
             "tomFalas" to audio.tomNasFalasMeiosTons, "agudosDb" to audio.agudosDb,
-            "buffer" to audio.bufferAdiante, "paralelo2" to appPrefs.paralelismoSupertonicoAumentado,
             "player" to FabricaDePlayer.nome(appPrefs.playerAudioTrack)
         )
     }
@@ -2186,38 +2176,39 @@ class GuidedPlayerManager(
     }
 
     /**
-     * Pausa depois de um trecho (frase, oração ou fala). Com as pausas naturais (opcionais, desligadas por
-     * padrão), varia com a pontuação, o tamanho da frase e o fim do parágrafo (ver [PausasNaturais]); sem elas, vale
-     * [pausaFixaMs] (a "Pausa entre frases" das vozes locais, ou nenhuma).
+     * Pausa depois de um trecho (frase, oração ou fala). Sempre natural: varia com a pontuação, o tamanho da frase
+     * e o fim do parágrafo (ver [PausasNaturais]), escalada pelo ritmo da narração ([EstiloDeRitmo.fator]). A troca
+     * de estilo vale a partir da próxima pausa.
      */
     private fun pausaDepoisDe(
         trecho: String,
         paragrafo: String,
         fimDoParagrafo: Boolean,
-        speedVal: Float,
-        pausaFixaMs: Int
+        speedVal: Float
     ): Int {
         val velocidade = speedVal * speedMultiplier
+        val fator = appPrefs.estiloDeRitmo.fator
         return when {
-            !appPrefs.pausasNaturais -> pausaFixaMs
-            fimDoParagrafo -> PausasNaturais.aposParagrafo(paragrafo, velocidade)
-            else -> PausasNaturais.aposTrecho(trecho, velocidade)
+            fimDoParagrafo -> PausasNaturais.aposParagrafo(paragrafo, velocidade, fator = fator)
+            else -> PausasNaturais.aposTrecho(trecho, velocidade, fator = fator)
         }
     }
 
     /**
-     * Fim do áudio de um parágrafo tocado inteiro (Edge, Android, nuvem): com as pausas naturais, espera a
-     * pausa de fim de parágrafo antes de avançar — antes o seguinte começava colado. A espera vira o
+     * Fim do áudio de um parágrafo tocado inteiro (Edge, Android, nuvem): espera a pausa de fim de parágrafo,
+     * escalada pelo ritmo, antes de avançar — antes o seguinte começava colado. A espera vira o
      * [playJob]: tocar outro parágrafo ou parar a cancela, e pausar a segura (ver [aguardarRetomada]).
      */
     private fun aoTerminarParagrafoInteiro() {
         val indice = currentIndex
         val texto = paragraphs.getOrNull(indice)?.texto
-        if (!appPrefs.pausasNaturais || texto == null) {
+        if (texto == null) {
             onPlaybackCompleted()
             return
         }
-        val pausaMs = PausasNaturais.aposParagrafo(texto, currentBaseSpeed * speedMultiplier)
+        val pausaMs = PausasNaturais.aposParagrafo(
+            texto, currentBaseSpeed * speedMultiplier, fator = appPrefs.estiloDeRitmo.fator
+        )
         playJob = coroutineScope.launch {
             delay(pausaMs.toLong())
             aguardarRetomada()

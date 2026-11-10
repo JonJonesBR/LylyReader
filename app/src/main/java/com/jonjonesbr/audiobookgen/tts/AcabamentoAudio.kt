@@ -11,7 +11,8 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
- * "Acabamento do áudio" (Naturalidade da voz, experimental): cada trecho sintetizado por um motor local sai com o
+ * "Acabamento do áudio": na leitura guiada é sempre ligado; na conversão segue a preferência.
+ * Cada trecho sintetizado por um motor local sai com o
  * mesmo volume médio, e, na leitura guiada, sem o silêncio que o motor deixa nas bordas (as pausas da leitura já
  * são inseridas pelo app). Só trata WAV PCM de 16 bits; qualquer outro arquivo fica como veio.
  *
@@ -52,8 +53,8 @@ object AcabamentoAudio {
     private const val TAMANHO_FMT = 16
     private const val RIFF_SEM_DADOS = 36
 
-    fun modoNaLeitura(context: Context): Modo =
-        if (ligado(context)) Modo.COMPLETO else Modo.NENHUM
+    /** Na leitura guiada o acabamento é sempre ligado (padrão fixo; o Ajustes deixou de oferecer a escolha). */
+    fun modoNaLeitura(): Modo = Modo.COMPLETO
 
     fun modoNaConversao(context: Context): Modo =
         if (ligado(context)) Modo.VOLUME else Modo.NENHUM

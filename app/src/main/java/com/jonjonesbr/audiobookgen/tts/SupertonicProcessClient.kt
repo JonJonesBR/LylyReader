@@ -36,16 +36,9 @@ object SupertonicProcessClient {
 
     private val bindMutex = Mutex()
 
-    // Duas instâncias FIXAS (nunca mutadas/recriadas — um Semaphore não suporta trocar o
-    // número de permits em uso sem risco de vazar permit; mesma técnica do
-    // SherpaProcessClient) — a escolhida por chamada depende de
-    // AppPrefs.paralelismoSupertonicoAumentado (Ajustes › Buffering da leitura guiada).
-    // Padrão CONTINUA 1 (sequencial, comportamento histórico): ao contrário do sherpa-onnx/
-    // kokoro (2 concorrentes validado em device, ~1,66x de speedup medido), a thread-safety
-    // do backend nativo do Supertonic para chamadas concorrentes NUNCA foi validada — 2 aqui
-    // é EXPERIMENTAL, oferecido só porque o usuário pediu explicitamente pra poder testar.
+    // Uma vaga só (sequencial): a thread-safety do backend nativo do Supertonic para chamadas concorrentes
+    // nunca foi validada em device, então a opção de duas vagas saiu da tela.
     private val synthSemaphoreUnico = Semaphore(1)
-    private val synthSemaphoreDuplo = Semaphore(2)
 
     @Volatile private var service: ISupertonicSynthService? = null
     private var connection: ServiceConnection? = null
@@ -62,8 +55,7 @@ object SupertonicProcessClient {
             Log.e(TAG, "Could not bind to isolated Supertonic process")
             return "não foi possível conectar ao processo isolado (:supertonic)"
         }
-        val aumentado = com.jonjonesbr.audiobookgen.data.AppPrefs(appContext).paralelismoSupertonicoAumentado
-        val semaphore = if (aumentado) synthSemaphoreDuplo else synthSemaphoreUnico
+        val semaphore = synthSemaphoreUnico
         return try {
             semaphore.withPermit {
                 withContext(Dispatchers.IO) {

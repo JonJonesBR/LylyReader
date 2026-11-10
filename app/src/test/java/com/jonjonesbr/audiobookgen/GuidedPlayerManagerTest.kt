@@ -5,6 +5,7 @@ import android.os.SystemClock
 import android.util.Log
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.StatsStore
+import com.jonjonesbr.audiobookgen.domain.EstiloDeRitmo
 import com.jonjonesbr.audiobookgen.domain.Paragrafo
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
@@ -83,6 +84,8 @@ class GuidedPlayerManagerTest {
 
         mockkConstructor(AppPrefs::class)
         every { anyConstructed<AppPrefs>().guidedSpeedMult } returns 1.0f
+        // Ritmo Fluida: as pausas ficam na faixa de antes (fator 1,0) e com a entonação contínua, como nos testes.
+        every { anyConstructed<AppPrefs>().estiloDeRitmo } returns EstiloDeRitmo.FLUIDA
 
         val errorSlot = slot<(String) -> Unit>()
         val completionSlot = slot<() -> Unit>()
@@ -186,11 +189,13 @@ class GuidedPlayerManagerTest {
             aguardar { manager.state.value.isPlaying }
             aguardar { coVerificationCount(synthesizer, "“Eu volto”", "pt-BR-FranciscaNeural") == 1 }
             lastCompletionListener()
+            testDispatcher.scheduler.advanceTimeBy(2_000)
             aguardar { playerPlayCount() == 2 }
             io.mockk.coVerify(exactly = 1) {
                 synthesizer.synthesize(", disse Marina.", "pt-BR-ThalitaMultilingualNeural", 100)
             }
             lastCompletionListener()
+            testDispatcher.scheduler.advanceTimeBy(2_000)
             aguardar { manager.state.value.index == -1 }
         } finally {
             manager.stop()
@@ -211,7 +216,6 @@ class GuidedPlayerManagerTest {
         every { anyConstructed<AppPrefs>().motorTts } returns "edge"
         every { anyConstructed<AppPrefs>().vozSelecionada } returns "pt-BR-ThalitaMultilingualNeural"
         every { anyConstructed<AppPrefs>().ritmo } returns 100
-        every { anyConstructed<AppPrefs>().pausasNaturais } returns true
         every { anyConstructed<MediaPlayerEngineImpl>().play(any(), any()) } just Runs
         mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
         every { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) } returns false
@@ -236,10 +240,10 @@ class GuidedPlayerManagerTest {
     }
 
     /**
-     * Leitura de dois parágrafos (um capítulo cada) pelo motor "edge", sem pausas naturais: o fim é o do
-     * parágrafo.
+     * Leitura de dois parágrafos (um capítulo cada) pelo motor "edge". O fim do parágrafo espera a pausa natural
+     * de fim de parágrafo (ritmo Fluida), então quem termina um parágrafo avança depois de `advanceTimeBy(2_000)`.
      */
-    private fun prepararLeituraSemPausasNaturais(arquivo: java.io.File) {
+    private fun prepararLeituraEdge(arquivo: java.io.File) {
         val synthesizer = mockk<com.jonjonesbr.audiobookgen.tts.TtsSynthesizer>()
         io.mockk.coEvery { synthesizer.synthesize(any(), any(), 100) } returns arquivo.absolutePath
         mockkObject(com.jonjonesbr.audiobookgen.tts.TtsSynthesizer.Companion)
@@ -251,7 +255,6 @@ class GuidedPlayerManagerTest {
         every { anyConstructed<AppPrefs>().motorTts } returns "edge"
         every { anyConstructed<AppPrefs>().vozSelecionada } returns "pt-BR-ThalitaMultilingualNeural"
         every { anyConstructed<AppPrefs>().ritmo } returns 100
-        every { anyConstructed<AppPrefs>().pausasNaturais } returns false
         every { anyConstructed<MediaPlayerEngineImpl>().play(any(), any()) } just Runs
         mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
         every { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) } returns false
@@ -260,7 +263,7 @@ class GuidedPlayerManagerTest {
     @Test
     fun sonecaDeCapituloPausaNoFimDoCapituloEAvancaAoRetomar() {
         val arquivo = java.io.File.createTempFile("guiada-soneca-", ".wav")
-        prepararLeituraSemPausasNaturais(arquivo)
+        prepararLeituraEdge(arquivo)
 
         val manager = createManager()
         try {
@@ -271,6 +274,7 @@ class GuidedPlayerManagerTest {
             SleepTimerManager.armarFimDoCapitulo(manager.sessionToken)
             lastCompletionListener()
             testDispatcher.scheduler.runCurrent()
+            testDispatcher.scheduler.advanceTimeBy(2_000)
 
             // Terminou o último parágrafo do capítulo: pausa na fronteira, sem avançar, e a soneca foi consumida.
             assertEquals(0, manager.state.value.index)
@@ -291,7 +295,7 @@ class GuidedPlayerManagerTest {
     @Test
     fun sonecaDeCapituloDeOutraSessaoNaoSeguraOAvanco() {
         val arquivo = java.io.File.createTempFile("guiada-soneca-outra-", ".wav")
-        prepararLeituraSemPausasNaturais(arquivo)
+        prepararLeituraEdge(arquivo)
 
         val manager = createManager()
         try {
@@ -301,6 +305,7 @@ class GuidedPlayerManagerTest {
 
             SleepTimerManager.armarFimDoCapitulo(manager.sessionToken + 1_000)
             lastCompletionListener()
+            testDispatcher.scheduler.advanceTimeBy(2_000)
             testDispatcher.scheduler.runCurrent()
 
             aguardar { manager.state.value.index == 1 }
@@ -324,7 +329,7 @@ class GuidedPlayerManagerTest {
     @Test
     fun avancoDeLivroNoFundoNaoRoubaASonecaDeOutroLivro() {
         val arquivo = java.io.File.createTempFile("guiada-soneca-fundo-", ".wav")
-        prepararLeituraSemPausasNaturais(arquivo)
+        prepararLeituraEdge(arquivo)
 
         val tocando = createManager()
         val outro = createManager()
@@ -338,6 +343,7 @@ class GuidedPlayerManagerTest {
 
             lastCompletionListener()
             testDispatcher.scheduler.runCurrent()
+            testDispatcher.scheduler.advanceTimeBy(2_000)
 
             aguardar { tocando.state.value.index == 1 }
             assertEquals(outro.sessionToken, SleepTimerManager.armedToken)
@@ -357,7 +363,7 @@ class GuidedPlayerManagerTest {
     @Test
     fun playComSonecaDeOutraSessaoReatrelaEPergunta() {
         val arquivo = java.io.File.createTempFile("guiada-troca-soneca-", ".wav")
-        prepararLeituraSemPausasNaturais(arquivo)
+        prepararLeituraEdge(arquivo)
 
         val manager = createManager()
         try {
@@ -391,7 +397,6 @@ class GuidedPlayerManagerTest {
         every { anyConstructed<AppPrefs>().motorTts } returns "edge"
         every { anyConstructed<AppPrefs>().vozSelecionada } returns "pt-BR-ThalitaMultilingualNeural"
         every { anyConstructed<AppPrefs>().ritmo } returns 100
-        every { anyConstructed<AppPrefs>().pausasNaturais } returns false
         every { anyConstructed<AppPrefs>().pausaMs } returns 600
         mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
         every { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) } returns false
@@ -906,19 +911,12 @@ class GuidedPlayerManagerTest {
     //     usuário substitui o padrão de CADA motor; automático preserva o padrão de sempre ---
 
     @Test
-    fun profundidadePrefetchEfetivaUsaPadraoDoMotorQuandoAutomatico() {
-        every { anyConstructed<AppPrefs>().bufferParagrafosAdiante } returns AppPrefs.BUFFER_ADIANTE_AUTOMATICO
-        val manager = createManager()
-
-        assertEquals(5, manager.profundidadePrefetchEfetiva(5))
-    }
-
-    @Test
-    fun profundidadePrefetchEfetivaUsaOverrideDoUsuarioQuandoConfigurado() {
+    fun profundidadePrefetchEfetivaIgnoraOOverrideAntigoEUsaOPadraoDoMotor() {
+        // O pré-carregamento saiu da tela: um valor antigo de bufferParagrafosAdiante não vale mais.
         every { anyConstructed<AppPrefs>().bufferParagrafosAdiante } returns 7
         val manager = createManager()
 
-        assertEquals(7, manager.profundidadePrefetchEfetiva(5))
+        assertEquals(5, manager.profundidadePrefetchEfetiva(5))
     }
 
     // --- Pré-aquecimento do kokoro (init{}): nunca toca o outro motores; consulta a

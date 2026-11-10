@@ -27,7 +27,6 @@ class LayoutsDoLeitorTest {
 
     private companion object {
         const val LARGURA_TELA_DP = 360
-        const val PASSOS_DO_MOTOR = 15
     }
 
     private val contexto: Context = ContextThemeWrapper(
@@ -57,7 +56,7 @@ class LayoutsDoLeitorTest {
             raiz.findViewById<View>(R.id.tvGuidedStatus).visibility = View.GONE
             raiz.findViewById<TextView>(R.id.tvGuidedPassos).apply {
                 visibility = View.VISIBLE
-                text = contexto.getString(R.string.guided_steps_chip, PASSOS_DO_MOTOR)
+                text = contexto.getString(R.string.guided_options_chip)
             }
             raiz.findViewById<TextView>(R.id.btnGuidedVelocidade).apply {
                 visibility = View.VISIBLE

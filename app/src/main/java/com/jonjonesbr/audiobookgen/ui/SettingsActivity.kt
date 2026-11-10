@@ -43,6 +43,7 @@ class SettingsActivity : BasePlayerActivity() {
         AjustesArmazenamentoController(this, pythonEngine)
     }
     private val buffering: AjustesBufferingController by lazy { AjustesBufferingController(this) }
+    private val ritmo: AjustesRitmoController by lazy { AjustesRitmoController(this) }
     private val qualidade: AjustesQualidadeController by lazy { AjustesQualidadeController(this) }
     private val pausas: AjustesPausasController by lazy { AjustesPausasController(this, pythonEngine) }
     private val paginas: AjustesPaginasController by lazy { AjustesPaginasController(this) }
@@ -178,6 +179,8 @@ class SettingsActivity : BasePlayerActivity() {
 
         pausas.carregar()
 
+        ritmo.carregar()
+
         qualidade.carregar()
 
         buffering.carregar()
@@ -200,6 +203,7 @@ class SettingsActivity : BasePlayerActivity() {
 
         pausas.configurar()
 
+        ritmo.configurar()
         qualidade.configurar()
         buffering.configurar()
 
@@ -215,7 +219,6 @@ class SettingsActivity : BasePlayerActivity() {
         linha(R.id.rowPronuncias) { PronunciationDialog.showManager(this) }
         linha(R.id.rowBlacklist) { blacklistDialog.mostrarDialogoBlacklist() }
         linha(R.id.rowEstatisticas) { abrirEstatisticas() }
-        linha(R.id.rowPausasNaturais) { pausas.alternarPausasNaturais() }
         linha(R.id.rowPocketMaisRapido) { qualidade.alternarPocketMaisRapido() }
         linha(R.id.rowTimbre) { TimbreDialog.show(this, appPrefs) }
         linha(R.id.rowAutoRewind) { ouvir.escolherAutoRewind() }

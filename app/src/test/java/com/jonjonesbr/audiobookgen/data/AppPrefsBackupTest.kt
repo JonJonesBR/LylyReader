@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.data
 
+import com.jonjonesbr.audiobookgen.domain.EstiloDeRitmo
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -69,5 +70,28 @@ class AppPrefsBackupTest {
         AppPrefsBackup.aplicar(destino, json)
 
         assertTrue(destino.playerAudioTrack)
+    }
+
+    @Test
+    fun `backup exporta e restaura o estilo de ritmo`() {
+        val (origem, _) = prefs()
+        origem.estiloDeRitmo = EstiloDeRitmo.CALMA
+        val json = AppPrefsBackup.paraJson(origem)
+        assertEquals("calma", json.getString("estilo_ritmo"))
+
+        val (destino, _) = prefs(File(pasta.root, "c"))
+        AppPrefsBackup.aplicar(destino, json)
+
+        assertEquals(EstiloDeRitmo.CALMA, destino.estiloDeRitmo)
+    }
+
+    @Test
+    fun `backup antigo so com entonacao continua restaura Fluida`() {
+        val (appPrefs, _) = prefs()
+        val json = JSONObject().put("entonacao_continua", true)
+
+        AppPrefsBackup.aplicar(appPrefs, json)
+
+        assertEquals(EstiloDeRitmo.FLUIDA, appPrefs.estiloDeRitmo)
     }
 }

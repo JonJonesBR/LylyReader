@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.data
 
+import com.jonjonesbr.audiobookgen.domain.EstiloDeRitmo
 import org.json.JSONObject
 
 /**
@@ -17,6 +18,8 @@ object AppPrefsBackup {
             put("supertonic_steps", appPrefs.supertonicSteps)
             put("pocket_passos", appPrefs.pocketPassos)
             put("pocket_expressividade", appPrefs.pocketExpressividade)
+            put("estilo_ritmo", appPrefs.estiloDeRitmo.id)
+            // Legado (não é mais lido pela leitura guiada): mantido no backup para quem restaura versões antigas.
             put("entonacao_continua", appPrefs.entonacaoContinua)
             put("acabamento_audio", appPrefs.acabamentoAudio)
             put("dialogos_vivos", appPrefs.dialogosVivos)
@@ -113,9 +116,25 @@ object AppPrefsBackup {
         }
         aplicarReaderPrefs(appPrefs, json)
         aplicarNaturalidade(appPrefs, json)
+        aplicarRitmo(appPrefs, json)
     }
 
-    /** Expressividade do Pocket e as opções de "Naturalidade da voz". */
+    /**
+     * Ritmo da narração: o backup novo traz "estilo_ritmo". Um backup antigo, sem ele, só traz "entonacao_continua":
+     * nesse caso o estilo sai da mesma migração da primeira leitura (ver AppPrefs.estiloDeRitmo). Roda por último.
+     */
+    private fun aplicarRitmo(appPrefs: AppPrefs, json: JSONObject) {
+        when {
+            json.has("estilo_ritmo") -> {
+                appPrefs.estiloDeRitmo = EstiloDeRitmo.deId(json.optString("estilo_ritmo", ""))
+            }
+            json.has("entonacao_continua") -> {
+                appPrefs.estiloDeRitmo = EstiloDeRitmo.migrar(json.optBoolean("entonacao_continua", false), false)
+            }
+        }
+    }
+
+    /** Expressividade do Pocket e as opções legadas de "Naturalidade da voz" (lidas só para backups antigos). */
     private fun aplicarNaturalidade(appPrefs: AppPrefs, json: JSONObject) {
         if (json.has("pocket_expressividade")) {
             appPrefs.pocketExpressividade = json.optInt("pocket_expressividade", appPrefs.pocketExpressividade)

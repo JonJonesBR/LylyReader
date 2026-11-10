@@ -6,6 +6,7 @@ import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MAX
 import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MIN
 import com.jonjonesbr.audiobookgen.domain.ESPACO_NIVEL_MAX
 import com.jonjonesbr.audiobookgen.domain.ESPACO_NIVEL_PADRAO
+import com.jonjonesbr.audiobookgen.domain.EstiloDeRitmo
 import com.jonjonesbr.audiobookgen.domain.FonteLeitura
 import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
@@ -164,7 +165,16 @@ class AppPrefs(context: Context) {
             }
             return p.getInt("supertonic_steps", SUPERTONIC_STEPS_PADRAO)
         }
-        set(v) = p.edit().putInt("supertonic_steps", v).apply()
+        set(v) {
+            // Escolha explícita: marca as três migrações como feitas, para que a próxima leitura não apague o
+            // valor escolhido (ex.: Rápida = 8, que a migração antiga trataria como padrão velho).
+            p.edit()
+                .putInt("supertonic_steps", v)
+                .putBoolean("supertonic_steps_padrao8", true)
+                .putBoolean("supertonic_steps_padrao18", true)
+                .putBoolean("supertonic_steps_padrao10", true)
+                .apply()
+        }
 
     /**
      * Passos de decodificação por quadro do Pocket TTS. 10 é o padrão (antes 4, e 1 antes disso): mais passos
@@ -212,39 +222,55 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putBoolean("pocket_mais_rapido", v).apply()
 
     /** Pausa entre orações (frases) na leitura guiada com kokoro (ms). Ver
-     *  [GuidedPlayerManager][com.jonjonesbr.audiobookgen.service.GuidedPlayerManager]. */
+     *  [GuidedPlayerManager][com.jonjonesbr.audiobookgen.service.GuidedPlayerManager].
+     *  Legado: a leitura guiada não lê mais esta pausa fixa (usa o ritmo); fica por compatibilidade de backup. */
     var pausaFinalFraseMs: Int
         get() = p.getInt("pausa_final_frase_ms", PAUSA_FINAL_FRASE_MS_PADRAO)
         set(v) = p.edit().putInt("pausa_final_frase_ms", v).apply()
 
     /**
-     * Pausas naturais na leitura guiada (desligadas por padrão): duração conforme a pontuação, o fôlego e o fim do
-     * parágrafo, com variação aleatória (ver [com.jonjonesbr.audiobookgen.domain.PausasNaturais]). Desligado volta
-     * à pausa fixa de [pausaFinalFraseMs] entre frases das vozes locais e nenhuma pausa entre parágrafos.
-     *
-     * Sem migração: a chave só é gravada quando o usuário marca ou desmarca o checkbox (Ajustes e diálogo de voz),
-     * então um valor gravado é escolha explícita e fica; sem chave, vale o padrão novo (false).
+     * Pausas naturais (chave antiga "pausas_naturais"). Legado: a leitura guiada usa sempre as pausas naturais,
+     * escaladas por [estiloDeRitmo]. A chave ainda é lida pela migração de [estiloDeRitmo] e pelo backup.
      */
     var pausasNaturais: Boolean
         get() = p.getBoolean("pausas_naturais", false)
         set(v) = p.edit().putBoolean("pausas_naturais", v).apply()
 
-    // ── Naturalidade da voz (experimental): começam desligadas, para o usuário comparar ──
+    /**
+     * Ritmo da narração na leitura guiada: [EstiloDeRitmo.NATURAL] por padrão. Na primeira leitura migra das
+     * preferências antigas ("entonacao_continua" ligada ou "pausas_naturais" desligada de propósito, que viram
+     * FLUIDA). A própria chave "estilo_ritmo" marca a migração feita, então ela roda uma vez só.
+     */
+    var estiloDeRitmo: EstiloDeRitmo
+        get() {
+            if (!p.contains("estilo_ritmo")) {
+                val migrado = EstiloDeRitmo.migrar(
+                    p.getBoolean("entonacao_continua", false),
+                    p.contains("pausas_naturais") && !p.getBoolean("pausas_naturais", true)
+                )
+                p.edit().putString("estilo_ritmo", migrado.id).apply()
+                return migrado
+            }
+            return EstiloDeRitmo.deId(p.getString("estilo_ritmo", null))
+        }
+        set(v) = p.edit().putString("estilo_ritmo", v.id).apply()
 
-    /** Leitura guiada no Supertonic e no Pocket: frases seguidas vão juntas ao motor, com entonação corrida. */
+    // ── Legado: a leitura guiada não lê mais estas (o ritmo e o acabamento fixo as substituem) ──
+
+    /** Legado: a entonação contínua agora vem de [estiloDeRitmo] (só em Fluida). Fica por compatibilidade. */
     var entonacaoContinua: Boolean
         get() = p.getBoolean("entonacao_continua", false)
         set(v) = p.edit().putBoolean("entonacao_continua", v).apply()
 
-    /** Motores locais: volume igual entre trechos e, na leitura guiada, sem o silêncio extra das bordas. */
+    /**
+     * Motores locais: volume igual entre trechos. Na leitura guiada ficou sempre ligado; na conversão de audiobook
+     * continua valendo esta preferência (ver AcabamentoAudio.modoNaConversao).
+     */
     var acabamentoAudio: Boolean
         get() = p.getBoolean("acabamento_audio", false)
         set(v) = p.edit().putBoolean("acabamento_audio", v).apply()
 
-    /**
-     * Supertonic: frases curtas sintetizadas com mais tempo (a voz engole menos palavras) e depois aceleradas de
-     * volta ao ritmo normal, sem mudar o tom.
-     */
+    /** Legado: a folga de frases curtas foi removida. Fica só para o backup antigo ser lido sem erro. */
     var folgaFrasesCurtas: Boolean
         get() = p.getBoolean("folga_frases_curtas", false)
         set(v) = p.edit().putBoolean("folga_frases_curtas", v).apply()
@@ -361,7 +387,8 @@ class AppPrefs(context: Context) {
         get() = p.getInt("ultima_versao_notas_vista", 0)
         set(v) = p.edit().putInt("ultima_versao_notas_vista", v).apply()
 
-    /** Quantas unidades (orações ou parágrafos, conforme o motor/modo) a leitura guiada
+    /** Legado: o pré-carregamento é sempre automático (ver [BUFFER_ADIANTE_AUTOMATICO]); fica por compatibilidade.
+     *  Quantas unidades (orações ou parágrafos, conforme o motor/modo) a leitura guiada
      *  sintetiza à frente da posição atual, substituindo o padrão interno de CADA motor —
      *  [BUFFER_ADIANTE_AUTOMATICO] mantém o comportamento de sempre (nenhuma mudança até o
      *  usuário mexer nisso em Ajustes). Ver uso em
@@ -379,7 +406,8 @@ class AppPrefs(context: Context) {
         get() = p.getBoolean("paralelismo_kokoro_reduzido", false)
         set(v) = p.edit().putBoolean("paralelismo_kokoro_reduzido", v).apply()
 
-    /** Quando true, permite ao Supertonic (onnx) processar 2 sínteses concorrentes em vez
+    /** Legado: o Supertonic sempre usa uma vaga; a opção saiu da tela.
+     *  Quando true, permite ao Supertonic (onnx) processar 2 sínteses concorrentes em vez
      *  do padrão histórico de 1 (sequencial, via mutex) — ver
      *  [SupertonicProcessClient][com.jonjonesbr.audiobookgen.tts.SupertonicProcessClient].
      *  EXPERIMENTAL: ao contrário do kokoro, a thread-safety do backend nativo do
@@ -390,11 +418,13 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putBoolean("paralelismo_supertonico_aumentado", v).apply()
 
     /**
-     * "Restaurar o padrão do som" (Ajustes › Som): pausas, tom da voz, repetir ao retomar, qualidade do
+     * "Restaurar o padrão do som" (Ajustes › Som): ritmo da narração, tom da voz, repetir ao retomar, qualidade do
      * áudio, passos das vozes e buffering voltam ao padrão. Vozes, livros e pronúncias não mudam.
      */
     fun restaurarPadroesDeSom() {
         p.edit()
+            // "estilo_ritmo" sai junto das chaves antigas, no mesmo edit(): senão a migração devolveria FLUIDA.
+            .remove("estilo_ritmo")
             .remove("pausas_naturais")
             .remove("pausa_final_frase_ms")
             .remove("pausa_ms")

@@ -442,7 +442,7 @@
 
             <TextView
                 style="@style/AjusteSecao"
-                android:text="@string/aj_secao_pausas"/>
+                android:text="@string/aj_secao_ritmo"/>
 
             <com.google.android.material.card.MaterialCardView
                 style="@style/AjusteCartao">
@@ -450,90 +450,50 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <LinearLayout
-                        android:id="@+id/rowPausasNaturais"
-                        style="@style/AjusteLinha">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/AjusteTitulo"
-                                android:text="@string/aj_pausas_naturais"/>
-
-                            <TextView
-                                style="@style/AjusteSub"
-                                android:text="@string/aj_pausas_naturais_sub"/>
-                        </LinearLayout>
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/chkPausasNaturais"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:contentDescription="@string/aj_pausas_naturais"/>
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/divPausaFrase"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="16dp"
-                        android:background="@color/color_divider_faint"/>
-                    <LinearLayout
-                        android:id="@+id/blocoPausaFrase"
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipsEstiloRitmo"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="12dp"
-                        android:paddingTop="10dp"
-                        android:paddingBottom="6dp">
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
 
-                        <TextView
-                            style="@style/AjusteTitulo"
-                            android:text="@string/aj_pausa_frase"/>
-
-                        <TextView
-                            style="@style/AjusteSub"
-                            android:text="@string/aj_pausa_frase_sub"/>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipRitmoCalma"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
+                            android:text="@string/aj_ritmo_calma"/>
 
-                            <SeekBar
-                                android:id="@+id/seekPausaFinalFrase"
-                                android:contentDescription="@string/cd_seek_pausa_frase"
-                                android:layout_width="0dp"
-                                android:layout_weight="1"
-                                android:layout_height="48dp"
-                                android:max="2000"/>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipRitmoNatural"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/aj_ritmo_natural"/>
 
-                            <TextView
-                                android:id="@+id/tvPausaFinalFraseValor"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:minWidth="64dp"
-                                android:gravity="end"
-                                tools:text="500 ms"
-                                android:textSize="13sp"
-                                android:textColor="?attr/colorPrimary"/>
-                        </LinearLayout>
-                    </LinearLayout>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipRitmoFluida"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/aj_ritmo_fluida"/>
+                    </com.google.android.material.chip.ChipGroup>
 
+                    <TextView
+                        android:id="@+id/tvEstiloRitmoDesc"
+                        style="@style/AjusteSub"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 style="@style/AjusteSecao"
-                android:text="@string/aj_secao_naturalidade"/>
+                android:text="@string/aj_secao_qualidade"/>
 
             <com.google.android.material.card.MaterialCardView
                 style="@style/AjusteCartao">
@@ -541,130 +501,46 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <LinearLayout
-                        android:id="@+id/rowEntonacaoContinua"
-                        style="@style/AjusteLinha">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/AjusteTitulo"
-                                android:text="@string/aj_entonacao_continua"/>
-
-                            <TextView
-                                style="@style/AjusteSub"
-                                android:text="@string/aj_entonacao_continua_sub"/>
-                        </LinearLayout>
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/swEntonacaoContinua"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:contentDescription="@string/aj_entonacao_continua"/>
-                    </LinearLayout>
-
-                    <View
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipsQualidade"
                         android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="16dp"
-                        android:background="@color/color_divider_faint"/>
-                    <LinearLayout
-                        android:id="@+id/rowAcabamentoAudio"
-                        style="@style/AjusteLinha">
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
 
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/AjusteTitulo"
-                                android:text="@string/aj_acabamento_audio"/>
-
-                            <TextView
-                                style="@style/AjusteSub"
-                                android:text="@string/aj_acabamento_audio_sub"/>
-                        </LinearLayout>
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/swAcabamentoAudio"
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipQualRapida"
+                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:contentDescription="@string/aj_acabamento_audio"/>
-                    </LinearLayout>
+                            android:text="@string/aj_qualidade_rapida"/>
 
-                    <View
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipQualEquilibrada"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/aj_qualidade_equilibrada"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipQualAlta"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/aj_qualidade_alta"/>
+                    </com.google.android.material.chip.ChipGroup>
+
+                    <TextView
+                        android:id="@+id/tvQualidadeAviso"
+                        style="@style/AjusteSub"
                         android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="16dp"
-                        android:background="@color/color_divider_faint"/>
-                    <LinearLayout
-                        android:id="@+id/rowDialogosVivos"
-                        style="@style/AjusteLinha">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/AjusteTitulo"
-                                android:text="@string/aj_dialogos_vivos"/>
-
-                            <TextView
-                                style="@style/AjusteSub"
-                                android:text="@string/aj_dialogos_vivos_sub"/>
-                        </LinearLayout>
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/swDialogosVivos"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:contentDescription="@string/aj_dialogos_vivos"/>
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="16dp"
-                        android:background="@color/color_divider_faint"/>
-                    <LinearLayout
-                        android:id="@+id/rowFolgaFrasesCurtas"
-                        style="@style/AjusteLinha">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/AjusteTitulo"
-                                android:text="@string/aj_folga_frases_curtas"/>
-
-                            <TextView
-                                style="@style/AjusteSub"
-                                android:text="@string/aj_folga_frases_curtas_sub"/>
-                        </LinearLayout>
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/swFolgaFrasesCurtas"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:contentDescription="@string/aj_folga_frases_curtas"/>
-                    </LinearLayout>
-
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/aj_qualidade_aviso"
+                        android:visibility="gone"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -679,33 +555,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
-                    <LinearLayout
-                        android:id="@+id/rowTimbre"
-                        style="@style/AjusteLinha">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/AjusteTitulo"
-                                android:text="@string/aj_tom"/>
-
-                            <TextView
-                                style="@style/AjusteSub"
-                                android:text="@string/aj_tom_sub"/>
-                        </LinearLayout>
-
-                        <TextView style="@style/AjusteSeta"/>
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="16dp"
-                        android:background="@color/color_divider_faint"/>
                     <LinearLayout
                         android:id="@+id/rowAutoRewind"
                         style="@style/AjusteLinha">
@@ -731,7 +580,6 @@
 
                         <TextView style="@style/AjusteSeta"/>
                     </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -767,7 +615,6 @@
 
                         <TextView style="@style/AjusteSeta"/>
                     </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -1519,6 +1366,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -1529,10 +1377,41 @@
                 android:textColor="@color/color_on_surface_dim"
                 android:textSize="13sp"/>
 
-            <!-- ── Geral: vale para qualquer voz ── -->
             <TextView
                 style="@style/AjusteSecao"
                 android:text="@string/aj_grupo_geral"/>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AjusteCartao">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowTimbre"
+                        style="@style/AjusteLinha">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_tom"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_tom_sub"/>
+                        </LinearLayout>
+
+                        <TextView style="@style/AjusteSeta"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Pausa entre blocos: os cinco rótulos cabem numa linha (o texto encolhe se precisar). -->
             <com.google.android.material.card.MaterialCardView
@@ -1682,170 +1561,71 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Pré-carregamento: quanto texto fica pronto à frente (a folga de Kokoro e Supertonic usa o mesmo número). -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/AjusteCartao"
-                android:layout_marginBottom="14dp">
+                style="@style/AjusteCartao">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        style="@style/AjusteTitulo"
-                        android:text="@string/settings_buffering_title"/>
-
-                    <TextView
-                        style="@style/AjusteSub"
-                        android:layout_marginBottom="12dp"
-                        android:text="@string/settings_buffer_paragrafos_desc"/>
-
+                    android:orientation="vertical">
                     <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:id="@+id/rowDialogosVivos"
+                        style="@style/AjusteLinha">
 
-                        <SeekBar
-                            android:id="@+id/seekBufferParagrafos"
-                            android:contentDescription="@string/cd_seek_buffer_paragrafos"
+                        <LinearLayout
                             android:layout_width="0dp"
-                            android:layout_weight="1"
                             android:layout_height="wrap_content"
-                            android:max="8"/>
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/tvBufferParagrafosValor"
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_dialogos_vivos"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_dialogos_vivos_sub"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/swDialogosVivos"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:minWidth="96dp"
-                            android:gravity="end"
-                            tools:text="Automático"
-                            android:textSize="13sp"
-                            android:textColor="?attr/colorPrimary"/>
-
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/aj_dialogos_vivos"/>
                     </LinearLayout>
 
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- ── Supertonic ── -->
-            <TextView
-                style="@style/AjusteSecao"
-                android:text="@string/aj_grupo_supertonic"/>
-
-            <com.google.android.material.card.MaterialCardView
-                style="@style/AjusteCartao"
-                android:layout_marginBottom="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        style="@style/AjusteTitulo"
-                        android:text="@string/aj_passos_titulo"/>
-
-                    <TextView
-                        style="@style/AjusteSub"
-                        android:layout_marginBottom="12dp"
-                        android:text="@string/settings_supertonic_passos_desc"/>
-
-                    <LinearLayout
+                    <View
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@color/color_divider_faint"/>
+                    <LinearLayout
+                        android:id="@+id/rowPlayerAudioTrack"
+                        style="@style/AjusteLinha">
 
-                        <SeekBar
-                            android:id="@+id/seekSupertonicSteps"
-                            android:contentDescription="@string/cd_seek_supertonic_passos"
+                        <LinearLayout
                             android:layout_width="0dp"
-                            android:layout_weight="1"
                             android:layout_height="wrap_content"
-                            android:max="18"/>
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/tvSupertonicStepsValor"
+                            <TextView
+                                style="@style/AjusteTitulo"
+                                android:text="@string/aj_player_audiotrack_titulo"/>
+
+                            <TextView
+                                style="@style/AjusteSub"
+                                android:text="@string/aj_player_audiotrack_sub"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/swPlayerAudioTrack"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:minWidth="64dp"
-                            android:gravity="end"
-                            tools:text="4 passos"
-                            android:textSize="13sp"
-                            android:textColor="?attr/colorPrimary"/>
-
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/aj_player_audiotrack_titulo"/>
                     </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                style="@style/AjusteCartao"
-                android:layout_marginBottom="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            style="@style/AjusteTitulo"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/aj_trechos_titulo"/>
-
-                        <TextView
-                            style="@style/AjusteEtiqueta"
-                            android:text="@string/aj_experimental"/>
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/AjusteSub"
-                        android:layout_marginBottom="12dp"
-                        android:text="@string/settings_paralelismo_supertonic_desc"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <Button
-                            android:id="@+id/btnParalelismoSupertonicoPadrao"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:minHeight="48dp"
-                            android:text="@string/btn_paralelismo_supertonico_padrao"
-                            android:textSize="12sp"
-                            android:textColor="?attr/colorPrimary"
-                            android:backgroundTint="@color/color_primary_surface"
-                            android:layout_marginEnd="4dp"/>
-
-                        <Button
-                            android:id="@+id/btnParalelismoSupertonicoExperimental"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:minHeight="48dp"
-                            android:text="@string/btn_paralelismo_supertonico_experimental"
-                            android:textSize="12sp"
-                            android:textColor="@color/color_on_surface_muted"
-                            android:backgroundTint="@color/color_surface_variant"/>
-
-                    </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -1853,67 +1633,6 @@
             <TextView
                 style="@style/AjusteSecao"
                 android:text="@string/aj_grupo_pocket"/>
-
-            <com.google.android.material.card.MaterialCardView
-                style="@style/AjusteCartao"
-                android:layout_marginBottom="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            style="@style/AjusteTitulo"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/aj_passos_titulo"/>
-
-                        <TextView
-                            style="@style/AjusteEtiqueta"
-                            android:text="@string/aj_experimental"/>
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/AjusteSub"
-                        android:layout_marginBottom="12dp"
-                        android:text="@string/aj_pocket_passos_desc"/>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <SeekBar
-                            android:id="@+id/seekPocketPassos"
-                            android:contentDescription="@string/cd_seek_pocket_passos"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:max="19"/>
-
-                        <TextView
-                            android:id="@+id/tvPocketPassosValor"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="64dp"
-                            android:gravity="end"
-                            tools:text="1 passo"
-                            android:textSize="13sp"
-                            android:textColor="?attr/colorPrimary"/>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
                 style="@style/AjusteCartao"
