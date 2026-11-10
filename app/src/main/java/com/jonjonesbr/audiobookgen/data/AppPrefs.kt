@@ -270,6 +270,14 @@ class AppPrefs(context: Context) {
         get() = p.getFloat("guided_speed_mult", 1.0f)
         set(v) = p.edit().putFloat("guided_speed_mult", v).apply()
 
+    /**
+     * Leitura guiada: toca os WAV locais por AudioTrack (MODE_STATIC) em vez do MediaPlayer. MP3 e WAV que não
+     * couberem continuam no MediaPlayer. Lida na criação de cada motor, ou seja, vale na próxima leitura.
+     */
+    var playerAudioTrack: Boolean
+        get() = p.getBoolean("player_audiotrack", false)
+        set(v) = p.edit().putBoolean("player_audiotrack", v).apply()
+
     /** Recuo automático ao retomar audiolivro pausado (off/curto/longo). Padrão: curto. */
     var autoRewindMode: AutoRewindMode
         get() = AutoRewindMode.entries.firstOrNull {

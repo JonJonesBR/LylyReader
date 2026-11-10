@@ -30,7 +30,7 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 import com.jonjonesbr.audiobookgen.player.AudioPlayerEngine
-import com.jonjonesbr.audiobookgen.player.MediaPlayerEngineImpl
+import com.jonjonesbr.audiobookgen.player.FabricaDePlayer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -550,7 +550,8 @@ class GuidedPlayerManager(
         // Congela a barra na posição real antes de trocar o motor (o player antigo ainda responde aqui).
         publicarTrecho(tocando = false)
         playerEngine?.release()
-        playerEngine = MediaPlayerEngineImpl(context)
+        // A preferência é lida aqui, a cada motor novo: a troca não acontece no meio de um trecho.
+        playerEngine = FabricaDePlayer.criar(context, appPrefs.playerAudioTrack)
         fixarTimbre(timbreAtual())
         // Motor novo a cada parágrafo: herda o volume do fade da soneca em curso (o motor novo começaria em 1.0).
         if (GuidedPlaybackBridge.manager === this) playerEngine?.setVolume(SleepTimerManager.volumeFactor.value)
@@ -1526,6 +1527,7 @@ class GuidedPlayerManager(
             "esperado_ms" to esperadoMs,
             "vel" to amostra.velocidade, "fila" to pendingOracaoJobs.size,
             "atraso_ms" to pausa.atrasoMs, "atraso_estimado_ms" to pausa.atrasoEstimadoMs,
+            "player" to playerEngine?.motorEmUso,
             "pausa_ms" to pausa.pausaMs
         )
     }
@@ -1593,7 +1595,8 @@ class GuidedPlayerManager(
             "acabamento" to appPrefs.acabamentoAudio, "folga" to appPrefs.folgaFrasesCurtas,
             "dialogosVivos" to appPrefs.dialogosVivos, "tom" to audio.tomMeiosTons,
             "tomFalas" to audio.tomNasFalasMeiosTons, "agudosDb" to audio.agudosDb,
-            "buffer" to audio.bufferAdiante, "paralelo2" to appPrefs.paralelismoSupertonicoAumentado
+            "buffer" to audio.bufferAdiante, "paralelo2" to appPrefs.paralelismoSupertonicoAumentado,
+            "player" to FabricaDePlayer.nome(appPrefs.playerAudioTrack)
         )
     }
 

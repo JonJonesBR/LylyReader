@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.data
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -55,5 +56,18 @@ class AppPrefsBackupTest {
         AppPrefsBackup.aplicar(destino, json)
 
         assertEquals(77, destino.ritmo)
+    }
+
+    @Test
+    fun `ida e volta mantem o player por AudioTrack`() {
+        val (origem, _) = prefs()
+        origem.playerAudioTrack = true
+        val json = AppPrefsBackup.paraJson(origem)
+
+        val (destino, _) = prefs(File(pasta.root, "c"))
+        assertFalse(destino.playerAudioTrack)
+        AppPrefsBackup.aplicar(destino, json)
+
+        assertTrue(destino.playerAudioTrack)
     }
 }

@@ -32,6 +32,7 @@ object AppPrefsBackup {
             put("pronuncias_json", appPrefs.pronunciasJson)
             // pasta_destino fica de fora: é uma permissão de pasta (SAF) que só vale neste aparelho e nesta instalação.
             put("guided_speed_mult", appPrefs.guidedSpeedMult.toDouble())
+            put("player_audiotrack", appPrefs.playerAudioTrack)
             put("onboarding_done", appPrefs.onboardingDone)
             put("voice_download_onboarding_done", appPrefs.voiceDownloadOnboardingDone)
             put("aviso_voz_generica_dispensado", appPrefs.avisoVozGenericaDispensado)
@@ -88,6 +89,9 @@ object AppPrefsBackup {
                 "guided_speed_mult",
                 appPrefs.guidedSpeedMult.toDouble()
             ).toFloat()
+        }
+        if (json.has("player_audiotrack")) {
+            appPrefs.playerAudioTrack = json.optBoolean("player_audiotrack", appPrefs.playerAudioTrack)
         }
         if (json.has("onboarding_done")) {
             appPrefs.onboardingDone = json.optBoolean("onboarding_done", appPrefs.onboardingDone)

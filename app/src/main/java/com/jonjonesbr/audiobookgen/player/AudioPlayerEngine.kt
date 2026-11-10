@@ -18,4 +18,7 @@ interface AudioPlayerEngine {
     fun setCompletionListener(listener: () -> Unit)
     fun setErrorListener(listener: (String) -> Unit)
     fun release()
+
+    /** Motor que de fato tocou o trecho atual (diagnóstico da leitura guiada). */
+    val motorEmUso: String get() = "mediaplayer"
 }
