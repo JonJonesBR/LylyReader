@@ -239,7 +239,8 @@ class AppPrefs(context: Context) {
     /**
      * Ritmo da narração na leitura guiada: [EstiloDeRitmo.FLUIDA] por padrão. Na primeira leitura migra das
      * preferências antigas ("entonacao_continua" ligada ou "pausas_naturais" desligada de propósito, que viram
-     * FLUIDA; "pausas_naturais" ligada de propósito vira NATURAL). A própria chave "estilo_ritmo" marca a migração feita, então ela roda uma vez só.
+     * FLUIDA; "pausas_naturais" ligada de propósito vira NATURAL).
+     * A própria chave "estilo_ritmo" marca a migração feita, então ela roda uma vez só.
      */
     var estiloDeRitmo: EstiloDeRitmo
         get() {
