@@ -1723,7 +1723,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="aj_player_audiotrack_sub">Toca os áudios locais por um caminho diferente, sem atraso entre as frases. Experimental.</string>
     <string name="aj_ajuda_narracao_link">Como funciona?</string>
     <string name="help_narration_title">Narração natural</string>
-    <string name="help_narration_step1">O Ritmo define as pausas: Calma e Natural respiram como um narrador; Fluida mantém pausas curtas e junta as frases, o que dá menos falhas na síntese.</string>
+    <string name="help_narration_step1">O Ritmo define o tamanho das pausas: Calma e Natural respiram como um narrador, Fluida mantém pausas curtas. Nas vozes Supertonic e Pocket, os três juntam frases curtas, o que reduz falhas na síntese.</string>
     <string name="help_narration_step2">A Qualidade da voz pode ser Rápida, Equilibrada ou Alta. A Alta soa melhor e pode pausar em aparelhos lentos.</string>
     <string name="help_narration_step3">Em Ajustes › Som › Avançado ficam o tom, a suavização de agudos (já em −8 dB, até −16 dB), a expressividade e mais. Os padrões servem bem.</string>
     <string name="help_narration_step4">No leitor, toque no botão do microfone para mudar o ritmo e a qualidade sem sair do livro.</string>

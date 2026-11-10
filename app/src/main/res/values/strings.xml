@@ -1718,7 +1718,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="aj_player_audiotrack_sub">Plays local audio through a different path, with no gap between sentences. Experimental.</string>
     <string name="aj_ajuda_narracao_link">How does it work?</string>
     <string name="help_narration_title">Natural narration</string>
-    <string name="help_narration_step1">Rhythm sets the pauses: Calm and Natural breathe like a narrator; Fluid keeps pauses short and joins sentences, which gives the fewest synthesis slips.</string>
+    <string name="help_narration_step1">Rhythm sets the pause length: Calm and Natural breathe like a narrator, Fluid keeps pauses short. With Supertonic and Pocket voices, all three join short sentences, which reduces synthesis slips.</string>
     <string name="help_narration_step2">Voice quality: Fast, Balanced or High. High sounds best and may pause on slow devices.</string>
     <string name="help_narration_step3">Settings › Sound › Advanced has pitch, treble softening (already at -8 dB, up to -16 dB), expressiveness and more. The defaults work well.</string>
     <string name="help_narration_step4">In the reader, tap the microphone button to change rhythm and quality without leaving the book.</string>
