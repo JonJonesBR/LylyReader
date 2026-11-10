@@ -25,6 +25,8 @@ import java.util.Locale
  * sem sair do livro. Tudo vale na hora. Com "Só neste livro" marcado, tom, agudos, tom nas falas, pausa e
  * preparo à frente ficam guardados no perfil do livro; sem marcar, mudam os ajustes globais.
  */
+// Cada função monta uma seção do diálogo (ritmo, qualidade, avançado…): dividir mais só espalharia a tela.
+@Suppress("TooManyFunctions")
 object GuidedVoiceOptionsDialog {
 
     fun show(

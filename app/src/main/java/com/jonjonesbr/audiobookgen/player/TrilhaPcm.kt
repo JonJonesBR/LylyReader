@@ -128,9 +128,9 @@ internal class TrilhaPcm(
 
     /** Posição em ms do arquivo de origem, limitada à duração. Depois do fim, devolve a duração. */
     fun posicaoMs(): Int {
+        val f = faixa
         if (terminada) return duracaoMs
-        val f = faixa ?: return 0
-        val frames = runCatching { f.playbackHeadPosition }.getOrDefault(0)
+        val frames = if (f == null) 0 else runCatching { f.playbackHeadPosition }.getOrDefault(0)
         return framesParaMs(frames, pcm.taxa).coerceIn(0, duracaoMs)
     }
 
