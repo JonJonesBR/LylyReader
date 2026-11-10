@@ -133,7 +133,7 @@ class AppPrefsPadroesTest {
         val (appPrefs, _) = prefs()
         appPrefs.pausasNaturais = true
 
-        assertEquals(EstiloDeRitmo.FLUIDA, appPrefs.estiloDeRitmo)
+        assertEquals(EstiloDeRitmo.NATURAL, appPrefs.estiloDeRitmo)
     }
 
     @Test
