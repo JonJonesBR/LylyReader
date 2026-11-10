@@ -34,7 +34,14 @@ enum class EstiloDeRitmo(val id: String, val fator: Float, val entonacaoContinua
          * Estilo da primeira leitura de quem já tinha ajustes antigos: a entonação contínua ligada ou a pausa
          * natural desligada de propósito indicam o modo "Fluida" (o ritmo de antes). Sem isso, [PADRAO].
          */
-        fun migrar(entonacaoContinuaLigada: Boolean, pausasNaturaisDesligadaExplicita: Boolean): EstiloDeRitmo =
-            if (entonacaoContinuaLigada || pausasNaturaisDesligadaExplicita) FLUIDA else PADRAO
+        fun migrar(
+            entonacaoContinuaLigada: Boolean,
+            pausasNaturaisDesligadaExplicita: Boolean,
+            pausasNaturaisLigadaExplicita: Boolean = false
+        ): EstiloDeRitmo = when {
+            entonacaoContinuaLigada || pausasNaturaisDesligadaExplicita -> FLUIDA
+            pausasNaturaisLigadaExplicita -> NATURAL
+            else -> PADRAO
+        }
     }
 }

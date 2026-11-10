@@ -237,16 +237,17 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putBoolean("pausas_naturais", v).apply()
 
     /**
-     * Ritmo da narração na leitura guiada: [EstiloDeRitmo.NATURAL] por padrão. Na primeira leitura migra das
+     * Ritmo da narração na leitura guiada: [EstiloDeRitmo.FLUIDA] por padrão. Na primeira leitura migra das
      * preferências antigas ("entonacao_continua" ligada ou "pausas_naturais" desligada de propósito, que viram
-     * FLUIDA). A própria chave "estilo_ritmo" marca a migração feita, então ela roda uma vez só.
+     * FLUIDA; "pausas_naturais" ligada de propósito vira NATURAL). A própria chave "estilo_ritmo" marca a migração feita, então ela roda uma vez só.
      */
     var estiloDeRitmo: EstiloDeRitmo
         get() {
             if (!p.contains("estilo_ritmo")) {
                 val migrado = EstiloDeRitmo.migrar(
                     p.getBoolean("entonacao_continua", false),
-                    p.contains("pausas_naturais") && !p.getBoolean("pausas_naturais", true)
+                    p.contains("pausas_naturais") && !p.getBoolean("pausas_naturais", true),
+                    p.contains("pausas_naturais") && p.getBoolean("pausas_naturais", false)
                 )
                 p.edit().putString("estilo_ritmo", migrado.id).apply()
                 return migrado

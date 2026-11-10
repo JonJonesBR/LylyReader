@@ -50,4 +50,16 @@ class EstiloDeRitmoTest {
         assertEquals(EstiloDeRitmo.FLUIDA, migrar(entonacao = false, pausasDesligadas = false))
         assertEquals(EstiloDeRitmo.FLUIDA, migrar(entonacao = true, pausasDesligadas = true))
     }
+
+    @Test
+    fun `pausas naturais ligadas de proposito migram para Natural`() {
+        assertEquals(
+            EstiloDeRitmo.NATURAL,
+            EstiloDeRitmo.migrar(false, false, pausasNaturaisLigadaExplicita = true)
+        )
+        assertEquals(
+            EstiloDeRitmo.FLUIDA,
+            EstiloDeRitmo.migrar(true, false, pausasNaturaisLigadaExplicita = true)
+        )
+    }
 }
