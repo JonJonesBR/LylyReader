@@ -45,10 +45,10 @@ sys.stdout.reconfigure(encoding="utf-8")
 RAIZ = os.path.join(os.environ["LOCALAPPDATA"], "lylyreader-previas")
 SAIDA = os.path.join(RAIZ, "saida")
 CACHE = os.path.join(RAIZ, "cache")
-FFMPEG_WINGET = (
-    r"C:\Users\Micro\AppData\Local\Microsoft\WinGet\Packages"
-    r"\Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe"
-    r"\ffmpeg-8.1.1-essentials_build\bin\ffmpeg.exe"
+FFMPEG_WINGET = os.path.join(
+    os.environ["LOCALAPPDATA"], "Microsoft", "WinGet", "Packages",
+    "Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe",
+    "ffmpeg-8.1.1-essentials_build", "bin", "ffmpeg.exe",
 )
 
 HF_BASE = "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main"

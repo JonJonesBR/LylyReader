@@ -62,10 +62,28 @@ Pocket TTS 3.3, CC BY 4.0.
 
 ## Supertonic (Supertone Inc.)
 
-O diretório `rust/` e os estilos de voz em `app/src/main/assets/supertonic/` derivam do projeto
-Supertonic (https://github.com/supertone-inc/supertonic). O código de exemplo é distribuído sob
-licença MIT; os **pesos dos modelos** (baixados em tempo de execução, não versionados aqui) seguem a
-licença própria do modelo (OpenRAIL-M) publicada em https://huggingface.co/Supertone/supertonic.
+O diretório `rust/` deriva do código de exemplo do projeto Supertonic
+(https://github.com/supertone-inc/supertonic), distribuído sob licença MIT. Os **pesos dos modelos**
+(baixados em tempo de execução, não versionados aqui) e os **estilos de voz** em
+`app/src/main/assets/supertonic/` vêm do repositório do modelo, https://huggingface.co/Supertone/supertonic,
+e seguem a licença própria dele (OpenRAIL-M), não a MIT do código.
+
+## Prévias de voz (`app/src/main/assets/previas/`)
+
+Os MP3 de prévia são frases curtas geradas pelas próprias vozes (`scripts/gerar_previas_offline.py`).
+Cada prévia segue a licença da voz que a gerou, **não a GPL do app**:
+
+- `kokoro-preview-*`: Kokoro, Apache-2.0.
+- `supertonic-preview-*`: Supertonic, OpenRAIL-M (ver seção acima).
+- `piper-preview-piper-ptbr-cadu`, `-faber`, `-jeff`: Piper, dataset CC0.
+- `piper-preview-piper-ptbr-edresson`: Piper, corpus CC BY 4.0.
+- `piper-preview-piper-enus-ljspeech-medium`, `-norman-medium`: Piper, datasets em domínio público.
+- `piper-preview-piper-esmx-claude-high`: Piper, dataset Apache-2.0.
+- `piper-preview-piper-ptbr-dii`, `-miro`: CC BY-NC-SA 4.0 (**uso não comercial**).
+- `mms-preview-main-pt`: MMS-TTS (Meta), CC BY-NC 4.0 (**uso não comercial**).
+
+Quem redistribuir o app ou estes arquivos para fins comerciais deve remover as prévias de uso não
+comercial. As fontes e atribuições de cada voz estão em `PiperVitsModelManager.kt` e na seção abaixo.
 
 ## sherpa-onnx, ONNX Runtime e bibliotecas nativas
 
