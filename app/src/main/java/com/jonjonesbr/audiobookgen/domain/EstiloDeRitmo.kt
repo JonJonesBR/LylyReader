@@ -24,8 +24,8 @@ enum class EstiloDeRitmo(val id: String, val fator: Float) {
     FLUIDA("fluida", FATOR_FLUIDA);
 
     companion object {
-        /** Estilo de quem nunca escolheu: Fluida (menos recomeços de frase, menos falhas de síntese). */
-        val PADRAO = FLUIDA
+        /** Estilo de quem nunca escolheu: Calma (a combinação que o usuário preferiu no uso). */
+        val PADRAO = CALMA
 
         /** Estilo gravado pelo [id]; `null` ou desconhecido (preferência corrompida) cai no [PADRAO]. */
         fun deId(id: String?): EstiloDeRitmo = entries.firstOrNull { it.id == id } ?: PADRAO

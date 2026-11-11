@@ -1631,6 +1631,9 @@ class GuidedPlayerManager(
         ritmo: Int,
         synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer
     ): Job = coroutineScope.launch {
+        // Supertonic e Pocket sintetizam uma por vez: sem esperar a anterior, a disputa pelo motor deixava a
+        // oração seguinte à frente da atual (no log, a 3ª terminava antes da 2ª e a leitura esperava 5 s).
+        if (voz.startsWith("supertonic-") || voz.startsWith("pocket-")) pendingOracaoJobs[alvo - 1]?.join()
         val inicioNs = System.nanoTime()
         val path = withContext(Dispatchers.IO) { synthesizer.synthesize(oracao.texto, voz, ritmo) }
         com.jonjonesbr.audiobookgen.util.DiagnosticoSintese.registrar(

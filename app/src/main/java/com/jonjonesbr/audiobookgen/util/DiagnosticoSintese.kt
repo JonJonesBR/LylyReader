@@ -36,6 +36,12 @@ object DiagnosticoSintese {
     const val TAMANHO_MAX = 400_000
     private const val MAX_AUDIOS = 80
     private const val PASTA_AUDIOS = "Download/LylyDiag"
+
+    /**
+     * Desligado: a cópia de cada trecho (uns 36 MB em Download/LylyDiag) só se liga, na compilação, quando uma
+     * investigação precisa ouvir o áudio fora do app. O registro de texto (`lyly_error_diag_sintese.txt`) segue ativo.
+     */
+    private const val EXPORTAR_AUDIOS = false
     private const val DECIMOS = 10
     private const val MB = 1024L * 1024L
     private const val KB_POR_MB = 1024L
@@ -75,7 +81,7 @@ object DiagnosticoSintese {
      * o trecho fora do app e para analisar o sinal: separa defeito do áudio gerado de defeito do player.
      */
     fun exportarAudio(context: Context, arquivo: File, rotulo: String, texto: String?) {
-        if (!ativo(context) || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        if (!EXPORTAR_AUDIOS || !ativo(context) || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
         val app = context.applicationContext
         executor.execute {
             runCatching {

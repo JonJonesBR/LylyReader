@@ -105,10 +105,10 @@ class AppPrefsPadroesTest {
     }
 
     @Test
-    fun `ritmo sem nada gravado e Fluida`() {
+    fun `ritmo sem nada gravado e Calma`() {
         val (appPrefs, _) = prefs()
 
-        assertEquals(EstiloDeRitmo.FLUIDA, appPrefs.estiloDeRitmo)
+        assertEquals(EstiloDeRitmo.CALMA, appPrefs.estiloDeRitmo)
     }
 
     @Test
@@ -156,22 +156,22 @@ class AppPrefsPadroesTest {
     }
 
     @Test
-    fun `ritmo corrompido cai em Natural`() {
+    fun `ritmo corrompido cai em Calma`() {
         val (appPrefs, gravado) = prefs()
         gravado.edit().putString("estilo_ritmo", "lixo").apply()
 
-        assertEquals(EstiloDeRitmo.FLUIDA, appPrefs.estiloDeRitmo)
+        assertEquals(EstiloDeRitmo.CALMA, appPrefs.estiloDeRitmo)
     }
 
     @Test
-    fun `restaurar o padrao do som volta o ritmo para Fluida`() {
+    fun `restaurar o padrao do som volta o ritmo para Calma`() {
         val (appPrefs, gravado) = prefs()
         appPrefs.estiloDeRitmo = EstiloDeRitmo.FLUIDA
         gravado.edit().putBoolean("entonacao_continua", true).apply()
 
         appPrefs.restaurarPadroesDeSom()
 
-        assertEquals(EstiloDeRitmo.FLUIDA, appPrefs.estiloDeRitmo)
+        assertEquals(EstiloDeRitmo.CALMA, appPrefs.estiloDeRitmo)
     }
 
     @Test

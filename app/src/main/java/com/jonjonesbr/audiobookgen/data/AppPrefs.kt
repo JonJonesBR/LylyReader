@@ -237,7 +237,7 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putBoolean("pausas_naturais", v).apply()
 
     /**
-     * Ritmo da narração na leitura guiada: [EstiloDeRitmo.FLUIDA] por padrão. Na primeira leitura migra das
+     * Ritmo da narração na leitura guiada: [EstiloDeRitmo.CALMA] por padrão. Na primeira leitura migra das
      * preferências antigas ("entonacao_continua" ligada ou "pausas_naturais" desligada de propósito, que viram
      * FLUIDA; "pausas_naturais" ligada de propósito vira NATURAL).
      * A própria chave "estilo_ritmo" marca a migração feita, então ela roda uma vez só.
