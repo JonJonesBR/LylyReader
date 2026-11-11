@@ -69,8 +69,14 @@ class VoiceCatalogTest {
 
     @Test fun catalogoIncluiTodosOsModelosPiperPtBrComPacotesSeparados() {
         val packages = VoiceCatalog.pacotesRegistrados().filter { it.id.startsWith("piper-ptbr-") }
-        assertEquals(listOf("piper-ptbr-cadu", "piper-ptbr-dii", "piper-ptbr-edresson", "piper-ptbr-faber", "piper-ptbr-jeff", "piper-ptbr-miro"), packages.map { it.id })
-        assertEquals(6, packages.flatMap { it.vozes }.count { it.language == "pt-BR" })
+        assertEquals(
+            listOf(
+                "piper-ptbr-cadu", "piper-ptbr-dii", "piper-ptbr-edresson", "piper-ptbr-faber",
+                "piper-ptbr-jeff", "piper-ptbr-miro", "piper-ptbr-razo"
+            ),
+            packages.map { it.id }
+        )
+        assertEquals(7, packages.flatMap { it.vozes }.count { it.language == "pt-BR" })
         assertTrue(packages.all { it.engine == "kokoro" && it.download != null })
         assertTrue(packages.all { it.vozes.single().id == "${it.id}::main-pt" })
         assertEquals("kokoro", VoiceCatalog.effectiveEngine("piper-ptbr-cadu::main-pt", "edge"))
@@ -103,7 +109,7 @@ class VoiceCatalogTest {
             .flatMap { it.vozes }
         val groups = VoiceCatalog.agruparPorIdiomaPreferido(voices, "pt-BR")
 
-        assertEquals(6, groups.recomendadas.size)
+        assertEquals(7, groups.recomendadas.size)
         assertEquals(listOf("en-US", "en-US", "es-MX"), groups.outras.map { it.language })
     }
 
@@ -227,11 +233,11 @@ class VoiceCatalogTest {
 
     @Test fun forEngineKokoro() {
         val voices = VoiceCatalog.forEngine("kokoro")
-        // Kokoro base (3 PT-BR + 28 inglês), MMS e nove pacotes Piper usam o mesmo engine.
-        assertEquals(41, voices.size)
-        assertEquals(41, voices.count { it.engine == "kokoro" })
-        // Vozes pt-BR do Kokoro, MMS e os seis pacotes Piper brasileiros.
-        assertEquals(10, voices.count { it.language == "pt-BR" })
+        // Kokoro base (3 PT-BR + 28 inglês), MMS e dez pacotes Piper usam o mesmo engine.
+        assertEquals(42, voices.size)
+        assertEquals(42, voices.count { it.engine == "kokoro" })
+        // Vozes pt-BR do Kokoro, MMS e os sete pacotes Piper brasileiros.
+        assertEquals(11, voices.count { it.language == "pt-BR" })
         // O catálogo bruto ainda traz a voz MMS; quem a esconde sem instalação é a regra abaixo.
         assertTrue(voices.any { it.id == "mms-por::main-pt" })
     }
@@ -360,7 +366,7 @@ class VoiceCatalogTest {
         // A amostra do motor "kokoro" só baixa clipe hospedado; sem clipe (Piper), o preview
         // precisa sintetizar localmente (AudiobookViewModel.gerarAmostra).
         val vozes = VoiceCatalog.pacotesRegistrados().filter { it.id.startsWith("piper-") }.flatMap { it.vozes }
-        assertEquals(9, vozes.size)
+        assertEquals(10, vozes.size)
         for (voz in vozes) {
             assertEquals("kokoro", VoiceCatalog.effectiveEngine(voz.id, "edge"))
             assertEquals(null, VoiceCatalog.previewClipUrl(voz.id))
@@ -460,7 +466,8 @@ class VoiceCatalogTest {
         assertEquals(
             listOf(
                 "kokoro", "mms-por", "piper-ptbr-cadu", "piper-ptbr-dii", "piper-ptbr-edresson",
-                "piper-ptbr-faber", "piper-ptbr-jeff", "piper-ptbr-miro", "piper-enus-ljspeech-medium",
+                "piper-ptbr-faber", "piper-ptbr-jeff", "piper-ptbr-miro", "piper-ptbr-razo",
+                "piper-enus-ljspeech-medium",
                 "piper-enus-norman-medium", "piper-esmx-claude-high"
             ),
             VoiceCatalog.pacotesDoEngine("kokoro").map { it.id }

@@ -16,6 +16,8 @@ import java.io.IOException
 object PiperVitsModelManager {
     private const val TAG = "PiperVitsModelManager"
     private const val RELEASE_URL = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models"
+    /** Pacotes convertidos pelo projeto (vozes que o k2-fsa não publica). */
+    private const val HF_PIPER_URL = "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/piper"
     private const val MB = 1024L * 1024L
     private const val MAX_ARCHIVE_BYTES = 250L * MB
     private const val INTERVALO_PROGRESSO_MS = 100L
@@ -36,6 +38,8 @@ object PiperVitsModelManager {
         val noticeResource: Int? = null,
         /** SHA-256 do .tar.bz2 publicado (conferido em 2026-10-26); um arquivo diferente não chega ao motor nativo. */
         val sha256: String? = null,
+        /** URL completa do .tar.bz2 quando o pacote não vem do release do k2-fsa; null usa [RELEASE_URL]. */
+        val url: String? = null,
     ) {
         /** Tamanho decimal arredondado para cima; o progresso do download mostra os bytes reais. */
         val sizeMb: Int = expectedArchiveBytes?.let { ((it + 999_999L) / 1_000_000L).toInt() } ?: 90
@@ -66,6 +70,19 @@ object PiperVitsModelManager {
             "CC BY-NC-SA 4.0",
             "Miro PT-BR · CC BY-NC-SA 4.0. https://huggingface.co/TarcisoAmorim/piper-pt_BR-miro-high",
             sha256 = "7f30d1c3421362a60381807543aeafd7e1cd0acbcb92c349a29908526c6f4e6f"),
+        Model(
+            id = "piper-ptbr-razo",
+            name = "Razo",
+            quality = "média",
+            archive = "vits-piper-pt_BR-razo-medium",
+            onnx = "pt_BR-razo-medium.onnx",
+            licenseInfo = "MIT",
+            attribution = "Razo PT-BR (Forjal) · MIT; ajuste fino da voz Faber. " +
+                "https://huggingface.co/Lucasllfs/Razo-piper-voice",
+            expectedArchiveBytes = 67_189_235L,
+            sha256 = "35871e4c78626e9c9f7b4ed42e0a7f1fd7c06727e29cf87278ce2aaf1c26dd38",
+            url = "$HF_PIPER_URL/vits-piper-pt_BR-razo-medium.tar.bz2",
+        ),
         Model(
             id = "piper-enus-ljspeech-medium",
             name = "LJSpeech",
@@ -133,6 +150,9 @@ object PiperVitsModelManager {
         )
     }
 
+    /** URL de download do pacote: a própria do modelo, ou o release do k2-fsa. */
+    fun urlDoPacote(model: Model): String = model.url ?: "$RELEASE_URL/${model.archive}.tar.bz2"
+
     fun licenseNotice(model: Model, context: Context? = null): String {
         if (context != null && model.noticeResource != null && model.datasetName != null) {
             return context.getString(model.noticeResource, model.datasetName)
@@ -175,7 +195,7 @@ object PiperVitsModelManager {
             try {
                 staging.deleteRecursively()
                 destination.deleteRecursively()
-                val url = "$RELEASE_URL/${model.archive}.tar.bz2"
+                val url = urlDoPacote(model)
                 val total = SupertonicAssetManager.probeFileSize(url)
                 if (total <= 0L || total > MAX_ARCHIVE_BYTES) {
                     throw IOException("Tamanho de pacote Piper inválido (${total / MB} MB).")

@@ -77,6 +77,8 @@ Cada prévia segue a licença da voz que a gerou, **não a GPL do app**:
 - `supertonic-preview-*`: Supertonic, OpenRAIL-M (ver seção acima).
 - `piper-preview-piper-ptbr-cadu`, `-faber`, `-jeff`: Piper, dataset CC0.
 - `piper-preview-piper-ptbr-edresson`: Piper, corpus CC BY 4.0.
+- `piper-preview-piper-ptbr-razo`: Razo (Forjal, ajuste fino da Faber), MIT —
+  https://huggingface.co/Lucasllfs/Razo-piper-voice.
 - `piper-preview-piper-enus-ljspeech-medium`, `-norman-medium`: Piper, datasets em domínio público.
 - `piper-preview-piper-esmx-claude-high`: Piper, dataset Apache-2.0.
 - `piper-preview-piper-ptbr-dii`, `-miro`: CC BY-NC-SA 4.0 (**uso não comercial**).
@@ -97,7 +99,9 @@ comercial. As fontes e atribuições de cada voz estão em `PiperVitsModelManage
 
 Cada pacote mantém sua própria licença; confira antes de redistribuir:
 - Kokoro — Apache-2.0.
-- Piper (vozes de rhasspy/piper e comunidade) — a licença varia **por voz**; veja o cartão de cada voz.
+- Piper (vozes de rhasspy/piper e comunidade) — a licença varia **por voz**; veja o cartão de cada voz. A Razo
+  (MIT) foi convertida para o formato sherpa-onnx pelo projeto e é baixada de
+  https://huggingface.co/JonJonesBR/lylyreader-tts-models.
 - MMS-TTS (Meta) — CC BY-NC 4.0 (**uso não comercial**).
 - Supertonic e Pocket TTS — ver seções acima.
 
