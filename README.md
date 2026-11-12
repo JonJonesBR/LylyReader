@@ -196,3 +196,7 @@ GNU General Public License for more details.
 ```
 
 LylyReader is free software under the [GNU GPL v3 or later](LICENSE): anyone can use, study, modify and share it. Whoever distributes the app or a modified version must keep the same license and publish the source code. Versions published before this change remain available under MIT. Voice models and third-party libraries keep their own licenses (see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)).
+
+### Name and logo
+
+The GPL covers the code, not the identity of the app. The name "LylyReader", the logo and the app icon belong to the project and are not licensed for modified versions. If you publish a fork or a modified build, give it another name and icon, and do not present it as the official LylyReader. Saying that it is "based on LylyReader", with a link to this repository, is welcome. The official releases are only the ones on the [Releases page](https://github.com/JonJonesBR/LylyReader/releases) of this repository.
