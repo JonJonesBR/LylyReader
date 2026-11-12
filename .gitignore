@@ -133,3 +133,7 @@ COISAS PARA IMPLEMENTAR NO APP/
 /.omp/
 /.planning/
 /graphify-out/
+
+# Logs de erro exportados pelo app e dumps de memória (podem ter dados do aparelho)
+lyly_error_*.txt
+*.hprof
