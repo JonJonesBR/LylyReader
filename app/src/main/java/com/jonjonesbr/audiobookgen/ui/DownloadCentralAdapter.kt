@@ -265,6 +265,7 @@ class DownloadCentralAdapter(
     private fun rotuloTipo(tipo: TipoPacote): Int? = when (tipo) {
         TipoPacote.SUPERTONIC -> R.string.dl_tipo_supertonic
         TipoPacote.KOKORO -> R.string.dl_tipo_kokoro
+        TipoPacote.PARADEE -> R.string.dl_tipo_paradee
         TipoPacote.PIPER -> R.string.dl_tipo_piper
         TipoPacote.POCKET -> R.string.dl_tipo_pocket
         TipoPacote.MMS -> R.string.dl_tipo_mms

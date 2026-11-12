@@ -17,6 +17,7 @@ import com.jonjonesbr.audiobookgen.domain.EstiloDeRitmo
 import com.jonjonesbr.audiobookgen.domain.PerfilAudioLivro
 import com.jonjonesbr.audiobookgen.domain.QualidadeDaVoz
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
+import com.jonjonesbr.audiobookgen.tts.ParadeeVozes
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import java.util.Locale
 
@@ -90,7 +91,7 @@ object GuidedVoiceOptionsDialog {
         }
         conteudo.addView(botaoAvancado(activity, avancado))
         conteudo.addView(avancado)
-        controlesAvancados(activity, avancado, motor, prefs, atuais, aoMudar) { mudanca -> alterar(mudanca) }
+        controlesAvancados(activity, avancado, motor, voz, prefs, atuais, aoMudar) { mudanca -> alterar(mudanca) }
 
         dialogo = abrirDialogo(activity, rotuloMotor(activity, motor), conteudo)
     }
@@ -254,6 +255,7 @@ object GuidedVoiceOptionsDialog {
         activity: AppCompatActivity,
         pai: LinearLayout,
         motor: String,
+        voz: String,
         prefs: AppPrefs,
         atuais: PerfilAudioLivro,
         aoMudar: () -> Unit,
@@ -300,7 +302,8 @@ object GuidedVoiceOptionsDialog {
             isChecked = prefs.playerAudioTrack
             setOnCheckedChangeListener { _, marcado -> prefs.playerAudioTrack = marcado; aoMudar() }
         })
-        if (motor == "kokoro") {
+        // O paralelismo reduzido só age no Kokoro (processo :sherpa); as vozes Paradee não usam esse caminho.
+        if (motor == "kokoro" && !ParadeeVozes.ehParadee(voz)) {
             pai.addView(CheckBox(activity).apply {
                 setText(R.string.btn_paralelismo_reduzido)
                 isChecked = prefs.paralelismoKokoroReduzido

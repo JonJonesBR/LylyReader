@@ -19,7 +19,10 @@ ALFA = 0.3                 # peso da amostra nova na média móvel exponencial
 MIN_BLOCOS_NOVOS = 20      # execuções menores que isso não medem nada
 MAX_FRACAO_FALHOS = 0.10   # acima disso a execução é descartada
 
-MOTORES_MEDIDOS = ("edge", "android", "onnx", "kokoro", "pocket", "piper")
+MOTORES_MEDIDOS = ("edge", "android", "onnx", "kokoro", "pocket", "piper", "paradee")
+
+# Vozes que o motor Paradee sintetiza, com os ids antigos do Kokoro (roteadas como "kokoro").
+VOZES_PARADEE = frozenset({"kokoro-pf-dora", "kokoro-pm-alex"})
 
 
 def motor_medido(voz: str, motor_roteado: str):
@@ -27,6 +30,8 @@ def motor_medido(voz: str, motor_roteado: str):
     (ver tts.motor_da_voz). Devolve None para motores que não entram na medição (nuvem).
     Pacote local ("::") que não seja kokoro/mms/byom é Piper."""
     if motor_roteado == "kokoro":
+        if voz in VOZES_PARADEE:
+            return "paradee"
         if "::" in voz:
             minusculo = voz.lower()
             if "mms-" in minusculo or "byom" in minusculo:

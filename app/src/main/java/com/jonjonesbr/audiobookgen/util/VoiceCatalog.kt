@@ -242,19 +242,26 @@ object VoiceCatalog {
         }
     }
 
+    // Paradee-8M pt-BR (offline, processo :paradee, pacote "paradee-ptbr" de 17 MB). Dora e Alex
+    // mantêm os ids "kokoro-*" e o engine "kokoro"; só o motor de síntese e o pacote mudam (ver
+    // KokoroTtsEngine.synthesize e planejamento/PARADEE_FASE1_PLANO.md).
+    private val paradeeVoices = listOf(
+        VoiceOption(
+            "kokoro-pf-dora", "Dora", "pt-BR", false, "kokoro",
+            description = "Voz Paradee (offline, rápida) · Português do Brasil"
+        ),
+        VoiceOption(
+            "kokoro-pm-alex", "Alex", "pt-BR", true, "kokoro",
+            description = "Voz Paradee (offline, rápida) · Português do Brasil"
+        )
+    )
+
     // Kokoro (offline, Sherpa-ONNX local, FP32 ~350MB — download na 1ª seleção).
     // Vozes pt-BR validadas por ouvido com lang="pt-BR" explícito (RN-1 do V6).
     // sid/lang por voz vivem no KokoroTtsEngine.kokoroVoiceParams — a lista e o engine são
     // mantidos em sincronia pelo teste KokoroTtsEngineTest/VoiceCatalogTest.
+    // Dora e Alex saíram para [paradeeVoices]; kokoroVoiceParams ainda as conhece (guard do catálogo).
     private val kokoroVoices = listOf(
-        VoiceOption(
-            "kokoro-pf-dora", "Dora", "pt-BR", false, "kokoro",
-            description = "Voz Kokoro (Sherpa-ONNX local) · Português do Brasil"
-        ),
-        VoiceOption(
-            "kokoro-pm-alex", "Alex", "pt-BR", true, "kokoro",
-            description = "Voz Kokoro (Sherpa-ONNX local) · Português do Brasil"
-        ),
         VoiceOption(
             "kokoro-pm-santa", "Santa", "pt-BR", true, "kokoro",
             description = "Voz Kokoro (Sherpa-ONNX local) · Português do Brasil"
@@ -356,6 +363,27 @@ object VoiceCatalog {
                 com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager.deleteVersion(ctx, "v1")
             },
             idiomas = listOf("en-US")
+        ),
+        // Paradee (Dora e Alex). Fica ANTES do pacote "kokoro": defaultFor("kokoro") segue Dora.
+        PacoteVozes(
+            id = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.PACOTE_ID,
+            engine = "kokoro",
+            nomeExibicao = "Paradee · Português do Brasil",
+            tamanhoDownloadMb = 17,
+            vozes = paradeeVoices,
+            isPronto = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(ctx) },
+            tamanhoOcupadoBytes = { ctx ->
+                com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.tamanhoOcupado(ctx)
+            },
+            download = { ctx, progresso ->
+                // ParadeeModelManager informa só a fração; o DownloadCentral calcula a fração a partir
+                // de bytes/total, então os bytes são derivados aqui.
+                val total = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.todas.sumOf { it.bytes }
+                com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.download(ctx) { fracao ->
+                    progresso("Baixando Paradee · Português do Brasil", fracao, (fracao * total).toLong(), total)
+                }
+            },
+            delete = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.delete(ctx) }
         ),
         PacoteVozes(
             id = "kokoro",

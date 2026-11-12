@@ -524,6 +524,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
                 when {
                     pacote == "mms-por" -> "MMS"
                     com.jonjonesbr.audiobookgen.tts.PiperVitsModelManager.models.any { it.id == pacote } -> "Piper"
+                    com.jonjonesbr.audiobookgen.tts.ParadeeVozes.ehParadee(voice.id) -> "Paradee"
                     voice.id.startsWith("kokoro-") -> "Kokoro"
                     // Pacote importado pelo usuário (BYOM) que roda pelo mesmo motor
                     else -> getString(R.string.voice_motor_importada)

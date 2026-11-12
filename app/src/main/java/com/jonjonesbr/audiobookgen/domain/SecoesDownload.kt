@@ -8,7 +8,7 @@ package com.jonjonesbr.audiobookgen.domain
 enum class SecaoDownload { BAIXANDO, NO_APARELHO, PARA_BAIXAR, MINHAS_VOZES, LIVROS }
 
 /** Tipo de pacote, para a linha de descrição ("Vozes naturais · PT, EN, ES"). */
-enum class TipoPacote { SUPERTONIC, KOKORO, PIPER, POCKET, MMS, CLONADA, IMPORTADA, LIVRO, OUTRO }
+enum class TipoPacote { SUPERTONIC, KOKORO, PARADEE, PIPER, POCKET, MMS, CLONADA, IMPORTADA, LIVRO, OUTRO }
 
 /** Linha 1 (nome) e linha 2 (motor, descrição, idiomas e tamanho) de uma voz na aba Downloads. */
 data class LinhasVoz(val nome: String, val descricao: String)
@@ -40,6 +40,7 @@ object SecoesDownload {
         ehDoUsuario -> TipoPacote.IMPORTADA
         id.startsWith("supertonic") -> TipoPacote.SUPERTONIC
         id == "kokoro" -> TipoPacote.KOKORO
+        id.startsWith("paradee-") -> TipoPacote.PARADEE
         id.startsWith("piper-") -> TipoPacote.PIPER
         id.startsWith("pocket-") -> TipoPacote.POCKET
         id.startsWith("mms-") -> TipoPacote.MMS
@@ -60,6 +61,7 @@ object SecoesDownload {
     fun motor(tipo: TipoPacote): String? = when (tipo) {
         TipoPacote.SUPERTONIC -> "Supertonic"
         TipoPacote.KOKORO -> "Kokoro"
+        TipoPacote.PARADEE -> "Paradee"
         TipoPacote.PIPER -> "Piper"
         TipoPacote.POCKET -> "Pocket TTS"
         TipoPacote.MMS -> "MMS-TTS"

@@ -596,7 +596,13 @@ class GuidedPlayerManager(
         coroutineScope.launch {
             val (voz, motor) = vozEMotorAtuais()
             if (VoiceCatalog.effectiveEngine(voz, motor) != "kokoro") return@launch
-            if (!com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(context)) return@launch
+            // Dora e Alex são Paradee: a prontidão é a do pacote paradee-ptbr, não a do bundle Kokoro.
+            val prontoParaSintese = if (com.jonjonesbr.audiobookgen.tts.ParadeeVozes.ehParadee(voz)) {
+                com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(context)
+            } else {
+                com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(context)
+            }
+            if (!prontoParaSintese) return@launch
             withContext(Dispatchers.IO) {
                 val tmp = File(context.cacheDir, "kokoro_preaquecimento_${System.nanoTime()}.wav")
                 try {

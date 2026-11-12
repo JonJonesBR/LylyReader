@@ -1,3 +1,5 @@
+import hashlib
+import json
 import os
 import shutil
 import sys
@@ -53,6 +55,32 @@ class JobHashTest(unittest.TestCase):
 
     def test_hash_tem_dezesseis_caracteres_hexadecimais(self):
         self.assertRegex(self._hash(), r"^[0-9a-f]{16}$")
+
+    def _hash_antigo(self, voz, plano=None):
+        # Fórmula de _job_hash antes do Paradee (estilo "padrao", velocidade e tom padrão).
+        conteudo = hashlib.sha256(json.dumps(list(CHUNKS_BASE), ensure_ascii=False).encode()).hexdigest()
+        mapping = json.dumps(plano, ensure_ascii=False, separators=(",", ":")) if plano else ""
+        pronuncias = core.pronunciation_dict.assinatura()
+        material = f"{conteudo}:{voz}:padrao:+0%:+0Hz:{mapping}:{pronuncias}"
+        return hashlib.sha256(material.encode()).hexdigest()[:16]
+
+    def test_voz_paradee_usa_formula_nova(self):
+        novo = core._job_hash(list(CHUNKS_BASE), "kokoro-pf-dora", "padrao", None, "+0%", "+0Hz")
+        self.assertNotEqual(self._hash_antigo("kokoro-pf-dora"), novo)
+
+    def test_voz_kokoro_comum_mantem_o_hash_antigo(self):
+        novo = core._job_hash(list(CHUNKS_BASE), "kokoro-en-am-santa", "padrao", None, "+0%", "+0Hz")
+        self.assertEqual(self._hash_antigo("kokoro-en-am-santa"), novo)
+
+    def test_plano_com_alex_muda_o_hash(self):
+        plano = [(CHUNKS_BASE[0], "pt-BR-Thalita"), (CHUNKS_BASE[1], "kokoro-pm-alex")]
+        novo = core._job_hash(list(CHUNKS_BASE), "pt-BR-Thalita", "padrao", plano, "+0%", "+0Hz")
+        self.assertNotEqual(self._hash_antigo("pt-BR-Thalita", plano), novo)
+
+    def test_plano_sem_paradee_mantem_o_hash_antigo(self):
+        plano = [(CHUNKS_BASE[0], "pt-BR-Thalita"), (CHUNKS_BASE[1], "kokoro-en-am-santa")]
+        novo = core._job_hash(list(CHUNKS_BASE), "pt-BR-Thalita", "padrao", plano, "+0%", "+0Hz")
+        self.assertEqual(self._hash_antigo("pt-BR-Thalita", plano), novo)
 
     def test_descartar_job_recusa_entradas_invalidas(self):
         for invalido in ["../x", "", "zzzzzzzzzzzzzzzz", "0123456789abcdef0", "0123456789ABCDEF", None]:

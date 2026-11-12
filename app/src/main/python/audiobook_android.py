@@ -24,6 +24,7 @@ import re
 import tarfile
 import threading
 from typing import Optional
+from velocidade_motores import VOZES_PARADEE
 
 # ── Bootstrap ─────────────────────────────────────────────────────────────────
 
@@ -1235,7 +1236,7 @@ def relatorio_normalizacao_json(texto: str, voz: str) -> str:
                 # Mesmas flags de tts.converter_tts_auto: o Pocket lê números soltos por extenso e
                 # Pocket/Piper não podem receber travessão no início do trecho.
                 numeros_soltos=voz.startswith("pocket-"),
-                sem_travessoes=voz.startswith(("pocket-", "piper-")),
+                sem_travessoes=voz.startswith(("pocket-", "piper-")) or voz in VOZES_PARADEE,
             ))
         return json.dumps({"ok": True, "trocas": trocas}, ensure_ascii=False)
     except Exception as e:

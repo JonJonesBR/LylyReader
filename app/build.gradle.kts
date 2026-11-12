@@ -93,7 +93,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                targets += listOf("pockettts_jni")
+                targets += listOf("pockettts_jni", "paradee_jni")
             }
         }
     }

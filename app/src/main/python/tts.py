@@ -27,6 +27,7 @@ from config_android import TTS_TIMEOUT, logger
 from text_normalizer import normalizar as _normalizar_texto
 import pronunciation_dict as _pronuncias
 from erros_tts import ErroDeChave
+from velocidade_motores import VOZES_PARADEE
 
 _MAX_RETRIES = 5
 _CONCAT_BATCH_SIZE = 50  # Máx. de entradas por operação de concat
@@ -597,7 +598,7 @@ async def converter_tts_auto(
         # Só o Pocket precisa de números soltos por extenso (o tokenizador dele não lê dígitos).
         numeros_soltos=voz.startswith("pocket-"),
         # Travessão/hífen no início abre o áudio com vazio + som avulso no Pocket e no Piper.
-        sem_travessoes=voz.startswith(("pocket-", "piper-")),
+        sem_travessoes=voz.startswith(("pocket-", "piper-")) or voz in VOZES_PARADEE,
     )
     motor = motor_da_voz(voz)
 

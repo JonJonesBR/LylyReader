@@ -39,6 +39,7 @@ class SecoesDownloadTest {
         assertEquals(TipoPacote.POCKET, SecoesDownload.tipo("pocket-ptbr-int8", false, false))
         assertEquals(TipoPacote.SUPERTONIC, SecoesDownload.tipo("supertonic-v1", false, false))
         assertEquals(TipoPacote.PIPER, SecoesDownload.tipo("piper-ptbr-jeff", false, false))
+        assertEquals(TipoPacote.PARADEE, SecoesDownload.tipo("paradee-ptbr", false, false))
     }
 
     @Test
@@ -52,6 +53,7 @@ class SecoesDownloadTest {
     @Test
     fun `motor do pacote e nulo para voz do usuario e livro`() {
         assertEquals("Piper", SecoesDownload.motor(TipoPacote.PIPER))
+        assertEquals("Paradee", SecoesDownload.motor(TipoPacote.PARADEE))
         assertEquals("Pocket TTS", SecoesDownload.motor(TipoPacote.POCKET))
         assertNull(SecoesDownload.motor(TipoPacote.CLONADA))
         assertNull(SecoesDownload.motor(TipoPacote.LIVRO))

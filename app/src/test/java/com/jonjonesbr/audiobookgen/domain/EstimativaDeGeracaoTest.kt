@@ -28,7 +28,9 @@ class EstimativaDeGeracaoTest {
         assertEquals("onnx", EstimativaDeGeracao.motorDaVoz("supertonic-pt"))
         assertEquals("piper", EstimativaDeGeracao.motorDaVoz("piper-ptbr-cadu::main-pt"))
         assertEquals("pocket", EstimativaDeGeracao.motorDaVoz("pocket-en-alba"))
-        assertEquals("kokoro", EstimativaDeGeracao.motorDaVoz("kokoro-pf-dora"))
+        assertEquals("paradee", EstimativaDeGeracao.motorDaVoz("kokoro-pf-dora"))
+        assertEquals("paradee", EstimativaDeGeracao.motorDaVoz("kokoro-pm-alex"))
+        assertEquals("kokoro", EstimativaDeGeracao.motorDaVoz("kokoro-en-am-santa"))
         assertEquals("kokoro", EstimativaDeGeracao.motorDaVoz("mms-por::voz"))
         assertEquals("edge", EstimativaDeGeracao.motorDaVoz("pt-BR-FranciscaNeural"))
     }
@@ -40,7 +42,8 @@ class EstimativaDeGeracaoTest {
         val esperado = mapOf(
             "piper-ptbr-cadu::main-pt" to "piper",
             "piper-ptbr-faber::main-pt" to "piper",
-            "kokoro-pf-dora" to "kokoro",
+            "kokoro-pf-dora" to "paradee",
+            "kokoro-pm-alex" to "paradee",
             "kokoro-en-am-santa" to "kokoro",
             "mms-por::main-pt" to "kokoro",
             "pocket-ptbr-rafael" to "pocket",

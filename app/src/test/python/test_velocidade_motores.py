@@ -25,7 +25,11 @@ class MotorMedidoTest(unittest.TestCase):
         self.assertEqual("android", vm.motor_medido("android::pkg::voz", "android"))
         self.assertEqual("onnx", vm.motor_medido("supertonic-m1", "onnx"))
         self.assertEqual("pocket", vm.motor_medido("pocket-ptbr-rafael", "pocket"))
-        self.assertEqual("kokoro", vm.motor_medido("kokoro-pf-dora", "kokoro"))
+        self.assertEqual("kokoro", vm.motor_medido("kokoro-en-am-santa", "kokoro"))
+
+    def test_dora_e_alex_sao_medidas_como_paradee(self):
+        self.assertEqual("paradee", vm.motor_medido("kokoro-pf-dora", "kokoro"))
+        self.assertEqual("paradee", vm.motor_medido("kokoro-pm-alex", "kokoro"))
 
     def test_pacote_local_comum_e_piper(self):
         self.assertEqual("piper", vm.motor_medido("pacote42::pt_BR-faber", "kokoro"))
@@ -203,7 +207,8 @@ class RegistrarVelocidadeNoCoreTest(unittest.TestCase):
 CHAVES_DE_MEDICAO_ESPERADAS = {
     "piper-ptbr-cadu::main-pt": "piper",
     "piper-ptbr-faber::main-pt": "piper",
-    "kokoro-pf-dora": "kokoro",
+    "kokoro-pf-dora": "paradee",
+    "kokoro-pm-alex": "paradee",
     "kokoro-en-am-santa": "kokoro",
     "mms-por::main-pt": "kokoro",
     "pocket-ptbr-rafael": "pocket",
@@ -230,7 +235,7 @@ class RotuloMotorTest(unittest.TestCase):
         casos = {
             ("piper-ptbr-cadu::main-pt", "kokoro"): "piper",
             ("mms-por::main-pt", "kokoro"): "mms",
-            ("kokoro-pf-dora", "kokoro"): "kokoro",
+            ("kokoro-pf-dora", "kokoro"): "paradee",
             ("pocket-ptbr-rafael", "pocket"): "pocket",
             ("supertonic-m1", "onnx"): "supertonic",
             ("pacote::byom-voz", "kokoro"): "byom",

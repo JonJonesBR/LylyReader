@@ -48,7 +48,7 @@ from erros_tts import ErroDeChave
 from metricas_conversao import MetricasConversao, ms_desde
 from orcamento_retry import OrcamentoRetry
 import velocidade_motores
-from velocidade_motores import motor_medido
+from velocidade_motores import motor_medido, VOZES_PARADEE
 from smart_cleaner import normalize_blacklist
 from speaker_segments import build_speaker_chunk_plan
 
@@ -248,6 +248,9 @@ def _job_hash(
     # A assinatura do dicionário de pronúncia entra no hash: mudá-lo não reaproveita áudio de um job antigo.
     pronuncias = pronunciation_dict.assinatura()
     material = f"{conteudo}:{voz}:{estilo}:{velocidade}:{tom}:{mapping}:{pronuncias}"
+    # Job com Paradee (vozes kokoro-pf-dora/kokoro-pm-alex) não retoma blocos de outro motor, mesmo com o mesmo id.
+    if voz in VOZES_PARADEE or any(voz_do_bloco in VOZES_PARADEE for _, voz_do_bloco in (voice_plan or [])):
+        material += ":paradee-ptbr-1.2"
     return hashlib.sha256(material.encode()).hexdigest()[:16]
 
 # Motores cujos ajustes (passos, folga, expressividade) mudam o áudio sem entrar no _job_hash.

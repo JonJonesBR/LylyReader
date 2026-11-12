@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.domain
 
 import org.json.JSONException
 import org.json.JSONObject
+import com.jonjonesbr.audiobookgen.tts.ParadeeVozes
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -42,11 +43,12 @@ class EstimativaDeGeracao(private val medicoes: Map<String, MedicaoMotor>) {
             "onnx" to 40.0,
             "piper" to 20.0,
             "kokoro" to 110.0,
-            "pocket" to 60.0
+            "pocket" to 60.0,
+            "paradee" to 8.0
         )
 
         /** Motores que rodam no aparelho (sem rede). Para estes, uma geração longa merece aviso. */
-        private val MOTORES_LOCAIS = setOf("android", "onnx", "piper", "kokoro", "pocket")
+        private val MOTORES_LOCAIS = setOf("android", "onnx", "piper", "kokoro", "pocket", "paradee")
 
         /**
          * Motor que sintetiza [voz], na mesma ordem de despacho de tts.py::converter_tts_auto.
@@ -60,6 +62,7 @@ class EstimativaDeGeracao(private val medicoes: Map<String, MedicaoMotor>) {
             voz.startsWith("supertonic-") -> "onnx"
             voz.startsWith("piper-") -> "piper"
             voz.startsWith("pocket-") -> "pocket"
+            ParadeeVozes.ehParadee(voz) -> "paradee"
             voz.startsWith("kokoro-") -> "kokoro"
             "::" in voz -> "kokoro"
             voz.startsWith("elevenlabs-") || voz.startsWith("openrouter-") -> null

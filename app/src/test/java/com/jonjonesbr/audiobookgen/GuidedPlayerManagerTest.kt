@@ -941,7 +941,7 @@ class GuidedPlayerManagerTest {
         mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
         every { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) } returns false
         every { anyConstructed<AppPrefs>().motorTts } returns "kokoro"
-        every { anyConstructed<AppPrefs>().vozSelecionada } returns "kokoro-pf-dora"
+        every { anyConstructed<AppPrefs>().vozSelecionada } returns "kokoro-pm-santa"
 
         createManager()
         testDispatcher.scheduler.runCurrent()
@@ -949,6 +949,22 @@ class GuidedPlayerManagerTest {
         // Bundle não pronto (mock) — barra ANTES de tentar construir o engine/tocar o
         // processo :sherpa (sem download automático, contrato do KokoroModelManager).
         verify(exactly = 1) { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) }
+    }
+
+    @Test
+    fun preWarmChecaPacoteParadeeQuandoVozEDora() {
+        mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
+        mockkObject(com.jonjonesbr.audiobookgen.tts.ParadeeModelManager)
+        every { com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(any()) } returns false
+        every { anyConstructed<AppPrefs>().motorTts } returns "kokoro"
+        every { anyConstructed<AppPrefs>().vozSelecionada } returns "kokoro-pf-dora"
+
+        createManager()
+        testDispatcher.scheduler.runCurrent()
+
+        // Dora é Paradee: a prontidão é a do pacote paradee-ptbr, não a do bundle Kokoro de 350 MB.
+        verify(exactly = 1) { com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(any()) }
+        verify(exactly = 0) { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) }
     }
 
     // --- 4. GuidedState.livroConcluido distingue fim natural do livro de stop() manual —

@@ -35,6 +35,7 @@ import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
+import com.jonjonesbr.audiobookgen.tts.ParadeeVozes
 import java.io.File
 
 /**
@@ -370,7 +371,8 @@ class LivroActivity : BasePlayerActivity() {
         val opcao = VoiceCatalog.findAny(vozId)
         findViewById<TextView>(R.id.tvLivroVozNome).text = opcao?.name ?: vozId
         val rede = if (NetworkStatus.engineRequiresNetwork(motor)) getString(R.string.livro_voz_online) else getString(R.string.livro_voz_offline)
-        val partes = listOfNotNull(rotuloDoMotor(motor), opcao?.language, rede)
+        val rotuloMotor = if (ParadeeVozes.ehParadee(vozId)) "Paradee" else rotuloDoMotor(motor)
+        val partes = listOfNotNull(rotuloMotor, opcao?.language, rede)
         findViewById<TextView>(R.id.tvLivroVozDetalhe).text = partes.joinToString(" · ")
     }
 

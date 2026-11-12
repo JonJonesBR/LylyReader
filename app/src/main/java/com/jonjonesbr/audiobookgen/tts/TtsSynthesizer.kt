@@ -73,9 +73,9 @@ class KokoroTtsSynthesizer(private val context: Context) : TtsSynthesizer {
 
     override suspend fun synthesize(texto: String, voz: String, ritmo: Int): String? {
         var mensagemErro: String? = null
-        // Vozes Piper (VITS/espeak, mesmo motor "kokoro"): travessão/hífen no início do parágrafo
+        // Vozes Piper e Paradee (espeak, ambas com motor "kokoro"): travessão/hífen no início do parágrafo
         // abre o áudio com vazio e um som avulso — mesma limpeza que o Pocket usa. Kokoro não muda.
-        val piper = voz.startsWith("piper-")
+        val piper = voz.startsWith("piper-") || ParadeeVozes.ehParadee(voz)
         val textoFinal = if (piper) {
             withContext(Dispatchers.IO) {
                 val idioma = com.jonjonesbr.audiobookgen.util.VoiceCatalog.findAny(voz)?.language ?: "pt-BR"

@@ -45,6 +45,8 @@ class LylyApplication : Application() {
                 } catch (e: Throwable) {
                     Log.w("LylyApplication", "Falha ao pré-carregar libs Pocket no processo isolado: ${e.message}")
                 }
+            } else if (currentProcessName() == "$packageName:paradee") {
+                carregarLibsParadee()
             } else {
                 try {
                     System.loadLibrary("onnxruntime_supertonic")
@@ -93,6 +95,17 @@ class LylyApplication : Application() {
         thread(name = "audio-cache-teto") {
             // Mantém o cache de áudio das vozes dentro do teto definido em Ajustes.
             com.jonjonesbr.audiobookgen.tts.TtsChunkCache.aparaSeNecessario(this)
+        }
+    }
+
+    /** Processo :paradee: mesmo runtime ORT do Supertonic (SONAME libonnxruntime.so) e a ponte JNI própria. */
+    private fun carregarLibsParadee() {
+        try {
+            System.loadLibrary("onnxruntime_supertonic")
+            System.loadLibrary("paradee_jni")
+            Log.i("LylyApplication", "Paradee native libraries preloaded in isolated process")
+        } catch (e: Throwable) {
+            Log.w("LylyApplication", "Falha ao pré-carregar libs Paradee no processo isolado: ${e.message}")
         }
     }
 

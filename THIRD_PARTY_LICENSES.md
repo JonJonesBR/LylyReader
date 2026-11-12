@@ -73,7 +73,8 @@ e seguem a licença própria dele (OpenRAIL-M), não a MIT do código.
 Os MP3 de prévia são frases curtas geradas pelas próprias vozes (`scripts/gerar_previas_offline.py`).
 Cada prévia segue a licença da voz que a gerou, **não a GPL do app**:
 
-- `kokoro-preview-*`: Kokoro, Apache-2.0.
+- `kokoro-preview-*`: Kokoro, Apache-2.0. Exceção: `kokoro-preview-pf-dora` e `kokoro-preview-pm-alex` são geradas
+  pelo Paradee-8M pt-BR (Apache-2.0, ver seção abaixo), que hoje dá voz à Dora e ao Alex.
 - `supertonic-preview-*`: Supertonic, OpenRAIL-M (ver seção acima).
 - `piper-preview-piper-ptbr-cadu`, `-faber`, `-jeff`: Piper, dataset CC0.
 - `piper-preview-piper-ptbr-edresson`: Piper, corpus CC BY 4.0.
@@ -95,10 +96,24 @@ comercial. As fontes e atribuições de cada voz estão em `PiperVitsModelManage
   Supertonic é baixada do Maven Central por `scripts/fetch-onnxruntime.*` e não é versionada.
 - Chaquopy (Python no Android), MIT — https://chaquo.com/chaquopy/.
 
+## Paradee e espeak-ng (vozes Dora e Alex)
+
+- **espeak-ng 1.52.0**, GPL-3.0-or-later — https://github.com/espeak-ng/espeak-ng. Converte o texto em fonemas para o
+  Paradee. O código-fonte é baixado pelo CMake no build (tag 1.52.0, SHA-256 fixo em `app/src/main/cpp/CMakeLists.txt`)
+  e compilado sem alterações, junto com o `ucd-tools` que vem nele (GPL-3.0-or-later). Os dados de português usados
+  (`phontab`, `phonindex`, `phondata`, `intonations`, `pt_dict`, `en_dict`, `lang/roa/pt-BR`) estão em
+  `app/src/main/assets/espeak-ng-paradee/`, copiados sem alteração da versão 1.52.0.
+- Tabela de equivalência de fonemas do **misaki** (hexgrad), Apache-2.0 — https://github.com/hexgrad/misaki, reproduzida em
+  `ParadeeTokens.kt`.
+- O processo Paradee reutiliza a biblioteca ONNX Runtime já incluída para o Supertonic (MIT).
+
 ## Modelos de voz baixados em tempo de execução (não incluídos no repositório)
 
 Cada pacote mantém sua própria licença; confira antes de redistribuir:
 - Kokoro — Apache-2.0.
+- Paradee-8M pt-BR (Dora e Alex, destilado do Kokoro-82M) — Apache-2.0, de
+  https://huggingface.co/eraldohug/Paradee-8M-PtBr; os dois ONNX int8 são espelhados sem modificação em
+  https://huggingface.co/JonJonesBR/lylyreader-tts-models (pasta `paradee/ptbr`).
 - Piper (vozes de rhasspy/piper e comunidade) — a licença varia **por voz**; veja o cartão de cada voz. A Razo
   (MIT) foi convertida para o formato sherpa-onnx pelo projeto e é baixada de
   https://huggingface.co/JonJonesBR/lylyreader-tts-models.

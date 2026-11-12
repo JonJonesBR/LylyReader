@@ -72,6 +72,8 @@ class OnnxModelManager(private val context: Context) {
         }
         // Bundle do motor Kokoro (V6 T1.4) — mesmo card "Vozes offline" de Ajustes.
         totalSize += KokoroModelManager.tamanhoOcupado(context)
+        // Pacote Paradee (Dora e Alex) — também conta no card "Vozes offline".
+        totalSize += ParadeeModelManager.tamanhoOcupado(context)
         return totalSize
     }
 
@@ -104,6 +106,7 @@ class OnnxModelManager(private val context: Context) {
         SupertonicAssetManager.copyBundledVoiceStyles(context)
         // Bundle do motor Kokoro (V6 T1.4) — "Apagar vozes offline" também remove o kokoro.
         KokoroModelManager.delete(context)
+        ParadeeModelManager.delete(context)
     }
 
     // ──────────────────────────────────────────────────────────────────────────

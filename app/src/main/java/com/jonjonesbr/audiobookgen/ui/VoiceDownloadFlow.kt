@@ -14,6 +14,7 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.tts.AndroidVoiceId
 import com.jonjonesbr.audiobookgen.tts.KokoroModelManager
 import com.jonjonesbr.audiobookgen.tts.OnnxModelManager
+import com.jonjonesbr.audiobookgen.tts.ParadeeVozes
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.dpToPx
@@ -43,6 +44,11 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
         when {
             voice.engine == "android" && voice.precisaBaixarNoSistema ->
                 mostrarDialogoBaixarVozAndroid(voice)
+            // Paradee (Dora e Alex) usa o pacote próprio de 17 MB, não o bundle Kokoro de ~350 MB.
+            ParadeeVozes.ehParadee(voice.id) &&
+                !com.jonjonesbr.audiobookgen.util.VoiceCatalog.modeloProntoParaVoz(voice.id, activity) ->
+                mostrarDialogoConfirmarDownloadPacoteVits(voice, onComplete)
+            ParadeeVozes.ehParadee(voice.id) -> onComplete()
             voice.engine == "kokoro" && voice.id.contains("::") &&
                 !com.jonjonesbr.audiobookgen.util.VoiceCatalog.modeloProntoParaVoz(voice.id, activity) ->
                 mostrarDialogoConfirmarDownloadPacoteVits(voice, onComplete)
@@ -76,7 +82,7 @@ class VoiceDownloadFlow(private val activity: AppCompatActivity) {
         val license = com.jonjonesbr.audiobookgen.tts.PiperVitsModelManager.models
             .firstOrNull { it.id == pacote.id }
             ?.let { com.jonjonesbr.audiobookgen.tts.PiperVitsModelManager.licenseNotice(it, activity) }
-            .orEmpty()
+            ?: if (ParadeeVozes.ehParadee(voice.id)) ParadeeVozes.LICENCA else ""
         val mobileNotice = if (NetworkStatus.isOnWifi(activity)) ""
             else "\n\n" + activity.getString(R.string.dialog_download_piper_mobile_notice)
         AlertDialog.Builder(activity)

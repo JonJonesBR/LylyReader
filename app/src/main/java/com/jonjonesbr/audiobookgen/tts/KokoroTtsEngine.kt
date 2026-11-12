@@ -273,9 +273,15 @@ class KokoroTtsEngine(
     // Fronteira com nativo (sherpa-onnx): exceções amplas são intencionais — o wrapper JNI
     // pode lançar de formas inesperadas (IllegalArgumentException do require, Runtime do
     // nativo); a falha é propagada como Result.failure para o chamador tratar.
-    @Suppress("TooGenericExceptionCaught")
+    // LongMethod/CyclomaticComplexMethod: o desvio do Paradee soma linhas e um ramo (padrão de AmostraVozUseCase).
+    @Suppress("TooGenericExceptionCaught", "CyclomaticComplexMethod", "LongMethod")
     suspend fun synthesize(texto: String, voiceId: String, outputFile: File): Result<File> =
         withContext(Dispatchers.IO) {
+            // Dora e Alex (ids kokoro-*) são sintetizadas pelo Paradee (processo :paradee). Só o engine
+            // da app delega: no processo :sherpa (allowIsolatedProcessDelegation=false) nunca entra aqui.
+            if (allowIsolatedProcessDelegation && ParadeeVozes.ehParadee(voiceId)) {
+                return@withContext ParadeeTtsEngine(context).synthesize(texto, voiceId, outputFile)
+            }
             // Vozes importadas (BYOM, Parte B do V6) usam o formato "<packId>::<vozId>" — o
             // Kokoro Base nunca usa "::" nos próprios ids ("kokoro-pf-dora" etc.), então isso
             // nunca colide com o caminho abaixo. Ver [synthesizeByom].

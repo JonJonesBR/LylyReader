@@ -274,6 +274,8 @@
         <item>Piper en_US-norman-medium — repositorio del modelo bajo MIT; grabaciones LibriVox de dominio público. Ficha: https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/en/en_US/norman/medium/MODEL_CARD</item>
         <item>Piper es_MX-claude-high — repositorio del modelo bajo MIT; la ficha indica que el conjunto Piper-TTS-Spanish está bajo Apache-2.0. Ficha: https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/es/es_MX/claude/high/MODEL_CARD</item>
         <item>Kokoro-82M — modelo de TTS neuronal (Apache-2.0). Copyright (c) hexgrad; conversión ONNX e integración de runtime por k2-fsa (sherpa-onnx).</item>
+        <item>Paradee-8M pt-BR (voces Dora y Alex) — modelo destilado de Kokoro-82M (Apache-2.0). Copyright (c) eraldohug y Sahil Mahendrakar. https://huggingface.co/eraldohug/Paradee-8M-PtBr</item>
+        <item>espeak-ng 1.52.0 — conversión de texto a fonemas para Paradee (GPL-3.0 o posterior). Copyright (c) Reece H. Dunn y colaboradores. https://github.com/espeak-ng/espeak-ng</item>
         <item>sherpa-onnx — runtime de voz sin conexión (Apache-2.0). Copyright (c) k2-fsa / Xiaomi.</item>
         <item>MMS-TTS (Massively Multilingual Speech) — modelo de voz en portugués (CC-BY-NC 4.0). Copyright (c) Meta AI. Solo uso no comercial.</item>
         <item>Supertonic — modelo de TTS neuronal (OpenRAIL-M). Copyright (c) Supertone.</item>
@@ -1508,6 +1510,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="dl_secao_minhas_vozes">Mis voces</string>
     <string name="dl_tipo_supertonic">voces naturales</string>
     <string name="dl_tipo_kokoro">muchas voces</string>
+    <string name="dl_tipo_paradee">voz neuronal rápida</string>
     <string name="dl_tipo_piper">ligera y rápida</string>
     <string name="dl_tipo_pocket">expresiva, permite clonar</string>
     <string name="dl_tipo_mms">voz simple</string>

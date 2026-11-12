@@ -233,7 +233,7 @@ class VoiceCatalogTest {
 
     @Test fun forEngineKokoro() {
         val voices = VoiceCatalog.forEngine("kokoro")
-        // Kokoro base (3 PT-BR + 28 inglês), MMS e dez pacotes Piper usam o mesmo engine.
+        // Kokoro base (Santa + 28 inglês), Paradee (Dora e Alex), MMS e dez pacotes Piper usam o mesmo engine.
         assertEquals(42, voices.size)
         assertEquals(42, voices.count { it.engine == "kokoro" })
         // Vozes pt-BR do Kokoro, MMS e os sete pacotes Piper brasileiros.
@@ -297,7 +297,7 @@ class VoiceCatalogTest {
     }
 
     @Test fun modelRootIdKokoroCompartilhaBundle() {
-        assertEquals("kokoro", VoiceCatalog.modelRootId("kokoro-pf-dora"))
+        assertEquals("paradee-ptbr", VoiceCatalog.modelRootId("kokoro-pf-dora"))
         assertEquals("kokoro", VoiceCatalog.modelRootId("kokoro-pm-santa"))
     }
 
@@ -417,18 +417,24 @@ class VoiceCatalogTest {
 
     // ── Modelo de pacotes (V6 T2.1 — RN-3: 1 download habilita N vozes) ────────────────
 
-    @Test fun pacoteKokoroHabilitaTresVozes() {
+    @Test fun pacoteParadeeHabilitaDoraEAlexSeparadoDoKokoro() {
         val dora = VoiceCatalog.pacoteDaVoz("kokoro-pf-dora")
         val alex = VoiceCatalog.pacoteDaVoz("kokoro-pm-alex")
         val santa = VoiceCatalog.pacoteDaVoz("kokoro-pm-santa")
-        // As 3 vozes compartilham o MESMO pacote (mesmo download).
-        assertEquals("kokoro", dora?.id)
+        // Dora e Alex compartilham o pacote Paradee (17 MB); Santa continua no pacote Kokoro (350 MB).
+        assertEquals("paradee-ptbr", dora?.id)
         assertEquals(dora, alex)
-        assertEquals(dora, santa)
-        assertEquals(31, dora?.vozes?.size)
-        // O tamanho do download vive no PACOTE (uma vez), não por voz — modelagem 1→N.
-        assertEquals(350, dora?.tamanhoDownloadMb)
-        assertEquals(31, dora?.vozes?.count { it.engine == "kokoro" })
+        assertEquals(listOf("kokoro-pf-dora", "kokoro-pm-alex"), dora?.vozes?.map { it.id })
+        assertEquals(17, dora?.tamanhoDownloadMb)
+        assertEquals("kokoro", santa?.id)
+        assertEquals(29, santa?.vozes?.size)
+        assertEquals(350, santa?.tamanhoDownloadMb)
+        assertEquals(29, santa?.vozes?.count { it.engine == "kokoro" })
+    }
+
+    @Test fun pacoteParadeeFicaAntesDoKokoroEDefaultSegueDora() {
+        assertEquals("kokoro-pf-dora", VoiceCatalog.defaultFor("kokoro").id)
+        assertEquals("paradee-ptbr", VoiceCatalog.pacotesDoEngine("kokoro").first().id)
     }
 
     @Test fun pacoteSupertonicTambemEhUmDownloadParaNVozes() {
@@ -460,12 +466,12 @@ class VoiceCatalogTest {
     }
 
     @Test fun pacotesDoEngineAgrupaPorMotor() {
-        // "kokoro" e "mms-por" (Parte A) são 2 pacotes DISTINTOS que compartilham o motor
+        // "paradee-ptbr", "kokoro" e "mms-por" (Parte A) são pacotes DISTINTOS que compartilham o motor
         // "kokoro" — cada um é seu próprio download/isPronto/delete, só o motor de síntese é
         // o mesmo (KokoroTtsEngine sabe as 2 arquiteturas, kokoro e vits).
         assertEquals(
             listOf(
-                "kokoro", "mms-por", "piper-ptbr-cadu", "piper-ptbr-dii", "piper-ptbr-edresson",
+                "paradee-ptbr", "kokoro", "mms-por", "piper-ptbr-cadu", "piper-ptbr-dii", "piper-ptbr-edresson",
                 "piper-ptbr-faber", "piper-ptbr-jeff", "piper-ptbr-miro", "piper-ptbr-razo",
                 "piper-enus-ljspeech-medium",
                 "piper-enus-norman-medium", "piper-esmx-claude-high"

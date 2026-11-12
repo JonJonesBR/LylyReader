@@ -115,7 +115,9 @@ class TtsChunkCacheTest {
     @Test
     fun revisaoIdentificaModelosOficiaisEPacoteByom() {
         assertEquals("supertonic-v2-dash1", TtsChunkCache.revisaoModelo("supertonic-f4-pt"))
-        assertEquals("kokoro-multilang-v1_0-fp32", TtsChunkCache.revisaoModelo("kokoro-pf-dora"))
+        assertEquals(ParadeeVozes.REVISAO_CACHE, TtsChunkCache.revisaoModelo("kokoro-pf-dora"))
+        assertEquals(ParadeeVozes.REVISAO_CACHE, TtsChunkCache.revisaoModelo("kokoro-pm-alex"))
+        assertEquals("kokoro-multilang-v1_0-fp32", TtsChunkCache.revisaoModelo("kokoro-pm-santa"))
         assertEquals(
             "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2-retry1-retic1-eosolha1-ini1",
             TtsChunkCache.revisaoModelo("pocket-ptbr-rafael")
@@ -143,7 +145,7 @@ class TtsChunkCacheTest {
         assertEquals("supertonic-v2-dash1", TtsChunkCache.revisaoModelo("supertonic-f1", portugues, true))
         assertEquals("supertonic-v2-dash1", TtsChunkCache.revisaoModelo("supertonic-f4-pt", ingles, true))
         assertEquals("supertonic-v2-dash1", TtsChunkCache.revisaoModelo("supertonic-f1", "", true))
-        assertEquals("kokoro-multilang-v1_0-fp32", TtsChunkCache.revisaoModelo("kokoro-pf-dora", ingles, true))
+        assertEquals(ParadeeVozes.REVISAO_CACHE, TtsChunkCache.revisaoModelo("kokoro-pf-dora", ingles, true))
     }
 
     @Test
