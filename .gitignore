@@ -5,6 +5,7 @@
 /app/libs/sherpa-onnx-*.aar
 *.ap_
 *.aab
+*.apks
 
 # Files for the ART/Dalvik VM
 *.dex
@@ -18,6 +19,7 @@
 /out/
 # Gradle files
 .gradle/
+.kotlin/
 /build/
 /app/build/
 
@@ -124,7 +126,6 @@ COISAS PARA IMPLEMENTAR NO APP/
 /LIVROS EXEMPLOS/
 /AGENTS.md
 /MOTORES QUE FALTAM IMPLEMENTAR NO APP.txt
-.claude/CLAUDE.md
 /scripts/build-local.ps1
 /scripts/test_tts_desktop.py
 /app/src/test/java/com/jonjonesbr/audiobookgen/CalibracaoManualTest.kt
