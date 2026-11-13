@@ -67,6 +67,14 @@ internal class FormatoDeSaida(val taxa: Int?, val canais: Int?)
 /** PCM decodificado (16 bits intercalado) e o formato em que ele saiu. */
 internal class AudioDecodificado(val pcm: ByteArray, val taxa: Int, val canais: Int)
 
+/** O que decodificar precisa: as duas portas e o formato inicial da faixa. */
+internal class Decodificacao(
+    val decodificador: Decodificador,
+    val fonte: FonteDeAmostras,
+    val taxaInicial: Int,
+    val canaisInicial: Int
+)
+
 /** Decodificador de produção: repassa tudo ao [MediaCodec]. */
 private class DecodificadorDoAndroid(
     private val codec: MediaCodec,
@@ -149,14 +157,11 @@ internal object DecodificadorDeAudio {
      * Sem nada decodificado, lança erro claro em vez de gravar um WAV vazio.
      */
     fun decodificar(
-        decodificador: Decodificador,
-        fonte: FonteDeAmostras,
-        taxaInicial: Int,
-        canaisInicial: Int,
+        decodificacao: Decodificacao,
         relogio: () -> Long = { SystemClock.elapsedRealtime() }
     ): AudioDecodificado {
-        var taxa = taxaInicial
-        var canais = canaisInicial
+        var taxa = decodificacao.taxaInicial
+        var canais = decodificacao.canaisInicial
         val pcm = ByteArrayOutputStream()
         val info = InfoDoBuffer()
         var fimEntrada = false
@@ -168,43 +173,43 @@ internal object DecodificadorDeAudio {
         while (!fimSaida && pcm.size() < limiteBytes) {
             val agora = relogio()
             if (agora - ultimoProgresso >= SEM_PROGRESSO_MS || agora - inicio >= TETO_TOTAL_MS) break
-            if (!fimEntrada) fimEntrada = enfileirar(decodificador, fonte)
-            val indice = decodificador.desenfileirarSaida(info, ESPERA_US)
+            if (!fimEntrada) fimEntrada = enfileirar(decodificacao)
+            val indice = decodificacao.decodificador.desenfileirarSaida(info, ESPERA_US)
             when {
                 indice >= 0 -> {
-                    pcm.write(lerSaida(decodificador, indice, info))
-                    decodificador.liberarSaida(indice)
+                    pcm.write(lerSaida(decodificacao.decodificador, indice, info))
+                    decodificacao.decodificador.liberarSaida(indice)
                     if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) fimSaida = true
                     // Progrediu: o prazo de ausência de progresso recomeça.
                     ultimoProgresso = relogio()
                 }
                 indice == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
-                    val novo = decodificador.formatoDeSaida
+                    val novo = decodificacao.decodificador.formatoDeSaida
                     taxa = novo.taxa ?: taxa
                     canais = novo.canais ?: canais
                 }
             }
         }
         if (pcm.size() == 0) {
-            throw IllegalStateException("O decodificador não devolveu nenhum trecho de áudio.")
+            error("O decodificador não devolveu nenhum trecho de áudio.")
         }
         return AudioDecodificado(pcm.toByteArray(), taxa, canais)
     }
 
     /** Enfileira uma amostra comprimida. Devolve true quando a fonte chegou ao fim. */
-    private fun enfileirar(decodificador: Decodificador, fonte: FonteDeAmostras): Boolean {
-        val indice = decodificador.desenfileirarEntrada(ESPERA_US)
+    private fun enfileirar(decodificacao: Decodificacao): Boolean {
+        val indice = decodificacao.decodificador.desenfileirarEntrada(ESPERA_US)
         var chegouAoFim = false
         // Buffer nulo não significa fim do fluxo: a próxima volta tenta de novo.
-        val buffer = if (indice >= 0) decodificador.bufferDeEntrada(indice) else null
+        val buffer = if (indice >= 0) decodificacao.decodificador.bufferDeEntrada(indice) else null
         if (buffer != null) {
-            val n = fonte.ler(buffer)
+            val n = decodificacao.fonte.ler(buffer)
             if (n < 0) {
-                decodificador.enfileirarEntrada(indice, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                decodificacao.decodificador.enfileirarEntrada(indice, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
                 chegouAoFim = true
             } else {
-                decodificador.enfileirarEntrada(indice, n, fonte.instante(), 0)
-                fonte.avancar()
+                decodificacao.decodificador.enfileirarEntrada(indice, n, decodificacao.fonte.instante(), 0)
+                decodificacao.fonte.avancar()
             }
         }
         return chegouAoFim
@@ -213,7 +218,7 @@ internal object DecodificadorDeAudio {
     /** Copia os bytes do buffer de saída para o PCM. */
     private fun lerSaida(decodificador: Decodificador, indice: Int, info: InfoDoBuffer): ByteArray {
         val saida = decodificador.bufferDeSaida(indice)
-            ?: throw IllegalStateException("Buffer de saída indisponível na decodificação do áudio.")
+            ?: error("Buffer de saída indisponível na decodificação do áudio.")
         val bytes = ByteArray(info.size)
         saida.position(info.offset)
         saida.get(bytes, 0, info.size)

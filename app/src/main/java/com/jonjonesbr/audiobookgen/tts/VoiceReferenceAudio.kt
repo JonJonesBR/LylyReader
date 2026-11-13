@@ -54,10 +54,12 @@ object VoiceReferenceAudio {
                 1
             }
             return decodificarESalvar(
-                decodificador = decodificadorDoAndroid(MediaCodec.createDecoderByType(mime), formato),
-                fonte = fonteDoExtractor(extractor),
-                taxaInicial = taxa,
-                canaisInicial = canais,
+                decodificacao = Decodificacao(
+                    decodificador = decodificadorDoAndroid(MediaCodec.createDecoderByType(mime), formato),
+                    fonte = fonteDoExtractor(extractor),
+                    taxaInicial = taxa,
+                    canaisInicial = canais
+                ),
                 destino = destino
             )
         } finally {
@@ -70,23 +72,20 @@ object VoiceReferenceAudio {
      * em `finally` separados, mesmo quando o laço lança no meio (codec nativo preso é limitado por processo).
      */
     internal fun decodificarESalvar(
-        decodificador: Decodificador,
-        fonte: FonteDeAmostras,
-        taxaInicial: Int,
-        canaisInicial: Int,
+        decodificacao: Decodificacao,
         destino: File,
         relogio: () -> Long = { SystemClock.elapsedRealtime() }
     ): Result {
         try {
-            decodificador.iniciar()
-            val audio = DecodificadorDeAudio.decodificar(decodificador, fonte, taxaInicial, canaisInicial, relogio)
+            decodificacao.decodificador.iniciar()
+            val audio = DecodificadorDeAudio.decodificar(decodificacao, relogio)
             val curtas = ByteBuffer.wrap(audio.pcm).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
             val amostras = ShortArray(curtas.remaining()).also { curtas.get(it) }
             return salvar(mono(amostras, audio.canais), audio.taxa, destino)
         } finally {
             // Separados de propósito: um falhando não impede o outro de devolver o codec ao sistema.
-            runCatching { decodificador.parar() }
-            runCatching { decodificador.liberar() }
+            runCatching { decodificacao.decodificador.parar() }
+            runCatching { decodificacao.decodificador.liberar() }
         }
     }
 

@@ -59,16 +59,13 @@ class VoiceReferenceAudioTest {
                 info.size = bloco
                 0
             } else {
-                throw IllegalStateException("falha no meio do laco")
+                error("falha no meio do laco")
             }
         }
 
         val erro = assertThrows(IllegalStateException::class.java) {
             VoiceReferenceAudio.decodificarESalvar(
-                decodificador = falso,
-                fonte = fonteDeTeste(),
-                taxaInicial = rate,
-                canaisInicial = 1,
+                decodificacao = Decodificacao(falso, fonteDeTeste(), rate, 1),
                 destino = arquivoTemporario(),
                 relogio = { 0L }
             )
@@ -86,10 +83,7 @@ class VoiceReferenceAudioTest {
         var agora = 0L
         val erro = assertThrows(IllegalStateException::class.java) {
             VoiceReferenceAudio.decodificarESalvar(
-                decodificador = falso,
-                fonte = fonteDeTeste(),
-                taxaInicial = rate,
-                canaisInicial = 1,
+                decodificacao = Decodificacao(falso, fonteDeTeste(), rate, 1),
                 destino = arquivoTemporario(),
                 relogio = { agora.also { agora += 5_000L } }
             )
@@ -113,10 +107,7 @@ class VoiceReferenceAudioTest {
         val destino = arquivoTemporario()
 
         val resultado = VoiceReferenceAudio.decodificarESalvar(
-            decodificador = falso,
-            fonte = fonteDeTeste(),
-            taxaInicial = rate,
-            canaisInicial = 1,
+            decodificacao = Decodificacao(falso, fonteDeTeste(), rate, 1),
             destino = destino,
             relogio = { 0L }
         )
