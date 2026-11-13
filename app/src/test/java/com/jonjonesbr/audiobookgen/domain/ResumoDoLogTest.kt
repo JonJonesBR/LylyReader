@@ -130,6 +130,21 @@ class ResumoDoLogTest {
     }
 
     @Test
+    fun `instante do nome com processo de voz ignora o sufixo`() {
+        val esperado = Calendar.getInstance(utc).apply {
+            clear()
+            set(2026, Calendar.NOVEMBER, 13, 10, 0, 0)
+            set(Calendar.MILLISECOND, 123)
+        }.timeInMillis
+        assertEquals(esperado, instanteDoNomeDoLog("lyly_error_2026-11-13T10-00-00-123Z_pocket.txt", utc))
+        assertEquals(
+            esperado,
+            instanteDoNomeDoLog("lyly_error_2026-11-13T10-00-00-123Z.txt", utc)
+        )
+        assertNull(instanteDoNomeDoLog("lyly_error_diag_sintese.txt", utc))
+    }
+
+    @Test
     fun `dia relativo distingue hoje, ontem e outros dias`() {
         val agora = instante(2026, Calendar.NOVEMBER, 2, 10, 0)
         assertEquals(DiaRelativo.HOJE, diaRelativo(instante(2026, Calendar.NOVEMBER, 2, 0, 5), agora, utc))

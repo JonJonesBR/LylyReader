@@ -16,9 +16,10 @@ class LylyApplication : Application() {
         super.onCreate()
         setupGlobalExceptionHandler()
 
-        // Os processos isolados (:supertonic e :sherpa) também instanciam a Application. Eles
-        // só precisam do handler global de exceções — pular o startup pesado (cópia de
-        // modelos, detector de crash, limpeza) evita trabalho duplicado e relatórios duplos.
+        // Os processos isolados (:supertonic, :sherpa, :pocket e :paradee) também instanciam a
+        // Application. Eles precisam do handler global de exceções e do CrashLogWriter (com o
+        // nome do processo no arquivo) — pular o startup pesado (cópia de modelos, detector de
+        // crash, limpeza) evita trabalho duplicado e relatórios duplos.
         // O pré-carregamento é POR PROCESSO, porque cada lib nativa exige sua própria ordem:
         // - :supertonic e :pocket: forçam o soname libonnxruntime.so a apontar para a cópia 1.26.0
         //   dedicada. Se OrtEnvironment (1.20.0) carregar primeiro, o linker registra a
@@ -27,15 +28,19 @@ class LylyApplication : Application() {
         //   no libsherpa-onnx-jni.so, então NÃO há libonnxruntime.so para gerenciar aqui;
         //   carregar as libs do Supertonic neste processo seria desperdício de memória.
         if (!isMainProcess()) {
-            Log.i("LylyApplication", "Skipping heavy startup in isolated process: ${currentProcessName()}")
-            if (currentProcessName() == "$packageName:sherpa") {
+            val nomeDoProcesso = currentProcessName()
+            Log.i("LylyApplication", "Skipping heavy startup in isolated process: $nomeDoProcesso")
+            // Um crash num processo de voz precisa de arquivo de erro próprio: sem o init aqui,
+            // CrashLogWriter.log cai no "não inicializado" e a falha fica sem rastro.
+            CrashLogWriter.init(this, processo = nomeDoProcesso.substringAfterLast(':'))
+            if (nomeDoProcesso == "$packageName:sherpa") {
                 try {
                     System.loadLibrary("sherpa-onnx-jni")
                     Log.i("LylyApplication", "sherpa-onnx preloaded successfully in :sherpa process")
                 } catch (e: Throwable) {
                     Log.w("LylyApplication", "Falha ao pré-carregar lib sherpa-onnx no processo :sherpa: ${e.message}")
                 }
-            } else if (currentProcessName() == "$packageName:pocket") {
+            } else if (nomeDoProcesso == "$packageName:pocket") {
                 try {
                     // Pocket usa o mesmo runtime compartilhado do Supertonic, já carregado
                     // sob o SONAME libonnxruntime.so no processo isolado.
@@ -45,7 +50,7 @@ class LylyApplication : Application() {
                 } catch (e: Throwable) {
                     Log.w("LylyApplication", "Falha ao pré-carregar libs Pocket no processo isolado: ${e.message}")
                 }
-            } else if (currentProcessName() == "$packageName:paradee") {
+            } else if (nomeDoProcesso == "$packageName:paradee") {
                 carregarLibsParadee()
             } else {
                 try {
