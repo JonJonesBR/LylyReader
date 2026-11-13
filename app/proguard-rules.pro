@@ -53,6 +53,11 @@
 -keep class com.jonjonesbr.audiobookgen.tts.IPocketSynthService$* { *; }
 -keep class com.jonjonesbr.audiobookgen.tts.NativePocketTts { *; }
 
+# ── AIDL e JNI (Paradee, processo :paradee) ──────────────────
+-keep class com.jonjonesbr.audiobookgen.tts.IParadeeSynthService { *; }
+-keep class com.jonjonesbr.audiobookgen.tts.IParadeeSynthService$* { *; }
+-keep class com.jonjonesbr.audiobookgen.tts.NativeParadee { *; }
+
 # ── Sherpa-ONNX (JNI / motor Kokoro local) ───────────────────────────────────
 # As classes de config (OfflineTtsConfig, OfflineTtsKokoroModelConfig, GenerationConfig
 # etc.) sao lidas campo a campo via JNI (GetFieldID/GetObjectField) pelo

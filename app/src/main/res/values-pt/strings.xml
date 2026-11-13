@@ -786,7 +786,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Nova voz offline em português do Brasil: Razo, masculina, natural e rápida. Baixe na lista de vozes Piper e ouça a prévia antes.</string>
+    <string name="release_notes_corpo">• Novas vozes offline em português do Brasil: Dora e Alex, naturais e bem mais rápidas. Baixe em Downloads e ouça a prévia antes.</string>
     <string name="timbre_title">Tom da voz</string>
     <string name="timbre_desc">Voz mais grave ou mais aguda, e agudos mais suaves. Vale na hora.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
