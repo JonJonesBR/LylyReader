@@ -774,7 +774,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Nueva voz sin conexión en portugués de Brasil: Razo, masculina, natural y rápida. Descárgala en la lista de voces Piper y escucha la vista previa antes.</string>
+    <string name="release_notes_corpo">• Nuevas voces sin conexión en portugués de Brasil: Dora y Alex, naturales y mucho más rápidas. Descárgalas en Descargas y escucha la vista previa antes.</string>
     <string name="timbre_title">Tono de la voz</string>
     <string name="timbre_desc">Voz más grave o más aguda, y agudos más suaves. Se aplica al instante.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>

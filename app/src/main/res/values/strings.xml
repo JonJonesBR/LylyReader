@@ -783,7 +783,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• New offline Brazilian Portuguese voice: Razo, a natural and fast male voice. Download it from the Piper voice list and play the preview first.</string>
+    <string name="release_notes_corpo">• New offline Brazilian Portuguese voices: Dora and Alex, natural and much faster. Download them in Downloads and play the preview first.</string>
     <string name="timbre_title">Voice pitch</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
