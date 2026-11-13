@@ -36,6 +36,9 @@ const val LINHAS_PARA_RESUMO = 40
 
 private const val FORMATO_DO_NOME = "yyyy-MM-dd'T'HH-mm-ss-SSS'Z'"
 
+// Data do nome do arquivo, sem depender do prefixo/sufixo: o processo de voz acrescenta "_pocket" etc.
+private val INSTANTE_NO_NOME = Regex("""\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z""")
+
 private val PALAVRAS_ENCERRAMENTO_NORMAL = listOf(
     "swipeupclean", "clean_up_mem", "installpackageli", "force-stop", "stop by user", "kill_background"
 )
@@ -104,10 +107,11 @@ fun resumirArquivoDeErro(arquivo: File): ResumoRegistroErro {
 
 /**
  * Instante gravado no nome do arquivo (lyly_error_<data>T<hora>Z.txt), na hora local em que o
- * CrashLogWriter escreveu. Null se o nome não segue o padrão.
+ * CrashLogWriter escreveu. O processo de voz acrescenta um sufixo (…Z_pocket.txt), que é ignorado
+ * aqui. Null se o nome não traz uma data no padrão.
  */
 fun instanteDoNomeDoLog(nomeDoArquivo: String, zona: TimeZone = TimeZone.getDefault()): Long? {
-    val miolo = nomeDoArquivo.removePrefix("lyly_error_").removeSuffix(".txt")
+    val miolo = INSTANTE_NO_NOME.find(nomeDoArquivo)?.value ?: return null
     return runCatching {
         SimpleDateFormat(FORMATO_DO_NOME, Locale.US).apply {
             timeZone = zona

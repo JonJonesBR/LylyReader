@@ -20,9 +20,15 @@ object CrashLogWriter {
     private var appContext: Context? = null
     private var appVersion: String = "?"
     private var appBuild: String = "?"
+    private var sufixoDoProcesso: String = ""
 
-    fun init(context: Context) {
+    /**
+     * Prepara o gravador. [processo] é o nome curto do processo isolado de voz ("pocket", "sherpa",
+     * "paradee", "supertonic"); vazio no processo principal, que continua gravando o nome de sempre.
+     */
+    fun init(context: Context, processo: String = "") {
         appContext = context.applicationContext
+        sufixoDoProcesso = sufixoDo(processo)
         appVersion = try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
         } catch (_: Exception) { "?" }
@@ -104,12 +110,18 @@ object CrashLogWriter {
             sb.appendLine("Thread: ${Thread.currentThread().name}")
             sb.appendLine("═══════════════════════════════════════════")
 
-            val fileName = "${FILE_PREFIX}${timestamp}.txt"
+            val fileName = "${FILE_PREFIX}${timestamp}${sufixoDoProcesso}.txt"
             writeToInternalLogs(ctx, fileName, ocultarSegredos(sb.toString()))
             rotateOldFiles(ctx)
         } catch (e: Exception) {
             Log.e(TAG, "Falha ao salvar log de erro", e)
         }
+    }
+
+    /** Sufixo do nome do arquivo: "_pocket" num processo isolado, "" no principal. */
+    private fun sufixoDo(processo: String): String {
+        val limpo = processo.lowercase(Locale.ROOT).filter { it in 'a'..'z' }
+        return if (limpo.isEmpty()) "" else "_$limpo"
     }
 
     fun getLogsDir(context: Context): File {

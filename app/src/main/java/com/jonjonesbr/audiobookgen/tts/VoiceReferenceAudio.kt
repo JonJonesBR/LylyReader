@@ -9,6 +9,7 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaRecorder
 import android.net.Uri
+import android.os.SystemClock
 import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -41,57 +42,50 @@ object VoiceReferenceAudio {
             extractor.selectTrack(faixa)
             val formato = extractor.getTrackFormat(faixa)
             val mime = formato.getString(MediaFormat.KEY_MIME)!!
-            val codec = MediaCodec.createDecoderByType(mime)
-            codec.configure(formato, null, null, 0)
-            codec.start()
-            var taxa = if (formato.containsKey(MediaFormat.KEY_SAMPLE_RATE)) formato.getInteger(MediaFormat.KEY_SAMPLE_RATE) else TARGET_RATE
-            var canais = if (formato.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) formato.getInteger(MediaFormat.KEY_CHANNEL_COUNT) else 1
-            val pcm = ByteArrayOutputStream()
-            val info = MediaCodec.BufferInfo()
-            var fimEntrada = false
-            var fimSaida = false
-            // Lê no máximo ~35 s decodificados: basta para cortar em 30 s depois de reamostrar.
-            val limiteBytes = (PocketCustomVoices.MAX_IMPORT_SECONDS + 5L) * taxa * canais * 2
-            while (!fimSaida && pcm.size() < limiteBytes) {
-                if (!fimEntrada) {
-                    val i = codec.dequeueInputBuffer(10_000)
-                    if (i >= 0) {
-                        val buf = codec.getInputBuffer(i)!!
-                        val n = extractor.readSampleData(buf, 0)
-                        if (n < 0) {
-                            codec.queueInputBuffer(i, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-                            fimEntrada = true
-                        } else {
-                            codec.queueInputBuffer(i, 0, n, extractor.sampleTime, 0)
-                            extractor.advance()
-                        }
-                    }
-                }
-                val o = codec.dequeueOutputBuffer(info, 10_000)
-                when {
-                    o >= 0 -> {
-                        val saida = codec.getOutputBuffer(o)!!
-                        val bytes = ByteArray(info.size)
-                        saida.position(info.offset)
-                        saida.get(bytes, 0, info.size)
-                        pcm.write(bytes)
-                        codec.releaseOutputBuffer(o, false)
-                        if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) fimSaida = true
-                    }
-                    o == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
-                        val novo = codec.outputFormat
-                        if (novo.containsKey(MediaFormat.KEY_SAMPLE_RATE)) taxa = novo.getInteger(MediaFormat.KEY_SAMPLE_RATE)
-                        if (novo.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) canais = novo.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
-                    }
-                }
+            // Taxa e canais declarados na faixa; sem eles, assume o WAV de referência (24 kHz mono).
+            val taxa = if (formato.containsKey(MediaFormat.KEY_SAMPLE_RATE)) {
+                formato.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+            } else {
+                TARGET_RATE
             }
-            codec.stop()
-            codec.release()
-            val curtas = ByteBuffer.wrap(pcm.toByteArray()).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
-            val amostras = ShortArray(curtas.remaining()).also { curtas.get(it) }
-            return salvar(mono(amostras, canais), taxa, destino)
+            val canais = if (formato.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) {
+                formato.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+            } else {
+                1
+            }
+            return decodificarESalvar(
+                decodificacao = Decodificacao(
+                    decodificador = decodificadorDoAndroid(MediaCodec.createDecoderByType(mime), formato),
+                    fonte = fonteDoExtractor(extractor),
+                    taxaInicial = taxa,
+                    canaisInicial = canais
+                ),
+                destino = destino
+            )
         } finally {
             extractor.release()
+        }
+    }
+
+    /**
+     * Decodifica e grava o WAV de referência. O decodificador é parado e liberado uma única vez aqui,
+     * em `finally` separados, mesmo quando o laço lança no meio (codec nativo preso é limitado por processo).
+     */
+    internal fun decodificarESalvar(
+        decodificacao: Decodificacao,
+        destino: File,
+        relogio: () -> Long = { SystemClock.elapsedRealtime() }
+    ): Result {
+        try {
+            decodificacao.decodificador.iniciar()
+            val audio = DecodificadorDeAudio.decodificar(decodificacao, relogio)
+            val curtas = ByteBuffer.wrap(audio.pcm).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
+            val amostras = ShortArray(curtas.remaining()).also { curtas.get(it) }
+            return salvar(mono(amostras, audio.canais), audio.taxa, destino)
+        } finally {
+            // Separados de propósito: um falhando não impede o outro de devolver o codec ao sistema.
+            runCatching { decodificacao.decodificador.parar() }
+            runCatching { decodificacao.decodificador.liberar() }
         }
     }
 
