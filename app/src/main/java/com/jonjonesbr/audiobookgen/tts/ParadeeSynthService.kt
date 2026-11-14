@@ -76,7 +76,9 @@ class ParadeeSynthService : Service() {
         idleRelease?.let(mainHandler::removeCallbacks)
         idleRelease = null
         val spec = ParadeeVozes.spec(voiceId) ?: throw ErroDeSintese("voz Paradee não reconhecida: $voiceId")
-        if (!ParadeeModelManager.isReady(this)) throw ErroDeSintese("pacote Paradee não está instalado")
+        if (!ParadeeModelManager.isReady(this, spec.pacoteId)) {
+            throw ErroDeSintese("pacote Paradee não está instalado")
+        }
         iniciarEspeak(spec)
 
         val velocidade = speed.coerceIn(VELOCIDADE_MIN, VELOCIDADE_MAX)
@@ -112,7 +114,7 @@ class ParadeeSynthService : Service() {
         velocidade: Float,
         output: File
     ) {
-        val handle = sessoes[spec.voiceId] ?: criarSessao(spec)
+        val handle = sessoes[spec.arquivo] ?: criarSessao(spec)
         val audios = blocos.map { bloco ->
             NativeParadee.sintetizar(handle, bloco.ids, velocidade, spec.indiceVoz)
                 ?: throw ErroDeSintese("o Paradee não gerou áudio válido")
@@ -137,7 +139,7 @@ class ParadeeSynthService : Service() {
         val modelo = ParadeeModelManager.arquivo(this, spec)
         val handle = NativeParadee.criarSessao(modelo.absolutePath, THREADS)
         if (handle == 0L) throw ErroDeSintese("não foi possível criar a sessão do modelo Paradee")
-        sessoes[spec.voiceId] = handle
+        sessoes[spec.arquivo] = handle
         while (sessoes.size > MAX_SESSOES) {
             val maisAntiga = sessoes.keys.first()
             NativeParadee.fecharSessao(sessoes.remove(maisAntiga) ?: 0L)

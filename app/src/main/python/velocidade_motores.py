@@ -22,7 +22,15 @@ MAX_FRACAO_FALHOS = 0.10   # acima disso a execução é descartada
 MOTORES_MEDIDOS = ("edge", "android", "onnx", "kokoro", "pocket", "piper", "paradee")
 
 # Vozes que o motor Paradee sintetiza, com os ids antigos do Kokoro (roteadas como "kokoro").
-VOZES_PARADEE = frozenset({"kokoro-pf-dora", "kokoro-pm-alex"})
+VOZES_PARADEE = frozenset({
+    "kokoro-pf-dora",
+    "kokoro-pm-alex",
+    "kokoro-en-af-heart",
+    "kokoro-en-bf-isabella",
+    "kokoro-en-am-puck",
+    "kokoro-en-bm-fable",
+    "kokoro-em-alex",
+})
 
 
 def motor_medido(voz: str, motor_roteado: str):

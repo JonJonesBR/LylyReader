@@ -955,15 +955,15 @@ class GuidedPlayerManagerTest {
     fun preWarmChecaPacoteParadeeQuandoVozEDora() {
         mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
         mockkObject(com.jonjonesbr.audiobookgen.tts.ParadeeModelManager)
-        every { com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(any()) } returns false
+        every { com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isProntoParaVoz(any(), any()) } returns false
         every { anyConstructed<AppPrefs>().motorTts } returns "kokoro"
         every { anyConstructed<AppPrefs>().vozSelecionada } returns "kokoro-pf-dora"
 
         createManager()
         testDispatcher.scheduler.runCurrent()
 
-        // Dora é Paradee: a prontidão é a do pacote paradee-ptbr, não a do bundle Kokoro de 350 MB.
-        verify(exactly = 1) { com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(any()) }
+        // Dora é Paradee: a prontidão é a do pacote Paradee da voz, não a do bundle Kokoro de 350 MB.
+        verify(exactly = 1) { com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isProntoParaVoz(any(), "kokoro-pf-dora") }
         verify(exactly = 0) { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) }
     }
 

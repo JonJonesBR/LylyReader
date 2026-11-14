@@ -11,7 +11,7 @@ import java.io.IOException
 internal object EspeakDados {
     private const val VERSAO = "espeak-ng-data-1.52.0"
     private const val ASSETS = "espeak-ng-paradee"
-    private const val MARCADOR = ".completo"
+    private const val MARCADOR = ".completo-v2"
     private val ARQUIVOS = listOf(
         "phontab",
         "phonindex",
@@ -19,7 +19,13 @@ internal object EspeakDados {
         "intonations",
         "pt_dict",
         "en_dict",
+        "es_dict",
         "lang/roa/pt-BR",
+        "lang/roa/es",
+        "lang/roa/es-419",
+        "lang/gmw/en",
+        "lang/gmw/en-US",
+        "lang/gmw/en-GB-x-rp",
     )
     private val trava = Any()
 

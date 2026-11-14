@@ -504,6 +504,7 @@ _OPENROUTER_VOZES_PT = frozenset({
 _KOKORO_VOZES_PT = frozenset({
     "kokoro-pf-dora", "kokoro-pm-alex", "kokoro-pm-santa",
 })
+_KOKORO_VOZES_ES = frozenset({"kokoro-em-alex"})
 _POCKET_VOZES_PT = frozenset({"pocket-ptbr-rafael"})
 _POCKET_VOZES_ES = frozenset({"pocket-es-lola"})
 
@@ -533,10 +534,10 @@ def _qualquer_voz_pt(voz: str) -> bool:
 
 
 def _idioma_para_voz(voz: str) -> str:
-    """Retorna o idioma de normalização para as vozes Pocket com locale explícito."""
+    """Retorna o idioma de normalização para as vozes Pocket/Paradee com locale explícito."""
     if voz in _POCKET_VOZES_PT:
         return "pt"
-    if voz in _POCKET_VOZES_ES:
+    if voz in _POCKET_VOZES_ES or voz in _KOKORO_VOZES_ES:
         return "es"
     if voz == "pocket-en-alba":
         return "en"

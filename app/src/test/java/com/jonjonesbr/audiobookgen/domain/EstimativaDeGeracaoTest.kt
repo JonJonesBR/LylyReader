@@ -30,6 +30,8 @@ class EstimativaDeGeracaoTest {
         assertEquals("pocket", EstimativaDeGeracao.motorDaVoz("pocket-en-alba"))
         assertEquals("paradee", EstimativaDeGeracao.motorDaVoz("kokoro-pf-dora"))
         assertEquals("paradee", EstimativaDeGeracao.motorDaVoz("kokoro-pm-alex"))
+        assertEquals("paradee", EstimativaDeGeracao.motorDaVoz("kokoro-en-af-heart"))
+        assertEquals("paradee", EstimativaDeGeracao.motorDaVoz("kokoro-em-alex"))
         assertEquals("kokoro", EstimativaDeGeracao.motorDaVoz("kokoro-en-am-santa"))
         assertEquals("kokoro", EstimativaDeGeracao.motorDaVoz("mms-por::voz"))
         assertEquals("edge", EstimativaDeGeracao.motorDaVoz("pt-BR-FranciscaNeural"))
@@ -44,6 +46,11 @@ class EstimativaDeGeracaoTest {
             "piper-ptbr-faber::main-pt" to "piper",
             "kokoro-pf-dora" to "paradee",
             "kokoro-pm-alex" to "paradee",
+            "kokoro-en-af-heart" to "paradee",
+            "kokoro-en-bf-isabella" to "paradee",
+            "kokoro-en-am-puck" to "paradee",
+            "kokoro-en-bm-fable" to "paradee",
+            "kokoro-em-alex" to "paradee",
             "kokoro-en-am-santa" to "kokoro",
             "mms-por::main-pt" to "kokoro",
             "pocket-ptbr-rafael" to "pocket",

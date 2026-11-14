@@ -6,7 +6,7 @@ from pathlib import Path
 PYTHON_SRC = Path(__file__).parents[2] / "main" / "python"
 sys.path.insert(0, str(PYTHON_SRC))
 
-from tts import _KOKORO_VOZES_PT, _qualquer_voz_pt
+from tts import _KOKORO_VOZES_PT, _idioma_para_voz, _qualquer_voz_pt
 
 
 class VozesKokoroPtTest(unittest.TestCase):
@@ -43,6 +43,11 @@ class VozesKokoroPtTest(unittest.TestCase):
         # mas o packId ("mms-por") não começa com "byom-" — a heurística de "::" precisa ser
         # genérica (qualquer pacote local), não específica do prefixo "byom-".
         self.assertTrue(_qualquer_voz_pt("mms-por::main-pt"))
+
+    def test_voz_paradee_espanhol_normaliza_em_es(self):
+        self.assertEqual("es", _idioma_para_voz("kokoro-em-alex"))
+        self.assertEqual("en", _idioma_para_voz("kokoro-en-af-heart"))
+        self.assertEqual("pt", _idioma_para_voz("kokoro-pf-dora"))
 
 
 if __name__ == "__main__":

@@ -95,6 +95,8 @@ internal fun kokoroVoiceParams(voiceId: String): KokoroVoiceParams? = when (voic
     "kokoro-pf-dora" -> KokoroVoiceParams(sid = 42, lang = "pt-BR")
     "kokoro-pm-alex" -> KokoroVoiceParams(sid = 43, lang = "pt-BR")
     "kokoro-pm-santa" -> KokoroVoiceParams(sid = 44, lang = "pt-BR")
+    // Paradee v1.3 em espanhol (roteada para o processo :paradee; entrada mantida para o guard do catálogo).
+    "kokoro-em-alex" -> KokoroVoiceParams(sid = 28, lang = "es")
     else -> KOKORO_ENGLISH_SIDS[voiceId]?.let { sid -> KokoroVoiceParams(sid, lang = null) }
 }
 
