@@ -276,7 +276,8 @@ class VoiceCatalogTest {
 
         assertEquals(28, voices.size)
         assertEquals(28, params.size)
-        assertEquals((0..27).toList(), params.map { it.sid })
+        assertEquals(listOf(3, 22, 18, 25), params.take(4).map { it.sid })
+        assertEquals((0..27).toList(), params.map { it.sid }.sorted())
         assertTrue(voices.all { it.language == "en-US" || it.language == "en-GB" })
         assertEquals(20, voices.count { it.language == "en-US" })
         assertEquals(8, voices.count { it.language == "en-GB" })
