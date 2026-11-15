@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
 import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.util.UUID
@@ -35,6 +36,9 @@ object BibliotecaStore {
     private const val ARQUIVO_JSON = "livro.json"
     private const val ARQUIVO_CAPA = "capa.jpg"
     private const val BUFFER = 64 * 1024
+    private const val BYTES_POR_MB = 1024L * 1024L
+    private const val LIMITE_MB = 50L
+    internal const val LIMITE_BYTES = LIMITE_MB * BYTES_POR_MB
 
     private val trava = Mutex()
 
@@ -54,10 +58,13 @@ object BibliotecaStore {
         nomeOriginal: String,
         origem: OrigemLivro = OrigemLivro.ARQUIVO,
         chaveOrigem: String? = null
-    ): LivroBiblioteca = importar(
-        ctx, { ctx.contentResolver.openInputStream(uri) }, nomeOriginal, ctx.contentResolver.getType(uri),
-        origem, chaveOrigem, null, null
-    )
+    ): LivroBiblioteca = withContext(Dispatchers.IO) {
+        val mime = ctx.contentResolver.getType(uri)
+        importar(
+            ctx, { ctx.contentResolver.openInputStream(uri) }, nomeOriginal, mime,
+            origem, chaveOrigem, null, null
+        )
+    }
 
     /**
      * Mesmo fluxo a partir de um [File] (usado pela busca de livros). **Não apaga a origem**: quem chama decide.
@@ -71,9 +78,41 @@ object BibliotecaStore {
         chaveOrigem: String?,
         tituloPreferido: String? = null,
         autorPreferido: String? = null
-    ): LivroBiblioteca = importar(
-        ctx, { arquivo.inputStream() }, nomeOriginal, null, origem, chaveOrigem, tituloPreferido, autorPreferido
-    )
+    ): LivroBiblioteca = withContext(Dispatchers.IO) {
+        if (arquivo.length() > LIMITE_BYTES) {
+            throw IOException("Arquivo acima do limite de $LIMITE_MB MB.")
+        }
+        importar(
+            ctx, { arquivo.inputStream() }, nomeOriginal, null, origem, chaveOrigem, tituloPreferido, autorPreferido
+        )
+    }
+
+    /**
+     * Copia [entrada] para [saida] atualizando [digest], interrompendo antes de gravar além de [limiteBytes].
+     * Evita gravar arquivos gigantes no disco antes da validação de leitura.
+     */
+    internal fun copiarComLimite(
+        entrada: InputStream,
+        saida: OutputStream,
+        digest: MessageDigest,
+        limiteBytes: Long = LIMITE_BYTES
+    ): Long {
+        var bytes = 0L
+        DigestInputStream(entrada, digest).use { lendo ->
+            val buffer = ByteArray(BUFFER)
+            while (true) {
+                val n = lendo.read(buffer)
+                if (n < 0) break
+                bytes += n
+                if (bytes > limiteBytes) {
+                    val mb = limiteBytes / BYTES_POR_MB
+                    throw IOException("Arquivo acima do limite de $mb MB.")
+                }
+                saida.write(buffer, 0, n)
+            }
+        }
+        return bytes
+    }
 
     private suspend fun importar(
         ctx: Context,
@@ -89,18 +128,9 @@ object BibliotecaStore {
         val temporario = File(raiz, ".importando-${UUID.randomUUID()}.part")
         try {
             val digest = MessageDigest.getInstance("SHA-256")
-            var bytes = 0L
-            (abrir() ?: throw IOException("Não foi possível abrir o arquivo.")).use { entrada ->
-                DigestInputStream(entrada, digest).use { lendo ->
-                    temporario.outputStream().use { saida ->
-                        val buffer = ByteArray(BUFFER)
-                        while (true) {
-                            val n = lendo.read(buffer)
-                            if (n < 0) break
-                            saida.write(buffer, 0, n)
-                            bytes += n
-                        }
-                    }
+            val bytes = (abrir() ?: throw IOException("Não foi possível abrir o arquivo.")).use { entrada ->
+                temporario.outputStream().use { saida ->
+                    copiarComLimite(entrada, saida, digest, LIMITE_BYTES)
                 }
             }
             if (bytes == 0L) throw IOException("O arquivo está vazio.")

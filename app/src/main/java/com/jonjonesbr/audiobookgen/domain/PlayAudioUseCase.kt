@@ -33,7 +33,10 @@ data class PlayerState(
  * Chame [release] em onCleared().
  */
 @Suppress("UnusedPrivateProperty")
-class PlayAudioUseCase(private val context: Context) {
+class PlayAudioUseCase(
+    private val context: Context,
+    private val criarMediaPlayer: () -> MediaPlayer = { MediaPlayer() }
+) {
 
     private val TAG = "PlayAudioUseCase"
 
@@ -44,35 +47,39 @@ class PlayAudioUseCase(private val context: Context) {
     val tocando: StateFlow<Boolean> = _tocando.asStateFlow()
 
     fun iniciarPreview(caminho: String) {
+        runCatching { previewPlayer?.release() }
+        previewPlayer = null
+        var novoPlayer: MediaPlayer? = null
         try {
-            previewPlayer?.release()
-            previewPlayer =
-                MediaPlayer().apply {
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_MEDIA)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build()
-                    )
-                    setDataSource(caminho)
-                    prepare()
-                    setOnCompletionListener {
-                        previewPlayer?.release()
-                        previewPlayer = null
-                        _tocando.value = false
-                    }
-                    setOnErrorListener { _, _, _ ->
-                        previewPlayer?.release()
-                        previewPlayer = null
-                        _tocando.value = false
-                        true
-                    }
-                    start()
+            val criado = criarMediaPlayer()
+            novoPlayer = criado
+            criado.apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                setDataSource(caminho)
+                prepare()
+                setOnCompletionListener {
+                    previewPlayer?.release()
+                    previewPlayer = null
+                    _tocando.value = false
                 }
+                setOnErrorListener { _, _, _ ->
+                    previewPlayer?.release()
+                    previewPlayer = null
+                    _tocando.value = false
+                    true
+                }
+                start()
+            }
+            previewPlayer = criado
             _tocando.value = true
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao tocar preview: ${e.message}", e)
-            previewPlayer?.release()
+            runCatching { novoPlayer?.release() }
             previewPlayer = null
             _tocando.value = false
         }
