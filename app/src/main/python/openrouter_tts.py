@@ -63,6 +63,11 @@ VOZES_PADRAO_EN = [
     {"id": "openrouter-rachel_en", "name": "Rachel (EN)", "model": "elevenlabs/eleven-turbo-v2", "voice": "Rachel", "language": "en"},
 ]
 
+_CATALOGO_POR_ID = {
+    item["id"]: (item["model"], item["voice"])
+    for item in (VOZES_PADRAO_PT + VOZES_PADRAO_EN)
+}
+
 
 class KeyManager:
     """Gerencia múltiplas chaves OpenRouter com rotação thread-safe."""
@@ -138,9 +143,13 @@ class OpenRouterTTSClient:
         if self._sess:
             await self._sess.close()
 
+    def _cache_voice_key(self) -> str:
+        return f"{self.model}/{self.voice}@{self.speed:.2f}"
+
     async def synth_chunk(self, text: str, out: str) -> bool:
         """Sintetiza texto para WAV via OpenRouter. Usa cache."""
-        cached = CACHE.get(text, f"{self.model}/{self.voice}", "openrouter")
+        cache_key = self._cache_voice_key()
+        cached = CACHE.get(text, cache_key, "openrouter")
         if cached:
             try:
                 Path(out).write_bytes(cached)
@@ -181,7 +190,7 @@ class OpenRouterTTSClient:
                             await asyncio.sleep(2)
                             continue
                         Path(out).write_bytes(audio)
-                        CACHE.put(text, f"{self.model}/{self.voice}", "openrouter", audio)
+                        CACHE.put(text, cache_key, "openrouter", audio)
                         return True
 
                     elif resp.status == 429:
@@ -267,28 +276,43 @@ class OpenRouterTTSClient:
 def extrair_modelo_voz(voice_id: str) -> tuple:
     """Extrai (model, voice_name) de um ID de voz OpenRouter.
 
-    Formato: "openrouter-<voice>" → modelo padrão (gpt-4o-mini-tts)
-    Ou: "openrouter-<model>-<voice>" → modelo específico
+    Prioriza o catálogo oficial (VOZES_PADRAO_PT + VOZES_PADRAO_EN), depois
+    prefixos explícitos ("openrouter-<model>-<voice>") e por fim "openrouter-<voice>".
     """
-    if not voice_id.startswith("openrouter-"):
+    if not voice_id or not voice_id.startswith("openrouter-"):
         return ("", "")
 
-    parts = voice_id.split("-", 2)
-    if len(parts) == 2:
-        # openrouter-coral → modelo padrão
-        return ("openai/gpt-4o-mini-tts", parts[1])
-    # openrouter-elevenlabs-rachel
-    model_key = parts[1]
-    voice = parts[2]
+    if voice_id in _CATALOGO_POR_ID:
+        return _CATALOGO_POR_ID[voice_id]
 
-    model_map = {
-        "openai-tts": "openai/tts-1",
-        "openai-tts-hd": "openai/tts-1-hd",
-        "gpt4o-tts": "openai/gpt-4o-mini-tts",
-        "elevenlabs": "elevenlabs/eleven-turbo-v2",
-    }
-    model = model_map.get(model_key, "openai/gpt-4o-mini-tts")
-    return (model, voice)
+    rest = voice_id[len("openrouter-"):]
+    if not rest:
+        return ("", "")
+
+    model_prefixes = (
+        ("openai-tts-hd-", "openai/tts-1-hd"),
+        ("openai-tts-", "openai/tts-1"),
+        ("gpt4o-tts-", "openai/gpt-4o-mini-tts"),
+        ("elevenlabs-", "elevenlabs/eleven-turbo-v2"),
+    )
+    for prefix, model in model_prefixes:
+        if rest.startswith(prefix):
+            raw_voice = rest[len(prefix):]
+            if not raw_voice:
+                return ("", "")
+            for candidate in MODEL_VOICES.get(model, []):
+                if candidate.lower() == raw_voice.lower():
+                    return (model, candidate)
+            return (model, raw_voice)
+
+    for candidate in MODEL_VOICES.get("openai/gpt-4o-mini-tts", []):
+        if candidate.lower() == rest.lower():
+            return ("openai/gpt-4o-mini-tts", candidate)
+    for candidate in MODEL_VOICES.get("elevenlabs/eleven-turbo-v2", []):
+        if candidate.lower() == rest.lower():
+            return ("elevenlabs/eleven-turbo-v2", candidate)
+
+    return ("openai/gpt-4o-mini-tts", rest)
 
 
 def montar_catalogo_vozes() -> List[dict]:
