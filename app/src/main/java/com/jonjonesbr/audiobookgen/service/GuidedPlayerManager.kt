@@ -1338,6 +1338,56 @@ class GuidedPlayerManager(
     }
 
     /**
+     * Libera áudios pré-sintetizados em memória sob pressão do sistema, preservando o parágrafo
+     * em reprodução ou carregamento e o imediatamente seguinte para não causar corte audível nem
+     * mudança de estado.
+     */
+    fun soltarCacheEmMemoria() {
+        val st = _state.value
+        val ativo = (st.isPlaying || st.isLoading) && st.index >= 0
+        if (!ativo) {
+            limparAntecipacao()
+            prefetchedPaths.clear()
+            cacheOracoes.clear()
+            return
+        }
+        val manterAte = st.index + 1
+        fun foraDaJanelaCurta(chave: Int) = chave < st.index || chave > manterAte
+        preparoPorParagrafo
+            .filter { (chave, _) -> foraDaJanelaCurta(chave) }
+            .forEach { (chave, preparo) ->
+                preparo.job.cancel()
+                preparoPorParagrafo.remove(chave)
+            }
+        val descartar: (Int, PrefetchedAudio) -> Boolean = { chave, _ -> foraDaJanelaCurta(chave) }
+        removerAudios(prefetchedPaths, descartar)
+        removerAudios(primeiraOracaoPorParagrafo, descartar)
+        removerAudios(segundaOracaoPorParagrafo, descartar)
+    }
+
+    internal fun popularCacheParaTeste(
+        indicesPrefetch: List<Int>,
+        indiceAtivo: Int = -1,
+        tocando: Boolean = false
+    ) {
+        prefetchedPaths.clear()
+        primeiraOracaoPorParagrafo.clear()
+        segundaOracaoPorParagrafo.clear()
+        cacheOracoes.clear()
+        val ritmoTeste = RITMO_BASE.toInt()
+        indicesPrefetch.forEach { idx ->
+            prefetchedPaths[idx] = PrefetchedAudio("/tmp/p$idx.wav", "voz", ritmoTeste, idx)
+            primeiraOracaoPorParagrafo[idx] = PrefetchedAudio("/tmp/o1_$idx.wav", "voz", ritmoTeste, idx)
+        }
+        cacheOracoes[0] = PrefetchedAudio("/tmp/oracao0.wav", "voz", ritmoTeste, 0)
+        _state.value = GuidedState(index = indiceAtivo, isPlaying = tocando, isLoading = false)
+    }
+
+    internal fun indicesEmCacheParaTeste(): Set<Int> = prefetchedPaths.keys.toSet()
+
+    internal fun temOracoesEmCacheParaTeste(): Boolean = cacheOracoes.isNotEmpty()
+
+    /**
      * Toca o parágrafo corrente como sequência de orações, sintetizando cada oração com a
      * PRÓXIMA já em andamento (1 à frente). Resultado: a primeira voz chega depois de ~1
      * oração de síntese (segundos) e o silêncio entre orações fica ~0 mesmo com RTF > 1 —

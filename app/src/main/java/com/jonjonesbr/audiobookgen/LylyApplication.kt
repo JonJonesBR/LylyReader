@@ -5,10 +5,13 @@ import com.jonjonesbr.audiobookgen.util.NativeCrashDetector
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import android.app.ActivityManager
 import android.app.Application
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.os.Process
 import android.util.Log
+import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.tts.SupertonicAssetManager
+import com.jonjonesbr.audiobookgen.ui.CapasDaBiblioteca
 import kotlin.concurrent.thread
 
 class LylyApplication : Application() {
@@ -118,6 +121,36 @@ class LylyApplication : Application() {
 
     private fun isMainProcess(): Boolean = currentProcessName() == packageName
 
+    @Suppress("DEPRECATION")
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (!isMainProcess()) return
+        aliviarMemoriaSobPressao(level, portasAlivioPadrao())
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onLowMemory() {
+        super.onLowMemory()
+        if (!isMainProcess()) return
+        aliviarMemoriaSobPressao(ComponentCallbacks2.TRIM_MEMORY_COMPLETE, portasAlivioPadrao())
+    }
+
+    private fun portasAlivioPadrao() = PortasAlivioMemoria(
+        reduzirBitmaps = { CapasDaBiblioteca.reduzirCache() },
+        limparBitmaps = { CapasDaBiblioteca.limparCache() },
+        soltarAudioMemoria = { GuidedPlaybackBridge.manager?.soltarCacheEmMemoria() },
+        apararAudioDisco = {
+            thread(name = "trim-audio-cache") {
+                runCatching { com.jonjonesbr.audiobookgen.tts.TtsChunkCache.aparaSeNecessario(this) }
+            }
+        },
+        coletarPythonSeIniciado = {
+            if (com.chaquo.python.Python.isStarted()) {
+                runCatching { com.chaquo.python.Python.getInstance().getModule("gc").callAttr("collect") }
+            }
+        }
+    )
+
     private fun currentProcessName(): String {
         // API 28+: API direta; abaixo disso, varre a lista de processos pelo PID.
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
@@ -139,4 +172,35 @@ class LylyApplication : Application() {
             defaultHandler?.uncaughtException(thread, throwable)
         }
     }
+}
+
+internal data class PortasAlivioMemoria(
+    val reduzirBitmaps: () -> Unit,
+    val limparBitmaps: () -> Unit,
+    val soltarAudioMemoria: () -> Unit,
+    val apararAudioDisco: () -> Unit,
+    val coletarPythonSeIniciado: () -> Unit
+)
+
+/**
+ * Reage a callbacks de memória do Android no processo principal:
+ * - Ignora níveis abaixo de `TRIM_MEMORY_RUNNING_LOW`.
+ * - Em `TRIM_MEMORY_RUNNING_LOW` ou `TRIM_MEMORY_UI_HIDDEN`, reduz o cache de capas pela metade;
+ *   nos níveis mais severos (`TRIM_MEMORY_RUNNING_CRITICAL`, `TRIM_MEMORY_BACKGROUND`, etc.), esvazia-o.
+ * - Sempre solta o excesso de prefetch da leitura guiada, apara o cache de áudio em disco e pede
+ *   `gc.collect()` ao Python caso a VM já esteja iniciada.
+ */
+@Suppress("DEPRECATION")
+internal fun aliviarMemoriaSobPressao(nivel: Int, portas: PortasAlivioMemoria) {
+    if (nivel < ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) return
+    val pressaoModerada = nivel == ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW ||
+        nivel == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN
+    if (pressaoModerada) {
+        portas.reduzirBitmaps()
+    } else {
+        portas.limparBitmaps()
+    }
+    portas.soltarAudioMemoria()
+    portas.apararAudioDisco()
+    portas.coletarPythonSeIniciado()
 }

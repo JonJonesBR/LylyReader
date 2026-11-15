@@ -125,6 +125,7 @@ class CapaView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
 /** Capas reais (`capa.jpg` da biblioteca) com cache em memória; falha = null (a tela usa a capa tipográfica). */
 object CapasDaBiblioteca {
     private const val CACHE_KB = 6 * 1024
+    private const val DIVISOR_CACHE_PRESSAO = 2
     private const val LADO_MAX_PX = 480
 
     private val cache = object : LruCache<String, Bitmap>(CACHE_KB) {
@@ -132,6 +133,22 @@ object CapasDaBiblioteca {
     }
 
     fun emCache(arquivo: File): Bitmap? = cache.get(chave(arquivo))
+
+    /** Reduz o cache de bitmaps pela metade em pressão moderada de memória. */
+    fun reduzirCache() {
+        cache.trimToSize(CACHE_KB / DIVISOR_CACHE_PRESSAO)
+    }
+
+    /** Esvazia todo o cache de bitmaps em pressão crítica de memória. */
+    fun limparCache() {
+        cache.evictAll()
+    }
+
+    internal fun tamanhoCacheKb(): Int = cache.size()
+
+    internal fun colocarEmCacheParaTeste(chave: String, bitmap: Bitmap) {
+        cache.put(chave, bitmap)
+    }
 
     private fun chave(arquivo: File) = arquivo.absolutePath + "@" + arquivo.lastModified()
 
