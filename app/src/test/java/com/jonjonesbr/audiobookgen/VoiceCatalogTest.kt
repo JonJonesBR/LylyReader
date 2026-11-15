@@ -233,11 +233,11 @@ class VoiceCatalogTest {
 
     @Test fun forEngineKokoro() {
         val voices = VoiceCatalog.forEngine("kokoro")
-        // Kokoro base (Santa + 24 inglês), Paradee (Dora/Alex pt-BR + 5 v1.3 EN/ES), MMS e dez pacotes Piper.
-        assertEquals(43, voices.size)
-        assertEquals(43, voices.count { it.engine == "kokoro" })
-        // Vozes pt-BR do Kokoro, MMS e os sete pacotes Piper brasileiros.
-        assertEquals(11, voices.count { it.language == "pt-BR" })
+        // Paradee (Dora/Alex pt-BR + 5 v1.3 EN/ES), MMS e dez pacotes Piper.
+        assertEquals(18, voices.size)
+        assertEquals(18, voices.count { it.engine == "kokoro" })
+        // Vozes pt-BR do Paradee (Dora e Alex), MMS e os sete pacotes Piper brasileiros.
+        assertEquals(10, voices.count { it.language == "pt-BR" })
         assertTrue(voices.any { it.id == "kokoro-em-alex" && it.language == "es-ES" })
         // O catálogo bruto ainda traz a voz MMS; quem a esconde sem instalação é a regra abaixo.
         assertTrue(voices.any { it.id == "mms-por::main-pt" })
@@ -268,30 +268,29 @@ class VoiceCatalogTest {
         assertFalse(consultou)
     }
 
-    @Test fun catalogoKokoroIncluiAsVinteEOitoVozesInglesasDoBundle() {
+    @Test fun catalogoKokoroIncluiAsQuatroVozesInglesasDoParadee() {
         val voices = VoiceCatalog.forEngine("kokoro").filter { it.id.startsWith("kokoro-en-") }
         val params = voices.mapNotNull {
             com.jonjonesbr.audiobookgen.tts.kokoroVoiceParams(it.id)
         }
 
-        assertEquals(28, voices.size)
-        assertEquals(28, params.size)
-        assertEquals(listOf(3, 22, 18, 25), params.take(4).map { it.sid })
-        assertEquals((0..27).toList(), params.map { it.sid }.sorted())
+        assertEquals(4, voices.size)
+        assertEquals(4, params.size)
+        assertEquals(listOf(3, 22, 18, 25), params.map { it.sid })
         assertTrue(voices.all { it.language == "en-US" || it.language == "en-GB" })
-        assertEquals(20, voices.count { it.language == "en-US" })
-        assertEquals(8, voices.count { it.language == "en-GB" })
+        assertEquals(2, voices.count { it.language == "en-US" })
+        assertEquals(2, voices.count { it.language == "en-GB" })
         assertTrue(params.all { it.lang == null })
 
         val groups = VoiceCatalog.agruparPorIdiomaPreferido(voices, "en-US")
-        assertEquals(20, groups.recomendadas.size)
-        assertEquals(8, groups.outras.size)
+        assertEquals(2, groups.recomendadas.size)
+        assertEquals(2, groups.outras.size)
     }
 
     @Test fun findAnyKokoro() {
         assertEquals("Dora", VoiceCatalog.findAny("kokoro-pf-dora")?.name)
         assertEquals("Alex", VoiceCatalog.findAny("kokoro-pm-alex")?.name)
-        assertEquals("Santa", VoiceCatalog.findAny("kokoro-pm-santa")?.name)
+        assertNull(VoiceCatalog.findAny("kokoro-pm-santa"))
     }
 
     @Test fun effectiveEngineKokoro() {
@@ -300,7 +299,9 @@ class VoiceCatalogTest {
 
     @Test fun modelRootIdKokoroCompartilhaBundle() {
         assertEquals("paradee-ptbr", VoiceCatalog.modelRootId("kokoro-pf-dora"))
-        assertEquals("kokoro", VoiceCatalog.modelRootId("kokoro-pm-santa"))
+        assertEquals("paradee-ptbr", VoiceCatalog.modelRootId("kokoro-pm-santa"))
+        assertEquals("paradee-v13", VoiceCatalog.modelRootId("kokoro-en-af-heart"))
+        assertEquals("paradee-v13", VoiceCatalog.modelRootId("kokoro-en-af-alloy"))
     }
 
     @Test fun previewClipUrlKokoroApontaParaClipHospedado() {
@@ -309,9 +310,10 @@ class VoiceCatalogTest {
             VoiceCatalog.previewClipUrl("kokoro-pf-dora")
         )
         assertEquals(
-            "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/kokoro-preview-pm-santa.mp3",
-            VoiceCatalog.previewClipUrl("kokoro-pm-santa")
+            "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/kokoro-preview-en-af-heart.mp3",
+            VoiceCatalog.previewClipUrl("kokoro-en-af-heart")
         )
+        assertNull(VoiceCatalog.previewClipUrl("kokoro-pm-santa"))
         assertEquals(null, VoiceCatalog.previewClipUrl("pt-BR-ThalitaMultilingualNeural"))
     }
 
@@ -423,14 +425,14 @@ class VoiceCatalogTest {
 
     // ── Modelo de pacotes (V6 T2.1 — RN-3: 1 download habilita N vozes) ────────────────
 
-    @Test fun pacoteParadeeHabilitaDoraEAlexSeparadoDoKokoro() {
+    @Test fun pacoteParadeeHabilitaDoraEAlexEV13SemPacoteKokoroAntigo() {
         val dora = VoiceCatalog.pacoteDaVoz("kokoro-pf-dora")
         val alex = VoiceCatalog.pacoteDaVoz("kokoro-pm-alex")
         val heart = VoiceCatalog.pacoteDaVoz("kokoro-en-af-heart")
         val emAlex = VoiceCatalog.pacoteDaVoz("kokoro-em-alex")
         val santa = VoiceCatalog.pacoteDaVoz("kokoro-pm-santa")
         // Dora e Alex compartilham o pacote paradee-ptbr (17 MB); as 5 v1.3 compartilham paradee-v13 (9 MB);
-        // Santa e as 24 inglesas restantes ficam no pacote Kokoro (350 MB).
+        // o pacote antigo "kokoro" (350 MB) foi removido.
         assertEquals("paradee-ptbr", dora?.id)
         assertEquals(dora, alex)
         assertEquals(listOf("kokoro-pf-dora", "kokoro-pm-alex"), dora?.vozes?.map { it.id })
@@ -448,10 +450,8 @@ class VoiceCatalogTest {
             heart?.vozes?.map { it.id }
         )
         assertEquals(9, heart?.tamanhoDownloadMb)
-        assertEquals("kokoro", santa?.id)
-        assertEquals(25, santa?.vozes?.size)
-        assertEquals(350, santa?.tamanhoDownloadMb)
-        assertEquals(25, santa?.vozes?.count { it.engine == "kokoro" })
+        assertNull(santa)
+        assertTrue(VoiceCatalog.pacotesRegistrados().none { it.id == "kokoro" })
     }
 
     @Test fun pacoteParadeeFicaAntesDoKokoroEDefaultSegueDora() {
@@ -488,14 +488,12 @@ class VoiceCatalogTest {
     }
 
     @Test fun pacotesDoEngineAgrupaPorMotor() {
-        // "paradee-ptbr", "kokoro" e "mms-por" (Parte A) são pacotes DISTINTOS que compartilham o motor
-        // "kokoro" — cada um é seu próprio download/isPronto/delete, só o motor de síntese é
-        // o mesmo (KokoroTtsEngine sabe as 2 arquiteturas, kokoro e vits).
+        // "paradee-ptbr", "paradee-v13" e "mms-por" (Parte A) são pacotes DISTINTOS que compartilham o motor
+        // "kokoro" — cada um é seu próprio download/isPronto/delete.
         assertEquals(
             listOf(
                 "paradee-ptbr",
                 "paradee-v13",
-                "kokoro",
                 "mms-por",
                 "piper-ptbr-cadu",
                 "piper-ptbr-dii",
@@ -546,12 +544,13 @@ class VoiceCatalogTest {
         assertEquals("onnx", VoiceCatalog.effectiveEngine("supertonic-voz-antiga", "edge"))
         assertEquals("kokoro", VoiceCatalog.effectiveEngine("kokoro-voz-antiga", "edge"))
         assertEquals("supertonic-m1", VoiceCatalog.modelRootId("supertonic-voz-antiga"))
-        assertEquals("kokoro", VoiceCatalog.modelRootId("kokoro-voz-antiga"))
+        assertEquals("paradee-ptbr", VoiceCatalog.modelRootId("kokoro-voz-antiga"))
     }
 
     @Test fun previewAssetNameDaFamiliaKokoroMmsEPiper() {
         assertEquals("kokoro-preview-pf-dora.mp3", VoiceCatalog.previewAssetName("kokoro-pf-dora"))
-        assertEquals("kokoro-preview-en-af-alloy.mp3", VoiceCatalog.previewAssetName("kokoro-en-af-alloy"))
+        assertEquals("kokoro-preview-en-af-heart.mp3", VoiceCatalog.previewAssetName("kokoro-en-af-heart"))
+        assertNull(VoiceCatalog.previewAssetName("kokoro-en-af-alloy"))
         assertEquals("mms-preview-main-pt.mp3", VoiceCatalog.previewAssetName("mms-por::main-pt"))
         assertEquals("piper-preview-piper-ptbr-cadu.mp3", VoiceCatalog.previewAssetName("piper-ptbr-cadu::main-pt"))
         assertEquals(
@@ -567,7 +566,8 @@ class VoiceCatalogTest {
     }
 
     @Test fun previewClipUrlRemotaSoParaKokoroMmsESupertonic() {
-        assertTrue(VoiceCatalog.previewClipUrl("kokoro-en-af-alloy")!!.endsWith("/kokoro-preview-en-af-alloy.mp3"))
+        assertTrue(VoiceCatalog.previewClipUrl("kokoro-en-af-heart")!!.endsWith("/kokoro-preview-en-af-heart.mp3"))
+        assertNull(VoiceCatalog.previewClipUrl("kokoro-en-af-alloy"))
         assertTrue(VoiceCatalog.previewClipUrl("mms-por::main-pt")!!.endsWith("/mms-preview-main-pt.mp3"))
         assertTrue(VoiceCatalog.previewClipUrl("supertonic-f1", "es")!!.endsWith("/supertonic-preview-f1-es.mp3"))
         assertNull(VoiceCatalog.previewClipUrl("piper-ptbr-cadu::main-pt"))

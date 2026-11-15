@@ -73,10 +73,9 @@ e seguem a licença própria dele (OpenRAIL-M), não a MIT do código.
 Os MP3 de prévia são frases curtas geradas pelas próprias vozes (`scripts/gerar_previas_offline.py`).
 Cada prévia segue a licença da voz que a gerou, **não a GPL do app**:
 
-- `kokoro-preview-*`: Kokoro, Apache-2.0. Exceção: `kokoro-preview-pf-dora`, `kokoro-preview-pm-alex`,
-  `kokoro-preview-en-af-heart`, `kokoro-preview-en-bf-isabella`, `kokoro-preview-en-am-puck`,
-  `kokoro-preview-en-bm-fable` e `kokoro-preview-em-alex` são geradas pelo Paradee-8M (Apache-2.0,
-  ver seção abaixo).
+- `kokoro-preview-pf-dora`, `kokoro-preview-pm-alex`, `kokoro-preview-en-af-heart`,
+  `kokoro-preview-en-bf-isabella`, `kokoro-preview-en-am-puck`, `kokoro-preview-en-bm-fable` e
+  `kokoro-preview-em-alex`: geradas pelo Paradee-8M (Apache-2.0, ver seção abaixo).
 - `supertonic-preview-*`: Supertonic, OpenRAIL-M (ver seção acima).
 - `piper-preview-piper-ptbr-cadu`, `-faber`, `-jeff`: Piper, dataset CC0.
 - `piper-preview-piper-ptbr-edresson`: Piper, corpus CC BY 4.0.
@@ -113,7 +112,6 @@ comercial. As fontes e atribuições de cada voz estão em `PiperVitsModelManage
 ## Modelos de voz baixados em tempo de execução (não incluídos no repositório)
 
 Cada pacote mantém sua própria licença; confira antes de redistribuir:
-- Kokoro — Apache-2.0.
 - Paradee-8M pt-BR (Dora e Alex, destilado do Kokoro-82M) — Apache-2.0, de
   https://huggingface.co/eraldohug/Paradee-8M-PtBr; os dois ONNX int8 são espelhados sem modificação em
   https://huggingface.co/JonJonesBR/lylyreader-tts-models (pasta `paradee/ptbr`).

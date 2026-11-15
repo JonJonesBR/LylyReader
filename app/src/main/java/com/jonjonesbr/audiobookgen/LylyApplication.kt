@@ -98,6 +98,8 @@ class LylyApplication : Application() {
             SupertonicAssetManager.copyBundledVoiceStyles(this)
         }
         thread(name = "audio-cache-teto") {
+            // Remove o bundle antigo do Kokoro-82M (~330 MB), substituído pelo Paradee.
+            runCatching { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.delete(this) }
             // Mantém o cache de áudio das vozes dentro do teto definido em Ajustes.
             com.jonjonesbr.audiobookgen.tts.TtsChunkCache.aparaSeNecessario(this)
         }

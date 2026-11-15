@@ -25,7 +25,8 @@ class MotorMedidoTest(unittest.TestCase):
         self.assertEqual("android", vm.motor_medido("android::pkg::voz", "android"))
         self.assertEqual("onnx", vm.motor_medido("supertonic-m1", "onnx"))
         self.assertEqual("pocket", vm.motor_medido("pocket-ptbr-rafael", "pocket"))
-        self.assertEqual("kokoro", vm.motor_medido("kokoro-en-am-santa", "kokoro"))
+        self.assertEqual("paradee", vm.motor_medido("kokoro-en-am-santa", "kokoro"))
+        self.assertEqual("paradee", vm.motor_medido("kokoro-pm-santa", "kokoro"))
 
     def test_dora_e_alex_sao_medidas_como_paradee(self):
         for voz in (
@@ -223,7 +224,7 @@ CHAVES_DE_MEDICAO_ESPERADAS = {
     "kokoro-en-am-puck": "paradee",
     "kokoro-en-bm-fable": "paradee",
     "kokoro-em-alex": "paradee",
-    "kokoro-en-am-santa": "kokoro",
+    "kokoro-en-am-santa": "paradee",
     "mms-por::main-pt": "kokoro",
     "pocket-ptbr-rafael": "pocket",
     "supertonic-m1": "onnx",

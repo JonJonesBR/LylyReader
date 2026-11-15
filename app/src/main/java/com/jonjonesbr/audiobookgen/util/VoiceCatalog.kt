@@ -281,37 +281,6 @@ object VoiceCatalog {
         )
     )
 
-    // Kokoro (offline, Sherpa-ONNX local, FP32 ~350MB — download na 1ª seleção).
-    // Vozes pt-BR validadas por ouvido com lang="pt-BR" explícito (RN-1 do V6).
-    // sid/lang por voz vivem no KokoroTtsEngine.kokoroVoiceParams — a lista e o engine são
-    // mantidos em sincronia pelo teste KokoroTtsEngineTest/VoiceCatalogTest.
-    // Dora/Alex e as 4 vozes EN do Paradee v1.3 saíram para [paradeeVoices]/[paradeeV13Voices];
-    // kokoroVoiceParams ainda as conhece (guard do catálogo).
-    private val kokoroVoices = listOf(
-        VoiceOption(
-            "kokoro-pm-santa", "Santa", "pt-BR", true, "kokoro",
-            description = "Voz Kokoro (Sherpa-ONNX local) · Português do Brasil"
-        )
-    ) + listOf(
-        "af_alloy", "af_aoede", "af_bella", "af_jessica", "af_kore",
-        "af_nicole", "af_nova", "af_river", "af_sarah", "af_sky", "am_adam",
-        "am_echo", "am_eric", "am_fenrir", "am_liam", "am_michael", "am_onyx",
-        "am_santa", "bf_alice", "bf_emma", "bf_lily",
-        "bm_daniel", "bm_george", "bm_lewis"
-    ).map { voiceId ->
-        val prefix = voiceId.substringBefore('_')
-        val name = voiceId.substringAfter('_').replaceFirstChar { it.uppercase() }
-        val catalogId = voiceId.replace('_', '-')
-        val language = if (prefix.startsWith("b")) "en-GB" else "en-US"
-        VoiceOption(
-            id = "kokoro-en-$catalogId",
-            name = name,
-            language = language,
-            isMale = prefix.endsWith("m"),
-            engine = "kokoro"
-        )
-    }
-
     // MMS-TTS Português (offline, Sherpa-ONNX local, VITS — V6 Parte A, ~100MB).
     // Voz única (modelo single-speaker do Meta) — id "main-pt" é o vozIdInterno que o
     // BYOMManager reconstrói a partir do manifesto.json do bundle (id "main" + sufixo "-pt"
@@ -421,7 +390,7 @@ object VoiceCatalog {
             },
             idiomas = listOf("en-US")
         ),
-        // Paradee (Dora e Alex). Fica ANTES do pacote "kokoro": defaultFor("kokoro") segue Dora.
+        // Paradee (Dora e Alex): primeiro pacote do engine "kokoro", então defaultFor("kokoro") segue Dora.
         pacoteParadee(
             id = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.PACOTE_ID,
             nomeExibicao = "Paradee · Português do Brasil",
@@ -435,21 +404,6 @@ object VoiceCatalog {
             tamanhoDownloadMb = 9,
             vozes = paradeeV13Voices,
             idiomas = listOf("en-US", "en-GB", "es-ES")
-        ),
-        PacoteVozes(
-            id = "kokoro",
-            engine = "kokoro",
-            nomeExibicao = "Kokoro (Sherpa-ONNX local)",
-            tamanhoDownloadMb = 350,
-            vozes = kokoroVoices,
-            isPronto = { ctx -> com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(ctx) },
-            tamanhoOcupadoBytes = { ctx ->
-                com.jonjonesbr.audiobookgen.tts.KokoroModelManager.tamanhoOcupado(ctx)
-            },
-            download = { ctx, progresso ->
-                com.jonjonesbr.audiobookgen.tts.KokoroModelManager.download(ctx, progresso)
-            },
-            delete = { ctx -> com.jonjonesbr.audiobookgen.tts.KokoroModelManager.delete(ctx) }
         ),
         PacoteVozes(
             id = "mms-por",
@@ -696,12 +650,15 @@ object VoiceCatalog {
         }
     }
 
-    /** Retorna a raiz do modelo/pacote que a voz compartilha (ex.: kokoro → "kokoro"). */
+    /** Retorna a raiz do modelo/pacote que a voz compartilha (ex.: kokoro-pf-dora → "paradee-ptbr"). */
     fun modelRootId(voiceId: String): String {
         pacoteDaVoz(voiceId)?.let { return it.id }
         return when {
             voiceId.startsWith("supertonic-") -> "supertonic-m1"
-            voiceId.startsWith("kokoro-") -> "kokoro"
+            voiceId.startsWith("kokoro-") -> {
+                val migrada = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.migrarVozKokoroRemovida(voiceId)
+                pacoteDaVoz(migrada)?.id ?: com.jonjonesbr.audiobookgen.tts.ParadeeVozes.PACOTE_ID
+            }
             else -> voiceId
         }
     }
@@ -754,7 +711,8 @@ object VoiceCatalog {
      * quando o asset embarcado não existe para a voz.
      */
     fun previewClipUrl(vozId: String, idioma: String = IDIOMA_PREVIA_SUPERTONIC): String? {
-        val remota = regexVozSupertonic.matches(vozId) || vozId.startsWith("kokoro-") ||
+        val remota = regexVozSupertonic.matches(vozId) ||
+            com.jonjonesbr.audiobookgen.tts.ParadeeVozes.ehParadee(vozId) ||
             vozId == ID_VOZ_MMS_PT
         if (!remota) return null
         val nomeArquivo = previewAssetName(vozId, idioma) ?: return null
@@ -767,8 +725,9 @@ object VoiceCatalog {
      * - Supertonic: `supertonic-preview-<estilo>-<idioma>.mp3` (estilo = f1..f5/m1..m5, sem o
      *   prefixo `supertonic-` e sem `-pt`; idioma = pt/es/en via [idiomaPreviaSupertonic]).
      *   Os estilos `-pt` têm só o clipe pt; f1/m1 multilíngues têm um clipe por idioma.
-     * - Kokoro: `kokoro-preview-<id sem "kokoro-">.mp3` (ex.: kokoro-en-af-alloy →
-     *   kokoro-preview-en-af-alloy.mp3; kokoro-pf-dora → kokoro-preview-pf-dora.mp3).
+     * - Paradee (`kokoro-*` em [ParadeeVozes]): `kokoro-preview-<id sem "kokoro-">.mp3`
+     *   (ex.: kokoro-en-af-heart → kokoro-preview-en-af-heart.mp3; kokoro-pf-dora →
+     *   kokoro-preview-pf-dora.mp3).
      * - MMS-por (`mms-por::main-pt`): `mms-preview-main-pt.mp3`.
      * - Piper (`<idDoPacote>::main` ou `::main-pt`, pacotes de [PiperVitsModelManager.models]):
      *   `piper-preview-<idDoPacote>.mp3`.
@@ -780,7 +739,9 @@ object VoiceCatalog {
             val estilo = vozId.removePrefix("supertonic-").removeSuffix("-pt")
             return "supertonic-preview-$estilo-${idiomaPreviaSupertonic(vozId, idioma)}.mp3"
         }
-        if (vozId.startsWith("kokoro-")) return "kokoro-preview-${vozId.removePrefix("kokoro-")}.mp3"
+        if (com.jonjonesbr.audiobookgen.tts.ParadeeVozes.ehParadee(vozId)) {
+            return "kokoro-preview-${vozId.removePrefix("kokoro-")}.mp3"
+        }
         if (vozId == ID_VOZ_MMS_PT) return "mms-preview-main-pt.mp3"
         val pacote = vozId.substringBefore("::", missingDelimiterValue = "")
         if (pacote.isNotEmpty() &&

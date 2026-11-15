@@ -14,15 +14,15 @@ class VozesKokoroPtTest(unittest.TestCase):
     reconhecidas como pt-BR pelo dispatcher — se não, a normalização do texto (números,
     datas, moedas) roda em inglês antes da síntese."""
 
-    def test_tres_vozes_pt_kokoro_sao_detectadas_como_pt(self):
-        for voz in ("kokoro-pf-dora", "kokoro-pm-alex", "kokoro-pm-santa"):
+    def test_duas_vozes_pt_kokoro_sao_detectadas_como_pt(self):
+        for voz in ("kokoro-pf-dora", "kokoro-pm-alex"):
             self.assertTrue(_qualquer_voz_pt(voz), f"{voz} deveria ser detectada como pt")
 
-    def test_lista_explicita_tem_exatamente_as_tres_vozes_pt(self):
+    def test_lista_explicita_tem_exatamente_as_duas_vozes_pt(self):
         # Se uma voz pt nova for adicionada no VoiceCatalog (Kotlin), este teste quebra até
         # a lista Python ser atualizada junto — proteção contra dessincronização.
         self.assertEqual(
-            {"kokoro-pf-dora", "kokoro-pm-alex", "kokoro-pm-santa"},
+            {"kokoro-pf-dora", "kokoro-pm-alex"},
             _KOKORO_VOZES_PT,
         )
 

@@ -61,40 +61,15 @@ internal const val KOKORO_MODEL_DIR = "kokoro"
  * `lang = null`, conforme o caminho oficial do sherpa com o lexicon en.
  */
 private val KOKORO_ENGLISH_SIDS = mapOf(
-    "kokoro-en-af-alloy" to 0,
-    "kokoro-en-af-aoede" to 1,
-    "kokoro-en-af-bella" to 2,
     "kokoro-en-af-heart" to 3,
-    "kokoro-en-af-jessica" to 4,
-    "kokoro-en-af-kore" to 5,
-    "kokoro-en-af-nicole" to 6,
-    "kokoro-en-af-nova" to 7,
-    "kokoro-en-af-river" to 8,
-    "kokoro-en-af-sarah" to 9,
-    "kokoro-en-af-sky" to 10,
-    "kokoro-en-am-adam" to 11,
-    "kokoro-en-am-echo" to 12,
-    "kokoro-en-am-eric" to 13,
-    "kokoro-en-am-fenrir" to 14,
-    "kokoro-en-am-liam" to 15,
-    "kokoro-en-am-michael" to 16,
-    "kokoro-en-am-onyx" to 17,
     "kokoro-en-am-puck" to 18,
-    "kokoro-en-am-santa" to 19,
-    "kokoro-en-bf-alice" to 20,
-    "kokoro-en-bf-emma" to 21,
     "kokoro-en-bf-isabella" to 22,
-    "kokoro-en-bf-lily" to 23,
-    "kokoro-en-bm-daniel" to 24,
-    "kokoro-en-bm-fable" to 25,
-    "kokoro-en-bm-george" to 26,
-    "kokoro-en-bm-lewis" to 27
+    "kokoro-en-bm-fable" to 25
 )
 
 internal fun kokoroVoiceParams(voiceId: String): KokoroVoiceParams? = when (voiceId) {
     "kokoro-pf-dora" -> KokoroVoiceParams(sid = 42, lang = "pt-BR")
     "kokoro-pm-alex" -> KokoroVoiceParams(sid = 43, lang = "pt-BR")
-    "kokoro-pm-santa" -> KokoroVoiceParams(sid = 44, lang = "pt-BR")
     // Paradee v1.3 em espanhol (roteada para o processo :paradee; entrada mantida para o guard do catálogo).
     "kokoro-em-alex" -> KokoroVoiceParams(sid = 28, lang = "es")
     else -> KOKORO_ENGLISH_SIDS[voiceId]?.let { sid -> KokoroVoiceParams(sid, lang = null) }
@@ -279,10 +254,11 @@ class KokoroTtsEngine(
     @Suppress("TooGenericExceptionCaught", "CyclomaticComplexMethod", "LongMethod")
     suspend fun synthesize(texto: String, voiceId: String, outputFile: File): Result<File> =
         withContext(Dispatchers.IO) {
-            // Dora e Alex (ids kokoro-*) são sintetizadas pelo Paradee (processo :paradee). Só o engine
+            val vozEfetiva = ParadeeVozes.migrarVozKokoroRemovida(voiceId)
+            // Vozes Paradee (ids kokoro-*) são sintetizadas pelo Paradee (processo :paradee). Só o engine
             // da app delega: no processo :sherpa (allowIsolatedProcessDelegation=false) nunca entra aqui.
-            if (allowIsolatedProcessDelegation && ParadeeVozes.ehParadee(voiceId)) {
-                return@withContext ParadeeTtsEngine(context).synthesize(texto, voiceId, outputFile)
+            if (allowIsolatedProcessDelegation && ParadeeVozes.ehParadee(vozEfetiva)) {
+                return@withContext ParadeeTtsEngine(context).synthesize(texto, vozEfetiva, outputFile)
             }
             // Vozes importadas (BYOM, Parte B do V6) usam o formato "<packId>::<vozId>" — o
             // Kokoro Base nunca usa "::" nos próprios ids ("kokoro-pf-dora" etc.), então isso

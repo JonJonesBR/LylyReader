@@ -27,7 +27,7 @@ from config_android import TTS_TIMEOUT, logger
 from text_normalizer import normalizar as _normalizar_texto
 import pronunciation_dict as _pronuncias
 from erros_tts import ErroDeChave
-from velocidade_motores import VOZES_PARADEE
+from velocidade_motores import VOZES_PARADEE, migrar_voz_kokoro_removida
 
 _MAX_RETRIES = 5
 _CONCAT_BATCH_SIZE = 50  # Máx. de entradas por operação de concat
@@ -497,12 +497,12 @@ _OPENROUTER_VOZES_PT = frozenset({
     "coral", "nova", "sage", "rachel",
 })
 
-# Vozes pt-BR do Kokoro (bundle sherpa-onnx v1.0). RN-1 do PLANO_MELHORIAS_V6: os ids
-# "kokoro-pf-dora/pm-alex/pm-santa" NÃO carregam "-pt-" nem sufixo "-pt" — a heurística de
+# Vozes pt-BR do Paradee (ids kokoro-*). RN-1 do PLANO_MELHORIAS_V6: os ids
+# "kokoro-pf-dora/pm-alex" NÃO carregam "-pt-" nem sufixo "-pt" — a heurística de
 # string abaixo não os detectaria e a normalização cairia em "en" (números/datas lidos em
 # inglês). Lista explícita = mesma regra do lang explícito por voz no lado Kotlin.
 _KOKORO_VOZES_PT = frozenset({
-    "kokoro-pf-dora", "kokoro-pm-alex", "kokoro-pm-santa",
+    "kokoro-pf-dora", "kokoro-pm-alex",
 })
 _KOKORO_VOZES_ES = frozenset({"kokoro-em-alex"})
 _POCKET_VOZES_PT = frozenset({"pocket-ptbr-rafael"})
@@ -592,6 +592,7 @@ async def converter_tts_auto(
             os.makedirs(_d, exist_ok=True)
     except Exception:
         pass
+    voz = migrar_voz_kokoro_removida(voz)
     texto = _pronuncias.aplicar(texto)  # dicionário de pronúncia do usuário, antes de normalizar
     texto = _normalizar_texto(
         texto,

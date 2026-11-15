@@ -26,6 +26,7 @@ object GuidedBookPrefsStore {
         if (caminho.isBlank()) return null
         val parts = prefs(ctx).getString(caminho, null)?.split("|") ?: emptyList()
         val voz = parts.getOrNull(0)?.takeIf { it.isNotBlank() }
+            ?.let(com.jonjonesbr.audiobookgen.tts.ParadeeVozes::migrarVozKokoroRemovida)
         val motor = parts.getOrNull(1)?.takeIf { it.isNotBlank() }
         val speedMult = parts.getOrNull(2)?.toFloatOrNull()
         return if (voz != null && motor != null && speedMult != null) {

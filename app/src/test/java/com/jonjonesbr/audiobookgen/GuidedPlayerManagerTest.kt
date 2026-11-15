@@ -937,18 +937,24 @@ class GuidedPlayerManagerTest {
     }
 
     @Test
-    fun preWarmChecksKokoroModelReadinessWhenEngineIsKokoro() {
+    fun preWarmChecksParadeeWhenSavedKokoroVoiceIsMigrated() {
         mockkObject(com.jonjonesbr.audiobookgen.tts.KokoroModelManager)
-        every { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) } returns false
+        mockkObject(com.jonjonesbr.audiobookgen.tts.ParadeeModelManager)
+        every { com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isProntoParaVoz(any(), any()) } returns false
         every { anyConstructed<AppPrefs>().motorTts } returns "kokoro"
         every { anyConstructed<AppPrefs>().vozSelecionada } returns "kokoro-pm-santa"
 
         createManager()
         testDispatcher.scheduler.runCurrent()
 
-        // Bundle não pronto (mock) — barra ANTES de tentar construir o engine/tocar o
-        // processo :sherpa (sem download automático, contrato do KokoroModelManager).
-        verify(exactly = 1) { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) }
+        // Santa migra para Alex (Paradee) e verifica a prontidão do pacote Paradee, não o antigo Kokoro.
+        verify(exactly = 1) {
+            com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isProntoParaVoz(
+                any(),
+                "kokoro-pm-alex",
+            )
+        }
+        verify(exactly = 0) { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) }
     }
 
     @Test

@@ -37,7 +37,7 @@ object TtsChunkCache {
     internal fun revisaoModelo(voice: String): String = when {
         voice.startsWith("supertonic-") -> "supertonic-v2" + SUFIXO_TRAVESSAO_SUPERTONIC
         ParadeeVozes.ehParadee(voice) -> ParadeeVozes.revisaoCache(voice)
-        voice.startsWith("kokoro-") -> "kokoro-multilang-v1_0-fp32"
+        voice.startsWith("kokoro-") -> ParadeeVozes.revisaoCache(ParadeeVozes.migrarVozKokoroRemovida(voice))
         // Pocket "-eosolha1": fim da fala só vale com silêncio depois; "-ini1": 60 ms de silêncio no início.
         voice == "pocket-ptbr-rafael" -> "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2-retry1-retic1-eosolha1-ini1"
         voice.startsWith("pocket-") -> "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-pause500-nodash-v2-retry1-retic1-eosolha1-ini1"

@@ -53,4 +53,17 @@ class ParadeeVozesTest {
         assertEquals(16L, ParadeeVocab.MAPA[0x20])
         assertEquals(17L, ParadeeVocab.MAPA[0x0303])
     }
+
+    @Test
+    fun `migra vozes removidas do kokoro para equivalentes paradee`() {
+        assertEquals("kokoro-pf-dora", ParadeeVozes.migrarVozKokoroRemovida("kokoro-pf-dora"))
+        assertEquals("kokoro-pm-alex", ParadeeVozes.migrarVozKokoroRemovida("kokoro-pm-santa"))
+        assertEquals("kokoro-en-af-heart", ParadeeVozes.migrarVozKokoroRemovida("kokoro-en-af-alloy"))
+        assertEquals("kokoro-en-bf-isabella", ParadeeVozes.migrarVozKokoroRemovida("kokoro-en-bf-emma"))
+        assertEquals("kokoro-en-am-puck", ParadeeVozes.migrarVozKokoroRemovida("kokoro-en-am-santa"))
+        assertEquals("kokoro-en-bm-fable", ParadeeVozes.migrarVozKokoroRemovida("kokoro-en-bm-george"))
+        assertEquals("kokoro-pf-dora", ParadeeVozes.migrarVozKokoroRemovida("kokoro-voz-antiga"))
+        assertEquals("mms-por::main-pt", ParadeeVozes.migrarVozKokoroRemovida("mms-por::main-pt"))
+        assertEquals("pt-BR-FranciscaNeural", ParadeeVozes.migrarVozKokoroRemovida("pt-BR-FranciscaNeural"))
+    }
 }

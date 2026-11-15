@@ -241,7 +241,8 @@ class GuidedPlayerManager(
     /** Voz/motor efetivos para a síntese: perfil do livro, com fallback nas prefs globais. */
     private fun vozEMotorAtuais(): Pair<String, String> {
         val motor = motorOverride ?: appPrefs.motorTts
-        val voz = vozOverride ?: appPrefs.vozSelecionada ?: VoiceCatalog.defaultFor(motor).id
+        val vozBruta = vozOverride ?: appPrefs.vozSelecionada ?: VoiceCatalog.defaultFor(motor).id
+        val voz = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.migrarVozKokoroRemovida(vozBruta)
         return voz to motor
     }
 

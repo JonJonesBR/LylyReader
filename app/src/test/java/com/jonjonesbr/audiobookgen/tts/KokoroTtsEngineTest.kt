@@ -22,15 +22,15 @@ class KokoroTtsEngineTest {
     fun `voze pt-br mapeiam para sid e lang pt-BR explicitos`() {
         assertEquals(KokoroVoiceParams(sid = 42, lang = "pt-BR"), kokoroVoiceParams("kokoro-pf-dora"))
         assertEquals(KokoroVoiceParams(sid = 43, lang = "pt-BR"), kokoroVoiceParams("kokoro-pm-alex"))
-        assertEquals(KokoroVoiceParams(sid = 44, lang = "pt-BR"), kokoroVoiceParams("kokoro-pm-santa"))
         assertEquals(KokoroVoiceParams(sid = 28, lang = "es"), kokoroVoiceParams("kokoro-em-alex"))
+        assertNull(kokoroVoiceParams("kokoro-pm-santa"))
     }
 
     @Test
     fun `nenhuma voz pt usa o lang generico pt do espeak-ng`() {
         // Regressão do bug real: lang="pt" (default do espeak-ng) soa como português EUROPEU;
         // o brasileiro exige "pt-BR". Qualquer voz pt com "pt"/null está errada (RN-1).
-        for (voz in listOf("kokoro-pf-dora", "kokoro-pm-alex", "kokoro-pm-santa")) {
+        for (voz in listOf("kokoro-pf-dora", "kokoro-pm-alex")) {
             val params = kokoroVoiceParams(voz)
             assertEquals("voz $voz deve ter lang explícito pt-BR", "pt-BR", params?.lang)
             assertTrue("voz $voz não pode cair no lang europeu", params?.lang != "pt")

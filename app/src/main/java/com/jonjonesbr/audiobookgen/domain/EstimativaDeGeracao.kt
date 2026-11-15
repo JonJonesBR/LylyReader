@@ -62,8 +62,7 @@ class EstimativaDeGeracao(private val medicoes: Map<String, MedicaoMotor>) {
             voz.startsWith("supertonic-") -> "onnx"
             voz.startsWith("piper-") -> "piper"
             voz.startsWith("pocket-") -> "pocket"
-            ParadeeVozes.ehParadee(voz) -> "paradee"
-            voz.startsWith("kokoro-") -> "kokoro"
+            ParadeeVozes.ehParadee(ParadeeVozes.migrarVozKokoroRemovida(voz)) -> "paradee"
             "::" in voz -> "kokoro"
             voz.startsWith("elevenlabs-") || voz.startsWith("openrouter-") -> null
             else -> "edge"

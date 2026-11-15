@@ -40,6 +40,7 @@ class AppPrefs(context: Context) {
 
     var vozSelecionada: String?
         get() = p.getString("voz_selecionada", null)
+            ?.let(com.jonjonesbr.audiobookgen.tts.ParadeeVozes::migrarVozKokoroRemovida)
         set(v) = p.edit().putString("voz_selecionada", v).apply()
 
     var pausaMs: Int
