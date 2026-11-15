@@ -15,13 +15,14 @@ object KokoroSynthBridge {
     @JvmStatic fun synthesize(text: String, voiceId: String, outPath: String): Boolean {
         val ctx = appContext ?: return false
         val eng = engine() ?: return false
+        val vozEfetiva = ParadeeVozes.migrarVozKokoroRemovida(voiceId)
         return try {
             val speed = com.jonjonesbr.audiobookgen.data.AppPrefs(ctx).ritmo
-            TtsChunkCache.synthesizeSync(ctx, voiceId, speed, text, File(outPath)) { temporary ->
-                eng.synthesizeSync(text, voiceId, temporary)
-            }.also { if (!it) Log.w(TAG, "Síntese Kokoro falhou para voz=$voiceId") }
+            TtsChunkCache.synthesizeSync(ctx, vozEfetiva, speed, text, File(outPath)) { temporary ->
+                eng.synthesizeSync(text, vozEfetiva, temporary)
+            }.also { if (!it) Log.w(TAG, "Síntese Kokoro falhou para voz=$vozEfetiva") }
         } catch (t: Throwable) {
-            Log.e(TAG, "Erro na síntese ($voiceId): " + t.message, t)
+            Log.e(TAG, "Erro na síntese ($vozEfetiva): " + t.message, t)
             false
         }
     }

@@ -211,6 +211,7 @@ class SpeakerAttributionStore(private val directory: File) {
                 name = item.getString("name"),
                 utteranceCount = item.optInt("utterance_count", 0),
                 voiceId = item.optString("voice_id").takeIf { it.isNotBlank() }
+                    ?.let(com.jonjonesbr.audiobookgen.tts.ParadeeVozes::migrarVozKokoroRemovida)
             )
         }
     }

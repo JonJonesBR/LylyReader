@@ -273,7 +273,6 @@
         <item>Piper en_US-ljspeech-medium — repositorio del modelo bajo MIT; conjunto de entrenamiento LJSpeech de dominio público. Ficha: https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/en/en_US/ljspeech/medium/MODEL_CARD</item>
         <item>Piper en_US-norman-medium — repositorio del modelo bajo MIT; grabaciones LibriVox de dominio público. Ficha: https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/en/en_US/norman/medium/MODEL_CARD</item>
         <item>Piper es_MX-claude-high — repositorio del modelo bajo MIT; la ficha indica que el conjunto Piper-TTS-Spanish está bajo Apache-2.0. Ficha: https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/es/es_MX/claude/high/MODEL_CARD</item>
-        <item>Kokoro-82M — modelo de TTS neuronal (Apache-2.0). Copyright (c) hexgrad; conversión ONNX e integración de runtime por k2-fsa (sherpa-onnx).</item>
         <item>Paradee-8M pt-BR (voces Dora y Alex) — modelo destilado de Kokoro-82M (Apache-2.0). Copyright (c) eraldohug y Sahil Mahendrakar. https://huggingface.co/eraldohug/Paradee-8M-PtBr</item>
         <item>Paradee-8M v1.3 (voces en inglés Heart, Isabella, Puck y Fable, y en español Alex) — modelo multilingüe destilado de Kokoro-82M (Apache-2.0). Copyright (c) Sahil Mahendrakar. https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.3</item>
         <item>espeak-ng 1.52.0 — conversión de texto a fonemas para Paradee (GPL-3.0 o posterior). Copyright (c) Reece H. Dunn y colaboradores. https://github.com/espeak-ng/espeak-ng</item>
@@ -775,7 +774,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Nuevas voces sin conexión en portugués de Brasil: Dora y Alex, naturales y mucho más rápidas. Descárgalas en Descargas y escucha la vista previa antes.</string>
+    <string name="release_notes_corpo">• Voces sin conexión Paradee en portugués (Dora y Alex), inglés (Heart, Isabella, Puck y Fable) y español (Alex), ligeras y mucho más rápidas.\n• El paquete antiguo de Kokoro (~350 MB), la voz Santa y las otras 24 voces en inglés salieron de la app; quienes las usaban pasan automáticamente a la voz Paradee equivalente.</string>
     <string name="timbre_title">Tono de la voz</string>
     <string name="timbre_desc">Voz más grave o más aguda, y agudos más suaves. Se aplica al instante.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
@@ -1574,7 +1573,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="aj_motor_desc_gemini">Voz muy natural; tiene uso gratis limitado.</string>
     <string name="aj_motor_desc_elevenlabs">Voces de ElevenLabs.</string>
     <string name="aj_motor_desc_onnx">Las voces más naturales.</string>
-    <string name="aj_motor_desc_kokoro">Varias voces en portugués de Brasil. Descarga un paquete de %1$d MB la primera vez.</string>
+    <string name="aj_motor_desc_kokoro">Voces ligeras y rápidas (Paradee y Piper) en portugués, inglés y español. Descarga un paquete desde %1$d MB la primera vez.</string>
     <string name="aj_motor_desc_pocket">Voz expresiva en portugués, inglés y español; permite clonar una voz. Descarga %1$d MB por idioma la primera vez.</string>
     <string name="aj_motor_grupo_offline_rec">Sin conexión recomendada</string>
     <string name="aj_motor_grupo_offline_rec_desc">Gratis y sin internet. La mejor opción para la mayoría.</string>

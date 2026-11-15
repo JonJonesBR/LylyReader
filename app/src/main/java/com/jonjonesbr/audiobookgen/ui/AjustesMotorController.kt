@@ -145,8 +145,10 @@ class AjustesMotorController(
         activity.lifecycleScope.launch {
             val (kokoroMb, pocketMb) = withContext(Dispatchers.IO) {
                 val pacotes = com.jonjonesbr.audiobookgen.util.VoiceCatalog.pacotesRegistrados()
-                // O Pocket baixa um pacote por idioma; o do português representa os três.
-                val kokoro = pacotes.firstOrNull { it.id == "kokoro" }?.tamanhoDownloadMb
+                // O Paradee pt-BR representa o pacote inicial do grupo Kokoro; o Pocket baixa um por idioma.
+                val kokoro = pacotes
+                    .firstOrNull { it.id == com.jonjonesbr.audiobookgen.tts.ParadeeVozes.PACOTE_ID }
+                    ?.tamanhoDownloadMb
                 val pocket = pacotes.firstOrNull { it.id == "pocket-ptbr-int8" }?.tamanhoDownloadMb
                 kokoro to pocket
             }

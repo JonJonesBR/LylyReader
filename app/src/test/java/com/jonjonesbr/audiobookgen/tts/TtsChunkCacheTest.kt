@@ -119,7 +119,8 @@ class TtsChunkCacheTest {
         assertEquals(ParadeeVozes.REVISAO_CACHE, TtsChunkCache.revisaoModelo("kokoro-pm-alex"))
         assertEquals(ParadeeVozes.REVISAO_CACHE_V13, TtsChunkCache.revisaoModelo("kokoro-en-af-heart"))
         assertEquals(ParadeeVozes.REVISAO_CACHE_V13, TtsChunkCache.revisaoModelo("kokoro-em-alex"))
-        assertEquals("kokoro-multilang-v1_0-fp32", TtsChunkCache.revisaoModelo("kokoro-pm-santa"))
+        assertEquals(ParadeeVozes.REVISAO_CACHE, TtsChunkCache.revisaoModelo("kokoro-pm-santa"))
+        assertEquals(ParadeeVozes.REVISAO_CACHE_V13, TtsChunkCache.revisaoModelo("kokoro-en-af-alloy"))
         assertEquals(
             "pocket-tts-3.3.0-per-language-tokenizers-v4-decoder-frame-by-frame-rafael-nofilter-pause500-nodash-v2-retry1-retic1-eosolha1-ini1",
             TtsChunkCache.revisaoModelo("pocket-ptbr-rafael")

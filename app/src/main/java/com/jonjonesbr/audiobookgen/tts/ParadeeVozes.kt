@@ -114,4 +114,18 @@ internal object ParadeeVozes {
     fun bytesDoPacote(pacoteId: String): Long = arquivosDoPacote(pacoteId).sumOf { it.bytes }
 
     fun revisaoCache(voiceId: String): String = spec(voiceId)?.revisaoCache ?: REVISAO_CACHE
+
+    /**
+     * Migra vozes removidas do antigo pacote Kokoro-82M (`kokoro-pm-santa` e as 24 vozes em inglês
+     * fora do v1.3) para a voz Paradee equivalente do mesmo idioma e gênero.
+     */
+    fun migrarVozKokoroRemovida(vozId: String): String = when {
+        ehParadee(vozId) || !vozId.startsWith("kokoro-") || "::" in vozId -> vozId
+        vozId == "kokoro-pm-santa" -> "kokoro-pm-alex"
+        vozId.startsWith("kokoro-en-af-") -> "kokoro-en-af-heart"
+        vozId.startsWith("kokoro-en-bf-") -> "kokoro-en-bf-isabella"
+        vozId.startsWith("kokoro-en-am-") -> "kokoro-en-am-puck"
+        vozId.startsWith("kokoro-en-bm-") -> "kokoro-en-bm-fable"
+        else -> "kokoro-pf-dora"
+    }
 }

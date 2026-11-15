@@ -33,12 +33,30 @@ VOZES_PARADEE = frozenset({
 })
 
 
+def migrar_voz_kokoro_removida(voz: str) -> str:
+    """Migra vozes do antigo Kokoro-82M para a equivalente do Paradee."""
+    if not isinstance(voz, str) or voz in VOZES_PARADEE or not voz.startswith("kokoro-") or "::" in voz:
+        return voz
+    if voz == "kokoro-pm-santa":
+        return "kokoro-pm-alex"
+    if voz.startswith("kokoro-en-af-"):
+        return "kokoro-en-af-heart"
+    if voz.startswith("kokoro-en-bf-"):
+        return "kokoro-en-bf-isabella"
+    if voz.startswith("kokoro-en-am-"):
+        return "kokoro-en-am-puck"
+    if voz.startswith("kokoro-en-bm-"):
+        return "kokoro-en-bm-fable"
+    return "kokoro-pf-dora"
+
+
 def motor_medido(voz: str, motor_roteado: str):
     """Nome do motor usado nas medições, a partir do motor que converter_tts_auto escolheu
     (ver tts.motor_da_voz). Devolve None para motores que não entram na medição (nuvem).
     Pacote local ("::") que não seja kokoro/mms/byom é Piper."""
     if motor_roteado == "kokoro":
-        if voz in VOZES_PARADEE:
+        voz_efetiva = migrar_voz_kokoro_removida(voz)
+        if voz_efetiva in VOZES_PARADEE:
             return "paradee"
         if "::" in voz:
             minusculo = voz.lower()
