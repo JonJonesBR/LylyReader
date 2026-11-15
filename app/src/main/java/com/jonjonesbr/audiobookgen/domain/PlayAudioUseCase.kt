@@ -49,9 +49,11 @@ class PlayAudioUseCase(
     fun iniciarPreview(caminho: String) {
         runCatching { previewPlayer?.release() }
         previewPlayer = null
-        val novoPlayer = criarMediaPlayer()
+        var novoPlayer: MediaPlayer? = null
         try {
-            novoPlayer.apply {
+            val criado = criarMediaPlayer()
+            novoPlayer = criado
+            criado.apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -73,11 +75,11 @@ class PlayAudioUseCase(
                 }
                 start()
             }
-            previewPlayer = novoPlayer
+            previewPlayer = criado
             _tocando.value = true
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao tocar preview: ${e.message}", e)
-            runCatching { novoPlayer.release() }
+            runCatching { novoPlayer?.release() }
             previewPlayer = null
             _tocando.value = false
         }

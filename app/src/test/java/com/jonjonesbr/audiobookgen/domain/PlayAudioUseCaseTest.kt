@@ -69,4 +69,21 @@ class PlayAudioUseCaseTest {
         verify(exactly = 1) { player.stop() }
         verify(exactly = 1) { player.release() }
     }
+
+    @Test
+    fun `falha ao criar novo MediaPlayer e capturada e libera o player anterior`() {
+        val primeiro = mockk<MediaPlayer>(relaxed = true)
+        var chamadas = 0
+        val useCase = PlayAudioUseCase(context) {
+            chamadas++
+            if (chamadas == 1) primeiro else throw RuntimeException("falha nativa")
+        }
+
+        useCase.iniciarPreview("/tmp/ok.mp3")
+        assertTrue(useCase.tocando.value)
+
+        useCase.iniciarPreview("/tmp/falha_criacao.mp3")
+        assertFalse(useCase.tocando.value)
+        verify(exactly = 1) { primeiro.release() }
+    }
 }
