@@ -38,13 +38,12 @@ internal object ParadeeModelManager {
     fun isProntoParaVoz(ctx: Context, voiceId: String): Boolean =
         ParadeeVozes.spec(voiceId)?.let { isPronto(ctx, it) } ?: false
 
-    fun tamanhoOcupado(ctx: Context, pacoteId: String? = null): Long {
-        if (pacoteId == null) {
-            return ParadeeVozes.PACOTES.sumOf { tamanhoOcupado(ctx, it) }
+    fun tamanhoOcupado(ctx: Context, pacoteId: String? = null): Long = when (pacoteId) {
+        null -> ParadeeVozes.PACOTES.sumOf { tamanhoOcupado(ctx, it) }
+        else -> {
+            val pasta = dir(ctx, pacoteId)
+            if (pasta.exists()) pasta.walkTopDown().filter { it.isFile }.sumOf { it.length() } else 0L
         }
-        val pasta = dir(ctx, pacoteId)
-        if (!pasta.exists()) return 0L
-        return pasta.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
 
     /** Apaga a pasta do pacote (ou todas, se [pacoteId] for nulo), inclusive `.part`. */
