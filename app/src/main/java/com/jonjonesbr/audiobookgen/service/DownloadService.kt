@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 class DownloadService : Service() {
 
     companion object {
+        private const val TAG = "DownloadService"
         private const val CHANNEL_ID = "lylyreader_downloads"
         // IDs únicos no app (ver ConversionNotificationManager): repetidos, a notificação de um serviço apagava ou
         // sobrescrevia a de outro (ex.: o "concluído" do download por cima do progresso da conversão).
@@ -41,6 +42,9 @@ class DownloadService : Service() {
             // Pode ser recusado se o app estiver em 2º plano sem permissão para iniciar serviço.
             runCatching {
                 context.startForegroundService(intent)
+            }.onFailure { e ->
+                android.util.Log.w(TAG, "Recusa ao iniciar DownloadService em primeiro plano", e)
+                com.jonjonesbr.audiobookgen.util.CrashLogWriter.log(e, "DownloadService.start")
             }
         }
     }
