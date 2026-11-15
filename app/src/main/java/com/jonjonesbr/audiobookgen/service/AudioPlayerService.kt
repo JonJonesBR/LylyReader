@@ -87,6 +87,22 @@ import java.io.File
 // callbacks de biblioteca, bookkeeping de domínio) — fragmentar mais não ajudaria a leitura.
 // Já estava suprimido antes da migração (baseline tinha essa chave p/ "AudioPlayerService : Service";
 // mudou de superclasse, a chave não casa mais).
+internal enum class AcaoWidgetResolvida {
+    EXECUTAR_NA_FAIXA_ATUAL,
+    RETOMAR_CAMINHO_DO_INTENT,
+    ENCERRAR_SEM_FAIXA
+}
+
+internal fun resolverAcaoWidget(
+    temFaixaAtiva: Boolean,
+    caminhoExtra: String?,
+    caminhoValido: (String) -> Boolean
+): AcaoWidgetResolvida = when {
+    temFaixaAtiva -> AcaoWidgetResolvida.EXECUTAR_NA_FAIXA_ATUAL
+    !caminhoExtra.isNullOrBlank() && caminhoValido(caminhoExtra) -> AcaoWidgetResolvida.RETOMAR_CAMINHO_DO_INTENT
+    else -> AcaoWidgetResolvida.ENCERRAR_SEM_FAIXA
+}
+
 @Suppress("TooManyFunctions")
 @OptIn(UnstableApi::class)
 class AudioPlayerService : MediaLibraryService() {
@@ -557,13 +573,44 @@ class AudioPlayerService : MediaLibraryService() {
                 val posicaoInicial = intent.getLongExtra(EXTRA_POSICAO_MS, -1L).takeIf { it >= 0L }
                 iniciar(caminho, nome, posicaoInicial)
             }
-            PlayerNotificationManager.ACTION_PLAY_PAUSE -> alternarPlayPause()
-            PlayerNotificationManager.ACTION_RECUAR     -> capituloAnterior()
-            PlayerNotificationManager.ACTION_AVANCAR    -> proximoCapitulo()
+            PlayerNotificationManager.ACTION_PLAY_PAUSE ->
+                executarAcaoComFaixaOuRetomar(intent, startId) { alternarPlayPause() }
+            PlayerNotificationManager.ACTION_RECUAR ->
+                executarAcaoComFaixaOuRetomar(intent, startId) { capituloAnterior() }
+            PlayerNotificationManager.ACTION_AVANCAR ->
+                executarAcaoComFaixaOuRetomar(intent, startId) { proximoCapitulo() }
             PlayerNotificationManager.ACTION_SONECA     -> alternarSonecaPreset()
             PlayerNotificationManager.ACTION_FECHAR     -> fecharPlayer()
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    /**
+     * Atende comandos vindos do widget (disparados com `PendingIntent.getForegroundService`): garante
+     * o contrato de primeiro plano e, se o processo tiver sido encerrado antes do toque, retoma a
+     * faixa informada no Intent ou atualiza/fecha o widget se não houver mais mídia válida.
+     */
+    private fun executarAcaoComFaixaOuRetomar(intent: Intent, startId: Int, acao: () -> Unit) {
+        playerNotificationManager.iniciarForeground()
+        val caminhoExtra = intent.getStringExtra(EXTRA_CAMINHO)
+        when (resolverAcaoWidget(
+            temFaixaAtiva = _state.value.caminho.isNotBlank() || exoPlayer.mediaItemCount > 0,
+            caminhoExtra = caminhoExtra,
+            caminhoValido = ::caminhoAceitoParaTocar
+        )) {
+            AcaoWidgetResolvida.EXECUTAR_NA_FAIXA_ATUAL -> acao()
+            AcaoWidgetResolvida.RETOMAR_CAMINHO_DO_INTENT -> {
+                val caminhoSeguro = caminhoExtra!!
+                val nomeExtra = intent.getStringExtra(EXTRA_NOME) ?: File(caminhoSeguro).nameWithoutExtension
+                iniciar(caminhoSeguro, nomeExtra)
+            }
+            AcaoWidgetResolvida.ENCERRAR_SEM_FAIXA -> {
+                Log.w(TAG, "Ação de mídia sem faixa carregada (${intent.action}); encerrando serviço")
+                PlayerWidget.atualizarWidget(applicationContext)
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf(startId)
+            }
+        }
     }
 
     override fun onDestroy() {

@@ -49,7 +49,11 @@ class PlayerWidget : AppWidgetProvider() {
         }
     }
 
-    private fun construirViews(context: Context): RemoteViews {
+    internal fun construirViews(
+        context: Context,
+        criarPendingServico: (Context, Int, Intent, Int) -> PendingIntent = PendingIntent::getForegroundService,
+        criarPendingAbrir: (Context, Int, Intent, Int) -> PendingIntent = PendingIntent::getActivity
+    ): RemoteViews {
         val views   = RemoteViews(context.packageName, R.layout.widget_player)
         val estadoPlayer = PlayerStateHolder.state.value
         val nome    = estadoPlayer.trackName
@@ -74,34 +78,47 @@ class PlayerWidget : AppWidgetProvider() {
         )
         views.setInt(R.id.widgetBtnPlayPause, "setColorFilter", Color.WHITE)
 
-        // Botão play/pause → mesma ação da notificação, direto no AudioPlayerService. O antigo
-        // broadcast WIDGET_TOGGLE não tinha ouvinte, então o botão nunca funcionou.
-        val togglePi = PendingIntent.getService(
-            context, REQ_WIDGET_PLAY_PAUSE,
-            Intent(context, AudioPlayerService::class.java).apply {
-                action = PlayerNotificationManager.ACTION_PLAY_PAUSE
-            },
+        // Clique no título/estado → abre o app (também é o fallback do Play quando não há livro carregado).
+        val openIntent = Intent(context, MeusLivrosActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val openPi = criarPendingAbrir(
+            context, 1, openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        views.setOnClickPendingIntent(R.id.widgetBtnPlayPause, togglePi)
+        views.setOnClickPendingIntent(R.id.widgetTvNome,   openPi)
+        views.setOnClickPendingIntent(R.id.widgetTvEstado, openPi)
 
-        // Navegação por capítulo: mesma ação (RECUAR/AVANCAR) que os botões da notificação já
-        // usam, direto no AudioPlayerService (PendingIntent.getService — igual
-        // PlayerNotificationManager.construirNotificacao) em vez do relay por
-        // LocalBroadcastManager do play/pause acima, que só funciona com o processo vivo. O
-        // service já cai pra "avançar/recuar 15s" quando o livro não tem capítulos (mesmo
-        // fallback da notificação) — nunca precisa ficar desabilitado por causa disso, só
-        // quando não há NADA carregado (nome em branco, mesmo estado vazio do texto acima).
+        // Navegação por capítulo e Play/Pause: usam PendingIntent.getForegroundService (API 26+
+        // recusa getService em segundo plano ou com o processo morto) e levam caminho/nome para
+        // retomar o último livro se o processo tiver morrido. Sem faixa carregada, o Play abre o app.
         val temFaixaCarregada = nome.isNotBlank()
         val visibilidadeNav = if (temFaixaCarregada) View.VISIBLE else View.GONE
         views.setViewVisibility(R.id.widgetBtnCapituloAnterior, visibilidadeNav)
         views.setViewVisibility(R.id.widgetBtnProximoCapitulo, visibilidadeNav)
-        if (temFaixaCarregada) {
-            fun pendingServico(action: String, req: Int) = PendingIntent.getService(
-                context, req,
-                Intent(context, AudioPlayerService::class.java).apply { this.action = action },
+
+        fun pendingServico(action: String, req: Int): PendingIntent {
+            val svcIntent = Intent(context, AudioPlayerService::class.java).apply {
+                this.action = action
+                if (estadoPlayer.caminho.isNotBlank()) {
+                    putExtra(AudioPlayerService.EXTRA_CAMINHO, estadoPlayer.caminho)
+                    putExtra(AudioPlayerService.EXTRA_NOME, nome)
+                }
+            }
+            return criarPendingServico(
+                context, req, svcIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
+        }
+
+        val togglePi = if (temFaixaCarregada) {
+            pendingServico(PlayerNotificationManager.ACTION_PLAY_PAUSE, REQ_WIDGET_PLAY_PAUSE)
+        } else {
+            openPi
+        }
+        views.setOnClickPendingIntent(R.id.widgetBtnPlayPause, togglePi)
+
+        if (temFaixaCarregada) {
             views.setOnClickPendingIntent(
                 R.id.widgetBtnCapituloAnterior,
                 pendingServico(PlayerNotificationManager.ACTION_RECUAR, REQ_WIDGET_RECUAR)
@@ -111,17 +128,6 @@ class PlayerWidget : AppWidgetProvider() {
                 pendingServico(PlayerNotificationManager.ACTION_AVANCAR, REQ_WIDGET_AVANCAR)
             )
         }
-
-        // Name/state click → open app
-        val openIntent = Intent(context, MeusLivrosActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        val openPi = PendingIntent.getActivity(
-            context, 1, openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        views.setOnClickPendingIntent(R.id.widgetTvNome,   openPi)
-        views.setOnClickPendingIntent(R.id.widgetTvEstado, openPi)
 
         return views
     }
