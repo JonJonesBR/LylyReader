@@ -76,7 +76,7 @@ class PlayAudioUseCaseTest {
         var chamadas = 0
         val useCase = PlayAudioUseCase(context) {
             chamadas++
-            if (chamadas == 1) primeiro else throw IllegalStateException("falha nativa")
+            if (chamadas == 1) primeiro else error("falha nativa")
         }
 
         useCase.iniciarPreview("/tmp/ok.mp3")
