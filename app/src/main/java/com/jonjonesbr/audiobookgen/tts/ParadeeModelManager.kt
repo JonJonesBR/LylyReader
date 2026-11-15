@@ -7,7 +7,10 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 
-/** Arquivos ONNX das vozes Paradee (`paradee-ptbr` em `filesDir/paradee/ptbr` e `paradee-v13` em `filesDir/paradee/v13`). */
+/**
+ * Arquivos ONNX das vozes Paradee (`paradee-ptbr` em `filesDir/paradee/ptbr`
+ * e `paradee-v13` em `filesDir/paradee/v13`).
+ */
 internal object ParadeeModelManager {
     private const val TAG = "ParadeeModelManager"
     private const val SUBDIR_PTBR = "paradee/ptbr"
@@ -35,22 +38,22 @@ internal object ParadeeModelManager {
     fun isProntoParaVoz(ctx: Context, voiceId: String): Boolean =
         ParadeeVozes.spec(voiceId)?.let { isPronto(ctx, it) } ?: false
 
-    fun tamanhoOcupado(ctx: Context, pacoteId: String): Long {
+    fun tamanhoOcupado(ctx: Context, pacoteId: String? = null): Long {
+        if (pacoteId == null) {
+            return ParadeeVozes.PACOTES.sumOf { tamanhoOcupado(ctx, it) }
+        }
         val pasta = dir(ctx, pacoteId)
-        return if (pasta.exists()) pasta.walkTopDown().filter { it.isFile }.sumOf { it.length() } else 0L
+        if (!pasta.exists()) return 0L
+        return pasta.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
 
-    fun tamanhoOcupado(ctx: Context): Long =
-        ParadeeVozes.PACOTES.sumOf { tamanhoOcupado(ctx, it) }
-
-    /** Apaga a pasta do pacote, inclusive os `.part` de downloads interrompidos. */
-    fun delete(ctx: Context, pacoteId: String) {
-        dir(ctx, pacoteId).deleteRecursively()
-    }
-
-    /** Apaga todas as pastas dos pacotes Paradee. */
-    fun delete(ctx: Context) {
-        ParadeeVozes.PACOTES.forEach { delete(ctx, it) }
+    /** Apaga a pasta do pacote (ou todas, se [pacoteId] for nulo), inclusive `.part`. */
+    fun delete(ctx: Context, pacoteId: String? = null) {
+        if (pacoteId == null) {
+            ParadeeVozes.PACOTES.forEach { dir(ctx, it).deleteRecursively() }
+        } else {
+            dir(ctx, pacoteId).deleteRecursively()
+        }
     }
 
     /**

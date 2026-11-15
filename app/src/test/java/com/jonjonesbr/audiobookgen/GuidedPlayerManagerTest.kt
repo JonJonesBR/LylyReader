@@ -963,7 +963,12 @@ class GuidedPlayerManagerTest {
         testDispatcher.scheduler.runCurrent()
 
         // Dora é Paradee: a prontidão é a do pacote Paradee da voz, não a do bundle Kokoro de 350 MB.
-        verify(exactly = 1) { com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isProntoParaVoz(any(), "kokoro-pf-dora") }
+        verify(exactly = 1) {
+            com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isProntoParaVoz(
+                any(),
+                "kokoro-pf-dora",
+            )
+        }
         verify(exactly = 0) { com.jonjonesbr.audiobookgen.tts.KokoroModelManager.isReady(any()) }
     }
 

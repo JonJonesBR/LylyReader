@@ -346,31 +346,33 @@ object VoiceCatalog {
     private fun pacoteParadee(
         id: String,
         nomeExibicao: String,
-        rotuloDownload: String,
         tamanhoDownloadMb: Int,
         vozes: List<VoiceOption>,
         idiomas: List<String>,
-    ): PacoteVozes = PacoteVozes(
-        id = id,
-        engine = "kokoro",
-        nomeExibicao = nomeExibicao,
-        tamanhoDownloadMb = tamanhoDownloadMb,
-        vozes = vozes,
-        isPronto = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(ctx, id) },
-        tamanhoOcupadoBytes = { ctx ->
-            com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.tamanhoOcupado(ctx, id)
-        },
-        download = { ctx, progresso ->
-            // ParadeeModelManager informa só a fração; o DownloadCentral calcula a fração a partir
-            // de bytes/total, então os bytes são derivados aqui.
-            val total = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.bytesDoPacote(id)
-            com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.download(ctx, id) { fracao ->
-                progresso(rotuloDownload, fracao, (fracao * total).toLong(), total)
-            }
-        },
-        delete = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.delete(ctx, id) },
-        idiomas = idiomas,
-    )
+    ): PacoteVozes {
+        val rotuloDownload = "Baixando $nomeExibicao"
+        return PacoteVozes(
+            id = id,
+            engine = "kokoro",
+            nomeExibicao = nomeExibicao,
+            tamanhoDownloadMb = tamanhoDownloadMb,
+            vozes = vozes,
+            isPronto = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(ctx, id) },
+            tamanhoOcupadoBytes = { ctx ->
+                com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.tamanhoOcupado(ctx, id)
+            },
+            download = { ctx, progresso ->
+                // ParadeeModelManager informa só a fração; o DownloadCentral calcula a fração a partir
+                // de bytes/total, então os bytes são derivados aqui.
+                val total = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.bytesDoPacote(id)
+                com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.download(ctx, id) { fracao ->
+                    progresso(rotuloDownload, fracao, (fracao * total).toLong(), total)
+                }
+            },
+            delete = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.delete(ctx, id) },
+            idiomas = idiomas,
+        )
+    }
 
     @Volatile
     private var pacotesLocais: List<PacoteVozes> = listOf(
@@ -423,7 +425,6 @@ object VoiceCatalog {
         pacoteParadee(
             id = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.PACOTE_ID,
             nomeExibicao = "Paradee · Português do Brasil",
-            rotuloDownload = "Baixando Paradee · Português do Brasil",
             tamanhoDownloadMb = 17,
             vozes = paradeeVoices,
             idiomas = listOf("pt-BR")
@@ -431,7 +432,6 @@ object VoiceCatalog {
         pacoteParadee(
             id = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.PACOTE_ID_V13,
             nomeExibicao = "Paradee · Inglês e Espanhol",
-            rotuloDownload = "Baixando Paradee · Inglês e Espanhol",
             tamanhoDownloadMb = 9,
             vozes = paradeeV13Voices,
             idiomas = listOf("en-US", "en-GB", "es-ES")

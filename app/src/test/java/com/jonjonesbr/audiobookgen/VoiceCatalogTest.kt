@@ -493,10 +493,20 @@ class VoiceCatalogTest {
         // o mesmo (KokoroTtsEngine sabe as 2 arquiteturas, kokoro e vits).
         assertEquals(
             listOf(
-                "paradee-ptbr", "paradee-v13", "kokoro", "mms-por", "piper-ptbr-cadu", "piper-ptbr-dii", "piper-ptbr-edresson",
-                "piper-ptbr-faber", "piper-ptbr-jeff", "piper-ptbr-miro", "piper-ptbr-razo",
+                "paradee-ptbr",
+                "paradee-v13",
+                "kokoro",
+                "mms-por",
+                "piper-ptbr-cadu",
+                "piper-ptbr-dii",
+                "piper-ptbr-edresson",
+                "piper-ptbr-faber",
+                "piper-ptbr-jeff",
+                "piper-ptbr-miro",
+                "piper-ptbr-razo",
                 "piper-enus-ljspeech-medium",
-                "piper-enus-norman-medium", "piper-esmx-claude-high"
+                "piper-enus-norman-medium",
+                "piper-esmx-claude-high"
             ),
             VoiceCatalog.pacotesDoEngine("kokoro").map { it.id }
         )
