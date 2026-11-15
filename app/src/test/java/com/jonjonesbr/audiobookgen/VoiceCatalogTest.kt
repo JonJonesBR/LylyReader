@@ -233,11 +233,12 @@ class VoiceCatalogTest {
 
     @Test fun forEngineKokoro() {
         val voices = VoiceCatalog.forEngine("kokoro")
-        // Kokoro base (Santa + 28 inglês), Paradee (Dora e Alex), MMS e dez pacotes Piper usam o mesmo engine.
-        assertEquals(42, voices.size)
-        assertEquals(42, voices.count { it.engine == "kokoro" })
+        // Kokoro base (Santa + 24 inglês), Paradee (Dora/Alex pt-BR + 5 v1.3 EN/ES), MMS e dez pacotes Piper.
+        assertEquals(43, voices.size)
+        assertEquals(43, voices.count { it.engine == "kokoro" })
         // Vozes pt-BR do Kokoro, MMS e os sete pacotes Piper brasileiros.
         assertEquals(11, voices.count { it.language == "pt-BR" })
+        assertTrue(voices.any { it.id == "kokoro-em-alex" && it.language == "es-ES" })
         // O catálogo bruto ainda traz a voz MMS; quem a esconde sem instalação é a regra abaixo.
         assertTrue(voices.any { it.id == "mms-por::main-pt" })
     }
@@ -275,7 +276,8 @@ class VoiceCatalogTest {
 
         assertEquals(28, voices.size)
         assertEquals(28, params.size)
-        assertEquals((0..27).toList(), params.map { it.sid })
+        assertEquals(listOf(3, 22, 18, 25), params.take(4).map { it.sid })
+        assertEquals((0..27).toList(), params.map { it.sid }.sorted())
         assertTrue(voices.all { it.language == "en-US" || it.language == "en-GB" })
         assertEquals(20, voices.count { it.language == "en-US" })
         assertEquals(8, voices.count { it.language == "en-GB" })
@@ -410,7 +412,11 @@ class VoiceCatalogTest {
         for (voice in VoiceCatalog.forEngine("kokoro").filter { it.id.startsWith("kokoro-") }) {
             val params = com.jonjonesbr.audiobookgen.tts.kokoroVoiceParams(voice.id)
             assertTrue("voz sem mapeamento no engine: ${voice.id}", params != null)
-            val expectedLang = if (voice.language == "pt-BR") "pt-BR" else null
+            val expectedLang = when {
+                voice.language == "pt-BR" -> "pt-BR"
+                voice.language.startsWith("es") -> "es"
+                else -> null
+            }
             assertEquals("lang incorreto no engine: ${voice.id}", expectedLang, params?.lang)
         }
     }
@@ -420,16 +426,32 @@ class VoiceCatalogTest {
     @Test fun pacoteParadeeHabilitaDoraEAlexSeparadoDoKokoro() {
         val dora = VoiceCatalog.pacoteDaVoz("kokoro-pf-dora")
         val alex = VoiceCatalog.pacoteDaVoz("kokoro-pm-alex")
+        val heart = VoiceCatalog.pacoteDaVoz("kokoro-en-af-heart")
+        val emAlex = VoiceCatalog.pacoteDaVoz("kokoro-em-alex")
         val santa = VoiceCatalog.pacoteDaVoz("kokoro-pm-santa")
-        // Dora e Alex compartilham o pacote Paradee (17 MB); Santa continua no pacote Kokoro (350 MB).
+        // Dora e Alex compartilham o pacote paradee-ptbr (17 MB); as 5 v1.3 compartilham paradee-v13 (9 MB);
+        // Santa e as 24 inglesas restantes ficam no pacote Kokoro (350 MB).
         assertEquals("paradee-ptbr", dora?.id)
         assertEquals(dora, alex)
         assertEquals(listOf("kokoro-pf-dora", "kokoro-pm-alex"), dora?.vozes?.map { it.id })
         assertEquals(17, dora?.tamanhoDownloadMb)
+        assertEquals("paradee-v13", heart?.id)
+        assertEquals(heart, emAlex)
+        assertEquals(
+            listOf(
+                "kokoro-en-af-heart",
+                "kokoro-en-bf-isabella",
+                "kokoro-en-am-puck",
+                "kokoro-en-bm-fable",
+                "kokoro-em-alex",
+            ),
+            heart?.vozes?.map { it.id }
+        )
+        assertEquals(9, heart?.tamanhoDownloadMb)
         assertEquals("kokoro", santa?.id)
-        assertEquals(29, santa?.vozes?.size)
+        assertEquals(25, santa?.vozes?.size)
         assertEquals(350, santa?.tamanhoDownloadMb)
-        assertEquals(29, santa?.vozes?.count { it.engine == "kokoro" })
+        assertEquals(25, santa?.vozes?.count { it.engine == "kokoro" })
     }
 
     @Test fun pacoteParadeeFicaAntesDoKokoroEDefaultSegueDora() {
@@ -471,10 +493,20 @@ class VoiceCatalogTest {
         // o mesmo (KokoroTtsEngine sabe as 2 arquiteturas, kokoro e vits).
         assertEquals(
             listOf(
-                "paradee-ptbr", "kokoro", "mms-por", "piper-ptbr-cadu", "piper-ptbr-dii", "piper-ptbr-edresson",
-                "piper-ptbr-faber", "piper-ptbr-jeff", "piper-ptbr-miro", "piper-ptbr-razo",
+                "paradee-ptbr",
+                "paradee-v13",
+                "kokoro",
+                "mms-por",
+                "piper-ptbr-cadu",
+                "piper-ptbr-dii",
+                "piper-ptbr-edresson",
+                "piper-ptbr-faber",
+                "piper-ptbr-jeff",
+                "piper-ptbr-miro",
+                "piper-ptbr-razo",
                 "piper-enus-ljspeech-medium",
-                "piper-enus-norman-medium", "piper-esmx-claude-high"
+                "piper-enus-norman-medium",
+                "piper-esmx-claude-high"
             ),
             VoiceCatalog.pacotesDoEngine("kokoro").map { it.id }
         )

@@ -7,41 +7,69 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 
-/** Arquivos ONNX das vozes Paradee (pacote `paradee-ptbr`), em `filesDir/paradee/ptbr`. */
+/**
+ * Arquivos ONNX das vozes Paradee (`paradee-ptbr` em `filesDir/paradee/ptbr`
+ * e `paradee-v13` em `filesDir/paradee/v13`).
+ */
 internal object ParadeeModelManager {
     private const val TAG = "ParadeeModelManager"
-    private const val SUBDIR = "paradee/ptbr"
+    private const val SUBDIR_PTBR = "paradee/ptbr"
+    private const val SUBDIR_V13 = "paradee/v13"
     private const val SUFIXO_PARCIAL = ".part"
     private const val MENSAGEM_CORROMPIDO = "As vozes Paradee chegaram corrompidas. Tente baixar de novo."
 
-    fun dir(ctx: Context): File = File(ctx.filesDir, SUBDIR)
-
-    fun arquivo(ctx: Context, spec: ParadeeVozes.Spec): File = File(dir(ctx), spec.arquivo)
-
-    fun url(spec: ParadeeVozes.Spec): String = "${KokoroModelManager.BASE_URL}/$SUBDIR/${spec.arquivo}"
-
-    fun isReady(ctx: Context): Boolean = ParadeeVozes.todas.all { isPronto(ctx, it) }
-
-    fun tamanhoOcupado(ctx: Context): Long {
-        val pasta = dir(ctx)
-        return if (pasta.exists()) pasta.walkTopDown().filter { it.isFile }.sumOf { it.length() } else 0L
+    private fun subdir(pacoteId: String): String = when (pacoteId) {
+        ParadeeVozes.PACOTE_ID_V13 -> SUBDIR_V13
+        else -> SUBDIR_PTBR
     }
 
-    /** Apaga a pasta inteira, inclusive os `.part` de downloads interrompidos. */
-    fun delete(ctx: Context) {
-        dir(ctx).deleteRecursively()
+    fun dir(ctx: Context, pacoteId: String = ParadeeVozes.PACOTE_ID): File =
+        File(ctx.filesDir, subdir(pacoteId))
+
+    fun arquivo(ctx: Context, spec: ParadeeVozes.Spec): File =
+        File(dir(ctx, spec.pacoteId), spec.arquivo)
+
+    fun url(spec: ParadeeVozes.Spec): String =
+        spec.url ?: "${KokoroModelManager.BASE_URL}/${subdir(spec.pacoteId)}/${spec.arquivo}"
+
+    fun isReady(ctx: Context, pacoteId: String = ParadeeVozes.PACOTE_ID): Boolean =
+        ParadeeVozes.arquivosDoPacote(pacoteId).all { isPronto(ctx, it) }
+
+    fun isProntoParaVoz(ctx: Context, voiceId: String): Boolean =
+        ParadeeVozes.spec(voiceId)?.let { isPronto(ctx, it) } ?: false
+
+    fun tamanhoOcupado(ctx: Context, pacoteId: String? = null): Long = when (pacoteId) {
+        null -> ParadeeVozes.PACOTES.sumOf { tamanhoOcupado(ctx, it) }
+        else -> {
+            val pasta = dir(ctx, pacoteId)
+            if (pasta.exists()) pasta.walkTopDown().filter { it.isFile }.sumOf { it.length() } else 0L
+        }
+    }
+
+    /** Apaga a pasta do pacote (ou todas, se [pacoteId] for nulo), inclusive `.part`. */
+    fun delete(ctx: Context, pacoteId: String? = null) {
+        if (pacoteId == null) {
+            ParadeeVozes.PACOTES.forEach { dir(ctx, it).deleteRecursively() }
+        } else {
+            dir(ctx, pacoteId).deleteRecursively()
+        }
     }
 
     /**
      * Baixa só os arquivos que faltam (ou estão com tamanho errado). O progresso é a soma dos bytes de
-     * todos os arquivos. Cada arquivo baixado é conferido por tamanho e SHA-256; se não bater, é apagado.
+     * todos os arquivos do pacote. Cada arquivo baixado é conferido por tamanho e SHA-256; se não bater, é apagado.
      */
-    suspend fun download(ctx: Context, progresso: (Float) -> Unit) = withContext(Dispatchers.IO) {
-        val total = ParadeeVozes.todas.sumOf { it.bytes }
-        var concluido = ParadeeVozes.todas.filter { isPronto(ctx, it) }.sumOf { it.bytes }
+    suspend fun download(
+        ctx: Context,
+        pacoteId: String = ParadeeVozes.PACOTE_ID,
+        progresso: (Float) -> Unit,
+    ) = withContext(Dispatchers.IO) {
+        val specs = ParadeeVozes.arquivosDoPacote(pacoteId)
+        val total = specs.sumOf { it.bytes }
+        var concluido = specs.filter { isPronto(ctx, it) }.sumOf { it.bytes }
         progresso((concluido.toFloat() / total).coerceIn(0f, 1f))
-        dir(ctx).mkdirs()
-        for (spec in ParadeeVozes.todas) {
+        dir(ctx, pacoteId).mkdirs()
+        for (spec in specs) {
             if (isPronto(ctx, spec)) continue
             val destino = arquivo(ctx, spec)
             // Retomada: os bytes já guardados no .part contam como baixados desde o início.

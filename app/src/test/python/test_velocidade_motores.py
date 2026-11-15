@@ -28,8 +28,17 @@ class MotorMedidoTest(unittest.TestCase):
         self.assertEqual("kokoro", vm.motor_medido("kokoro-en-am-santa", "kokoro"))
 
     def test_dora_e_alex_sao_medidas_como_paradee(self):
-        self.assertEqual("paradee", vm.motor_medido("kokoro-pf-dora", "kokoro"))
-        self.assertEqual("paradee", vm.motor_medido("kokoro-pm-alex", "kokoro"))
+        for voz in (
+            "kokoro-pf-dora",
+            "kokoro-pm-alex",
+            "kokoro-en-af-heart",
+            "kokoro-en-bf-isabella",
+            "kokoro-en-am-puck",
+            "kokoro-en-bm-fable",
+            "kokoro-em-alex",
+        ):
+            with self.subTest(voz=voz):
+                self.assertEqual("paradee", vm.motor_medido(voz, "kokoro"))
 
     def test_pacote_local_comum_e_piper(self):
         self.assertEqual("piper", vm.motor_medido("pacote42::pt_BR-faber", "kokoro"))
@@ -209,6 +218,11 @@ CHAVES_DE_MEDICAO_ESPERADAS = {
     "piper-ptbr-faber::main-pt": "piper",
     "kokoro-pf-dora": "paradee",
     "kokoro-pm-alex": "paradee",
+    "kokoro-en-af-heart": "paradee",
+    "kokoro-en-bf-isabella": "paradee",
+    "kokoro-en-am-puck": "paradee",
+    "kokoro-en-bm-fable": "paradee",
+    "kokoro-em-alex": "paradee",
     "kokoro-en-am-santa": "kokoro",
     "mms-por::main-pt": "kokoro",
     "pocket-ptbr-rafael": "pocket",

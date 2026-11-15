@@ -24,10 +24,9 @@ class ParadeeTtsEngine(private val context: Context) {
                 lastError = null
                 return@withContext Result.success(outputFile)
             }
-            if (ParadeeVozes.spec(voiceId) == null) {
-                return@withContext failure("Voz Paradee não reconhecida: $voiceId")
-            }
-            if (!ParadeeModelManager.isReady(context)) {
+            val spec = ParadeeVozes.spec(voiceId)
+                ?: return@withContext failure("Voz Paradee não reconhecida: $voiceId")
+            if (!ParadeeModelManager.isReady(context, spec.pacoteId)) {
                 return@withContext failure("Baixe as vozes Paradee em Downloads.")
             }
             // Mesma escala do Kokoro: o ritmo em % (100 = normal) vira multiplicador de velocidade.

@@ -276,6 +276,7 @@
         <item>Piper es_MX-claude-high — repositório do modelo sob MIT; o model card informa que o conjunto Piper-TTS-Spanish está sob Apache-2.0. Model card: https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/es/es_MX/claude/high/MODEL_CARD</item>
         <item>Kokoro-82M — modelo de TTS neural (Apache-2.0). Copyright (c) hexgrad; conversão ONNX e integração de runtime pela k2-fsa (sherpa-onnx).</item>
         <item>Paradee-8M pt-BR (vozes Dora e Alex) — modelo destilado do Kokoro-82M (Apache-2.0). Copyright (c) eraldohug e Sahil Mahendrakar. https://huggingface.co/eraldohug/Paradee-8M-PtBr</item>
+        <item>Paradee-8M v1.3 (vozes em inglês Heart, Isabella, Puck e Fable, e em espanhol Alex) — modelo multilíngue destilado do Kokoro-82M (Apache-2.0). Copyright (c) Sahil Mahendrakar. https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.3</item>
         <item>espeak-ng 1.52.0 — conversão de texto em fonemas para o Paradee (GPL-3.0 ou posterior). Copyright (c) Reece H. Dunn e colaboradores. https://github.com/espeak-ng/espeak-ng</item>
         <item>sherpa-onnx — runtime de fala offline (Apache-2.0). Copyright (c) k2-fsa / Xiaomi.</item>
         <item>MMS-TTS (Massively Multilingual Speech) — modelo de voz em português (CC-BY-NC 4.0). Copyright (c) Meta AI. Uso apenas não comercial.</item>

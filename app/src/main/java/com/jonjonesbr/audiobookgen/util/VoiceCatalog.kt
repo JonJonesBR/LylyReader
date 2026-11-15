@@ -256,22 +256,48 @@ object VoiceCatalog {
         )
     )
 
+    // Paradee-8M v1.3 (offline, processo :paradee, pacote único "paradee-v13" de ~9 MB):
+    // quatro vozes em inglês já conhecidas do catálogo + Alex em espanhol.
+    private val paradeeV13Voices = listOf(
+        VoiceOption(
+            "kokoro-en-af-heart", "Heart", "en-US", false, "kokoro",
+            description = "Voz Paradee (offline, rápida) · Inglês (EUA)"
+        ),
+        VoiceOption(
+            "kokoro-en-bf-isabella", "Isabella", "en-GB", false, "kokoro",
+            description = "Voz Paradee (offline, rápida) · Inglês (Reino Unido)"
+        ),
+        VoiceOption(
+            "kokoro-en-am-puck", "Puck", "en-US", true, "kokoro",
+            description = "Voz Paradee (offline, rápida) · Inglês (EUA)"
+        ),
+        VoiceOption(
+            "kokoro-en-bm-fable", "Fable", "en-GB", true, "kokoro",
+            description = "Voz Paradee (offline, rápida) · Inglês (Reino Unido)"
+        ),
+        VoiceOption(
+            "kokoro-em-alex", "Alex", "es-ES", true, "kokoro",
+            description = "Voz Paradee (offline, rápida) · Espanhol"
+        )
+    )
+
     // Kokoro (offline, Sherpa-ONNX local, FP32 ~350MB — download na 1ª seleção).
     // Vozes pt-BR validadas por ouvido com lang="pt-BR" explícito (RN-1 do V6).
     // sid/lang por voz vivem no KokoroTtsEngine.kokoroVoiceParams — a lista e o engine são
     // mantidos em sincronia pelo teste KokoroTtsEngineTest/VoiceCatalogTest.
-    // Dora e Alex saíram para [paradeeVoices]; kokoroVoiceParams ainda as conhece (guard do catálogo).
+    // Dora/Alex e as 4 vozes EN do Paradee v1.3 saíram para [paradeeVoices]/[paradeeV13Voices];
+    // kokoroVoiceParams ainda as conhece (guard do catálogo).
     private val kokoroVoices = listOf(
         VoiceOption(
             "kokoro-pm-santa", "Santa", "pt-BR", true, "kokoro",
             description = "Voz Kokoro (Sherpa-ONNX local) · Português do Brasil"
         )
     ) + listOf(
-        "af_alloy", "af_aoede", "af_bella", "af_heart", "af_jessica", "af_kore",
+        "af_alloy", "af_aoede", "af_bella", "af_jessica", "af_kore",
         "af_nicole", "af_nova", "af_river", "af_sarah", "af_sky", "am_adam",
         "am_echo", "am_eric", "am_fenrir", "am_liam", "am_michael", "am_onyx",
-        "am_puck", "am_santa", "bf_alice", "bf_emma", "bf_isabella", "bf_lily",
-        "bm_daniel", "bm_fable", "bm_george", "bm_lewis"
+        "am_santa", "bf_alice", "bf_emma", "bf_lily",
+        "bm_daniel", "bm_george", "bm_lewis"
     ).map { voiceId ->
         val prefix = voiceId.substringBefore('_')
         val name = voiceId.substringAfter('_').replaceFirstChar { it.uppercase() }
@@ -316,6 +342,37 @@ object VoiceCatalog {
             description = "Pocket TTS 3.3 · Español · preset público fijo · offline"
         )
     )
+
+    private fun pacoteParadee(
+        id: String,
+        nomeExibicao: String,
+        tamanhoDownloadMb: Int,
+        vozes: List<VoiceOption>,
+        idiomas: List<String>,
+    ): PacoteVozes {
+        val rotuloDownload = "Baixando $nomeExibicao"
+        return PacoteVozes(
+            id = id,
+            engine = "kokoro",
+            nomeExibicao = nomeExibicao,
+            tamanhoDownloadMb = tamanhoDownloadMb,
+            vozes = vozes,
+            isPronto = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(ctx, id) },
+            tamanhoOcupadoBytes = { ctx ->
+                com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.tamanhoOcupado(ctx, id)
+            },
+            download = { ctx, progresso ->
+                // ParadeeModelManager informa só a fração; o DownloadCentral calcula a fração a partir
+                // de bytes/total, então os bytes são derivados aqui.
+                val total = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.bytesDoPacote(id)
+                com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.download(ctx, id) { fracao ->
+                    progresso(rotuloDownload, fracao, (fracao * total).toLong(), total)
+                }
+            },
+            delete = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.delete(ctx, id) },
+            idiomas = idiomas,
+        )
+    }
 
     @Volatile
     private var pacotesLocais: List<PacoteVozes> = listOf(
@@ -365,25 +422,19 @@ object VoiceCatalog {
             idiomas = listOf("en-US")
         ),
         // Paradee (Dora e Alex). Fica ANTES do pacote "kokoro": defaultFor("kokoro") segue Dora.
-        PacoteVozes(
+        pacoteParadee(
             id = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.PACOTE_ID,
-            engine = "kokoro",
             nomeExibicao = "Paradee · Português do Brasil",
             tamanhoDownloadMb = 17,
             vozes = paradeeVoices,
-            isPronto = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.isReady(ctx) },
-            tamanhoOcupadoBytes = { ctx ->
-                com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.tamanhoOcupado(ctx)
-            },
-            download = { ctx, progresso ->
-                // ParadeeModelManager informa só a fração; o DownloadCentral calcula a fração a partir
-                // de bytes/total, então os bytes são derivados aqui.
-                val total = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.todas.sumOf { it.bytes }
-                com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.download(ctx) { fracao ->
-                    progresso("Baixando Paradee · Português do Brasil", fracao, (fracao * total).toLong(), total)
-                }
-            },
-            delete = { ctx -> com.jonjonesbr.audiobookgen.tts.ParadeeModelManager.delete(ctx) }
+            idiomas = listOf("pt-BR")
+        ),
+        pacoteParadee(
+            id = com.jonjonesbr.audiobookgen.tts.ParadeeVozes.PACOTE_ID_V13,
+            nomeExibicao = "Paradee · Inglês e Espanhol",
+            tamanhoDownloadMb = 9,
+            vozes = paradeeV13Voices,
+            idiomas = listOf("en-US", "en-GB", "es-ES")
         ),
         PacoteVozes(
             id = "kokoro",

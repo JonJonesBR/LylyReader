@@ -40,6 +40,7 @@ class SecoesDownloadTest {
         assertEquals(TipoPacote.SUPERTONIC, SecoesDownload.tipo("supertonic-v1", false, false))
         assertEquals(TipoPacote.PIPER, SecoesDownload.tipo("piper-ptbr-jeff", false, false))
         assertEquals(TipoPacote.PARADEE, SecoesDownload.tipo("paradee-ptbr", false, false))
+        assertEquals(TipoPacote.PARADEE, SecoesDownload.tipo("paradee-v13", false, false))
     }
 
     @Test

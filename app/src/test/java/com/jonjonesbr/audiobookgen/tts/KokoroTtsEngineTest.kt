@@ -23,6 +23,7 @@ class KokoroTtsEngineTest {
         assertEquals(KokoroVoiceParams(sid = 42, lang = "pt-BR"), kokoroVoiceParams("kokoro-pf-dora"))
         assertEquals(KokoroVoiceParams(sid = 43, lang = "pt-BR"), kokoroVoiceParams("kokoro-pm-alex"))
         assertEquals(KokoroVoiceParams(sid = 44, lang = "pt-BR"), kokoroVoiceParams("kokoro-pm-santa"))
+        assertEquals(KokoroVoiceParams(sid = 28, lang = "es"), kokoroVoiceParams("kokoro-em-alex"))
     }
 
     @Test

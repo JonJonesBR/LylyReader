@@ -7,9 +7,18 @@ class ParadeeModelManagerTest {
 
     @Test
     fun `url de cada voz aponta para o arquivo no repositorio do modelo`() {
-        val raiz = "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/paradee/ptbr"
+        val raizPt = "https://huggingface.co/JonJonesBR/lylyreader-tts-models/resolve/main/paradee/ptbr"
+        val urlV13 = ParadeeVozes.URL_MODELO_V13
         assertEquals(
-            listOf("$raiz/paradee_dora_int8.onnx", "$raiz/paradee_alex_int8.onnx"),
+            listOf(
+                "$raizPt/paradee_dora_int8.onnx",
+                "$raizPt/paradee_alex_int8.onnx",
+                urlV13,
+                urlV13,
+                urlV13,
+                urlV13,
+                urlV13,
+            ),
             ParadeeVozes.todas.map { ParadeeModelManager.url(it) },
         )
     }
