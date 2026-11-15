@@ -16,7 +16,9 @@ import com.jonjonesbr.audiobookgen.data.DocumentRepository
 import com.jonjonesbr.audiobookgen.domain.ehFormatoSuportado
 import com.jonjonesbr.audiobookgen.service.AudioPlayerService
 import com.jonjonesbr.audiobookgen.service.ConversionNotificationManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -81,25 +83,40 @@ class MainActivity : AppCompatActivity() {
     // ── Arquivo compartilhado: vira livro da biblioteca ──────────────────────
 
     private fun importarCompartilhado(uri: Uri) {
-        val nome = DocumentRepository(this).extrairMetadadosArquivo(uri).nome
-        if (!ehFormatoSuportado(nome)) {
-            Toast.makeText(this, getString(R.string.status_unsupported_format, nome.substringAfterLast('.', "")), Toast.LENGTH_LONG).show()
-            startActivity(Intent(this, MeusLivrosActivity::class.java))
-            finish()
-            return
-        }
-        Toast.makeText(this, R.string.bib_importando, Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
-            val livro = runCatching { BibliotecaStore.importarDeUri(applicationContext, uri, nome) }.getOrNull()
+            val meta = withContext(Dispatchers.IO) {
+                DocumentRepository(applicationContext).extrairMetadadosArquivo(uri)
+            }
+            val nome = meta.nome
             val biblioteca = Intent(this@MainActivity, MeusLivrosActivity::class.java)
-            if (livro == null) {
-                Toast.makeText(this@MainActivity, R.string.status_file_read_error_detail, Toast.LENGTH_LONG).show()
+            if (!ehFormatoSuportado(nome)) {
+                val ext = nome.substringAfterLast('.', "")
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.status_unsupported_format, ext),
+                    Toast.LENGTH_LONG
+                ).show()
+                startActivity(biblioteca)
+            } else if (meta.tamanhoBytes > BibliotecaStore.LIMITE_BYTES) {
+                Toast.makeText(this@MainActivity, R.string.extracao_arquivo_grande, Toast.LENGTH_LONG).show()
                 startActivity(biblioteca)
             } else {
-                // Biblioteca embaixo (mantém o tour/novidades de quem abriu o app por aqui) e a tela do livro por cima.
-                startActivities(
-                    arrayOf(biblioteca, Intent(this@MainActivity, LivroActivity::class.java).putExtra(LivroActivity.EXTRA_ID, livro.id))
-                )
+                Toast.makeText(this@MainActivity, R.string.bib_importando, Toast.LENGTH_SHORT).show()
+                val livro = runCatching {
+                    BibliotecaStore.importarDeUri(applicationContext, uri, nome)
+                }.getOrNull()
+                if (livro == null) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        R.string.status_file_read_error_detail,
+                        Toast.LENGTH_LONG
+                    ).show()
+                    startActivity(biblioteca)
+                } else {
+                    val abrirLivro = Intent(this@MainActivity, LivroActivity::class.java)
+                        .putExtra(LivroActivity.EXTRA_ID, livro.id)
+                    startActivities(arrayOf(biblioteca, abrirLivro))
+                }
             }
             finish()
         }
