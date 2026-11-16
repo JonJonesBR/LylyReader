@@ -134,7 +134,9 @@ internal class FilaDaLeituraGuiada(
         }
     }
 
-    /** Carrega o próximo livro da fila com o mesmo texto que a tela mostra (cache e regras de [TextoNarravelDoLivro]). */
+    /**
+     * Carrega o próximo livro da fila com o mesmo texto que a tela mostra (cache e regras de [TextoNarravelDoLivro]).
+     */
     private suspend fun prepararLivroDaFilaPadrao(caminho: String): LivroDaFila? {
         val texto = when (val resultado = TextoNarravelDoLivro(context).carregar(caminho)) {
             is ExtractionResult.Success -> resultado.texto
