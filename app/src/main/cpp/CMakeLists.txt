@@ -76,6 +76,7 @@ target_link_libraries(pockettts_jni PRIVATE
     log
     android
 )
+target_link_options(pockettts_jni PRIVATE "-Wl,-z,max-page-size=16384")
 
 # Paradee (fonemizador espeak-ng 1.52.0 + ORT). Só o código-fonte é baixado: sem add_subdirectory,
 # porque o CMake upstream baixa sonic, inclui CTest e executa binário do host.
@@ -173,4 +174,4 @@ target_link_libraries(paradee_jni PRIVATE
 # Inline/templates dos headers do ORT e do libc++ ficam ocultos; o JNIEXPORT segue exportado.
 target_compile_options(paradee_jni PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
 # Nenhum símbolo do espeak/ucd sai exportado pela .so: só as funções JNI de NativeParadee.
-target_link_options(paradee_jni PRIVATE "-Wl,--exclude-libs,ALL")
+target_link_options(paradee_jni PRIVATE "-Wl,--exclude-libs,ALL" "-Wl,-z,max-page-size=16384")
