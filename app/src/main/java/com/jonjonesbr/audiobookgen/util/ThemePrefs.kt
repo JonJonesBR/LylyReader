@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatDelegate
 import com.jonjonesbr.audiobookgen.R
 import java.util.WeakHashMap
@@ -64,7 +65,13 @@ object ThemePrefs {
                 }
             }
 
-            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityStarted(activity: Activity) {
+                val raiz = activity.findViewById<ViewGroup>(android.R.id.content)?.getChildAt(0) ?: return
+                if (raiz.getTag(R.id.insetsSistemaETeclado) == null) {
+                    raiz.setTag(R.id.insetsSistemaETeclado, true)
+                    raiz.aplicarInsetsDeSistemaETeclado()
+                }
+            }
             override fun onActivityPaused(activity: Activity) = Unit
             override fun onActivityStopped(activity: Activity) = Unit
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit

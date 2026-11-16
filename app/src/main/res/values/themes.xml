@@ -23,6 +23,7 @@
         <item name="colorSurfaceContainerHigh">#ECE6F0</item>
         <item name="colorSurfaceContainerHighest">#ECE6F0</item>
         <item name="android:colorBackground">#FDFBFF</item>
+        <item name="android:windowBackground">#FDFBFF</item>
 
         <!-- Barras de sistema acompanham o fundo; ícones claros/escuros conforme o tema -->
         <item name="android:statusBarColor">#FDFBFF</item>
@@ -84,6 +85,7 @@
         <item name="colorSurfaceContainerHigh">#E6DAC0</item>
         <item name="colorSurfaceContainerHighest">#E6DAC0</item>
         <item name="android:colorBackground">#F5EEDC</item>
+        <item name="android:windowBackground">#F5EEDC</item>
 
         <!-- Barras de sistema acompanham o fundo; ícones claros/escuros conforme o tema -->
         <item name="android:statusBarColor">#F5EEDC</item>

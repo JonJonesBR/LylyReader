@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.domain
 
 import android.content.Context
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.util.lerTextoComLimite
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlinx.coroutines.ensureActive
@@ -197,7 +198,7 @@ class GeminiSpeakerClient(
             connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
             val code = connection.responseCode
             val text = (if (code in 200..299) connection.inputStream else connection.errorStream)
-                ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                ?.lerTextoComLimite(LIMITE_RESPOSTA_GEMINI_BYTES).orEmpty()
             when {
                 code in 200..299 -> {
                     val parts = JSONObject(text).optJSONArray("candidates")?.optJSONObject(0)
@@ -228,6 +229,7 @@ class GeminiSpeakerClient(
         )
         private const val MAX_ATTEMPTS_PER_MODEL = 3
         private const val BACKOFF_MS = 4_000L
+        private const val LIMITE_RESPOSTA_GEMINI_BYTES = 4L * 1024L * 1024L
 
         private val EXCLUDED_WORDS = listOf(
             "tts", "image", "embedding", "live", "audio", "robotics", "computer-use", "imagen", "veo", "aqa", "learnlm", "gemma", "vision"
@@ -246,7 +248,7 @@ class GeminiSpeakerClient(
             }
             try {
                 if (connection.responseCode !in 200..299) throw java.io.IOException("HTTP ${connection.responseCode}")
-                val json = JSONObject(connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() })
+                val json = JSONObject(connection.inputStream.lerTextoComLimite(LIMITE_RESPOSTA_GEMINI_BYTES))
                 val items = json.optJSONArray("models") ?: return emptyList()
                 val found = mutableListOf<String>()
                 for (i in 0 until items.length()) {

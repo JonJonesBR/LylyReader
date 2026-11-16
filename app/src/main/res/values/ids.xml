@@ -2,4 +2,6 @@
 <resources>
     <!-- Raiz da dica "CoachMark" (Fase J): evita mostrar duas ao mesmo tempo. -->
     <item name="coachMarkRaiz" type="id"/>
+    <!-- Marca a view raiz que já recebeu o listener de insets de sistema e teclado (API 35+). -->
+    <item name="insetsSistemaETeclado" type="id"/>
 </resources>
