@@ -33,7 +33,8 @@ fun View.aplicarInsetsDeSistemaETeclado() {
             right = baseRight + barras.right,
             bottom = baseBottom + maxOf(barras.bottom, teclado.bottom),
         )
-        insets
+        // Consome para que filhos (ex.: BottomNavigationView) não apliquem a barra de navegação de novo.
+        WindowInsetsCompat.CONSUMED
     }
     if (isAttachedToWindow) {
         ViewCompat.requestApplyInsets(this)
