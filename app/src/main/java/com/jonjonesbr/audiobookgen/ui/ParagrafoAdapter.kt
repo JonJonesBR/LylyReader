@@ -35,40 +35,6 @@ import androidx.recyclerview.widget.RecyclerView
 
 enum class AdapterModo { LEITURA, EDICAO, ALTERACOES }
 
-private val COR_SELECAO = mapOf(
-    TemaLeitura.CLARO  to Color.parseColor("#D0C0FF"),
-    TemaLeitura.ESCURO to Color.parseColor("#4A3070"),
-    TemaLeitura.SEPIA  to Color.parseColor("#C8A870"),
-    TemaLeitura.OLED   to Color.parseColor("#4A3070"),
-)
-private val COR_BUSCA_ATUAL = mapOf(
-    TemaLeitura.CLARO  to Color.parseColor("#FFE082"),
-    TemaLeitura.ESCURO to Color.parseColor("#5C4A20"),
-    TemaLeitura.SEPIA  to Color.parseColor("#D4A040"),
-    TemaLeitura.OLED   to Color.parseColor("#5C4A20"),
-)
-private val COR_BUSCA_MATCH = mapOf(
-    TemaLeitura.CLARO  to Color.parseColor("#FFF8E1"),
-    TemaLeitura.ESCURO to Color.parseColor("#3A3020"),
-    TemaLeitura.SEPIA  to Color.parseColor("#E8D0A0"),
-    TemaLeitura.OLED   to Color.parseColor("#3A3020"),
-)
-// Claro e Sépia escurecidos (a11y-4): o destaque do parágrafo narrado tinha 1,12:1 e 1,20:1 contra o fundo.
-private val COR_SYNC = mapOf(
-    TemaLeitura.CLARO  to Color.parseColor("#DAD2F5"),
-    TemaLeitura.ESCURO to Color.parseColor("#2A2040"),
-    TemaLeitura.SEPIA  to Color.parseColor("#DFC99C"),
-    TemaLeitura.OLED   to Color.parseColor("#2A2040"),
-)
-
-// Barra vertical na borda inicial do parágrafo narrado (a11y-4): sinal além da cor, com contraste >= 3:1
-// contra o fundo do tema e contra o destaque de sincronia (WCAG 1.4.11).
-private val COR_BARRA_SYNC = mapOf(
-    TemaLeitura.CLARO  to Color.parseColor("#6A4CA0"),
-    TemaLeitura.ESCURO to Color.parseColor("#B39DDB"),
-    TemaLeitura.SEPIA  to Color.parseColor("#6B4423"),
-    TemaLeitura.OLED   to Color.parseColor("#B39DDB"),
-)
 private const val LARGURA_BARRA_SYNC_DP = 4f
 
 /**
@@ -378,12 +344,7 @@ class ParagrafoAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val par = paragrafos.getOrNull(position)
-        val corTexto = when (tema) {
-            TemaLeitura.CLARO  -> Color.parseColor("#333333")
-            TemaLeitura.ESCURO -> Color.parseColor("#E0E0E0")
-            TemaLeitura.SEPIA  -> Color.parseColor("#3B2A1A")
-            TemaLeitura.OLED   -> Color.parseColor("#CCCCCC")
-        }
+        val corTexto = paletaDoLeitor(tema).textoParagrafo
         when (holder) {
             is VHLeitura    -> bindLeitura(holder, par, position, corTexto)
             is VHEdicao     -> bindEdicao(holder, par, position, corTexto)
@@ -443,13 +404,14 @@ class ParagrafoAdapter(
         val estaBuscaAtual = position == posicaoResultadoBusca(buscaResultados, buscaIndiceAtual)
         val estaBuscaMatch = buscaResultados.contains(position)
 
+        val paleta = paletaDoLeitor(tema)
         val corFundo = when {
-            estaSelecao    -> COR_SELECAO[tema]
-            estaBuscaAtual -> COR_BUSCA_ATUAL[tema]
-            estaBuscaMatch -> COR_BUSCA_MATCH[tema]
-            estaNoSync     -> COR_SYNC[tema]
+            estaSelecao    -> paleta.selecao
+            estaBuscaAtual -> paleta.buscaAtual
+            estaBuscaMatch -> paleta.buscaMatch
+            estaNoSync     -> paleta.sync
             else           -> Color.TRANSPARENT
-        } ?: Color.TRANSPARENT
+        }
         val destaquesDoParagrafo = destaques[position].orEmpty()
         val trechosBusca = buscaTrechos[position].orEmpty()
         val corTrechoBusca = if (estaBuscaAtual) COR_TRECHO_BUSCA_ATUAL else COR_TRECHO_BUSCA
@@ -524,7 +486,7 @@ class ParagrafoAdapter(
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
             spannable.setSpan(
-                ForegroundColorSpan(0xFFB71C1C.toInt()),
+                ForegroundColorSpan(COR_PARAGRAFO_REMOVIDO),
                 0, spannable.length,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
@@ -624,14 +586,6 @@ private fun AppCompatActivity.definirPalavra(texto: String) {
     Toast.makeText(this, R.string.toast_definir_indisponivel, Toast.LENGTH_SHORT).show()
 }
 
-/** Cor do destaque persistente (T3.5) — amarelo translúcido, legível sobre os 4 temas. */
-private val COR_DESTAQUE = Color.parseColor("#55FFC107")
-
-// Palavra achada pela busca: laranja forte no resultado atual, amarelo nos demais. Cores opacas
-// com texto escuro por cima não funcionariam nos temas escuros; a transparência mantém o texto legível.
-private val COR_TRECHO_BUSCA_ATUAL = Color.parseColor("#CCFF9800")
-private val COR_TRECHO_BUSCA = Color.parseColor("#88FFEB3B")
-
 /**
  * Aplica um BackgroundColorSpan por trecho destacado salvo. Função de topo (não membro da
  * classe) pelo mesmo motivo de [aplicarTipografiaLeitor] — não estourar TooManyFunctions.
@@ -639,7 +593,7 @@ private val COR_TRECHO_BUSCA = Color.parseColor("#88FFEB3B")
 private fun android.text.SpannableString.aplicarDestaques(
     destaques: List<IntRange>,
     maxLen: Int,
-    cor: Int = COR_DESTAQUE
+    cor: Int = COR_DESTAQUE_PERSISTENTE
 ) {
     destaques.forEach { range ->
         val start = range.first.coerceIn(0, maxLen)
@@ -698,7 +652,7 @@ private fun TextView.pintarFundoParagrafo(corFundo: Int, narrado: Boolean, tema:
         setBackgroundColor(corFundo)
         return
     }
-    val corBarra = COR_BARRA_SYNC[tema] ?: Color.TRANSPARENT
+    val corBarra = paletaDoLeitor(tema).barraSync
     // A leitura guiada repinta o narrado cerca de 20 vezes por segundo: reaproveita a camada já criada por esta
     // função em vez de montar um LayerDrawable novo a cada bind.
     val camadasAtuais = background as? LayerDrawable

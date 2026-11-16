@@ -2,7 +2,6 @@ package com.jonjonesbr.audiobookgen.ui
 
 import android.app.Activity
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.widget.EditText
@@ -15,23 +14,94 @@ import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.util.dpToPx
 
-/** Cores do leitor para um tema de leitura: fundo, superfície (barra de busca), texto e texto secundário. */
+/**
+ * Cores do leitor para um tema de leitura: barras/superfícies e cores dos parágrafos
+ * (texto, seleção, busca e sincronia da leitura guiada).
+ */
+@Suppress("LongParameterList")
 internal data class PaletaLeitor(
     val fundo: Int,
     val superficie: Int,
     val texto: Int,
     val suave: Int,
-    val clara: Boolean
+    val clara: Boolean,
+    val textoParagrafo: Int,
+    val selecao: Int,
+    val buscaAtual: Int,
+    val buscaMatch: Int,
+    val sync: Int,
+    val barraSync: Int
 )
 
-internal fun paletaDoLeitor(tema: TemaLeitura): PaletaLeitor = when (tema) {
-    TemaLeitura.CLARO -> PaletaLeitor(cor("#F8F8F8"), cor("#ECECEC"), cor("#222222"), cor("#5F5F5F"), clara = true)
-    TemaLeitura.ESCURO -> PaletaLeitor(cor("#1A1A1A"), cor("#262626"), cor("#E6E6E6"), cor("#A0A0A0"), clara = false)
-    TemaLeitura.SEPIA -> PaletaLeitor(cor("#F5ECD7"), cor("#EADFC4"), cor("#3B2F1E"), cor("#7A6A50"), clara = true)
-    TemaLeitura.OLED -> PaletaLeitor(cor("#000000"), cor("#141414"), cor("#E0E0E0"), cor("#9A9A9A"), clara = false)
-}
+/** Cor do destaque persistente (T3.5) — amarelo translúcido, legível sobre os 4 temas. */
+internal const val COR_DESTAQUE_PERSISTENTE = 0x55FFC107
 
-private fun cor(hex: String) = Color.parseColor(hex)
+/** Palavra achada pela busca: laranja forte no resultado atual, amarelo nos demais. */
+@Suppress("MagicNumber")
+internal val COR_TRECHO_BUSCA_ATUAL = 0xCCFF9800.toInt()
+@Suppress("MagicNumber")
+internal val COR_TRECHO_BUSCA = 0x88FFEB3B.toInt()
+
+/** Cor de parágrafo marcado como removido no modo de alterações. */
+@Suppress("MagicNumber")
+internal val COR_PARAGRAFO_REMOVIDO = 0xFFB71C1C.toInt()
+
+// Claro e Sépia têm sync escurecido e barra lateral com contraste >= 3:1 (a11y-4 / WCAG 1.4.11).
+@Suppress("MagicNumber")
+internal fun paletaDoLeitor(tema: TemaLeitura): PaletaLeitor = when (tema) {
+    TemaLeitura.CLARO -> PaletaLeitor(
+        fundo = 0xFFF8F8F8.toInt(),
+        superficie = 0xFFECECEC.toInt(),
+        texto = 0xFF222222.toInt(),
+        suave = 0xFF5F5F5F.toInt(),
+        clara = true,
+        textoParagrafo = 0xFF333333.toInt(),
+        selecao = 0xFFD0C0FF.toInt(),
+        buscaAtual = 0xFFFFE082.toInt(),
+        buscaMatch = 0xFFFFF8E1.toInt(),
+        sync = 0xFFDAD2F5.toInt(),
+        barraSync = 0xFF6A4CA0.toInt()
+    )
+    TemaLeitura.ESCURO -> PaletaLeitor(
+        fundo = 0xFF1A1A1A.toInt(),
+        superficie = 0xFF262626.toInt(),
+        texto = 0xFFE6E6E6.toInt(),
+        suave = 0xFFA0A0A0.toInt(),
+        clara = false,
+        textoParagrafo = 0xFFE0E0E0.toInt(),
+        selecao = 0xFF4A3070.toInt(),
+        buscaAtual = 0xFF5C4A20.toInt(),
+        buscaMatch = 0xFF3A3020.toInt(),
+        sync = 0xFF2A2040.toInt(),
+        barraSync = 0xFFB39DDB.toInt()
+    )
+    TemaLeitura.SEPIA -> PaletaLeitor(
+        fundo = 0xFFF5ECD7.toInt(),
+        superficie = 0xFFEADFC4.toInt(),
+        texto = 0xFF3B2F1E.toInt(),
+        suave = 0xFF7A6A50.toInt(),
+        clara = true,
+        textoParagrafo = 0xFF3B2A1A.toInt(),
+        selecao = 0xFFC8A870.toInt(),
+        buscaAtual = 0xFFD4A040.toInt(),
+        buscaMatch = 0xFFE8D0A0.toInt(),
+        sync = 0xFFDFC99C.toInt(),
+        barraSync = 0xFF6B4423.toInt()
+    )
+    TemaLeitura.OLED -> PaletaLeitor(
+        fundo = 0xFF000000.toInt(),
+        superficie = 0xFF141414.toInt(),
+        texto = 0xFFE0E0E0.toInt(),
+        suave = 0xFF9A9A9A.toInt(),
+        clara = false,
+        textoParagrafo = 0xFFCCCCCC.toInt(),
+        selecao = 0xFF4A3070.toInt(),
+        buscaAtual = 0xFF5C4A20.toInt(),
+        buscaMatch = 0xFF3A3020.toInt(),
+        sync = 0xFF2A2040.toInt(),
+        barraSync = 0xFFB39DDB.toInt()
+    )
+}
 
 /** Alfa da bolinha da setinha da barra de cima (rb-66): 0,85 de 255. */
 private const val ALFA_DA_SETINHA = 217
