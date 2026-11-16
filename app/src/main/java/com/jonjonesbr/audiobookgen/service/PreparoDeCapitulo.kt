@@ -32,6 +32,7 @@ internal class PreparoDeCapitulo(
     private val callbacks: Callbacks
 ) {
     /** Tudo que o preparo precisa ler da leitura ao vivo. Só lambdas, avaliadas a cada uso. */
+    @Suppress("LongParameterList")
     class Callbacks(
         val ritmoAtual: () -> Int,
         val vozAtual: () -> String,
@@ -104,7 +105,7 @@ internal class PreparoDeCapitulo(
      * Começa a preparar as [unidades] (parágrafo, (texto, voz)). [titulo] aparece na notificação. Não faz nada
      * se já houver preparo em curso ou se não houver unidades.
      */
-    @Suppress("LongMethod", "CyclomaticComplexMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "TooGenericExceptionCaught")
     fun iniciar(
         unidades: List<Pair<Int, Pair<String, String>>>,
         voz: String,
