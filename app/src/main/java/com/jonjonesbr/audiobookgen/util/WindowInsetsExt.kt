@@ -9,6 +9,38 @@ import androidx.core.view.updatePadding
 import kotlin.math.roundToInt
 
 /**
+ * Aplica os insets das barras de sistema (status, navegação e recorte de câmera) e do teclado virtual
+ * ([WindowInsetsCompat.Type.ime]) como padding na view raiz da Activity.
+ *
+ * Em API 35+ (edge-to-edge obrigatório), `android:windowSoftInputMode="adjustResize"` e `fitsSystemWindows`
+ * sozinhos não reservam espaço para o teclado (`ime()`), deixando campos no rodapé cobertos por ele.
+ * Somando `maxOf(barras.bottom, teclado.bottom)` ao padding base, a tela encolhe acima do teclado
+ * quando ele abre e volta ao normal quando fecha, mantendo o fundo da view atrás das barras transparentes.
+ */
+fun View.aplicarInsetsDeSistemaETeclado() {
+    val baseLeft = paddingLeft
+    val baseTop = paddingTop
+    val baseRight = paddingRight
+    val baseBottom = paddingBottom
+    ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+        val barras = insets.getInsets(
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+        )
+        val teclado = insets.getInsets(WindowInsetsCompat.Type.ime())
+        view.updatePadding(
+            left = baseLeft + barras.left,
+            top = baseTop + barras.top,
+            right = baseRight + barras.right,
+            bottom = baseBottom + maxOf(barras.bottom, teclado.bottom),
+        )
+        insets
+    }
+    if (isAttachedToWindow) {
+        ViewCompat.requestApplyInsets(this)
+    }
+}
+
+/**
  * Quanto a view ainda desce abaixo do começo da barra de navegação, em px. Quem já descontou a barra (o pai com
  * fitsSystemWindows põe os filhos acima dela) fica com 0; quem não descontou fica com a altura da barra; no meio, a
  * parte que entra nela. Função pura, para o teste sem Android.

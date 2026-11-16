@@ -16,6 +16,7 @@ import com.jonjonesbr.audiobookgen.domain.BackupException
 import com.jonjonesbr.audiobookgen.domain.BackupUseCase
 import com.jonjonesbr.audiobookgen.domain.MotivoBackup
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
+import com.jonjonesbr.audiobookgen.util.lerTextoComLimite
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.mostrarErro
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,8 @@ import org.json.JSONObject
 
 // Indentação do JSON das configurações exportadas (legível para quem abrir o arquivo).
 private const val JSON_INDENT = 4
+// Teto generoso para JSON de configurações (na prática tem alguns KB); evita OOM com arquivo grande.
+private const val LIMITE_CONFIG_JSON_BYTES = 4L * 1024L * 1024L
 
 /**
  * Backup dos Ajustes (rb-11): exportar e restaurar as configurações em JSON ou o backup completo em ZIP.
@@ -231,9 +234,8 @@ class AjustesBackupController(
  */
 private fun lerJsonDeUri(resolver: ContentResolver, uri: Uri): Pair<JSONObject?, Exception?> {
     return try {
-        val jsonStr = resolver.openInputStream(uri)?.use { inputStream ->
-            inputStream.bufferedReader().use { it.readText() }
-        } ?: error("Input stream is null")
+        val jsonStr = resolver.openInputStream(uri)?.lerTextoComLimite(LIMITE_CONFIG_JSON_BYTES)
+            ?: error("Input stream is null")
         JSONObject(jsonStr) to null
     } catch (e: java.io.IOException) {
         Log.w("SettingsActivity", "Erro ao carregar configuracoes", e)

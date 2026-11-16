@@ -166,6 +166,9 @@ internal fun Activity.aplicarPaletaNasBarrasDoLeitor(p: PaletaLeitor) {
         setIndicatorColor(p.texto)
         trackColor = ColorUtils.setAlphaComponent(p.suave, ALFA_DO_TRILHO_DO_PROGRESSO)
     }
-    // Ícones da barra de status escuros no fundo claro (e claros no escuro).
-    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = p.clara
+    // Ícones das barras de sistema escuros no fundo claro (e claros no escuro).
+    WindowInsetsControllerCompat(window, window.decorView).apply {
+        isAppearanceLightStatusBars = p.clara
+        isAppearanceLightNavigationBars = p.clara
+    }
 }

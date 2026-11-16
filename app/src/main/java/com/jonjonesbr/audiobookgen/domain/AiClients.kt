@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.domain
 
 import android.content.Context
 import com.jonjonesbr.audiobookgen.R
+import com.jonjonesbr.audiobookgen.util.lerTextoComLimite
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import org.json.JSONArray
 import org.json.JSONObject
@@ -82,7 +83,7 @@ class OpenAiStyleClient(
             connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
             val code = connection.responseCode
             val text = (if (code in 200..299) connection.inputStream else connection.errorStream)
-                ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                ?.lerTextoComLimite(LIMITE_RESPOSTA_IA_BYTES).orEmpty()
             return when {
                 code in 200..299 -> extractContent(text, context)
                 code == 401 || code == 403 ->
@@ -101,6 +102,7 @@ class OpenAiStyleClient(
     companion object {
         private const val MAX_ATTEMPTS = 4
         private const val BACKOFF_MS = 5_000L
+        private const val LIMITE_RESPOSTA_IA_BYTES = 4L * 1024L * 1024L
 
         const val POLLINATIONS_ENDPOINT = "https://text.pollinations.ai/openai"
         const val POLLINATIONS_MODEL = "openai"

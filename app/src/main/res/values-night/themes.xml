@@ -23,6 +23,7 @@
         <item name="colorSurfaceContainerHigh">#2B2930</item>
         <item name="colorSurfaceContainerHighest">#2B2930</item>
         <item name="android:colorBackground">#141218</item>
+        <item name="android:windowBackground">#141218</item>
 
         <!-- Barras de sistema acompanham o fundo; ícones claros/escuros conforme o tema -->
         <item name="android:statusBarColor">#141218</item>
