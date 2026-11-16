@@ -35,7 +35,7 @@ class InsetsSistemaETecladoTest {
         val soBarras = WindowInsetsCompat.Builder()
             .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 60, 0, 48))
             .build()
-        ViewCompat.dispatchApplyWindowInsets(activity.window.decorView, soBarras)
+        ViewCompat.dispatchApplyWindowInsets(raiz, soBarras)
         shadowOf(Looper.getMainLooper()).idle()
 
         assertEquals(16, raiz.paddingLeft)
@@ -47,12 +47,12 @@ class InsetsSistemaETecladoTest {
             .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 60, 0, 48))
             .setInsets(WindowInsetsCompat.Type.ime(), Insets.of(0, 0, 0, 400))
             .build()
-        ViewCompat.dispatchApplyWindowInsets(activity.window.decorView, comTeclado)
+        ViewCompat.dispatchApplyWindowInsets(raiz, comTeclado)
         shadowOf(Looper.getMainLooper()).idle()
 
         assertEquals(412, raiz.paddingBottom)
 
-        ViewCompat.dispatchApplyWindowInsets(activity.window.decorView, soBarras)
+        ViewCompat.dispatchApplyWindowInsets(raiz, soBarras)
         shadowOf(Looper.getMainLooper()).idle()
 
         assertEquals(60, raiz.paddingBottom)
