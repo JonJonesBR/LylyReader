@@ -19,6 +19,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+/** Livro pronto para narrar: caminho, título para a notificação e texto limpo (o mesmo da tela). */
+internal data class LivroDaFila(val caminho: String, val titulo: String, val texto: TextoExtraido)
+
 /**
  * Fila "Ler tudo" da leitura guiada: prepara o próximo livro da sequência e coordena a troca sem encerrar a
  * sessão (mesmo token, serviço e soneca). Só usado na main thread.
@@ -32,9 +35,6 @@ internal class FilaDaLeituraGuiada(
     private val pythonUseCase: PythonEngineUseCase,
     private val callbacks: Callbacks
 ) {
-    /** Livro pronto para narrar: caminho, título para a notificação e texto limpo (o mesmo da tela). */
-    internal data class LivroDaFila(val caminho: String, val titulo: String, val texto: TextoExtraido)
-
     /** Tudo que a fila precisa acionar no gerenciador da leitura. Só lambdas, avaliadas a cada uso. */
     class Callbacks(
         val caminhoAtual: () -> String,

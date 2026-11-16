@@ -320,8 +320,6 @@ class GuidedPlayerManager(
     }
 
     // ── Fila "Ler tudo" ─────────────────────────────────────────────────────────
-    internal typealias LivroDaFila = FilaDaLeituraGuiada.LivroDaFila
-
     private val fila: FilaDaLeituraGuiada = FilaDaLeituraGuiada(
         context,
         coroutineScope,

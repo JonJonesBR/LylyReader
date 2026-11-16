@@ -18,6 +18,7 @@ import com.jonjonesbr.audiobookgen.player.MediaPlayerEngineImpl
 import com.jonjonesbr.audiobookgen.service.GuidedPlaybackBridge
 import com.jonjonesbr.audiobookgen.service.GuidedPlayerManager
 import com.jonjonesbr.audiobookgen.service.GuidedState
+import com.jonjonesbr.audiobookgen.service.LivroDaFila
 import com.jonjonesbr.audiobookgen.service.SleepTimerManager
 import io.mockk.Runs
 import io.mockk.every
@@ -387,7 +388,7 @@ class GuidedPlayerManagerTest {
     private fun paragrafosDo(caminho: String, quantidade: Int = 2) =
         (0 until quantidade).map { Paragrafo(texto = "${caminho.trimStart('/')}-$it", charOffset = 0, indiceCapitulo = 0) }
 
-    private fun livroDaFila(caminho: String, quantidade: Int = 2) = GuidedPlayerManager.LivroDaFila(
+    private fun livroDaFila(caminho: String, quantidade: Int = 2) = LivroDaFila(
         caminho, "Título $caminho", TextoExtraido(emptyList(), paragrafosDo(caminho, quantidade), 0)
     )
 
@@ -470,7 +471,7 @@ class GuidedPlayerManagerTest {
     @Test
     fun stopDuranteATrocaCancelaOLivroQueSoPrepara() {
         val manager = managerNoFimDoLivro("/a", listOf("/b"))
-        val liberar = CompletableDeferred<GuidedPlayerManager.LivroDaFila?>()
+        val liberar = CompletableDeferred<LivroDaFila?>()
         manager.prepararLivroDaFila = { liberar.await() }
 
         manager.next()
@@ -487,7 +488,7 @@ class GuidedPlayerManagerTest {
     @Test
     fun pausaDuranteATrocaSeguraOLivroAteRetomar() {
         val manager = managerNoFimDoLivro("/a", listOf("/b"))
-        val liberar = CompletableDeferred<GuidedPlayerManager.LivroDaFila?>()
+        val liberar = CompletableDeferred<LivroDaFila?>()
         manager.prepararLivroDaFila = { liberar.await() }
 
         manager.next()
