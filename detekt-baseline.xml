@@ -30,7 +30,6 @@
     <ID>CyclomaticComplexMethod:FolgaFrasesCurtas.kt$FolgaFrasesCurtas$fun acelerar(audio: FloatArray, sampleRate: Int, fator: Float): FloatArray</ID>
     <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$@Suppress("LongMethod") fun play(index: Int)</ID>
     <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$@Suppress("LongMethod") private suspend fun tocarParagrafoPorOracoes( oracoes: List&lt;OracaoGuia&gt;, paragraphText: String, voz: String, ritmo: Int, speedVal: Float, synthesizer: com.jonjonesbr.audiobookgen.tts.TtsSynthesizer )</ID>
-    <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$fun prepararCapitulo(desde: Int, ate: Int, titulo: String)</ID>
     <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private fun prefetch(index: Int)</ID>
     <ID>CyclomaticComplexMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private suspend fun tocarParagrafoPorFalantes( segments: List&lt;VoiceAssignedSegment&gt;, paragraphText: String, narratorVoice: String, fallbackEngine: String, ritmo: Int, speedVal: Float )</ID>
     <ID>CyclomaticComplexMethod:GuidedReadingBarController.kt$GuidedReadingBarController$private fun atualizarGuidedPlayerUI(guidedState: GuidedState)</ID>
@@ -78,7 +77,6 @@
     <ID>LongMethod:AudiobookViewModel.kt$AudiobookViewModel$private fun observarTrabalho(workId: java.util.UUID)</ID>
     <ID>LongMethod:ConversionWorker.kt$ConversionWorker$@Suppress("TooGenericExceptionCaught") // fronteira do WorkManager: qualquer falha vira Result.failure override suspend fun doWork(): Result</ID>
     <ID>LongMethod:ConversionWorker.kt$ConversionWorker$private suspend fun executarConversao( arquivo: String, voz: String, velocidade: String, estilo: String, saida: String ): Result</ID>
-    <ID>LongMethod:GuidedPlayerManager.kt$GuidedPlayerManager$fun prepararCapitulo(desde: Int, ate: Int, titulo: String)</ID>
     <ID>LongMethod:GuidedPlayerManager.kt$GuidedPlayerManager$private suspend fun tocarParagrafoPorFalantes( segments: List&lt;VoiceAssignedSegment&gt;, paragraphText: String, narratorVoice: String, fallbackEngine: String, ritmo: Int, speedVal: Float )</ID>
     <ID>LongMethod:GuidedReadingBarController.kt$GuidedReadingBarController$private fun atualizarGuidedPlayerUI(guidedState: GuidedState)</ID>
     <ID>LongMethod:GuidedVoiceOptionsDialog.kt$GuidedVoiceOptionsDialog$fun show( activity: AppCompatActivity, manager: GuidedPlayerManager, prepararCapitulo: (() -&gt; Unit)? = null, aoMudar: () -&gt; Unit = {} )</ID>
