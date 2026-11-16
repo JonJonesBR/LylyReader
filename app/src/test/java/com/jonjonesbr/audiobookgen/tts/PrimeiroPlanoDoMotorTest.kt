@@ -68,26 +68,24 @@ class PrimeiroPlanoDoMotorTest {
 
     @Test
     fun `sherpa onTimeout delega ao motor sem derrubar o servico`() {
-        val servico = spyk(Robolectric.buildService(SherpaSynthService::class.java).create().get())
+        val servico = Robolectric.buildService(SherpaSynthService::class.java).create().get()
         servico.onBind(Intent())
 
         servico.onTimeout(START_ID_TESTE, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
 
-        verify(exactly = 1) { servico.stopForeground(Service.STOP_FOREGROUND_REMOVE) }
+        assertTrue(shadowOf(servico).isForegroundStopped)
+        assertTrue(shadowOf(servico).notificationShouldRemoved)
         servico.onDestroy()
     }
 
     @Test
-    fun `pocket pos onTimeout sem foreground sintetiza sem excecao e nao agenda stopForeground`() {
-        val servico = spyk(Robolectric.buildService(PocketSynthService::class.java).create().get())
+    fun `pocket pos onTimeout sintetiza sem excecao e sai do foreground apos espera`() {
+        val servico = Robolectric.buildService(PocketSynthService::class.java).create().get()
         val binder = servico.onBind(Intent()) as IPocketSynthService
 
         servico.onTimeout(START_ID_TESTE, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        verify(exactly = 1) { servico.stopForeground(Service.STOP_FOREGROUND_REMOVE) }
-
-        every {
-            servico.startForeground(any(), any(), any())
-        } throws SecurityException("primeiro plano negado em segundo plano")
+        assertTrue(shadowOf(servico).isForegroundStopped)
+        assertTrue(shadowOf(servico).notificationShouldRemoved)
 
         val retorno = binder.synthesize(
             "teste",
@@ -101,7 +99,7 @@ class PrimeiroPlanoDoMotorTest {
         assertTrue(retorno.isNotBlank())
 
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(ESPERA_AVANCO_MS))
-        verify(exactly = 1) { servico.stopForeground(Service.STOP_FOREGROUND_REMOVE) }
+        assertTrue(shadowOf(servico).isForegroundStopped)
         servico.onDestroy()
     }
 }
