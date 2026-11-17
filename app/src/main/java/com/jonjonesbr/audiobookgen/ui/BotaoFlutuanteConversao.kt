@@ -60,28 +60,33 @@ object BotaoFlutuanteConversao {
         })
     }
 
+    private fun ehTelaElegivel(activity: Activity): Boolean {
+        return activity is AppCompatActivity &&
+            activity::class.java !in TELAS_EXCLUIDAS &&
+            activity.findViewById<View>(R.id.cartaoGerandoAgora) == null
+    }
+
     private fun anexarSeElegivel(app: Application, activity: Activity) {
-        if (activity !is AppCompatActivity) return
-        if (activity::class.java in TELAS_EXCLUIDAS) return
-        if (activity.findViewById<View>(R.id.cartaoGerandoAgora) != null) return
-        val conteudo = activity.findViewById<FrameLayout>(android.R.id.content) ?: return
+        if (!ehTelaElegivel(activity)) return
+        val appActivity = activity as AppCompatActivity
+        val conteudo = appActivity.findViewById<FrameLayout>(android.R.id.content) ?: return
 
         val existente = conteudo.findViewById<View>(R.id.botaoFlutuanteConversao)
         if (existente != null) {
             if (existente.visibility == View.VISIBLE) {
-                existente.post { posicionarPelaPreferencia(existente, conteudo, AppPrefs(activity)) }
+                existente.post { posicionarPelaPreferencia(existente, conteudo, AppPrefs(appActivity)) }
             }
             return
         }
 
-        val botao = LayoutInflater.from(activity)
+        val botao = LayoutInflater.from(appActivity)
             .inflate(R.layout.view_botao_flutuante_conversao, conteudo, false)
-        botao.translationZ = ELEVACAO_Z_DP * activity.resources.displayMetrics.density
+        botao.translationZ = ELEVACAO_Z_DP * appActivity.resources.displayMetrics.density
         conteudo.addView(botao)
 
-        val prefs = AppPrefs(activity)
-        configurarInteracao(activity, botao, conteudo, prefs)
-        observarConversao(app, activity, botao, conteudo, prefs)
+        val prefs = AppPrefs(appActivity)
+        configurarInteracao(appActivity, botao, conteudo, prefs)
+        observarConversao(app, appActivity, botao, conteudo, prefs)
     }
 
     private fun configurarInteracao(
@@ -90,6 +95,24 @@ object BotaoFlutuanteConversao {
         conteudo: FrameLayout,
         prefs: AppPrefs,
     ) {
+        var arrastando = false
+        botao.setOnClickListener {
+            activity.startActivity(Intent(activity, ConversoesActivity::class.java))
+        }
+        botao.setOnTouchListener(criarTouchListener(activity, conteudo, prefs) { arrastando = it })
+        conteudo.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            if (!arrastando && botao.visibility == View.VISIBLE) {
+                posicionarPelaPreferencia(botao, conteudo, prefs)
+            }
+        }
+    }
+
+    private fun criarTouchListener(
+        activity: AppCompatActivity,
+        conteudo: FrameLayout,
+        prefs: AppPrefs,
+        aoMudarArraste: (Boolean) -> Unit,
+    ): View.OnTouchListener {
         val touchSlop = ViewConfiguration.get(activity).scaledTouchSlop.toFloat()
         var downRawX = 0f
         var downRawY = 0f
@@ -97,11 +120,7 @@ object BotaoFlutuanteConversao {
         var startY = 0f
         var arrastando = false
 
-        botao.setOnClickListener {
-            activity.startActivity(Intent(activity, ConversoesActivity::class.java))
-        }
-
-        botao.setOnTouchListener { v, event ->
+        return View.OnTouchListener { v, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     v.animate().cancel()
@@ -110,6 +129,7 @@ object BotaoFlutuanteConversao {
                     startX = v.x
                     startY = v.y
                     arrastando = false
+                    aoMudarArraste(false)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -117,6 +137,7 @@ object BotaoFlutuanteConversao {
                     val dy = event.rawY - downRawY
                     if (!arrastando && PosicaoFlutuante.ehArraste(dx, dy, touchSlop)) {
                         arrastando = true
+                        aoMudarArraste(true)
                         conteudo.requestDisallowInterceptTouchEvent(true)
                     }
                     if (arrastando) {
@@ -126,31 +147,19 @@ object BotaoFlutuanteConversao {
                     }
                     true
                 }
-                MotionEvent.ACTION_UP -> {
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     conteudo.requestDisallowInterceptTouchEvent(false)
-                    if (arrastando) {
-                        arrastando = false
+                    val eraArraste = arrastando
+                    arrastando = false
+                    aoMudarArraste(false)
+                    if (eraArraste) {
                         ancorarComIman(v, conteudo, prefs)
-                    } else {
+                    } else if (event.actionMasked == MotionEvent.ACTION_UP) {
                         v.performClick()
                     }
                     true
                 }
-                MotionEvent.ACTION_CANCEL -> {
-                    conteudo.requestDisallowInterceptTouchEvent(false)
-                    if (arrastando) {
-                        arrastando = false
-                        ancorarComIman(v, conteudo, prefs)
-                    }
-                    true
-                }
                 else -> false
-            }
-        }
-
-        conteudo.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            if (!arrastando && botao.visibility == View.VISIBLE) {
-                posicionarPelaPreferencia(botao, conteudo, prefs)
             }
         }
     }
@@ -188,7 +197,7 @@ object BotaoFlutuanteConversao {
     }
 
     private fun posicionarPelaPreferencia(botao: View, conteudo: FrameLayout, prefs: AppPrefs) {
-        if (conteudo.width <= 0 || conteudo.height <= 0 || botao.width <= 0 || botao.height <= 0) return
+        if (minOf(conteudo.width, conteudo.height, botao.width, botao.height) <= 0) return
         val limites = limitesDe(botao, conteudo)
         botao.x = PosicaoFlutuante.xAncorado(prefs.botaoConversaoBorda, limites)
         botao.y = PosicaoFlutuante.yDeFracao(prefs.botaoConversaoFracaoY, limites)

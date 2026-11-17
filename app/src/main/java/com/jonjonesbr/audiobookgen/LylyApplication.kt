@@ -68,9 +68,7 @@ class LylyApplication : Application() {
         }
 
         // Aplica o tema escolhido pelo usuário (claro/escuro/sistema) antes de qualquer Activity.
-        com.jonjonesbr.audiobookgen.util.ThemePrefs.apply(
-            com.jonjonesbr.audiobookgen.util.ThemePrefs.load(this)
-        )
+        com.jonjonesbr.audiobookgen.util.ThemePrefs.apply(com.jonjonesbr.audiobookgen.util.ThemePrefs.load(this))
         com.jonjonesbr.audiobookgen.util.ThemePrefs.instalar(this)
         // Acompanha se o app está visível: a conversão só entra em primeiro plano quando pode (Android 12+).
         com.jonjonesbr.audiobookgen.util.VisibilidadeDoApp.registrar(this)
