@@ -440,15 +440,22 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             ?.takeIf { java.io.File(it.arquivoEntrada).exists() }
             ?: return false
         val novoToken = java.util.UUID.randomUUID().toString()
-        val filaId = p.filaItemId?.takeIf {
-            com.jonjonesbr.audiobookgen.service.FilaDeConversao.reabrirItemParaRetry(
-                getApplication(),
-                it,
-                novoToken,
-                viewModelScope,
-            )
+        val filaIdOriginal = p.filaItemId
+        return if (filaIdOriginal == null) {
+            iniciarProcessamento(p.copy(runToken = novoToken))
+        } else {
+            viewModelScope.launch {
+                val filaId = filaIdOriginal.takeIf {
+                    com.jonjonesbr.audiobookgen.service.FilaDeConversao.reabrirItemParaRetry(
+                        getApplication(),
+                        it,
+                        novoToken,
+                    )
+                }
+                iniciarProcessamento(p.copy(runToken = novoToken, filaItemId = filaId))
+            }
+            true
         }
-        return iniciarProcessamento(p.copy(runToken = novoToken, filaItemId = filaId))
     }
 
     /** Devolve false, sem enfileirar nada, se há uma conversão pausada guardada. */

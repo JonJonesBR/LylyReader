@@ -230,20 +230,19 @@ object FilaDeConversao {
         return true
     }
 
-    fun reabrirItemParaRetry(
+    suspend fun reabrirItemParaRetry(
         context: Context,
         itemId: String,
         novoToken: String,
-        escopo: kotlinx.coroutines.CoroutineScope,
-    ): Boolean {
+    ): Boolean = withContext(Dispatchers.Main) {
         val app = context.applicationContext
         val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         QueueManager.garantirCarregada(app, prefs)
-        if (!reabrirItemComErro(QueueManager.items, itemId, novoToken)) return false
+        if (!reabrirItemComErro(QueueManager.items, itemId, novoToken)) return@withContext false
         QueueManager.salvar(prefs)
         val snapshot = QueueManager.items.toList()
-        escopo.launch(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
-        return true
+        withContext(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
+        true
     }
 
     private fun enfileirar(
