@@ -431,7 +431,8 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         )
 
     private val ultimaConversaoPrefs by lazy {
-        getApplication<Application>().getSharedPreferences("ultima_conversao_prefs", android.content.Context.MODE_PRIVATE)
+        getApplication<Application>()
+            .getSharedPreferences("ultima_conversao_prefs", android.content.Context.MODE_PRIVATE)
     }
 
     private fun obterUltimosParametros(): ParametrosConversao? =
