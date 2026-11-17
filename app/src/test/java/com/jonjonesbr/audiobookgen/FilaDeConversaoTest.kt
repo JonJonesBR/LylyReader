@@ -330,4 +330,21 @@ class FilaDeConversaoTest {
         assertEquals(QueueStatus.CONCLUIDO, item.status)
         assertTrue(itens.isEmpty())
     }
+
+    @Test
+    fun `reabrirItemComErro restaura status PROCESSANDO e sincroniza novo runToken`() {
+        val itens = fila("a.epub")
+        val item = itens[0]
+        item.status = QueueStatus.ERRO
+        item.erro = "Falha de rede"
+        item.runToken = "token-antigo"
+
+        assertTrue(FilaDeConversao.reabrirItemComErro(itens, "1", "token-novo"))
+        assertEquals(QueueStatus.PROCESSANDO, item.status)
+        assertNull(item.erro)
+        assertEquals("token-novo", item.runToken)
+
+        FilaDeConversao.fecharItem(itens, "1", "token-novo", "/tmp/a.mp3", null, false) { "edge" }
+        assertTrue(itens.isEmpty())
+    }
 }

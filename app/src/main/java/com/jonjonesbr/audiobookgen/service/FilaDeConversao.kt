@@ -221,7 +221,37 @@ object FilaDeConversao {
         }
     }
 
-    private fun enfileirar(context: Context, inicio: QueueStart, ajustes: AjustesDaConversao, comMapa: Pair<String, String>?) {
+    /** Reabre um item em ERRO para retry com novo [novoToken]. */
+    fun reabrirItemComErro(items: MutableList<QueueItem>, itemId: String, novoToken: String): Boolean {
+        val item = items.find { it.id == itemId && it.status == QueueStatus.ERRO } ?: return false
+        item.status = QueueStatus.PROCESSANDO
+        item.erro = null
+        item.runToken = novoToken
+        return true
+    }
+
+    fun reabrirItemParaRetry(
+        context: Context,
+        itemId: String,
+        novoToken: String,
+        escopo: kotlinx.coroutines.CoroutineScope,
+    ): Boolean {
+        val app = context.applicationContext
+        val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        QueueManager.garantirCarregada(app, prefs)
+        if (!reabrirItemComErro(QueueManager.items, itemId, novoToken)) return false
+        QueueManager.salvar(prefs)
+        val snapshot = QueueManager.items.toList()
+        escopo.launch(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
+        return true
+    }
+
+    private fun enfileirar(
+        context: Context,
+        inicio: QueueStart,
+        ajustes: AjustesDaConversao,
+        comMapa: Pair<String, String>?,
+    ) {
         val item = inicio.item
         val parametros = ParametrosConversao(
             arquivoEntrada = comMapa?.first ?: item.caminhoLocal,
@@ -238,6 +268,7 @@ object FilaDeConversao {
             filaItemId = item.id,
             livroDicionarioCaminho = item.caminhoLocal
         )
+        ParametrosConversao.salvarUltimo(context, parametros)
         val pedido = OneTimeWorkRequestBuilder<ConversionWorker>()
             .setInputData(parametros.toInputData(AppPrefs(context).pausaMs))
             .build()

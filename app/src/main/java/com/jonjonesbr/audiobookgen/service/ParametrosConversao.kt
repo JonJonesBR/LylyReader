@@ -1,5 +1,6 @@
 package com.jonjonesbr.audiobookgen.service
 
+import android.content.Context
 import androidx.work.Data
 import androidx.work.workDataOf
 import org.json.JSONObject
@@ -74,6 +75,24 @@ data class ParametrosConversao(
     }
 
     companion object {
+        private const val PREFS_ULTIMA = "ultima_conversao_prefs"
+        private const val CHAVE_PARAMS = "params_json"
+
+        fun salvarUltimo(context: Context, params: ParametrosConversao) {
+            context.applicationContext
+                .getSharedPreferences(PREFS_ULTIMA, Context.MODE_PRIVATE)
+                .edit()
+                .putString(CHAVE_PARAMS, params.toJson())
+                .apply()
+        }
+
+        fun carregarUltimo(context: Context): ParametrosConversao? {
+            val raw = context.applicationContext
+                .getSharedPreferences(PREFS_ULTIMA, Context.MODE_PRIVATE)
+                .getString(CHAVE_PARAMS, null)
+            return fromJson(raw)
+        }
+
         fun fromJson(raw: String?): ParametrosConversao? =
             raw?.takeIf { it.isNotBlank() }?.let { texto ->
                 runCatching {
