@@ -22,6 +22,7 @@ import com.jonjonesbr.audiobookgen.ui.apoio.RegrasDoLeitor
 import com.jonjonesbr.audiobookgen.ui.apoio.esperarAte
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -108,13 +109,14 @@ class AparenciaQuatroTemasNoAparelhoTest {
                     }
 
                     onView(withId(R.id.etBuscaReader)).perform(click())
-                    esperarTecladoSeAbrir(scenario)
+                    esperarTecladoSeAbrir(scenario, modo)
 
                     scenario.onActivity { a ->
                         val decor = a.window.decorView
                         val insets = ViewCompat.getRootWindowInsets(decor)
                         val imeBottom = insets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
                         val statusTop = insets?.getInsets(WindowInsetsCompat.Type.statusBars())?.top ?: 0
+                        assertTrue("IME deveria estar aberto no modo $modo", imeBottom > 0)
 
                         val decorPos = IntArray(POS_ARRAY_TAMANHO).also { decor.getLocationOnScreen(it) }
                         val et = a.findViewById<View>(R.id.etBuscaReader)
@@ -141,7 +143,7 @@ class AparenciaQuatroTemasNoAparelhoTest {
         }
     }
 
-    private fun esperarTecladoSeAbrir(scenario: ActivityScenario<ReaderActivity>) {
+    private fun esperarTecladoSeAbrir(scenario: ActivityScenario<ReaderActivity>, modo: Int) {
         val fim = System.currentTimeMillis() + TIMEOUT_TECLADO_MS
         while (System.currentTimeMillis() < fim) {
             var aberto = false
@@ -154,5 +156,6 @@ class AparenciaQuatroTemasNoAparelhoTest {
             if (aberto) return
             Thread.sleep(INTERVALO_TECLADO_MS)
         }
+        fail("Teclado virtual não abriu no modo $modo")
     }
 }
