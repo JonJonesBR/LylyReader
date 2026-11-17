@@ -72,6 +72,8 @@ class EstimativaDeGeracao(private val medicoes: Map<String, MedicaoMotor>) {
         fun deveAvisarLento(motor: String?, duracao: Duration): Boolean =
             motor != null && motor in MOTORES_LOCAIS && duracao > 1.hours
 
+        private const val EDGE_MB_POR_CHAR = 0.0004
+
         /**
          * Consumo aproximado (em MB) do Edge TTS para [totalChars] caracteres.
          * Considera ~15 caracteres/s de fala e MP3 a 48 kbps (~0,4 KB/caractere).
@@ -79,7 +81,7 @@ class EstimativaDeGeracao(private val medicoes: Map<String, MedicaoMotor>) {
          */
         fun estimarConsumoEdgeMb(totalChars: Int, motor: String?): Int? {
             if (motor != "edge" || totalChars <= 0) return null
-            return kotlin.math.ceil(totalChars * 0.0004).toInt().coerceAtLeast(1)
+            return kotlin.math.ceil(totalChars * EDGE_MB_POR_CHAR).toInt().coerceAtLeast(1)
         }
 
         /**
