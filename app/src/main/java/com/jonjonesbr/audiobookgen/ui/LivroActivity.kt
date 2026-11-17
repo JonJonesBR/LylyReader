@@ -348,19 +348,7 @@ class LivroActivity : BasePlayerActivity() {
                 tempo
             )
         }
-        val aviso = when {
-            estimativa != null && EstimativaDeGeracao.deveAvisarLento(motor, estimativa.duracao) ->
-                getString(R.string.gerar_tempo_aviso_lento)
-            NetworkStatus.engineRequiresNetwork(motorEfetivo) && NetworkStatus.isMetered(this) -> {
-                val consumoMb = EstimativaDeGeracao.estimarConsumoEdgeMb(total, motor)
-                if (consumoMb != null) {
-                    getString(R.string.gerar_aviso_dados_moveis_edge, consumoMb)
-                } else {
-                    getString(R.string.gerar_aviso_dados_moveis)
-                }
-            }
-            else -> null
-        }
+        val aviso = avisoDeGeracao(motor, motorEfetivo, total, estimativa?.duracao)
         val texto = listOfNotNull(frase, aviso).joinToString("\n")
         if (texto.isEmpty()) {
             linha.visibility = View.GONE
@@ -368,6 +356,25 @@ class LivroActivity : BasePlayerActivity() {
             linha.text = texto
             linha.visibility = View.VISIBLE
         }
+    }
+
+    private fun avisoDeGeracao(
+        motor: String?,
+        motorEfetivo: String,
+        totalChars: Int,
+        duracao: kotlin.time.Duration?,
+    ): String? = when {
+        duracao != null && EstimativaDeGeracao.deveAvisarLento(motor, duracao) ->
+            getString(R.string.gerar_tempo_aviso_lento)
+        NetworkStatus.engineRequiresNetwork(motorEfetivo) && NetworkStatus.isMetered(this) -> {
+            val consumoMb = EstimativaDeGeracao.estimarConsumoEdgeMb(totalChars, motor)
+            if (consumoMb != null) {
+                getString(R.string.gerar_aviso_dados_moveis_edge, consumoMb)
+            } else {
+                getString(R.string.gerar_aviso_dados_moveis)
+            }
+        }
+        else -> null
     }
 
     // ── Voz deste livro ──────────────────────────────────────────────────────
