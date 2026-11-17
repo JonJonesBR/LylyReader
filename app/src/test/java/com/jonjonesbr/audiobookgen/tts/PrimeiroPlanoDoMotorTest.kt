@@ -8,6 +8,7 @@ import android.os.Looper
 import io.mockk.every
 import io.mockk.spyk
 import io.mockk.verify
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -96,7 +97,7 @@ class PrimeiroPlanoDoMotorTest {
             1,
             false
         )
-        assertTrue(retorno.isNotBlank())
+        assertEquals("voz Pocket não reconhecida: voz_inexistente", retorno)
 
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(ESPERA_AVANCO_MS))
         assertTrue(shadowOf(servico).isForegroundStopped)
