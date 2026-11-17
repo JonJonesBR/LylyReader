@@ -73,15 +73,18 @@ class AudiobooksVazioPaisagemNoAparelhoTest {
                 val btnEscolher = a.findViewById<View>(R.id.btnEscolherLivroVazio)
                 val btnImportar = a.findViewById<View>(R.id.btnImportarVazio)
 
+                val decor = a.window.decorView
+                val decorPos = posicaoNaTela(decor)
                 listOf(tvMsg, tvSub, btnEscolher, btnImportar).forEach { v ->
-                    assertTrue("View ${v.id} deveria estar visível", v.visibility == View.VISIBLE)
-                    assertTrue("View ${v.id} deveria ter largura > 0", v.width > 0)
-                    assertTrue("View ${v.id} deveria ter altura > 0", v.height > 0)
+                    val nome = a.resources.getResourceEntryName(v.id)
+                    assertTrue("$nome deveria estar visível", v.visibility == View.VISIBLE)
+                    assertTrue("$nome deveria ter largura > 0", v.width > 0)
+                    assertTrue("$nome deveria ter altura > 0", v.height > 0)
                     val pos = posicaoNaTela(v)
-                    assertTrue("View ${v.id} cortada à esquerda", pos[0] >= 0)
+                    assertTrue("$nome cortada à esquerda", pos[0] >= decorPos[0])
                     assertTrue(
-                        "View ${v.id} cortada à direita",
-                        pos[0] + v.width <= a.window.decorView.width
+                        "$nome cortada à direita",
+                        pos[0] + v.width <= decorPos[0] + decor.width
                     )
                 }
 
@@ -92,14 +95,16 @@ class AudiobooksVazioPaisagemNoAparelhoTest {
                     scrollPos[1] + scroll.height <= navPos[1]
                 )
 
-                scroll.fullScroll(View.FOCUS_UP)
+                scroll.isSmoothScrollingEnabled = false
+                scroll.scrollTo(0, 0)
                 val msgPos = posicaoNaTela(tvMsg)
                 assertTrue(
                     "Mensagem principal cortada acima do ScrollView",
                     msgPos[1] >= scrollPos[1]
                 )
 
-                scroll.fullScroll(View.FOCUS_DOWN)
+                val fundo = scroll.getChildAt(0)?.height ?: 0
+                scroll.scrollTo(0, fundo)
                 val btnImportarPos = posicaoNaTela(btnImportar)
                 assertTrue(
                     "Botão Importar ficou abaixo da barra de navegação após rolar",
