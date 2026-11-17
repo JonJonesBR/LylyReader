@@ -221,15 +221,6 @@ object FilaDeConversao {
         }
     }
 
-    /** Reabre um item em ERRO para retry com novo [novoToken]. */
-    fun reabrirItemComErro(items: MutableList<QueueItem>, itemId: String, novoToken: String): Boolean {
-        val item = items.find { it.id == itemId && it.status == QueueStatus.ERRO } ?: return false
-        item.status = QueueStatus.PROCESSANDO
-        item.erro = null
-        item.runToken = novoToken
-        return true
-    }
-
     private fun enfileirar(
         context: Context,
         inicio: QueueStart,
@@ -265,6 +256,15 @@ object FilaDeConversao {
     private const val PROGRESSO_COMPLETO = 100
 }
 
+/** Reabre um item em ERRO para retry com novo [novoToken]. */
+fun reabrirItemComErro(items: MutableList<QueueItem>, itemId: String, novoToken: String): Boolean {
+    val item = items.find { it.id == itemId && it.status == QueueStatus.ERRO } ?: return false
+    item.status = QueueStatus.PROCESSANDO
+    item.erro = null
+    item.runToken = novoToken
+    return true
+}
+
 /** Reabre no disco e em memória um item da fila em ERRO para retry com [novoToken]. */
 suspend fun reabrirItemDaFilaParaRetry(
     context: Context,
@@ -274,7 +274,7 @@ suspend fun reabrirItemDaFilaParaRetry(
     val app = context.applicationContext
     val prefs = app.getSharedPreferences("audiobookgen_prefs", Context.MODE_PRIVATE)
     QueueManager.garantirCarregada(app, prefs)
-    if (!FilaDeConversao.reabrirItemComErro(QueueManager.items, itemId, novoToken)) return@withContext false
+    if (!reabrirItemComErro(QueueManager.items, itemId, novoToken)) return@withContext false
     QueueManager.salvar(prefs)
     val snapshot = QueueManager.items.toList()
     withContext(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }

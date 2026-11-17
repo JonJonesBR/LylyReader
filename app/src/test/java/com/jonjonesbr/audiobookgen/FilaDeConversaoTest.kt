@@ -5,6 +5,7 @@ import com.jonjonesbr.audiobookgen.data.QueueItem
 import com.jonjonesbr.audiobookgen.data.QueueStatus
 import com.jonjonesbr.audiobookgen.service.ConversionQueueCoordinator
 import com.jonjonesbr.audiobookgen.service.FilaDeConversao
+import com.jonjonesbr.audiobookgen.service.reabrirItemComErro
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -339,7 +340,7 @@ class FilaDeConversaoTest {
         item.erro = "Falha de rede"
         item.runToken = "token-antigo"
 
-        assertTrue(FilaDeConversao.reabrirItemComErro(itens, "1", "token-novo"))
+        assertTrue(reabrirItemComErro(itens, "1", "token-novo"))
         assertEquals(QueueStatus.PROCESSANDO, item.status)
         assertNull(item.erro)
         assertEquals("token-novo", item.runToken)
