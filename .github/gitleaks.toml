@@ -1,0 +1,9 @@
+# Configuração do gitleaks: regras padrão + exceções estreitas para falsos positivos conhecidos.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Checksums sha256 de modelos (campos *Sha256), que não são segredos"
+targetRules = ["generic-api-key"]
+regexTarget = "line"
+regexes = ['''(?i)\w*sha256\w*\s*=\s*"[0-9a-f]{64}"''']
