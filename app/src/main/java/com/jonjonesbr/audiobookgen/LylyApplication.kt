@@ -74,6 +74,8 @@ class LylyApplication : Application() {
         com.jonjonesbr.audiobookgen.util.ThemePrefs.instalar(this)
         // Acompanha se o app está visível: a conversão só entra em primeiro plano quando pode (Android 12+).
         com.jonjonesbr.audiobookgen.util.VisibilidadeDoApp.registrar(this)
+        // Mostra o ícone flutuante magnético nas telas sem o cartão "Gerando agora".
+        com.jonjonesbr.audiobookgen.ui.BotaoFlutuanteConversao.registrar(this)
         CrashLogWriter.init(this)
         NativeCrashDetector.checkForNativeCrashes(this)
         // Disponibiliza o motor ONNX Kotlin para o Python (geração de audiobook Supertonic).

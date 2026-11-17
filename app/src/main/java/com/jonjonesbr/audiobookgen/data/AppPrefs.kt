@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.jonjonesbr.audiobookgen.domain.BordaLateral
 import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MAX
 import com.jonjonesbr.audiobookgen.domain.DOWNLOADS_SIMULTANEOS_MIN
 import com.jonjonesbr.audiobookgen.domain.ESPACO_NIVEL_MAX
@@ -9,6 +10,7 @@ import com.jonjonesbr.audiobookgen.domain.ESPACO_NIVEL_PADRAO
 import com.jonjonesbr.audiobookgen.domain.EstiloDeRitmo
 import com.jonjonesbr.audiobookgen.domain.FonteLeitura
 import com.jonjonesbr.audiobookgen.domain.MARGEM_NIVEL_PADRAO
+import com.jonjonesbr.audiobookgen.domain.PosicaoFlutuante
 import com.jonjonesbr.audiobookgen.domain.TemaLeitura
 import com.jonjonesbr.audiobookgen.util.AutoRewindMode
 
@@ -561,6 +563,20 @@ class AppPrefs(context: Context) {
 
     /** Total de parágrafos gravado pelo leitor para o livro; 0 se nunca gravado. */
     fun totalParagrafosLeitura(caminhoLivro: String): Int = p.getInt("reader_total_$caminhoLivro", 0)
+
+    /** Borda lateral onde o botão flutuante de conversão está ancorado. */
+    var botaoConversaoBorda: BordaLateral
+        get() = if (p.getBoolean("botao_conversao_borda_direita", true)) {
+            BordaLateral.DIREITA
+        } else {
+            BordaLateral.ESQUERDA
+        }
+        set(v) = p.edit().putBoolean("botao_conversao_borda_direita", v == BordaLateral.DIREITA).apply()
+
+    /** Altura relativa (0..1) do botão flutuante de conversão na área segura da tela. */
+    var botaoConversaoFracaoY: Float
+        get() = p.getFloat("botao_conversao_fracao_y", PosicaoFlutuante.FRACAO_VERTICAL_PADRAO).coerceIn(0f, 1f)
+        set(v) = p.edit().putFloat("botao_conversao_fracao_y", v.coerceIn(0f, 1f)).apply()
 
     fun getPrefs(): SharedPreferences = p
 

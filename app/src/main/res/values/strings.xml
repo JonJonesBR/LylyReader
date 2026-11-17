@@ -1483,6 +1483,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="gerando_agora_sem_nome">Your audiobook</string>
     <string name="gerando_agora_ver">View</string>
     <string name="bib_menu_conversoes">Conversions and queue</string>
+    <string name="cd_botao_flutuante_conversao">Conversion in progress (%1$d%%). Tap to open Conversions</string>
     <plurals name="gerando_agora_fila_texto">
         <item quantity="one">%1$d book in the queue</item>
         <item quantity="other">%1$d books in the queue</item>
