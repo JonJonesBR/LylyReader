@@ -32,11 +32,20 @@ class CompartilharMp3LegadoTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        limparCacheFileProvider()
     }
 
     @After
     fun tearDown() {
+        limparCacheFileProvider()
         arquivosCriados.forEach { it.delete() }
+    }
+
+    private fun limparCacheFileProvider() {
+        val campo = FileProvider::class.java.getDeclaredField("sCache")
+        campo.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        (campo.get(null) as? MutableMap<*, *>)?.clear()
     }
 
     @Test
