@@ -216,12 +216,14 @@ class LimiteAdaptativo:
         self._em_uso = 0
         self._cond: Optional[asyncio.Condition] = None
 
-    def registrar(self, sucesso: bool) -> None:
-        """Informa o resultado final de um bloco. Só ajusta o limite quando adaptativo=True."""
+    def registrar(self, sucesso: bool, lento: bool = False) -> None:
+        """Informa o resultado final de um bloco. Só ajusta o limite quando adaptativo=True.
+        `lento=True` indica bloco concluído após congestionamento/retries (reduz como falha)."""
         if not self.adaptativo:
             return
-        self._janela.append(bool(sucesso))
-        self._sucessos_seguidos = self._sucessos_seguidos + 1 if sucesso else 0
+        saudavel = bool(sucesso) and not lento
+        self._janela.append(saudavel)
+        self._sucessos_seguidos = self._sucessos_seguidos + 1 if saudavel else 0
         falhas = sum(1 for ok in self._janela if not ok)
         if falhas >= self._falhas_para_reduzir:
             self.limite = min(self.limite, max(self.minimo, self.limite // 2))

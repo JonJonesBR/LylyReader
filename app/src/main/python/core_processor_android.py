@@ -1090,6 +1090,7 @@ async def _processar_nucleo(
                 # Bloco com URL, número de processo, símbolos etc.: envia já sanitizado (P1.3).
                 texto_envio = sanitizar_trecho_para_tts(chunk)
             ok = False
+            duracao_bloco_ms = 0.0
             retries_extra = 0 if motor_da_voz(chunk_voices[idx]) in _MOTORES_COM_RETRY_INTERNO else _RETRIES_IMEDIATOS
             # Retries imediatos do próprio bloco, com espera curta (P1.2), só nos motores sem retry
             # interno. Chave recusada e cancelamento interrompem sem nova tentativa.
@@ -1114,7 +1115,8 @@ async def _processar_nucleo(
                     # Erro inesperado de um motor: conta como falha e segue o retry normal (não derruba o gather).
                     logger.exception(f"Bloco {idx + 1}: erro inesperado na síntese; tratado como falha.")
                     ok = False
-                metricas.registrar_bloco(idx, ms_desde(inicio_bloco), bool(ok), tentativas_por_bloco[idx])
+                duracao_bloco_ms = ms_desde(inicio_bloco)
+                metricas.registrar_bloco(idx, duracao_bloco_ms, bool(ok), tentativas_por_bloco[idx])
                 if ok:
                     break
                 if tentativa_imediata < retries_extra:
@@ -1125,7 +1127,7 @@ async def _processar_nucleo(
             if not ok and (_cancelar_flag or chave_recusada[0]):
                 return  # interrompido: não conta como falha para o ajuste de workers
             if controle is not None:
-                controle.registrar(bool(ok))
+                controle.registrar(bool(ok), lento=adaptativo and duracao_bloco_ms >= 20_000)
             if ok:
                 # BUG FIX: só marca como concluído se de fato gerou áudio válido
                 completed_valid.add(idx)

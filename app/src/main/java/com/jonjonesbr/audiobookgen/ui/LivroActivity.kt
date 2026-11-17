@@ -348,9 +348,19 @@ class LivroActivity : BasePlayerActivity() {
             if (estimativa.aproximada) R.string.gerar_tempo_estimado_aprox else R.string.gerar_tempo_estimado,
             tempo
         )
-        val aviso = if (EstimativaDeGeracao.deveAvisarLento(motor, estimativa.duracao)) {
-            getString(R.string.gerar_tempo_aviso_lento)
-        } else null
+        val aviso = when {
+            EstimativaDeGeracao.deveAvisarLento(motor, estimativa.duracao) ->
+                getString(R.string.gerar_tempo_aviso_lento)
+            NetworkStatus.engineRequiresNetwork(motorDoLivro) && NetworkStatus.isMetered(this) -> {
+                val consumoMb = EstimativaDeGeracao.estimarConsumoEdgeMb(total, motor)
+                if (consumoMb != null) {
+                    getString(R.string.gerar_aviso_dados_moveis_edge, consumoMb)
+                } else {
+                    getString(R.string.gerar_aviso_dados_moveis)
+                }
+            }
+            else -> null
+        }
         linha.text = listOfNotNull(frase, aviso).joinToString("\n")
         linha.visibility = View.VISIBLE
     }

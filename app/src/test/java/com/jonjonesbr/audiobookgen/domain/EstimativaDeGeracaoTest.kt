@@ -162,4 +162,13 @@ class EstimativaDeGeracaoTest {
         assertFalse(EstimativaDeGeracao.deveAvisarLento("edge", 5.hours))
         assertFalse(EstimativaDeGeracao.deveAvisarLento(null, 5.hours))
     }
+
+    @Test
+    fun estimativaConsumoEdgeMbSoParaEdgeComCharsPositivos() {
+        assertEquals(40, EstimativaDeGeracao.estimarConsumoEdgeMb(100_000, "edge"))
+        assertEquals(1, EstimativaDeGeracao.estimarConsumoEdgeMb(500, "edge"))
+        assertNull(EstimativaDeGeracao.estimarConsumoEdgeMb(0, "edge"))
+        assertNull(EstimativaDeGeracao.estimarConsumoEdgeMb(100_000, "paradee"))
+        assertNull(EstimativaDeGeracao.estimarConsumoEdgeMb(100_000, null))
+    }
 }

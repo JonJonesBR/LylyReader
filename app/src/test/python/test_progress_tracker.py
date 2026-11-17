@@ -102,6 +102,21 @@ class ProgressTrackerTest(unittest.TestCase):
         self.assertEqual(100, t.pct())
         self.assertEqual([], t.falhas)
 
+    def test_eta_recupera_mais_rapido_com_janela_cheia(self):
+        # 1º bloco leva 90s; os 10 seguintes saem a 1s cada (100s no total, 11 blocos de 21).
+        # Média global = 100/11 ≈ 9.09s; janela cheia (10 blocos de 1s) = 1.0s.
+        # Com peso 0.7 na janela cheia: (0.3 * 9.09 + 0.7 * 1.0) * 10 ≈ 34s (menor que 50s do peso 0.5).
+        with patch("utils.time.time") as relogio:
+            relogio.return_value = 0.0
+            t = ProgressTracker(21, inicio=0.0)
+            relogio.return_value = 90.0
+            t.registrar(0, True)
+            for i in range(1, 11):
+                relogio.return_value = 90.0 + i
+                t.registrar(i, True)
+            eta = t._eta_segundos()
+        self.assertLess(eta, 40)
+
 
 if __name__ == "__main__":
     unittest.main()

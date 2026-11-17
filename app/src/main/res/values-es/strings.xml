@@ -1257,6 +1257,8 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="gerar_tempo_estimado_aprox">Unos %1$s</string>
     <string name="gerar_tempo_calculando">Calculando el tiempo…</string>
     <string name="gerar_tempo_aviso_lento">Esta voz local puede tardar más de 1 hora en este dispositivo. Las voces Piper suelen ser más rápidas.</string>
+    <string name="gerar_aviso_dados_moveis_edge">En datos móviles: ~%1$d MB estimados. Para ahorrar datos, usa una voz sin conexión (Paradee o Supertonic) o la Lectura Guiada.</string>
+    <string name="gerar_aviso_dados_moveis">En datos móviles: requiere internet. Para ahorrar datos, usa una voz sin conexión o la Lectura Guiada.</string>
     <string name="tempo_juntar">%1$s y %2$s</string>
     <plurals name="tempo_horas">
         <item quantity="one">%d hora</item>
