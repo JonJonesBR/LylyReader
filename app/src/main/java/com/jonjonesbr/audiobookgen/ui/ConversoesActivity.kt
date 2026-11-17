@@ -127,6 +127,7 @@ class ConversoesActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnConvDescartar).setOnClickListener { confirmarDescarte() }
         findViewById<Button>(R.id.btnConvFecharPronto).setOnClickListener { fecharResultado() }
         findViewById<Button>(R.id.btnConvFecharErro).setOnClickListener { fecharResultado() }
+        findViewById<Button>(R.id.btnConvTentarNovamente).setOnClickListener { tentarNovamente() }
         findViewById<Button>(R.id.btnConvIrBiblioteca).setOnClickListener { irParaAba(MeusLivrosActivity::class.java) }
         findViewById<Button>(R.id.btnConvVerAudiobooks).setOnClickListener { irParaAba(LibraryActivity::class.java) }
         findViewById<Button>(R.id.btnConvIniciarFila).setOnClickListener { rodarFila() }
@@ -568,6 +569,8 @@ class ConversoesActivity : AppCompatActivity() {
             exibir is ConversionDoneEvent.Erro -> {
                 mostrarSo(cardErro)
                 findViewById<TextView>(R.id.tvConvErroMsg).text = exibir.mensagem
+                findViewById<Button>(R.id.btnConvTentarNovamente).visibility =
+                    if (viewModel.podeTentarNovamente()) View.VISIBLE else View.GONE
             }
             exibir is ConversionDoneEvent.Cancelada -> {
                 viewModel.consumirEventoConversao()
@@ -593,6 +596,13 @@ class ConversoesActivity : AppCompatActivity() {
         resultadoLocal = null
         viewModel.consumirEventoConversao()
         mostrar(viewModel.uiState.value)
+    }
+
+    private fun tentarNovamente() {
+        resultadoLocal = null
+        if (!viewModel.tentarNovamente()) {
+            findViewById<Button>(R.id.btnConvTentarNovamente).visibility = View.GONE
+        }
     }
 
     private fun mostrarSo(alvo: View) {

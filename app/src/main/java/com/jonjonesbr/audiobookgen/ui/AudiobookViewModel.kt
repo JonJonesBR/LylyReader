@@ -430,9 +430,27 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             ConversaoPausadaStore.existe(getApplication<Application>())
         )
 
+    private val ultimaConversaoPrefs by lazy {
+        getApplication<Application>().getSharedPreferences("ultima_conversao_prefs", android.content.Context.MODE_PRIVATE)
+    }
+
+    private fun obterUltimosParametros(): ParametrosConversao? =
+        ParametrosConversao.fromJson(ultimaConversaoPrefs.getString("params_json", null))
+
+    fun podeTentarNovamente(): Boolean {
+        val p = obterUltimosParametros()
+        return p != null && !conversaoPausadaBloqueia() && java.io.File(p.arquivoEntrada).exists()
+    }
+
+    fun tentarNovamente(): Boolean {
+        val p = obterUltimosParametros()?.takeIf { java.io.File(it.arquivoEntrada).exists() } ?: return false
+        return iniciarProcessamento(p.copy(runToken = java.util.UUID.randomUUID().toString()))
+    }
+
     /** Devolve false, sem enfileirar nada, se há uma conversão pausada guardada. */
     fun iniciarProcessamento(params: ParametrosConversao): Boolean {
         if (conversaoPausadaBloqueia()) return false
+        ultimaConversaoPrefs.edit().putString("params_json", params.toJson()).apply()
         // Cancela conversão em andamento: ExistingWorkPolicy.REPLACE abaixo, no enqueue.
         _uiState.update {
             it.copy(

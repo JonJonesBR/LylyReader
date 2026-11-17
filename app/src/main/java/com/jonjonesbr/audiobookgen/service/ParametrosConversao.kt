@@ -2,6 +2,7 @@ package com.jonjonesbr.audiobookgen.service
 
 import androidx.work.Data
 import androidx.work.workDataOf
+import org.json.JSONObject
 
 data class ParametrosConversao(
     val arquivoEntrada: String,
@@ -52,5 +53,53 @@ data class ParametrosConversao(
         agudosDb?.let { builder.putInt(ConversionWorker.KEY_AGUDOS_DB, it) }
         filaItemId?.let { builder.putString(ConversionWorker.KEY_FILA_ITEM_ID, it) }
         return builder.build()
+    }
+
+    fun toJson(): String {
+        val obj = JSONObject()
+            .put("arquivoEntrada", arquivoEntrada)
+            .put("voz", voz)
+            .put("velocidade", velocidade)
+            .put("estilo", estilo)
+            .put("caminhoSaidaInterna", caminhoSaidaInterna)
+            .put("motor", motor)
+        runToken?.let { obj.put("runToken", it) }
+        livroOrigemCaminho?.let { obj.put("livroOrigemCaminho", it) }
+        speakerMapPath?.let { obj.put("speakerMapPath", it) }
+        tomMeiosTons?.let { obj.put("tomMeiosTons", it) }
+        agudosDb?.let { obj.put("agudosDb", it) }
+        filaItemId?.let { obj.put("filaItemId", it) }
+        livroDicionarioCaminho?.let { obj.put("livroDicionarioCaminho", it) }
+        return obj.toString()
+    }
+
+    companion object {
+        fun fromJson(raw: String?): ParametrosConversao? =
+            raw?.takeIf { it.isNotBlank() }?.let { texto ->
+                runCatching {
+                    val obj = JSONObject(texto)
+                    val arquivo = obj.optString("arquivoEntrada", "")
+                    val saida = obj.optString("caminhoSaidaInterna", "")
+                    if (arquivo.isBlank() || saida.isBlank()) {
+                        null
+                    } else {
+                        ParametrosConversao(
+                            arquivoEntrada = arquivo,
+                            voz = obj.optString("voz", ""),
+                            velocidade = obj.optString("velocidade", "+0%"),
+                            estilo = obj.optString("estilo", "padrao"),
+                            caminhoSaidaInterna = saida,
+                            motor = obj.optString("motor", ""),
+                            runToken = obj.optString("runToken").ifBlank { null },
+                            livroOrigemCaminho = obj.optString("livroOrigemCaminho").ifBlank { null },
+                            speakerMapPath = obj.optString("speakerMapPath").ifBlank { null },
+                            tomMeiosTons = if (obj.has("tomMeiosTons")) obj.getInt("tomMeiosTons") else null,
+                            agudosDb = if (obj.has("agudosDb")) obj.getInt("agudosDb") else null,
+                            filaItemId = obj.optString("filaItemId").ifBlank { null },
+                            livroDicionarioCaminho = obj.optString("livroDicionarioCaminho").ifBlank { null },
+                        )
+                    }
+                }.getOrNull()
+            }
     }
 }
