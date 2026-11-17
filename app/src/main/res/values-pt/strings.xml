@@ -1486,6 +1486,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="gerando_agora_sem_nome">Seu audiobook</string>
     <string name="gerando_agora_ver">Ver</string>
     <string name="bib_menu_conversoes">Conversões e fila</string>
+    <string name="cd_botao_flutuante_conversao">Conversão em andamento (%1$d%%). Toque para abrir Conversões</string>
     <plurals name="gerando_agora_fila_texto">
         <item quantity="one">%1$d livro na fila</item>
         <item quantity="many">%1$d livros na fila</item>
