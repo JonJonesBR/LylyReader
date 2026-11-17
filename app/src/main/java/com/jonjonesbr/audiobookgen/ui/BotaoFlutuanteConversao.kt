@@ -69,24 +69,24 @@ object BotaoFlutuanteConversao {
     private fun anexarSeElegivel(app: Application, activity: Activity) {
         if (!ehTelaElegivel(activity)) return
         val appActivity = activity as AppCompatActivity
-        val conteudo = appActivity.findViewById<FrameLayout>(android.R.id.content) ?: return
-
-        val existente = conteudo.findViewById<View>(R.id.botaoFlutuanteConversao)
-        if (existente != null) {
+        val conteudo = appActivity.findViewById<FrameLayout>(android.R.id.content)
+        val existente = conteudo?.findViewById<View>(R.id.botaoFlutuanteConversao)
+        if (conteudo == null) {
+            Unit
+        } else if (existente != null) {
             if (existente.visibility == View.VISIBLE) {
                 existente.post { posicionarPelaPreferencia(existente, conteudo, AppPrefs(appActivity)) }
             }
-            return
+        } else {
+            val botao = LayoutInflater.from(appActivity)
+                .inflate(R.layout.view_botao_flutuante_conversao, conteudo, false)
+            botao.translationZ = ELEVACAO_Z_DP * appActivity.resources.displayMetrics.density
+            conteudo.addView(botao)
+
+            val prefs = AppPrefs(appActivity)
+            configurarInteracao(appActivity, botao, conteudo, prefs)
+            observarConversao(app, appActivity, botao, conteudo, prefs)
         }
-
-        val botao = LayoutInflater.from(appActivity)
-            .inflate(R.layout.view_botao_flutuante_conversao, conteudo, false)
-        botao.translationZ = ELEVACAO_Z_DP * appActivity.resources.displayMetrics.density
-        conteudo.addView(botao)
-
-        val prefs = AppPrefs(appActivity)
-        configurarInteracao(appActivity, botao, conteudo, prefs)
-        observarConversao(app, appActivity, botao, conteudo, prefs)
     }
 
     private fun configurarInteracao(
