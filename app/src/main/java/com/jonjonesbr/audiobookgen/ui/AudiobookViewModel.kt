@@ -430,9 +430,38 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
             ConversaoPausadaStore.existe(getApplication<Application>())
         )
 
+    fun podeTentarNovamente(): Boolean {
+        val p = ParametrosConversao.carregarUltimo(getApplication())
+        return p != null && !conversaoPausadaBloqueia() && java.io.File(p.arquivoEntrada).exists()
+    }
+
+    fun tentarNovamente(): Boolean {
+        val p = ParametrosConversao.carregarUltimo(getApplication())
+            ?.takeIf { java.io.File(it.arquivoEntrada).exists() }
+            ?: return false
+        val novoToken = java.util.UUID.randomUUID().toString()
+        val filaIdOriginal = p.filaItemId
+        return if (filaIdOriginal == null) {
+            iniciarProcessamento(p.copy(runToken = novoToken))
+        } else {
+            viewModelScope.launch {
+                val filaId = filaIdOriginal.takeIf {
+                    com.jonjonesbr.audiobookgen.service.reabrirItemDaFilaParaRetry(
+                        getApplication(),
+                        it,
+                        novoToken,
+                    )
+                }
+                iniciarProcessamento(p.copy(runToken = novoToken, filaItemId = filaId))
+            }
+            true
+        }
+    }
+
     /** Devolve false, sem enfileirar nada, se há uma conversão pausada guardada. */
     fun iniciarProcessamento(params: ParametrosConversao): Boolean {
         if (conversaoPausadaBloqueia()) return false
+        ParametrosConversao.salvarUltimo(getApplication(), params)
         // Cancela conversão em andamento: ExistingWorkPolicy.REPLACE abaixo, no enqueue.
         _uiState.update {
             it.copy(

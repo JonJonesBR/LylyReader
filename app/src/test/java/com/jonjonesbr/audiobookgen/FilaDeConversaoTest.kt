@@ -5,6 +5,7 @@ import com.jonjonesbr.audiobookgen.data.QueueItem
 import com.jonjonesbr.audiobookgen.data.QueueStatus
 import com.jonjonesbr.audiobookgen.service.ConversionQueueCoordinator
 import com.jonjonesbr.audiobookgen.service.FilaDeConversao
+import com.jonjonesbr.audiobookgen.service.reabrirItemComErro
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -328,6 +329,23 @@ class FilaDeConversaoTest {
         FilaDeConversao.fecharItem(itens, "1", inicio.runToken, "/tmp/a.mp3", null, false) { "edge" }
 
         assertEquals(QueueStatus.CONCLUIDO, item.status)
+        assertTrue(itens.isEmpty())
+    }
+
+    @Test
+    fun `reabrirItemComErro restaura status PROCESSANDO e sincroniza novo runToken`() {
+        val itens = fila("a.epub")
+        val item = itens[0]
+        item.status = QueueStatus.ERRO
+        item.erro = "Falha de rede"
+        item.runToken = "token-antigo"
+
+        assertTrue(reabrirItemComErro(itens, "1", "token-novo"))
+        assertEquals(QueueStatus.PROCESSANDO, item.status)
+        assertNull(item.erro)
+        assertEquals("token-novo", item.runToken)
+
+        FilaDeConversao.fecharItem(itens, "1", "token-novo", "/tmp/a.mp3", null, false) { "edge" }
         assertTrue(itens.isEmpty())
     }
 }

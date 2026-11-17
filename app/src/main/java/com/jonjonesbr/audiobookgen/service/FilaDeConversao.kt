@@ -221,7 +221,12 @@ object FilaDeConversao {
         }
     }
 
-    private fun enfileirar(context: Context, inicio: QueueStart, ajustes: AjustesDaConversao, comMapa: Pair<String, String>?) {
+    private fun enfileirar(
+        context: Context,
+        inicio: QueueStart,
+        ajustes: AjustesDaConversao,
+        comMapa: Pair<String, String>?,
+    ) {
         val item = inicio.item
         val parametros = ParametrosConversao(
             arquivoEntrada = comMapa?.first ?: item.caminhoLocal,
@@ -238,6 +243,7 @@ object FilaDeConversao {
             filaItemId = item.id,
             livroDicionarioCaminho = item.caminhoLocal
         )
+        ParametrosConversao.salvarUltimo(context, parametros)
         val pedido = OneTimeWorkRequestBuilder<ConversionWorker>()
             .setInputData(parametros.toInputData(AppPrefs(context).pausaMs))
             .build()
@@ -248,4 +254,29 @@ object FilaDeConversao {
 
     private const val ESTILO_PADRAO = "padrao"
     private const val PROGRESSO_COMPLETO = 100
+}
+
+/** Reabre um item em ERRO para retry com novo [novoToken]. */
+fun reabrirItemComErro(items: MutableList<QueueItem>, itemId: String, novoToken: String): Boolean {
+    val item = items.find { it.id == itemId && it.status == QueueStatus.ERRO } ?: return false
+    item.status = QueueStatus.PROCESSANDO
+    item.erro = null
+    item.runToken = novoToken
+    return true
+}
+
+/** Reabre no disco e em memória um item da fila em ERRO para retry com [novoToken]. */
+suspend fun reabrirItemDaFilaParaRetry(
+    context: Context,
+    itemId: String,
+    novoToken: String,
+): Boolean = withContext(Dispatchers.Main) {
+    val app = context.applicationContext
+    val prefs = app.getSharedPreferences("audiobookgen_prefs", Context.MODE_PRIVATE)
+    QueueManager.garantirCarregada(app, prefs)
+    if (!reabrirItemComErro(QueueManager.items, itemId, novoToken)) return@withContext false
+    QueueManager.salvar(prefs)
+    val snapshot = QueueManager.items.toList()
+    withContext(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
+    true
 }
