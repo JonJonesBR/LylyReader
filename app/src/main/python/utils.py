@@ -144,7 +144,9 @@ class ProgressTracker:
         taxa = decorrido / produzidos  # segundos por bloco, média da execução
         if len(self._janela) >= 3:
             taxa_janela = sum(self._janela) / len(self._janela)
-            taxa = (taxa + taxa_janela) / 2  # suaviza com a janela recente
+            # Janela cheia (10 blocos): dá mais peso ao ritmo recente para recuperar rápido de picos iniciais.
+            peso_janela = 0.7 if len(self._janela) == self._janela.maxlen else 0.5
+            taxa = (1.0 - peso_janela) * taxa + peso_janela * taxa_janela
         # Mínimo de 1s: nunca mostrar "0s" enquanto restam blocos.
         return int(max(1.0, taxa * restantes))
 

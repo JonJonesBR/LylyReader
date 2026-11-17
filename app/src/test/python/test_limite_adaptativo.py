@@ -77,6 +77,16 @@ class LimiteAdaptativoAjusteTest(unittest.TestCase):
             lim.registrar(True)
         self.assertEqual(1, lim.limite)
 
+    def test_blocos_lentos_reduzem_concorrencia_e_zeram_sucessos(self):
+        lim = LimiteAdaptativo(inicial=8, minimo=2, teto=10)
+        for _ in range(19):
+            lim.registrar(True)
+        lim.registrar(True, lento=True)
+        self.assertEqual(8, lim.limite)  # lento zerou a contagem antes do 20º
+        lim.registrar(True, lento=True)
+        lim.registrar(True, lento=True)
+        self.assertEqual(4, lim.limite)
+
 
 @unittest.skipIf(LimiteAdaptativo is None, "módulo config_android indisponível")
 class LimiteAdaptativoConcorrenciaTest(unittest.TestCase):

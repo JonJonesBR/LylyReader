@@ -311,9 +311,8 @@ class LivroActivity : BasePlayerActivity() {
         val linha = painelTempo ?: return
         val caminhoLivro = caminho()
         val (voz, motorDoLivro) = vozDoLivro()
-        val motor = EstimativaDeGeracao.motorDaVoz(
-            voz, ehGemini = VoiceCatalog.effectiveEngine(voz, motorDoLivro) == "gemini"
-        )
+        val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motorDoLivro)
+        val motor = EstimativaDeGeracao.motorDaVoz(voz, ehGemini = motorEfetivo == "gemini")
         val total = totalCharsCalculado?.takeIf { it.first == caminhoLivro }?.second
         if (total == null) {
             if (caminhoLivro.isBlank()) { linha.visibility = View.GONE; return }
@@ -337,22 +336,45 @@ class LivroActivity : BasePlayerActivity() {
         val estimativa = motor?.let {
             EstimativaDeGeracao.lerDoArquivo(File(filesDir, EstimativaDeGeracao.ARQUIVO)).estimativa(total, it)
         }
-        if (estimativa == null) { linha.visibility = View.GONE; return }
-        val tempo = EstimativaDeGeracao.formatar(
-            estimativa.duracao,
-            rotuloHoras = { h -> resources.getQuantityString(R.plurals.tempo_horas, h, h) },
-            rotuloMinutos = { m -> resources.getQuantityString(R.plurals.tempo_minutos, m, m) },
-            juntar = { a, b -> getString(R.string.tempo_juntar, a, b) }
-        )
-        val frase = getString(
-            if (estimativa.aproximada) R.string.gerar_tempo_estimado_aprox else R.string.gerar_tempo_estimado,
-            tempo
-        )
-        val aviso = if (EstimativaDeGeracao.deveAvisarLento(motor, estimativa.duracao)) {
+        val frase = estimativa?.let {
+            val tempo = EstimativaDeGeracao.formatar(
+                it.duracao,
+                rotuloHoras = { h -> resources.getQuantityString(R.plurals.tempo_horas, h, h) },
+                rotuloMinutos = { m -> resources.getQuantityString(R.plurals.tempo_minutos, m, m) },
+                juntar = { a, b -> getString(R.string.tempo_juntar, a, b) }
+            )
+            getString(
+                if (it.aproximada) R.string.gerar_tempo_estimado_aprox else R.string.gerar_tempo_estimado,
+                tempo
+            )
+        }
+        val aviso = avisoDeGeracao(motor, motorEfetivo, total, estimativa?.duracao)
+        val texto = listOfNotNull(frase, aviso).joinToString("\n")
+        if (texto.isEmpty()) {
+            linha.visibility = View.GONE
+        } else {
+            linha.text = texto
+            linha.visibility = View.VISIBLE
+        }
+    }
+
+    private fun avisoDeGeracao(
+        motor: String?,
+        motorEfetivo: String,
+        totalChars: Int,
+        duracao: kotlin.time.Duration?,
+    ): String? = when {
+        duracao != null && EstimativaDeGeracao.deveAvisarLento(motor, duracao) ->
             getString(R.string.gerar_tempo_aviso_lento)
-        } else null
-        linha.text = listOfNotNull(frase, aviso).joinToString("\n")
-        linha.visibility = View.VISIBLE
+        NetworkStatus.engineRequiresNetwork(motorEfetivo) && NetworkStatus.isMetered(this) -> {
+            val consumoMb = EstimativaDeGeracao.estimarConsumoEdgeMb(totalChars, motor)
+            if (consumoMb != null) {
+                getString(R.string.gerar_aviso_dados_moveis_edge, consumoMb)
+            } else {
+                getString(R.string.gerar_aviso_dados_moveis)
+            }
+        }
+        else -> null
     }
 
     // ── Voz deste livro ──────────────────────────────────────────────────────
