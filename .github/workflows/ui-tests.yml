@@ -52,7 +52,7 @@ jobs:
           java-version: "17"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           # Só platform-tools aqui; platform, build-tools e o emulador entram nos passos seguintes.
           packages: "platform-tools"
@@ -130,7 +130,7 @@ jobs:
         continue-on-error: true
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
-          api-level: 34
+          api-level: 36
           target: google_apis
           arch: x86_64
           profile: pixel_6
@@ -155,7 +155,7 @@ jobs:
         continue-on-error: true
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
-          api-level: 34
+          api-level: 36
           target: google_apis
           arch: x86_64
           profile: pixel_6
