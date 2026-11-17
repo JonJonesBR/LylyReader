@@ -230,21 +230,6 @@ object FilaDeConversao {
         return true
     }
 
-    suspend fun reabrirItemParaRetry(
-        context: Context,
-        itemId: String,
-        novoToken: String,
-    ): Boolean = withContext(Dispatchers.Main) {
-        val app = context.applicationContext
-        val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        QueueManager.garantirCarregada(app, prefs)
-        if (!reabrirItemComErro(QueueManager.items, itemId, novoToken)) return@withContext false
-        QueueManager.salvar(prefs)
-        val snapshot = QueueManager.items.toList()
-        withContext(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
-        true
-    }
-
     private fun enfileirar(
         context: Context,
         inicio: QueueStart,
@@ -278,4 +263,20 @@ object FilaDeConversao {
 
     private const val ESTILO_PADRAO = "padrao"
     private const val PROGRESSO_COMPLETO = 100
+}
+
+/** Reabre no disco e em memória um item da fila em ERRO para retry com [novoToken]. */
+suspend fun reabrirItemDaFilaParaRetry(
+    context: Context,
+    itemId: String,
+    novoToken: String,
+): Boolean = withContext(Dispatchers.Main) {
+    val app = context.applicationContext
+    val prefs = app.getSharedPreferences("audiobookgen_prefs", Context.MODE_PRIVATE)
+    QueueManager.garantirCarregada(app, prefs)
+    if (!FilaDeConversao.reabrirItemComErro(QueueManager.items, itemId, novoToken)) return@withContext false
+    QueueManager.salvar(prefs)
+    val snapshot = QueueManager.items.toList()
+    withContext(Dispatchers.IO) { QueueRepository.get(app).replaceAll(snapshot) }
+    true
 }

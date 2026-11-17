@@ -446,7 +446,7 @@ class AudiobookViewModel(application: Application) : AndroidViewModel(applicatio
         } else {
             viewModelScope.launch {
                 val filaId = filaIdOriginal.takeIf {
-                    com.jonjonesbr.audiobookgen.service.FilaDeConversao.reabrirItemParaRetry(
+                    com.jonjonesbr.audiobookgen.service.reabrirItemDaFilaParaRetry(
                         getApplication(),
                         it,
                         novoToken,
