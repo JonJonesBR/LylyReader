@@ -49,7 +49,7 @@ class CompartilharMp3LegadoTest {
 
         val resultado = DocumentExportUseCase(context).exportar(origem, pastaSafUri = null).getOrThrow()
 
-        assertEquals("Downloads", resultado.folderName)
+        assertEquals("Downloads", resultado.nomePasta)
         assertEquals("file", resultado.destUri.scheme)
         val destino = File(requireNotNull(resultado.destUri.path))
         arquivosCriados.add(destino)
