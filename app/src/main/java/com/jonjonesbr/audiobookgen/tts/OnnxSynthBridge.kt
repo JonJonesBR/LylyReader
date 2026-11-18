@@ -7,6 +7,10 @@ object OnnxSynthBridge {
     private const val TAG = "OnnxSynthBridge"
     @Volatile private var appContext: Context? = null
     @Volatile private var engine: OnnxTtsEngine? = null
+
+    /** Costura usada pelos testes instrumentados para simular síntese Supertonic sem baixar modelos. */
+    @Volatile internal var sinteseParaTestes: ((texto: String, voz: String, destino: File) -> Boolean)? = null
+
     @JvmStatic fun init(context: Context) { appContext = context.applicationContext }
 
     /** Ajustes que mudam o áudio Supertonic sem entrar no hash do job: gravados no progress.json para a retomada. */
@@ -22,6 +26,16 @@ object OnnxSynthBridge {
         return engine ?: OnnxTtsEngine(ctx).also { engine = it }
     }
     @JvmStatic fun synthesize(text: String, voiceId: String, outPath: String): Boolean {
+        sinteseParaTestes?.let { hook ->
+            return try {
+                val destino = File(outPath)
+                destino.parentFile?.mkdirs()
+                hook(text, voiceId, destino)
+            } catch (t: Throwable) {
+                Log.e(TAG, "Erro na síntese de teste ($voiceId): " + t.message, t)
+                false
+            }
+        }
         val ctx = appContext ?: return false
         val eng = engine() ?: return false
         return try {
