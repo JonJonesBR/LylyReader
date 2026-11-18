@@ -25,10 +25,11 @@ except ImportError:  # dependências de conversão ausentes no ambiente local
 _LIVRO_TXT = (
     "Capítulo 1 — O Começo\n\n"
     "Era uma vez um teste automatizado de conversão em audiobook. "
-    "Ele precisava validar cada etapa da extração até o arquivo final.\n\n"
+    "Ele precisava validar cada etapa da extração até o arquivo final, "
+    "incluindo divisão em blocos, cache e etiquetas.\n\n"
     "Capítulo 2 — A Continuação\n\n"
     "Depois da divisão em blocos, a síntese em cache e a junção em MP3 "
-    "fecham o ciclo completo sem depender de rede externa.\n"
+    "fecham o ciclo completo sem depender de rede externa nem de arquivos externos.\n"
 )
 
 
