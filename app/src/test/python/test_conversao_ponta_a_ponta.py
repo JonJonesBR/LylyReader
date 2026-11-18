@@ -43,10 +43,10 @@ class ConversaoPontaAPontaTest(unittest.TestCase):
                 self.rate = rate
                 self.pitch = pitch
 
-            async def save(self, arquivo_saida):
+            async def stream(self):
+                # A conversão consome o stream (com vigia de inatividade), não o save().
                 chamadas_edge.append((self.texto, self.voz, self.rate, self.pitch))
-                with open(arquivo_saida, "wb") as f:
-                    f.write(mp3_falso(3000, semente=len(chamadas_edge)))
+                yield {"type": "audio", "data": mp3_falso(3000, semente=len(chamadas_edge))}
 
         with tempfile.TemporaryDirectory() as tmp:
             files_dir = os.path.join(tmp, "files")
