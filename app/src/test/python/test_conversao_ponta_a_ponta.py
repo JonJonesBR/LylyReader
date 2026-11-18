@@ -65,63 +65,91 @@ class ConversaoPontaAPontaTest(unittest.TestCase):
             def on_progress(pct, msg):
                 progressos.append((pct, msg))
 
-            aa.init(files_dir, cache_dir)
-            # Garante motor auto/edge e limpa qualquer resíduo de cache anterior
-            aa.set_motor("auto")
-            audio_cache.CACHE.clear()
+            estado_anterior = (
+                tempfile.tempdir,
+                cfg.FILES_DIR,
+                cfg.CACHE_DIR,
+                cfg.BASE_DIR,
+                cfg.TEMP_DIR,
+                cfg.CONFIG_FILE,
+                cfg.HISTORICO_FILE,
+                cfg.TEXTO_PRONTO,
+                cfg.SEMAFORO_TTS,
+                audio_cache.CACHE.DIR,
+                cpa.TEMP_DIR,
+            )
+            try:
+                aa.init(files_dir, cache_dir)
+                # Garante motor auto/edge
+                aa.set_motor("auto")
 
-            with mock.patch.object(tts.edge_tts, "Communicate", _CommunicateFalso), \
-                    mock.patch.object(cpa, "obter_capa", lambda *_a, **_k: None):
-                res1 = aa.processar_arquivo_sync(
-                    caminho_arquivo=livro_path,
-                    voz="pt-BR-ThalitaMultilingualNeural",
-                    velocidade="+0%",
-                    tom="+0Hz",
-                    estilo="padrao",
-                    saida_mp3=saida_mp3,
-                    progress_callback=on_progress,
-                    titulo_etiqueta="Livro Teste",
-                    autor_etiqueta="Autora Teste",
-                    album_etiqueta="Coleção Teste",
-                )
+                with mock.patch.object(tts.edge_tts, "Communicate", _CommunicateFalso), \
+                        mock.patch.object(cpa, "TEMP_DIR", cfg.TEMP_DIR), \
+                        mock.patch.object(cpa, "obter_capa", lambda *_a, **_k: None):
+                    res1 = aa.processar_arquivo_sync(
+                        caminho_arquivo=livro_path,
+                        voz="pt-BR-ThalitaMultilingualNeural",
+                        velocidade="+0%",
+                        tom="+0Hz",
+                        estilo="padrao",
+                        saida_mp3=saida_mp3,
+                        progress_callback=on_progress,
+                        titulo_etiqueta="Livro Teste",
+                        autor_etiqueta="Autora Teste",
+                        album_etiqueta="Coleção Teste",
+                    )
 
-                self.assertTrue(res1.get("ok"), f"1ª conversão falhou: {res1}")
-                self.assertTrue(os.path.isfile(saida_mp3))
-                self.assertGreater(os.path.getsize(saida_mp3), 0)
-                self.assertGreaterEqual(len(res1.get("capitulos", [])), 2)
+                    self.assertTrue(res1.get("ok"), f"1ª conversão falhou: {res1}")
+                    self.assertTrue(os.path.isfile(saida_mp3))
+                    self.assertGreater(os.path.getsize(saida_mp3), 0)
+                    self.assertGreaterEqual(len(res1.get("capitulos", [])), 2)
 
-                trechos = json.loads(res1.get("trechos_json", "[]"))
-                self.assertGreaterEqual(len(trechos), 1)
-                self.assertGreaterEqual(len(chamadas_edge), 1)
-                self.assertTrue(all(v == "pt-BR-ThalitaMultilingualNeural" for _, v, _, _ in chamadas_edge))
-                self.assertTrue(any(pct == 100 for pct, _ in progressos))
+                    trechos = json.loads(res1.get("trechos_json", "[]"))
+                    self.assertGreaterEqual(len(trechos), 1)
+                    self.assertGreaterEqual(len(chamadas_edge), 1)
+                    self.assertTrue(all(v == "pt-BR-ThalitaMultilingualNeural" for _, v, _, _ in chamadas_edge))
+                    self.assertTrue(any(pct == 100 for pct, _ in progressos))
 
-                tags = ID3(saida_mp3)
-                self.assertEqual(["Livro Teste"], list(tags["TIT2"].text))
-                self.assertEqual(["Autora Teste"], list(tags["TPE1"].text))
-                self.assertEqual(["Coleção Teste"], list(tags["TALB"].text))
-                self.assertGreaterEqual(len(tags.getall("CHAP")), 2)
+                    tags = ID3(saida_mp3)
+                    self.assertEqual(["Livro Teste"], list(tags["TIT2"].text))
+                    self.assertEqual(["Autora Teste"], list(tags["TPE1"].text))
+                    self.assertEqual(["Coleção Teste"], list(tags["TALB"].text))
+                    self.assertGreaterEqual(len(tags.getall("CHAP")), 2)
 
-                chamadas_apos_primeira = len(chamadas_edge)
+                    chamadas_apos_primeira = len(chamadas_edge)
 
-                # 2ª conversão do mesmo livro/voz: deve reutilizar o cache sem chamar o Edge TTS
-                os.remove(saida_mp3)
-                res2 = aa.processar_arquivo_sync(
-                    caminho_arquivo=livro_path,
-                    voz="pt-BR-ThalitaMultilingualNeural",
-                    velocidade="+0%",
-                    tom="+0Hz",
-                    estilo="padrao",
-                    saida_mp3=saida_mp3,
-                    titulo_etiqueta="Livro Teste",
-                    autor_etiqueta="Autora Teste",
-                    album_etiqueta="Coleção Teste",
-                )
+                    # 2ª conversão do mesmo livro/voz: deve reutilizar o cache sem chamar o Edge TTS
+                    os.remove(saida_mp3)
+                    res2 = aa.processar_arquivo_sync(
+                        caminho_arquivo=livro_path,
+                        voz="pt-BR-ThalitaMultilingualNeural",
+                        velocidade="+0%",
+                        tom="+0Hz",
+                        estilo="padrao",
+                        saida_mp3=saida_mp3,
+                        titulo_etiqueta="Livro Teste",
+                        autor_etiqueta="Autora Teste",
+                        album_etiqueta="Coleção Teste",
+                    )
 
-                self.assertTrue(res2.get("ok"), f"2ª conversão falhou: {res2}")
-                self.assertTrue(os.path.isfile(saida_mp3))
-                self.assertEqual(
-                    chamadas_apos_primeira,
-                    len(chamadas_edge),
-                    "2ª conversão deveria usar o cache sem novas chamadas ao Edge TTS",
-                )
+                    self.assertTrue(res2.get("ok"), f"2ª conversão falhou: {res2}")
+                    self.assertTrue(os.path.isfile(saida_mp3))
+                    self.assertEqual(
+                        chamadas_apos_primeira,
+                        len(chamadas_edge),
+                        "2ª conversão deveria usar o cache sem novas chamadas ao Edge TTS",
+                    )
+            finally:
+                (
+                    tempfile.tempdir,
+                    cfg.FILES_DIR,
+                    cfg.CACHE_DIR,
+                    cfg.BASE_DIR,
+                    cfg.TEMP_DIR,
+                    cfg.CONFIG_FILE,
+                    cfg.HISTORICO_FILE,
+                    cfg.TEXTO_PRONTO,
+                    cfg.SEMAFORO_TTS,
+                    audio_cache.CACHE.DIR,
+                    cpa.TEMP_DIR,
+                ) = estado_anterior
