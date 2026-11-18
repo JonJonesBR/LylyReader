@@ -55,10 +55,11 @@ class ConversaoAudiobookNoAparelhoTest {
             mkdirs()
         }
         val entrada = File(pastaTeste, "livro_ui_teste.txt").apply {
-            writeText(
-                "Capítulo 1 — Início\n\n" +
-                    "Este é um teste real curto de conversão em audiobook no emulador."
-            )
+            val cap1 = "Capítulo 1 — Início\n\n" +
+                "Este é um teste real curto de conversão em audiobook no emulador. ".repeat(8)
+            val cap2 = "\n\nCapítulo 2 — Fim\n\n" +
+                "Depois dos blocos locais, a junção e os capítulos são gravados no aparelho. ".repeat(8)
+            writeText(cap1 + cap2)
         }
         val saida = File(contexto.filesDir, "livro_ui_teste_${System.currentTimeMillis()}.mp3")
         val itemId = "ui-conv-${UUID.randomUUID()}"
