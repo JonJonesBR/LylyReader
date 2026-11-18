@@ -783,7 +783,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Offline Paradee voices in Portuguese (Dora and Alex), English (Heart, Isabella, Puck and Fable) and Spanish (Alex), lightweight and much faster.\n• The old Kokoro pack (~350 MB), the Santa voice and the other 24 English voices have been removed; books and settings using them switch automatically to the equivalent Paradee voice.</string>
+    <string name="release_notes_corpo">• Floating progress button that follows your audiobook conversion across screens, plus a Try again button if a conversion fails.\n• Faster, more reliable online Edge voices on slow connections, with a mobile data usage warning before starting.</string>
     <string name="timbre_title">Voice pitch</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
