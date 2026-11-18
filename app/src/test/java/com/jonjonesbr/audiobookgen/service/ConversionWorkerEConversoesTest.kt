@@ -78,7 +78,57 @@ class ConversionWorkerEConversoesTest {
         val saida = File(pastaTemp, "livro_teste.mp3")
         val itemId = "item-teste-1"
         val runToken = "token-teste-1"
+        val prefs = prepararFilaEMockPython(entrada, saida, itemId, runToken)
 
+        val worker = TestListenableWorkerBuilder<ConversionWorker>(contexto)
+            .setInputData(
+                workDataOf(
+                    ConversionWorker.KEY_ARQUIVO to entrada.absolutePath,
+                    ConversionWorker.KEY_VOZ to "pt-BR-ThalitaMultilingualNeural",
+                    ConversionWorker.KEY_VELOCIDADE to "+0%",
+                    ConversionWorker.KEY_ESTILO to "padrao",
+                    ConversionWorker.KEY_SAIDA to saida.absolutePath,
+                    ConversionWorker.KEY_MOTOR to "auto",
+                    ConversionWorker.KEY_FILA_ITEM_ID to itemId,
+                    ConversionWorker.KEY_RUN_TOKEN_ENTRADA to runToken,
+                )
+            )
+            .build()
+
+        val resultado = executarBombeandoMain { worker.doWork() }
+        assertTrue(
+            "Worker deveria concluir com sucesso, mas retornou $resultado",
+            resultado is ListenableWorker.Result.Success,
+        )
+        val out = (resultado as ListenableWorker.Result.Success).outputData
+        assertEquals(saida.absolutePath, out.getString(ConversionWorker.KEY_RESULT_CAMINHO))
+        assertEquals("0:01", out.getString(ConversionWorker.KEY_RESULT_DURACAO))
+        assertTrue(out.getBoolean(ConversionWorker.KEY_RESULT_FINALIZADO, false))
+
+        val capitulosSalvos = ChapterMarksStore.carregar(contexto, saida.absolutePath)
+        assertEquals(1, capitulosSalvos.size)
+        assertEquals("Capítulo 1", capitulosSalvos.first().titulo)
+
+        val trechosSalvos = SincroniaAudioStore.carregar(contexto, saida.absolutePath)
+        assertEquals(1, trechosSalvos.size)
+        assertEquals("Texto de teste para o worker.", trechosSalvos.first().texto)
+
+        val filaRestante = runBlocking { QueueRepository.get(contexto).loadItems(prefs) }
+        assertTrue("Item concluído deveria sair da fila ativa", filaRestante.none { it.id == itemId })
+
+        ActivityScenario.launch(ConversoesActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                assertTrue(!activity.isFinishing)
+            }
+        }
+    }
+
+    private fun prepararFilaEMockPython(
+        entrada: File,
+        saida: File,
+        itemId: String,
+        runToken: String,
+    ): android.content.SharedPreferences {
         val repo = QueueRepository.get(contexto)
         val prefs = contexto.getSharedPreferences("audiobookgen_prefs", Context.MODE_PRIVATE)
         val itensIniciais = listOf(
@@ -125,45 +175,7 @@ class ConversionWorkerEConversoesTest {
                 trechosJson = trechosJson,
             )
         }
-
-        val worker = TestListenableWorkerBuilder<ConversionWorker>(contexto)
-            .setInputData(
-                workDataOf(
-                    ConversionWorker.KEY_ARQUIVO to entrada.absolutePath,
-                    ConversionWorker.KEY_VOZ to "pt-BR-ThalitaMultilingualNeural",
-                    ConversionWorker.KEY_VELOCIDADE to "+0%",
-                    ConversionWorker.KEY_ESTILO to "padrao",
-                    ConversionWorker.KEY_SAIDA to saida.absolutePath,
-                    ConversionWorker.KEY_MOTOR to "auto",
-                    ConversionWorker.KEY_FILA_ITEM_ID to itemId,
-                    ConversionWorker.KEY_RUN_TOKEN_ENTRADA to runToken,
-                )
-            )
-            .build()
-
-        val resultado = executarBombeandoMain { worker.doWork() }
-        assertTrue("Worker deveria concluir com sucesso, mas retornou $resultado", resultado is ListenableWorker.Result.Success)
-        val out = (resultado as ListenableWorker.Result.Success).outputData
-        assertEquals(saida.absolutePath, out.getString(ConversionWorker.KEY_RESULT_CAMINHO))
-        assertEquals("0:01", out.getString(ConversionWorker.KEY_RESULT_DURACAO))
-        assertTrue(out.getBoolean(ConversionWorker.KEY_RESULT_FINALIZADO, false))
-
-        val capitulosSalvos = ChapterMarksStore.carregar(contexto, saida.absolutePath)
-        assertEquals(1, capitulosSalvos.size)
-        assertEquals("Capítulo 1", capitulosSalvos.first().titulo)
-
-        val trechosSalvos = SincroniaAudioStore.carregar(contexto, saida.absolutePath)
-        assertEquals(1, trechosSalvos.size)
-        assertEquals("Texto de teste para o worker.", trechosSalvos.first().texto)
-
-        val filaRestante = runBlocking { repo.loadItems(prefs) }
-        assertTrue("Item concluído deveria sair da fila ativa", filaRestante.none { it.id == itemId })
-
-        ActivityScenario.launch(ConversoesActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                assertTrue(!activity.isFinishing)
-            }
-        }
+        return prefs
     }
 
     private fun <T> executarBombeandoMain(bloco: suspend () -> T): T {
