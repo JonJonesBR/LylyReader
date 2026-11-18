@@ -1,6 +1,7 @@
 package com.jonjonesbr.audiobookgen.service
 
 import android.content.Context
+import android.os.Looper
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -20,6 +21,9 @@ import com.jonjonesbr.audiobookgen.ui.LeitorTesteApplication
 import io.mockk.coEvery
 import io.mockk.mockkConstructor
 import io.mockk.unmockkAll
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -28,9 +32,11 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import java.io.File
 import java.lang.reflect.Modifier
+import java.util.concurrent.CompletableFuture
 
 /**
  * Integração no Checks do lado Kotlin do fluxo de conversão:
@@ -47,6 +53,7 @@ class ConversionWorkerEConversoesTest {
     @Before
     fun preparar() {
         zerarFabricaDeViewModel()
+        QueueManager.replaceAll(emptyList())
         contexto = ApplicationProvider.getApplicationContext()
         WorkManagerTestInitHelper.initializeTestWorkManager(contexto)
         pastaTemp = File(contexto.cacheDir, "teste_worker_conversoes").apply {
@@ -58,6 +65,7 @@ class ConversionWorkerEConversoesTest {
     @After
     fun limpar() {
         unmockkAll()
+        QueueManager.replaceAll(emptyList())
         pastaTemp.deleteRecursively()
         zerarFabricaDeViewModel()
     }
@@ -73,21 +81,19 @@ class ConversionWorkerEConversoesTest {
 
         val repo = QueueRepository.get(contexto)
         val prefs = contexto.getSharedPreferences("audiobookgen_prefs", Context.MODE_PRIVATE)
-        runBlocking {
-            repo.replaceAll(
-                listOf(
-                    QueueItem(
-                        id = itemId,
-                        nome = "Livro Teste",
-                        caminhoLocal = entrada.absolutePath,
-                        status = QueueStatus.PROCESSANDO,
-                        motor = "auto",
-                        caminhoSaida = saida.absolutePath,
-                        runToken = runToken,
-                    )
-                )
+        val itensIniciais = listOf(
+            QueueItem(
+                id = itemId,
+                nome = "Livro Teste",
+                caminhoLocal = entrada.absolutePath,
+                status = QueueStatus.PROCESSANDO,
+                motor = "auto",
+                caminhoSaida = saida.absolutePath,
+                runToken = runToken,
             )
-        }
+        )
+        QueueManager.replaceAll(itensIniciais)
+        runBlocking { repo.replaceAll(itensIniciais) }
 
         val trechosJson = """[{"i":0,"inicioMs":0,"fimMs":1200,"texto":"Texto de teste para o worker."}]"""
         mockkConstructor(PythonEngineUseCase::class)
@@ -135,7 +141,7 @@ class ConversionWorkerEConversoesTest {
             )
             .build()
 
-        val resultado = runBlocking { worker.doWork() }
+        val resultado = executarBombeandoMain { worker.doWork() }
         assertTrue("Worker deveria concluir com sucesso, mas retornou $resultado", resultado is ListenableWorker.Result.Success)
         val out = (resultado as ListenableWorker.Result.Success).outputData
         assertEquals(saida.absolutePath, out.getString(ConversionWorker.KEY_RESULT_CAMINHO))
@@ -158,6 +164,24 @@ class ConversionWorkerEConversoesTest {
                 assertTrue(!activity.isFinishing)
             }
         }
+    }
+
+    private fun <T> executarBombeandoMain(bloco: suspend () -> T): T {
+        val futuro = CompletableFuture<T>()
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                futuro.complete(bloco())
+            } catch (t: Throwable) {
+                futuro.completeExceptionally(t)
+            }
+        }
+        val prazo = System.currentTimeMillis() + 30_000L
+        while (!futuro.isDone && System.currentTimeMillis() < prazo) {
+            Shadows.shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(10)
+        }
+        check(futuro.isDone) { "Timeout aguardando conclusão na thread principal do Robolectric" }
+        return futuro.get()
     }
 
     private fun zerarFabricaDeViewModel() {

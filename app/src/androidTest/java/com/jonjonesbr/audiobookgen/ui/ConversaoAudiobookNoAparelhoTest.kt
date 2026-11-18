@@ -19,6 +19,7 @@ import com.jonjonesbr.audiobookgen.data.SincroniaAudioStore
 import com.jonjonesbr.audiobookgen.service.ChapterMarksStore
 import com.jonjonesbr.audiobookgen.service.ConversionWorker
 import com.jonjonesbr.audiobookgen.service.ParametrosConversao
+import com.jonjonesbr.audiobookgen.service.QueueManager
 import com.jonjonesbr.audiobookgen.tts.OnnxSynthBridge
 import com.jonjonesbr.audiobookgen.tts.SilentWav
 import com.jonjonesbr.audiobookgen.ui.apoio.Capturas
@@ -75,21 +76,19 @@ class ConversaoAudiobookNoAparelhoTest {
         try {
             val repo = QueueRepository.get(contexto)
             val prefs = contexto.getSharedPreferences("audiobookgen_prefs", android.content.Context.MODE_PRIVATE)
-            runBlocking {
-                repo.replaceAll(
-                    listOf(
-                        QueueItem(
-                            id = itemId,
-                            nome = "Livro UI Teste",
-                            caminhoLocal = entrada.absolutePath,
-                            status = QueueStatus.PROCESSANDO,
-                            motor = "onnx",
-                            caminhoSaida = saida.absolutePath,
-                            runToken = runToken,
-                        )
-                    )
+            val itensIniciais = listOf(
+                QueueItem(
+                    id = itemId,
+                    nome = "Livro UI Teste",
+                    caminhoLocal = entrada.absolutePath,
+                    status = QueueStatus.PROCESSANDO,
+                    motor = "onnx",
+                    caminhoSaida = saida.absolutePath,
+                    runToken = runToken,
                 )
-            }
+            )
+            QueueManager.replaceAll(itensIniciais)
+            runBlocking { repo.replaceAll(itensIniciais) }
 
             val parametros = ParametrosConversao(
                 arquivoEntrada = entrada.absolutePath,
@@ -150,6 +149,7 @@ class ConversaoAudiobookNoAparelhoTest {
             assertTrue("Item concluído deveria ter saído da fila", filaRestante.none { it.id == itemId })
         } finally {
             OnnxSynthBridge.sinteseParaTestes = null
+            QueueManager.replaceAll(emptyList())
             WorkManager.getInstance(contexto).cancelUniqueWork(ConversionWorker.WORK_NAME)
             scenario.close()
             pastaTeste.deleteRecursively()
