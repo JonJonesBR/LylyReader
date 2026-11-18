@@ -378,17 +378,16 @@ class ParagrafoAdapter(
         val selecaoAtiva = tv.hasSelection() && tv.isFocused && tv.text.toString() == par.texto
         // rb-53: a repintura de sincronia que chega com o dedo já sobre o parágrafo fica para depois do toque.
         if (segurarTextoDoBind(holder, par, position, selecaoAtiva)) return
-        if (!selecaoAtiva) {
-            // View reaproveitada pelo RecyclerView: sem reativar, a seleção de texto (textIsSelectable)
-            // deixa de responder ao toque longo depois de rolar a lista. Alternar reinicia o estado.
-            // Só quando o item passou a mostrar outro parágrafo: repintar o parágrafo em leitura 20x/s
-            // e alternar a cada vez cancelava o toque longo antes de ele completar.
-            if (holder.textoArmado != par.texto) {
-                tv.setTextIsSelectable(false)
-                tv.setTextIsSelectable(true)
-                holder.textoArmado = par.texto
-            }
-            tv.text = par.texto
+        // View reaproveitada pelo RecyclerView: sem reativar, a seleção de texto (textIsSelectable)
+        // deixa de responder ao toque longo depois de rolar a lista. Alternar reinicia o estado.
+        // Só quando o item passou a mostrar outro parágrafo: repintar o parágrafo em leitura 20x/s
+        // e alternar a cada vez cancelava o toque longo antes de ele completar.
+        // O texto em si é aplicado uma única vez, nos ramos do fim do bind: um setText aqui montava o
+        // layout do parágrafo duas vezes por bind (20x/s no parágrafo narrado).
+        if (!selecaoAtiva && holder.textoArmado != par.texto) {
+            tv.setTextIsSelectable(false)
+            tv.setTextIsSelectable(true)
+            holder.textoArmado = par.texto
         }
         tv.textSize = tamanhoFonte
         tv.setLineSpacing(0f, espacamento)
