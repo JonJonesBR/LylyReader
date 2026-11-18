@@ -73,13 +73,14 @@ class ConversaoAudiobookNoAparelhoTest {
         )
 
         try {
-            val repo = QueueRepository(contexto)
+            val repo = QueueRepository.get(contexto)
+            val prefs = contexto.getSharedPreferences("audiobookgen_prefs", android.content.Context.MODE_PRIVATE)
             runBlocking {
-                repo.salvarTodos(
+                repo.replaceAll(
                     listOf(
                         QueueItem(
                             id = itemId,
-                            titulo = "Livro UI Teste",
+                            nome = "Livro UI Teste",
                             caminhoLocal = entrada.absolutePath,
                             status = QueueStatus.PROCESSANDO,
                             motor = "onnx",
@@ -145,7 +146,7 @@ class ConversaoAudiobookNoAparelhoTest {
                 "Trechos de sincronia deveriam ter sido salvos em SincroniaAudioStore",
                 SincroniaAudioStore.carregar(contexto, saida.absolutePath).isNotEmpty(),
             )
-            val filaRestante = runBlocking { repo.carregarTodos() }
+            val filaRestante = runBlocking { repo.loadItems(prefs) }
             assertTrue("Item concluído deveria ter saído da fila", filaRestante.none { it.id == itemId })
         } finally {
             OnnxSynthBridge.sinteseParaTestes = null

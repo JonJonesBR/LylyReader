@@ -17,7 +17,7 @@ import com.jonjonesbr.audiobookgen.domain.ProcessamentoResult
 import com.jonjonesbr.audiobookgen.domain.PythonEngineUseCase
 import com.jonjonesbr.audiobookgen.ui.ConversoesActivity
 import com.jonjonesbr.audiobookgen.ui.LeitorTesteApplication
-import io.mockk.every
+import io.mockk.coEvery
 import io.mockk.mockkConstructor
 import io.mockk.unmockkAll
 import kotlinx.coroutines.runBlocking
@@ -71,13 +71,14 @@ class ConversionWorkerEConversoesTest {
         val itemId = "item-teste-1"
         val runToken = "token-teste-1"
 
-        val repo = QueueRepository(contexto)
+        val repo = QueueRepository.get(contexto)
+        val prefs = contexto.getSharedPreferences("audiobookgen_prefs", Context.MODE_PRIVATE)
         runBlocking {
-            repo.salvarTodos(
+            repo.replaceAll(
                 listOf(
                     QueueItem(
                         id = itemId,
-                        titulo = "Livro Teste",
+                        nome = "Livro Teste",
                         caminhoLocal = entrada.absolutePath,
                         status = QueueStatus.PROCESSANDO,
                         motor = "auto",
@@ -90,12 +91,12 @@ class ConversionWorkerEConversoesTest {
 
         val trechosJson = """[{"i":0,"inicioMs":0,"fimMs":1200,"texto":"Texto de teste para o worker."}]"""
         mockkConstructor(PythonEngineUseCase::class)
-        every { anyConstructed<PythonEngineUseCase>().inicializarMotorSeNecessario() } returns Unit
-        every {
+        coEvery { anyConstructed<PythonEngineUseCase>().inicializarMotorSeNecessario() } returns true
+        coEvery {
             anyConstructed<PythonEngineUseCase>().sincronizarConfiguracoes(any(), any(), any(), any(), any(), any())
         } returns Unit
-        every { anyConstructed<PythonEngineUseCase>().sincronizarDicionario(any()) } returns Unit
-        every {
+        coEvery { anyConstructed<PythonEngineUseCase>().sincronizarDicionario(any()) } returns Unit
+        coEvery {
             anyConstructed<PythonEngineUseCase>().processarArquivo(
                 arquivo = any(),
                 voz = any(),
@@ -149,7 +150,7 @@ class ConversionWorkerEConversoesTest {
         assertEquals(1, trechosSalvos.size)
         assertEquals("Texto de teste para o worker.", trechosSalvos.first().texto)
 
-        val filaRestante = runBlocking { repo.carregarTodos() }
+        val filaRestante = runBlocking { repo.loadItems(prefs) }
         assertTrue("Item concluído deveria sair da fila ativa", filaRestante.none { it.id == itemId })
 
         ActivityScenario.launch(ConversoesActivity::class.java).use { scenario ->
