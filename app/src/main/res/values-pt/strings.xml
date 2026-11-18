@@ -786,7 +786,7 @@
 
     <!-- Nota de versão pós-atualização (mostrada uma vez, na 1ª abertura após atualizar) -->
     <string name="release_notes_titulo">Novidades da versão %1$s</string>
-    <string name="release_notes_corpo">• Vozes offline Paradee em português (Dora e Alex), inglês (Heart, Isabella, Puck e Fable) e espanhol (Alex), leves e bem mais rápidas.\n• O pacote antigo do Kokoro (~350 MB), a voz Santa e as outras 24 vozes em inglês saíram do app; quem usava uma delas passa automaticamente para a voz Paradee equivalente.</string>
+    <string name="release_notes_corpo">• Botão flutuante que acompanha o progresso da conversão nas outras telas e botão Tentar de novo caso uma conversão falhe.\n• Vozes online Edge mais rápidas e estáveis em conexões lentas, com aviso de consumo estimado ao gerar em dados móveis.</string>
     <string name="timbre_title">Tom da voz</string>
     <string name="timbre_desc">Voz mais grave ou mais aguda, e agudos mais suaves. Vale na hora.</string>
     <string name="timbre_pitch_label">Tom: %1$s</string>
