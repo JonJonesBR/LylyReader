@@ -95,7 +95,7 @@ class ConversionWorkerEConversoesTest {
         QueueManager.replaceAll(itensIniciais)
         runBlocking { repo.replaceAll(itensIniciais) }
 
-        val trechosJson = """[{"i":0,"inicioMs":0,"fimMs":1200,"texto":"Texto de teste para o worker."}]"""
+        val trechosJson = """[{"inicio_ms":0,"texto":"Texto de teste para o worker."}]"""
         mockkConstructor(PythonEngineUseCase::class)
         coEvery { anyConstructed<PythonEngineUseCase>().inicializarMotorSeNecessario() } returns true
         coEvery {
