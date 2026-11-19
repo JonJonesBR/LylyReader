@@ -121,6 +121,21 @@ class BatimentoTest(unittest.TestCase):
         n_ao_falhar = asyncio.run(_principal())
         self.assertEqual(n_ao_falhar, len(chamadas))
 
+    def test_batimento_de_linha_progresso_nao_leva_tempo_no_fim(self):
+        # A linha @progresso é lida pelo Kotlin: o "(tempo decorrido)" não pode entrar nela.
+        chamadas = []
+
+        async def _principal():
+            await _com_batimento(
+                asyncio.sleep(0.1), lambda p, m: chamadas.append((p, m)), 60,
+                "@progresso pct=60 refazendo=2 rodada=1 rodadas=3", intervalo=0.03,
+            )
+
+        asyncio.run(_principal())
+        self.assertTrue(chamadas)
+        for _, msg in chamadas:
+            self.assertEqual("@progresso pct=60 refazendo=2 rodada=1 rodadas=3", msg)
+
     def test_pct_dinamico_e_lido_a_cada_batimento(self):
         chamadas = []
         estado = {"pct": 10}
