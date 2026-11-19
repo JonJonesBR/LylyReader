@@ -5,21 +5,30 @@ from pathlib import Path
 PYTHON_SRC = Path(__file__).parents[2] / "main" / "python"
 sys.path.insert(0, str(PYTHON_SRC))
 
-from utils import ProgressTracker, conexao_lenta, linha_de_progresso  # noqa: E402
+from utils import (  # noqa: E402
+    ProgressTracker, conexao_lenta, linha_de_progresso, LIMITE_BLOCO_LENTO_MS, bloco_veio_do_cache,
+)
 
 
 class ConexaoLentaTest(unittest.TestCase):
 
+    def test_limiar_de_bloco_lento_e_60_s(self):
+        self.assertEqual(60_000, LIMITE_BLOCO_LENTO_MS)
+
     def test_motor_local_nunca_e_lento(self):
-        self.assertFalse(conexao_lenta([30_000] * 5, motor_de_rede=False))
+        self.assertFalse(conexao_lenta([90_000] * 5, motor_de_rede=False))
 
-    def test_mediana_de_20_s_ou_mais_e_lenta(self):
-        self.assertTrue(conexao_lenta([20_000, 20_000, 20_000], motor_de_rede=True))
-        self.assertTrue(conexao_lenta([5_000, 25_000, 30_000, 22_000, 21_000], motor_de_rede=True))
+    def test_mediana_de_60_s_ou_mais_e_lenta(self):
+        self.assertTrue(conexao_lenta([60_000, 60_000, 60_000], motor_de_rede=True))
+        self.assertTrue(conexao_lenta([30_000, 60_000, 90_000, 61_000, 62_000], motor_de_rede=True))
 
-    def test_mediana_abaixo_de_20_s_nao_e_lenta(self):
-        self.assertFalse(conexao_lenta([19_999, 19_999, 19_999], motor_de_rede=True))
-        self.assertFalse(conexao_lenta([60_000, 60_000, 2_000, 2_000, 3_000], motor_de_rede=True))
+    def test_mediana_abaixo_de_60_s_nao_e_lenta(self):
+        self.assertFalse(conexao_lenta([59_999, 59_999, 59_999], motor_de_rede=True))
+        self.assertFalse(conexao_lenta([120_000, 120_000, 2_000, 2_000, 3_000], motor_de_rede=True))
+
+    def test_blocos_normais_de_10_a_50_s_nao_sao_conexao_lenta(self):
+        # Edge com rede boa: um bloco de 2.500 caracteres leva 10 a 50 s.
+        self.assertFalse(conexao_lenta([50_000, 45_000, 50_000, 38_000, 50_000], motor_de_rede=True))
 
     def test_um_bloco_lento_isolado_nao_basta(self):
         self.assertFalse(conexao_lenta([90_000], motor_de_rede=True))
@@ -27,14 +36,20 @@ class ConexaoLentaTest(unittest.TestCase):
 
     def test_so_olha_os_ultimos_5_blocos(self):
         # Os 3 primeiros foram lentos, mas os 5 últimos são rápidos: não é lenta.
-        self.assertFalse(conexao_lenta([50_000, 50_000, 50_000, 1_000, 1_000, 1_000, 1_000, 1_000],
+        self.assertFalse(conexao_lenta([90_000, 90_000, 90_000, 1_000, 1_000, 1_000, 1_000, 1_000],
                                        motor_de_rede=True))
         # Os 5 últimos são lentos mesmo com início rápido.
-        self.assertTrue(conexao_lenta([1_000, 1_000, 1_000, 25_000, 25_000, 25_000, 25_000, 25_000],
+        self.assertTrue(conexao_lenta([1_000, 1_000, 1_000, 70_000, 70_000, 70_000, 70_000, 70_000],
                                       motor_de_rede=True))
 
     def test_sem_amostras_nao_e_lenta(self):
         self.assertFalse(conexao_lenta([], motor_de_rede=True))
+
+    def test_bloco_do_cache_e_identificado_por_menos_de_1_s(self):
+        self.assertTrue(bloco_veio_do_cache(50))
+        self.assertTrue(bloco_veio_do_cache(999.9))
+        self.assertFalse(bloco_veio_do_cache(1_000))
+        self.assertFalse(bloco_veio_do_cache(None))
 
 
 class LinhaDeProgressoTest(unittest.TestCase):

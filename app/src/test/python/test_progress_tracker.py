@@ -117,6 +117,65 @@ class ProgressTrackerTest(unittest.TestCase):
             eta = t._eta_segundos()
         self.assertLess(eta, 40)
 
+    def test_blocos_de_cache_nao_geram_eta_antes_do_primeiro_real(self):
+        with patch("utils.time.time") as relogio:
+            relogio.return_value = 0.0
+            t = ProgressTracker(32, inicio=0.0)
+            for i in range(29):
+                t.registrar(i, True, duracao_ms=50)
+            self.assertIsNone(t._eta_segundos())
+            self.assertEqual("calculando...", t._eta())
+        self.assertEqual(29, t.concluidos)
+        self.assertEqual(90, t.pct())
+
+    def test_eta_so_com_blocos_reais_apos_cache(self):
+        # 29 blocos de cache e 1 real que termina em 20 s, com 2 restantes: 20 s x 2 = 40 s.
+        # Contando o cache como produzido, a taxa seria 20 / 30 e o ETA cairia para 1 s.
+        with patch("utils.time.time") as relogio:
+            relogio.return_value = 0.0
+            t = ProgressTracker(32, inicio=0.0)
+            for i in range(29):
+                t.registrar(i, True, duracao_ms=50)
+            relogio.return_value = 20.0
+            t.registrar(29, True, duracao_ms=20_000)
+            eta = t._eta_segundos()
+        self.assertEqual(30, t.concluidos)
+        self.assertEqual(93, t.pct())
+        self.assertEqual(40, eta)
+
+    def test_cache_no_meio_nao_encurta_eta(self):
+        with patch("utils.time.time") as relogio:
+            relogio.return_value = 0.0
+            t = ProgressTracker(10, inicio=0.0)
+            relogio.return_value = 10.0
+            t.registrar(0, True, duracao_ms=10_000)
+            for i in range(1, 6):
+                t.registrar(i, True, duracao_ms=30)
+            eta = t._eta_segundos()
+        # Restam 4 blocos; o ritmo real é 10 s por bloco (1 bloco real em 10 s): 40 s.
+        self.assertEqual(40, eta)
+
+    def test_cache_nao_entra_na_janela_nem_avanca_ultimo_sucesso(self):
+        with patch("utils.time.time") as relogio:
+            relogio.return_value = 5.0
+            t = ProgressTracker(10, inicio=0.0)
+            t.registrar(0, True, duracao_ms=10)
+            self.assertEqual(0, len(t._janela))
+            self.assertEqual(0.0, t._ultimo_sucesso)
+            relogio.return_value = 8.0
+            t.registrar(1, True, duracao_ms=4_000)
+            self.assertEqual([8.0], list(t._janela))
+
+    def test_bloco_com_duracao_none_conta_como_real(self):
+        with patch("utils.time.time") as relogio:
+            relogio.return_value = 4.0
+            t = ProgressTracker(4, inicio=0.0)
+            t.registrar(0, True)
+            eta = t._eta_segundos()
+        self.assertEqual(1, t._reais)
+        # 4 s por bloco real x 3 restantes = 12 s
+        self.assertEqual(12, eta)
+
 
 if __name__ == "__main__":
     unittest.main()
