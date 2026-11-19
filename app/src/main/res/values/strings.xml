@@ -1407,7 +1407,7 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="erro_tts_sem_texto">No readable text was found in the document.</string>
     <string name="erro_tts_texto_nao_separavel">The text could not be split for narration.</string>
     <string name="erro_tts_generico">Could not finish. Try again or use another file.</string>
-    <string name="erro_tts_blocos_falharam">Some parts of the book could not be converted. Check your connection and try again.</string>
+    <string name="erro_tts_blocos_falharam">Some parts could not be generated, so the audiobook was not assembled with missing parts. What was already generated is saved: check your connection and try again to continue where it stopped.</string>
     <string name="erro_tts_juncao_falhou">Could not join the audio. Check the free space and try again.</string>
     <string name="python_motor_offline">The reading engine could not start.</string>
     <string name="python_payload_incompleto">The reading engine returned an incomplete answer.</string>

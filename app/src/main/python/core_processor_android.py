@@ -70,7 +70,7 @@ _MOTORES_COM_RETRY_INTERNO = frozenset({"edge", "gemini", "openrouter"})
 # Motores que rodam no aparelho, pelo roteamento de tts.motor_da_voz (Piper entra como "kokoro").
 _MOTORES_LOCAIS = frozenset({"onnx", "android", "kokoro", "pocket"})
 # Tempo total somado das rodadas globais de retry (depois da rodada inicial). Esgotado, a conversão
-# para de reprocessar e falha (ou tolera) com a mensagem de sempre. Rede boa não chega perto disso.
+# para de reprocessar e falha com a mensagem de sempre (sem montar o audiobook). Rede boa não chega perto disso.
 _ORCAMENTO_RETRY_S = 480
 
 
@@ -566,11 +566,6 @@ def _chunks_falhos(total: int, completed_valid: set, temp_files: list) -> list:
         or not os.path.exists(temp_files[i])
         or os.path.getsize(temp_files[i]) <= 500
     ]
-
-
-def _limite_falhas_toleradas(total: int) -> int:
-    """Quantos blocos podem falhar sem abortar a conversão: 5% do total, entre 1 e 10."""
-    return min(10, max(1, math.ceil(total * 0.05)))
 
 
 def _kokoro_oficial(voz: str) -> bool:
@@ -1208,7 +1203,7 @@ async def _processar_nucleo(
                 timeout=orcamento_retry.restante() if orcamento_retry is not None else None,
             )
         except asyncio.TimeoutError:
-            # Blocos que não terminaram ficam como falhos; a verificação final decide (tolerância ou erro).
+            # Blocos que não terminaram ficam como falhos; a verificação final aborta a conversão se sobrar algum.
             orcamento_esgotou = True
             logger.warning(f"Orçamento de retry de {_ORCAMENTO_RETRY_S} s esgotado na rodada {rodada}.")
         _persistir_progresso(forcado=True)
@@ -1222,18 +1217,16 @@ async def _processar_nucleo(
         if orcamento_esgotou:
             break
 
-    # ── Verificação final: impede audiobook incompleto ────────────────────────
+    # ── Verificação final: nenhum bloco falho entra no audiobook ──────────────
+    # Sem tolerância: qualquer bloco que sobrou falho aborta a conversão, e não se monta o MP3 com partes
+    # faltando. O progresso é gravado antes do retorno, para o "Tentar de novo" retomar só os blocos faltantes.
     falhos_final = _chunks_falhos(total, completed_valid, temp_files)
-    aviso_ignorados = ""  # repetido nas mensagens seguintes, para não ser sobrescrito de imediato
-    if falhos_final and len(falhos_final) <= _limite_falhas_toleradas(total):
-        logger.warning(
-            f"{len(falhos_final)}/{total} blocos ignorados após {_MAX_RODADAS_RETRY} retries "
-            "(dentro do limite de tolerância); seguindo com os demais."
-        )
-        aviso_ignorados = f" | {len(falhos_final)} trecho(s) ignorado(s)"
-        _cb(PCT_FIM_SINTESE, f"{len(falhos_final)} trecho(s) não puderam ser convertidos e foram ignorados.")
-    elif falhos_final:
+    if falhos_final:
         logger.error(f"Conversão incompleta: {len(falhos_final)}/{total} blocos falharam após {_MAX_RODADAS_RETRY} retries.")
+        # Lotes em andamento terminam antes do retorno: um "Tentar de novo" imediato não pode juntar o
+        # mesmo grupo enquanto uma thread ainda grava o batch dele.
+        await _aguardar_lotes()
+        _persistir_progresso(forcado=True)
         if motor_ativo == "elevenlabs":
             dica = _dica_erro_elevenlabs()
         elif motor_ativo == "gemini":
@@ -1263,7 +1256,7 @@ async def _processar_nucleo(
         return PCT_FIM_SINTESE + int(estado_juncao["fracao"] * (PCT_FIM_JUNCAO - PCT_FIM_SINTESE))
 
     def _msg_juncao() -> str:
-        return f"Juntando áudio… {int(estado_juncao['fracao'] * 100)}%{aviso_ignorados}"
+        return f"Juntando áudio… {int(estado_juncao['fracao'] * 100)}%"
 
     def _progresso_juncao(fracao: float) -> None:
         estado_juncao["fracao"] = fracao
@@ -1335,7 +1328,7 @@ async def _processar_nucleo(
 
     tem_capitulos = bool(capitulos_info and len(capitulos_info) > 1)
     caps_com_ts: list = []
-    msg_metadados = f"Adicionando metadados…{aviso_ignorados}"
+    msg_metadados = "Adicionando metadados…"
     _cb(PCT_FIM_TIMBRE, msg_metadados)
     if tem_capitulos:
         inicio_etapa = time.perf_counter()
@@ -1392,10 +1385,10 @@ async def _processar_nucleo(
         logger.info(f"Chapter marks adicionados: {len(caps_com_ts)} capítulos.")
 
     # Faixa PCT_FIM_METADADOS..PCT_FIM_CAPITULOS
-    _cb(PCT_FIM_METADADOS, f"Finalizando…{aviso_ignorados}")
+    _cb(PCT_FIM_METADADOS, "Finalizando…")
 
     # Duração final (faixa PCT_FIM_CAPITULOS)
-    msg_duracao = f"Calculando a duração…{aviso_ignorados}"
+    msg_duracao = "Calculando a duração…"
     _cb(PCT_FIM_CAPITULOS, msg_duracao)
     inicio_etapa = time.perf_counter()
     duracao_seg = await _com_batimento(
