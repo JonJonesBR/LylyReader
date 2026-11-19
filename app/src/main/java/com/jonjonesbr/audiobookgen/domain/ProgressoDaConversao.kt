@@ -1,15 +1,23 @@
 package com.jonjonesbr.audiobookgen.domain
 
 /**
- * Progresso que o Python manda numa linha "@progresso pct=18 eta_s=168 falhas=2" (ver ProgressTracker.mensagem_simples).
+ * Progresso que o Python manda numa linha "@progresso pct=18 eta_s=168 falhas=2" (ver utils.linha_de_progresso).
  * Só os números: a frase no idioma do app é montada pelo Android (service.TextoDeProgresso).
  */
 data class ProgressoEstruturado(
     val pct: Int,
     /** Segundos até o fim. Null enquanto o Python ainda não tem base para estimar (eta_s=-1). */
     val etaSegundos: Int?,
-    /** Blocos com falha ainda não recuperados. */
+    /** Blocos com falha ainda não recuperados (na 1ª passada: serão refeitos automaticamente). */
     val falhas: Int,
+    /** Blocos pendentes da rodada de retry. Zero fora das rodadas. */
+    val refazendo: Int = 0,
+    /** Número da rodada de retry em curso. */
+    val rodada: Int = 0,
+    /** Total de rodadas de retry. */
+    val rodadas: Int = 0,
+    /** Conexão lenta com motor de rede (lenta=1). */
+    val lenta: Boolean = false,
 )
 
 /** Faixa do tempo restante: a decisão de qual frase usar fica aqui; o texto fica no Android. */
@@ -52,6 +60,10 @@ object ProgressoDaConversao {
                 pct = pct.coerceIn(0, PCT_MAXIMO),
                 etaSegundos = campos["eta_s"]?.toIntOrNull()?.takeIf { it >= 0 },
                 falhas = campos["falhas"]?.toIntOrNull()?.coerceAtLeast(0) ?: 0,
+                refazendo = campos["refazendo"]?.toIntOrNull()?.coerceAtLeast(0) ?: 0,
+                rodada = campos["rodada"]?.toIntOrNull()?.coerceAtLeast(0) ?: 0,
+                rodadas = campos["rodadas"]?.toIntOrNull()?.coerceAtLeast(0) ?: 0,
+                lenta = campos["lenta"] == "1",
             )
         } else {
             null

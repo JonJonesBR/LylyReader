@@ -24,8 +24,37 @@ object TextoDeProgresso {
         }
     }
 
-    /** Ex.: "18% · faltam cerca de 2 min"; com falhas, acrescenta "· 1 trecho falhou". */
+    /**
+     * Ex.: "18% · faltam cerca de 2 min"; com falhas na 1ª passada, "· 1 trecho será refeito automaticamente".
+     * Nas rodadas de retry, "18% · Refazendo 1 trecho (tentativa 1 de 3), aguarde…" (sem tempo nem falhas).
+     * Conexão lenta: uma 2ª linha com o aviso.
+     */
     fun frase(context: Context, progresso: ProgressoEstruturado): String {
+        val linha = if (progresso.refazendo > 0) {
+            fraseDeRefazer(context, progresso)
+        } else {
+            fraseDeAndamento(context, progresso)
+        }
+        return if (progresso.lenta) {
+            "$linha\n" + context.getString(R.string.conv_cartao_conexao_lenta)
+        } else {
+            linha
+        }
+    }
+
+    private fun fraseDeRefazer(context: Context, progresso: ProgressoEstruturado): String {
+        val pct = context.getString(R.string.conv_cartao_pct_simples, progresso.pct)
+        val refazendo = context.resources.getQuantityString(
+            R.plurals.conv_cartao_refazendo,
+            progresso.refazendo,
+            progresso.refazendo,
+            progresso.rodada,
+            progresso.rodadas,
+        )
+        return context.getString(R.string.conv_cartao_com_falhas, pct, refazendo)
+    }
+
+    private fun fraseDeAndamento(context: Context, progresso: ProgressoEstruturado): String {
         val pct = progresso.pct
         val principal = when (val tempo = ProgressoDaConversao.tempoRestante(progresso.etaSegundos)) {
             TempoRestante.Calculando -> context.getString(R.string.conv_cartao_pct_calculando, pct)

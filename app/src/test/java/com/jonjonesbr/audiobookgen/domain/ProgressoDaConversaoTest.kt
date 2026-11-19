@@ -57,6 +57,25 @@ class ProgressoDaConversaoTest {
     }
 
     @Test
+    fun `le os campos da rodada de retry e o aviso de conexao lenta`() {
+        assertEquals(
+            ProgressoEstruturado(
+                pct = 60, etaSegundos = null, falhas = 0, refazendo = 2, rodada = 1, rodadas = 3, lenta = true,
+            ),
+            ProgressoDaConversao.ler("@progresso pct=60 refazendo=2 rodada=1 rodadas=3 lenta=1")
+        )
+    }
+
+    @Test
+    fun `campos novos ausentes ou invalidos valem zero ou falso`() {
+        assertEquals(
+            ProgressoEstruturado(pct = 5, etaSegundos = 10, falhas = 0),
+            ProgressoDaConversao.ler("@progresso pct=5 eta_s=10 refazendo=abc rodada=-2 rodadas= lenta=0")
+        )
+        assertEquals(false, ProgressoDaConversao.ler("@progresso pct=5 eta_s=10 lenta=sim")?.lenta)
+    }
+
+    @Test
     fun `percentual fora de 0 a 100 e limitado`() {
         assertEquals(100, ProgressoDaConversao.ler("@progresso pct=150 eta_s=1")?.pct)
         assertTrue(ProgressoDaConversao.ler("@progresso pct=-3")?.pct == 0)

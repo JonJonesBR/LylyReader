@@ -10,6 +10,7 @@ Diferenças em relação ao core_processor.py original:
 """
 
 import asyncio
+import collections
 import contextlib
 import hashlib
 import json
@@ -35,6 +36,7 @@ from utils import (
     precisa_sanear, remover_secao_notas_final,
     PCT_FIM_SINTESE, PCT_FIM_JUNCAO, PCT_FIM_TIMBRE, PCT_FIM_METADADOS, PCT_FIM_CAPITULOS,
     fracao_sintese, pct_sintese_global, pct_nao_regride,
+    conexao_lenta, linha_de_progresso, PREFIXO_PROGRESSO,
 )
 from tts import (
     converter_tts_auto, motor_da_voz, concatenar_grupo_com_pausa,
@@ -69,6 +71,8 @@ _ESPERAS_RETRY_IMEDIATO = (0.5, 1.5)  # segundos antes da 1ª e da 2ª repetiç�
 _MOTORES_COM_RETRY_INTERNO = frozenset({"edge", "gemini", "openrouter"})
 # Motores que rodam no aparelho, pelo roteamento de tts.motor_da_voz (Piper entra como "kokoro").
 _MOTORES_LOCAIS = frozenset({"onnx", "android", "kokoro", "pocket"})
+# Motores que dependem da internet: só para eles a conexão pode ser lenta (aviso no cartão).
+_MOTORES_DE_REDE = frozenset({"edge", "gemini", "openrouter", "elevenlabs"})
 # Tempo total somado das rodadas globais de retry (depois da rodada inicial). Esgotado, a conversão
 # para de reprocessar e falha com a mensagem de sempre (sem montar o audiobook). Rede boa não chega perto disso.
 _ORCAMENTO_RETRY_S = 480
@@ -629,6 +633,9 @@ async def _com_batimento(awaitable, _cb, pct, mensagem, intervalo: float = 5.0):
 
     def _msg_atual():
         texto = mensagem() if callable(mensagem) else mensagem
+        # Linha estruturada do Kotlin: sem o "(tempo)" no fim, que ela não leria.
+        if texto.startswith(PREFIXO_PROGRESSO):
+            return texto
         return f"{texto} ({formatar_duracao(time.time() - inicio)})"
 
     tarefa = _iniciar_batimento(_cb, _pct_atual, _msg_atual, intervalo)
@@ -1056,6 +1063,12 @@ async def _processar_nucleo(
     )
     # Fase do pipeline: "sintese" (blocos pendentes) ou "retry" (rodadas de reprocessamento).
     fase = ["sintese"]
+    # Duração (ms) dos últimos blocos ok de motor de rede, para o aviso de conexão lenta.
+    duracoes_rede_ms = collections.deque(maxlen=5)
+    job_de_rede = any(motor_da_voz(v) in _MOTORES_DE_REDE for v in set(chunk_voices))
+
+    def _lenta_agora() -> bool:
+        return conexao_lenta(duracoes_rede_ms, job_de_rede)
 
     def _pct_sintese() -> int:
         return pct_sintese_global(tracker.pct())
@@ -1126,6 +1139,8 @@ async def _processar_nucleo(
             if ok:
                 # BUG FIX: só marca como concluído se de fato gerou áudio válido
                 completed_valid.add(idx)
+                if motor_da_voz(chunk_voices[idx]) in _MOTORES_DE_REDE:
+                    duracoes_rede_ms.append(duracao_bloco_ms)
                 duracao = await asyncio.to_thread(_duracao_ms_bloco, temp_files[idx])
                 if duracao is not None:
                     duracoes_ms[idx] = duracao
@@ -1133,7 +1148,7 @@ async def _processar_nucleo(
                 _disparar_lote_se_pronto(idx // _CONCAT_BATCH_SIZE)
             tracker.registrar(idx, ok)
             if fase[0] == "sintese" and tracker.deve_atualizar():
-                _cb(_pct_sintese(), tracker.mensagem_simples(_pct_sintese()))
+                _cb(_pct_sintese(), tracker.mensagem_simples(_pct_sintese(), lenta=_lenta_agora()))
 
     # ── Rodada inicial ────────────────────────────────────────────────────────
     # Sinal de vida: reenvia o andamento a cada 5 s, para o Tempo/ETA andar mesmo sem bloco novo.
@@ -1143,7 +1158,9 @@ async def _processar_nucleo(
     # Grupos que já estavam completos (retomada) viram lote logo no início, sem esperar bloco novo.
     for g in range(math.ceil(total / _CONCAT_BATCH_SIZE)):
         _disparar_lote_se_pronto(g)
-    batimento = _iniciar_batimento(_cb, _pct_sintese, lambda: tracker.mensagem_simples(_pct_sintese()))
+    batimento = _iniciar_batimento(
+        _cb, _pct_sintese, lambda: tracker.mensagem_simples(_pct_sintese(), lenta=_lenta_agora()),
+    )
     inicio_sintese = time.perf_counter()
     tempo_sintese_ms = 0.0  # parede da síntese desta execução (rodada inicial + retries globais)
     try:
@@ -1177,8 +1194,12 @@ async def _processar_nucleo(
 
         espera = 2 ** rodada  # 2, 4, 8 segundos entre rodadas
         logger.warning(f"Retry {rodada}/{_MAX_RODADAS_RETRY}: {len(falhos)} blocos pendentes. Aguardando {espera}s.")
-        msg_retry = f"Reprocessando {len(falhos)} bloco(s) (tentativa {rodada}/{_MAX_RODADAS_RETRY})…"
-        _cb(_pct_concluidos(), msg_retry)
+        # Linha estruturada (o Kotlin monta "Refazendo N trechos (tentativa r de R)…"); o batimento repete a mesma.
+        def msg_retry(n=len(falhos), r=rodada):
+            return linha_de_progresso(
+                _pct_concluidos(), refazendo=n, rodada=r, rodadas=_MAX_RODADAS_RETRY, lenta=_lenta_agora(),
+            )
+        _cb(_pct_concluidos(), msg_retry())
 
         # Usa metade dos workers para dar mais folga à API
         workers_retry = workers_para(set(chunk_voices), padrao=max(1, _config.get_tts_workers() // 2))

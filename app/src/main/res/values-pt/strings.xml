@@ -1253,10 +1253,17 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
         <item quantity="many">%d itens aguardando</item>
     </plurals>
     <plurals name="conv_cartao_falhas">
-        <item quantity="one">%d trecho falhou</item>
-        <item quantity="other">%d trechos falharam</item>
-        <item quantity="many">%d trechos falharam</item>
+        <item quantity="one">%d trecho será refeito automaticamente</item>
+        <item quantity="other">%d trechos serão refeitos automaticamente</item>
+        <item quantity="many">%d trechos serão refeitos automaticamente</item>
     </plurals>
+    <plurals name="conv_cartao_refazendo">
+        <item quantity="one">Refazendo %1$d trecho (tentativa %2$d de %3$d), aguarde…</item>
+        <item quantity="other">Refazendo %1$d trechos (tentativa %2$d de %3$d), aguarde…</item>
+        <item quantity="many">Refazendo %1$d trechos (tentativa %2$d de %3$d), aguarde…</item>
+    </plurals>
+    <string name="conv_cartao_pct_simples">%1$d%%</string>
+    <string name="conv_cartao_conexao_lenta">Conexão lenta: a conversão vai demorar mais.</string>
 
     <string name="gerar_fila">Adicionar à fila</string>
     <string name="gerar_fila_ok">Adicionado à fila (%1$d aguardando)</string>

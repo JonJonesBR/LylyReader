@@ -1240,10 +1240,17 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
         <item quantity="many">%d elementos en espera</item>
     </plurals>
     <plurals name="conv_cartao_falhas">
-        <item quantity="one">%d trozo falló</item>
-        <item quantity="other">%d trozos fallaron</item>
-        <item quantity="many">%d trozos fallaron</item>
+        <item quantity="one">%d fragmento se rehará automáticamente</item>
+        <item quantity="other">%d fragmentos se reharán automáticamente</item>
+        <item quantity="many">%d fragmentos se reharán automáticamente</item>
     </plurals>
+    <plurals name="conv_cartao_refazendo">
+        <item quantity="one">Rehaciendo %1$d fragmento (intento %2$d de %3$d), espera…</item>
+        <item quantity="other">Rehaciendo %1$d fragmentos (intento %2$d de %3$d), espera…</item>
+        <item quantity="many">Rehaciendo %1$d fragmentos (intento %2$d de %3$d), espera…</item>
+    </plurals>
+    <string name="conv_cartao_pct_simples">%1$d%%</string>
+    <string name="conv_cartao_conexao_lenta">Conexión lenta: la conversión tardará más.</string>
 
     <string name="gerar_fila">Añadir a la cola</string>
     <string name="gerar_fila_ok">Añadido a la cola (%1$d en espera)</string>

@@ -1251,9 +1251,15 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
         <item quantity="other">%d items waiting</item>
     </plurals>
     <plurals name="conv_cartao_falhas">
-        <item quantity="one">%d part failed</item>
-        <item quantity="other">%d parts failed</item>
+        <item quantity="one">%d part will be redone automatically</item>
+        <item quantity="other">%d parts will be redone automatically</item>
     </plurals>
+    <plurals name="conv_cartao_refazendo">
+        <item quantity="one">Redoing %1$d part (attempt %2$d of %3$d), please wait…</item>
+        <item quantity="other">Redoing %1$d parts (attempt %2$d of %3$d), please wait…</item>
+    </plurals>
+    <string name="conv_cartao_pct_simples">%1$d%%</string>
+    <string name="conv_cartao_conexao_lenta">Slow connection: the conversion will take longer.</string>
 
     <string name="gerar_fila">Add to queue</string>
     <string name="gerar_fila_ok">Added to the queue (%1$d waiting)</string>
