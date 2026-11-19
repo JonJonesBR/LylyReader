@@ -1397,7 +1397,7 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="erro_tts_sem_texto">No se encontró texto legible en el documento.</string>
     <string name="erro_tts_texto_nao_separavel">El texto no se pudo dividir para la narración.</string>
     <string name="erro_tts_generico">No se pudo terminar. Inténtalo de nuevo o usa otro archivo.</string>
-    <string name="erro_tts_blocos_falharam">Algunos fragmentos del libro no se pudieron convertir. Revisa la conexión e inténtalo de nuevo.</string>
+    <string name="erro_tts_blocos_falharam">Algunos fragmentos no se pudieron generar, así que el audiolibro no se armó con partes faltantes. Lo que ya se generó está guardado: revisa la conexión e inténtalo de nuevo para continuar donde se detuvo.</string>
     <string name="erro_tts_juncao_falhou">No se pudo unir el audio. Revisa el espacio libre e inténtalo de nuevo.</string>
     <string name="python_motor_offline">El motor de lectura no se inició.</string>
     <string name="python_payload_incompleto">El motor de lectura devolvió una respuesta incompleta.</string>

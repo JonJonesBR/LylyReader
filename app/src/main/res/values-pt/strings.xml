@@ -1410,7 +1410,7 @@ Privacidade: os parágrafos que têm diálogo (cerca de %1$d parágrafos, %2$s d
     <string name="erro_tts_sem_texto">Não foi encontrado texto legível no documento.</string>
     <string name="erro_tts_texto_nao_separavel">O texto não pôde ser separado para narração.</string>
     <string name="erro_tts_generico">Não foi possível concluir. Tente novamente ou use outro arquivo.</string>
-    <string name="erro_tts_blocos_falharam">Alguns trechos do livro não puderam ser convertidos. Verifique a conexão e tente novamente.</string>
+    <string name="erro_tts_blocos_falharam">Alguns trechos não puderam ser gerados, então o audiobook não foi montado com partes faltando. O que já foi gerado está guardado: verifique a conexão e tente de novo para continuar de onde parou.</string>
     <string name="erro_tts_juncao_falhou">Não foi possível juntar o áudio. Verifique o espaço livre e tente novamente.</string>
     <string name="python_motor_offline">O motor de leitura não iniciou.</string>
     <string name="python_payload_incompleto">O motor de leitura devolveu uma resposta incompleta.</string>
