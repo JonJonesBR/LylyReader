@@ -33,6 +33,7 @@ _MAX_RETRIES = 5
 _CONCAT_BATCH_SIZE = 50  # Máx. de entradas por operação de concat
 _VOICE_VALIDATION_TTL_SECONDS = 10 * 60
 _COPIA_BUFFER_BYTES = 4 * 1024 * 1024  # buffer da cópia binária da junção (P3.2)
+_EDGE_SEM_DADOS_S = 30  # tempo máximo sem receber nenhum pedaço do stream; passou disso, a tentativa é refeita
 _ID3_PADDING_MINIMO = 8192  # padding reservado ao gravar tags, para updates futuros sem reescrever
 _validated_voices = {}
 
@@ -422,9 +423,32 @@ def apagar_silencios(silencios: dict) -> None:
 
 
 def timeout_para_texto(texto: str) -> float:
-    """Timeout (s) de uma chamada Edge para um bloco: 30 s + 1 s a cada 20 caracteres, entre 30 e 90 s.
-    Folga generosa para redes lentas; blocos curtos falham um pouco mais cedo e blocos longos mantêm o teto de 90 s."""
-    return min(90.0, max(30.0, 30.0 + len(texto or "") / 20.0))
+    """Teto total (s) de uma chamada Edge para um bloco: 60 s + 1 s a cada 10 caracteres, entre 60 e 300 s.
+    É só a rede de segurança: quem detecta travamento é o vigia `_salvar_edge_com_vigia`, com
+    `_EDGE_SEM_DADOS_S` (não o edge-tts, cujo `receive_timeout` não cobre o streaming do websocket).
+    Assim, numa rede lenta mas com dados chegando, o bloco não é cortado no meio; o teto só pega o que
+    ficou preso sem travar de fato."""
+    return min(300.0, max(60.0, 60.0 + len(texto or "") / 10.0))
+
+
+async def _salvar_edge_com_vigia(communicate, arquivo_saida: str, sem_dados_s: float) -> None:
+    """Grava o áudio do Edge TTS consumindo o stream, com vigia: se nenhum pedaço chegar em
+    `sem_dados_s` segundos, levanta asyncio.TimeoutError. Só grava os pedaços de áudio."""
+    it = communicate.stream().__aiter__()
+    try:
+        with open(arquivo_saida, "wb") as f:
+            while True:
+                try:
+                    chunk = await asyncio.wait_for(it.__anext__(), timeout=sem_dados_s)
+                except StopAsyncIteration:
+                    break
+                if chunk.get("type") == "audio":
+                    f.write(chunk["data"])
+    finally:
+        try:
+            await it.aclose()
+        except Exception:  # gerador já encerrado
+            pass
 
 
 async def converter_tts_bloco(
@@ -461,7 +485,7 @@ async def converter_tts_bloco(
                     os.makedirs(_d, exist_ok=True)
                 communicate = edge_tts.Communicate(texto, voz, rate=velocidade, pitch=tom)
                 await asyncio.wait_for(
-                    communicate.save(arquivo_saida),
+                    _salvar_edge_com_vigia(communicate, arquivo_saida, _EDGE_SEM_DADOS_S),
                     timeout=timeout_para_texto(texto),
                 )
                 if os.path.exists(arquivo_saida) and os.path.getsize(arquivo_saida) > 500:
@@ -470,7 +494,13 @@ async def converter_tts_bloco(
                     except Exception:
                         pass
                     _mark_voice_valid(voz, velocidade, tom)
-                return True
+                    return True
+                # Arquivo ausente ou pequeno demais: não é sucesso; conta como falha desta tentativa.
+                logger.warning(
+                    f"Bloco {arquivo_saida} tentativa {tentativa + 1}/{tentativas}: "
+                    f"arquivo ausente ou menor que 500 bytes"
+                )
+                delay = (2 ** tentativa) + random.uniform(0, 1)
             except asyncio.TimeoutError:
                 logger.warning(f"Timeout bloco {arquivo_saida} ({tentativa + 1}/{tentativas})")
                 delay = (2 ** tentativa) + random.uniform(0, 1)
