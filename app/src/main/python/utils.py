@@ -9,6 +9,7 @@ import shutil
 import math
 import time
 import collections
+import statistics
 import unicodedata
 from typing import Optional
 import ebooklib
@@ -79,6 +80,44 @@ def pct_sintese_global(pct_blocos: int) -> int:
 def pct_nao_regride(novo: int, maior_ate_agora: int) -> int:
     """Percentual que não volta atrás: nunca menor que o maior já reportado nesta conversão."""
     return max(novo, maior_ate_agora)
+
+
+# Primeira palavra da linha de progresso que o Kotlin lê (ProgressoDaConversao.PREFIXO).
+PREFIXO_PROGRESSO = "@progresso"
+# Blocos concluídos com sucesso, de motor de rede, usados para decidir se a conexão está lenta.
+JANELA_CONEXAO_LENTA = 5
+# Mínimo de blocos na janela antes de dizer que a conexão está lenta (evita aviso por um bloco isolado).
+MINIMO_AMOSTRAS_CONEXAO_LENTA = 3
+# Mesmo limiar de "bloco lento" usado pelo controle adaptativo (core_processor_android).
+LIMITE_BLOCO_LENTO_MS = 20_000
+
+
+def conexao_lenta(duracoes_ms, motor_de_rede: bool) -> bool:
+    """Conexão lenta: só para motores de rede, quando a mediana dos últimos blocos ok passa de 20 s.
+    `duracoes_ms` é a lista de duração (ms) dos blocos concluídos com sucesso, na ordem em que terminaram."""
+    if not motor_de_rede:
+        return False
+    ultimas = list(duracoes_ms)[-JANELA_CONEXAO_LENTA:]
+    if len(ultimas) < MINIMO_AMOSTRAS_CONEXAO_LENTA:
+        return False
+    return statistics.median(ultimas) >= LIMITE_BLOCO_LENTO_MS
+
+
+def linha_de_progresso(pct: int, eta_s: int = -1, falhas: int = 0, refazendo: int = 0,
+                       rodada: int = 0, rodadas: int = 0, lenta: bool = False) -> str:
+    """Linha "@progresso pct=... ". Campos zerados/falsos não aparecem. Com `refazendo` (rodada de
+    retry), sai `refazendo=N rodada=r rodadas=R` no lugar de eta_s e falhas: o Kotlin mostra só a frase de
+    refazer. `lenta=1` acrescenta o aviso de conexão lenta, em qualquer fase."""
+    partes = [f"{PREFIXO_PROGRESSO} pct={pct}"]
+    if refazendo > 0:
+        partes += [f"refazendo={refazendo}", f"rodada={rodada}", f"rodadas={rodadas}"]
+    else:
+        partes.append(f"eta_s={eta_s}")
+        if falhas:
+            partes.append(f"falhas={falhas}")
+    if lenta:
+        partes.append("lenta=1")
+    return " ".join(partes)
 
 
 class ProgressTracker:
@@ -154,18 +193,17 @@ class ProgressTracker:
         segundos = self._eta_segundos()
         return "calculando..." if segundos is None else formatar_duracao(segundos)
 
-    def mensagem_simples(self, pct: Optional[int] = None) -> str:
+    def mensagem_simples(self, pct: Optional[int] = None, lenta: bool = False) -> str:
         """Linha de progresso para o Android: "@progresso pct=18 eta_s=168". `eta_s=-1` enquanto não há
-        estimativa; ` falhas=N` só se houver blocos falhando. Não traz texto de tela: o Kotlin monta a
-        frase no idioma do app (TextoDeProgresso). `pct` é o percentual já na faixa global da conversão
-        (ver pct_sintese_global); sem ele, usa o percentual dos blocos."""
+        estimativa; ` falhas=N` só se houver blocos falhando; ` lenta=1` com conexão lenta. Não traz texto
+        de tela: o Kotlin monta a frase no idioma do app (TextoDeProgresso). `pct` é o percentual já na
+        faixa global da conversão (ver pct_sintese_global); sem ele, usa o percentual dos blocos."""
         self._ultima_pct = self.pct()
         p = self.pct() if pct is None else pct
         eta = self._eta_segundos()
-        partes = [f"@progresso pct={p}", f"eta_s={-1 if eta is None else eta}"]
-        if self.falhas:
-            partes.append(f"falhas={len(self.falhas)}")
-        return " ".join(partes)
+        return linha_de_progresso(
+            p, eta_s=-1 if eta is None else eta, falhas=len(self.falhas), lenta=lenta,
+        )
 
 
 def estimar_duracao(texto: str, velocidade: str = "+0%") -> str:
