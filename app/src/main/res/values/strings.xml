@@ -1266,6 +1266,12 @@ Privacy: the paragraphs that contain dialogue (about %1$d paragraphs, %2$s of te
     <string name="gerar_tempo_estimado">About %1$s on this device</string>
     <string name="gerar_tempo_estimado_aprox">About %1$s</string>
     <string name="gerar_tempo_calculando">Calculating time…</string>
+    <string name="gerar_livro_inteiro_com_capitulos">The whole book will be converted: %1$s, about %2$s of audio.</string>
+    <string name="gerar_livro_inteiro_sem_capitulos">The whole book will be converted: about %1$s of audio.</string>
+    <plurals name="gerar_livro_capitulos">
+        <item quantity="one">%d chapter</item>
+        <item quantity="other">%d chapters</item>
+    </plurals>
     <string name="gerar_tempo_aviso_lento">This local voice may take over an hour on this device. Piper voices are usually faster.</string>
     <string name="gerar_aviso_dados_moveis_edge">On mobile data: ~%1$d MB estimated. To save data, use an offline voice (Paradee or Supertonic) or Guided Reading.</string>
     <string name="gerar_aviso_dados_moveis">On mobile data: requires internet. To save data, use an offline voice or Guided Reading.</string>

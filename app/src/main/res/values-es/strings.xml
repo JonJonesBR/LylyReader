@@ -1256,6 +1256,13 @@ Privacidad: los párrafos con diálogo (unos %1$d párrafos, %2$s de texto) se E
     <string name="gerar_tempo_estimado">Unos %1$s en este dispositivo</string>
     <string name="gerar_tempo_estimado_aprox">Unos %1$s</string>
     <string name="gerar_tempo_calculando">Calculando el tiempo…</string>
+    <string name="gerar_livro_inteiro_com_capitulos">Se convertirá el libro completo: %1$s, aproximadamente %2$s de audio.</string>
+    <string name="gerar_livro_inteiro_sem_capitulos">Se convertirá el libro completo: aproximadamente %1$s de audio.</string>
+    <plurals name="gerar_livro_capitulos">
+        <item quantity="one">%d capítulo</item>
+        <item quantity="other">%d capítulos</item>
+        <item quantity="many">%d capítulos</item>
+    </plurals>
     <string name="gerar_tempo_aviso_lento">Esta voz local puede tardar más de 1 hora en este dispositivo. Las voces Piper suelen ser más rápidas.</string>
     <string name="gerar_aviso_dados_moveis_edge">En datos móviles: ~%1$d MB estimados. Para ahorrar datos, usa una voz sin conexión (Paradee o Supertonic) o la Lectura Guiada.</string>
     <string name="gerar_aviso_dados_moveis">En datos móviles: requiere internet. Para ahorrar datos, usa una voz sin conexión o la Lectura Guiada.</string>

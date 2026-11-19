@@ -21,6 +21,8 @@ import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.domain.EstimativaDeGeracao
 import com.jonjonesbr.audiobookgen.domain.ExtractTextUseCase
+import com.jonjonesbr.audiobookgen.domain.contarPalavras
+import com.jonjonesbr.audiobookgen.domain.estimarDuracaoDoAudio
 import com.jonjonesbr.audiobookgen.domain.ExtractionResult
 import com.jonjonesbr.audiobookgen.domain.LivroBiblioteca
 import com.jonjonesbr.audiobookgen.domain.OrigemLivro
@@ -34,7 +36,9 @@ import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.jonjonesbr.audiobookgen.tts.ParadeeVozes
 import java.io.File
 
@@ -182,9 +186,13 @@ class LivroActivity : BasePlayerActivity() {
     private var painelVozDetalhe: TextView? = null
     private var painelPasta: TextView? = null
     private var painelTempo: TextView? = null
-    /** Total de caracteres do livro, por caminho: a extração é cara, então calcula uma vez e reaproveita. */
-    private var totalCharsCalculado: Pair<String, Int>? = null
+    /** Medidas do texto completo do livro: a extração é cara, então calcula uma vez e reaproveita. */
+    private data class TamanhoDoLivro(val caminho: String, val totalChars: Int, val capitulos: Int, val palavras: Int)
+    private var tamanhoDoLivro: TamanhoDoLivro? = null
     private var calculandoTotalChars = false
+    private var painelLivroInteiro: TextView? = null
+    /** Ritmo (%) do painel, base da duração da linha "O livro inteiro será convertido". */
+    private var ritmoDoPainel = AppPrefs.RITMO_DEFAULT
 
     private val seletorPasta = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri == null) return@registerForActivityResult
@@ -229,6 +237,8 @@ class LivroActivity : BasePlayerActivity() {
         painelVozNome = vista.findViewById(R.id.tvGerarVozNome)
         painelVozDetalhe = vista.findViewById(R.id.tvGerarVozDetalhe)
         painelTempo = vista.findViewById(R.id.tvGerarTempo)
+        painelLivroInteiro = vista.findViewById(R.id.tvGerarLivroInteiro)
+        ritmoDoPainel = ritmoDaPosicao(posicaoDoRitmo(appPrefs.ritmo))
         atualizarPainelVoz()
         painelPasta = vista.findViewById(R.id.tvGerarPasta)
         atualizarRotuloPasta()
@@ -244,6 +254,8 @@ class LivroActivity : BasePlayerActivity() {
             override fun onProgressChanged(sb: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
                 rotulo.text = "${ritmoDaPosicao(progress)}%"
                 ViewCompat.setStateDescription(sb, rotulo.text)
+                ritmoDoPainel = ritmoDaPosicao(progress)
+                atualizarLivroInteiro()
             }
             override fun onStartTrackingTouch(sb: android.widget.SeekBar) = Unit
             override fun onStopTrackingTouch(sb: android.widget.SeekBar) {
@@ -252,6 +264,8 @@ class LivroActivity : BasePlayerActivity() {
                 sb.progress = posicaoDoRitmo(travado)
                 rotulo.text = "${ritmoDaPosicao(sb.progress)}%"
                 ViewCompat.setStateDescription(sb, rotulo.text)
+                ritmoDoPainel = ritmoDaPosicao(sb.progress)
+                atualizarLivroInteiro()
             }
         })
 
@@ -291,6 +305,7 @@ class LivroActivity : BasePlayerActivity() {
 
     private fun aoFecharPainel(fecharTela: Boolean) {
         painelVozNome = null; painelVozDetalhe = null; painelPasta = null; painelTempo = null
+        painelLivroInteiro = null
         if (fecharTela) finish()
     }
 
@@ -308,12 +323,13 @@ class LivroActivity : BasePlayerActivity() {
      * ou o valor de referência, marcado como aproximado. Some quando não há como estimar (nuvem sem medição).
      */
     private fun atualizarTempoEstimado() {
+        atualizarLivroInteiro()
         val linha = painelTempo ?: return
         val caminhoLivro = caminho()
         val (voz, motorDoLivro) = vozDoLivro()
         val motorEfetivo = VoiceCatalog.effectiveEngine(voz, motorDoLivro)
         val motor = EstimativaDeGeracao.motorDaVoz(voz, ehGemini = motorEfetivo == "gemini")
-        val total = totalCharsCalculado?.takeIf { it.first == caminhoLivro }?.second
+        val total = tamanhoDoLivro?.takeIf { it.caminho == caminhoLivro }?.totalChars
         if (total == null) {
             if (caminhoLivro.isBlank()) { linha.visibility = View.GONE; return }
             linha.visibility = View.VISIBLE
@@ -324,7 +340,13 @@ class LivroActivity : BasePlayerActivity() {
                     val resultado = ExtractTextUseCase(this@LivroActivity).invoke(caminhoLivro)
                     calculandoTotalChars = false
                     if (resultado is ExtractionResult.Success) {
-                        totalCharsCalculado = caminhoLivro to resultado.texto.totalChars
+                        val textoCompleto = resultado.texto
+                        val palavras = withContext(Dispatchers.Default) {
+                            contarPalavras(textoCompleto.paragrafos.map { it.texto })
+                        }
+                        tamanhoDoLivro = TamanhoDoLivro(
+                            caminhoLivro, textoCompleto.totalChars, textoCompleto.capitulos.size, palavras
+                        )
                         atualizarTempoEstimado()
                     } else {
                         painelTempo?.visibility = View.GONE
@@ -337,12 +359,7 @@ class LivroActivity : BasePlayerActivity() {
             EstimativaDeGeracao.lerDoArquivo(File(filesDir, EstimativaDeGeracao.ARQUIVO)).estimativa(total, it)
         }
         val frase = estimativa?.let {
-            val tempo = EstimativaDeGeracao.formatar(
-                it.duracao,
-                rotuloHoras = { h -> resources.getQuantityString(R.plurals.tempo_horas, h, h) },
-                rotuloMinutos = { m -> resources.getQuantityString(R.plurals.tempo_minutos, m, m) },
-                juntar = { a, b -> getString(R.string.tempo_juntar, a, b) }
-            )
+            val tempo = rotuloDeTempo(it.duracao)
             getString(
                 if (it.aproximada) R.string.gerar_tempo_estimado_aprox else R.string.gerar_tempo_estimado,
                 tempo
@@ -356,6 +373,37 @@ class LivroActivity : BasePlayerActivity() {
             linha.text = texto
             linha.visibility = View.VISIBLE
         }
+    }
+
+    /** Duração por extenso no painel ("2 horas e 5 minutos"), com os plurais do app. */
+    private fun rotuloDeTempo(duracao: kotlin.time.Duration): String = EstimativaDeGeracao.formatar(
+        duracao,
+        rotuloHoras = { h -> resources.getQuantityString(R.plurals.tempo_horas, h, h) },
+        rotuloMinutos = { m -> resources.getQuantityString(R.plurals.tempo_minutos, m, m) },
+        juntar = { a, b -> getString(R.string.tempo_juntar, a, b) }
+    )
+
+    /**
+     * Linha "O livro inteiro será convertido": a geração desta tela converte o arquivo todo. Mostra os capítulos
+     * (só quando há mais de um) e a duração aproximada do áudio no ritmo do painel.
+     * Some enquanto o texto não foi lido.
+     */
+    private fun atualizarLivroInteiro() {
+        val linha = painelLivroInteiro ?: return
+        val tamanho = tamanhoDoLivro?.takeIf { it.caminho == caminho() }
+        if (tamanho == null) {
+            linha.visibility = View.GONE
+            return
+        }
+        val tempo = rotuloDeTempo(estimarDuracaoDoAudio(tamanho.palavras, ritmoDoPainel))
+        linha.text = if (tamanho.capitulos > 1) {
+            val qtd = tamanho.capitulos
+            val capitulos = resources.getQuantityString(R.plurals.gerar_livro_capitulos, qtd, qtd)
+            getString(R.string.gerar_livro_inteiro_com_capitulos, capitulos, tempo)
+        } else {
+            getString(R.string.gerar_livro_inteiro_sem_capitulos, tempo)
+        }
+        linha.visibility = View.VISIBLE
     }
 
     private fun avisoDeGeracao(
