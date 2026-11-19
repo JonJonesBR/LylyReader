@@ -19,6 +19,7 @@ import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
 import com.jonjonesbr.audiobookgen.domain.TextoExportacaoMarcacoes
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.util.abrirExpandida
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import com.jonjonesbr.audiobookgen.util.progressoLivroPct
 import java.io.File
 
@@ -156,6 +157,7 @@ class ReaderMarcacoesController(
         val raiz = activity.layoutInflater.inflate(R.layout.bottom_sheet_marcacoes, null)
         folha.setContentView(raiz)
         folha.abrirExpandida()
+        folha.manterAcimaDaBarraDeNavegacao(raiz)
         raiz.findViewById<View>(R.id.acaoExportarMarcacoes).setOnClickListener { exportarMarcacoes() }
         preencherFolhaMarcacoes(folha, raiz)
         folhaAberta = folha

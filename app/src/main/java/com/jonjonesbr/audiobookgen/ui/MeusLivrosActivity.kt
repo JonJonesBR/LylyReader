@@ -31,6 +31,7 @@ import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import android.util.Log
 import com.jonjonesbr.audiobookgen.util.mensagemDeErro
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.DocumentRepository
@@ -560,6 +561,7 @@ class MeusLivrosActivity : BasePlayerActivity() {
         }
         folha.setContentView(conteudo)
         folha.expandirEmPaisagem()
+        folha.manterAcimaDaBarraDeNavegacao(conteudo)
         folha.show()
     }
 

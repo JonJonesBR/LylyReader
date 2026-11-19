@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import com.jonjonesbr.audiobookgen.util.valePerguntarPorCapitulo
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
@@ -291,6 +292,7 @@ class ReaderRetornoController(
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_acoes_reader, null)
         dialog.setContentView(view)
         dialog.expandirEmPaisagem()
+        dialog.manterAcimaDaBarraDeNavegacao(view)
         itensAcaoClicaveis.forEach { view.findViewById<android.view.View>(it).marcarComoBotao() }
 
         configurarItensLeituraEVoz(dialog, view)
