@@ -37,6 +37,7 @@ from utils import (
     PCT_FIM_SINTESE, PCT_FIM_JUNCAO, PCT_FIM_TIMBRE, PCT_FIM_METADADOS, PCT_FIM_CAPITULOS,
     fracao_sintese, pct_sintese_global, pct_nao_regride,
     conexao_lenta, linha_de_progresso, PREFIXO_PROGRESSO,
+    LIMITE_BLOCO_LENTO_MS, bloco_veio_do_cache,
 )
 from tts import (
     converter_tts_auto, motor_da_voz, concatenar_grupo_com_pausa,
@@ -1135,18 +1136,22 @@ async def _processar_nucleo(
             if not ok and (_cancelar_flag or chave_recusada[0]):
                 return  # interrompido: não conta como falha para o ajuste de workers
             if controle is not None:
-                controle.registrar(bool(ok), lento=adaptativo and duracao_bloco_ms >= 20_000)
+                controle.registrar(bool(ok), lento=adaptativo and duracao_bloco_ms >= LIMITE_BLOCO_LENTO_MS)
             if ok:
                 # BUG FIX: só marca como concluído se de fato gerou áudio válido
                 completed_valid.add(idx)
-                if motor_da_voz(chunk_voices[idx]) in _MOTORES_DE_REDE:
+                # Bloco do cache não entra na mediana de conexão lenta: puxaria a mediana para baixo.
+                if motor_da_voz(chunk_voices[idx]) in _MOTORES_DE_REDE and not bloco_veio_do_cache(duracao_bloco_ms):
                     duracoes_rede_ms.append(duracao_bloco_ms)
                 duracao = await asyncio.to_thread(_duracao_ms_bloco, temp_files[idx])
                 if duracao is not None:
                     duracoes_ms[idx] = duracao
                 _persistir_progresso()
                 _disparar_lote_se_pronto(idx // _CONCAT_BATCH_SIZE)
-            tracker.registrar(idx, ok)
+            # A regra "menos de 1 s = cache" só vale para motor de rede (o cache de áudio é deles): um bloco
+            # curto de motor local pode terminar em menos de 1 s e ainda assim é trabalho real.
+            de_rede = motor_da_voz(chunk_voices[idx]) in _MOTORES_DE_REDE
+            tracker.registrar(idx, ok, duracao_ms=duracao_bloco_ms if de_rede else None)
             if fase[0] == "sintese" and tracker.deve_atualizar():
                 _cb(_pct_sintese(), tracker.mensagem_simples(_pct_sintese(), lenta=_lenta_agora()))
 

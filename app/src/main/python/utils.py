@@ -88,13 +88,22 @@ PREFIXO_PROGRESSO = "@progresso"
 JANELA_CONEXAO_LENTA = 5
 # Mínimo de blocos na janela antes de dizer que a conexão está lenta (evita aviso por um bloco isolado).
 MINIMO_AMOSTRAS_CONEXAO_LENTA = 3
-# Mesmo limiar de "bloco lento" usado pelo controle adaptativo (core_processor_android).
-LIMITE_BLOCO_LENTO_MS = 20_000
+# Limiar único de "bloco lento": usado pelo controle adaptativo (core_processor_android) e pelo aviso de
+# conexão lenta. Um bloco normal de 2.500 caracteres leva 10 a 50 s no Edge; só passa de 60 s com rede congestionada.
+LIMITE_BLOCO_LENTO_MS = 60_000
+# Bloco concluído em menos de 1 s veio do cache de áudio ou da retomada: não mede rede nem ritmo.
+LIMITE_BLOCO_CACHE_MS = 1_000
+
+
+def bloco_veio_do_cache(duracao_ms: Optional[float]) -> bool:
+    """True se o bloco foi resolvido sem síntese (cache ou retomada), pela duração medida."""
+    return duracao_ms is not None and duracao_ms < LIMITE_BLOCO_CACHE_MS
 
 
 def conexao_lenta(duracoes_ms, motor_de_rede: bool) -> bool:
-    """Conexão lenta: só para motores de rede, quando a mediana dos últimos blocos ok passa de 20 s.
-    `duracoes_ms` é a lista de duração (ms) dos blocos concluídos com sucesso, na ordem em que terminaram."""
+    """Conexão lenta: só para motores de rede, quando a mediana dos últimos blocos ok chega a 60 s.
+    `duracoes_ms` é a lista de duração (ms) dos blocos concluídos com sucesso, na ordem em que terminaram.
+    Quem chama não deve incluir blocos do cache (ver bloco_veio_do_cache)."""
     if not motor_de_rede:
         return False
     ultimas = list(duracoes_ms)[-JANELA_CONEXAO_LENTA:]
@@ -128,28 +137,33 @@ class ProgressTracker:
         self.concluidos = concluidos_iniciais
         # Índices de blocos que falharam e ainda não tiveram sucesso.
         self.falhas: list = []
-        self._iniciais = concluidos_iniciais
         self._ok_nesta_execucao: set = set()
-        # Intervalos (s) entre sucessos consecutivos desta execução.
+        # Blocos reais (sintetizados nesta execução): só eles entram na taxa do ETA.
+        self._reais = 0
+        # Intervalos (s) entre sucessos reais consecutivos desta execução.
         self._janela: collections.deque = collections.deque(maxlen=10)
         self._ultimo_sucesso = inicio
         self._ultima_pct = -1
         self._ultima_atualizacao_ts = time.time()
 
-    def registrar(self, idx: int, sucesso: bool) -> None:
+    def registrar(self, idx: int, sucesso: bool, duracao_ms: Optional[float] = None) -> None:
         if not sucesso:
             if idx not in self._ok_nesta_execucao and idx not in self.falhas:
                 self.falhas.append(idx)
             return
         if idx in self._ok_nesta_execucao:
             return
-        agora = time.time()
-        self._janela.append(max(0.0, agora - self._ultimo_sucesso))
-        self._ultimo_sucesso = agora
         self._ok_nesta_execucao.add(idx)
         if idx in self.falhas:
             self.falhas.remove(idx)
         self.concluidos += 1
+        # Bloco do cache não altera o ritmo: avança o percentual, mas fica fora da janela e da taxa.
+        if bloco_veio_do_cache(duracao_ms):
+            return
+        agora = time.time()
+        self._janela.append(max(0.0, agora - self._ultimo_sucesso))
+        self._ultimo_sucesso = agora
+        self._reais += 1
 
     def pct(self) -> int:
         return math.floor(self.concluidos * 100 / self.total) if self.total else 0
@@ -171,16 +185,15 @@ class ProgressTracker:
         return deve
 
     def _eta_segundos(self) -> Optional[int]:
-        """Segundos até o fim, ou None enquanto não há bloco produzido nesta execução para estimar."""
+        """Segundos até o fim, ou None enquanto nenhum bloco real (sintetizado) terminou nesta execução."""
         restantes = self.total - self.concluidos
         if restantes <= 0:
             return 0
-        # Base só com blocos produzidos NESTA execução: a retomada não entra na taxa.
-        produzidos = self.concluidos - self._iniciais
-        if produzidos <= 0:
+        # Base só com blocos reais desta execução: retomada e cache não entram na taxa.
+        if self._reais <= 0:
             return None
         decorrido = time.time() - self.inicio
-        taxa = decorrido / produzidos  # segundos por bloco, média da execução
+        taxa = decorrido / self._reais  # segundos por bloco real, média da execução
         if len(self._janela) >= 3:
             taxa_janela = sum(self._janela) / len(self._janela)
             # Janela cheia (10 blocos): dá mais peso ao ritmo recente para recuperar rápido de picos iniciais.

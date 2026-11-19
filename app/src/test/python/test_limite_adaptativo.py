@@ -12,6 +12,15 @@ try:
 except ImportError:  # dependências de configuração ausentes no ambiente de teste
     LimiteAdaptativo = None
 
+try:
+    from utils import LIMITE_BLOCO_LENTO_MS
+except ImportError:  # dependências de extração ausentes no ambiente de teste
+    LIMITE_BLOCO_LENTO_MS = None
+
+# Durações típicas (s) de blocos de 2.500 caracteres no Edge, com rede boa (medidas no aparelho).
+DURACOES_TIPICAS_S = [16, 11, 13, 17, 17, 38, 25, 33, 10, 36, 34, 38, 10, 17, 42, 50, 14, 33, 37, 44, 23,
+                      50, 37, 19, 41, 13, 39, 27, 39, 10, 17]
+
 
 @unittest.skipIf(LimiteAdaptativo is None, "módulo config_android indisponível")
 class LimiteAdaptativoAjusteTest(unittest.TestCase):
@@ -85,6 +94,27 @@ class LimiteAdaptativoAjusteTest(unittest.TestCase):
         self.assertEqual(8, lim.limite)  # lento zerou a contagem antes do 20º
         lim.registrar(True, lento=True)
         lim.registrar(True, lento=True)
+        self.assertEqual(4, lim.limite)
+
+
+@unittest.skipIf(
+    LimiteAdaptativo is None or LIMITE_BLOCO_LENTO_MS is None,
+    "módulos config_android/utils indisponíveis",
+)
+class LimiteComBlocoLentoTest(unittest.TestCase):
+    def test_blocos_normais_de_10_a_50_s_nao_reduzem_o_limite(self):
+        # Regressão: com o limiar antigo de 20 s, os blocos 6 a 8 cortavam o limite de 8 para 4.
+        lim = LimiteAdaptativo(inicial=8, teto=10)
+        menor = lim.limite
+        for segundos in DURACOES_TIPICAS_S:
+            lim.registrar(True, lento=segundos * 1000 >= LIMITE_BLOCO_LENTO_MS)
+            menor = min(menor, lim.limite)
+        self.assertGreaterEqual(menor, 8)
+
+    def test_blocos_de_60_s_ou_mais_repetidos_reduzem_o_limite(self):
+        lim = LimiteAdaptativo(inicial=8, minimo=2, teto=10)
+        for _ in range(3):
+            lim.registrar(True, lento=60_000 >= LIMITE_BLOCO_LENTO_MS)
         self.assertEqual(4, lim.limite)
 
 
