@@ -16,6 +16,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.util.ThemePrefs
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
 
 /**
@@ -67,6 +68,7 @@ object SeletorTemaSheet {
         }
         folha.setContentView(raiz)
         folha.expandirEmPaisagem()
+        folha.manterAcimaDaBarraDeNavegacao(raiz)
         folha.show()
     }
 }

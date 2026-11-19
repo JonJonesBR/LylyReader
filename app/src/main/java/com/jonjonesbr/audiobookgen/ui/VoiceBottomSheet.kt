@@ -3,6 +3,7 @@ package com.jonjonesbr.audiobookgen.ui
 import com.jonjonesbr.audiobookgen.util.NetworkStatus
 import com.jonjonesbr.audiobookgen.util.TextoDaListaDeVozes
 import com.jonjonesbr.audiobookgen.util.VoiceOption
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import com.jonjonesbr.audiobookgen.R
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -21,6 +22,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import java.util.Locale
 
@@ -199,6 +201,7 @@ class VoiceBottomSheet : BottomSheetDialogFragment() {
             dismissAllowingStateLoss()
             return
         }
+        (dialog as? BottomSheetDialog)?.manterAcimaDaBarraDeNavegacao(view)
         view.findViewById<Button>(R.id.btnClonarVoz).apply {
             val hasCloneAction = onCloneVoiceRequested != null ||
                 arguments?.getBoolean(ARG_HAS_CLONE_ACTION) == true

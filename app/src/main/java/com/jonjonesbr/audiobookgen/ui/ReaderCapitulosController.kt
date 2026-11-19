@@ -14,6 +14,7 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.domain.NavegacaoCapitulos
 import com.jonjonesbr.audiobookgen.domain.TextoExtraido
 import com.jonjonesbr.audiobookgen.util.abrirExpandida
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import com.jonjonesbr.audiobookgen.util.minutosRestantesCapitulo
 import com.jonjonesbr.audiobookgen.util.progressoLivroPct
 
@@ -271,6 +272,7 @@ class ReaderCapitulosController(
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_capitulos, null)
         dialog.setContentView(view)
         dialog.abrirExpandida()
+        dialog.manterAcimaDaBarraDeNavegacao(view)
         painelAberto = true
         folhaAberta = dialog
         dialog.setOnDismissListener { painelAberto = false }

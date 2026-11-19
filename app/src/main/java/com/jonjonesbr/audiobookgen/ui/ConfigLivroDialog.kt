@@ -5,6 +5,7 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.service.GuidedBookPrefsStore
 import com.jonjonesbr.audiobookgen.util.VELOCIDADES_GUIADAS
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 import com.jonjonesbr.audiobookgen.util.VoiceOption
 import com.jonjonesbr.audiobookgen.util.marcarComoBotao
@@ -40,6 +41,7 @@ object ConfigLivroDialog {
         val dialog = BottomSheetDialog(activity)
         dialog.setContentView(view)
         dialog.expandirEmPaisagem()
+        dialog.manterAcimaDaBarraDeNavegacao(view)
 
         val tvVoz = view.findViewById<TextView>(R.id.tvConfigVozAtual)
         // Um chip por preset, com o texto no locale do aparelho ("0,75×" em pt). Sem deslizante: os chips bastam.

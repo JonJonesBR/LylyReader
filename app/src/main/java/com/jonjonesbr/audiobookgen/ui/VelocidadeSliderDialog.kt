@@ -5,6 +5,7 @@ import com.jonjonesbr.audiobookgen.util.VELOCIDADES_GUIADAS
 import com.jonjonesbr.audiobookgen.util.aplicarSnapVelocidade
 import com.jonjonesbr.audiobookgen.util.rotuloVelocidade
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import android.app.Activity
 import android.widget.Button
 import android.widget.TextView
@@ -25,6 +26,7 @@ object VelocidadeSliderDialog {
         val dialog = BottomSheetDialog(activity)
         dialog.setContentView(view)
         dialog.expandirEmPaisagem()
+        dialog.manterAcimaDaBarraDeNavegacao(view)
 
         fun aplicar(valor: Float) {
             aoAplicar(valor)

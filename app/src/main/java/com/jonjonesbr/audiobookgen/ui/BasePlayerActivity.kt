@@ -35,6 +35,7 @@ import com.jonjonesbr.audiobookgen.util.GestoArraste
 import com.jonjonesbr.audiobookgen.util.aplicarPaddingInferiorSoNaSobreposicao
 import com.jonjonesbr.audiobookgen.util.formatarTempo
 import com.jonjonesbr.audiobookgen.util.abrirExpandida
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import com.jonjonesbr.audiobookgen.util.textosDaSoneca
 import com.jonjonesbr.audiobookgen.util.rotuloSonecaMiniPlayer
 import com.jonjonesbr.audiobookgen.util.rotuloVelocidade
@@ -487,6 +488,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.bottom_sheet_capitulos, null)
         dialog.setContentView(view)
         dialog.abrirExpandida()
+        dialog.manterAcimaDaBarraDeNavegacao(view)
 
         val posicao = state.currentPosition.toLong()
         val ativo = state.capitulos.indexOfLast { posicao >= it.inicioMs }.coerceAtLeast(0)

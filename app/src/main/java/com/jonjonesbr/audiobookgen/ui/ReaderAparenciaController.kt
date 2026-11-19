@@ -15,6 +15,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.util.expandirEmPaisagem
+import com.jonjonesbr.audiobookgen.util.manterAcimaDaBarraDeNavegacao
 import com.jonjonesbr.audiobookgen.R
 import com.jonjonesbr.audiobookgen.domain.AlinhamentoTexto
 import com.jonjonesbr.audiobookgen.domain.FonteLeitura
@@ -66,6 +67,7 @@ class ReaderAparenciaController(
         val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_aparencia, null)
         dialog.setContentView(view)
         dialog.expandirEmPaisagem()
+        dialog.manterAcimaDaBarraDeNavegacao(view)
 
         configurarSeekFonte(
             view.findViewById(R.id.seekBarFonte),
