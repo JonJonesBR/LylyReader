@@ -774,7 +774,7 @@
 
     <!-- Nota de versión posterior a la actualización (se muestra una vez, al abrir por primera vez tras actualizar) -->
     <string name="release_notes_titulo">Novedades de la versión %1$s</string>
-    <string name="release_notes_corpo">• Botón flotante que sigue el progreso de la conversión en otras pantallas y botón Reintentar si falla una conversión.\n• Voces en línea Edge más rápidas y estables en conexiones lentas, con aviso de consumo estimado al generar con datos móviles.</string>
+    <string name="release_notes_corpo">• Conversión de audiolibros más confiable: nunca se genera un audiolibro con partes faltantes y, si algo falla, continúas desde donde se detuvo.\n• Conversiones con la voz Edge más rápidas en conexiones lentas, con avisos claros cuando se rehacen fragmentos o la conexión es lenta.\n• Al generar un audiolibro, la app muestra que se convertirá el libro completo, con los capítulos y la duración aproximada.\n• Los paneles y menús ya no quedan ocultos detrás de la barra de navegación de Android.</string>
     <string name="timbre_title">Tono de la voz</string>
     <string name="timbre_desc">Voz más grave o más aguda, y agudos más suaves. Se aplica al instante.</string>
     <string name="timbre_pitch_label">Tono: %1$s</string>
