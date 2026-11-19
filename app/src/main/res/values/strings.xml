@@ -783,7 +783,7 @@
 
     <!-- Post-update release notes (shown once, on first open after an update) -->
     <string name="release_notes_titulo">What\'s new in %1$s</string>
-    <string name="release_notes_corpo">• Floating progress button that follows your audiobook conversion across screens, plus a Try again button if a conversion fails.\n• Faster, more reliable online Edge voices on slow connections, with a mobile data usage warning before starting.</string>
+    <string name="release_notes_corpo">• More reliable audiobook conversion: it never produces an audiobook with missing parts, and if something fails you pick up where it stopped.\n• Faster Edge voice conversions on slow connections, with clear notices when parts are being redone or the connection is slow.\n• When generating an audiobook, the app now shows that the whole book will be converted, with chapters and approximate audio length.\n• Panels and menus no longer hide behind the Android navigation bar.</string>
     <string name="timbre_title">Voice pitch</string>
     <string name="timbre_desc">Deeper or higher voice, and softer highs. Applies right away.</string>
     <string name="timbre_pitch_label">Pitch: %1$s</string>
