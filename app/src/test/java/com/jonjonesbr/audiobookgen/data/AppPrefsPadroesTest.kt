@@ -8,7 +8,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/** Padrões novos (Supertonic 14, Pocket 12, ritmo Fluida) e as migrações de uma vez só. */
+/** Padrões da leitura guiada (0,9x, Calma, Supertonic 14 / Pocket 12 = Alta, agudos -16 dB) e migrações. */
 class AppPrefsPadroesTest {
 
     @get:Rule
@@ -24,8 +24,11 @@ class AppPrefsPadroesTest {
     fun `padroes novos sem nada gravado`() {
         val (appPrefs, _) = prefs()
 
+        assertEquals(0.9f, appPrefs.guidedSpeedMult, 1e-6f)
+        assertEquals(EstiloDeRitmo.CALMA, appPrefs.estiloDeRitmo)
         assertEquals(14, appPrefs.supertonicSteps)
         assertEquals(12, appPrefs.pocketPassos)
+        assertEquals(16, appPrefs.suavizarAgudosDb)
         assertFalse(appPrefs.pausasNaturais)
     }
 
@@ -172,6 +175,20 @@ class AppPrefsPadroesTest {
         appPrefs.restaurarPadroesDeSom()
 
         assertEquals(EstiloDeRitmo.CALMA, appPrefs.estiloDeRitmo)
+    }
+
+    @Test
+    fun `restaurar o padrao do som volta agudos para 16 e qualidade para Alta`() {
+        val (appPrefs, _) = prefs()
+        appPrefs.suavizarAgudosDb = 4
+        appPrefs.supertonicSteps = 8
+        appPrefs.pocketPassos = 6
+
+        appPrefs.restaurarPadroesDeSom()
+
+        assertEquals(16, appPrefs.suavizarAgudosDb)
+        assertEquals(14, appPrefs.supertonicSteps)
+        assertEquals(12, appPrefs.pocketPassos)
     }
 
     @Test

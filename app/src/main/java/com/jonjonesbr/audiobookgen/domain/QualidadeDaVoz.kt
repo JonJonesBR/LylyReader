@@ -2,15 +2,15 @@ package com.jonjonesbr.audiobookgen.domain
 
 /** Passos do Supertonic no preset Rápida (8): síntese mais curta, menos fiel. */
 private const val SUPERTONIC_RAPIDA = 8
-/** Passos do Supertonic no preset Equilibrada (10), o padrão. */
+/** Passos do Supertonic no preset Equilibrada (10). */
 private const val SUPERTONIC_EQUILIBRADA = 10
-/** Passos do Supertonic no preset Alta (14): síntese mais lenta. */
+/** Passos do Supertonic no preset Alta (14), o padrão: síntese mais lenta. */
 private const val SUPERTONIC_ALTA = 14
 /** Passos do Pocket no preset Rápida (6). */
 private const val POCKET_RAPIDA = 6
-/** Passos do Pocket no preset Equilibrada (10), o padrão. */
+/** Passos do Pocket no preset Equilibrada (10). */
 private const val POCKET_EQUILIBRADA = 10
-/** Passos do Pocket no preset Alta (12): acima de 10 a leitura pode pausar em aparelhos lentos. */
+/** Passos do Pocket no preset Alta (12), o padrão: acima de 10 a leitura pode pausar em aparelhos lentos. */
 private const val POCKET_ALTA = 12
 
 /**

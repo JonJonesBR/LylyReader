@@ -60,7 +60,7 @@ class LayoutsDoLeitorTest {
             }
             raiz.findViewById<TextView>(R.id.btnGuidedVelocidade).apply {
                 visibility = View.VISIBLE
-                text = "1×"
+                text = "0,9×"
             }
         }
 

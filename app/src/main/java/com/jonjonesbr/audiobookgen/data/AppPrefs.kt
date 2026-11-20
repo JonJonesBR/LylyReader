@@ -61,7 +61,7 @@ class AppPrefs(context: Context) {
 
     /**
      * Timbre das vozes (leitura guiada e audiobooks novos). Tom em meios-tons de semitom (−6…+6 = −3…+3
-     * semitons; 0 = original) e corte de agudos em dB (0…8; 0 = desligado). Ver [TimbreVoz].
+     * semitons; 0 = original) e corte de agudos em dB (0…16; 16 = padrão). Ver [TimbreVoz].
      */
     /** Ids de [com.jonjonesbr.audiobookgen.domain.EventoAprendizado] já ocorridos (progresso da central "Aprender o app"). */
     var eventosAprendizado: Set<String>
@@ -298,7 +298,7 @@ class AppPrefs(context: Context) {
         set(v) = p.edit().putString("pasta_destino", v).apply()
 
     var guidedSpeedMult: Float
-        get() = p.getFloat("guided_speed_mult", 1.0f)
+        get() = p.getFloat("guided_speed_mult", GUIDED_SPEED_DEFAULT)
         set(v) = p.edit().putFloat("guided_speed_mult", v).apply()
 
     /**
@@ -603,6 +603,8 @@ class AppPrefs(context: Context) {
         const val NAME = "audiobookgen_prefs"
         /** Velocidade de narração canônica (a UI mostra este valor; a síntese deve casar). */
         const val RITMO_DEFAULT = 100
+        /** Velocidade padrão da leitura guiada (0,9× para todas as vozes, online e offline). */
+        const val GUIDED_SPEED_DEFAULT = 0.9f
 
         /** Pausa entre blocos da conversão (ms). */
         private const val PAUSA_MS_PADRAO = 600
@@ -612,8 +614,8 @@ class AppPrefs(context: Context) {
         const val TIMBRE_TOM_MIN = -6
         const val TIMBRE_TOM_MAX = 6
         const val TIMBRE_AGUDOS_MAX = 16
-        /** Suavização de agudos padrão (dB): as vozes neurais soam menos metálicas. */
-        const val TIMBRE_AGUDOS_PADRAO = 8
+        /** Suavização de agudos padrão (dB): −16 dB para as vozes neurais soarem menos metálicas. */
+        const val TIMBRE_AGUDOS_PADRAO = 16
         /** Passos padrão do Pocket TTS (antes 4): a síntese fica mais lenta, mas com mais fidelidade. */
         const val POCKET_PASSOS_PADRAO = 12
         /** Padrões antigos do Pocket: 1 (versão muito antiga) e 4. Quem ainda tem um deles gravado nunca escolheu.

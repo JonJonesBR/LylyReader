@@ -12,15 +12,18 @@ class VelocidadesGuiadasTest {
 
     @Test fun rotuloUsaVirgulaEmPortugues() {
         assertEquals("0,75×", rotuloVelocidade(0.75f, portugues))
+        assertEquals("0,9×", rotuloVelocidade(0.9f, portugues))
         assertEquals("1,25×", rotuloVelocidade(1.25f, portugues))
     }
 
     @Test fun rotuloUsaVirgulaEmEspanhol() {
+        assertEquals("0,9×", rotuloVelocidade(0.9f, espanhol))
         assertEquals("1,75×", rotuloVelocidade(1.75f, espanhol))
     }
 
     @Test fun rotuloUsaPontoEmIngles() {
         assertEquals("0.75×", rotuloVelocidade(0.75f, ingles))
+        assertEquals("0.9×", rotuloVelocidade(0.9f, ingles))
         assertEquals("1.75×", rotuloVelocidade(1.75f, ingles))
     }
 
