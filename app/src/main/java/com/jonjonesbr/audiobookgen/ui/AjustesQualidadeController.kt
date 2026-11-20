@@ -12,7 +12,7 @@ import com.jonjonesbr.audiobookgen.domain.QualidadeDaVoz
 import com.jonjonesbr.audiobookgen.util.VoiceCatalog
 
 /**
- * "Qualidade da voz" nos Ajustes › Som: Rápida, Equilibrada (padrão) ou Alta. Grava, por trás, os passos do
+ * "Qualidade da voz" nos Ajustes › Som: Rápida, Equilibrada ou Alta (padrão). Grava, por trás, os passos do
  * Supertonic e do Pocket ao tocar num chip. Em Avançado fica o "Pocket mais rápido" (experimental). A Activity
  * chama [carregar] e [configurar] (ver SettingsActivity).
  */

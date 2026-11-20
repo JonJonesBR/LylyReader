@@ -476,7 +476,7 @@ class LivroActivity : BasePlayerActivity() {
     /** Grava a voz no perfil deste livro e atualiza o cartão e o painel. Não registra evento de troca. */
     private fun gravarVozDoLivro(voz: VoiceOption) {
         val atual = GuidedBookPrefsStore.load(this, caminho())
-        GuidedBookPrefsStore.save(this, caminho(), voz.id, voz.engine, atual?.speedMult ?: 1.0f)
+        GuidedBookPrefsStore.save(this, caminho(), voz.id, voz.engine, atual?.speedMult ?: appPrefs.guidedSpeedMult)
         mostrarVoz()
         atualizarPainelVoz()
     }

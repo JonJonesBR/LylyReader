@@ -10,7 +10,7 @@ import com.jonjonesbr.audiobookgen.data.AppPrefs
 import com.jonjonesbr.audiobookgen.domain.EstiloDeRitmo
 
 /**
- * "Ritmo da narração" nos Ajustes › Som: Calma, Natural ou Fluida (padrão), num seletor único. Grava
+ * "Ritmo da narração" nos Ajustes › Som: Calma (padrão), Natural ou Fluida, num seletor único. Grava
  * [AppPrefs.estiloDeRitmo] ao tocar num chip. A Activity chama [carregar] e [configurar] (ver SettingsActivity).
  */
 class AjustesRitmoController(private val activity: AppCompatActivity) {

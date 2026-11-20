@@ -12,7 +12,7 @@ import java.util.Locale
 
 /**
  * Ajuste de timbre das vozes: tom (−3…+3 semitons, passos de meio semitom) e suavização de agudos
- * (0…8 dB). As mudanças valem na hora (inclusive na leitura guiada em andamento) e ficam salvas.
+ * (0…16 dB). As mudanças valem na hora (inclusive na leitura guiada em andamento) e ficam salvas.
  */
 object TimbreDialog {
 
@@ -92,7 +92,7 @@ object TimbreDialog {
         }
         return Controles(conteudo) {
             sliderTom.progress = -minimo
-            sliderAgudos.progress = 0
+            sliderAgudos.progress = AppPrefs.TIMBRE_AGUDOS_PADRAO
             rotular()
             salvarEAplicar()
         }
@@ -110,7 +110,7 @@ object TimbreDialog {
             .setNeutralButton(R.string.timbre_reset, null)
             .create()
         activity.mostrarDialogo(dialogo)
-        // "Restaurar padrão" não fecha o diálogo: zera os dois controles e já aplica.
+        // "Restaurar padrão" não fecha o diálogo: volta os dois controles ao padrão e já aplica.
         dialogo.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
             controles.restaurar()
         }
