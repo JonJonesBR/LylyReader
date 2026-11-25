@@ -155,6 +155,16 @@ class PythonEngineUseCase(private val context: Context) {
         Python.getInstance().getModule("audiobook_android").callAttr("limpar_cache").toInt()
     }
 
+    /** Lê os contadores de rede do Edge TTS para diagnóstico de conversão lenta. */
+    fun obterDiagnosticoEdge(): Map<String, String> = runCatching {
+        val mapa = Python.getInstance()
+            .getModule("audiobook_android")
+            .callAttr("diagnostico_edge")
+            ?.asMap()
+            ?: return emptyMap()
+        mapa.entries.associate { (k, v) -> k.toString() to (v?.toString() ?: "") }
+    }.getOrDefault(emptyMap())
+
     /**
      * Gera um preview (amostra) da voz solicitada.
      */

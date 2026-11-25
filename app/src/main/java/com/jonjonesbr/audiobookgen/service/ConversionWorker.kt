@@ -11,6 +11,7 @@ import com.jonjonesbr.audiobookgen.data.BibliotecaStore
 import com.jonjonesbr.audiobookgen.data.ConversaoPausadaStore
 import com.jonjonesbr.audiobookgen.data.SecurePreferences
 import com.jonjonesbr.audiobookgen.domain.DestinoDaParada
+import com.jonjonesbr.audiobookgen.domain.DiagnosticoConversaoLenta
 import com.jonjonesbr.audiobookgen.domain.LimiteDeProgresso
 import com.jonjonesbr.audiobookgen.domain.MotivoParada
 import com.jonjonesbr.audiobookgen.domain.PoliticaPrimeiroPlano
@@ -35,7 +36,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.io.File
+import java.net.Inet6Address
+import java.net.NetworkInterface
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -376,8 +380,14 @@ class ConversionWorker(
         var ultimaAtualizacaoMs: Long? = null
         // Último percentual visto (fora do limitador), para a pausa salvar onde a conversão estava.
         val ultimoPct = AtomicInteger(0)
+        val diagnosticoLentaGravado = AtomicBoolean(false)
         val onProgress: (Int, String) -> Unit = { pct, msg ->
                 ultimoPct.set(pct)
+                if (DiagnosticoConversaoLenta.mensagemIndicaConexaoLenta(msg) &&
+                    diagnosticoLentaGravado.compareAndSet(false, true)
+                ) {
+                    registrarDiagnosticoConexaoLenta(engine, motor, voz, pct)
+                }
                 val agora = System.currentTimeMillis()
                 // Limite do sistema para mediaProcessing (~6 h): pausa antes de o Android matar o primeiro plano.
                 if (PoliticaPrimeiroPlano.deveAutoPausar(
@@ -518,4 +528,40 @@ class ConversionWorker(
             }
         }
     }
+
+    private fun registrarDiagnosticoConexaoLenta(
+        engine: PythonEngineUseCase,
+        motor: String,
+        voz: String,
+        pct: Int,
+    ) {
+        CrashLogWriter.log(
+            throwable = null,
+            contextTag = "CONVERSAO_LENTA",
+            message = "Conexão lenta detectada durante a conversão (mediana >= 60s por bloco).",
+            extraInfo = DiagnosticoConversaoLenta.montarCamposExtras(
+                motor = motor,
+                voz = voz,
+                pct = pct,
+                ipv6Ativo = detectarIpv6Ativo(),
+                resumoPython = engine.obterDiagnosticoEdge(),
+            ),
+        )
+    }
+
+    private fun detectarIpv6Ativo(): Boolean? = runCatching {
+        val interfaces = NetworkInterface.getNetworkInterfaces() ?: return false
+        while (interfaces.hasMoreElements()) {
+            val iface = interfaces.nextElement()
+            if (!iface.isUp || iface.isLoopback) continue
+            val enderecos = iface.inetAddresses
+            while (enderecos.hasMoreElements()) {
+                val addr = enderecos.nextElement()
+                if (addr is Inet6Address && !addr.isLinkLocalAddress && !addr.isLoopbackAddress) {
+                    return true
+                }
+            }
+        }
+        false
+    }.getOrNull()
 }

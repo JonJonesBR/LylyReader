@@ -151,6 +151,15 @@ def limpar_cache() -> int:
     return CACHE.clear_all()
 
 
+def diagnostico_edge() -> dict:
+    """Retorna os contadores de rede do Edge TTS para registro técnico de conversão lenta."""
+    try:
+        from tts import obter_diagnostico_edge
+        return obter_diagnostico_edge()
+    except Exception:
+        return {}
+
+
 def preview_voz_sync(voz: str, velocidade: str = "+0%", texto: str = "") -> dict:
     """
     Sintetiza uma frase curta com a voz selecionada para preview (~5s).
