@@ -8,11 +8,17 @@ import asyncio
 import os
 import random
 import shutil
+import socket
 import struct
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional
+
+try:
+    import aiohttp
+except ImportError:
+    aiohttp = None
 
 import edge_tts
 from mutagen.mp3 import MP3
@@ -34,8 +40,65 @@ _CONCAT_BATCH_SIZE = 50  # Máx. de entradas por operação de concat
 _VOICE_VALIDATION_TTL_SECONDS = 10 * 60
 _COPIA_BUFFER_BYTES = 4 * 1024 * 1024  # buffer da cópia binária da junção (P3.2)
 _EDGE_SEM_DADOS_S = 30  # tempo máximo sem receber nenhum pedaço do stream; passou disso, a tentativa é refeita
+_EDGE_IPV4_TTL_S = 15 * 60  # tempo que o fallback para IPv4 fica ativo após timeout/erro de rede
 _ID3_PADDING_MINIMO = 8192  # padding reservado ao gravar tags, para updates futuros sem reescrever
 _validated_voices = {}
+_edge_preferir_ipv4_ate = 0.0
+_diagnostico_edge = {
+    "timeouts": 0,
+    "rate_limits_429": 0,
+    "erros_conexao": 0,
+    "arquivo_invalido": 0,
+    "tentativas_ipv4": 0,
+    "sucessos_ipv4": 0,
+    "ultimo_erro": "",
+}
+
+
+def _edge_usar_ipv4() -> bool:
+    """True enquanto o fallback temporário para IPv4 estiver ativo no Edge TTS."""
+    return time.monotonic() < _edge_preferir_ipv4_ate
+
+
+def _ativar_edge_ipv4() -> None:
+    """Ativa (ou renova) a preferência temporária por IPv4 nas chamadas do Edge TTS."""
+    global _edge_preferir_ipv4_ate
+    _edge_preferir_ipv4_ate = time.monotonic() + _EDGE_IPV4_TTL_S
+
+
+def _limpar_edge_ipv4() -> None:
+    """Desativa a preferência por IPv4, voltando ao padrão do sistema (AF_UNSPEC)."""
+    global _edge_preferir_ipv4_ate
+    _edge_preferir_ipv4_ate = 0.0
+
+
+def _criar_connector_edge(forcar_ipv4: bool):
+    """Cria um TCPConnector novo para IPv4 quando necessário.
+    Nunca reutilizar a mesma instância: edge_tts fecha o connector ao encerrar o ClientSession.
+    """
+    if forcar_ipv4 and aiohttp is not None:
+        return aiohttp.TCPConnector(family=socket.AF_INET)
+    return None
+
+
+def zerar_diagnostico_edge() -> None:
+    """Zera os contadores de diagnóstico do Edge para uma nova conversão.
+    Mantém _edge_preferir_ipv4_ate para aproveitar a descoberta de rota em retomadas.
+    """
+    _diagnostico_edge["timeouts"] = 0
+    _diagnostico_edge["rate_limits_429"] = 0
+    _diagnostico_edge["erros_conexao"] = 0
+    _diagnostico_edge["arquivo_invalido"] = 0
+    _diagnostico_edge["tentativas_ipv4"] = 0
+    _diagnostico_edge["sucessos_ipv4"] = 0
+    _diagnostico_edge["ultimo_erro"] = ""
+
+
+def obter_diagnostico_edge() -> dict:
+    """Retorna cópia dos contadores de rede do Edge TTS (sem texto do livro nem segredos)."""
+    dados = dict(_diagnostico_edge)
+    dados["fallback_ipv4_ativo"] = _edge_usar_ipv4()
+    return dados
 
 
 class JuncaoCancelada(Exception):
@@ -476,6 +539,7 @@ async def converter_tts_bloco(
                 pass
 
         for tentativa in range(tentativas):
+            usar_ipv4 = _edge_usar_ipv4()
             try:
                 await _config.wait_for_tts_slot("edge")
                 # Recria o diretório-pai imediatamente antes de escrever (fecha a janela de
@@ -483,7 +547,13 @@ async def converter_tts_bloco(
                 _d = os.path.dirname(arquivo_saida)
                 if _d:
                     os.makedirs(_d, exist_ok=True)
-                communicate = edge_tts.Communicate(texto, voz, rate=velocidade, pitch=tom)
+                connector = _criar_connector_edge(usar_ipv4)
+                if usar_ipv4:
+                    _diagnostico_edge["tentativas_ipv4"] += 1
+                kwargs_edge = {"rate": velocidade, "pitch": tom}
+                if connector is not None:
+                    kwargs_edge["connector"] = connector
+                communicate = edge_tts.Communicate(texto, voz, **kwargs_edge)
                 await asyncio.wait_for(
                     _salvar_edge_com_vigia(communicate, arquivo_saida, _EDGE_SEM_DADOS_S),
                     timeout=timeout_para_texto(texto),
@@ -493,27 +563,50 @@ async def converter_tts_bloco(
                         CACHE.put(texto, voz, engine_key, Path(arquivo_saida).read_bytes())
                     except Exception:
                         pass
+                    if usar_ipv4:
+                        _diagnostico_edge["sucessos_ipv4"] += 1
+                        _ativar_edge_ipv4()
                     _mark_voice_valid(voz, velocidade, tom)
                     return True
                 # Arquivo ausente ou pequeno demais: não é sucesso; conta como falha desta tentativa.
+                _diagnostico_edge["arquivo_invalido"] += 1
                 logger.warning(
                     f"Bloco {arquivo_saida} tentativa {tentativa + 1}/{tentativas}: "
                     f"arquivo ausente ou menor que 500 bytes"
                 )
                 delay = (2 ** tentativa) + random.uniform(0, 1)
             except asyncio.TimeoutError:
+                _diagnostico_edge["timeouts"] += 1
+                _diagnostico_edge["ultimo_erro"] = "TimeoutError"
+                if not usar_ipv4:
+                    _ativar_edge_ipv4()
+                    logger.warning("Timeout no Edge TTS; ativando fallback temporário para IPv4.")
+                else:
+                    _limpar_edge_ipv4()
                 logger.warning(f"Timeout bloco {arquivo_saida} ({tentativa + 1}/{tentativas})")
                 delay = (2 ** tentativa) + random.uniform(0, 1)
             except Exception as e:
                 err = str(e).lower()
                 is_rate_limit = "429" in err or "too many" in err or "rate" in err
                 if is_rate_limit:
+                    _diagnostico_edge["rate_limits_429"] += 1
+                    _diagnostico_edge["ultimo_erro"] = f"{type(e).__name__}: rate_limit"
                     delay = min(5.0 * (2 ** tentativa), 60.0) + random.uniform(0, 3)
                     logger.warning(
                         f"Rate-limit (429) bloco {arquivo_saida} "
                         f"({tentativa + 1}/{tentativas}), aguardando {delay:.0f}s"
                     )
                 else:
+                    _diagnostico_edge["erros_conexao"] += 1
+                    _diagnostico_edge["ultimo_erro"] = f"{type(e).__name__}: {str(e)[:100]}"
+                    if not usar_ipv4:
+                        _ativar_edge_ipv4()
+                        logger.warning(
+                            f"Erro de conexão no Edge TTS ({type(e).__name__}); "
+                            "ativando fallback temporário para IPv4."
+                        )
+                    else:
+                        _limpar_edge_ipv4()
                     delay = (2 ** tentativa) + random.uniform(0, 1)
                     logger.warning(f"Bloco {arquivo_saida} tentativa {tentativa + 1}/{tentativas}: {e}")
 

@@ -45,6 +45,7 @@ from tts import (
     agrupar_blocos_por_limite, obter_duracao_ffprobe, validar_voz_tts,
     JuncaoCancelada, _CONCAT_BATCH_SIZE, _concatenar_mp3_puro, _is_wav,
     intercalar_silencios, apagar_silencios, _duracao_wav, duracao_real_silencio_ms,
+    zerar_diagnostico_edge,
 )
 from cover_art import obter_capa
 from erros_tts import ErroDeChave
@@ -849,6 +850,7 @@ async def _processar_nucleo(
     incremental entram em `tarefas_lote` (quem chama espera as que sobrarem)."""
     if metricas is None:
         metricas = MetricasConversao()
+    zerar_diagnostico_edge()
     _reset_cancelar()
     garantir_temp_dir()
 
